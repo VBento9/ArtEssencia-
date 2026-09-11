@@ -1,0 +1,187 @@
+ARTESSENCIA AE V3.0 — AUDITORIA DE LAYOUT, ESTRUTURA E FUNCIONALIDADES
+Data: 11/09/2026
+
+1. CONCLUSÃO DA ANÁLISE
+A V2 já continha uma boa fusão entre a arquitetura DONART e o motor de custos ArtEssencia, mas ainda existiam elementos herdados do negócio de mini donuts, sobretudo na Produção, Homepage e linguagem de caixas/receitas. A V3 reorganiza a aplicação sem eliminar os fluxos que já funcionavam.
+
+2. NOVA ESTRUTURA DE NAVEGAÇÃO
+HOJE
+- Início
+- Nova encomenda
+- Encomendas
+- Orçamentos
+
+PRODUÇÃO
+- Produção
+- Fichas Técnicas & Custos
+- Materiais & Stock
+- Compras
+
+GESTÃO
+- Caixa
+- Clientes
+- Relatórios
+
+CATÁLOGO & LOJA
+- Produtos
+- Kits & Personalização
+- Coleções Sazonais
+- Homepage Loja
+- Campanhas
+- Entregas & Capacidade
+
+SISTEMA
+- Configuração
+- Cloud Sync
+- Backup
+
+3. PRODUTOS ADAPTADOS À ARTESSENCIA
+Famílias preservadas/preparadas:
+- Velas
+- Wax Melts
+- Jesmonite
+- Sabonetes
+- Decoração
+- Personalizados
+- Ímanes & Lembranças
+- Kits & Presentes
+- Outros
+
+Subtipos técnicos:
+- Velas: recipiente, molde, tealight, decorativa
+- Wax Melts: tablete/snap bar, figuras/molde, dose individual
+- Jesmonite: bandeja, vaso/recipiente, porta-velas, peça decorativa
+- Sabonetes: molde, personalizado
+- Personalizados: íman, lembrança, peça decorativa, outro
+- Kits: kit presente, conjunto de produtos, conjunto de lembranças
+
+4. FICHA TÉCNICA
+Mantém as quantidades de materiais por unidade e passa a guardar também:
+- subtipo
+- peso final
+- molde/recipiente
+- custo e vida útil do molde
+- rácio técnico
+- temperatura de mistura/fragrância
+- temperatura de vazamento
+- tempo de desmolde/manuseamento
+- tempo de cura/repouso
+- notas técnicas de produção
+- tempo de trabalho por lote
+- unidades por lote
+- energia/equipamento
+- consumíveis/extras
+- desperdício/defeito
+- embalagem
+
+5. MOTOR DE CUSTOS
+Preservado e apresentado de forma mais clara:
+- materiais
+- componentes de kit
+- mão de obra
+- consumíveis/extras
+- desperdício
+- embalagem
+- amortização de molde
+- energia/equipamento
+- custo de produção
+- taxas de pagamento configuradas
+- custo real
+- margem real
+- PVP recomendado
+- PVP online recomendado
+- PVP grossista
+
+6. PRODUÇÃO
+Foi removida da lógica ativa a "base comum" herdada dos donuts.
+A Produção passa a:
+- somar exclusivamente as Fichas Técnicas dos artigos pedidos
+- agrupar unidades por família
+- calcular as necessidades reais de materiais
+- verificar faltas de stock
+- bloquear conclusão se faltar Ficha Técnica
+- descontar stock pela composição dos produtos
+- incluir recursivamente os componentes de Kits
+- registar os materiais consumidos na sessão de produção
+
+7. MATERIAIS & STOCK
+O antigo Stock passa a estar organizado por famílias:
+- Ceras
+- Fragrâncias
+- Pavios
+- Recipientes
+- Pigmentos & Corantes
+- Jesmonite
+- Selantes & Acabamentos
+- Sabonetes
+- Embalagens
+- Personalização & Decoração
+- Outros
+
+Mantém movimentos, histórico, stock mínimo, custo/base, valor de stock e ligação às Compras.
+
+8. KITS, COLEÇÕES E LOJA FUTURA
+As funções herdadas da DONART foram mantidas, mas adaptadas:
+- Criador de Kits/Presentes
+- ocasiões
+- temas
+- cores
+- nome/data/mensagem
+- fita e fita personalizada
+- etiquetas/cartões
+- acréscimos de preço
+- Coleções Sazonais
+- publicação de produtos
+- fotografia e descrição online
+- PVP online
+- campanhas
+- homepage administrável
+- entrega/levantamento e capacidade
+- encomendas online
+- notificações Push
+
+A Homepage deixou de apresentar Classic/Special/Premium e passa a destacar:
+- Velas
+- Wax Melts
+- Jesmonite
+As restantes categorias poderão ser geradas pelo catálogo da futura loja.
+
+9. SKU
+Incluído gerador de código por família:
+- VEL-001
+- WAX-001
+- JES-001
+- SAB-001
+- IMA-001
+- PER-001
+- KIT-001
+- ART-001
+O código continua editável.
+
+10. PAGAMENTOS DA FUTURA LOJA
+A configuração visível deixou de ficar dependente de um tarifário Ifthenpay específico.
+Mantêm-se reservas percentual e fixa para simulação do PVP online. O prestador e respetivas taxas reais podem ser definidos na fase final da loja.
+
+11. CLOUD / BACKUP
+Foram preservados os módulos Cloud Sync, recuperação de conflitos, Push, backup, clientes, encomendas, produtos e estrutura de futura loja.
+Esta versão não deve ser ligada ao projeto Supabase da DONART.
+
+12. VALIDAÇÃO TÉCNICA
+- JavaScript inline: sintaxe validada com Node
+- IDs HTML duplicados: 0
+- funções referenciadas por botões: 0 em falta na análise estática
+- Service Worker: cache atualizado para artessencia-ae-v3-adaptada
+- Manifest: ArtEssencia Gestão Pro
+- Chromium headless não concluiu o dump DOM neste ambiente; por isso não é reivindicado teste runtime completo nem teste em Honor/iPhone.
+
+13. PRÓXIMO CICLO RECOMENDADO
+Testar na prática:
+1) criar um material de cera
+2) criar uma vela em recipiente
+3) criar a Ficha Técnica
+4) confirmar custo/PVP
+5) criar uma encomenda
+6) passar para Produção
+7) concluir produção e confirmar desconto de stock
+8) repetir o fluxo com uma peça de Jesmonite
+Só depois avançar para o esquema Supabase próprio e a loja pública.
