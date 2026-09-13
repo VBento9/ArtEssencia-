@@ -1,33 +1,47 @@
 <!doctype html>
 <html lang="pt-PT">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#8a5d45" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#795746">
   <title>ArtEssencia Atelier</title>
-  <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="app.css" />
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="app.css">
 </head>
 <body>
-  <div id="app" class="app-shell">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-mark">AE</div>
-        <div><strong>ArtEssencia</strong><small>Atelier</small></div>
+<div id="appShell" class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-symbol">AE</div>
+      <div class="brand-copy"><strong>ArtEssencia</strong><span>Atelier artesanal</span></div>
+    </div>
+    <div id="sidebarNav" class="sidebar-nav"></div>
+    <div class="sidebar-footer">
+      <button id="cloudMini" class="cloud-mini" type="button"><span class="dot"></span><span>Base local</span></button>
+      <span id="appVersion">v2.0.0</span>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="page-copy">
+        <div id="pageContext" class="eyebrow">ATELIER</div>
+        <h1 id="pageTitle">Hoje</h1>
+        <p id="pageSubtitle">O que precisa da tua atenção.</p>
       </div>
-      <nav id="sidebarNav"></nav>
-      <div class="sidebar-foot"><span id="appVersion"></span></div>
-    </aside>
-    <main class="main">
-      <header class="topbar">
-        <div><h1 id="pageTitle">Hoje</h1><p id="pageSubtitle">O teu atelier num só lugar.</p></div>
-        <div class="top-actions"><button id="quickAdd" class="btn primary">+ Novo</button><button id="auditTop" class="btn ghost">Auditoria 360º</button></div>
-      </header>
-      <section id="view" class="view"></section>
-    </main>
-    <nav id="mobileNav" class="mobile-nav"></nav>
-  </div>
-  <div id="modalRoot"></div>
-  <script type="module" src="app.js"></script>
+      <div class="top-actions">
+        <button id="searchBtn" class="icon-button" type="button" title="Pesquisa rápida">⌕</button>
+        <button id="auditTop" class="icon-button" type="button" title="Auditoria 360º">✓</button>
+        <button id="quickAdd" class="btn primary" type="button">+ Criar</button>
+      </div>
+    </header>
+    <section id="view" class="view"></section>
+  </main>
+
+  <nav id="mobileNav" class="mobile-nav"></nav>
+</div>
+<div id="modalRoot"></div>
+<div id="toastRoot" class="toast-root"></div>
+<script type="module" src="app.js"></script>
 </body>
 </html>

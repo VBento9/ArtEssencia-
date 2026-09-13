@@ -1,15 +1,39 @@
 import * as db from './db.js';
 import {calcProduct} from './domain.js';
 export async function runAudit(){
-  const [products,materials,clients,orders,orderItems,production]=await Promise.all(['products','materials','clients','orders','orderItems','productionBatches'].map(db.all));
-  const issues=[]; const add=(area,level,message)=>issues.push({area,level,message});
-  const sku=new Map();for(const p of products){if(!p.sku)add('Catálogo','warn',`Produto ${p.name||'(sem nome)'} sem SKU.`);else{const k=p.sku.toLowerCase();if(sku.has(k))add('Catálogo','error',`SKU duplicado: ${p.sku}.`);sku.set(k,true)}if(!p.recipe?.length&&p.family!=='kit')add('Ficha Técnica','warn',`${p.name} sem matérias na ficha técnica.`);const c=calcProduct(p,materials);if(Number(p.price)>0&&c.margin<Number(p.alertMarginPct||40))add('Custos','warn',`${p.name} com margem ${c.margin.toFixed(1)}%.`);}
-  const matIds=new Set(materials.map(m=>m.id));for(const p of products)for(const r of p.recipe||[])if(!matIds.has(r.materialId))add('Ficha Técnica','error',`${p.name} referencia uma matéria inexistente.`);
-  for(const m of materials){if(Number(m.stock)<0)add('Stock','error',`${m.name} tem stock negativo.`);else if(Number(m.stock)<=Number(m.minStock||0))add('Stock','warn',`${m.name} atingiu o stock mínimo.`);if(Number(m.stock)>0&&Number(m.unitCost)<=0)add('Stock','warn',`${m.name} tem stock mas não tem custo médio.`)}
-  const clientIds=new Set(clients.map(c=>c.id));const orderIds=new Set(orders.map(o=>o.id));for(const o of orders){if(o.clientId&&!clientIds.has(o.clientId))add('Encomendas','error',`Encomenda ${o.number||o.id} ligada a cliente inexistente.`);if(!orderItems.some(i=>i.orderId===o.id))add('Encomendas','warn',`Encomenda ${o.number||o.id} sem artigos.`)}for(const i of orderItems)if(!orderIds.has(i.orderId))add('Encomendas','error','Existe uma linha órfã sem encomenda.');
-  for(const b of production)if(!products.some(p=>p.id===b.productId))add('Atelier','error',`Produção ${b.id} ligada a produto inexistente.`);
-  if(!issues.length)add('Geral','ok','Nenhum problema estrutural detetado.');
-  const counts={ok:issues.filter(i=>i.level==='ok').length,warn:issues.filter(i=>i.level==='warn').length,error:issues.filter(i=>i.level==='error').length};
-  await db.put('auditLog',{id:`audit_${Date.now()}`,createdAt:new Date().toISOString(),counts,issues});
-  return {counts,issues};
+  const names=['products','materials','orders','orderItems','clients','productionBatches','kitItems','collections','purchases','payments'];
+  const data={};for(const n of names)data[n]=await db.all(n);
+  const issues=[];const push=(level,area,message)=>issues.push({level,area,message});
+  push('ok','Base de dados','IndexedDB acessível e stores principais carregadas.');
+  const sku=new Map();
+  for(const p of data.products){
+    const key=String(p.sku||'').trim().toUpperCase();
+    if(!key)push('warn','Catálogo',`Produto "${p.name||'Sem nome'}" sem SKU.`);
+    else if(sku.has(key))push('error','Catálogo',`SKU duplicado: ${key}.`);
+    else sku.set(key,p.id);
+    if(p.family!=='kit'&&!(p.recipe||[]).length)push('warn','Ficha técnica',`"${p.name}" não tem matérias na ficha técnica.`);
+    const econ=calcProduct(p,data.materials,data.kitItems,data.products);
+    if(Number(p.price||0)>0&&econ.margin<Number(p.alertMarginPct??40))push('warn','Margem',`"${p.name}" está com margem ${econ.margin.toFixed(1)}%.`);
+    for(const r of p.recipe||[])if(!data.materials.some(m=>m.id===r.materialId))push('error','Ficha técnica',`"${p.name}" referencia uma matéria eliminada.`);
+  }
+  for(const m of data.materials){
+    if(Number(m.stock||0)<0)push('error','Stock',`${m.name}: stock negativo.`);
+    else if(Number(m.stock||0)<=Number(m.minStock||0))push('warn','Stock',`${m.name}: stock crítico (${m.stock||0} ${m.unit||''}).`);
+    if(Number(m.stock||0)>0&&Number(m.unitCost||0)<=0)push('warn','Custos',`${m.name}: existe stock sem custo médio.`);
+  }
+  const clientIds=new Set(data.clients.map(x=>x.id)),productIds=new Set(data.products.map(x=>x.id)),orderIds=new Set(data.orders.map(x=>x.id));
+  for(const o of data.orders){
+    if(o.clientId&&!clientIds.has(o.clientId))push('error','Encomendas',`${o.number||o.id}: cliente inexistente.`);
+    if(!data.orderItems.some(i=>i.orderId===o.id))push('warn','Encomendas',`${o.number||o.id}: sem artigos.`);
+  }
+  for(const i of data.orderItems){
+    if(!orderIds.has(i.orderId))push('error','Encomendas',`Linha órfã ${i.id}.`);
+    if(i.productId&&!productIds.has(i.productId))push('warn','Histórico',`Linha de encomenda aponta para produto eliminado: ${i.productName||i.productId}.`);
+  }
+  for(const k of data.kitItems){
+    if(!productIds.has(k.kitProductId)||!productIds.has(k.productId))push('error','Kits',`Componente inválido no kit ${k.kitProductId}.`);
+  }
+  if(!issues.some(x=>x.level==='error'))push('ok','Integridade','Não foram encontradas relações estruturais partidas.');
+  const counts={error:issues.filter(x=>x.level==='error').length,warn:issues.filter(x=>x.level==='warn').length,ok:issues.filter(x=>x.level==='ok').length};
+  return {at:new Date().toISOString(),issues,counts};
 }

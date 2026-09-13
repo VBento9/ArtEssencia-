@@ -1,21 +1,30 @@
-ARTESSENCIA — GITHUB / VERCEL — ESTRUTURA PLANA
+ARTESSENCIA ATELIER PRO V2 — FICHEIROS PARA GITHUB
 
-Todos os ficheiros deste ZIP devem ser enviados juntos para a RAIZ do mesmo repositório GitHub ArtEssencia.
-Não é necessário criar pastas.
+Esta versão foi reconstruída como uma aplicação própria para o atelier ArtEssencia.
+Não utiliza a DONART como identidade nem como estrutura visual, mas aproveita o nível
+de completude e os fluxos que fazem sentido para um pequeno negócio artesanal.
 
-Ficheiros principais:
-index.html
-app.css
-app.js
-audit.js
-db.js
-domain.js
-ui.js
-views.js
-manifest.webmanifest
-sw.js
-version.json
+Todos os ficheiros ficam juntos na raiz do repositório GitHub ArtEssencia.
 
-As referências do index.html e do Service Worker foram adaptadas para esta estrutura plana.
+Módulos:
+- Hoje
+- Atelier / Produção
+- Encomendas e Orçamentos
+- Produtos + Fichas Técnicas
+- Custos & Preços
+- Materiais & Stock
+- Compras
+- Clientes
+- Caixa / Despesas / Investimentos
+- Relatórios
+- Loja & Coleções
+  - Coleções
+  - Catálogos & Kits
+  - Homepage
+  - Campanhas
+  - Entregas
+- Auditoria 360º
+- Configuração + Backup
 
-Nas próximas versões, manteremos estes mesmos nomes e substituiremos os ficheiros no mesmo repositório.
+Não ligar esta versão ao Supabase DONART.
+A ligação futura será ao projeto Supabase exclusivo ArtEssencia.

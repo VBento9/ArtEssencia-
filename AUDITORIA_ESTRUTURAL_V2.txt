@@ -1,0 +1,73 @@
+AUDITORIA ESTRUTURAL — ARTESSENCIA ATELIER PRO V2
+
+BASE DE REFERÊNCIA ANALISADA
+DONART V12.7.2 UX RC foi usada apenas como referência de maturidade funcional:
+dashboard operacional, encomendas, produção, stock, compras, caixa, clientes,
+relatórios, produtos, catálogos, edições especiais, homepage, campanhas,
+entregas, configuração, cloud e backup.
+
+DECISÃO
+A ArtEssencia mantém uma arquitetura e identidade próprias para atelier artesanal.
+
+ADAPTAÇÕES PRINCIPAIS
+1. Produção por família:
+   - Velas: Preparar > Produzir > Cura > Acabamento > Pronto
+   - Wax Melts: Preparar > Produzir > Arrefecer > Desmoldar > Pronto
+   - Jesmonite: Preparar > Verter > Desmoldar > Acabamento > Pronto
+   - Sabonetes, personalizados, ímanes e kits têm fluxos próprios.
+
+2. Produto / Ficha Técnica:
+   - matérias por lote
+   - quantidade por lote
+   - mão de obra
+   - embalagem
+   - consumíveis
+   - desperdício
+   - molde e amortização
+   - equipamento/energia
+   - taxas de pagamento
+   - PVP praticado, recomendado e grossista
+   - margem real
+   - publicação futura na loja
+
+3. Stock:
+   - custo médio ponderado pelas compras
+   - stock mínimo
+   - alertas
+   - consumo na conclusão da produção
+
+4. Comercial:
+   - orçamento e encomenda no mesmo fluxo
+   - personalização
+   - entrega
+   - linhas de produto
+   - snapshots de custo previstos para histórico
+
+5. Loja futura:
+   - produtos publicados
+   - coleções sazonais
+   - catálogos/kits
+   - homepage
+   - campanhas
+   - regras de entrega
+
+6. Auditoria 360º:
+   - SKU duplicado/em falta
+   - ficha técnica vazia
+   - matéria eliminada ainda usada
+   - stock negativo/crítico
+   - stock sem custo
+   - margem inferior ao alerta
+   - cliente inexistente
+   - encomenda sem linhas
+   - linhas órfãs
+   - componentes de kits inválidos
+
+PONTOS A FAZER DEPOIS DE VALIDAR ESTA INTERFACE
+- ligar ao Supabase ArtEssencia próprio
+- normalizar dados cloud registo a registo
+- sincronização Honor/iPhone
+- gestão avançada de pagamentos/sinais
+- documentos PDF de orçamento/ordem de produção
+- imagens reais dos produtos
+- loja pública separada

@@ -1,10 +1,9 @@
 {
-  "name":"ArtEssencia Atelier",
-  "short_name":"ArtEssencia",
-  "start_url":"./",
-  "display":"standalone",
-  "background_color":"#f7f2ec",
-  "theme_color":"#8a5d45",
-  "description":"Gestão de atelier artesanal ArtEssencia",
-  "icons":[]
+  "name": "ArtEssencia Atelier",
+  "short_name": "ArtEssencia",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f5f0e9",
+  "theme_color": "#795746",
+  "description": "Gestão privada do atelier ArtEssencia"
 }
