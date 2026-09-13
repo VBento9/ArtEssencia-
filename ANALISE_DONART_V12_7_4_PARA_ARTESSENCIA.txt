@@ -1,0 +1,39 @@
+ANÁLISE FUNCIONAL — DONART V12.7.4 FINAL → ARTESSENCIA ATELIER PRO V3
+
+O ficheiro DONART V12.7.4 FINAL foi analisado como referência de maturidade funcional.
+Páginas encontradas na origem: Início, Nova venda, Encomendas, Orçamentos, Produção,
+Custos, Stock, Compras, Caixa, Clientes, Relatórios, Produtos, Catálogos,
+Edições Especiais, Homepage, Campanhas, Entregas Loja, Configuração, Cloud Sync e Backup.
+
+TRANSFORMAÇÃO PARA ARTESSENCIA
+1. Início → Hoje, orientado ao atelier.
+2. Nova venda → venda/encomenda rápida de peças artesanais.
+3. Encomendas → produtos ArtEssencia, personalizações, datas e pagamentos.
+4. Orçamentos → sinal recomendado, impressão/PDF do navegador e conversão em encomenda.
+5. Produção → Atelier com etapas diferentes por família (velas, wax, jesmonite, sabonete, etc.).
+6. Custos → matérias, mão de obra, molde, embalagem, extras, desperdício, energia e taxas.
+7. Stock → níveis, mínimo, movimentos manuais, desperdício, acertos, histórico e lista de compra.
+8. Compras → entrada de stock + custo médio ponderado + saída de caixa.
+9. Caixa → pagamentos de clientes, por receber, despesas, investimentos e transferências internas.
+10. Clientes → contacto e histórico comercial.
+11. Relatórios → receita, contribuição, stock e ranking de produtos.
+12. Produtos → ficha técnica completa e publicação futura na loja.
+13. Catálogos → Catálogos & Criador de presentes/lembranças:
+    - Temas
+    - Ocasiões
+    - Cores com ativo/inativo/editar/eliminar
+    - Personalizações adicionais com custo e limite de caracteres
+    - Preços do Criador
+14. Edições Especiais → Natal/Páscoa/Dia da Mãe/etc. com datas, produtos e hero.
+15. Homepage → hero, CTA, benefícios e categorias ArtEssencia.
+16. Campanhas → preparação local para campanhas/push.
+17. Entregas → métodos, antecedência, capacidade e calendário de dias indisponíveis.
+18. Configuração → parâmetros do atelier totalmente editáveis.
+19. Cloud Sync → Supabase ArtEssencia, sessão e sync por registo.
+20. Backup → exportação/importação completa.
+21. Auditoria 360º → camada adicional própria da ArtEssencia.
+
+NOTA DE ARQUITETURA
+A DONART não foi copiada como identidade. A V3 continua com domínio e interface ArtEssencia.
+O Supabase é separado e usa tabelas AE. A sincronização desta V3 usa ae_sync_records,
+permitindo evolução por registo sem substituir a base inteira.

@@ -28,3 +28,15 @@ Módulos:
 
 Não ligar esta versão ao Supabase DONART.
 A ligação futura será ao projeto Supabase exclusivo ArtEssencia.
+
+
+V2.1 — PARÂMETROS EDITÁVEIS
+- Parâmetros globais do atelier são editáveis em Configuração.
+- Mão de obra/hora, extras, desperdício, margem alvo, alerta de margem,
+  taxa de pagamento, embalagem, custo de equipamento/h e unidades/lote.
+- Estes parâmetros são usados como predefinições nos NOVOS produtos.
+- Cada produto continua a poder ter os seus próprios valores manualmente.
+- Produtos existentes não são reescritos ao alterar os parâmetros globais.
+
+
+V3.0 — Paridade funcional ampliada com DONART V12.7.4, totalmente adaptada ao atelier ArtEssencia.

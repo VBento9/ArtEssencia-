@@ -1,6 +1,7 @@
 import * as db from './db.js';
 import {calcProduct} from './domain.js';
 export async function runAudit(){
+  const defaultAlertMargin=Number(await db.getSetting('atelier.alertMarginPct',40));
   const names=['products','materials','orders','orderItems','clients','productionBatches','kitItems','collections','purchases','payments'];
   const data={};for(const n of names)data[n]=await db.all(n);
   const issues=[];const push=(level,area,message)=>issues.push({level,area,message});
@@ -13,7 +14,7 @@ export async function runAudit(){
     else sku.set(key,p.id);
     if(p.family!=='kit'&&!(p.recipe||[]).length)push('warn','Ficha técnica',`"${p.name}" não tem matérias na ficha técnica.`);
     const econ=calcProduct(p,data.materials,data.kitItems,data.products);
-    if(Number(p.price||0)>0&&econ.margin<Number(p.alertMarginPct??40))push('warn','Margem',`"${p.name}" está com margem ${econ.margin.toFixed(1)}%.`);
+    if(Number(p.price||0)>0&&econ.margin<Number(p.alertMarginPct??defaultAlertMargin))push('warn','Margem',`"${p.name}" está com margem ${econ.margin.toFixed(1)}%.`);
     for(const r of p.recipe||[])if(!data.materials.some(m=>m.id===r.materialId))push('error','Ficha técnica',`"${p.name}" referencia uma matéria eliminada.`);
   }
   for(const m of data.materials){

@@ -1,10 +1,11 @@
 const DB_NAME='artessencia_atelier_pro';
-const DB_VERSION=2;
+const DB_VERSION=3;
 export const stores=[
   'settings','clients','suppliers','materials','products','productMaterials','molds',
   'orders','orderItems','payments','purchases','expenses','investments','cashMovements',
   'productionBatches','stockMovements','collections','kitItems','catalogs',
-  'homepage','campaigns','deliverySettings','auditLog','recurringExpenses','transfers'
+  'homepage','campaigns','deliverySettings','auditLog','recurringExpenses','transfers',
+  'themes','occasions','colors','personalizations','creatorPricing','unavailableDates','notifications','quoteHistory'
 ];
 let dbPromise;
 export function openDB(){
