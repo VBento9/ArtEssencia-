@@ -46,4 +46,4 @@ async function globalSearch(){
     if(!found.length)results.append(el('div',{class:'empty'},'Sem resultados.'));for(const [v,t,s]of found.slice(0,20))results.append(el('button',{class:'quick-card',type:'button',onclick:()=>{document.querySelector('#modalRoot').innerHTML='';go(v)}},el('strong',{},t),el('small',{},s)));
   };q.oninput=search;modal('Pesquisa rápida',box,{wide:true});setTimeout(()=>q.focus(),50)
 }
-(async()=>{await db.openDB();await loadVersion();const h=location.hash.slice(1);if(views[h])state.view=h;await render();if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(console.warn)})();
+(async()=>{try{await db.openDB();await loadVersion();const h=location.hash.slice(1);if(views[h])state.view=h;await render();if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(console.warn)}catch(e){console.error('Falha de arranque ArtEssencia:',e);const view=qs('#view');if(view)view.innerHTML=`<div class="card"><h3>Falha ao iniciar a aplicação</h3><p>${String(e?.message||e)}</p><p class="small muted">Atualiza a página. Se persistir, envia esta mensagem de erro.</p></div>`}})();

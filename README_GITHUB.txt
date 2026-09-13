@@ -40,3 +40,10 @@ V2.1 — PARÂMETROS EDITÁVEIS
 
 
 V3.0 — Paridade funcional ampliada com DONART V12.7.4, totalmente adaptada ao atelier ArtEssencia.
+
+
+V3.1 — HOTFIX DE ARRANQUE
+- Corrigido erro de sintaxe na função "Nova venda" que impedia o módulo views.js de carregar.
+- Como views.js não carregava, app.js não arrancava e o ecrã mostrava apenas o HTML estático.
+- Cache do Service Worker alterada para obrigar atualização dos ficheiros.
+- Adicionado tratamento de erro de arranque para impedir ecrãs vazios silenciosos no futuro.
