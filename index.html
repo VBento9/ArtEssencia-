@@ -2178,6 +2178,14 @@
 .legal-check-v1286 input{width:auto;margin-top:3px}.legal-actions-v1286{position:sticky;bottom:10px;z-index:4;display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:12px;padding:12px 14px;border:1px solid #eadde1;border-radius:16px;background:rgba(255,255,255,.96);box-shadow:0 12px 35px rgba(80,35,20,.12);backdrop-filter:blur(8px)}
 .legal-actions-v1286 .btnrow{margin:0}.legal-warning-v1286{border-left:4px solid #f0b429;background:#fff8e8}.legal-ready-v1286{border-left-color:#18a999;background:#effbf8}
 @media(max-width:850px){.legal-summary-v1286{grid-template-columns:1fr 1fr}.legal-doc-grid-v1286{grid-template-columns:1fr}.legal-actions-v1286{align-items:flex-start;flex-direction:column}}
+
+/* V1.4.3 — feedback de gravação */
+.save-state-v143{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid rgba(93,65,48,.18);border-radius:12px;background:rgba(255,255,255,.45);min-height:48px}
+.save-state-v143>span{font-size:18px;color:#9b8a7d}.save-state-v143 div{display:flex;flex-direction:column;gap:2px}.save-state-v143 strong{font-size:13px}.save-state-v143 small{font-size:11px;opacity:.72}
+.save-state-v143.saved{background:#eef5e9;border-color:#a9c69a}.save-state-v143.saved>span{color:#4f7a43}
+.save-state-v143.dirty{background:#fbf2df;border-color:#d9b87d}.save-state-v143.dirty>span{color:#a36f27}
+.save-state-v143.error{background:#fae9e5;border-color:#d69b8e}.save-state-v143.error>span{color:#a24e3c}
+@media(max-width:820px){.save-state-v143{padding:9px 10px}.cloud-grid,.grid2{grid-template-columns:1fr!important}.screen{padding-bottom:28px}}
 </style>
 
 <style id="artessencia-v142-redesign">
@@ -2242,7 +2250,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 <div class="app">
 <aside class="sidebar"><div class="brand"><img src="brand-artessencia.png" alt="ArtEssencia"><small>BACKOFFICE · GESTÃO PRIVADA</small></div><div class="nav" id="nav"></div><div class="sidebar-signature">Mais do que produtos,<br>criamos bem-estar.</div></aside>
 <main class="main">
-  <div class="topbar"><div class="art-global-search"><span class="art-search-icon">⌕</span><input id="globalSearchV142" type="search" placeholder="Pesquisar módulos..." autocomplete="off" onkeydown="globalSearchKeyV142(event)"><span class="art-search-hint">Enter</span></div><div class="top-actions"><button id="orderAlertButtonV12624" class="smallbtn order-alert-button-v12624" onclick="toggleOrderNotificationsV12624()" title="Novas encomendas">🔔<span id="orderAlertBadgeV12624" class="order-alert-count-v12624 hidden">0</span></button><button id="installBtn" class="smallbtn hidden" onclick="installApp()">Instalar app</button><button class="pill cloud-status neutral" id="cloudStatus" onclick="go('cloud')" title="Estado da sincronização"><span class="cloud-dot"></span><span id="cloudStatusText">Cloud desligada</span></button><div class="pill art-date-pill" id="today"></div><div class="art-profile"><span>AE</span><div><b>ArtEssencia</b><small>Backoffice privado</small></div></div><span id="runtimeVersion" class="pill art-version-pill">V1.4.2</span></div><div class="page-heading"><span id="pageContext">GESTÃO ArtEssencia</span><h1 id="pageTitle">Dashboard</h1></div></div>
+  <div class="topbar"><div class="art-global-search"><span class="art-search-icon">⌕</span><input id="globalSearchV142" type="search" placeholder="Pesquisar módulos..." autocomplete="off" onkeydown="globalSearchKeyV142(event)"><span class="art-search-hint">Enter</span></div><div class="top-actions"><button id="orderAlertButtonV12624" class="smallbtn order-alert-button-v12624" onclick="toggleOrderNotificationsV12624()" title="Novas encomendas">🔔<span id="orderAlertBadgeV12624" class="order-alert-count-v12624 hidden">0</span></button><button id="installBtn" class="smallbtn hidden" onclick="installApp()">Instalar app</button><button class="pill cloud-status neutral" id="cloudStatus" onclick="go('cloud')" title="Estado da sincronização"><span class="cloud-dot"></span><span id="cloudStatusText">Cloud desligada</span></button><div class="pill art-date-pill" id="today"></div><div class="art-profile"><span>AE</span><div><b>ArtEssencia</b><small>Backoffice privado</small></div></div><span id="runtimeVersion" class="pill art-version-pill">V1.4.3</span></div><div class="page-heading"><span id="pageContext">GESTÃO ArtEssencia</span><h1 id="pageTitle">Dashboard</h1></div></div>
   <div id="installBanner" class="installBanner hidden"><div><strong>Instalar no dispositivo</strong><br><small>Adiciona a app ao ecrã inicial e abre em modo completo.</small></div><button class="btn primary" onclick="installApp()">Instalar</button></div>
 
   <div id="orderNotificationPanelV12624" class="order-notification-panel-v12624 hidden" aria-live="polite">
@@ -2489,7 +2497,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div class="field span2"><label>Produto</label><select id="costProduct" onchange="renderProductRecipeEditor()"></select></div>
         <div class="field span2"><label>Material / componente</label><select id="costIngredient"></select></div>
         <div class="field"><label>Quantidade por unidade</label><input id="costIngredientQty" type="number" step="0.01" placeholder="g/ml/un"></div>
-        <div class="field"><label>&nbsp;</label><button class="btn primary" onclick="addRecipeLine()">Adicionar / atualizar</button></div>
+        <div class="field"><label>&nbsp;</label><button id="recipeSaveBtnV143" class="btn primary" onclick="addRecipeLine()">Guardar material na ficha</button></div>
+<div class="field span2"><div id="recipeSaveStateV143" class="save-state-v143 neutral"><span>●</span><div><strong>Selecione um produto</strong><small>Cada material fica guardado imediatamente ao carregar em “Guardar material na ficha”.</small></div></div></div>
       </div>
       <div id="productRecipeEditor" style="margin-top:12px"></div>
     </div>
@@ -2539,7 +2548,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           <div class="field"><label>Stock alvo</label><input id="stockTarget" type="number" step="0.01" placeholder="Ex.: 2000"><small>Quantidade desejada após reposição. Se vazio, usa 2× o mínimo.</small></div>
           <div class="field"><label>Custo por unidade base</label><input id="stockUnitCost" type="number" step="0.0001"></div>
           <div class="field"><label>Fornecedor preferencial</label><input id="stockPreferredSupplier" placeholder="Opcional"></div>
-          <div class="field"><label>&nbsp;</label><button class="btn primary" onclick="addStock()">Guardar artigo</button></div>
+          <div class="field"><label>&nbsp;</label><button id="stockSaveBtnV143" class="btn primary" onclick="addStock()">Guardar matéria-prima</button></div>
+<div class="field span2"><div id="stockSaveStateV143" class="save-state-v143 neutral"><span>●</span><div><strong>Pronto para registar</strong><small>Depois de guardar, o formulário será limpo automaticamente.</small></div></div></div>
         </div>
       </div>
 
@@ -4868,11 +4878,22 @@ function renderProduction(){
  const runs=(db.productionRuns||[]).filter(r=>r.date===d),hist=document.getElementById('productionHistory');if(hist)hist.innerHTML=runs.length?runs.map((r,i)=>`<div class="prod-history"><div><strong>Sessão ${i+1}</strong><small>${(r.orders||[]).map(escapeHtml).join(', ')}</small></div><div><strong>${r.total||0} un.</strong><small>${r.createdAt?new Date(r.createdAt).toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'}):'Concluída'}</small></div></div>`).join(''):'<div class="empty">Ainda não há sessões concluídas neste dia.</div>';
  renderProductionDailyCenterV12653(d)
 }
+function setStockSaveStateV143(type,title,detail){
+ const el=document.getElementById('stockSaveStateV143');if(!el)return;
+ el.className='save-state-v143 '+(type||'neutral');
+ el.innerHTML=`<span>${type==='saved'?'✓':type==='error'?'!':'●'}</span><div><strong>${escapeHtml(title)}</strong><small>${escapeHtml(detail||'')}</small></div>`;
+}
 function addStock(){
- const n=stockName.value.trim();if(!n)return toast('Indique o produto');
+ const n=stockName.value.trim();if(!n){setStockSaveStateV143('error','Falta o nome','Indique a matéria-prima antes de guardar.');return toast('Indique a matéria-prima')}
  const targetRaw=String(document.getElementById('stockTarget')?.value||'').trim();
- const ex=db.stock.find(x=>x.name.toLowerCase()===n.toLowerCase()),o={name:n,qty:+stockQty.value||0,unit:normalizeBaseUnitV120(stockUnit.value),min:+stockMin.value||0,target:targetRaw===''?null:(+targetRaw||0),unitCost:+stockUnitCost.value||0,preferredSupplier:String(document.getElementById('stockPreferredSupplier')?.value||'').trim()};
- ex?Object.assign(ex,o):db.stock.push(o);save();stockName.value=stockQty.value=stockMin.value=stockUnitCost.value='';if(document.getElementById('stockTarget'))stockTarget.value='';if(document.getElementById('stockPreferredSupplier'))stockPreferredSupplier.value='';stockUnit.value='g';toast('Stock atualizado')
+ const ex=db.stock.find(x=>x.name.toLowerCase()===n.toLowerCase()),isEdit=!!ex,o={name:n,qty:+stockQty.value||0,unit:normalizeBaseUnitV120(stockUnit.value),min:+stockMin.value||0,target:targetRaw===''?null:(+targetRaw||0),unitCost:+stockUnitCost.value||0,preferredSupplier:String(document.getElementById('stockPreferredSupplier')?.value||'').trim()};
+ ex?Object.assign(ex,o):db.stock.push(o);save();
+ stockName.value='';stockQty.value='';stockMin.value='';stockUnitCost.value='';
+ if(document.getElementById('stockTarget'))stockTarget.value='';
+ if(document.getElementById('stockPreferredSupplier'))stockPreferredSupplier.value='';
+ stockUnit.value='g';
+ setStockSaveStateV143('saved',isEdit?'Alterações guardadas':'Matéria-prima guardada com sucesso',n+' · formulário limpo e pronto para novo registo.');
+ toast(isEdit?'Alterações guardadas':'Matéria-prima guardada com sucesso')
 }
 function refreshStockSelectors(){
  const opts='<option value="">Selecionar…</option>'+db.stock.map(x=>`<option value="${x.name}">${x.name}</option>`).join('');
@@ -6974,15 +6995,23 @@ function restoreCostProductSelectionV12628(code){
  if(sel&&code&&[...sel.options].some(o=>o.value===code))sel.value=code;
  renderProductRecipeEditor();
 }
+function setRecipeSaveStateV143(type,title,detail){
+ const el=document.getElementById('recipeSaveStateV143');if(!el)return;
+ el.className='save-state-v143 '+(type||'neutral');
+ el.innerHTML=`<span>${type==='saved'?'✓':type==='error'?'!':'●'}</span><div><strong>${escapeHtml(title)}</strong><small>${escapeHtml(detail||'')}</small></div>`;
+}
 function addRecipeLine(){
  const code=costProduct.value,item=costIngredient.value,qty=Number(costIngredientQty.value)||0;
- if(!code||!item||qty<=0)return toast('Selecione produto, material e quantidade');
+ if(!code||!item||qty<=0){setRecipeSaveStateV143('error','Ficha ainda não guardada','Selecione produto, material e uma quantidade superior a zero.');return toast('Selecione produto, material e quantidade')}
  db.productRecipes[code]=db.productRecipes[code]||[];
  const ex=db.productRecipes[code].find(x=>x.item===item);
  ex?ex.qty=qty:db.productRecipes[code].push({item,qty});
  save();restoreCostProductSelectionV12628(code);
  const qtyInput=document.getElementById('costIngredientQty');if(qtyInput)qtyInput.value='';
- toast('Ficha técnica atualizada')
+ const ing=document.getElementById('costIngredient');if(ing)ing.value='';
+ const p=db.products.find(x=>x.code===code),count=(db.productRecipes[code]||[]).length;
+ setRecipeSaveStateV143('saved','Ficha técnica guardada',`${p?.name||code} · ${count} material(is) guardado(s). Pode adicionar o seguinte.`);
+ toast('Material guardado na ficha técnica')
 }
 function removeRecipeLine(code,item){
  db.productRecipes[code]=(db.productRecipes[code]||[]).filter(x=>x.item!==item);
@@ -6991,8 +7020,9 @@ function removeRecipeLine(code,item){
 function renderProductRecipeEditor(){
  if(!document.getElementById('productRecipeEditor'))return;
  const code=costProduct.value,p=db.products.find(x=>x.code===code);
- if(!p){productRecipeEditor.innerHTML='<div class="empty">Selecione um produto</div>';return}
+ if(!p){productRecipeEditor.innerHTML='<div class="empty">Selecione um produto</div>';setRecipeSaveStateV143('neutral','Selecione um produto','Cada material é guardado imediatamente no botão “Guardar material na ficha”.');return}
  const lines=db.productRecipes[code]||[],x=productCostBreakdownV110(p),base=x.mold,top=x.materials,lab=x.labor,extraLab=x.editionLabor,waste=x.waste,total=x.total;
+ setRecipeSaveStateV143(lines.length?'saved':'dirty',lines.length?'Ficha técnica guardada':'Ficha técnica ainda vazia',lines.length?`${p.name} · ${lines.length} material(is) atualmente guardado(s).`:'Adicione o primeiro material e carregue em “Guardar material na ficha”.');
  const editionConfigured=lines.length>0,editionRec=editionRecommendedPriceV1249(p),editionMin=minPriceForMargin(total),editionMargin=Number(db.settings.minMargin)||.65;
  productRecipeEditor.innerHTML=`<div class="totalbox cost-totalbox-v1248"><div class="mini"><span>Amortização do molde</span><strong>${euro(base)}</strong></div><div class="mini"><span>Materiais e componentes</span><strong>${euro(top)}</strong></div><div class="mini"><span>Mão de obra</span><strong>${euro(lab+extraLab)}</strong>${extraLab>0?`<small>+ ${euro(extraLab)} edição</small>`:''}</div><div class="mini"><span>Custo final</span><strong>${euro(total)}</strong>${productEditionExtraWasteRate(p)>0?`<small>desperdício extra ${Number(p.editionExtraWastePct)||0}%</small>`:''}</div></div>${normalizeProductAvailabilityV1244(p)==='edition'?(editionConfigured?`<div class="edition-pvp-recommend-v1249"><div><span>PVP mínimo · margem ${pct(editionMargin)}</span><strong>${euro(editionMin)}</strong></div><div class="recommended"><span>⭐ PVP recomendado</span><strong>${euro(editionRec)}</strong></div><div><span>PVP definido</span><strong>${euro(Number(p.price)||0)}</strong></div><small>Recomendação informativa baseada no custo real e na margem mínima ArtEssencia. O PVP definido continua manual.</small></div>`:`<div class="edition-pvp-warning-v1250"><strong>⚠️ PVP recomendado ainda indisponível</strong><span>Adiciona os materiais específicos deste produto à Ficha Técnica para obter uma recomendação fiável.</span></div>`):''}
  <div style="margin-top:10px">${lines.length?lines.map(l=>`<div class="cart-row" style="grid-template-columns:1fr 100px 110px 80px"><span>${l.item}</span><strong>${Number(l.qty).toLocaleString('pt-PT')} ${stockByName(l.item)?.unit||''}</strong><strong>${euro((Number(l.qty)||0)*materialUnitCost(l.item))}</strong><button class="btn danger" onclick="removeRecipeLine('${code}','${l.item.replace(/'/g,"\\'")}')">Remover</button></div>`).join(''):'<div class="empty">Sem materiais configurados</div>'}</div>`
