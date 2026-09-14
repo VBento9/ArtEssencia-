@@ -1,4 +1,4 @@
-ARTESSENCIA — ADAPTAÇÃO V1.0.0
+ARTESSENCIA — BACKOFFICE V1.1.0 / LOJA V1.0.0
 
 Esta versão foi criada separadamente a partir da base funcional DONART.
 
@@ -6,11 +6,14 @@ ALTERAÇÕES PRINCIPAIS
 - Identidade ArtEssencia e visual rústico/minimalista.
 - Produtos adaptados a velas, wax melts, sabonetes, resina/Jesmonite e personalizados.
 - Massa base, receitas alimentares, sabores e alergénios retirados do funcionamento.
-- Ficha técnica por produto baseada em matérias-primas, consumo por unidade, mão de obra e desperdício.
+- Ficha técnica por produto baseada em matérias-primas e consumo por unidade.
+- Custos individuais editáveis: tempo de trabalho, desperdício, molde e amortização, embalagem, energia/consumíveis e outros custos.
+- Margem alvo editável por produto para venda direta e Loja online.
+- PVP recomendado para venda direta e para Loja, sem alterar os PVP definidos manualmente.
 - Produção desconta do stock os materiais definidos na ficha técnica de cada produto.
 - Criador convertido em composição de conjuntos presente/personalizados.
 - Informação técnica, cuidados e segurança substituem informação alimentar.
 - Dados locais e tabelas Cloud usam espaço ArtEssencia separado.
 
 IMPORTANTE
-Não introduzir nesta versão as credenciais do projeto Supabase da DONART. A loja está deliberadamente com marcadores de configuração para impedir mistura de produtos e encomendas. A ligação Cloud ArtEssencia deve usar um projeto/esquema separado.
+Não introduzir nesta versão as credenciais do projeto Supabase da DONART. A ligação Cloud ArtEssencia deve usar um projeto/esquema separado.
