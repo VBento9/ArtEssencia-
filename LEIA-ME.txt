@@ -1,19 +1,26 @@
-ARTESSENCIA — BACKOFFICE V1.3.0
+ARTESSENCIA — BACKOFFICE V1.4.2
 
-Esta versão foi criada separadamente a partir da base funcional DONART.
+AUDITORIA FINAL DO BACKOFFICE (V1.4.2)
 
-ALTERAÇÕES PRINCIPAIS
-- Fichas técnicas exclusivamente por produto; deixou de existir uma receita ou ficha base comum na produção.
-- Consumo de matérias-primas calculado pela quantidade real de cada produto encomendado.
-- Produção bloqueada quando faltar uma ficha técnica ou existir stock insuficiente.
-- Desconto de stock e histórico detalhado ao concluir a produção.
-- Processo técnico editável por produto: velas em molde/recipiente, wax melts, sabonetes, resina/Jesmonite, laser, montagem ou outro.
-- Campos editáveis para cura/secagem, temperaturas de preparação, mistura/fragrância e vertimento.
-- Instruções internas e controlo de qualidade por produto.
-- Possibilidade de marcar artigos não fabricados no ateliê, sem exigir ficha nem descontar materiais.
-- A ordem de produção em PDF inclui os processos técnicos dos produtos.
-- Mantém custos, margens, PVP definidos e PVP recomendados totalmente editáveis.
-- Mantém as conversões automáticas de kg para g, L para ml e m para cm.
+Correções desta versão:
+- Removidas referências funcionais residuais a receita base/rendimento/lotes herdadas da DONART.
+- Reposição de stock ao eliminar produções/encomendas passa a usar exclusivamente as fichas técnicas reais dos produtos fabricados.
+- Removida lógica alimentar residual de ajuda operacional.
+- Venda deixou de ter embalagens fixas "Caixa 6 / 12 / 24 / Evento 50".
+- Venda e Orçamentos passam a usar exclusivamente as embalagens configuradas no módulo de Configuração.
+- Orçamentos antigos sem embalagem são normalizados para a primeira embalagem configurada, mantendo compatibilidade.
+- Validação adicionada para impedir guardar Venda/Orçamento sem uma embalagem configurada.
+- Mantida compatibilidade de leitura de backups antigos; chaves legacy de yield/baseRecipe são descartadas na normalização e já não participam nos cálculos.
+- Versão Cloud e Backup atualizada para 1.4.1, mantendo schema 7.
 
-IMPORTANTE
-Não introduzir nesta versão as credenciais do projeto Supabase da DONART. A ligação Cloud ArtEssencia deve usar um projeto/esquema separado.
+Estado da auditoria:
+- 21 módulos/ecrãs preservados.
+- JavaScript validado sem erros de sintaxe.
+- Sem IDs HTML duplicados.
+- Sem referências funcionais a DONART, donuts, sabores ou caixas fixas da antiga aplicação.
+- Núcleo Produtos -> Fichas Técnicas -> Custos -> Orçamentos/Encomendas -> Produção -> Stock -> Compras -> Caixa -> Relatórios preservado.
+
+Mantém todas as funcionalidades das versões anteriores: Produtos, Fichas Técnicas, Custos, Stock, Compras, Encomendas, Orçamentos, Produção, Clientes, Caixa, Relatórios, Catálogos, Coleções, Entregas, Legal, Cloud e Backup.
+
+
+V1.4.2 — Redesign ArtEssencia: nova identidade visual baseada no logótipo kraft/castanho; sidebar escura, topbar com pesquisa de módulos, cartões e formulários harmonizados, preservando a lógica funcional da V1.4.1.
