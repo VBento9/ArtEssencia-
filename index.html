@@ -2193,9 +2193,9 @@
 </div>
 
 <div class="app">
-<aside class="sidebar"><div class="brand"><img src="logo-artessencia.svg" alt="ArtEssencia Backoffice"><small>Gestão Privada · V1.1.0 CUSTOS EDITÁVEIS · Tablet + iPhone</small></div><div class="nav" id="nav"></div></aside>
+<aside class="sidebar"><div class="brand"><img src="logo-artessencia.svg" alt="ArtEssencia Backoffice"><small>Gestão Privada · V1.3.0 FICHAS TÉCNICAS E PRODUÇÃO · Tablet + iPhone</small></div><div class="nav" id="nav"></div></aside>
 <main class="main">
-  <div class="topbar"><div class="page-heading"><span id="pageContext">GESTÃO ArtEssencia</span><h1 id="pageTitle">Dashboard</h1></div><div class="top-actions"><button id="orderAlertButtonV12624" class="smallbtn order-alert-button-v12624" onclick="toggleOrderNotificationsV12624()" title="Novas encomendas">🔔<span id="orderAlertBadgeV12624" class="order-alert-count-v12624 hidden">0</span></button><span id="runtimeVersion" class="pill" style="font-weight:900">V1.1.0 CUSTOS EDITÁVEIS</span><button id="installBtn" class="smallbtn hidden" onclick="installApp()">Instalar app</button><button class="pill cloud-status neutral" id="cloudStatus" onclick="go('cloud')" title="Estado da sincronização"><span class="cloud-dot"></span><span id="cloudStatusText">Cloud desligada</span></button><div class="pill" id="today"></div></div></div>
+  <div class="topbar"><div class="page-heading"><span id="pageContext">GESTÃO ArtEssencia</span><h1 id="pageTitle">Dashboard</h1></div><div class="top-actions"><button id="orderAlertButtonV12624" class="smallbtn order-alert-button-v12624" onclick="toggleOrderNotificationsV12624()" title="Novas encomendas">🔔<span id="orderAlertBadgeV12624" class="order-alert-count-v12624 hidden">0</span></button><span id="runtimeVersion" class="pill" style="font-weight:900">V1.3.0 FICHAS TÉCNICAS E PRODUÇÃO</span><button id="installBtn" class="smallbtn hidden" onclick="installApp()">Instalar app</button><button class="pill cloud-status neutral" id="cloudStatus" onclick="go('cloud')" title="Estado da sincronização"><span class="cloud-dot"></span><span id="cloudStatusText">Cloud desligada</span></button><div class="pill" id="today"></div></div></div>
   <div id="installBanner" class="installBanner hidden"><div><strong>Instalar no dispositivo</strong><br><small>Adiciona a app ao ecrã inicial e abre em modo completo.</small></div><button class="btn primary" onclick="installApp()">Instalar</button></div>
 
   <div id="orderNotificationPanelV12624" class="order-notification-panel-v12624 hidden" aria-live="polite">
@@ -2321,7 +2321,7 @@
       <div class="prod-head-main">
         <div>
           <div class="section-title" style="margin:0">Produção do dia</div>
-          <small>Planeia, verifica stock e acompanha as encomendas sem alterar o fluxo já existente.</small>
+          <small>Planeia cada encomenda a partir da ficha técnica individual de cada produto.</small>
         </div>
         <div class="prod-head-actions">
           <div class="field">
@@ -2334,7 +2334,7 @@
           <button class="btn" onclick="previewProductionPDFV12653()">Ver ordem PDF</button>
           <button class="btn" onclick="downloadProductionPDFV12653()">Guardar PDF</button>
           <button class="btn primary" onclick="renderProduction()">Atualizar</button>
-          <button class="btn" onclick="consumeProduction()">Concluir produção e descontar materiais</button>
+          <button class="btn" onclick="consumeProduction()">Concluir produção e descontar stock</button>
         </div>
       </div>
     </div>
@@ -2363,8 +2363,8 @@
       <div class="card">
         <div class="prod-card-title">
           <div>
-            <div class="section-title" style="margin:0">Unidades por produto</div>
-            <small>Quantidade total agrupada por produto/produto.</small>
+            <div class="section-title" style="margin:0">Produção por produto</div>
+            <small>Quantidade agrupada, processo e tempos técnicos de cada produto.</small>
           </div>
         </div>
         <div id="productionProducts"></div>
@@ -2375,8 +2375,8 @@
       <div class="card">
         <div class="prod-card-title">
           <div>
-            <div class="section-title" style="margin:0">Materiais comuns</div>
-            <small>Fichas técnicas e materiais necessários para o total do dia.</small>
+            <div class="section-title" style="margin:0">Materiais totais</div>
+            <small>Soma das fichas técnicas individuais para a produção selecionada.</small>
           </div>
         </div>
         <div id="productionRecipe"></div>
@@ -2423,9 +2423,9 @@
     <div class="section-title">Atualizar custo de matéria-prima</div>
     <div class="card">
       <div class="form-grid">
-        <div class="field span2"><label>Matéria-prima</label><select id="costMaterial"></select></div>
-        <div class="field"><label>Quantidade comprada (g/ml/un)</label><input id="costPackQty" type="number" step="0.01" placeholder="Ex.: 200"></div>
-        <div class="field"><label>Preço pago €</label><input id="costPackPrice" type="number" step="0.01" placeholder="Ex.: 4,59"></div>
+        <div class="field span2"><label>Matéria-prima</label><select id="costMaterial" onchange="syncCostUnitV120();updateCostPreview()"></select></div>
+        <div class="field"><label>Quantidade comprada</label><input id="costPackQty" type="number" step="0.01" placeholder="Ex.: 5" oninput="updateCostPreview()"></div><div class="field"><label>Unidade da compra</label><select id="costPackUnitV120" onchange="updateCostPreview()"><option value="">Selecionar matéria-prima</option></select></div>
+        <div class="field"><label>Preço pago €</label><input id="costPackPrice" type="number" step="0.01" placeholder="Ex.: 35,00" oninput="updateCostPreview()"></div>
         <div class="field"><label>Custo calculado/unidade base</label><input id="costUnitPreview" readonly style="background:#DDF4D2"></div>
         <div class="field"><label>&nbsp;</label><button class="btn primary" onclick="applyMaterialCost()">Atualizar custo</button></div>
       </div>
@@ -2466,7 +2466,7 @@
     <div class="stock-hero card">
       <div>
         <div class="section-title" style="margin:0">Stock</div>
-        <small>Controlo de matérias-primas, utilizaçãos e níveis mínimos.</small>
+        <small>Controlo de matérias-primas, componentes, unidades e níveis mínimos.</small>
       </div>
       <div class="stock-tools">
         <input id="stockSearch" placeholder="Pesquisar artigo…" oninput="renderStock()">
@@ -2487,7 +2487,7 @@
         <div class="form-grid">
           <div class="field span2"><label>Produto / matéria-prima</label><input id="stockName" placeholder="Ex.: Cera de soja APF"></div>
           <div class="field"><label>Quantidade atual</label><input id="stockQty" type="number" step="0.01"></div>
-          <div class="field"><label>Unidade</label><input id="stockUnit" placeholder="g / ml / un"></div>
+          <div class="field"><label>Unidade-base</label><select id="stockUnit"><option value="g">g — grama</option><option value="ml">ml — mililitro</option><option value="cm">cm — centímetro</option><option value="un">un — unidade</option></select><small>É nesta unidade que o stock e as fichas técnicas são calculados.</small></div>
           <div class="field"><label>Stock mínimo</label><input id="stockMin" type="number" step="0.01"></div>
           <div class="field"><label>Custo por unidade base</label><input id="stockUnitCost" type="number" step="0.0001"></div>
           <div class="field"><label>&nbsp;</label><button class="btn primary" onclick="addStock()">Guardar artigo</button></div>
@@ -2552,8 +2552,8 @@
       </div>
       <div class="form-grid purchase-form">
         <div class="field span2"><label>Fornecedor</label><input id="purchaseSupplier" placeholder="Nome do fornecedor"></div>
-        <div class="field span2"><label>Artigo</label><select id="purchaseItem" onchange="updatePurchasePreview()"></select></div>
-        <div class="field"><label id="purchaseQtyLabel">Quantidade base</label><input id="purchaseQty" type="number" step="0.01" oninput="updatePurchasePreview()"></div>
+        <div class="field span2"><label>Artigo</label><select id="purchaseItem" onchange="syncPurchaseUnitV120();updatePurchasePreview()"></select></div>
+        <div class="field"><label id="purchaseQtyLabel">Quantidade comprada</label><input id="purchaseQty" type="number" step="0.01" oninput="updatePurchasePreview()"></div><div class="field"><label>Unidade da compra</label><select id="purchaseUnitV120" onchange="updatePurchasePreview()"><option value="">Selecionar artigo primeiro</option></select></div>
         <div class="field"><label>Valor total €</label><input id="purchaseTotal" type="number" step="0.01" oninput="updatePurchasePreview()"></div>
         <div class="field"><label>Pagamento</label><select id="purchaseMethod"><option>Dinheiro</option><option>MB Way</option><option>Transferência</option><option>Cartão</option><option>Outro</option></select></div>
         <div class="field"><label>Data</label><input id="purchaseDate" type="date"></div>
@@ -2564,7 +2564,7 @@
           <div class="purchase-preview-item"><span>Stock atual</span><strong id="purchasePreviewCurrent">—</strong></div>
           <div class="purchase-preview-item"><span>Após compra</span><strong id="purchasePreviewAfter">—</strong></div>
           <div class="purchase-preview-item"><span>Custo desta compra</span><strong id="purchasePreviewUnitCost">—</strong></div>
-          <div class="purchase-preview-item"><span>Novo custo médio</span><strong id="purchasePreviewAvgCost">—</strong></div>
+          <div class="purchase-preview-item"><span>Novo custo médio</span><strong id="purchasePreviewAvgCost">—</strong></div><div class="purchase-preview-item"><span>Convertido para stock</span><strong id="purchasePreviewConvertedV120">—</strong></div>
         </div>
       </div>
     </div>
@@ -3128,10 +3128,15 @@
         <div id="packList" class="settings-pack-list" style="margin-top:9px"></div>
       </div>
 
-      <div class="card settings-card">
+      <div class="card settings-card artessencia-production-help-v130">
+        <div class="settings-card-head"><div><div class="section-title" style="margin:0">Fichas técnicas e produção</div><small>Na ArtEssencia, cada produto tem a sua própria ficha técnica independente.</small></div></div>
+        <div class="production-help-steps-v130"><div><strong>1</strong><span>Regista matérias-primas e custos no Stock ou em Compras.</span></div><div><strong>2</strong><span>Define o consumo por unidade em Custos → Ficha técnica por produto.</span></div><div><strong>3</strong><span>Preenche processo, temperaturas, cura e controlo de qualidade no produto.</span></div><div><strong>4</strong><span>A Produção soma as fichas, verifica stock e desconta os consumos reais.</span></div></div>
+        <div class="btnrow" style="margin-top:10px"><button class="btn primary" onclick="go('costs')">Abrir fichas técnicas</button><button class="btn" onclick="go('production')">Abrir produção</button></div>
+      </div>
+      <div id="legacyBaseRecipeCardV130" class="card settings-card" style="display:none">
         <div class="settings-card-head">
           <div>
-            <div class="section-title" style="margin:0">Ficha técnica base</div>
+            <div class="section-title" style="margin:0">Compatibilidade interna</div>
             <small>Rendimento e materiais usados no cálculo da produção.</small>
           </div>
         </div>
@@ -3420,7 +3425,7 @@
       <div class="form-grid">
         <div class="field span2"><label>Nome</label><input id="prodName" placeholder="Nome do produto"></div>
         <div class="field"><label>Disponibilidade na loja</label><select id="prodAvailability" onchange="updateProductAvailabilityUI()"><option value="regular">Todo o ano</option><option value="edition">Apenas durante uma Edição Especial</option></select><small class="mix-help">“Todo o ano” mantém o produto no catálogo normal. “Apenas durante uma Edição Especial” mostra-o somente quando a edição escolhida estiver ativa e dentro das datas.</small></div>
-        <div class="field" id="prodCategoryField"><label>Categoria</label><select id="prodCat"><option>Velas em molde</option><option>Velas em recipiente</option><option>Wax melts</option><option>Sabonetes</option><option>Resina e Jesmonite</option><option>Personalizados</option></select></div>
+        <div class="field" id="prodCategoryField"><label>Categoria</label><select id="prodCat" onchange="syncProductionTypeFromCategoryV130()"><option>Velas em molde</option><option>Velas em recipiente</option><option>Wax melts</option><option>Sabonetes</option><option>Resina e Jesmonite</option><option>Personalizados</option></select></div>
         <div class="field" id="prodEditionField" style="display:none"><label>Edição Especial</label><div class="edition-select-row"><select id="prodEditionId"><option value="">Seleciona uma edição</option></select><button type="button" class="btn ghost" onclick="loadProductEditionsV1245(true).then(list=>{fillProductEditionOptionsV1244();toast(list.length?'Edições atualizadas':'Nenhuma edição disponível')})">Atualizar</button></div><small class="mix-help">Seleciona a edição que controla as datas deste produto. Fora desse período, o produto não deve aparecer na loja.</small></div>
         <div class="field edition-cost-field" id="prodEditionLaborField" style="display:none"><label>Tempo extra por unidade</label><div class="edition-cost-input"><input id="prodEditionExtraLaborMinutes" type="number" min="0" step="0.1" value="0"><span>min</span></div><small class="mix-help">Só o tempo adicional desta edição. O custo é calculado com a mão de obra €/hora já definida na app.</small></div>
         <div class="field edition-cost-field" id="prodEditionWasteField" style="display:none"><label>Desperdício extra da edição</label><div class="edition-cost-input"><input id="prodEditionExtraWastePct" type="number" min="0" step="0.1" value="0"><span>%</span></div><small class="mix-help">Acrescenta-se ao desperdício geral apenas neste produto. Usa 0 se não houver diferença.</small></div>
@@ -3447,6 +3452,19 @@
           </div>
           <div class="product-cost-summary-v110">
             <div><span>Materiais</span><strong id="prodCostMaterialsV110">0,00 €</strong></div><div><span>Mão de obra</span><strong id="prodCostLaborV110">0,00 €</strong></div><div><span>Molde</span><strong id="prodCostMoldV110">0,00 €</strong></div><div><span>Outros custos</span><strong id="prodCostExtrasV110">0,00 €</strong></div><div><span>Desperdício</span><strong id="prodCostWasteV110">0,00 €</strong></div><div class="total"><span>Custo real</span><strong id="prodCostTotalV110">0,00 €</strong></div>
+          </div>
+        </div>
+        <div class="field span4 production-profile-v130">
+          <div class="product-cost-editor-head-v110"><div><strong>Parâmetros técnicos de produção</strong><small>Informação interna para preparar e controlar este produto. Todos os campos são editáveis e opcionais.</small></div><span>por produto</span></div>
+          <div class="production-profile-grid-v130">
+            <div class="field"><label>Processo principal</label><select id="prodProductionTypeV130"><option value="wax_mold">Vela em molde</option><option value="wax_container">Vela em recipiente</option><option value="wax_melt">Wax melt</option><option value="soap">Sabonete</option><option value="resin">Resina / Jesmonite</option><option value="laser">Gravação a laser</option><option value="assembly">Montagem / personalização</option><option value="other">Outro processo</option></select></div>
+            <div class="field"><label>Produzido no ateliê</label><label class="product-shop-toggle"><input id="prodManufacturedV130" type="checkbox" checked> Exigir ficha técnica e descontar materiais</label></div>
+            <div class="field"><label>Cura / secagem</label><div class="cost-input-suffix-v110"><input id="prodCureHoursV130" type="number" min="0" step="0.5"><span>horas</span></div></div>
+            <div class="field"><label>Temperatura de preparação</label><div class="cost-input-suffix-v110"><input id="prodPrepTempV130" type="number" step="0.1"><span>°C</span></div></div>
+            <div class="field"><label>Temperatura de fragrância / mistura</label><div class="cost-input-suffix-v110"><input id="prodMixTempV130" type="number" step="0.1"><span>°C</span></div></div>
+            <div class="field"><label>Temperatura de vertimento</label><div class="cost-input-suffix-v110"><input id="prodPourTempV130" type="number" step="0.1"><span>°C</span></div></div>
+            <div class="field span2"><label>Instruções internas de produção</label><textarea id="prodProductionNotesV130" rows="3" placeholder="Ex.: aquecer lentamente, adicionar fragrância, verter e deixar curar..."></textarea></div>
+            <div class="field span2"><label>Controlo de qualidade</label><textarea id="prodQualityNotesV130" rows="3" placeholder="Ex.: verificar acabamento, peso, pavio centrado e ausência de fissuras"></textarea></div>
           </div>
         </div>
         <div class="field span2"><label>Descrição para a loja online</label><textarea id="prodShopDescription" rows="3" placeholder="Descrição curta que o cliente verá na loja"></textarea></div>
@@ -4656,15 +4674,10 @@ async function deleteOrder(id){
    alert('Não foi possível eliminar da Cloud.\n\n'+detail+'\n\nNada foi apagado localmente.');
  }
 }
-function productionBaseNeedsForQtyV12632(qty){
- const y=Math.max(1,Number(db.settings.yield)||28),factor=(Number(qty)||0)/y,needs={};
- baseRecipeV12812().forEach(r=>needs[r.name]=(Number(r.qty)||0)*factor);
- return needs;
-}
+function productionBaseNeedsForQtyV12632(){return {}}
 function productionOrderNeedsV12632(o){
- const qty=calcOrder(o).qty,needs=productionBaseNeedsForQtyV12632(qty);
- const add=(name,v)=>needs[name]=(needs[name]||0)+(Number(v)||0);
- (o.items||[]).forEach(line=>(db.productRecipes[line.code]||[]).forEach(r=>add(r.item,(Number(r.qty)||0)*(Number(line.qty)||0))));
+ const needs={},add=(name,v)=>needs[name]=(needs[name]||0)+(Number(v)||0);
+ (o.items||[]).forEach(line=>{const p=productionProductForLineV130(line);if(p&&productManufacturedV130(p))(db.productRecipes[p.code]||[]).forEach(r=>add(r.item,(Number(r.qty)||0)*(Number(line.qty)||0)))});
  return needs;
 }
 function productionFmtQtyV12632(v){
@@ -4768,7 +4781,7 @@ async function buildProductionDailyPdfBlobV12653(){
   if(pg===0){const total=orders.reduce((a,o)=>a+calcOrder(o).qty,0),boxes=orders.reduce((a,o)=>a+productionOrderBoxesV12653(o),0);ctx.fillStyle='#f8efec';ctx.fillRect(70,y,1100,72);ctx.fillStyle='#5A240B';ctx.font='700 23px Arial';ctx.fillText(`${orders.length} encomenda(s) · ${total} unidades · ${boxes} caixa(s)`,92,y+31);ctx.font='18px Arial';ctx.fillStyle='#806b62';ctx.fillText('Documento operacional — conferir personalizações e pagamento antes da entrega.',92,y+57);y+=100}
   for(const r of rows.slice(pg*perPage,pg*perPage+perPage)){
    const o=r.o;ctx.strokeStyle='#e4d7d1';ctx.lineWidth=2;ctx.strokeRect(70,y,1100,245);ctx.fillStyle='#5A240B';ctx.font='900 24px Arial';ctx.fillText(String(o.id||'—'),92,y+34);ctx.font='700 20px Arial';ctx.fillStyle='#6d5149';ctx.fillText(String(o.client||'—').slice(0,46),92,y+64);ctx.textAlign='right';ctx.fillStyle='#F12473';ctx.font='900 21px Arial';ctx.fillText(`${r.c.qty} unidades · ${productionOrderBoxesV12653(o)} caixa(s)`,1148,y+34);ctx.fillStyle='#6d5149';ctx.font='18px Arial';ctx.fillText(productionDeliveryLabelV12653(o),1148,y+64);ctx.textAlign='left';
-   const lines=[`Estado: ${o.status||'Pedido'} · Pagamento: ${r.pay.label}`,`Produtos: ${r.products||'—'}`];if(r.pers.length)lines.push('Personalização: '+r.pers.join(' | '));if(o.notes)lines.push('Notas: '+o.notes);ctx.font='18px Arial';ctx.fillStyle='#5e4a44';let ly=y+104;for(const line of lines){const words=String(line).split(' ');let cur='';for(const w of words){const test=cur?cur+' '+w:w;if(ctx.measureText(test).width>1030&&cur){ctx.fillText(cur,92,ly);ly+=24;cur=w}else cur=test}if(cur){ctx.fillText(cur,92,ly);ly+=24}if(ly>y+222)break}y+=267;
+   const tech=(o.items||[]).map(line=>{const p=productionProductForLineV130(line);return p?productionProfileSummaryV130(p):''}).filter(Boolean).join(' | ');const lines=[`Estado: ${o.status||'Pedido'} · Pagamento: ${r.pay.label}`,`Produtos: ${r.products||'—'}`];if(tech)lines.push('Processos: '+tech);if(r.pers.length)lines.push('Personalização: '+r.pers.join(' | '));if(o.notes)lines.push('Notas: '+o.notes);ctx.font='18px Arial';ctx.fillStyle='#5e4a44';let ly=y+104;for(const line of lines){const words=String(line).split(' ');let cur='';for(const w of words){const test=cur?cur+' '+w:w;if(ctx.measureText(test).width>1030&&cur){ctx.fillText(cur,92,ly);ly+=24;cur=w}else cur=test}if(cur){ctx.fillText(cur,92,ly);ly+=24}if(ly>y+222)break}y+=267;
   }
   drawCatalogFooter(ctx);pages.push(await new Promise((res,rej)=>canvas.toBlob(b=>b?res(b):rej(new Error('PDF')),'image/jpeg',.92)));
  }
@@ -4780,82 +4793,27 @@ function downloadProductionPDFV12653(){const d=prodDate.value||todayISO();return
 function renderProduction(){
  const d=prodDate.value||todayISO(),done=orderAlreadyProducedIds();
  const ords=db.orders.filter(o=>o.delivery===d&&['Confirmada','Em produção','Confirmado','Produção'].includes(o.status)&&!done.has(o.id));
- const counts={};
- ords.forEach(o=>(o.items||[]).forEach(i=>counts[i.name]=(counts[i.name]||0)+(Number(i.qty)||0)));
- const total=Object.values(counts).reduce((a,b)=>a+b,0);
- const yieldQty=Math.max(1,Number(db.settings.yield)||28),recipeEquivalent=total/yieldQty;
- const packs={};
- ords.forEach(o=>{const n=o.box||'Sem embalagem';packs[n]=(packs[n]||0)+(Number(o.boxes)||1)});
- const packTotal=Object.values(packs).reduce((a,b)=>a+b,0);
-
- const needs=productionBaseNeedsForQtyV12632(total);
- const addNeed=(name,qty)=>needs[name]=(needs[name]||0)+(Number(qty)||0);
- ords.forEach(o=>(o.items||[]).forEach(line=>(db.productRecipes[line.code]||[]).forEach(r=>addNeed(r.item,(Number(r.qty)||0)*(Number(line.qty)||0)))));
- const needEntries=Object.entries(needs).filter(([,need])=>(Number(need)||0)>0);
- const shortages=needEntries.filter(([name,need])=>{const x=stockByName(name),have=x?(Number(x.qty)||0):0;return !x||have<=0||have+1e-9<(Number(need)||0)});
-
- const sum=document.getElementById('productionSummary');
- if(sum)sum.innerHTML=[
-   ['Encomendas',ords.length,'Para produzir'],
-   ['Unidades',total,'Total do dia'],
-   ['Ficha técnica base',recipeEquivalent?productionFmtQtyV12632(recipeEquivalent)+'×':'0×','Proporcional a '+yieldQty+' unidades'],
-   ['Stock',!ords.length?'—':(!needEntries.length?'VERIFICAR':(shortages.length?shortages.length+' falta(s)':'OK')),!ords.length?'Sem produção para verificar':(!needEntries.length?'Não foi possível calcular necessidades':(shortages.length?'Rever antes de concluir':'Sem faltas detetadas'))]
- ].map(([label,value,note])=>`<div class="card prod-kpi ${label==='Stock'&&ords.length&&(!needEntries.length||shortages.length)?'prod-kpi-alert':''}">
-   <span>${label}</span><strong>${value}</strong><small>${note}</small>
- </div>`).join('');
-
- const po=document.getElementById('productionOrders');
- if(po)po.innerHTML=ords.length?ords.map(o=>{
-   const c=calcOrder(o),inProd=['Em produção','Produção'].includes(o.status),status=escapeHtml(o.status||'—'),orderNeeds=productionOrderNeedsV12632(o);
-   const products=(o.items||[]).map(i=>`${escapeHtml(i.name||i.code||'Produto')} × ${Number(i.qty)||0}`).join(' · ');
-   const prep=Object.entries(orderNeeds).filter(([,q])=>Number(q)>0).map(([name,q])=>{const st=stockByName(name),unit=st?.unit||'';return `<div class="prod-line"><span>${escapeHtml(name)}${productionOperationalHintV12633(name,q,unit)}</span><strong>${productionFmtQtyV12632(q)} ${escapeHtml(unit)}</strong></div>`}).join('');
-   return `<div class="prod-order-card">
-     <button class="prod-order-main" onclick="showOrder('${escapeHtml(o.id)}')">
-       <span class="prod-order-id"><strong>${escapeHtml(o.id)}</strong><small>${escapeHtml(o.client||'—')}</small></span>
-       <span><small>Unidades</small><strong>${c.qty} un.</strong></span>
-       <span><small>Embalagem</small><strong>${escapeHtml(o.box||'—')} × ${Number(o.boxes)||1}</strong></span>
-     </button>
-     <div class="prod-order-foot">
-       <span class="badge ${inProd?'warn':'ok'}">${status}</span>
-       <div class="prod-order-actions"><button class="btn" onclick="showOrder('${escapeHtml(o.id)}')">Ver detalhe</button>${inProd?'':`<button class="btn primary" onclick="setStatus('${escapeHtml(o.id)}','Em produção')">Iniciar produção</button>`}</div>
-     </div>
-     <details class="prod-order-prep-v12632" open>
-       <summary><strong>Preparação desta encomenda</strong><span>${c.qty} unidades</span></summary>
-       <div class="prod-order-products-v12632"><small>Produtos da encomenda</small><strong>${products||'—'}</strong></div>
-       <div class="prod-order-products-v12632"><small>Materiais comuns</small><strong>Preparar para ${c.qty} unidades · ${productionFmtQtyV12632(c.qty/yieldQty)}× da ficha técnica de ${yieldQty}</strong></div>
-       <div class="prod-order-recipe-v12632">${prep||'<div class="empty">Sem ficha técnica configurada.</div>'}</div>
-     </details>
-   </div>`;
- }).join(''):'<div class="empty">Sem encomendas para esta data.</div>';
-
- const ppd=document.getElementById('productionProducts');
- if(ppd)ppd.innerHTML=Object.keys(counts).length?Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([n,q])=>`<div class="prod-line"><span>${escapeHtml(n)}</span><strong>${q} un.</strong></div>`).join(''):'<div class="empty">Sem produção pendente para esta data.</div>';
-
- const pr=document.getElementById('productionRecipe');
- if(pr)pr.innerHTML=total?`
-   <div class="prod-recipe-head"><span>Ficha técnica proporcional para ${total} unidades</span><strong>${productionFmtQtyV12632(recipeEquivalent)}× da ficha técnica de ${yieldQty}</strong></div>
-   ${baseRecipeV12812().map(x=>{const q=(Number(x.qty)||0)*(total/yieldQty),unit=x.unit||'';return `<div class="prod-line"><span>${escapeHtml(x.name)}${productionOperationalHintV12633(x.name,q,unit)}</span><strong>${productionFmtQtyV12632(q)} ${escapeHtml(unit)}</strong></div>`}).join('')}
- `:'<div class="empty">Sem preparação necessária.</div>';
-
- const stockBox=document.getElementById('productionStockCheck');
- if(stockBox)stockBox.innerHTML=needEntries.length?needEntries.map(([name,need])=>{
-   const x=stockByName(name),have=x?Number(x.qty)||0:0,unit=x?x.unit:'';
-   const ok=!!x&&have+1e-9>=need;
-   return `<div class="prod-stock-line ${ok?'':'prod-stock-missing'}"><div><strong>${escapeHtml(name)}</strong><small>Precisa ${productionFmtQtyV12632(need)} ${escapeHtml(unit||'')}</small></div><div class="prod-stock-right"><strong>${productionFmtQtyV12632(have)} ${escapeHtml(unit||'')}</strong><span class="badge ${ok?'ok':'bad'}">${ok?'OK':'FALTA'}</span></div></div>`;
- }).join(''):(ords.length?'<div class="empty prod-warning">Não foi possível calcular as necessidades desta produção. Não considerar o stock como OK.</div>':'<div class="empty">Sem necessidades de stock para esta data.</div>');
-
- const pk=document.getElementById('productionPackaging');
- if(pk)pk.innerHTML=Object.keys(packs).length?`<div class="prod-recipe-head"><span>Total de embalagens</span><strong>${packTotal}</strong></div>${Object.entries(packs).map(([n,q])=>`<div class="prod-line"><span>${escapeHtml(n)}</span><strong>${q} un.</strong></div>`).join('')}`:'<div class="empty">Sem embalagens previstas.</div>';
-
- const runs=(db.productionRuns||[]).filter(r=>r.date===d);
- const hist=document.getElementById('productionHistory');
- if(hist)hist.innerHTML=runs.length?runs.map((r,i)=>`<div class="prod-history"><div><strong>Sessão ${i+1}</strong><small>${(r.orders||[]).map(escapeHtml).join(', ')}</small></div><div><strong>${r.total||0} un.</strong><small>${r.createdAt?new Date(r.createdAt).toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'}):'Concluída'}</small></div></div>`).join(''):'<div class="empty">Ainda não há sessões concluídas neste dia.</div>';
- renderProductionDailyCenterV12653(d);
+ const grouped=new Map();
+ ords.forEach(o=>(o.items||[]).forEach(line=>{const p=productionProductForLineV130(line),key=p?.code||line.code||line.name||'Produto',cur=grouped.get(key)||{p,name:p?.name||line.name||line.code||'Produto',qty:0};cur.qty+=(Number(line.qty)||0);grouped.set(key,cur)}));
+ const products=[...grouped.values()],total=products.reduce((s,x)=>s+x.qty,0),manufactured=products.filter(x=>productManufacturedV130(x.p));
+ const missing=manufactured.filter(x=>!x.p||!((db.productRecipes[x.p.code]||[]).length));
+ const needs={};const addNeed=(name,qty)=>needs[name]=(needs[name]||0)+(Number(qty)||0);
+ manufactured.forEach(x=>(db.productRecipes[x.p.code]||[]).forEach(r=>addNeed(r.item,(Number(r.qty)||0)*x.qty)));
+ const needEntries=Object.entries(needs).filter(([,q])=>Number(q)>0),shortages=needEntries.filter(([name,need])=>{const x=stockByName(name);return !x||(Number(x.qty)||0)+1e-9<need});
+ const packs={};ords.forEach(o=>{const n=o.box||'Sem embalagem';packs[n]=(packs[n]||0)+(Number(o.boxes)||1)});const packTotal=Object.values(packs).reduce((a,v)=>a+v,0);
+ const sum=document.getElementById('productionSummary');if(sum)sum.innerHTML=[['Encomendas',ords.length,'Para produzir'],['Peças',total,'Total do dia'],['Fichas técnicas',manufactured.length-missing.length+'/'+manufactured.length,missing.length?'Existem produtos por configurar':'Produtos fabricados configurados'],['Stock',!ords.length?'—':missing.length?'FICHA EM FALTA':shortages.length?shortages.length+' falta(s)':'OK',!ords.length?'Sem produção para verificar':missing.length?'Complete as fichas antes de produzir':shortages.length?'Repor antes de concluir':'Consumos disponíveis']].map(([label,value,note])=>`<div class="card prod-kpi ${(label==='Stock'&&(missing.length||shortages.length))?'prod-kpi-alert':''}"><span>${label}</span><strong>${value}</strong><small>${note}</small></div>`).join('');
+ const po=document.getElementById('productionOrders');if(po)po.innerHTML=ords.length?ords.map(o=>{const c=calcOrder(o),inProd=['Em produção','Produção'].includes(o.status),orderNeeds={},add=(n,q)=>orderNeeds[n]=(orderNeeds[n]||0)+(Number(q)||0);(o.items||[]).forEach(line=>{const p=productionProductForLineV130(line);if(p&&productManufacturedV130(p))(db.productRecipes[p.code]||[]).forEach(r=>add(r.item,(Number(r.qty)||0)*(Number(line.qty)||0)))});const orderMissing=(o.items||[]).map(productionProductForLineV130).filter(p=>p&&productManufacturedV130(p)&&!((db.productRecipes[p.code]||[]).length));const prep=Object.entries(orderNeeds).map(([name,q])=>{const st=stockByName(name);return `<div class="prod-line"><span>${escapeHtml(name)}${productionOperationalHintV12633(name,q,st?.unit||'')}</span><strong>${productionFmtQtyV12632(q)} ${escapeHtml(st?.unit||'')}</strong></div>`}).join('');const tech=(o.items||[]).map(line=>{const p=productionProductForLineV130(line);return p?`<div class="prod-notes-v130"><strong>${escapeHtml(p.name)} × ${Number(line.qty)||0}</strong><span class="prod-tech-v130">${escapeHtml(productionProfileSummaryV130(p))}</span>${p.productionNotes?`<span class="prod-tech-v130"><b>Produção:</b> ${escapeHtml(p.productionNotes)}</span>`:''}${p.qualityNotes?`<span class="prod-tech-v130"><b>Qualidade:</b> ${escapeHtml(p.qualityNotes)}</span>`:''}</div>`:''}).join('');return `<div class="prod-order-card ${orderMissing.length?'prod-missing-v130':''}"><button class="prod-order-main" onclick="showOrder('${escapeHtml(o.id)}')"><span class="prod-order-id"><strong>${escapeHtml(o.id)}</strong><small>${escapeHtml(o.client||'—')}</small></span><span><small>Peças</small><strong>${c.qty} un.</strong></span><span><small>Embalagem</small><strong>${escapeHtml(o.box||'—')} × ${Number(o.boxes)||1}</strong></span></button><div class="prod-order-foot"><span class="badge ${inProd?'warn':'ok'}">${escapeHtml(o.status||'—')}</span><div class="prod-order-actions"><button class="btn" onclick="showOrder('${escapeHtml(o.id)}')">Ver detalhe</button>${inProd?'':`<button class="btn primary" onclick="setStatus('${escapeHtml(o.id)}','Em produção')">Iniciar produção</button>`}</div></div><details class="prod-order-prep-v12632" open><summary><strong>Preparação desta encomenda</strong><span>${c.qty} peças</span></summary>${tech}<div class="prod-order-recipe-v12632">${orderMissing.length?`<div class="empty prod-warning">Ficha técnica em falta: ${orderMissing.map(p=>escapeHtml(p.name)).join(' · ')}</div>`:prep||'<div class="empty">Sem materiais a descontar.</div>'}</div></details></div>`}).join(''):'<div class="empty">Sem encomendas para esta data.</div>';
+ const ppd=document.getElementById('productionProducts');if(ppd)ppd.innerHTML=products.length?products.sort((a,b)=>b.qty-a.qty).map(x=>`<div class="prod-line ${x.p&&productManufacturedV130(x.p)&&!((db.productRecipes[x.p.code]||[]).length)?'prod-missing-v130':''}"><span><strong>${escapeHtml(x.name)}</strong><small class="prod-tech-v130">${escapeHtml(productionProfileSummaryV130(x.p))}${x.p&&!productManufacturedV130(x.p)?' · sem desconto de materiais':''}</small></span><strong>${x.qty} un.</strong></div>`).join(''):'<div class="empty">Sem produção pendente para esta data.</div>';
+ const pr=document.getElementById('productionRecipe');if(pr)pr.innerHTML=missing.length?`<div class="empty prod-warning">Não é seguro calcular o total: faltam as fichas técnicas de ${missing.map(x=>escapeHtml(x.name)).join(' · ')}.</div>`:needEntries.length?`<div class="prod-recipe-head"><span>Consumo total calculado</span><strong>${manufactured.length} produto(s)</strong></div>${needEntries.map(([name,q])=>{const st=stockByName(name),unit=st?.unit||'';return `<div class="prod-line"><span>${escapeHtml(name)}${productionOperationalHintV12633(name,q,unit)}</span><strong>${productionFmtQtyV12632(q)} ${escapeHtml(unit)}</strong></div>`}).join('')}`:'<div class="empty">Sem materiais a preparar.</div>';
+ const stockBox=document.getElementById('productionStockCheck');if(stockBox)stockBox.innerHTML=missing.length?'<div class="empty prod-warning">Verificação bloqueada enquanto existirem fichas técnicas em falta.</div>':needEntries.length?needEntries.map(([name,need])=>{const x=stockByName(name),have=x?Number(x.qty)||0:0,unit=x?.unit||'',ok=!!x&&have+1e-9>=need;return `<div class="prod-stock-line ${ok?'':'prod-stock-missing'}"><div><strong>${escapeHtml(name)}</strong><small>Precisa ${productionFmtQtyV12632(need)} ${escapeHtml(unit)}</small></div><div class="prod-stock-right"><strong>${productionFmtQtyV12632(have)} ${escapeHtml(unit)}</strong><span class="badge ${ok?'ok':'bad'}">${ok?'OK':'FALTA'}</span></div></div>`}).join(''):(ords.length?'<div class="empty">Esta produção não tem materiais para descontar.</div>':'<div class="empty">Sem necessidades de stock para esta data.</div>');
+ const pk=document.getElementById('productionPackaging');if(pk)pk.innerHTML=Object.keys(packs).length?`<div class="prod-recipe-head"><span>Total de embalagens</span><strong>${packTotal}</strong></div>${Object.entries(packs).map(([n,q])=>`<div class="prod-line"><span>${escapeHtml(n)}</span><strong>${q} un.</strong></div>`).join('')}`:'<div class="empty">Sem embalagens previstas.</div>';
+ const runs=(db.productionRuns||[]).filter(r=>r.date===d),hist=document.getElementById('productionHistory');if(hist)hist.innerHTML=runs.length?runs.map((r,i)=>`<div class="prod-history"><div><strong>Sessão ${i+1}</strong><small>${(r.orders||[]).map(escapeHtml).join(', ')}</small></div><div><strong>${r.total||0} un.</strong><small>${r.createdAt?new Date(r.createdAt).toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'}):'Concluída'}</small></div></div>`).join(''):'<div class="empty">Ainda não há sessões concluídas neste dia.</div>';
+ renderProductionDailyCenterV12653(d)
 }
 function addStock(){
  const n=stockName.value.trim();if(!n)return toast('Indique o produto');
- const ex=db.stock.find(x=>x.name.toLowerCase()===n.toLowerCase()),o={name:n,qty:+stockQty.value||0,unit:stockUnit.value.trim(),min:+stockMin.value||0,unitCost:+stockUnitCost.value||0};
- ex?Object.assign(ex,o):db.stock.push(o);save();stockName.value=stockQty.value=stockUnit.value=stockMin.value=stockUnitCost.value='';toast('Stock atualizado')
+ const ex=db.stock.find(x=>x.name.toLowerCase()===n.toLowerCase()),o={name:n,qty:+stockQty.value||0,unit:normalizeBaseUnitV120(stockUnit.value),min:+stockMin.value||0,unitCost:+stockUnitCost.value||0};
+ ex?Object.assign(ex,o):db.stock.push(o);save();stockName.value=stockQty.value=stockMin.value=stockUnitCost.value='';stockUnit.value='g';toast('Stock atualizado')
 }
 function refreshStockSelectors(){
  const opts='<option value="">Selecionar…</option>'+db.stock.map(x=>`<option value="${x.name}">${x.name}</option>`).join('');
@@ -4870,7 +4828,7 @@ function moveStock(){
  save();moveStockQty.value='';moveStockNote.value='';toast('Movimento registado')
 }
 function renderStock(){
- refreshStockSelectors();
+ ensureBaseUnitsV120();refreshStockSelectors();
  const all=Array.isArray(db.stock)?db.stock:[];
  const totalValue=all.reduce((s,x)=>s+(Number(x.qty)||0)*(Number(x.unitCost)||0),0);
  const outCount=all.filter(x=>(Number(x.qty)||0)<=0).length;
@@ -5827,49 +5785,23 @@ function purchaseCanReverse(rec){
  return !newerPurchase&&!laterMove;
 }
 function savePurchase(){
- const item=purchaseItem.value,q=+purchaseQty.value||0,total=+purchaseTotal.value||0;if(!item||q<=0||total<0)return toast('Selecione artigo, quantidade e valor');
+ ensureBaseUnitsV120();const item=purchaseItem.value,x=db.stock.find(s=>s.name===item),purchaseQtyEntered=+purchaseQty.value||0,purchaseUnit=document.getElementById('purchaseUnitV120')?.value||(x?.unit||'un'),q=x?convertToBaseV120(purchaseQtyEntered,purchaseUnit,x.unit):null,total=+purchaseTotal.value||0;if(!item||!x||!q||q<=0||total<0)return toast('Selecione artigo, quantidade, unidade e valor válidos');
  if(editingPurchaseId){const old=db.purchases.find(x=>x.id===editingPurchaseId);if(!old)return cancelPurchaseEdit();if(!purchaseCanReverse(old))return toast('Esta compra já tem movimentos posteriores. Para preservar o histórico, faça um ajuste de stock/caixa em vez de a reescrever.');reversePurchaseEffects(old,false);db.purchases=db.purchases.filter(x=>x.id!==editingPurchaseId)}
- const x=db.stock.find(s=>s.name===item);if(!x)return toast('Artigo de stock não encontrado');
+ if(!x)return toast('Artigo de stock não encontrado');
  const oldValue=(+x.qty||0)*(+x.unitCost||0),newQty=(+x.qty||0)+q,newValue=oldValue+total;x.qty=newQty;x.unitCost=newQty?newValue/newQty:(+x.unitCost||0);
- const cashId=uid('CASH'),rec={id:editingPurchaseId||uid('PUR'),cashId,date:purchaseDate.value||todayISO(),supplier:purchaseSupplier.value.trim(),item,qty:q,total,unitCost:q?total/q:0,method:purchaseMethod.value,note:purchaseNote.value};
- db.costMeta[item]={packQty:q,packPrice:total,updated:new Date().toISOString(),source:'Compra / custo médio'};db.purchases.push(rec);db.cash.push({id:cashId,date:rec.date,type:'Despesa',desc:'Compra - '+item,method:rec.method,value:total,source:'purchase',purchaseId:rec.id});
+ const cashId=uid('CASH'),rec={id:editingPurchaseId||uid('PUR'),cashId,date:purchaseDate.value||todayISO(),supplier:purchaseSupplier.value.trim(),item,qty:q,purchaseQtyEntered,purchaseUnit,baseUnit:x.unit,total,unitCost:q?total/q:0,method:purchaseMethod.value,note:purchaseNote.value};
+ db.costMeta[item]={packQty:q,purchaseQty:purchaseQtyEntered,purchaseUnit,packPrice:total,updated:new Date().toISOString(),source:'Compra / custo médio'};db.purchases.push(rec);db.cash.push({id:cashId,date:rec.date,type:'Despesa',desc:'Compra - '+item,method:rec.method,value:total,source:'purchase',purchaseId:rec.id});
  editingPurchaseId=null;save();cancelPurchaseEdit();toast('Compra guardada; stock, caixa e custos recalculados')
 }
 function reversePurchaseEffects(rec,removeRecord=true){const x=stockByName(rec.item);if(x){const curQty=Number(x.qty)||0,curVal=curQty*(Number(x.unitCost)||0),newQty=curQty-(Number(rec.qty)||0),newVal=curVal-(Number(rec.total)||0);x.qty=newQty;x.unitCost=newQty>0?Math.max(0,newVal/newQty):0}if(rec.cashId)db.cash=db.cash.filter(c=>c.id!==rec.cashId);else{const idx=db.cash.findIndex(c=>c.source==='purchase'&&c.purchaseId===rec.id);if(idx>=0)db.cash.splice(idx,1)}if(removeRecord)db.purchases=db.purchases.filter(p=>p.id!==rec.id)}
-function editPurchase(id){const r=db.purchases.find(x=>x.id===id);if(!r)return;editingPurchaseId=id;purchaseSupplier.value=r.supplier||'';purchaseItem.value=r.item;purchaseQty.value=r.qty;purchaseTotal.value=r.total;purchaseMethod.value=r.method||'Dinheiro';purchaseDate.value=r.date||todayISO();purchaseNote.value=r.note||'';purchaseSaveBtn.textContent='Guardar correção';purchaseCancelBtn.classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'})}
+function editPurchase(id){const r=db.purchases.find(x=>x.id===id);if(!r)return;editingPurchaseId=id;purchaseSupplier.value=r.supplier||'';purchaseItem.value=r.item;syncPurchaseUnitV120(r.purchaseUnit||r.baseUnit||stockByName(r.item)?.unit||'un');purchaseQty.value=r.purchaseQtyEntered??r.qty;purchaseTotal.value=r.total;purchaseMethod.value=r.method||'Dinheiro';purchaseDate.value=r.date||todayISO();purchaseNote.value=r.note||'';purchaseSaveBtn.textContent='Guardar correção';purchaseCancelBtn.classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'})}
 function cancelPurchaseEdit(clear=true){editingPurchaseId=null;if(clear){purchaseSupplier.value='';purchaseQty.value='';purchaseTotal.value='';purchaseNote.value='';purchaseDate.value=todayISO()}purchaseSaveBtn.textContent='Guardar compra';purchaseCancelBtn.classList.add('hidden')}
 function voidPurchase(id){const r=db.purchases.find(x=>x.id===id);if(!r)return;if(!purchaseCanReverse(r))return toast('Esta compra já tem movimentos posteriores. Não é seguro revertê-la automaticamente; faça um ajuste de stock/caixa.');if(!confirm('Anular esta compra? O stock e a saída de caixa serão revertidos.'))return;reversePurchaseEffects(r,true);save();toast('Compra anulada e efeitos revertidos')}
 
 function updatePurchasePreview(){
- const sel=document.getElementById('purchaseItem');
- const qtyInput=document.getElementById('purchaseQty');
- const totalInput=document.getElementById('purchaseTotal');
- const label=document.getElementById('purchaseQtyLabel');
- const cur=document.getElementById('purchasePreviewCurrent');
- const aft=document.getElementById('purchasePreviewAfter');
- const unitCostEl=document.getElementById('purchasePreviewUnitCost');
- const avgCostEl=document.getElementById('purchasePreviewAvgCost');
- if(!sel||!qtyInput||!totalInput||!label||!cur||!aft||!unitCostEl||!avgCostEl)return;
-
- const name=sel.value||'';
- const x=(db.stock||[]).find(s=>s.name===name);
- const unit=x?.unit||'';
- label.textContent=unit?`Quantidade comprada (${unit})`:'Quantidade base';
-
- const current=x?(Number(x.qty)||0):0;
- const qty=Number(qtyInput.value)||0;
- const total=Number(totalInput.value)||0;
- const incomingUnitCost=qty>0?total/qty:0;
- const after=current+qty;
- const oldUnitCost=x?(Number(x.unitCost)||0):0;
- const oldValue=current*oldUnitCost;
- const avg=(after>0)?(oldValue+total)/after:0;
-
- const fmtQty=(v)=>`${v.toLocaleString('pt-PT',{maximumFractionDigits:2})}${unit?' '+unit:''}`;
- cur.textContent=x?fmtQty(current):'—';
- aft.textContent=(x||qty>0)?fmtQty(after):'—';
- unitCostEl.textContent=qty>0?euro(incomingUnitCost):'—';
- avgCostEl.textContent=(x||qty>0)?euro(avg):'—';
+ const sel=document.getElementById('purchaseItem'),qtyInput=document.getElementById('purchaseQty'),totalInput=document.getElementById('purchaseTotal'),label=document.getElementById('purchaseQtyLabel'),cur=document.getElementById('purchasePreviewCurrent'),aft=document.getElementById('purchasePreviewAfter'),unitCostEl=document.getElementById('purchasePreviewUnitCost'),avgCostEl=document.getElementById('purchasePreviewAvgCost'),convertedEl=document.getElementById('purchasePreviewConvertedV120');
+ if(!sel||!qtyInput||!totalInput||!label||!cur||!aft||!unitCostEl||!avgCostEl)return;const x=stockByName(sel.value||''),base=x?.unit||'',purchaseUnit=document.getElementById('purchaseUnitV120')?.value||base,entered=Number(qtyInput.value)||0,qty=x?convertToBaseV120(entered,purchaseUnit,base):0,total=Number(totalInput.value)||0,current=x?(Number(x.qty)||0):0,incomingUnitCost=qty>0?total/qty:0,after=current+(qty||0),oldUnitCost=x?(Number(x.unitCost)||0):0,avg=after>0?(current*oldUnitCost+total)/after:0,fmt=(v,u)=>`${Number(v||0).toLocaleString('pt-PT',{maximumFractionDigits:3})} ${u||''}`.trim();
+ label.textContent='Quantidade comprada';cur.textContent=x?fmt(current,base):'—';aft.textContent=x&&qty!==null?fmt(after,base):'—';unitCostEl.textContent=qty>0?euro(incomingUnitCost)+' / '+base:'—';avgCostEl.textContent=x&&qty>0?euro(avg)+' / '+base:'—';if(convertedEl)convertedEl.textContent=x&&qty!==null?fmt(qty,base):'—'
 }
 function renderPurchases(){
  if(!document.getElementById('purchasesBody'))return;
@@ -5908,7 +5840,7 @@ function renderPurchases(){
    <td>${escapeHtml(x.date||'—')}</td>
    <td><strong>${escapeHtml(x.supplier||'—')}</strong></td>
    <td>${escapeHtml(x.item||'—')}</td>
-   <td>${(+x.qty||0).toLocaleString('pt-PT')}</td>
+   <td>${x.purchaseQtyEntered!=null?`${Number(x.purchaseQtyEntered).toLocaleString('pt-PT')} ${x.purchaseUnit||''}<br><small>${Number(x.qty||0).toLocaleString('pt-PT')} ${x.baseUnit||stockByName(x.item)?.unit||''} no stock</small>`:`${Number(x.qty||0).toLocaleString('pt-PT')} ${stockByName(x.item)?.unit||''}`}</td>
    <td><strong>${euro(x.total)}</strong></td>
    <td>${euro(x.unitCost)}</td>
    <td><span class="badge">${escapeHtml(x.method||'—')}</span></td>
@@ -6320,7 +6252,7 @@ function renderShopCapacityAgenda(){
 }
 
 function ensureCostModel(){
-  db.settings=db.settings||{};
+  db.settings=db.settings||{};ensureBaseUnitsV120();
   if(db.settings.laborRate==null)db.settings.laborRate=8;
   if(db.settings.laborMinutes==null)db.settings.laborMinutes=0;
   if(db.settings.wasteRate==null)db.settings.wasteRate=.10;
@@ -6338,6 +6270,23 @@ function ensureCostModel(){
   ensureRecordIds();
 }
 function stockByName(name){return db.stock.find(x=>x.name===name)}
+function normalizeBaseUnitV120(unit){const u=String(unit||'').trim().toLowerCase();return ({kg:'g',g:'g',l:'ml',lt:'ml',litro:'ml',litros:'ml',ml:'ml',m:'cm',metro:'cm',metros:'cm',cm:'cm',un:'un',uni:'un',unidade:'un',unidades:'un'})[u]||u}
+function ensureBaseUnitsV120(){let changed=false;for(const x of (db.stock||[])){const old=String(x.unit||'').trim().toLowerCase(),base=normalizeBaseUnitV120(old),factor=old==='kg'||['l','lt','litro','litros'].includes(old)?1000:old==='m'||old==='metro'||old==='metros'?100:1;if(!base)continue;if(base!==old||x.unit!==base){if(factor>1){const name=x.name;x.qty=(Number(x.qty)||0)*factor;x.min=(Number(x.min)||0)*factor;x.unitCost=(Number(x.unitCost)||0)/factor;(db.purchases||[]).filter(p=>p.item===name).forEach(p=>{if(p.purchaseQtyEntered==null)p.purchaseQtyEntered=Number(p.qty)||0;if(!p.purchaseUnit)p.purchaseUnit=old;p.qty=(Number(p.qty)||0)*factor;p.baseUnit=base;p.unitCost=p.qty?(Number(p.total)||0)/p.qty:0});(db.stockMoves||[]).filter(m=>m.item===name).forEach(m=>m.qty=(Number(m.qty)||0)*factor);for(const lines of Object.values(db.productRecipes||{}))for(const line of (lines||[]))if(line.item===name)line.qty=(Number(line.qty)||0)*factor;for(const line of (db.settings?.baseRecipe||[]))if((line.name||line.item)===name){line.qty=(Number(line.qty)||0)*factor;line.unit=base}const meta=db.costMeta?.[name];if(meta){if(meta.purchaseQty==null)meta.purchaseQty=Number(meta.packQty)||0;if(!meta.purchaseUnit)meta.purchaseUnit=old;meta.packQty=(Number(meta.packQty)||0)*factor}}x.unit=base;changed=true}}if(changed)try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}return changed}
+function readOptionalNumberV130(id){const el=document.getElementById(id),raw=String(el?.value??'').trim();if(!raw)return null;const n=Number(raw);return Number.isFinite(n)?n:null}
+function inferredProductionTypeV130(p){const c=String(p?.category||'').toLowerCase();if(c.includes('recipiente'))return 'wax_container';if(c.includes('wax'))return 'wax_melt';if(c.includes('sabon'))return 'soap';if(c.includes('resina')||c.includes('jesmonite'))return 'resin';if(c.includes('molde'))return 'wax_mold';if(c.includes('personal'))return 'assembly';return 'other'}
+function productionTypeLabelV130(v){return ({wax_mold:'Vela em molde',wax_container:'Vela em recipiente',wax_melt:'Wax melt',soap:'Sabonete',resin:'Resina / Jesmonite',laser:'Gravação a laser',assembly:'Montagem / personalização',other:'Outro processo'})[v]||'Outro processo'}
+function productProductionTypeV130(p){return p?.productionType||inferredProductionTypeV130(p)}
+function productManufacturedV130(p){return p?.manufactured!==false}
+function productionProductForLineV130(line){return (db.products||[]).find(p=>p.code===line?.code)||(db.products||[]).find(p=>p.name===line?.name)||null}
+function fillProductProductionFieldsV130(p){const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v==null?'':v};set('prodProductionTypeV130',productProductionTypeV130(p));const m=document.getElementById('prodManufacturedV130');if(m)m.checked=productManufacturedV130(p);set('prodCureHoursV130',p?.cureHours);set('prodPrepTempV130',p?.prepTemp);set('prodMixTempV130',p?.mixTemp);set('prodPourTempV130',p?.pourTemp);set('prodProductionNotesV130',p?.productionNotes);set('prodQualityNotesV130',p?.qualityNotes)}
+function clearProductProductionFieldsV130(){const p={category:document.getElementById('prodCat')?.value||''};fillProductProductionFieldsV130(p);const m=document.getElementById('prodManufacturedV130');if(m)m.checked=true}
+function syncProductionTypeFromCategoryV130(){const el=document.getElementById('prodProductionTypeV130');if(el)el.value=inferredProductionTypeV130({category:document.getElementById('prodCat')?.value||''})}
+function productionProfileSummaryV130(p){if(!p)return 'Produto sem perfil técnico';const parts=[productionTypeLabelV130(productProductionTypeV130(p))];if(Number(p.cureHours)>0)parts.push('cura '+Number(p.cureHours).toLocaleString('pt-PT')+' h');if(p.prepTemp!=null)parts.push('preparação '+Number(p.prepTemp).toLocaleString('pt-PT')+' °C');if(p.mixTemp!=null)parts.push('mistura '+Number(p.mixTemp).toLocaleString('pt-PT')+' °C');if(p.pourTemp!=null)parts.push('vertimento '+Number(p.pourTemp).toLocaleString('pt-PT')+' °C');return parts.join(' · ')}
+function purchaseUnitsForBaseV120(base){base=normalizeBaseUnitV120(base);if(base==='g')return [{value:'g',label:'g — gramas'},{value:'kg',label:'kg — quilogramas'}];if(base==='ml')return [{value:'ml',label:'ml — mililitros'},{value:'l',label:'L — litros'}];if(base==='cm')return [{value:'cm',label:'cm — centímetros'},{value:'m',label:'m — metros'}];return [{value:'un',label:'un — unidades'}]}
+function convertToBaseV120(qty,from,base){const q=Number(qty),f=String(from||'').toLowerCase(),b=normalizeBaseUnitV120(base);if(!Number.isFinite(q)||q<0)return null;if((f==='g'&&b==='g')||(f==='ml'&&b==='ml')||(f==='cm'&&b==='cm')||(f==='un'&&b==='un'))return q;if(f==='kg'&&b==='g')return q*1000;if(f==='l'&&b==='ml')return q*1000;if(f==='m'&&b==='cm')return q*100;return null}
+function fillPurchaseUnitSelectV120(select,base,preferred=''){if(!select)return;const opts=purchaseUnitsForBaseV120(base);select.innerHTML=opts.map(o=>`<option value="${o.value}">${o.label}</option>`).join('');if(preferred&&opts.some(o=>o.value===preferred))select.value=preferred}
+function syncPurchaseUnitV120(preferred=''){const x=stockByName(document.getElementById('purchaseItem')?.value||'');fillPurchaseUnitSelectV120(document.getElementById('purchaseUnitV120'),x?.unit||'un',preferred)}
+function syncCostUnitV120(preferred=''){const x=stockByName(document.getElementById('costMaterial')?.value||'');fillPurchaseUnitSelectV120(document.getElementById('costPackUnitV120'),x?.unit||'un',preferred)}
 function materialUnitCost(name){const x=stockByName(name);return x?Number(x.unitCost)||0:0}
 function baseBatchCost(){
   return baseRecipeV12812().reduce((sum,r)=>sum+(Number(r.qty)||0)*materialUnitCost(r.name),0)
@@ -6678,7 +6627,7 @@ function productFinalIngredientsV12811(p){return productAdditionalIngredientsV12
 function uniqueSafetysV12811(){return []}
 function productFinalContainsV12811(){return []}
 function productFinalMayContainV12811(){return []}
-function productTechnicalInfoCompleteV1287(p){return !!((db.productRecipes&&db.productRecipes[p?.code])||[]).length}
+function productTechnicalInfoCompleteV1287(p){return !productManufacturedV130(p)||!!((db.productRecipes&&db.productRecipes[p?.code])||[]).length}
 function publicTechnicalProfilesV12815(){return []}
 async function publishPublicTechnicalProfilesV12815(){return true}
 function updateProductTechnicalStatusV1287(){}
@@ -6702,11 +6651,12 @@ function saveProduct(){
  const moldCost=Math.max(0,Number(document.getElementById('prodMoldCostV110')?.value)||0),moldUses=Math.max(0,Number(document.getElementById('prodMoldUsesV110')?.value)||0),moldCavities=Math.max(1,Number(document.getElementById('prodMoldCavitiesV110')?.value)||1),moldUnitOverride=readProductCostFieldV110('prodMoldOverrideV110');
  const packagingCost=Math.max(0,Number(document.getElementById('prodPackagingCostV110')?.value)||0),indirectCost=Math.max(0,Number(document.getElementById('prodIndirectCostV110')?.value)||0),otherCost=Math.max(0,Number(document.getElementById('prodOtherCostV110')?.value)||0),targetMarginPct=readProductCostFieldV110('prodTargetMarginV110'),onlineTargetMarginPct=readProductCostFieldV110('prodOnlineTargetMarginV110');
  const onlinePriceInput=Number(document.getElementById('prodOnlinePriceV12620')?.value); const onlinePrice=onlinePriceInput>0?onlinePriceInput:(+prodPrice.value||0);
+ const productionType=document.getElementById('prodProductionTypeV130')?.value||'other',manufactured=!!document.getElementById('prodManufacturedV130')?.checked,cureHours=Math.max(0,Number(document.getElementById('prodCureHoursV130')?.value)||0),prepTemp=readOptionalNumberV130('prodPrepTempV130'),mixTemp=readOptionalNumberV130('prodMixTempV130'),pourTemp=readOptionalNumberV130('prodPourTempV130'),productionNotes=document.getElementById('prodProductionNotesV130')?.value.trim()||'',qualityNotes=document.getElementById('prodQualityNotesV130')?.value.trim()||'';
  const additionalIngredientsText=document.getElementById('prodIngredientsV1287')?.value.trim()||'',storageInstructions=document.getElementById('prodStorageV1287')?.value.trim()||'',consumptionGuidance=document.getElementById('prodConsumptionV1287')?.value.trim()||'',technicalInfoVerified=!!document.getElementById('prodTechnicalVerifiedV1287')?.checked;
  if(technicalInfoVerified&&!baseTechnicalProfileCompleteV12811())return toast('Confirma primeiro a informação técnica da materiais comuns em Configuração');
  
  const additionalSafetysContains=productSafetySelectionV1287('contains'),additionalSafetysMayContain=productSafetySelectionV1287('mayContain').filter(code=>!additionalSafetysContains.includes(code));
- const obj={code,name,category:prodCat.value,cost:0,price:+prodPrice.value||0,onlinePrice,shopVisible:!!prodShopVisible.checked,shopDescription:prodShopDescription.value.trim(),shopImageUrl:(document.getElementById('prodShopImageUrl')?.value||existing?.shopImageUrl||'').trim(),mixVisible,mixMaxQty,mixBoxCapacities,availabilityType,editionExclusive:availabilityType==='edition',editionId,editionExtraLaborMinutes,editionExtraWastePct,laborMinutes,wastePct,moldCost,moldUses,moldCavities,moldUnitOverride,packagingCost,indirectCost,otherCost,targetMarginPct,onlineTargetMarginPct,materialsText:additionalIngredientsText,careInstructions:storageInstructions,safetyInstructions:consumptionGuidance,additionalIngredientsText,additionalSafetysContains:[],additionalSafetysMayContain:[],storageInstructions,consumptionGuidance,technicalInfoVerified:false,technicalInfoReviewedAt:''};
+ const obj={code,name,category:prodCat.value,cost:0,price:+prodPrice.value||0,onlinePrice,shopVisible:!!prodShopVisible.checked,shopDescription:prodShopDescription.value.trim(),shopImageUrl:(document.getElementById('prodShopImageUrl')?.value||existing?.shopImageUrl||'').trim(),mixVisible,mixMaxQty,mixBoxCapacities,availabilityType,editionExclusive:availabilityType==='edition',editionId,editionExtraLaborMinutes,editionExtraWastePct,laborMinutes,wastePct,moldCost,moldUses,moldCavities,moldUnitOverride,packagingCost,indirectCost,otherCost,targetMarginPct,onlineTargetMarginPct,productionType,manufactured,cureHours,prepTemp,mixTemp,pourTemp,productionNotes,qualityNotes,materialsText:additionalIngredientsText,careInstructions:storageInstructions,safetyInstructions:consumptionGuidance,additionalIngredientsText,additionalSafetysContains:[],additionalSafetysMayContain:[],storageInstructions,consumptionGuidance,technicalInfoVerified:false,technicalInfoReviewedAt:''};
  obj.ingredientsText=productFinalIngredientsV12811(obj);obj.safetysContains=productFinalContainsV12811(obj);obj.safetysMayContain=productFinalMayContainV12811(obj);
  existing?Object.assign(existing,obj):db.products.push(obj);
  const savedProduct=existing||db.products[db.products.length-1];
@@ -6719,7 +6669,7 @@ function saveProduct(){
  const ei=document.getElementById('prodEditionId');if(ei)ei.value='';
  const elm=document.getElementById('prodEditionExtraLaborMinutes');if(elm)elm.value='0';
  const ewp=document.getElementById('prodEditionExtraWastePct');if(ewp)ewp.value='0';
- for(const id of ['prodLaborMinutesV110','prodWastePctV110','prodMoldCostV110','prodMoldUsesV110','prodMoldOverrideV110','prodPackagingCostV110','prodIndirectCostV110','prodOtherCostV110','prodTargetMarginV110','prodOnlineTargetMarginV110']){const el=document.getElementById(id);if(el)el.value=''}const cavities=document.getElementById('prodMoldCavitiesV110');if(cavities)cavities.value='1';
+ for(const id of ['prodLaborMinutesV110','prodWastePctV110','prodMoldCostV110','prodMoldUsesV110','prodMoldOverrideV110','prodPackagingCostV110','prodIndirectCostV110','prodOtherCostV110','prodTargetMarginV110','prodOnlineTargetMarginV110']){const el=document.getElementById(id);if(el)el.value=''}const cavities=document.getElementById('prodMoldCavitiesV110');if(cavities)cavities.value='1';clearProductProductionFieldsV130();
  updateProductAvailabilityUI();refreshProductChannelPricingV12620();
  clearProductTechnicalFormV1287();
  setProductShopImagePreview('');const f=document.getElementById('prodShopImageFile');if(f)f.value='';toast('Produto guardado')
@@ -6728,7 +6678,7 @@ function editProduct(code){
  const p=db.products.find(x=>x.code===code);if(!p)return;
  prodCode.value=p.code;prodName.value=p.name;prodCat.value=p.category;prodCost.value=calculatedProductCost(p).toFixed(4);prodPrice.value=p.price;prodShopVisible.checked=!!p.shopVisible;prodShopDescription.value=p.shopDescription||'';
  const op=document.getElementById('prodOnlinePriceV12620');if(op)op.value=Number(p.onlinePrice??p.price)||0;
- const costFields={prodLaborMinutesV110:p.laborMinutes,prodWastePctV110:p.wastePct,prodMoldCostV110:p.moldCost,prodMoldUsesV110:p.moldUses,prodMoldCavitiesV110:p.moldCavities??1,prodMoldOverrideV110:p.moldUnitOverride,prodPackagingCostV110:p.packagingCost,prodIndirectCostV110:p.indirectCost,prodOtherCostV110:p.otherCost,prodTargetMarginV110:p.targetMarginPct,prodOnlineTargetMarginV110:p.onlineTargetMarginPct};for(const [id,v] of Object.entries(costFields)){const el=document.getElementById(id);if(el)el.value=v==null?'':v}refreshProductChannelPricingV12620();
+ const costFields={prodLaborMinutesV110:p.laborMinutes,prodWastePctV110:p.wastePct,prodMoldCostV110:p.moldCost,prodMoldUsesV110:p.moldUses,prodMoldCavitiesV110:p.moldCavities??1,prodMoldOverrideV110:p.moldUnitOverride,prodPackagingCostV110:p.packagingCost,prodIndirectCostV110:p.indirectCost,prodOtherCostV110:p.otherCost,prodTargetMarginV110:p.targetMarginPct,prodOnlineTargetMarginV110:p.onlineTargetMarginPct};for(const [id,v] of Object.entries(costFields)){const el=document.getElementById(id);if(el)el.value=v==null?'':v}fillProductProductionFieldsV130(p);refreshProductChannelPricingV12620();
  const mv=document.getElementById('prodMixVisible');if(mv)mv.checked=!!p.mixVisible;
  const mm=document.getElementById('prodMixMaxQty');if(mm)mm.value=Number(p.mixMaxQty)||0;
  const mb=document.getElementById('prodMixBoxCaps');if(mb)mb.value=formatMixBoxCaps(p.mixBoxCapacities);
@@ -6801,7 +6751,7 @@ function renderProducts(){
          </div>
        </div>
        ${p.shopDescription?`<p>${escapeHtml(p.shopDescription)}</p>`:''}
-       ${productTechnicalInfoCompleteV1287(p)?`<div class="product-safety-meta-v1287"><b>Contém:</b> ${escapeHtml(productSafetyNamesV1287(productFinalContainsV12811(p)).join(', ')||'Nenhum dos 14 segurança assinalado')} · <b>Pode conter:</b> ${escapeHtml(productSafetyNamesV1287(productFinalMayContainV12811(p)).join(', ')||'Não assinalado')} · <b>Revisto:</b> ${new Date(p.technicalInfoReviewedAt).toLocaleDateString('pt-PT')}</div>`:''}
+       <div class="product-safety-meta-v1287"><b>Produção:</b> ${escapeHtml(productionProfileSummaryV130(p))} · <b>Materiais:</b> ${productManufacturedV130(p)?(((db.productRecipes[p.code]||[]).length)+' componente(s)'):'sem desconto de stock'}</div>
        ${p.mixVisible?`<div class="product-card-mixmeta">
          <span>🎁 Disponível em conjuntos</span>
          <span>${Number(p.mixMaxQty)>0?'Máx. '+Number(p.mixMaxQty)+' / caixa':'Sem limite por conjunto'}</span>
@@ -6835,19 +6785,16 @@ function populateCostSelectors(){
  costProduct.innerHTML='<option value="">Selecionar…</option>'+db.products.map(p=>`<option value="${p.code}">${p.name}</option>`).join('');
  if(prevMaterial&&[...costMaterial.options].some(o=>o.value===prevMaterial))costMaterial.value=prevMaterial;
  if(prevIngredient&&[...costIngredient.options].some(o=>o.value===prevIngredient))costIngredient.value=prevIngredient;
- if(prevProduct&&[...costProduct.options].some(o=>o.value===prevProduct))costProduct.value=prevProduct;
+ if(prevProduct&&[...costProduct.options].some(o=>o.value===prevProduct))costProduct.value=prevProduct;syncCostUnitV120();
 }
 function updateCostPreview(){
- if(!document.getElementById('costUnitPreview'))return;
- const q=Number(costPackQty.value)||0,price=Number(costPackPrice.value)||0;
- costUnitPreview.value=q?(price/q).toFixed(6)+' €/un.base':''
+ if(!document.getElementById('costUnitPreview'))return;const x=stockByName(costMaterial.value),raw=Number(costPackQty.value)||0,price=Number(costPackPrice.value)||0,base=x?.unit||'un',unit=document.getElementById('costPackUnitV120')?.value||base,q=convertToBaseV120(raw,unit,base);costUnitPreview.value=q>0?(price/q).toFixed(6)+' €/'+base:''
 }
 function applyMaterialCost(){
- const n=costMaterial.value,q=Number(costPackQty.value)||0,price=Number(costPackPrice.value)||0;
- if(!n||q<=0||price<0)return toast('Selecione a matéria-prima, quantidade e preço');
- const x=stockByName(n);if(!x)return;
+ const n=costMaterial.value,raw=Number(costPackQty.value)||0,price=Number(costPackPrice.value)||0,x=stockByName(n);if(!x)return toast('Selecione a matéria-prima');const purchaseUnit=document.getElementById('costPackUnitV120')?.value||x.unit,q=convertToBaseV120(raw,purchaseUnit,x.unit);
+ if(!n||!q||q<=0||price<0)return toast('Indique uma quantidade e um preço válidos');
  x.unitCost=price/q;
- db.costMeta[n]={packQty:q,packPrice:price,updated:new Date().toISOString(),source:'Manual'};
+ db.costMeta[n]={packQty:q,purchaseQty:raw,purchaseUnit,packPrice:price,updated:new Date().toISOString(),source:'Manual'};
  save();toast('Custo atualizado em toda a app')
 }
 function restoreCostProductSelectionV12628(code){
@@ -6905,16 +6852,10 @@ function saveCostSettings(){
 }
 
 function consumeProduction(){
- const d=prodDate.value||todayISO(),done=orderAlreadyProducedIds();
- const ords=db.orders.filter(o=>o.delivery===d&&['Em produção','Produção'].includes(o.status)&&!done.has(o.id));if(!ords.length)return toast('Sem encomendas em produção para concluir');
- const total=ords.reduce((sum,o)=>sum+calcOrder(o).qty,0),yieldQty=Math.max(1,Number(db.settings.yield)||28),batches=total/yieldQty,needs=productionBaseNeedsForQtyV12632(total);
- const addNeed=(name,qty)=>needs[name]=(needs[name]||0)+(Number(qty)||0);
- ords.forEach(o=>o.items.forEach(line=>(db.productRecipes[line.code]||[]).forEach(r=>addNeed(r.item,(Number(r.qty)||0)*(Number(line.qty)||0)))));
- const shortages=Object.entries(needs).filter(([name,need])=>{const x=stockByName(name);return !x||(Number(x.qty)||0)+1e-9<need});
- if(shortages.length){const msg=shortages.slice(0,5).map(([name,need])=>{const x=stockByName(name),have=x?Number(x.qty)||0:0,unit=x?x.unit:'';return `${name}: precisa ${need.toLocaleString('pt-PT')} ${unit}, tem ${have.toLocaleString('pt-PT')} ${unit}`}).join(' · ');return toast('Produção bloqueada — stock insuficiente. '+msg)}
- Object.entries(needs).forEach(([name,need])=>{const x=stockByName(name);x.qty=(Number(x.qty)||0)-need;db.stockMoves.push({date:new Date().toISOString(),item:x.name,type:'production',qty:need,note:'Produção '+d})});
- ords.forEach(o=>{const prev=o.status||'Em produção';o.status='Pronta';o.readyAt=o.readyAt||new Date().toISOString();o.statusHistory=Array.isArray(o.statusHistory)?o.statusHistory:[];o.statusHistory.push({from:prev,to:'Pronta',date:new Date().toISOString(),source:'production'})});
- db.productionRuns.push({id:uid('PROD'),date:d,createdAt:new Date().toISOString(),total,batches,orders:ords.map(o=>o.id),missing:[]});save();renderProduction();toast('Produção concluída · encomendas marcadas como Pronta')
+ const d=prodDate.value||todayISO(),done=orderAlreadyProducedIds(),ords=db.orders.filter(o=>o.delivery===d&&['Em produção','Produção'].includes(o.status)&&!done.has(o.id));if(!ords.length)return toast('Sem encomendas em produção para concluir');
+ const products=new Map();ords.forEach(o=>(o.items||[]).forEach(line=>{const p=productionProductForLineV130(line),key=p?.code||line.code||line.name,cur=products.get(key)||{p,name:p?.name||line.name||'Produto',qty:0};cur.qty+=(Number(line.qty)||0);products.set(key,cur)}));const manufactured=[...products.values()].filter(x=>productManufacturedV130(x.p)),missing=manufactured.filter(x=>!x.p||!((db.productRecipes[x.p.code]||[]).length));if(missing.length)return toast('Produção bloqueada — falta a ficha técnica de: '+missing.map(x=>x.name).join(' · '));
+ const needs={},addNeed=(n,q)=>needs[n]=(needs[n]||0)+(Number(q)||0);manufactured.forEach(x=>(db.productRecipes[x.p.code]||[]).forEach(r=>addNeed(r.item,(Number(r.qty)||0)*x.qty)));const shortages=Object.entries(needs).filter(([name,need])=>{const x=stockByName(name);return !x||(Number(x.qty)||0)+1e-9<need});if(shortages.length){const msg=shortages.slice(0,5).map(([name,need])=>{const x=stockByName(name),have=x?Number(x.qty)||0:0,unit=x?.unit||'';return name+': precisa '+Number(need).toLocaleString('pt-PT')+' '+unit+', tem '+have.toLocaleString('pt-PT')+' '+unit}).join(' · ');return toast('Produção bloqueada — stock insuficiente. '+msg)}
+ const runId=uid('PROD');Object.entries(needs).forEach(([name,need])=>{const x=stockByName(name);x.qty=(Number(x.qty)||0)-need;db.stockMoves.push({date:new Date().toISOString(),item:x.name,type:'production',qty:need,note:'Produção '+d,productionRunId:runId})});ords.forEach(o=>{const prev=o.status||'Em produção';o.status='Pronta';o.readyAt=o.readyAt||new Date().toISOString();o.statusHistory=Array.isArray(o.statusHistory)?o.statusHistory:[];o.statusHistory.push({from:prev,to:'Pronta',date:new Date().toISOString(),source:'production'})});const total=ords.reduce((sum,o)=>sum+calcOrder(o).qty,0);db.productionRuns.push({id:runId,date:d,createdAt:new Date().toISOString(),total,batches:0,orders:ords.map(o=>o.id),materials:{...needs},products:[...products.values()].map(x=>({code:x.p?.code||'',name:x.name,qty:x.qty,productionType:productProductionTypeV130(x.p)})),missing:[]});save();renderProduction();toast('Produção concluída · stock descontado · encomendas prontas')
 }
 
 function escapeHtml(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
@@ -9303,3 +9244,5 @@ ensureCostModel();syncPackagingSelect();go('dashboard');configureLock();setTimeo
 <style id="artessencia-costs-v110">
 .product-cost-editor-v110{border:1px solid #dac9b4;border-radius:16px;padding:14px;background:#fbf7ef}.product-cost-editor-head-v110{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}.product-cost-editor-head-v110 strong{display:block;font-size:15px;color:#44372b}.product-cost-editor-head-v110 small{display:block;margin-top:4px;color:#78695c}.product-cost-editor-head-v110>span{font-size:11px;font-weight:900;background:#efe4d4;padding:6px 9px;border-radius:999px}.product-cost-grid-v110{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.cost-input-suffix-v110{display:grid;grid-template-columns:1fr auto;align-items:center;border:1px solid var(--line);border-radius:13px;background:#fff;overflow:hidden}.cost-input-suffix-v110 input{border:0!important;border-radius:0!important;background:transparent!important}.cost-input-suffix-v110 span{padding:0 10px;font-size:11px;font-weight:900;color:#796757}.product-cost-summary-v110{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px;margin-top:12px}.product-cost-summary-v110>div{padding:9px;border:1px solid #e7dccd;border-radius:11px;background:#fff}.product-cost-summary-v110 span{display:block;font-size:10px;color:#75675b}.product-cost-summary-v110 strong{display:block;margin-top:3px;font-size:14px}.product-cost-summary-v110 .total{background:#44372b;color:#fff;border-color:#44372b}.product-cost-summary-v110 .total span{color:#eadfce}@media(max-width:850px){.product-cost-grid-v110{grid-template-columns:repeat(2,minmax(0,1fr))}.product-cost-summary-v110{grid-template-columns:repeat(3,1fr)}}@media(max-width:560px){.product-cost-grid-v110{grid-template-columns:1fr}.product-cost-summary-v110{grid-template-columns:repeat(2,1fr)}}
 </style>
+<style id="artessencia-units-v120">#purchaseUnitV120,#costPackUnitV120,#stockUnit{background:#fff}.purchase-preview{grid-column:1/-1!important;grid-template-columns:repeat(5,minmax(0,1fr))!important}@media(max-width:700px){.purchase-preview{grid-template-columns:repeat(2,minmax(0,1fr))!important}}</style>
+<style id="artessencia-production-v130">.production-profile-v130{border:1px solid #dfd1c5;border-radius:16px;padding:14px;background:linear-gradient(135deg,#fffdf9,#f7efe7)}.production-profile-grid-v130{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:10px}.production-help-steps-v130{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:10px}.production-help-steps-v130>div{display:flex;gap:9px;align-items:flex-start;padding:10px;border:1px solid #eadfd7;border-radius:12px;background:#fff}.production-help-steps-v130 strong{display:grid;place-items:center;min-width:25px;height:25px;border-radius:50%;background:#5b3740;color:#fff}.production-help-steps-v130 span{font-size:12px;line-height:1.45;color:#5f4a43}.prod-tech-v130{display:block;margin-top:3px;color:#7b665f}.prod-notes-v130{margin-top:7px;padding:8px 10px;border-radius:9px;background:#f8f2ee;font-size:11px;line-height:1.45}.prod-missing-v130{border-left:4px solid #d75252!important}@media(max-width:900px){.production-profile-grid-v130{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.production-profile-grid-v130,.production-help-steps-v130{grid-template-columns:1fr}}</style>
