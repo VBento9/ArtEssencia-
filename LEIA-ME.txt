@@ -1,4 +1,10 @@
-ARTESSENCIA — BACKOFFICE V1.4.10
+ARTESSENCIA — BACKOFFICE V1.4.11
+
+V1.4.11 — IDENTIFICAÇÃO ÚNICA + RASTREABILIDADE DE PRODUÇÃO
+- Nova encomenda manual já não aceita um número devolvido pela Cloud se esse número já existir no dispositivo.
+- Mantida a numeração sequencial AS-AAAA-NNNN sem reutilizar IDs existentes localmente.
+- Movimentos novos de Stock gerados pela Produção passam a guardar e mostrar a(s) encomenda(s) de origem na nota e em orderIds.
+- Sem alterações a tabelas, SQL ou Edge Functions do Supabase.
 
 V1.4.10 — PRODUÇÃO → STOCK AUDITADA
 
