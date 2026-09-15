@@ -1,6 +1,6 @@
-ARTESSENCIA — BACKOFFICE V1.4.17
+ARTESSENCIA — BACKOFFICE V1.4.20
 
-V1.4.17 — PRODUTOS: IDENTIDADE, INTEGRIDADE E INTERFACE
+V1.4.18 — ORÇAMENTOS: VALIDAÇÃO, IDENTIDADE E INTEGRIDADE FINANCEIRA
 
 Alterações incrementais sobre a V1.4.16:
 - código automático de produto deixa de depender da contagem e nunca reutiliza um código existente;
@@ -14,3 +14,10 @@ Alterações incrementais sobre a V1.4.16:
 - identidade, categoria, disponibilidade e ações do formulário foram realinhadas;
 - preservados custos atuais, fichas técnicas, snapshots históricos e fluxo de produção;
 - preservados localStorage, schema 7, Cloud Sync, Backup e PWA.
+
+
+V1.4.18: validação de cliente/contacto/data/validade/condição/linhas; embalagem opcional; numeração pelo próximo ORC livre; proteção de orçamentos convertidos ou com pagamentos; proteção contra edição abaixo do recebido.
+
+V1.4.19 — FASE DE TESTES: a eliminação de orçamentos volta a ser permitida mesmo quando convertidos ou com pagamentos, com aviso explícito e sem cascata automática sobre registos relacionados. Mantidas as restantes validações e correções da V1.4.18.
+
+V1.4.20 — MODO DE UTILIZAÇÃO: adicionada em Configuração a alternância Fase de testes / Negócio real. Em testes mantém-se a eliminação definitiva de dados operacionais; em Negócio real ficam bloqueadas eliminações destrutivas de encomendas, orçamentos, clientes, produtos, movimentos manuais de Caixa e compras. A mudança de modo não altera dados existentes e é persistida nas definições, Backup e Cloud Sync.
