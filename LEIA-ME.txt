@@ -1,4 +1,4 @@
-ARTESSENCIA — BACKOFFICE V1.4.20
+ARTESSENCIA — BACKOFFICE V1.4.21
 
 V1.4.18 — ORÇAMENTOS: VALIDAÇÃO, IDENTIDADE E INTEGRIDADE FINANCEIRA
 
@@ -21,3 +21,6 @@ V1.4.18: validação de cliente/contacto/data/validade/condição/linhas; embala
 V1.4.19 — FASE DE TESTES: a eliminação de orçamentos volta a ser permitida mesmo quando convertidos ou com pagamentos, com aviso explícito e sem cascata automática sobre registos relacionados. Mantidas as restantes validações e correções da V1.4.18.
 
 V1.4.20 — MODO DE UTILIZAÇÃO: adicionada em Configuração a alternância Fase de testes / Negócio real. Em testes mantém-se a eliminação definitiva de dados operacionais; em Negócio real ficam bloqueadas eliminações destrutivas de encomendas, orçamentos, clientes, produtos, movimentos manuais de Caixa e compras. A mudança de modo não altera dados existentes e é persistida nas definições, Backup e Cloud Sync.
+
+
+V1.4.21 — SUPABASE ARTESSENCIA INDEPENDENTE: preparado o Backoffice para o novo projeto Supabase ARTESSENCIA (project ref ihtsonqnnlrxvorfrarl), sem qualquer dependência DONART. A configuração inicial usa apenas a publishable key pública do novo projeto quando ainda não existe configuração Cloud local. A sincronização relacional mantém Clientes/Produtos/Encomendas/Orçamentos privados por utilizador e publica em store_products apenas campos comerciais dos produtos marcados para Loja (código, nome, descrição, categoria, PVP online, imagem, disponibilidade/personalização), nunca custos, margens, matérias-primas ou fichas técnicas. A Loja continua desligada e sem aceitar encomendas até ativação explícita.
