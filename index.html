@@ -2179,13 +2179,18 @@
 .legal-actions-v1286 .btnrow{margin:0}.legal-warning-v1286{border-left:4px solid #f0b429;background:#fff8e8}.legal-ready-v1286{border-left-color:#18a999;background:#effbf8}
 @media(max-width:850px){.legal-summary-v1286{grid-template-columns:1fr 1fr}.legal-doc-grid-v1286{grid-template-columns:1fr}.legal-actions-v1286{align-items:flex-start;flex-direction:column}}
 
-/* V1.4.3 — feedback de gravação */
+/* V1.4.6 — feedback de gravação */
 .save-state-v143{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid rgba(93,65,48,.18);border-radius:12px;background:rgba(255,255,255,.45);min-height:48px}
 .save-state-v143>span{font-size:18px;color:#9b8a7d}.save-state-v143 div{display:flex;flex-direction:column;gap:2px}.save-state-v143 strong{font-size:13px}.save-state-v143 small{font-size:11px;opacity:.72}
 .save-state-v143.saved{background:#eef5e9;border-color:#a9c69a}.save-state-v143.saved>span{color:#4f7a43}
 .save-state-v143.dirty{background:#fbf2df;border-color:#d9b87d}.save-state-v143.dirty>span{color:#a36f27}
 .save-state-v143.error{background:#fae9e5;border-color:#d69b8e}.save-state-v143.error>span{color:#a24e3c}
 @media(max-width:820px){.save-state-v143{padding:9px 10px}.cloud-grid,.grid2{grid-template-columns:1fr!important}.screen{padding-bottom:28px}}
+
+/* V1.4.6 — Ficha Técnica integrada no editor de produto */
+.product-techsheet-v1250{border:1px solid rgba(86,54,36,.22)!important;background:linear-gradient(180deg,rgba(255,252,246,.94),rgba(247,239,227,.82))!important}
+.product-techsheet-head-v1250{align-items:center}.product-techsheet-head-v1250>div{display:flex;flex-direction:column;gap:3px}.product-techsheet-head-v1250>div>strong{font-size:15px}.product-techsheet-head-v1250>div>span{font-size:12px;opacity:.75}
+.product-composition-head-v144 .badge.ok{background:#e7f0e3;color:#49643e}.product-composition-head-v144 .badge.warn{background:#f6ead5;color:#8a5e24}
 </style>
 
 <style id="artessencia-v142-redesign">
@@ -2250,7 +2255,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 <div class="app">
 <aside class="sidebar"><div class="brand"><img src="brand-artessencia.png" alt="ArtEssencia"><small>BACKOFFICE · GESTÃO PRIVADA</small></div><div class="nav" id="nav"></div><div class="sidebar-signature">Mais do que produtos,<br>criamos bem-estar.</div></aside>
 <main class="main">
-  <div class="topbar"><div class="art-global-search"><span class="art-search-icon">⌕</span><input id="globalSearchV142" type="search" placeholder="Pesquisar módulos..." autocomplete="off" onkeydown="globalSearchKeyV142(event)"><span class="art-search-hint">Enter</span></div><div class="top-actions"><button id="orderAlertButtonV12624" class="smallbtn order-alert-button-v12624" onclick="toggleOrderNotificationsV12624()" title="Novas encomendas">🔔<span id="orderAlertBadgeV12624" class="order-alert-count-v12624 hidden">0</span></button><button id="installBtn" class="smallbtn hidden" onclick="installApp()">Instalar app</button><button class="pill cloud-status neutral" id="cloudStatus" onclick="go('cloud')" title="Estado da sincronização"><span class="cloud-dot"></span><span id="cloudStatusText">Cloud desligada</span></button><div class="pill art-date-pill" id="today"></div><div class="art-profile"><span>AE</span><div><b>ArtEssencia</b><small>Backoffice privado</small></div></div><span id="runtimeVersion" class="pill art-version-pill">V1.4.3</span></div><div class="page-heading"><span id="pageContext">GESTÃO ArtEssencia</span><h1 id="pageTitle">Dashboard</h1></div></div>
+  <div class="topbar"><div class="art-global-search"><span class="art-search-icon">⌕</span><input id="globalSearchV142" type="search" placeholder="Pesquisar módulos..." autocomplete="off" onkeydown="globalSearchKeyV142(event)"><span class="art-search-hint">Enter</span></div><div class="top-actions"><button id="orderAlertButtonV12624" class="smallbtn order-alert-button-v12624" onclick="toggleOrderNotificationsV12624()" title="Novas encomendas">🔔<span id="orderAlertBadgeV12624" class="order-alert-count-v12624 hidden">0</span></button><button id="installBtn" class="smallbtn hidden" onclick="installApp()">Instalar app</button><button class="pill cloud-status neutral" id="cloudStatus" onclick="go('cloud')" title="Estado da sincronização"><span class="cloud-dot"></span><span id="cloudStatusText">Cloud desligada</span></button><div class="pill art-date-pill" id="today"></div><div class="art-profile"><span>AE</span><div><b>ArtEssencia</b><small>Backoffice privado</small></div></div><span id="runtimeVersion" class="pill art-version-pill">V1.4.6</span></div><div class="page-heading"><span id="pageContext">GESTÃO ArtEssencia</span><h1 id="pageTitle">Dashboard</h1></div></div>
   <div id="installBanner" class="installBanner hidden"><div><strong>Instalar no dispositivo</strong><br><small>Adiciona a app ao ecrã inicial e abre em modo completo.</small></div><button class="btn primary" onclick="installApp()">Instalar</button></div>
 
   <div id="orderNotificationPanelV12624" class="order-notification-panel-v12624 hidden" aria-live="polite">
@@ -3464,7 +3469,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
     <div class="card products-form-card" style="margin-top:10px">
       <div class="products-form-head">
         <div>
-          <div class="section-title" style="margin:0">Novo / editar produto</div>
+          <div class="section-title" id="productEditorTitleV145" style="margin:0">Novo produto</div>
           <small>Define materiais, trabalho, molde, embalagem, desperdício, margens e preços para cada produto.</small>
         </div>
       </div>
@@ -3475,7 +3480,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div class="field span2" id="prodEditionField"><label>Coleções / Edições Especiais</label><div class="edition-select-row"><select id="prodEditionId" multiple size="4" aria-label="Coleções sazonais do produto"></select><button type="button" class="btn ghost" onclick="loadProductEditionsV1245(true).then(list=>{fillProductEditionOptionsV1244(productEditionMembershipIdsV138(productTechSheetProductV1250()));toast(list.length?'Coleções atualizadas':'Nenhuma coleção disponível')})">Atualizar</button></div><small class="mix-help">Seleciona uma ou várias coleções. Usa Ctrl/Cmd para várias seleções no computador; no tablet seleciona diretamente as opções disponíveis.</small></div>
         <div class="field edition-cost-field" id="prodEditionLaborField" style="display:none"><label>Tempo extra por unidade</label><div class="edition-cost-input"><input id="prodEditionExtraLaborMinutes" type="number" min="0" step="0.1" value="0"><span>min</span></div><small class="mix-help">Só o tempo adicional desta edição. O custo é calculado com a mão de obra €/hora já definida na app.</small></div>
         <div class="field edition-cost-field" id="prodEditionWasteField" style="display:none"><label>Desperdício extra da edição</label><div class="edition-cost-input"><input id="prodEditionExtraWastePct" type="number" min="0" step="0.1" value="0"><span>%</span></div><small class="mix-help">Acrescenta-se ao desperdício geral apenas neste produto. Usa 0 se não houver diferença.</small></div>
-        <div class="field span2 edition-cost-note" id="prodEditionCostNote" style="display:none"><strong>💶 Custo real da edição</strong><span>Materiais e decoração continuam a ser registados na ficha técnica do produto. Aqui só acrescentamos o tempo e desperdício extra específicos desta edição. O PVP continua totalmente manual.</span></div><div class="field span2 product-techsheet-v1250" id="prodTechSheetBridge" style="display:none"><div class="product-techsheet-head-v1250"><div><strong>🧾 Ficha Técnica</strong><span id="prodTechSheetStatus">Ficha técnica do produto</span></div><button type="button" class="btn ghost" id="prodTechSheetBtn" onclick="openProductTechSheetV1250()">Abrir Ficha Técnica</button></div><div class="product-techsheet-stats-v1250"><div><span>Materiais específicos</span><strong id="prodTechSheetIngredientCount">—</strong></div><div><span>Custo calculado</span><strong id="prodTechSheetCost">—</strong></div><div><span>PVP recomendado</span><strong id="prodTechSheetRecommended">—</strong></div></div></div>
+        <div class="field span2 edition-cost-note" id="prodEditionCostNote" style="display:none"><strong>💶 Custo real da edição</strong><span>Materiais e decoração continuam a ser registados na ficha técnica do produto. Aqui só acrescentamos o tempo e desperdício extra específicos desta edição. O PVP continua totalmente manual.</span></div><div class="field span2 product-techsheet-v1250" id="prodTechSheetBridge" style="display:none"><div class="product-techsheet-head-v1250"><div><strong>🧾 Ficha Técnica</strong><span id="prodTechSheetStatus">Ficha técnica do produto</span></div><button type="button" class="btn ghost" id="prodTechSheetBtn" onclick="openProductTechSheetV1250()">Editar Ficha Técnica</button></div><div class="product-techsheet-stats-v1250"><div><span>Materiais específicos</span><strong id="prodTechSheetIngredientCount">—</strong></div><div><span>Custo calculado</span><strong id="prodTechSheetCost">—</strong></div><div><span>PVP recomendado</span><strong id="prodTechSheetRecommended">—</strong></div></div><div class="product-composition-v144"><div class="product-composition-head-v144"><div><strong>Composição do produto</strong><small>Carregada automaticamente da Ficha Técnica guardada.</small></div><span id="prodCompositionBadgeV144" class="badge">—</span></div><div id="prodCompositionPreviewV144" class="product-composition-list-v144"><div class="empty">Guarda ou seleciona um produto para ver a composição.</div></div></div></div>
         <div class="field"><label>Código</label><input id="prodCode" placeholder="Ex.: VEL001"></div>
         <div class="field"><label>Custo/un. automático</label><input id="prodCost" type="number" step="0.0001" readonly style="background:#DDF4D2"></div>
         <div class="field"><label>PVP definido — venda direta</label><input id="prodPrice" type="number" step="0.01"><small class="mix-help">Usado nas encomendas criadas diretamente na app.</small></div>
@@ -3537,7 +3542,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div class="field"><label>Máximo deste produto por conjunto</label><input id="prodMixMaxQty" type="number" min="0" step="1" value="0" placeholder="0 = sem limite"><small class="mix-help">Ex.: 4 impede o cliente de escolher mais de 4 unidades deste produto no mesmo conjunto.</small></div>
         <div class="field"><label>Embalagens permitidas no conjunto</label><input id="prodMixBoxCaps" placeholder="Ex.: 6, 12, 24"><small class="mix-help">Deixa vazio para permitir em todas as embalagens disponíveis.</small></div>
         <div class="field span2 mix-admin-note"><strong>🕯️ Controlo dos conjuntos</strong><span>“Publicado na loja” e “Disponível para conjuntos” são independentes. Um produto de Edição Especial também pode entrar no conjunto se ativares esta opção.</span></div>
-        <div class="field"><label>&nbsp;</label><button class="btn primary" onclick="saveProduct()">Guardar produto</button></div>
+        <div class="field"><label>&nbsp;</label><div class="btnrow"><button id="productSaveBtnV145" class="btn primary" onclick="saveProduct()">Guardar produto</button><button id="productCancelEditBtnV145" type="button" class="btn ghost hidden" onclick="cancelProductEditV145()">Cancelar edição</button></div></div>
+<div class="field span2"><div id="productSaveStateV145" class="save-state-v143 neutral"><span>●</span><div><strong>Novo produto</strong><small>Preenche os dados e guarda. Ao editar um produto, este estado muda automaticamente.</small></div></div></div>
       </div>
     </div>
 
@@ -6606,7 +6612,7 @@ async function uploadProductShopImage(){
    const url=data?.publicUrl||'';
    if(!url)throw new Error('URL pública indisponível');
    setProductShopImagePreview(url);
-   const existing=db.products.find(x=>x.code===code);
+   const existing=db.products.find(x=>x.code===code),wasEditing=!!existing;
    if(existing){existing.shopImageUrl=url;save()}
    toast('Fotografia carregada')
  }catch(e){cloudLogMsg('Erro fotografia produto: '+cloudErrText(e));toast('Erro ao carregar fotografia')}
@@ -6721,14 +6727,32 @@ async function fillProductEditionOptionsV1244(selected=[]){
  if(!list.length)sel.innerHTML='<option value="" disabled>Nenhuma coleção disponível</option>';
 }
 function productTechSheetProductV1250(){const code=(prodCode?.value||'').trim();return db.products.find(p=>p.code===code)||null}
+function productTechSheetStateV146(p){
+ const lines=Array.isArray(db.productRecipes?.[p?.code])?db.productRecipes[p.code]:[];
+ if(!productManufacturedV130(p))return {key:'not_required',label:'Não aplicável',detail:'Produto sem produção própria configurada.',ok:true};
+ if(!lines.length)return {key:'empty',label:'Sem ficha',detail:'Ainda não foram associados materiais à composição.',ok:false};
+ const invalid=lines.filter(r=>!r?.item||!(Number(r.qty)>0)||!stockByName(r.item));
+ if(invalid.length)return {key:'draft',label:'Em elaboração',detail:`${invalid.length} componente(s) precisam de revisão.`,ok:false};
+ return {key:'complete',label:'Completa',detail:`${lines.length} componente(s) validados na composição.`,ok:true};
+}
 function refreshProductTechSheetBridgeV1250(){
  const box=document.getElementById('prodTechSheetBridge');if(!box)return;
- const p=productTechSheetProductV1250();box.style.display=p?'':'none';if(!p)return;
- const lines=Array.isArray(db.productRecipes[p.code])?db.productRecipes[p.code]:[],configured=lines.length>0;
- prodTechSheetStatus.textContent=configured?'Configurada · ligada à ficha técnica existente':'Ainda não configurada · adiciona os materiais específicos';
+ const p=productTechSheetProductV1250();box.style.display=p?'':'none';
+ const preview=document.getElementById('prodCompositionPreviewV144'),badge=document.getElementById('prodCompositionBadgeV144');
+ if(!p){if(preview)preview.innerHTML='<div class="empty">Guarda ou seleciona um produto para ver a composição.</div>';if(badge){badge.textContent='—';badge.className='badge'}return}
+ const lines=Array.isArray(db.productRecipes[p.code])?db.productRecipes[p.code]:[],configured=lines.length>0,state=productTechSheetStateV146(p);
+ prodTechSheetStatus.textContent=`${state.label} · ${state.detail}`;
  prodTechSheetIngredientCount.textContent=String(lines.length);prodTechSheetCost.textContent=euro(calculatedProductCost(p));
  prodTechSheetRecommended.textContent=configured?euro(artessenciaRecommendedPriceV1251(p)):'Configura a ficha';
- prodTechSheetBtn.textContent=configured?'Abrir Ficha Técnica':'Criar Ficha Técnica'
+ prodTechSheetBtn.textContent=configured?'Editar Ficha Técnica':'Criar Ficha Técnica';
+ if(badge){badge.textContent=state.label;badge.className='badge '+(state.ok?'ok':'warn')}
+ if(preview){
+   if(!configured){preview.innerHTML='<div class="empty">Este produto ainda não tem materiais na Ficha Técnica. Carregue em “Criar Ficha Técnica” para definir a composição.</div>'}
+   else{
+     let materialTotal=0;
+     preview.innerHTML=lines.map(r=>{const st=stockByName(r.item),uc=Number(st?.unitCost)||0,q=Number(r.qty)||0,c=q*uc;materialTotal+=c;return `<div class="composition-row-v144"><span class="name">${escapeHtml(r.item)}</span><span class="qty">${q.toLocaleString('pt-PT')} ${escapeHtml(st?.unit||'')}</span><span class="cost">${euro(c)}</span></div>`}).join('')+`<div class="composition-total-v144"><span>Custo dos materiais:</span><strong>${euro(materialTotal)}</strong></div>`;
+   }
+ }
 }
 function openProductTechSheetV1250(){
  const p=productTechSheetProductV1250();if(!p)return toast('Guarda primeiro o produto');
@@ -6824,10 +6848,39 @@ function invalidateProductTechnicalReviewV1288(){}
 function renderProductBaseSummaryV12811(){}
 function clearProductTechnicalFormV1287(){for(const id of ['prodIngredientsV1287','prodStorageV1287','prodConsumptionV1287']){const el=document.getElementById(id);if(el)el.value=''}}
 function fillProductTechnicalFormV1287(p){const a=document.getElementById('prodIngredientsV1287'),c=document.getElementById('prodStorageV1287'),u=document.getElementById('prodConsumptionV1287');if(a)a.value=p?.materialsText||p?.additionalIngredientsText||p?.ingredientsText||'';if(c)c.value=p?.careInstructions||p?.storageInstructions||'';if(u)u.value=p?.safetyInstructions||p?.consumptionGuidance||''}
+function setProductEditorModeV145(p){
+ const editing=!!p;
+ const title=document.getElementById('productEditorTitleV145'),btn=document.getElementById('productSaveBtnV145'),cancel=document.getElementById('productCancelEditBtnV145'),state=document.getElementById('productSaveStateV145');
+ if(title)title.textContent=editing?`Editar produto · ${p.name||p.code}`:'Novo produto';
+ if(btn)btn.textContent=editing?'Guardar alterações':'Guardar produto';
+ if(cancel)cancel.classList.toggle('hidden',!editing);
+ if(state){state.className='save-state-v143 '+(editing?'dirty':'neutral');state.innerHTML=editing?`<span>●</span><div><strong>Produto em edição</strong><small>${escapeHtml(p.name||p.code)} · altera os campos necessários e carrega em “Guardar alterações”.</small></div>`:`<span>●</span><div><strong>Novo produto</strong><small>Preenche os dados e guarda. Ao editar um produto, este estado muda automaticamente.</small></div>`}
+}
+function setProductSaveStateV145(type,title,detail){
+ const el=document.getElementById('productSaveStateV145');if(!el)return;
+ el.className='save-state-v143 '+(type||'neutral');
+ el.innerHTML=`<span>${type==='saved'?'✓':type==='error'?'!':'●'}</span><div><strong>${escapeHtml(title)}</strong><small>${escapeHtml(detail||'')}</small></div>`;
+}
+function cancelProductEditV145(){
+ prodName.value=prodCode.value=prodPrice.value=prodShopDescription.value='';
+ const op=document.getElementById('prodOnlinePriceV12620');if(op)op.value='';
+ prodShopVisible.checked=false;
+ const mv=document.getElementById('prodMixVisible');if(mv)mv.checked=false;
+ const mm=document.getElementById('prodMixMaxQty');if(mm)mm.value='0';
+ const mb=document.getElementById('prodMixBoxCaps');if(mb)mb.value='';
+ const av=document.getElementById('prodAvailability');if(av)av.value='regular';
+ const ei=document.getElementById('prodEditionId');if(ei)[...ei.options].forEach(o=>o.selected=false);
+ for(const id of ['prodEditionExtraLaborMinutes','prodEditionExtraWastePct']){const el=document.getElementById(id);if(el)el.value='0'}
+ for(const id of ['prodLaborMinutesV110','prodWastePctV110','prodMoldCostV110','prodMoldUsesV110','prodMoldOverrideV110','prodPackagingCostV110','prodEquipmentPowerWV133','prodEquipmentMinutesV133','prodIndirectCostV110','prodOtherCostV110','prodTargetMarginV110','prodOnlineTargetMarginV110']){const el=document.getElementById(id);if(el)el.value=''}
+ const cavities=document.getElementById('prodMoldCavitiesV110');if(cavities)cavities.value='1';
+ clearProductProductionFieldsV130();clearProductTechnicalFormV1287();setProductShopImagePreview('');
+ const f=document.getElementById('prodShopImageFile');if(f)f.value='';
+ updateProductAvailabilityUI();refreshProductChannelPricingV12620();setProductEditorModeV145(null);refreshProductTechSheetBridgeV1250();toast('Edição cancelada')
+}
 function saveProduct(){
  ensureProductSafetyEditorV1287();
- const code=prodCode.value.trim()||('X'+String(db.products.length+1).padStart(3,'0')),name=prodName.value.trim();if(!name)return toast('Indique o nome do produto');
- const existing=db.products.find(x=>x.code===code);
+ const code=prodCode.value.trim()||('X'+String(db.products.length+1).padStart(3,'0')),name=prodName.value.trim();if(!name){setProductSaveStateV145('error','Produto não guardado','Indique o nome do produto.');return toast('Indique o nome do produto')}
+ const existing=db.products.find(x=>x.code===code),wasEditing=!!existing;
  const mixVisible=!!document.getElementById('prodMixVisible')?.checked;
  const mixMaxQty=Math.max(0,Math.round(Number(document.getElementById('prodMixMaxQty')?.value)||0));
  const mixBoxCapacities=parseMixBoxCaps(document.getElementById('prodMixBoxCaps')?.value||'');
@@ -6862,7 +6915,7 @@ function saveProduct(){
  for(const id of ['prodLaborMinutesV110','prodWastePctV110','prodMoldCostV110','prodMoldUsesV110','prodMoldOverrideV110','prodPackagingCostV110','prodEquipmentPowerWV133','prodEquipmentMinutesV133','prodIndirectCostV110','prodOtherCostV110','prodTargetMarginV110','prodOnlineTargetMarginV110']){const el=document.getElementById(id);if(el)el.value=''}const cavities=document.getElementById('prodMoldCavitiesV110');if(cavities)cavities.value='1';clearProductProductionFieldsV130();
  updateProductAvailabilityUI();refreshProductChannelPricingV12620();
  clearProductTechnicalFormV1287();
- setProductShopImagePreview('');const f=document.getElementById('prodShopImageFile');if(f)f.value='';toast('Produto guardado')
+ setProductShopImagePreview('');const f=document.getElementById('prodShopImageFile');if(f)f.value='';setProductEditorModeV145(null);setProductSaveStateV145('saved',wasEditing?'Alterações guardadas':'Produto guardado com sucesso',`${name} · dados e composição associados ao produto.`);toast(wasEditing?'Alterações guardadas':'Produto guardado com sucesso')
 }
 function editProduct(code){
  const p=db.products.find(x=>x.code===code);if(!p)return;
@@ -6879,10 +6932,10 @@ function editProduct(code){
  fillProductEditionOptionsV1244(productEditionMembershipIdsV138(p));
  refreshProductTechSheetBridgeV1250();
  fillProductTechnicalFormV1287(p);
- setProductShopImagePreview(p.shopImageUrl||'');const f=document.getElementById('prodShopImageFile');if(f)f.value='';window.scrollTo({top:0,behavior:'smooth'})
+ setProductShopImagePreview(p.shopImageUrl||'');const f=document.getElementById('prodShopImageFile');if(f)f.value='';setProductEditorModeV145(p);window.scrollTo({top:0,behavior:'smooth'})
 }
 function renderProducts(){
- ensureProductSafetyEditorV1287();if(!document.getElementById('prodCode')?.value)renderProductBaseSummaryV12811(false);updateProductTechnicalStatusV1287();
+ ensureProductSafetyEditorV1287();if(!document.getElementById('prodCode')?.value){renderProductBaseSummaryV12811(false);setProductEditorModeV145(null);}updateProductTechnicalStatusV1287();
  loadProductEditionsV1245(false).then(()=>fillProductEditionOptionsV1244(selectedProductEditionIdsV138()));updateProductAvailabilityUI();
  const all=Array.isArray(db.products)?db.products:[];
  const minMargin=Number(db.settings.minMargin)||.65;
@@ -6936,7 +6989,7 @@ function renderProducts(){
          <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end">
            <span class="badge ${p.shopVisible?'ok':'warn'}">${p.shopVisible?'Publicado':'Oculto'}</span>
            <span class="badge product-mix-badge ${p.mixVisible?'':'off'}">${p.mixVisible?'Conjuntos ✓':'Fora dos conjuntos'}</span>
-           <span class="badge ${productTechnicalInfoCompleteV1287(p)?'ok':'warn'}">${productTechnicalInfoCompleteV1287(p)?'Ficha técnica ✓':'Sem ficha técnica'}</span>
+           <span class="badge ${productTechSheetStateV146(p).ok?'ok':'warn'}">Ficha técnica · ${escapeHtml(productTechSheetStateV146(p).label)}</span>
            ${productEditionMembershipIdsV138(p).length?`<span class="badge edition-product-badge">${productEditionMembershipIdsV138(p).length} coleção(ões)</span>`:''}
          </div>
        </div>
@@ -9528,4 +9581,24 @@ function globalSearchKeyV142(ev){
 <style id="artessencia-production-v130">.production-profile-v130{border:1px solid #dfd1c5;border-radius:16px;padding:14px;background:linear-gradient(135deg,#fffdf9,#f7efe7)}.production-profile-grid-v130{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:10px}.production-help-steps-v130{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:10px}.production-help-steps-v130>div{display:flex;gap:9px;align-items:flex-start;padding:10px;border:1px solid #eadfd7;border-radius:12px;background:#fff}.production-help-steps-v130 strong{display:grid;place-items:center;min-width:25px;height:25px;border-radius:50%;background:#5b3740;color:#fff}.production-help-steps-v130 span{font-size:12px;line-height:1.45;color:#5f4a43}.prod-tech-v130{display:block;margin-top:3px;color:#7b665f}.prod-notes-v130{margin-top:7px;padding:8px 10px;border-radius:9px;background:#f8f2ee;font-size:11px;line-height:1.45}.prod-missing-v130{border-left:4px solid #d75252!important}@media(max-width:900px){.production-profile-grid-v130{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.production-profile-grid-v130,.production-help-steps-v130{grid-template-columns:1fr}}</style>
 <style id="artessencia-v138-collections">
 #prodEditionId[multiple]{min-height:118px;padding:7px;background:#fff}#prodEditionField .edition-select-row{align-items:stretch}#prodEditionField .edition-select-row .btn{align-self:flex-start}.edition-product-badge{white-space:nowrap}
+
+/* V1.4.6 — Sidebar estrutural + composição automática no editor de produto */
+@media(min-width:651px){
+ .app{grid-template-columns:232px minmax(0,1fr)!important}
+ .sidebar{background:linear-gradient(180deg,#2b1d15 0%,#352318 50%,#291c14 100%)!important;padding:18px 12px 16px!important;border-right:0!important;box-shadow:8px 0 28px rgba(45,29,18,.12)!important}
+ .sidebar .brand{margin:0 3px 18px!important;padding:0 6px 16px!important;border-bottom:1px solid rgba(255,255,255,.09)!important;text-align:left!important}
+ .sidebar .brand img{width:100%!important;max-width:178px!important;height:92px!important;object-fit:cover!important;object-position:center!important;border-radius:9px!important;box-shadow:none!important;filter:saturate(.82) contrast(.98)!important}
+ .sidebar .brand small{margin:9px 2px 0!important;text-align:left!important;color:#cdbba6!important;font-size:8px!important;letter-spacing:.22em!important}
+ .sidebar .nav{display:flex!important;flex-direction:column!important;gap:2px!important}
+ .sidebar .nav button{display:grid!important;grid-template-columns:25px minmax(0,1fr) auto!important;gap:9px!important;min-height:39px!important;padding:7px 10px!important;border-radius:8px!important;color:#e9dece!important;background:transparent!important;border:0!important;font-size:12px!important;font-weight:650!important;box-shadow:none!important}
+ .sidebar .nav button:hover{background:rgba(255,255,255,.065)!important;transform:none!important}
+ .sidebar .nav button.active{background:#6c4b33!important;color:#fff!important;box-shadow:inset 3px 0 0 #d4ad7d!important}
+ .sidebar .nav-icon{display:flex!important;align-items:center!important;justify-content:center!important;width:24px!important;height:24px!important;background:transparent!important;border:0!important;border-radius:0!important;font-size:15px!important;color:#dbc6aa!important;filter:none!important;padding:0!important}
+ .sidebar .nav button.active .nav-icon{background:transparent!important;color:#fff!important;box-shadow:none!important}
+ .sidebar .nav-label{font-size:12.5px!important;line-height:1.1!important}
+ .sidebar-signature{font-size:11.5px!important;margin:18px 7px 4px!important;padding-top:14px!important;color:#bca88f!important}
+}
+.product-composition-v144{margin-top:12px;border-top:1px solid #dfd1bf;padding-top:12px}
+.product-composition-head-v144{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}.product-composition-head-v144>div{display:flex;flex-direction:column;gap:2px}.product-composition-head-v144 strong{font-family:Georgia,"Times New Roman",serif;font-size:15px;color:#3d2b20}.product-composition-head-v144 small{font-size:10px;color:#8a7564}
+.product-composition-list-v144{display:grid;gap:6px}.composition-row-v144{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;background:#fffaf3;border:1px solid #e5d8c8;border-radius:9px;padding:8px 10px}.composition-row-v144 .name{font-weight:750;color:#4d3829}.composition-row-v144 .qty{font-weight:800;color:#654a36;white-space:nowrap}.composition-row-v144 .cost{font-size:11px;color:#8b7461;white-space:nowrap}.composition-total-v144{display:flex;justify-content:flex-end;gap:8px;padding:5px 2px 0;color:#725b48;font-size:11px}.composition-total-v144 strong{color:#3e2d21}
 </style>
