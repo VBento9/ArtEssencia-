@@ -1,6 +1,6 @@
-ARTESSENCIA — BACKOFFICE V1.4.8
+ARTESSENCIA — BACKOFFICE V1.4.9
 
-V1.4.8 — PRODUÇÃO → STOCK AUDITADA
+V1.4.9 — PRODUÇÃO → STOCK AUDITADA
 
 Correções incrementais desta versão:
 - A produção fica bloqueada quando uma linha de produto já não pode ser localizada no catálogo; deixa de ser possível concluir a encomenda sem ficha técnica nem desconto de materiais.
@@ -47,3 +47,9 @@ Mantém todas as funcionalidades das versões anteriores: Produtos, Fichas Técn
 
 
 V1.4.2 — Redesign ArtEssencia: nova identidade visual baseada no logótipo kraft/castanho; sidebar escura, topbar com pesquisa de módulos, cartões e formulários harmonizados, preservando a lógica funcional da V1.4.1.
+
+
+V1.4.9 — CORREÇÃO DE ARRANQUE
+- Corrigido ecrã vazio no arranque quando existiam encomendas online persistidas.
+- A normalização inicial usa agora explicitamente a base de dados em carregamento, evitando acesso prematuro à variável global db.
+- Sem alteração de schema, chaves de localStorage, Cloud, Backup ou modelo de dados.
