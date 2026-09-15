@@ -1,4 +1,27 @@
-ARTESSENCIA — BACKOFFICE V1.4.2
+ARTESSENCIA — BACKOFFICE V1.4.8
+
+V1.4.8 — PRODUÇÃO → STOCK AUDITADA
+
+Correções incrementais desta versão:
+- A produção fica bloqueada quando uma linha de produto já não pode ser localizada no catálogo; deixa de ser possível concluir a encomenda sem ficha técnica nem desconto de materiais.
+- Cada nova sessão de produção guarda o snapshot exato dos materiais por encomenda, além do total agregado já existente.
+- A reposição ao eliminar uma produção exclusiva usa o snapshot histórico da sessão, mesmo que a ficha técnica tenha sido alterada posteriormente.
+- Numa produção partilhada nova, a eliminação de uma encomenda repõe apenas o consumo dessa encomenda e ajusta o movimento e o histórico da sessão sem duplicar Stock.
+- Produções partilhadas antigas sem snapshot por encomenda mantêm o comportamento conservador: não fazem uma reposição estimada potencialmente incorreta.
+- Uma encomenda já produzida não pode regressar manualmente a Pedido, Confirmada ou Em produção sem reversão da produção.
+- O indicador visual de Stock passa a considerar também os compromissos existentes, tal como a validação final.
+- A reconciliação Pagamentos → Caixa passa a contabilizar correções positivas e negativas sem criar entradas legado duplicadas; entradas legado indevidas criadas por este caso são removidas automaticamente.
+
+Validações realizadas:
+- Multiplicação dos materiais pela quantidade produzida.
+- Bloqueio por ficha técnica em falta, produto não localizado e Stock insuficiente/comprometido.
+- Desconto exato de Stock, movimentos associados ao Production Run e passagem para Pronta.
+- Proteção contra segundo desconto da mesma encomenda.
+- Preservação de custos históricos das encomendas e dos custos unitários da produção.
+- Compatibilidade de localStorage, Cloud, Backup e schema 7 preservada.
+- Pagamentos parciais/totais, correções, entrega com/sem saldo e relatórios financeiros verificados.
+
+VERSÃO ANTERIOR / HISTÓRICO
 
 AUDITORIA FINAL DO BACKOFFICE (V1.4.2)
 
