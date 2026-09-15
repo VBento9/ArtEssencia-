@@ -564,8 +564,14 @@
 .stock-kpi-bad{background:#fff5f2;border-color:#efb8ad}
 .stock-kpi-warn{background:#fffaf0;border-color:#ead3a1}
 .stock-grid{gap:9px!important}
+.stock-form-card{align-self:start}
+.stock-form-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:9px;padding-bottom:8px;border-bottom:1px solid #eee5e1}
+.stock-form-head small{display:block;margin-top:2px;font-size:8px;color:#8c7971;line-height:1.4}
+.stock-form-actions{display:flex;gap:6px;align-items:end;grid-column:1/-1}
+.stock-form-actions .btn{min-height:34px}
 #stock .field label{font-size:9px}
 #stock .field input,#stock .field select{font-size:10px;min-height:34px}
+#stock .field input:disabled,#stock .field select:disabled{background:#f3efeb;color:#7d6d66;cursor:not-allowed}
 #stock .btn{font-size:9px}
 #stock .section-title{font-size:14px}
 .stock-list-card{padding:10px 12px}
@@ -697,12 +703,18 @@
 .clients-kpi strong{font-size:19px;color:#503833}
 .clients-kpi small{font-size:7.5px;color:#94837c}
 .clients-form-card,.clients-list-card{padding:10px 12px}
+.clients-workspace{display:grid;grid-template-columns:minmax(280px,.72fr) minmax(0,2fr);gap:10px;margin-top:10px;align-items:start}
+.clients-workspace .clients-form-card,.clients-workspace .clients-list-card{margin-top:0!important}
 .clients-form-head,.clients-list-head{margin-bottom:8px}
 .clients-form-head small,.clients-list-head small{font-size:8px;color:#8c7971}
 #clients .field label{font-size:9px}
-#clients .field input{font-size:10px;min-height:34px}
+#clients .field input,#clients .field textarea{font-size:10px;min-height:34px}
+#clients .field textarea{resize:vertical;min-height:74px}
 #clients .btn{font-size:9px}
 #clients .section-title{font-size:14px}
+.clients-form-actions{display:flex;gap:6px;align-items:end;grid-column:1/-1}
+.clients-form-actions .btn{min-height:34px}
+.client-contact-help{display:block;margin-top:4px;font-size:7px;color:#94837c;line-height:1.35}
 .clients-cards{display:grid;gap:8px}
 .client-card{border:1px solid #eadfdb;border-radius:11px;background:#fff;overflow:hidden}
 .client-card-main{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px}
@@ -710,7 +722,7 @@
 .client-info{display:flex;flex-direction:column;gap:2px;min-width:0}
 .client-info strong{font-size:10px;color:#4e3934}
 .client-info small,.client-info span{font-size:8px;color:#8d7a72;overflow:hidden;text-overflow:ellipsis}
-.client-metrics{display:grid;grid-template-columns:repeat(3,80px);gap:5px}
+.client-metrics{display:grid;grid-template-columns:repeat(5,minmax(70px,1fr));gap:5px}
 .client-metrics>div{background:#fcfaf9;border:1px solid #eee5e1;border-radius:8px;padding:6px 7px;display:flex;flex-direction:column;gap:1px}
 .client-metrics small{font-size:6.5px;color:#8d7a72}
 .client-metrics strong{font-size:9px;color:#4e3934}
@@ -718,13 +730,25 @@
 .client-card-foot>span{font-size:7.5px;color:#8d7a72}
 .client-actions{display:flex;gap:4px}
 .client-actions .btn{padding:5px 7px;font-size:7.5px}
+.client-detail-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
+.client-detail-grid .mini{min-width:0}
+.client-detail-section{margin-top:12px}
+.client-detail-section h3{margin:0 0 7px;font-size:12px;color:#503833}
+.client-detail-columns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.client-product-list{display:grid;gap:5px}
+.client-product-row{display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:7px 8px;border:1px solid #eee5e1;border-radius:8px;background:#fcfaf9;font-size:8px}
 @media(max-width:800px){
  .clients-hero{align-items:stretch;flex-direction:column}
  .clients-tools{display:grid;grid-template-columns:1fr 150px}
  .clients-tools input{min-width:0}
  .clients-summary{grid-template-columns:1fr 1fr}
+ .clients-workspace{grid-template-columns:1fr}
  .client-card-main{grid-template-columns:40px 1fr}
  .client-metrics{grid-column:1/-1;grid-template-columns:repeat(3,1fr)}
+ .client-detail-grid{grid-template-columns:repeat(2,1fr)}
+ .client-detail-columns{grid-template-columns:1fr}
+ .client-card-foot{align-items:flex-start;flex-direction:column}
+ .client-actions{width:100%;flex-wrap:wrap}
 }
 
 
@@ -2187,6 +2211,27 @@
 .save-state-v143.error{background:#fae9e5;border-color:#d69b8e}.save-state-v143.error>span{color:#a24e3c}
 @media(max-width:820px){.save-state-v143{padding:9px 10px}.cloud-grid,.grid2{grid-template-columns:1fr!important}.screen{padding-bottom:28px}}
 
+/* ArtEssencia V1.4.16 — Fichas Técnicas e Custos: estrutura operacional alinhada */
+.costs-hero{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px}
+.costs-hero .section-title{font-size:18px}.costs-hero p{font-size:9px}
+.costs-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:9px}
+.costs-kpi{padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.costs-kpi span{font-size:8px;font-weight:800;text-transform:uppercase;color:#8b746c}
+.costs-kpi strong{font-size:18px;color:#503833}.costs-kpi small{font-size:7.5px;color:#94837c}
+.costs-kpi-warn{background:#fffaf0;border-color:#ead3a1}
+.costs-workspace{display:grid;grid-template-columns:minmax(300px,.82fr) minmax(0,1.45fr);gap:10px;margin-top:10px;align-items:start}
+.costs-card{padding:11px 12px}.costs-card-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:9px}
+.costs-card-head small{font-size:8px;color:#8c7971}.costs-card .section-title{font-size:14px}
+.costs-table-card{padding:11px 12px;margin-top:10px}
+.costs-table-card .tablewrap{margin-top:8px}.costs-table-card table{font-size:9px}
+.costs-recipe-form{display:grid;grid-template-columns:minmax(180px,1.2fr) minmax(180px,1fr) minmax(120px,.55fr) auto;gap:9px;align-items:end}
+.costs-recipe-form .field{min-width:0}.costs-recipe-state{margin-top:9px}
+.costs-material-actions{display:flex;gap:8px;align-items:end}.costs-material-actions .btn{white-space:nowrap}
+.recipe-line-v146{grid-template-columns:minmax(0,1fr) 110px 110px 82px!important}
+.recipe-line-v146.invalid{border-color:#e8b9aa;background:#fff8f5}.recipe-line-v146 .recipe-warning-v146{display:block;font-size:7.5px;color:#a04f3d;margin-top:2px}
+@media(max-width:950px){.costs-summary{grid-template-columns:repeat(3,1fr)}.costs-workspace{grid-template-columns:1fr}}
+@media(max-width:700px){.costs-hero{align-items:stretch;flex-direction:column}.costs-summary{grid-template-columns:1fr 1fr}.costs-recipe-form{grid-template-columns:1fr 1fr}.costs-recipe-form .recipe-product-v146{grid-column:1/-1}.costs-material-actions{align-items:stretch}.recipe-line-v146{grid-template-columns:1fr!important;gap:4px!important}.recipe-line-v146 .btn{justify-self:start}}
+
 /* V1.4.7 — Ficha Técnica integrada no editor de produto */
 .product-techsheet-v1250{border:1px solid rgba(86,54,36,.22)!important;background:linear-gradient(180deg,rgba(255,252,246,.94),rgba(247,239,227,.82))!important}
 .product-techsheet-head-v1250{align-items:center}.product-techsheet-head-v1250>div{display:flex;flex-direction:column;gap:3px}.product-techsheet-head-v1250>div>strong{font-size:15px}.product-techsheet-head-v1250>div>span{font-size:12px;opacity:.75}
@@ -2268,7 +2313,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 <div class="app">
 <aside class="sidebar"><div class="brand"><img src="brand-artessencia.png" alt="ArtEssencia"><small>BACKOFFICE · GESTÃO PRIVADA</small></div><div class="nav" id="nav"></div><div class="sidebar-signature">Mais do que produtos,<br>criamos bem-estar.</div></aside>
 <main class="main">
-  <div class="topbar"><div class="art-global-search"><span class="art-search-icon">⌕</span><input id="globalSearchV142" type="search" placeholder="Pesquisar módulos..." autocomplete="off" onkeydown="globalSearchKeyV142(event)"><span class="art-search-hint">Enter</span></div><div class="top-actions"><button id="orderAlertButtonV12624" class="smallbtn order-alert-button-v12624" onclick="toggleOrderNotificationsV12624()" title="Novas encomendas">🔔<span id="orderAlertBadgeV12624" class="order-alert-count-v12624 hidden">0</span></button><button id="installBtn" class="smallbtn hidden" onclick="installApp()">Instalar app</button><button class="pill cloud-status neutral" id="cloudStatus" onclick="go('cloud')" title="Estado da sincronização"><span class="cloud-dot"></span><span id="cloudStatusText">Cloud desligada</span></button><div class="pill art-date-pill" id="today"></div><div class="art-profile"><span>AE</span><div><b>ArtEssencia</b><small>Backoffice privado</small></div></div><span id="runtimeVersion" class="pill art-version-pill">V1.4.12</span></div><div class="page-heading"><span id="pageContext">GESTÃO ArtEssencia</span><h1 id="pageTitle">Dashboard</h1></div></div>
+  <div class="topbar"><div class="art-global-search"><span class="art-search-icon">⌕</span><input id="globalSearchV142" type="search" placeholder="Pesquisar módulos..." autocomplete="off" onkeydown="globalSearchKeyV142(event)"><span class="art-search-hint">Enter</span></div><div class="top-actions"><button id="orderAlertButtonV12624" class="smallbtn order-alert-button-v12624" onclick="toggleOrderNotificationsV12624()" title="Novas encomendas">🔔<span id="orderAlertBadgeV12624" class="order-alert-count-v12624 hidden">0</span></button><button id="installBtn" class="smallbtn hidden" onclick="installApp()">Instalar app</button><button class="pill cloud-status neutral" id="cloudStatus" onclick="go('cloud')" title="Estado da sincronização"><span class="cloud-dot"></span><span id="cloudStatusText">Cloud desligada</span></button><div class="pill art-date-pill" id="today"></div><div class="art-profile"><span>AE</span><div><b>ArtEssencia</b><small>Backoffice privado</small></div></div><span id="runtimeVersion" class="pill art-version-pill">V1.4.16</span></div><div class="page-heading"><span id="pageContext">GESTÃO ArtEssencia</span><h1 id="pageTitle">Dashboard</h1></div></div>
   <div id="installBanner" class="installBanner hidden"><div><strong>Instalar no dispositivo</strong><br><small>Adiciona a app ao ecrã inicial e abre em modo completo.</small></div><button class="btn primary" onclick="installApp()">Instalar</button></div>
 
   <div id="orderNotificationPanelV12624" class="order-notification-panel-v12624 hidden" aria-live="polite">
@@ -2360,7 +2405,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       <div id="eventRequestsV1276" style="display:grid;gap:10px;margin-top:10px"></div>
     </div>
     <div class="card"><div class="form-grid">
-      <div class="field span2"><label>Cliente</label><input id="quoteClient" list="clientSuggestions" placeholder="Nome do cliente"></div>
+      <div class="field span2"><label>Cliente</label><input id="quoteClient" list="clientSuggestions" placeholder="Nome do cliente" oninput="fillQuoteClientContact()"></div>
       <div class="field"><label>Contacto</label><input id="quoteContact" placeholder="Telemóvel"></div>
       <div class="field"><label>Email</label><input id="quoteEmail" type="email" placeholder="cliente@email.pt"></div>
       <div class="field"><label>Data do evento</label><input id="quoteEventDate" type="date"></div>
@@ -2493,48 +2538,65 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 
 
   <section id="costs" class="screen">
-    <div class="grid4" id="costKpis"></div>
+    <div class="costs-hero card">
+      <div><div class="section-title" style="margin:0">Fichas Técnicas e Custos</div><p class="muted" style="margin:4px 0 0">Composição por produto, custo atual e controlo da rentabilidade.</p></div>
+      <button class="btn" onclick="renderCosts()">Atualizar</button>
+    </div>
+    <div class="costs-summary" id="costKpis"></div>
 
-    <div class="section-title">Atualizar custo de matéria-prima</div>
-    <div class="card">
-      <div class="form-grid">
-        <div class="field span2"><label>Matéria-prima</label><select id="costMaterial" onchange="syncCostUnitV120();updateCostPreview()"></select></div>
-        <div class="field"><label>Quantidade comprada</label><input id="costPackQty" type="number" step="0.01" placeholder="Ex.: 5" oninput="updateCostPreview()"></div><div class="field"><label>Unidade da compra</label><select id="costPackUnitV120" onchange="updateCostPreview()"><option value="">Selecionar matéria-prima</option></select></div>
-        <div class="field"><label>Preço pago €</label><input id="costPackPrice" type="number" step="0.01" placeholder="Ex.: 35,00" oninput="updateCostPreview()"></div>
-        <div class="field"><label>Custo calculado/unidade base</label><input id="costUnitPreview" readonly style="background:#DDF4D2"></div>
-        <div class="field"><label>&nbsp;</label><button class="btn primary" onclick="applyMaterialCost()">Atualizar custo</button></div>
+    <div class="costs-workspace">
+      <div class="card costs-card">
+        <div class="costs-card-head"><div><div class="section-title" style="margin:0">Custo manual de matéria-prima</div><small>Correção excecional do custo atual, sem alterar a quantidade em Stock.</small></div></div>
+        <div class="form-grid">
+          <div class="field span2"><label>Matéria-prima</label><select id="costMaterial" onchange="syncCostUnitV120();updateCostPreview()"></select></div>
+          <div class="field"><label>Quantidade comprada</label><input id="costPackQty" type="number" step="0.01" placeholder="Ex.: 5" oninput="updateCostPreview()"></div>
+          <div class="field"><label>Unidade da compra</label><select id="costPackUnitV120" onchange="updateCostPreview()"><option value="">Selecionar matéria-prima</option></select></div>
+          <div class="field"><label>Preço pago €</label><input id="costPackPrice" type="number" step="0.01" placeholder="Ex.: 35,00" oninput="updateCostPreview()"></div>
+          <div class="field"><label>Custo calculado/unidade base</label><input id="costUnitPreview" readonly style="background:#DDF4D2"></div>
+          <div class="field span2"><label>Motivo da atualização</label><input id="costManualReasonV146" maxlength="180" placeholder="Ex.: correção de fatura ou custo inicial confirmado"><small>Obrigatório. Fica registado no histórico da matéria-prima.</small></div>
+          <div class="field span2"><div class="costs-material-actions"><button class="btn primary" onclick="applyMaterialCost()">Atualizar custo</button></div></div>
+          <div class="field span2"><div id="materialCostSaveStateV146" class="save-state-v143 neutral"><span>●</span><div><strong>Sem correções pendentes</strong><small>As compras recebidas continuam a recalcular automaticamente o custo médio.</small></div></div></div>
+        </div>
+        <small>Use esta operação apenas para uma correção manual justificada. Para entradas reais de material, utilize Compras.</small>
       </div>
-      <small>Esta operação altera o custo usado em todas as fichas técnicas, produtos e margens. Não altera a quantidade em stock; para isso utilize Compras.</small>
+
+      <div class="card costs-card">
+        <div class="costs-card-head"><div><div class="section-title" style="margin:0">Ficha técnica por produto</div><small>Cada quantidade corresponde ao consumo de uma unidade do produto selecionado.</small></div></div>
+        <div class="costs-recipe-form">
+          <div class="field recipe-product-v146"><label>Produto</label><select id="costProduct" onchange="renderProductRecipeEditor()"></select></div>
+          <div class="field"><label>Material / componente</label><select id="costIngredient"></select></div>
+          <div class="field"><label>Quantidade por unidade</label><input id="costIngredientQty" type="number" min="0" step="any" placeholder="g/ml/cm/un"></div>
+          <div class="field"><label>&nbsp;</label><button id="recipeSaveBtnV143" class="btn primary" onclick="addRecipeLine()">Guardar material</button></div>
+        </div>
+        <div class="costs-recipe-state"><div id="recipeSaveStateV143" class="save-state-v143 neutral"><span>●</span><div><strong>Selecione um produto</strong><small>Cada material fica guardado imediatamente ao carregar em “Guardar material”.</small></div></div></div>
+        <div id="productRecipeEditor" style="margin-top:12px"></div>
+      </div>
     </div>
 
-    <div class="section-title">Custos das matérias-primas</div>
-    <div class="tablewrap"><table><thead><tr><th>Matéria-prima</th><th>Unidade</th><th>Custo/base</th><th>Stock</th><th>Valor stock</th><th>Origem</th></tr></thead><tbody id="costMaterialsBody"></tbody></table></div>
-
-    <div class="section-title">Ficha técnica por produto</div>
-    <div class="card">
-      <div class="form-grid">
-        <div class="field span2"><label>Produto</label><select id="costProduct" onchange="renderProductRecipeEditor()"></select></div>
-        <div class="field span2"><label>Material / componente</label><select id="costIngredient"></select></div>
-        <div class="field"><label>Quantidade por unidade</label><input id="costIngredientQty" type="number" step="0.01" placeholder="g/ml/un"></div>
-        <div class="field"><label>&nbsp;</label><button id="recipeSaveBtnV143" class="btn primary" onclick="addRecipeLine()">Guardar material na ficha</button></div>
-<div class="field span2"><div id="recipeSaveStateV143" class="save-state-v143 neutral"><span>●</span><div><strong>Selecione um produto</strong><small>Cada material fica guardado imediatamente ao carregar em “Guardar material na ficha”.</small></div></div></div>
-      </div>
-      <div id="productRecipeEditor" style="margin-top:12px"></div>
+    <div class="card costs-table-card">
+      <div class="costs-card-head"><div><div class="section-title" style="margin:0">Custos das matérias-primas</div><small>Valor atual utilizado nas fichas técnicas e no valor de Stock.</small></div></div>
+      <div class="tablewrap"><table><thead><tr><th>Matéria-prima</th><th>Unidade</th><th>Custo/base</th><th>Stock</th><th>Valor stock</th><th>Origem</th></tr></thead><tbody id="costMaterialsBody"></tbody></table></div>
     </div>
 
-    <div class="section-title">Custo real e preços recomendados por produto</div>
-    <div class="tablewrap"><table><thead><tr><th>Produto</th><th>Categoria</th><th>Materiais</th><th>Mão de obra</th><th>Molde</th><th>Embalagem</th><th>Energia</th><th>Desgaste/consum.</th><th>Indiretos/outros</th><th>Desperdício</th><th>Custo total</th><th>PVP direto</th><th>PVP recomendado</th><th>PVP Loja</th><th>Recomendado Loja</th><th>Margem / estado</th></tr></thead><tbody id="costProductsBody"></tbody></table></div>
+    <div class="card costs-table-card">
+      <div class="costs-card-head"><div><div class="section-title" style="margin:0">Custo real e preços recomendados por produto</div><small>O PVP permanece manual; as recomendações acompanham o custo atual.</small></div></div>
+      <div class="tablewrap"><table><thead><tr><th>Produto</th><th>Categoria</th><th>Materiais</th><th>Mão de obra</th><th>Molde</th><th>Embalagem</th><th>Energia</th><th>Desgaste/consum.</th><th>Indiretos/outros</th><th>Desperdício</th><th>Custo total</th><th>PVP direto</th><th>PVP recomendado</th><th>PVP Loja</th><th>Recomendado Loja</th><th>Margem / estado</th></tr></thead><tbody id="costProductsBody"></tbody></table></div>
+    </div>
 
-    <div class="section-title">Valores padrão de custos</div>
-    <div class="card"><div class="form-grid">
-      <div class="field"><label>Mão de obra €/hora</label><input id="costLaborRate" type="number" step="0.01"></div>
-      <div class="field"><label>Minutos padrão por unidade</label><input id="costLaborMinutes" type="number" min="0" step="0.1"><small>Usado apenas quando o produto não tiver tempo próprio.</small></div>
-      <div class="field"><label>Desperdício padrão (%)</label><input id="costWasteRate" type="number" min="0" step="0.1"><small>Usado apenas quando o produto não tiver percentagem própria.</small></div>
-      <div class="field"><label>&nbsp;</label><button class="btn primary" onclick="saveCostSettings()">Guardar parâmetros</button></div>
-    </div></div>
+    <div class="card costs-table-card">
+      <div class="costs-card-head"><div><div class="section-title" style="margin:0">Valores padrão de custos</div><small>Aplicados apenas quando o produto não tiver valores próprios.</small></div></div>
+      <div class="form-grid">
+        <div class="field"><label>Mão de obra €/hora</label><input id="costLaborRate" type="number" step="0.01"></div>
+        <div class="field"><label>Minutos padrão por unidade</label><input id="costLaborMinutes" type="number" min="0" step="0.1"><small>Usado apenas quando o produto não tiver tempo próprio.</small></div>
+        <div class="field"><label>Desperdício padrão (%)</label><input id="costWasteRate" type="number" min="0" step="0.1"><small>Usado apenas quando o produto não tiver percentagem própria.</small></div>
+        <div class="field"><label>&nbsp;</label><button class="btn primary" onclick="saveCostSettings()">Guardar parâmetros</button></div>
+      </div>
+    </div>
 
-    <div class="section-title">Embalagens</div>
-    <div class="tablewrap"><table><thead><tr><th>Embalagem</th><th>Capacidade</th><th>Custo/un.</th><th>Custo por unidade cheio</th></tr></thead><tbody id="costPackagingBody"></tbody></table></div>
+    <div class="card costs-table-card">
+      <div class="costs-card-head"><div><div class="section-title" style="margin:0">Embalagens</div><small>Consulta dos custos definidos em Configuração.</small></div><button class="btn" onclick="go('settings')">Gerir</button></div>
+      <div class="tablewrap"><table><thead><tr><th>Embalagem</th><th>Capacidade</th><th>Custo/un.</th><th>Custo por unidade cheio</th></tr></thead><tbody id="costPackagingBody"></tbody></table></div>
+    </div>
   </section>
 
   <section id="stock" class="screen">
@@ -2557,8 +2619,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
     <div id="stockSummary" class="stock-summary"></div>
 
     <div class="grid2 stock-grid" style="margin-top:10px">
-      <div class="card">
-        <div class="section-title" style="margin-top:0">Criar / atualizar artigo</div>
+      <div class="card stock-form-card">
+        <div class="stock-form-head"><div><div class="section-title" style="margin:0">Criar matéria-prima</div><small id="stockFormHintV145">Quantidade e custo iniciais podem ser definidos apenas na criação.</small></div></div>
         <div class="form-grid">
           <div class="field span2"><label>Produto / matéria-prima</label><input id="stockName" placeholder="Ex.: Cera de soja APF"></div>
           <div class="field"><label>Quantidade atual</label><input id="stockQty" type="number" step="0.01"></div>
@@ -2567,19 +2629,21 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           <div class="field"><label>Stock alvo</label><input id="stockTarget" type="number" step="0.01" placeholder="Ex.: 2000"><small>Quantidade desejada após reposição. Se vazio, usa 2× o mínimo.</small></div>
           <div class="field"><label>Custo por unidade base</label><input id="stockUnitCost" type="number" step="0.0001"></div>
           <div class="field"><label>Fornecedor preferencial</label><input id="stockPreferredSupplier" placeholder="Opcional"></div>
-          <div class="field"><label>&nbsp;</label><button id="stockSaveBtnV143" class="btn primary" onclick="addStock()">Guardar matéria-prima</button></div>
+          <div id="stockEditReasonFieldV145" class="field span2 hidden"><label>Motivo da correção</label><input id="stockEditReasonV145" maxlength="180" placeholder="Obrigatório se alterar quantidade ou custo"><small>Fica registado no histórico da matéria-prima.</small></div>
+          <div class="stock-form-actions"><button id="stockSaveBtnV143" class="btn primary" onclick="addStock()">Guardar matéria-prima</button><button id="stockCancelBtnV145" class="btn hidden" onclick="cancelStockEditV145()">Cancelar edição</button></div>
 <div class="field span2"><div id="stockSaveStateV143" class="save-state-v143 neutral"><span>●</span><div><strong>Pronto para registar</strong><small>Depois de guardar, o formulário será limpo automaticamente.</small></div></div></div>
         </div>
       </div>
 
-      <div class="card">
-        <div class="section-title" style="margin-top:0">Movimento rápido</div>
+      <div class="card stock-form-card">
+        <div class="stock-form-head"><div><div class="section-title" style="margin:0">Movimento rápido</div><small>Compras devem ser registadas no módulo Compras. Use esta área para correções, saídas e desperdício.</small></div></div>
         <div class="form-grid">
           <div class="field span2"><label>Artigo</label><select id="moveStockItem"></select></div>
           <div class="field"><label>Tipo</label><select id="moveStockType"><option value="in">Entrada</option><option value="out">Saída</option><option value="waste">Desperdício</option><option value="adjust">Acerto</option></select></div>
           <div class="field"><label>Quantidade</label><input id="moveStockQty" type="number" step="0.01"></div>
           <div class="field span2"><label>Motivo</label><input id="moveStockNote" placeholder="Opcional"></div>
-          <div class="field"><label>&nbsp;</label><button class="btn primary" onclick="moveStock()">Registar movimento</button></div>
+          <div class="stock-form-actions"><button class="btn primary" onclick="moveStock()">Registar movimento</button></div>
+          <div class="field span2"><div id="moveStockSaveStateV145" class="save-state-v143 neutral"><span>●</span><div><strong>Sem movimentos pendentes</strong><small>Saídas, desperdícios e acertos ficam registados no histórico.</small></div></div></div>
         </div>
       </div>
     </div>
@@ -3367,7 +3431,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 
     <div id="clientsSummary" class="clients-summary"></div>
 
-    <div class="card clients-form-card" style="margin-top:10px">
+    <div class="clients-workspace">
+    <div class="card clients-form-card">
       <div class="clients-form-head">
         <div>
           <div class="section-title" style="margin:0">Novo / editar cliente</div>
@@ -3375,16 +3440,15 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         </div>
       </div>
       <div class="form-grid">
-        <div class="field span2"><label>Nome</label><input id="clientName"></div>
-        <div class="field"><label>Telefone</label><input id="clientPhone"></div>
-        <div class="field"><label>Email</label><input id="clientEmail"></div>
-        <div class="field span2"><label>Notas</label><input id="clientNote" placeholder="Opcional"></div>
-        <div class="field"><label>&nbsp;</label><button class="btn primary" id="clientSaveBtn" onclick="addClient()">Guardar cliente</button></div>
-        <div class="field"><label>&nbsp;</label><button class="btn hidden" id="clientCancelBtn" onclick="cancelClientEdit()">Cancelar edição</button></div>
+        <div class="field span2"><label>Nome</label><input id="clientName" autocomplete="name"></div>
+        <div class="field span2"><label>Telefone</label><input id="clientPhone" type="tel" inputmode="tel" maxlength="20" placeholder="Ex.: 912 345 678"><small class="client-contact-help">Aceita número português com ou sem +351, ou número internacional com indicativo.</small></div>
+        <div class="field span2"><label>Email</label><input id="clientEmail" type="email" autocomplete="email" placeholder="cliente@email.pt"></div>
+        <div class="field span2"><label>Notas</label><textarea id="clientNote" rows="3" placeholder="Preferências, personalizações ou informação útil"></textarea></div>
+        <div class="clients-form-actions"><button class="btn primary" id="clientSaveBtn" onclick="addClient()">Guardar cliente</button><button class="btn hidden" id="clientCancelBtn" onclick="cancelClientEdit()">Cancelar edição</button></div>
       </div>
     </div>
 
-    <div class="card clients-list-card" style="margin-top:10px">
+    <div class="card clients-list-card">
       <div class="clients-list-head">
         <div>
           <div class="section-title" style="margin:0">Lista de clientes</div>
@@ -3392,6 +3456,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         </div>
       </div>
       <div id="clientsCards" class="clients-cards"></div>
+    </div>
     </div>
   </section>
 
@@ -3703,6 +3768,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 </dialog>
 <dialog id="stockDialog" style="border:0;border-radius:20px;padding:0;max-width:820px;width:92%;box-shadow:0 25px 80px rgba(0,0,0,.35)"><div class="card" style="box-shadow:none;border:0"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 id="stockDialogTitle" style="margin:0">Histórico de stock</h2><button class="btn" onclick="stockDialog.close()">Fechar</button></div><div id="stockHistoryDetail" style="margin-top:12px"></div></div></dialog>
 <dialog id="quoteHistoryDialog" style="border:0;border-radius:20px;padding:0;max-width:860px;width:92%;box-shadow:0 25px 80px rgba(0,0,0,.35)"><div class="card" style="box-shadow:none;border:0"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><h2 id="quoteHistoryTitle" style="margin:0">Histórico do orçamento</h2><small>Estados, pagamentos e conversão sem alterar os registos anteriores.</small></div><button class="btn" type="button" onclick="quoteHistoryDialog.close()">Fechar</button></div><div id="quoteHistoryDetail" style="margin-top:12px"></div></div></dialog>
+<dialog id="clientDetailDialog" style="border:0;border-radius:20px;padding:0;max-width:1040px;width:94%;box-shadow:0 25px 80px rgba(0,0,0,.35)"><div class="card" style="box-shadow:none;border:0"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px"><div><h2 id="clientDetailTitle" style="margin:0">Ficha do cliente</h2><small>Dados, atividade comercial e histórico associado.</small></div><button class="btn" type="button" onclick="clientDetailDialog.close()">Fechar</button></div><div id="clientDetailBody" style="margin-top:12px"></div></div></dialog>
 <dialog id="quoteQtyDifferenceDialogV1282" style="border:0;border-radius:20px;padding:0;max-width:620px;width:92%;box-shadow:0 25px 80px rgba(0,0,0,.35)"><div class="card" style="box-shadow:none;border:0"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div><h2 style="margin:0">Quantidade diferente do pedido</h2><small>Confirma que a diferença é intencional antes de guardar.</small></div><button class="btn" type="button" onclick="closeQuoteQtyDifferenceV1282()">Fechar</button></div><div id="quoteQtyDifferenceSummaryV1282" class="soft-note" style="margin-top:14px"></div><div class="field" style="margin-top:14px"><label>Justificação da diferença</label><textarea id="quoteQtyDifferenceReasonV1282" rows="3" maxlength="180" placeholder="Ex.: proposta ajustada após contacto com o cliente"></textarea><small class="muted">Obrigatória para continuar · máximo 180 caracteres.</small></div><div class="btnrow" style="margin-top:14px"><button class="btn" type="button" onclick="correctQuoteEventQtyV1282()">Corrigir</button><button class="btn primary" type="button" onclick="confirmQuoteQtyDifferenceV1282()">Continuar mesmo assim</button></div></div></dialog>
 <dialog id="eventDateDialogV1284" style="border:0;border-radius:20px;padding:0;max-width:560px;width:92%;box-shadow:0 25px 80px rgba(0,0,0,.35)"><div class="card" style="box-shadow:none;border:0"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div><h2 style="margin:0">Alterar data do evento</h2><small id="eventDateDialogSummaryV1284">Atualiza a data indicada pelo cliente.</small></div><button class="btn" type="button" onclick="closeEventDateDialogV1284()">Fechar</button></div><div class="field" style="margin-top:14px"><label>Nova data do evento</label><input id="eventDateInputV1284" type="date"></div><div class="field" style="margin-top:12px"><label>Observação <small>(opcional)</small></label><textarea id="eventDateNoteV1284" rows="3" maxlength="180" placeholder="Ex.: nova data confirmada pelo cliente"></textarea></div><div class="btnrow" style="margin-top:14px"><button class="btn" type="button" onclick="closeEventDateDialogV1284()">Cancelar</button><button class="btn primary" type="button" onclick="saveEventRequestDateV1284()">Guardar nova data</button></div></div></dialog>
 <div id="toast" class="toast"></div>
@@ -3717,7 +3783,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.4.12';
+const APP_VERSION='1.4.16';
 const SEED={"products":[],"minMargin":0.65,"businessName":"ArtEssencia"};
 const KEY='artessencia_v9_app_state', SEC='artessencia_v9_security', LAST='artessencia_v9_last_backup', BACKUP_META='artessencia_v9_backup_meta', RESTORE_SAFETY='artessencia_v9_pre_restore', CLOUD_SAFETY='artessencia_v9_pre_cloud_apply';
 const CLOUD_V91_MIGRATION='artessencia_v1_clean_start', CLOUD_CFG='artessencia_v1_cloud_config', CLOUD_META='artessencia_v1_cloud_meta', CLOUD_TABLE='artessencia_v1_state', CLOUD_SHADOW='artessencia_v1_cloud_shadow', CLOUD_LOG='artessencia_v1_cloud_log', DEVICE_KEY='artessencia_v1_device_id';
@@ -3727,7 +3793,7 @@ const REL_DIRTY='artessencia_v10_rel_dirty',
       REL_ORDER_PENDING='artessencia_v12_order_pending',
       REL_ORDER_SHADOW='artessencia_v12_order_shadow',
       REL_TABLES={clients:'artessencia_v1_clients',products:'artessencia_v1_products',orders:'artessencia_v1_orders',quotes:'artessencia_v1_quotes',sales:'artessencia_v1_sales'};
-let db=load(), cart=[], quoteCart=[], unlocked=true, deferredPrompt=null, idleTimer=null, editingPurchaseId=null, editingCashId=null;
+let db=load(), cart=[], quoteCart=[], unlocked=true, deferredPrompt=null, idleTimer=null, editingPurchaseId=null, editingCashId=null, editingStockIndex=null;
 let cloudClient=null, cloudUser=null, cloudChannel=null, cloudPushTimer=null, cloudApplying=false, cloudBusy=false, cloudConflict=null, cloudStartupDone=false, cloudHydrating=false;
 
 function stableStringify(v){
@@ -4174,27 +4240,46 @@ function dash(){
  return{total,paid,due:Math.max(total-paid,0),cost,profit,margin:total?profit/total:0,pending,stockLow,orders:v.length}
 }
 function normalizePhone(v){return String(v||'').replace(/\D/g,'')}
+function customerPhoneKey(v){
+ const raw=String(v||'').trim(),digits=normalizePhone(raw);
+ if(!digits)return'';
+ if(digits.length===14&&digits.startsWith('00351'))return 'PT:'+digits.slice(5);
+ if(digits.length===12&&digits.startsWith('351'))return 'PT:'+digits.slice(3);
+ if(digits.length===9)return 'PT:'+digits;
+ return 'INT:'+digits
+}
+function validCustomerPhone(v){
+ const raw=String(v||'').trim(),digits=normalizePhone(raw);
+ if(!raw)return false;
+ if(/^\d{9}$/.test(digits))return true;
+ if(/^(?:\+351|00351)\s*[239](?:[\s.-]*\d){8}$/.test(raw))return true;
+ return /^\+\d{7,15}$/.test(raw.replace(/[\s().-]/g,''))
+}
+function validCustomerEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(String(v||'').trim())}
+function customerWhatsAppPhone(v){let d=normalizePhone(v);if(d.startsWith('00'))d=d.slice(2);if(d.length===9)d='351'+d;return d}
 function normText(v){return String(v||'').trim().toLocaleLowerCase('pt-PT').replace(/\s+/g,' ')}
 function ensureClientsFromOrders(){
  db.clients=db.clients||[];
  db.orders.forEach(o=>{
    if(!o.client||o.clientDeleted)return;
-   const phone=normalizePhone(o.contact),mail=String(o.email||'').trim().toLowerCase(),name=String(o.client).trim(),nn=normText(name);
-   let c=db.clients.find(x=>(phone&&normalizePhone(x.phone)===phone)||(mail&&String(x.email||'').trim().toLowerCase()===mail)||(!phone&&!mail&&normText(x.name)===nn));
+   const phone=customerPhoneKey(o.contact),mail=String(o.email||'').trim().toLowerCase(),name=String(o.client).trim(),nn=normText(name);
+   let c=db.clients.find(x=>(phone&&customerPhoneKey(x.phone)===phone)||(mail&&String(x.email||'').trim().toLowerCase()===mail)||(!phone&&!mail&&normText(x.name)===nn));
    if(!c){c={id:uid('CLI'),name,phone:o.contact||'',email:o.email||'',notes:'',created:o.created||todayISO(),source:o.source==='online_store'?'online_store':'order'};db.clients.push(c)}
-   else{if(name)c.name=name;if(!c.phone&&o.contact)c.phone=o.contact;if(!c.email&&o.email)c.email=o.email;if(o.source==='online_store')c.source='online_store'}
+   else{if(!c.name&&name)c.name=name;if(!c.phone&&o.contact)c.phone=o.contact;if(!c.email&&o.email)c.email=o.email;if(o.source==='online_store'&&c.source!=='manual')c.source='online_store'}
    o.clientId=c.id
  })
 }
 function upsertClientFromOrder(name,contact,email=''){
  name=String(name||'').trim();if(!name)return null;db.clients=db.clients||[];
- const phone=normalizePhone(contact),mail=String(email||'').trim().toLowerCase(),nn=normText(name);
- let c=db.clients.find(x=>(phone&&normalizePhone(x.phone)===phone)||(mail&&String(x.email||'').trim().toLowerCase()===mail)||(!phone&&!mail&&normText(x.name)===nn));
- if(c){c.name=name;if(contact)c.phone=contact;if(mail)c.email=mail;return c.id}
+ const phone=customerPhoneKey(contact),mail=String(email||'').trim().toLowerCase(),nn=normText(name);
+ let c=db.clients.find(x=>(phone&&customerPhoneKey(x.phone)===phone)||(mail&&String(x.email||'').trim().toLowerCase()===mail)||(!phone&&!mail&&normText(x.name)===nn));
+ if(c){if(!c.name)c.name=name;if(!c.phone&&contact)c.phone=contact;if(!c.email&&mail)c.email=mail;return c.id}
  c={id:uid('CLI'),name,phone:contact||'',email:mail,notes:'',created:todayISO(),source:'order'};db.clients.push(c);return c.id
 }
 function renderClientSuggestions(){ensureClientsFromOrders();const d=document.getElementById('clientSuggestions');if(d)d.innerHTML=db.clients.slice().sort((a,b)=>a.name.localeCompare(b.name,'pt')).map(c=>`<option value="${String(c.name).replace(/"/g,'&quot;')}">${c.phone||''}</option>`).join('')}
-function fillClientContact(){const n=normText(document.getElementById('saleClient')?.value),c=(db.clients||[]).find(x=>normText(x.name)===n);if(c&&document.getElementById('saleContact'))document.getElementById('saleContact').value=c.phone||''}
+function clientByUniqueName(value){const n=normText(value),rows=(db.clients||[]).filter(x=>normText(x.name)===n);return rows.length===1?rows[0]:null}
+function fillClientContact(){const c=clientByUniqueName(document.getElementById('saleClient')?.value);if(c&&document.getElementById('saleContact'))document.getElementById('saleContact').value=c.phone||''}
+function fillQuoteClientContact(){const c=clientByUniqueName(document.getElementById('quoteClient')?.value);if(!c)return;const p=document.getElementById('quoteContact'),e=document.getElementById('quoteEmail');if(p&&!p.value)p.value=c.phone||'';if(e&&!e.value)e.value=c.email||''}
 function orderMessage(id){
  const o=db.orders.find(x=>x.id===id);if(!o)return'';const c=calcOrder(o),remaining=Math.max(c.total-(+o.paid||0),0),s=db.settings||{};let pay='';
  if(remaining>0){pay=`\nValor a pagar: ${euro(remaining)}.`;if(o.payment==='MB Way'&&s.businessPhone)pay+=`\nMB Way: ${s.businessPhone}`;if(o.payment==='Transferência'&&s.iban)pay+=`\nIBAN: ${s.iban}`;if(s.paymentNote)pay+=`\n${s.paymentNote}`}
@@ -4313,6 +4398,7 @@ function clearSale(){cart=[];$('saleClient').value='';$('saleContact').value='';
 async function saveOrder(){
  if(!$('saleClient').value.trim())return toast('Indique o cliente');
  if(!$('saleContact').value.trim())return toast('Indique o contacto do cliente');
+ if(!validCustomerPhone($('saleContact').value))return toast('Confirma o telefone do cliente: 9 algarismos em Portugal ou número internacional com indicativo');
  if(!cart.length)return toast('Adicione pelo menos um produto');
  if(!$('saleDate').value)return toast('Indique a data de entrega para integrar a encomenda no planeamento de produção');
  const total=cart.reduce((s,x)=>s+(Number(x.qty)||0)*(Number(x.price)||0),0),
@@ -4344,9 +4430,12 @@ async function saveOrder(){
  localStorage.setItem(KEY,JSON.stringify(db));
  localStorage.setItem(REL_DIRTY,'1');
  setCloudMeta({dirty:true,verified:false,conflict:false,localChangedAt:new Date().toISOString()});
- renderOrders();
+ // Atualização reativa local: a encomenda acabada de guardar tem de surgir sem refresh manual.
+ refreshOperationalViewsV1413('order_saved');
  clearSale();
  go('orders');
+ requestAnimationFrame(()=>refreshOperationalViewsV1413('order_saved_after_navigation'));
+ setTimeout(()=>refreshOperationalViewsV1413('order_saved_settled'),80);
  toast('Encomenda '+id+' guardada');
 
  // 2. Depois tentar sincronizar APENAS esta encomenda.
@@ -4959,30 +5048,58 @@ function setStockSaveStateV143(type,title,detail){
  el.className='save-state-v143 '+(type||'neutral');
  el.innerHTML=`<span>${type==='saved'?'✓':type==='error'?'!':'●'}</span><div><strong>${escapeHtml(title)}</strong><small>${escapeHtml(detail||'')}</small></div>`;
 }
+function setMoveStockStateV145(type,title,detail){
+ const el=document.getElementById('moveStockSaveStateV145');if(!el)return;
+ el.className='save-state-v143 '+(type||'neutral');
+ el.innerHTML=`<span>${type==='saved'?'✓':type==='error'?'!':'●'}</span><div><strong>${escapeHtml(title)}</strong><small>${escapeHtml(detail||'')}</small></div>`;
+}
+function resetStockFormV145(message=true){
+ editingStockIndex=null;
+ stockName.value='';stockQty.value='';stockMin.value='';stockUnitCost.value='';stockUnit.value='g';
+ if(document.getElementById('stockTarget'))stockTarget.value='';
+ if(document.getElementById('stockPreferredSupplier'))stockPreferredSupplier.value='';
+ for(const id of ['stockName','stockQty','stockUnit','stockUnitCost']){const el=document.getElementById(id);if(el)el.disabled=false}
+ const reason=document.getElementById('stockEditReasonV145'),reasonField=document.getElementById('stockEditReasonFieldV145');if(reason)reason.value='';if(reasonField)reasonField.classList.add('hidden');
+ const title=document.querySelector('#stock .stock-form-card .section-title'),hint=document.getElementById('stockFormHintV145'),saveBtn=document.getElementById('stockSaveBtnV143'),cancelBtn=document.getElementById('stockCancelBtnV145');
+ if(title)title.textContent='Criar matéria-prima';if(hint)hint.textContent='Quantidade e custo iniciais podem ser definidos apenas na criação.';if(saveBtn)saveBtn.textContent='Guardar matéria-prima';if(cancelBtn)cancelBtn.classList.add('hidden');
+ if(message)setStockSaveStateV143('neutral','Pronto para registar','Depois de guardar, o formulário será limpo automaticamente.')
+}
+function cancelStockEditV145(){resetStockFormV145(true);toast('Edição cancelada')}
 function addStock(){
  const n=stockName.value.trim();if(!n){setStockSaveStateV143('error','Falta o nome','Indique a matéria-prima antes de guardar.');return toast('Indique a matéria-prima')}
  const targetRaw=String(document.getElementById('stockTarget')?.value||'').trim();
- const ex=db.stock.find(x=>x.name.toLowerCase()===n.toLowerCase()),isEdit=!!ex,o={name:n,qty:+stockQty.value||0,unit:normalizeBaseUnitV120(stockUnit.value),min:+stockMin.value||0,target:targetRaw===''?null:(+targetRaw||0),unitCost:+stockUnitCost.value||0,preferredSupplier:String(document.getElementById('stockPreferredSupplier')?.value||'').trim()};
- ex?Object.assign(ex,o):db.stock.push(o);save();
- stockName.value='';stockQty.value='';stockMin.value='';stockUnitCost.value='';
- if(document.getElementById('stockTarget'))stockTarget.value='';
- if(document.getElementById('stockPreferredSupplier'))stockPreferredSupplier.value='';
- stockUnit.value='g';
- setStockSaveStateV143('saved',isEdit?'Alterações guardadas':'Matéria-prima guardada com sucesso',n+' · formulário limpo e pronto para novo registo.');
- toast(isEdit?'Alterações guardadas':'Matéria-prima guardada com sucesso')
+ const qty=Number(stockQty.value||0),min=Number(stockMin.value||0),target=targetRaw===''?null:Number(targetRaw),unitCost=Number(stockUnitCost.value||0),supplier=String(document.getElementById('stockPreferredSupplier')?.value||'').trim();
+ if(!Number.isFinite(qty)||qty<0||!Number.isFinite(min)||min<0||target!=null&&(!Number.isFinite(target)||target<0)||!Number.isFinite(unitCost)||unitCost<0){setStockSaveStateV143('error','Valores inválidos','Quantidade, mínimos, alvo e custo não podem ser negativos.');return toast('Confirma os valores da matéria-prima')}
+ if(target!=null&&target<min){setStockSaveStateV143('error','Stock alvo inválido','O stock alvo não pode ser inferior ao stock mínimo.');return toast('O stock alvo deve ser igual ou superior ao mínimo')}
+ if(editingStockIndex!=null){
+   const current=db.stock[editingStockIndex];if(!current){resetStockFormV145();return toast('A matéria-prima já não existe')}
+   const beforeQty=Number(current.qty)||0,beforeCost=Number(current.unitCost)||0,changedQty=Math.abs(qty-beforeQty)>1e-9,changedCost=Math.abs(unitCost-beforeCost)>1e-12,reason=String(document.getElementById('stockEditReasonV145')?.value||'').trim();
+   if((changedQty||changedCost)&&!reason){setStockSaveStateV143('error','Falta justificar a correção','Indique o motivo para alterar quantidade ou custo.');return toast('Indique o motivo da correção')}
+   db.stockMoves=db.stockMoves||[];
+   if(changedQty)db.stockMoves.push({date:new Date().toISOString(),item:current.name,type:'adjust',qty,note:'Correção manual: '+reason,beforeQty,afterQty:qty,delta:qty-beforeQty});
+   if(changedCost)db.stockMoves.push({date:new Date().toISOString(),item:current.name,type:'cost_adjustment',qty:0,note:'Correção de custo: '+reason,previousUnitCost:beforeCost,newUnitCost:unitCost,beforeQty:qty,afterQty:qty,delta:0});
+   current.qty=qty;current.unitCost=unitCost;current.min=min;current.target=target;current.preferredSupplier=supplier;save();resetStockFormV145(false);setStockSaveStateV143('saved','Alterações guardadas',n+' · correções de quantidade/custo registadas no histórico.');return toast('Alterações guardadas')
+ }
+ if(db.stock.some(x=>String(x.name||'').trim().toLowerCase()===n.toLowerCase())){setStockSaveStateV143('error','Matéria-prima já existente','Use o botão Editar na lista para alterar os dados.');return toast('Esta matéria-prima já existe — utilize Editar')}
+ const o={name:n,qty,unit:normalizeBaseUnitV120(stockUnit.value),min,target,unitCost,preferredSupplier:supplier};db.stock.push(o);
+ if(qty>0){db.stockMoves=db.stockMoves||[];db.stockMoves.push({date:new Date().toISOString(),item:n,type:'initial',qty,note:'Saldo inicial',beforeQty:0,afterQty:qty,delta:qty})}
+ save();resetStockFormV145(false);setStockSaveStateV143('saved','Matéria-prima guardada com sucesso',n+' · formulário limpo e pronto para novo registo.');toast('Matéria-prima guardada com sucesso')
 }
 function refreshStockSelectors(){
  const opts='<option value="">Selecionar…</option>'+db.stock.map(x=>`<option value="${x.name}">${x.name}</option>`).join('');
  if(document.getElementById('moveStockItem'))moveStockItem.innerHTML=opts;if(document.getElementById('purchaseItem'))purchaseItem.innerHTML=opts
 }
 function moveStock(){
- const n=moveStockItem.value,q=Number(moveStockQty.value)||0;if(!n||q<=0)return toast('Selecione artigo e indique uma quantidade superior a zero');
+ const n=moveStockItem.value,q=Number(moveStockQty.value),t=moveStockType.value,note=String(moveStockNote.value||'').trim();
+ if(!n||!Number.isFinite(q)||q<0||(t!=='adjust'&&q<=0)){setMoveStockStateV145('error','Movimento inválido',t==='adjust'?'Selecione o artigo e indique um valor igual ou superior a zero.':'Selecione o artigo e indique uma quantidade superior a zero.');return toast('Confirma o artigo e a quantidade')}
  const x=db.stock.find(s=>s.name===n);if(!x)return;
- const t=moveStockType.value;if(t==='out'&&q>(Number(x.qty)||0))return toast('Stock insuficiente: disponível '+(Number(x.qty)||0)+' '+x.unit);if(t==='adjust'&&q<0)return toast('O stock ajustado não pode ser negativo');
- if(t==='in')x.qty=(Number(x.qty)||0)+q;else if(t==='adjust')x.qty=q;else x.qty=(Number(x.qty)||0)-q;
- db.stockMoves.push({date:new Date().toISOString(),item:n,type:t,qty:q,note:moveStockNote.value});
- save();moveStockQty.value='';moveStockNote.value='';toast('Movimento registado')
+ if(['out','waste','adjust'].includes(t)&&!note){setMoveStockStateV145('error','Falta o motivo','Indique a razão da saída, desperdício ou acerto.');return toast('Indique o motivo do movimento')}
+ const before=Number(x.qty)||0;if(['out','waste'].includes(t)&&q>before){setMoveStockStateV145('error','Stock insuficiente','Disponível: '+before.toLocaleString('pt-PT')+' '+x.unit);return toast('Stock insuficiente: disponível '+before+' '+x.unit)}
+ const after=t==='in'?before+q:t==='adjust'?q:before-q;x.qty=after;
+ db.stockMoves.push({date:new Date().toISOString(),item:n,type:t,qty:q,note,beforeQty:before,afterQty:after,delta:after-before});
+ save();moveStockQty.value='';moveStockNote.value='';setMoveStockStateV145('saved','Movimento registado',n+' · '+before.toLocaleString('pt-PT')+' → '+after.toLocaleString('pt-PT')+' '+x.unit);toast('Movimento registado')
 }
+function formatUnitCostV145(value,unit=''){const n=Math.max(0,Number(value)||0);return n.toLocaleString('pt-PT',{minimumFractionDigits:n>0&&n<.01?4:2,maximumFractionDigits:6})+' €'+(unit?'/'+unit:'')}
 function stockTargetValueV135(x){const min=Math.max(0,Number(x?.min)||0),saved=Number(x?.target);return Number.isFinite(saved)&&saved>0?saved:(min>0?min*2:0)}
 function stockRecommendedBuyV135(x){const qty=Math.max(0,Number(x?.qty)||0),target=stockTargetValueV135(x);return Math.max(0,target-qty)}
 function renderStock(){
@@ -5024,7 +5141,7 @@ function renderStock(){
      <td>${min.toLocaleString('pt-PT')}</td>
      <td>${target?target.toLocaleString('pt-PT'):'—'}</td>
      <td><strong>${recommended>0?recommended.toLocaleString('pt-PT')+' '+escapeHtml(x.unit||''):'—'}</strong></td>
-     <td>${euro(x.unitCost||0)}</td>
+     <td>${formatUnitCostV145(x.unitCost||0,x.unit||'')}</td>
      <td>${euro(qty*(Number(x.unitCost)||0))}</td>
      <td>${qty<=min?`<button class="badge ${cls} stock-status-btn" onclick="stockGoPurchase(${i})">${status}</button>`:`<span class="badge ${cls}">${status}</span>`}</td>
      <td><div class="stock-actions"><button class="btn" onclick="loadStock(${i})">Editar</button><button class="btn" onclick="showStockHistory(${i})">Histórico</button></div></td>
@@ -5058,8 +5175,16 @@ function stockGoPurchase(i){
    toast('Compra preparada: '+x.name+(rec>0?' · '+rec.toLocaleString('pt-PT')+' '+(x.unit||''):'') );
  },80);
 }
-function showStockHistory(i){const x=db.stock[i];if(!x)return;const moves=[];(db.purchases||[]).filter(p=>p.item===x.name).forEach(p=>moves.push({date:p.date||'',type:(p.status||'received')==='ordered'?'Compra encomendada':'Compra recebida',qty:Number(p.qty)||0,note:[p.supplier?('Fornecedor: '+p.supplier):'',Number.isFinite(Number(p.previousAvgUnitCost))?('Custo médio: '+euro(p.previousAvgUnitCost)+' → '+euro(p.newAvgUnitCost)):'' ].filter(Boolean).join(' · '),value:Number(p.total)||0}));(db.stockMoves||[]).filter(m=>m.item===x.name).forEach(m=>{let note=m.note||'';if(m.type==='production'){const run=(db.productionRuns||[]).find(r=>r.id===m.productionRunId),ids=(Array.isArray(m.orderIds)&&m.orderIds.length?m.orderIds:(run?.orders||[]));if(ids.length){const label=ids.length===1?'Encomenda '+ids[0]:'Encomendas '+ids.join(', ');if(!note.includes(ids[0]))note=(note?note+' · ':'')+label}}moves.push({date:String(m.date||'').slice(0,10),type:m.type==='production'?'Produção':m.type==='in'?'Entrada':m.type==='out'?'Saída':m.type==='waste'?'Desperdício':'Ajuste',qty:Number(m.qty)||0,note,value:null})});moves.sort((a,b)=>(b.date||'').localeCompare(a.date||''));stockDialogTitle.textContent='Histórico - '+x.name;stockHistoryDetail.innerHTML=`<div class="totalbox"><div class="mini"><span>Stock atual</span><strong>${Number(x.qty||0).toLocaleString('pt-PT')} ${x.unit}</strong></div><div class="mini"><span>Stock alvo</span><strong>${stockTargetValueV135(x)?stockTargetValueV135(x).toLocaleString('pt-PT')+' '+x.unit:'—'}</strong></div><div class="mini"><span>Custo/base</span><strong>${euro(x.unitCost||0)}</strong></div><div class="mini"><span>Valor stock</span><strong>${euro((Number(x.qty)||0)*(Number(x.unitCost)||0))}</strong></div><div class="mini"><span>Fornecedor</span><strong>${escapeHtml(x.preferredSupplier||'—')}</strong></div><div class="mini"><span>Movimentos</span><strong>${moves.length}</strong></div></div><div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>Data</th><th>Tipo</th><th>Quantidade</th><th>Valor</th><th>Nota</th></tr></thead><tbody>${moves.length?moves.map(m=>`<tr><td>${m.date||'—'}</td><td>${m.type}</td><td>${m.qty.toLocaleString('pt-PT')} ${x.unit}</td><td>${m.value==null?'—':euro(m.value)}</td><td>${m.note||'—'}</td></tr>`).join(''):'<tr><td colspan="5" class="empty">Sem movimentos registados.</td></tr>'}</tbody></table></div>`;stockDialog.showModal()}
-function loadStock(i){const x=db.stock[i];stockName.value=x.name;stockQty.value=x.qty;stockUnit.value=x.unit;stockMin.value=x.min;stockUnitCost.value=x.unitCost||0;if(document.getElementById('stockTarget'))stockTarget.value=x.target??'';if(document.getElementById('stockPreferredSupplier'))stockPreferredSupplier.value=x.preferredSupplier||'';window.scrollTo({top:0,behavior:'smooth'})}
+function showStockHistory(i){const x=db.stock[i];if(!x)return;const moves=[];(db.purchases||[]).filter(p=>p.item===x.name).forEach(p=>moves.push({date:p.date||'',type:(p.status||'received')==='ordered'?'Compra encomendada':'Compra recebida',qty:Number(p.qty)||0,note:[p.supplier?('Fornecedor: '+p.supplier):'',Number.isFinite(Number(p.previousAvgUnitCost))?('Custo médio: '+euro(p.previousAvgUnitCost)+' → '+euro(p.newAvgUnitCost)):'' ].filter(Boolean).join(' · '),value:Number(p.total)||0}));(db.stockMoves||[]).filter(m=>m.item===x.name).forEach(m=>{let note=m.note||'';if(m.type==='production'){const run=(db.productionRuns||[]).find(r=>r.id===m.productionRunId),ids=(Array.isArray(m.orderIds)&&m.orderIds.length?m.orderIds:(run?.orders||[]));if(ids.length){const label=ids.length===1?'Encomenda '+ids[0]:'Encomendas '+ids.join(', ');if(!note.includes(ids[0]))note=(note?note+' · ':'')+label}}moves.push({date:String(m.date||'').slice(0,10),type:m.type==='production'?'Produção':m.type==='in'?'Entrada':m.type==='out'?'Saída':m.type==='waste'?'Desperdício':m.type==='initial'?'Saldo inicial':m.type==='cost_adjustment'?'Correção custo':'Acerto',qty:Number(m.qty)||0,note,value:null,beforeQty:m.beforeQty,afterQty:m.afterQty,previousUnitCost:m.previousUnitCost,newUnitCost:m.newUnitCost})});moves.sort((a,b)=>(b.date||'').localeCompare(a.date||''));stockDialogTitle.textContent='Histórico - '+x.name;stockHistoryDetail.innerHTML=`<div class="totalbox"><div class="mini"><span>Stock atual</span><strong>${Number(x.qty||0).toLocaleString('pt-PT')} ${x.unit}</strong></div><div class="mini"><span>Stock alvo</span><strong>${stockTargetValueV135(x)?stockTargetValueV135(x).toLocaleString('pt-PT')+' '+x.unit:'—'}</strong></div><div class="mini"><span>Custo/base</span><strong>${formatUnitCostV145(x.unitCost||0,x.unit||'')}</strong></div><div class="mini"><span>Valor stock</span><strong>${euro((Number(x.qty)||0)*(Number(x.unitCost)||0))}</strong></div><div class="mini"><span>Fornecedor</span><strong>${escapeHtml(x.preferredSupplier||'—')}</strong></div><div class="mini"><span>Movimentos</span><strong>${moves.length}</strong></div></div><div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>Data</th><th>Tipo</th><th>Quantidade</th><th>Valor</th><th>Nota</th></tr></thead><tbody>${moves.length?moves.map(m=>`<tr><td>${m.date||'—'}</td><td>${m.type}</td><td>${m.type==='Correção custo'?formatUnitCostV145(m.previousUnitCost,x.unit)+' → '+formatUnitCostV145(m.newUnitCost,x.unit):m.type==='Acerto'&&Number.isFinite(Number(m.beforeQty))?Number(m.beforeQty).toLocaleString('pt-PT')+' → '+Number(m.afterQty).toLocaleString('pt-PT')+' '+x.unit:m.qty.toLocaleString('pt-PT')+' '+x.unit}</td><td>${m.value==null?'—':euro(m.value)}</td><td>${m.note||'—'}</td></tr>`).join(''):'<tr><td colspan="5" class="empty">Sem movimentos registados.</td></tr>'}</tbody></table></div>`;stockDialog.showModal()}
+function loadStock(i){
+ const x=db.stock[i];if(!x)return toast('Matéria-prima não encontrada');
+ editingStockIndex=i;stockName.value=x.name;stockQty.value=x.qty;stockUnit.value=x.unit;stockMin.value=x.min;stockUnitCost.value=x.unitCost||0;
+ if(document.getElementById('stockTarget'))stockTarget.value=x.target??'';if(document.getElementById('stockPreferredSupplier'))stockPreferredSupplier.value=x.preferredSupplier||'';
+ for(const id of ['stockName','stockUnit']){const el=document.getElementById(id);if(el)el.disabled=true}
+ const title=document.querySelector('#stock .stock-form-card .section-title'),hint=document.getElementById('stockFormHintV145'),saveBtn=document.getElementById('stockSaveBtnV143'),cancelBtn=document.getElementById('stockCancelBtnV145'),reasonField=document.getElementById('stockEditReasonFieldV145');
+ if(title)title.textContent='Editar matéria-prima';if(hint)hint.textContent='Nome e unidade ficam protegidos. Alterações de quantidade/custo exigem justificação.';if(saveBtn)saveBtn.textContent='Guardar alterações';if(cancelBtn)cancelBtn.classList.remove('hidden');if(reasonField)reasonField.classList.remove('hidden');
+ setStockSaveStateV143('dirty','Edição em curso',x.name+' · correções de quantidade/custo ficarão no histórico.');document.getElementById('stock')?.scrollIntoView({behavior:'smooth',block:'start'})
+}
 function addCash(){
  const v=+cashValue.value||0;if(!v)return toast('Indique o valor');
  if(editingCashId){const x=db.cash.find(x=>x.id===editingCashId);if(!x)return cancelCashEdit();Object.assign(x,{date:cashDate.value||todayISO(),type:cashType.value,desc:cashDesc.value.trim(),method:cashMethod.value,value:v});toast('Movimento corrigido')}
@@ -5144,7 +5269,9 @@ function renderClients(){
    const relatedQuotes=quotes.filter(q=>q.clientId===c.id||(!q.clientId&&String(q.client||'').trim().toLowerCase()===cname));
    const commercial=related.filter(o=>completed(o));
    const spent=commercial.reduce((s,o)=>s+(Number(calcOrder(o).total)||0),0);
-   const paid=commercial.reduce((s,o)=>s+Math.min(Math.max(Number(o.paid)||0,0),Number(calcOrder(o).total)||0),0);
+   const orderPaid=commercial.reduce((s,o)=>s+Math.min(Math.max(Number(o.paid)||0,0),Number(calcOrder(o).total)||0),0);
+   const quotePaid=relatedQuotes.filter(q=>!q.orderId).reduce((s,q)=>s+Math.max(0,Number(q.depositPaid)||0),0);
+   const paid=orderPaid+quotePaid;
    const due=commercial.reduce((s,o)=>s+Math.max(0,(Number(calcOrder(o).total)||0)-Math.max(0,Number(o.paid)||0)),0);
    const activeQuotes=relatedQuotes.filter(q=>!q.orderId&&!['Recusado','Expirado'].includes(q.status));
    return {c,i,related,relatedQuotes,activeQuotes,commercial,spent,paid,due};
@@ -5172,7 +5299,7 @@ function renderClients(){
  const filter=document.getElementById('clientOrderFilter')?.value||'all';
  const rows=stats.filter(x=>{
    const c=x.c||{};
-   const matchQ=!q||[c.name,c.phone,c.email,c.note].some(v=>String(v||'').toLowerCase().includes(q));
+   const matchQ=!q||[c.name,c.phone,c.email,c.note||c.notes].some(v=>String(v||'').toLowerCase().includes(q));
    const matchF=filter==='all'||(filter==='with'&&x.related.length>0)||(filter==='without'&&!x.related.length);
    return matchQ&&matchF;
  });
@@ -5190,7 +5317,7 @@ function renderClients(){
        <div class="client-info">
          <strong>${escapeHtml(c.name||'Sem nome')}</strong>
          <small>${escapeHtml(c.phone||'Sem telefone')}${c.email?' · '+escapeHtml(c.email):''}</small>
-         ${c.note?`<span>${escapeHtml(c.note)}</span>`:''}
+         ${(c.note||c.notes)?`<span>${escapeHtml(c.note||c.notes)}</span>`:''}
        </div>
        <div class="client-metrics">
          <div><small>Encomendas</small><strong>${related.length}</strong></div>
@@ -5203,13 +5330,55 @@ function renderClients(){
      <div class="client-card-foot">
        <span>${last?`Última encomenda: ${escapeHtml(last.delivery||last.created||'—')}`:'Sem encomendas'}${relatedQuotes.length?` · ${relatedQuotes.length} orçamento(s) no histórico`:''}</span>
        <div class="client-actions">
+         <button class="btn primary" onclick="showClientDetail('${c.id}')">Ver ficha</button>
+         <button class="btn" onclick="startOrderForClient('${c.id}')">Nova encomenda</button>
          <button class="btn" onclick="editClient('${c.id}')">Editar</button>
-         ${c.phone?`<button class="btn" onclick="window.open('https://wa.me/${String(c.phone).replace(/\D/g,'')}','_blank')">WhatsApp</button>`:''}
+         ${c.phone?`<button class="btn" onclick="window.open('https://wa.me/${customerWhatsAppPhone(c.phone)}','_blank')">WhatsApp</button>`:''}
          <button class="btn danger" onclick="deleteClient('${c.id}')">Eliminar definitivamente</button>
        </div>
      </div>
    </div>`;
  }).join(''):'<div class="empty">Sem clientes</div>';
+}
+
+function showClientDetail(id){
+ const c=(db.clients||[]).find(x=>x.id===id);if(!c)return toast('Cliente não encontrado');
+ const cname=normText(c.name),phone=customerPhoneKey(c.phone),mail=String(c.email||'').trim().toLowerCase();
+ const orders=(db.orders||[]).filter(o=>o.clientId===c.id||(!o.clientId&&((phone&&customerPhoneKey(o.contact)===phone)||(mail&&String(o.email||'').trim().toLowerCase()===mail)||(!phone&&!mail&&normText(o.client)===cname))));
+ const quotes=(db.quotes||[]).filter(q=>q.clientId===c.id||(!q.clientId&&((phone&&customerPhoneKey(q.contact)===phone)||(mail&&String(q.email||'').trim().toLowerCase()===mail)||(!phone&&!mail&&normText(q.client)===cname))));
+ const validOrders=orders.filter(completed),delivered=validOrders.filter(o=>o.status==='Entregue');
+ const ordered=validOrders.reduce((s,o)=>s+(Number(calcOrder(o).total)||0),0);
+ const bought=delivered.reduce((s,o)=>s+(Number(calcOrder(o).total)||0),0);
+ const orderPaid=validOrders.reduce((s,o)=>s+Math.min(Math.max(Number(o.paid)||0,0),Number(calcOrder(o).total)||0),0);
+ const quotePaid=quotes.filter(q=>!q.orderId).reduce((s,q)=>s+Math.max(0,Number(q.depositPaid)||0),0);
+ const received=orderPaid+quotePaid;
+ const due=validOrders.reduce((s,o)=>s+Math.max(0,(Number(calcOrder(o).total)||0)-Math.max(0,Number(o.paid)||0)),0);
+ const last=orders.slice().sort((a,b)=>String(b.created||b.delivery||'').localeCompare(String(a.created||a.delivery||'')))[0];
+ const products=new Map();
+ delivered.forEach(o=>(o.items||[]).forEach(i=>{const key=String(i.code||i.name||'Produto'),old=products.get(key)||{name:i.name||i.code||'Produto',qty:0,value:0};old.qty+=Number(i.qty)||0;old.value+=(Number(i.qty)||0)*(Number(i.price)||0);products.set(key,old)}));
+ const history=[];
+ orders.forEach(o=>{history.push({date:o.created||o.delivery||'',type:'Encomenda',ref:o.id||'—',detail:(o.status||'Pedido')+' · '+euro(calcOrder(o).total)});(o.paymentHistory||[]).forEach(p=>history.push({date:p.date||o.created||'',type:'Pagamento',ref:o.id||'—',detail:euro(p.amount||0)+' · '+(p.method||o.payment||'Outro')}))});
+ quotes.forEach(q=>{history.push({date:q.created||q.eventDate||'',type:'Orçamento',ref:q.id||'—',detail:(q.orderId?'Convertido':(q.status||'Rascunho'))+' · '+euro(quoteCalc(q).total)});if(!q.orderId)(q.paymentHistory||[]).forEach(p=>history.push({date:p.date||q.created||'',type:'Pagamento orçamento',ref:q.id||'—',detail:euro(p.amount||0)+' · '+(p.method||q.paymentMethod||'Outro')}))});
+ history.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+ document.getElementById('clientDetailTitle').textContent='Ficha · '+(c.name||'Cliente');
+ document.getElementById('clientDetailBody').innerHTML=`
+  <div class="client-detail-grid">
+   <div class="mini"><span>Encomendado</span><strong>${euro(ordered)}</strong></div>
+   <div class="mini"><span>Comprado / entregue</span><strong>${euro(bought)}</strong></div>
+   <div class="mini"><span>Recebido</span><strong>${euro(received)}</strong></div>
+   <div class="mini"><span>Por receber</span><strong>${euro(due)}</strong></div>
+   <div class="mini"><span>Última encomenda</span><strong>${escapeHtml(last?(last.delivery||last.created||'—'):'—')}</strong></div>
+  </div>
+  <div class="card" style="margin-top:10px;padding:11px"><strong>${escapeHtml(c.name||'Sem nome')}</strong><div style="margin-top:5px;font-size:9px;line-height:1.6">Telefone: ${escapeHtml(c.phone||'—')} · Email: ${escapeHtml(c.email||'—')}<br>Notas: ${escapeHtml(c.note||c.notes||'—')}</div><div class="btnrow" style="margin-top:8px"><button class="btn primary" onclick="clientDetailDialog.close();startOrderForClient('${c.id}')">Nova encomenda</button><button class="btn" onclick="clientDetailDialog.close();editClient('${c.id}')">Editar cliente</button></div></div>
+  <div class="client-detail-columns">
+   <div class="client-detail-section"><h3>Encomendas</h3><div class="tablewrap"><table><thead><tr><th>N.º</th><th>Data</th><th>Estado</th><th>Total</th><th>Recebido</th></tr></thead><tbody>${orders.length?orders.slice().sort((a,b)=>String(b.created||'').localeCompare(String(a.created||''))).map(o=>`<tr><td>${escapeHtml(o.id||'—')}</td><td>${escapeHtml(o.delivery||o.created||'—')}</td><td>${escapeHtml(o.status||'Pedido')}</td><td>${euro(calcOrder(o).total)}</td><td>${euro(Math.max(0,Number(o.paid)||0))}</td></tr>`).join(''):'<tr><td colspan="5" class="empty">Sem encomendas.</td></tr>'}</tbody></table></div></div>
+   <div class="client-detail-section"><h3>Orçamentos</h3><div class="tablewrap"><table><thead><tr><th>N.º</th><th>Evento</th><th>Estado</th><th>Total</th></tr></thead><tbody>${quotes.length?quotes.slice().sort((a,b)=>String(b.created||'').localeCompare(String(a.created||''))).map(q=>`<tr><td>${escapeHtml(q.id||'—')}</td><td>${escapeHtml(q.eventDate||'—')}</td><td>${escapeHtml(q.orderId?'Convertido':(q.status||'Rascunho'))}</td><td>${euro(quoteCalc(q).total)}</td></tr>`).join(''):'<tr><td colspan="4" class="empty">Sem orçamentos.</td></tr>'}</tbody></table></div></div>
+  </div>
+  <div class="client-detail-columns">
+   <div class="client-detail-section"><h3>Produtos comprados</h3><div class="client-product-list">${products.size?[...products.values()].sort((a,b)=>b.qty-a.qty).map(p=>`<div class="client-product-row"><strong>${escapeHtml(p.name)}</strong><span>${p.qty.toLocaleString('pt-PT')} un.</span><span>${euro(p.value)}</span></div>`).join(''):'<div class="empty">Ainda não existem produtos entregues.</div>'}</div></div>
+   <div class="client-detail-section"><h3>Histórico relevante</h3><div class="tablewrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Registo</th><th>Detalhe</th></tr></thead><tbody>${history.length?history.map(x=>`<tr><td>${escapeHtml(String(x.date||'').slice(0,16).replace('T',' '))}</td><td>${escapeHtml(x.type)}</td><td>${escapeHtml(x.ref)}</td><td>${escapeHtml(x.detail)}</td></tr>`).join(''):'<tr><td colspan="4" class="empty">Sem atividade.</td></tr>'}</tbody></table></div></div>
+  </div>`;
+ document.getElementById('clientDetailDialog').showModal()
 }
 
 
@@ -5243,10 +5412,13 @@ function addClient(){
  const email=(document.getElementById('clientEmail')?.value||'').trim();
  const note=(document.getElementById('clientNote')?.value||'').trim();
  if(!name)return toast('Indica o nome do cliente');
+ if(!phone&&!email)return toast('Indica pelo menos um telefone ou email');
+ if(phone&&!validCustomerPhone(phone))return toast('Confirma o telefone: 9 algarismos em Portugal ou número internacional com indicativo');
+ if(email&&!validCustomerEmail(email))return toast('Confirma o endereço de email');
 
  db.clients=db.clients||[];
- const normPhone=normalizePhone(phone), normMail=email.toLowerCase();
- const duplicate=db.clients.find(c=>c.id!==editingClientId&&((normPhone&&normalizePhone(c.phone)===normPhone)||(normMail&&String(c.email||'').trim().toLowerCase()===normMail)));
+ const normPhone=customerPhoneKey(phone), normMail=email.toLowerCase();
+ const duplicate=db.clients.find(c=>c.id!==editingClientId&&((normPhone&&customerPhoneKey(c.phone)===normPhone)||(normMail&&String(c.email||'').trim().toLowerCase()===normMail)));
  if(duplicate)return toast('Já existe um cliente com este telefone ou email');
 
  if(editingClientId){
@@ -5391,7 +5563,7 @@ function repairDuplicateManualOrdersV1412(d){
  });
  return d;
 }
-function normalizeImportedDb(d){d=d&&typeof d==='object'?d:{};d.settings=d.settings&&typeof d.settings==='object'&&!Array.isArray(d.settings)?d.settings:{};if(d.settings.minMargin==null)d.settings.minMargin=.65;if(d.settings.laborRate==null)d.settings.laborRate=8;if(d.settings.wasteRate==null)d.settings.wasteRate=.10;if(d.settings.electricityRate==null)d.settings.electricityRate=.20;if(d.settings.equipmentWearRate==null)d.settings.equipmentWearRate=0;if(d.settings.consumablesHourlyRate==null)d.settings.consumablesHourlyRate=0;d.settings.businessName=d.settings.businessName||SEED.businessName;d.settings.businessLegalName=d.settings.businessLegalName||'';d.settings.businessTaxId=d.settings.businessTaxId||'';d.settings.businessPhone=d.settings.businessPhone||'';d.settings.businessEmail=d.settings.businessEmail||'';d.settings.businessAddress=d.settings.businessAddress||'';d.settings.businessPostalCode=d.settings.businessPostalCode||'';d.settings.businessLocation=d.settings.businessLocation||'';d.settings.iban=d.settings.iban||'';d.settings.paymentNote=d.settings.paymentNote||'';delete d.settings.yield;delete d.settings.baseRecipeV12812;for(const k of ['orders','clients','quotes','purchases','cash','stockMoves','productionRuns','themedBoxes'])if(!Array.isArray(d[k]))d[k]=[];if(!Array.isArray(d.products))d.products=[];if(!Array.isArray(d.stock))d.stock=[];repairDuplicateManualOrdersV1412(d);if(!Array.isArray(d.packaging)||!d.packaging.length)d.packaging=[{name:'Caixa pequena',capacity:2,cost:0},{name:'Caixa média',capacity:4,cost:0},{name:'Caixa presente',capacity:6,cost:0},{name:'Saco kraft',capacity:3,cost:0}];d.quotes=(d.quotes||[]);d.quotes.forEach(q=>{if(!q.box)q.box=d.packaging[0]?.name||''});d.orders.forEach(o=>{o.items=Array.isArray(o.items)?o.items:[];o.paymentHistory=Array.isArray(o.paymentHistory)?o.paymentHistory:[];if(o.status==='Confirmado')o.status='Confirmada';if(o.source==='online_store')ensureOnlineOrderCostSnapshotV12644(o,d);});d.quotes.forEach(q=>{q.items=Array.isArray(q.items)?q.items:[];q.paymentHistory=Array.isArray(q.paymentHistory)?q.paymentHistory:[];if(q.box==null)q.box='';if(!q.boxes)q.boxes=1});
+function normalizeImportedDb(d){d=d&&typeof d==='object'?d:{};d.settings=d.settings&&typeof d.settings==='object'&&!Array.isArray(d.settings)?d.settings:{};if(d.settings.minMargin==null)d.settings.minMargin=.65;if(d.settings.laborRate==null)d.settings.laborRate=8;if(d.settings.wasteRate==null)d.settings.wasteRate=.10;if(d.settings.electricityRate==null)d.settings.electricityRate=.20;if(d.settings.equipmentWearRate==null)d.settings.equipmentWearRate=0;if(d.settings.consumablesHourlyRate==null)d.settings.consumablesHourlyRate=0;d.settings.businessName=d.settings.businessName||SEED.businessName;d.settings.businessLegalName=d.settings.businessLegalName||'';d.settings.businessTaxId=d.settings.businessTaxId||'';d.settings.businessPhone=d.settings.businessPhone||'';d.settings.businessEmail=d.settings.businessEmail||'';d.settings.businessAddress=d.settings.businessAddress||'';d.settings.businessPostalCode=d.settings.businessPostalCode||'';d.settings.businessLocation=d.settings.businessLocation||'';d.settings.iban=d.settings.iban||'';d.settings.paymentNote=d.settings.paymentNote||'';delete d.settings.yield;delete d.settings.baseRecipeV12812;for(const k of ['orders','clients','quotes','purchases','cash','stockMoves','productionRuns','themedBoxes'])if(!Array.isArray(d[k]))d[k]=[];if(!Array.isArray(d.products))d.products=[];if(!Array.isArray(d.stock))d.stock=[];d.clients.forEach(c=>{const note=String(c?.note??c?.notes??'');c.note=note;c.notes=note});repairDuplicateManualOrdersV1412(d);if(!Array.isArray(d.packaging)||!d.packaging.length)d.packaging=[{name:'Caixa pequena',capacity:2,cost:0},{name:'Caixa média',capacity:4,cost:0},{name:'Caixa presente',capacity:6,cost:0},{name:'Saco kraft',capacity:3,cost:0}];d.quotes=(d.quotes||[]);d.quotes.forEach(q=>{if(!q.box)q.box=d.packaging[0]?.name||''});d.orders.forEach(o=>{o.items=Array.isArray(o.items)?o.items:[];o.paymentHistory=Array.isArray(o.paymentHistory)?o.paymentHistory:[];if(o.status==='Confirmado')o.status='Confirmada';if(o.source==='online_store')ensureOnlineOrderCostSnapshotV12644(o,d);});d.quotes.forEach(q=>{q.items=Array.isArray(q.items)?q.items:[];q.paymentHistory=Array.isArray(q.paymentHistory)?q.paymentHistory:[];if(q.box==null)q.box='';if(!q.boxes)q.boxes=1});
  d.stock.forEach(x=>{if(x.target===undefined)x.target=null;if(x.preferredSupplier==null)x.preferredSupplier='';x.unit=normalizeBaseUnitV120(x.unit||'un')||'un'});
  d.products.forEach(p=>{if(!Array.isArray(p.editionIds))p.editionIds=p.editionId?[p.editionId]:[];p.editionIds=[...new Set(p.editionIds.filter(Boolean).map(String))];p.editionId=p.editionIds[0]||'';if(p.manufactured==null)p.manufactured=true});
  if(!d.productRecipes||typeof d.productRecipes!=='object'||Array.isArray(d.productRecipes))d.productRecipes={};
@@ -6848,7 +7020,7 @@ function refreshProductTechSheetBridgeV1250(){
  const p=productTechSheetProductV1250();box.style.display=p?'':'none';
  const preview=document.getElementById('prodCompositionPreviewV144'),badge=document.getElementById('prodCompositionBadgeV144');
  if(!p){if(preview)preview.innerHTML='<div class="empty">Guarda ou seleciona um produto para ver a composição.</div>';if(badge){badge.textContent='—';badge.className='badge'}return}
- const lines=Array.isArray(db.productRecipes[p.code])?db.productRecipes[p.code]:[],configured=lines.length>0,state=productTechSheetStateV146(p);
+ const lines=Array.isArray(db.productRecipes[p.code])?db.productRecipes[p.code]:[],state=productTechSheetStateV146(p),configured=state.ok;
  prodTechSheetStatus.textContent=`${state.label} · ${state.detail}`;
  prodTechSheetIngredientCount.textContent=String(lines.length);prodTechSheetCost.textContent=euro(calculatedProductCost(p));
  prodTechSheetRecommended.textContent=configured?euro(artessenciaRecommendedPriceV1251(p)):'Configura a ficha';
@@ -6948,7 +7120,7 @@ function productFinalIngredientsV12811(p){return productAdditionalIngredientsV12
 function uniqueSafetysV12811(){return []}
 function productFinalContainsV12811(){return []}
 function productFinalMayContainV12811(){return []}
-function productTechnicalInfoCompleteV1287(p){return !productManufacturedV130(p)||!!((db.productRecipes&&db.productRecipes[p?.code])||[]).length}
+function productTechnicalInfoCompleteV1287(p){return productTechSheetStateV146(p).ok}
 function publicTechnicalProfilesV12815(){return []}
 async function publishPublicTechnicalProfilesV12815(){return true}
 function updateProductTechnicalStatusV1287(){}
@@ -7140,14 +7312,23 @@ function populateCostSelectors(){
  if(prevProduct&&[...costProduct.options].some(o=>o.value===prevProduct))costProduct.value=prevProduct;syncCostUnitV120();
 }
 function updateCostPreview(){
- if(!document.getElementById('costUnitPreview'))return;const x=stockByName(costMaterial.value),raw=Number(costPackQty.value)||0,price=Number(costPackPrice.value)||0,base=x?.unit||'un',unit=document.getElementById('costPackUnitV120')?.value||base,q=convertToBaseV120(raw,unit,base);costUnitPreview.value=q>0?(price/q).toFixed(6)+' €/'+base:''
+ if(!document.getElementById('costUnitPreview'))return;const x=stockByName(costMaterial.value),rawText=String(costPackQty.value||'').trim(),priceText=String(costPackPrice.value||'').trim(),raw=Number(rawText),price=Number(priceText),base=x?.unit||'un',unit=document.getElementById('costPackUnitV120')?.value||base,q=convertToBaseV120(raw,unit,base);costUnitPreview.value=rawText&&priceText&&q>0&&Number.isFinite(price)?formatUnitCostV145(price/q,base):''
+}
+function setMaterialCostStateV146(type,title,detail){
+ const el=document.getElementById('materialCostSaveStateV146');if(!el)return;
+ el.className='save-state-v143 '+(type||'neutral');el.innerHTML=`<span>${type==='saved'?'✓':type==='error'?'!':'●'}</span><div><strong>${escapeHtml(title)}</strong><small>${escapeHtml(detail||'')}</small></div>`
 }
 function applyMaterialCost(){
- const n=costMaterial.value,raw=Number(costPackQty.value)||0,price=Number(costPackPrice.value)||0,x=stockByName(n);if(!x)return toast('Selecione a matéria-prima');const purchaseUnit=document.getElementById('costPackUnitV120')?.value||x.unit,q=convertToBaseV120(raw,purchaseUnit,x.unit);
- if(!n||!q||q<=0||price<0)return toast('Indique uma quantidade e um preço válidos');
- x.unitCost=price/q;
- db.costMeta[n]={packQty:q,purchaseQty:raw,purchaseUnit,packPrice:price,updated:new Date().toISOString(),source:'Manual'};
- save();toast('Custo atualizado em toda a app')
+ const n=costMaterial.value,rawText=String(costPackQty.value||'').trim(),priceText=String(costPackPrice.value||'').trim(),raw=Number(rawText),price=Number(priceText),x=stockByName(n),reason=String(document.getElementById('costManualReasonV146')?.value||'').trim();
+ if(!x){setMaterialCostStateV146('error','Custo não atualizado','Selecione a matéria-prima.');return toast('Selecione a matéria-prima')}
+ const purchaseUnit=document.getElementById('costPackUnitV120')?.value||x.unit,q=convertToBaseV120(raw,purchaseUnit,x.unit);
+ if(!rawText||!priceText||!Number.isFinite(raw)||!Number.isFinite(price)||!q||q<=0||price<0){setMaterialCostStateV146('error','Valores inválidos','Indique a quantidade comprada e o preço pago.');return toast('Indique uma quantidade e um preço válidos')}
+ if(!reason){setMaterialCostStateV146('error','Falta justificar a atualização','Indique o motivo da correção manual do custo.');return toast('Indique o motivo da atualização do custo')}
+ const previousUnitCost=Number(x.unitCost)||0,newUnitCost=price/q,now=new Date().toISOString();
+ if(Math.abs(newUnitCost-previousUnitCost)<=1e-12){setMaterialCostStateV146('error','Custo sem alteração',n+' já tem este custo unitário.');return toast('O custo calculado é igual ao custo atual')}
+ x.unitCost=newUnitCost;db.costMeta[n]={packQty:q,purchaseQty:raw,purchaseUnit,packPrice:price,updated:now,source:'Correção manual',reason};
+ db.stockMoves=db.stockMoves||[];db.stockMoves.push({date:now,item:n,type:'cost_adjustment',qty:0,note:'Correção de custo: '+reason,previousUnitCost,newUnitCost,beforeQty:Number(x.qty)||0,afterQty:Number(x.qty)||0,delta:0,source:'costs_manual'});
+ save();costPackQty.value='';costPackPrice.value='';costUnitPreview.value='';const reasonInput=document.getElementById('costManualReasonV146');if(reasonInput)reasonInput.value='';setMaterialCostStateV146('saved','Custo atualizado e registado',n+' · '+formatUnitCostV145(previousUnitCost,x.unit)+' → '+formatUnitCostV145(newUnitCost,x.unit));toast('Custo atualizado em toda a app e registado no histórico')
 }
 function restoreCostProductSelectionV12628(code){
  // save() chama renderAll(), que reconstrói os seletores. Restauramos explicitamente
@@ -7161,6 +7342,7 @@ function setRecipeSaveStateV143(type,title,detail){
  el.className='save-state-v143 '+(type||'neutral');
  el.innerHTML=`<span>${type==='saved'?'✓':type==='error'?'!':'●'}</span><div><strong>${escapeHtml(title)}</strong><small>${escapeHtml(detail||'')}</small></div>`;
 }
+function recipeArgV146(value){return encodeURIComponent(String(value??'')).replace(/'/g,'%27')}
 function addRecipeLine(){
  const code=costProduct.value,item=costIngredient.value,qty=Number(costIngredientQty.value)||0;
  if(!code||!item||qty<=0){setRecipeSaveStateV143('error','Ficha ainda não guardada','Selecione produto, material e uma quantidade superior a zero.');return toast('Selecione produto, material e quantidade')}
@@ -7171,30 +7353,32 @@ function addRecipeLine(){
  const qtyInput=document.getElementById('costIngredientQty');if(qtyInput)qtyInput.value='';
  const ing=document.getElementById('costIngredient');if(ing)ing.value='';
  const p=db.products.find(x=>x.code===code),count=(db.productRecipes[code]||[]).length;
- setRecipeSaveStateV143('saved','Ficha técnica guardada',`${p?.name||code} · ${count} material(is) guardado(s). Pode adicionar o seguinte.`);
- toast('Material guardado na ficha técnica')
+ setRecipeSaveStateV143('saved',ex?'Quantidade do material atualizada':'Material adicionado à ficha',`${p?.name||code} · ${item} · ${qty.toLocaleString('pt-PT')} ${stockByName(item)?.unit||''}.`);
+ if(ing)ing.focus();toast(ex?'Quantidade atualizada na ficha técnica':'Material adicionado à ficha técnica')
 }
 function removeRecipeLine(code,item){
+ const p=db.products.find(x=>x.code===code);if(!confirm(`Remover ${item} da ficha técnica de ${p?.name||code}?`))return;
  db.productRecipes[code]=(db.productRecipes[code]||[]).filter(x=>x.item!==item);
- save();restoreCostProductSelectionV12628(code);toast('Material removido')
+ save();restoreCostProductSelectionV12628(code);setRecipeSaveStateV143('saved','Material removido',`${item} deixou de fazer parte da ficha de ${p?.name||code}.`);toast('Material removido da ficha técnica')
 }
 function renderProductRecipeEditor(){
  if(!document.getElementById('productRecipeEditor'))return;
  const code=costProduct.value,p=db.products.find(x=>x.code===code);
  if(!p){productRecipeEditor.innerHTML='<div class="empty">Selecione um produto</div>';setRecipeSaveStateV143('neutral','Selecione um produto','Cada material é guardado imediatamente no botão “Guardar material na ficha”.');return}
- const lines=db.productRecipes[code]||[],x=productCostBreakdownV110(p),base=x.mold,top=x.materials,lab=x.labor,extraLab=x.editionLabor,waste=x.waste,total=x.total;
- setRecipeSaveStateV143(lines.length?'saved':'dirty',lines.length?'Ficha técnica guardada':'Ficha técnica ainda vazia',lines.length?`${p.name} · ${lines.length} material(is) atualmente guardado(s).`:'Adicione o primeiro material e carregue em “Guardar material na ficha”.');
- const editionConfigured=lines.length>0,editionRec=editionRecommendedPriceV1249(p),editionMin=minPriceForMargin(total),editionMargin=Number(db.settings.minMargin)||.65;
+ const lines=db.productRecipes[code]||[],x=productCostBreakdownV110(p),base=x.mold,top=x.materials,lab=x.labor,extraLab=x.editionLabor,waste=x.waste,total=x.total,state=productTechSheetStateV146(p);
+ setRecipeSaveStateV143(state.ok?'saved':'dirty',state.key==='draft'?'Ficha técnica por rever':lines.length?'Ficha técnica guardada':'Ficha técnica ainda vazia',state.key==='draft'?state.detail:lines.length?`${p.name} · ${lines.length} material(is) atualmente guardado(s).`:'Adicione o primeiro material e carregue em “Guardar material”.');
+ const editionConfigured=state.ok,editionRec=editionRecommendedPriceV1249(p),editionMin=minPriceForMargin(total),editionMargin=Number(db.settings.minMargin)||.65;
  productRecipeEditor.innerHTML=`<div class="totalbox cost-totalbox-v1248"><div class="mini"><span>Amortização do molde</span><strong>${euro(base)}</strong></div><div class="mini"><span>Materiais e componentes</span><strong>${euro(top)}</strong></div><div class="mini"><span>Mão de obra</span><strong>${euro(lab+extraLab)}</strong>${extraLab>0?`<small>+ ${euro(extraLab)} edição</small>`:''}</div><div class="mini"><span>Custo final</span><strong>${euro(total)}</strong>${productEditionExtraWasteRate(p)>0?`<small>desperdício extra ${Number(p.editionExtraWastePct)||0}%</small>`:''}</div></div>${normalizeProductAvailabilityV1244(p)==='edition'?(editionConfigured?`<div class="edition-pvp-recommend-v1249"><div><span>PVP mínimo · margem ${pct(editionMargin)}</span><strong>${euro(editionMin)}</strong></div><div class="recommended"><span>⭐ PVP recomendado</span><strong>${euro(editionRec)}</strong></div><div><span>PVP definido</span><strong>${euro(Number(p.price)||0)}</strong></div><small>Recomendação informativa baseada no custo real e na margem mínima ArtEssencia. O PVP definido continua manual.</small></div>`:`<div class="edition-pvp-warning-v1250"><strong>⚠️ PVP recomendado ainda indisponível</strong><span>Adiciona os materiais específicos deste produto à Ficha Técnica para obter uma recomendação fiável.</span></div>`):''}
- <div style="margin-top:10px">${lines.length?lines.map(l=>`<div class="cart-row" style="grid-template-columns:1fr 100px 110px 80px"><span>${l.item}</span><strong>${Number(l.qty).toLocaleString('pt-PT')} ${stockByName(l.item)?.unit||''}</strong><strong>${euro((Number(l.qty)||0)*materialUnitCost(l.item))}</strong><button class="btn danger" onclick="removeRecipeLine('${code}','${l.item.replace(/'/g,"\\'")}')">Remover</button></div>`).join(''):'<div class="empty">Sem materiais configurados</div>'}</div>`
+ <div style="margin-top:10px">${lines.length?lines.map(l=>{const st=stockByName(l.item),invalid=!st||!(Number(l.qty)>0);return `<div class="cart-row recipe-line-v146 ${invalid?'invalid':''}"><span>${escapeHtml(l.item)}${!st?'<small class="recipe-warning-v146">Componente inexistente no Stock</small>':''}</span><strong>${Number(l.qty).toLocaleString('pt-PT')} ${escapeHtml(st?.unit||'—')}</strong><strong>${st?euro((Number(l.qty)||0)*materialUnitCost(l.item)):'—'}</strong><button class="btn danger" onclick="removeRecipeLine(decodeURIComponent('${recipeArgV146(code)}'),decodeURIComponent('${recipeArgV146(l.item)}'))">Remover</button></div>`}).join(''):'<div class="empty">Sem materiais configurados</div>'}</div>`
 }
 function renderCosts(){
  ensureCostModel();if(!document.getElementById('costKpis'))return;
  populateCostSelectors();
  const avg=db.products.length?db.products.reduce((a,p)=>a+calculatedProductCost(p),0)/db.products.length:0;
- const configured=db.products.filter(p=>(db.productRecipes[p.code]||[]).length).length;
+ const configured=db.products.filter(p=>productManufacturedV130(p)&&productTechSheetStateV146(p).ok).length;
+ const pending=db.products.filter(p=>productManufacturedV130(p)&&!productTechSheetStateV146(p).ok).length;
  const molds=db.products.filter(p=>productMoldCostV110(p)>0).length;
- costKpis.innerHTML=[['Produtos com ficha',configured],['Produtos com molde',molds],['Mão de obra / hora',euro(db.settings.laborRate||0)],['Custo médio produtos',euro(avg)]].map(([l,v])=>`<div class="card kpi"><div class="label">${l}</div><div class="value">${v}</div></div>`).join('');
+ costKpis.innerHTML=[['Produtos',db.products.length,'Total registado'],['Fichas válidas',configured,'Composição operacional'],['Fichas por rever',pending,'Produção própria'],['Com molde',molds,'Amortização configurada'],['Custo médio',euro(avg),'Custo atual por produto']].map(([l,v,n])=>`<div class="card costs-kpi ${l==='Fichas por rever'&&pending?'costs-kpi-warn':''}"><span>${l}</span><strong>${v}</strong><small>${n}</small></div>`).join('');
  costMaterialsBody.innerHTML=db.stock.map(x=>{
    const meta=db.costMeta[x.name],origin=meta?.source||((Number(x.unitCost)||0)>0?'Inicial':'Por preencher');
    return `<tr><td>${x.name}</td><td>${x.unit}</td><td>${Number(x.unitCost||0).toFixed(6)} €/${x.unit}</td><td>${Number(x.qty||0).toLocaleString('pt-PT')} ${x.unit}</td><td>${euro((Number(x.qty)||0)*(Number(x.unitCost)||0))}</td><td>${origin}</td></tr>`
@@ -8481,7 +8665,7 @@ function renderQuoteEventQtyGuardV1279(){const box=document.getElementById('quot
 function editQuoteV1279(id){const q=(db.quotes||[]).find(x=>x.id===id);if(!q)return;if(q.orderId)return toast('Este orçamento já foi convertido em encomenda');clearQuoteForm();editingQuoteIdV1279=id;currentEventRequestV1277=q.eventRequestId||null;currentEventRequestedQtyV1279=Math.max(0,Number(q.eventRequestedQty)||0);currentEventLeadDecisionV1283=q.eventLeadDecision?{...q.eventLeadDecision}:null;const qtyGuardEditV1280=document.getElementById('quoteEventQtyGuardV1279');if(qtyGuardEditV1280)qtyGuardEditV1280.dataset.requestedQty=String(currentEventRequestedQtyV1279);quoteClient.value=q.client||'';quoteContact.value=q.contact||'';if(document.getElementById('quoteEmail'))quoteEmail.value=q.email||'';quoteEventDate.value=q.eventDate||'';quoteValidUntil.value=q.validUntil||'';quoteCart=(q.items||[]).map(x=>({...x}));eventQtyDifferenceReasonV1282=String(q.eventQtyDifferenceReason||'');allowDifferentEventQtyV1279=!!q.allowDifferentEventQty&&!!eventQtyDifferenceReasonV1282;confirmedEventQtySignatureV1282=allowDifferentEventQtyV1279?String(q.eventQtyOverrideSignature||quoteEventQtySignatureV1282(currentEventRequestedQtyV1279,quoteCountedQtyV1279())):'';quoteNotes.value=q.notes||'';quotePaymentTerms.value=q.paymentTerms||'50_50';quoteDepositPct.value=quoteDepositPct(q);quoteBalanceDays.value=Math.max(0,Number(q.balanceDays)||0);quotePaymentMethod.value=q.paymentMethod||'MB Way';syncPackagingSelect();if(document.getElementById('quoteBox'))quoteBox.value=q.box||quoteBox.value;if(document.getElementById('quoteBoxes'))quoteBoxes.value=Math.max(1,Number(q.boxes)||1);if(document.getElementById('quoteDiscountType'))quoteDiscountType.value=q.discountType||'none';if(document.getElementById('quoteDiscount'))quoteDiscount.value=Math.max(0,Number(q.discountValue)||0);syncQuotePaymentFields();renderQuoteCart();document.querySelector('#quotes .card:nth-of-type(2)')?.scrollIntoView({behavior:'smooth',block:'start'});toast('Orçamento carregado para edição. Ao guardar, o mesmo orçamento será atualizado.')}
 function renderQuoteCart(){const el=document.getElementById('quoteCart');if(!el)return;el.innerHTML=quoteCart.length?quoteCart.map((i,n)=>`<div class="cart-row" style="grid-template-columns:1fr 80px 100px 80px"><span>${escapeHtml(i.name||'')}</span><strong>${Number(i.qty)||0} un.</strong><strong>${euro(i.qty*i.price)}</strong><button class="btn danger" onclick="removeQuoteLine(${n})">Remover</button></div>`).join(''):'<div class="empty">Adicione produtos ou linhas personalizadas.</div>';const sub=quoteCart.reduce((a,i)=>a+i.qty*i.price,0),type=document.getElementById('quoteDiscountType')?.value||'none',raw=Math.max(0,Number(document.getElementById('quoteDiscount')?.value)||0),disc=type==='percent'?Math.min(sub,sub*Math.min(100,raw)/100):type==='fixed'?Math.min(sub,raw):0,total=Math.max(0,sub-disc),terms=document.getElementById('quotePaymentTerms')?.value||'50_50',dp=terms==='100_upfront'?100:terms==='50_50'?50:Math.min(100,Math.max(0,Number(document.getElementById('quoteDepositPct')?.value)||0));if(document.getElementById('quoteSubtotal'))quoteSubtotal.textContent=euro(sub);if(document.getElementById('quoteDiscountView'))quoteDiscountView.textContent=type==='percent'?`${raw.toLocaleString('pt-PT')}% · ${euro(disc)}`:euro(disc);if(document.getElementById('quoteSavingView'))quoteSavingView.textContent=euro(disc);if(document.getElementById('quoteTotal'))quoteTotal.textContent=euro(total);if(document.getElementById('quoteDepositView'))quoteDepositView.textContent=euro(total*dp/100);const hint=document.getElementById('quoteDiscountHint'),sg=quoteDiscountSuggestionV1277();if(hint)hint.innerHTML=sg?`Sugestão para esta quantidade: <b>${sg}%</b>. É apenas uma referência — aplica somente se a margem permitir. <button class="btn" style="padding:5px 9px;margin-left:6px" onclick="quoteDiscountType.value='percent';quoteDiscount.value=${sg};renderQuoteCart()">Aplicar ${sg}%</button>`:'Sem sugestão automática para esta quantidade. Podes aplicar manualmente % ou €.'};renderQuoteEventQtyGuardV1279()
 function clearQuoteForm(){quoteCart=[];currentEventRequestV1277=null;editingQuoteIdV1279=null;currentEventRequestedQtyV1279=0;currentEventLeadDecisionV1283=null;allowDifferentEventQtyV1279=false;eventQtyDifferenceReasonV1282='';confirmedEventQtySignatureV1282='';closeQuoteQtyDifferenceV1282();const qtyGuardV1280=document.getElementById('quoteEventQtyGuardV1279');if(qtyGuardV1280)qtyGuardV1280.dataset.requestedQty='0';['quoteClient','quoteContact','quoteEmail','quoteEventDate','quoteValidUntil','quoteNotes','quoteUnitPrice','quoteFreeDesc','quoteFreePrice','quoteFreeCost'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});if(document.getElementById('quoteDiscountType'))quoteDiscountType.value='none';if(document.getElementById('quoteDiscount'))quoteDiscount.value=0;if(document.getElementById('quotePaymentTerms'))quotePaymentTerms.value='50_50';if(document.getElementById('quoteDepositPct'))quoteDepositPct.value=50;if(document.getElementById('quoteBalanceDays'))quoteBalanceDays.value=3;if(document.getElementById('quotePaymentMethod'))quotePaymentMethod.value='MB Way';if(document.getElementById('quoteBoxes'))quoteBoxes.value=1;syncPackagingSelect();syncQuotePaymentFields();renderQuoteCart()}
-function saveQuote(){if(!quoteClient.value.trim())return toast('Indique o cliente');if(!quoteCart.length)return toast('Adicione pelo menos uma linha');if(!(db.packaging||[]).length||!document.getElementById('quoteBox')?.value)return toast('Configura pelo menos uma embalagem antes de guardar o orçamento');const requestedQtyV1280=quoteRequestedQtyV1280(),countedQtyV1280=quoteCountedQtyV1279();if(requestedQtyV1280>0){currentEventRequestedQtyV1279=requestedQtyV1280;if(countedQtyV1280!==requestedQtyV1280&&!quoteEventQtyOverrideConfirmedV1282(requestedQtyV1280,countedQtyV1280)){renderQuoteEventQtyGuardV1279();requestQuoteQtyDifferenceV1282();return}}const qtyDifferentV1282=requestedQtyV1280>0&&countedQtyV1280!==requestedQtyV1280;const terms=quotePaymentTerms.value||'50_50',dp=terms==='100_upfront'?100:terms==='50_50'?50:Math.min(100,Math.max(0,Number(quoteDepositPct.value)||0));if(terms==='custom'&&dp<=0)return toast('Defina o sinal inicial');const dtype=document.getElementById('quoteDiscountType')?.value||'none',dvalue=Math.max(0,Number(document.getElementById('quoteDiscount')?.value)||0),sub=quoteCart.reduce((a,i)=>a+(Number(i.qty)||0)*(Number(i.price)||0),0),damount=dtype==='percent'?Math.min(sub,sub*Math.min(100,dvalue)/100):dtype==='fixed'?Math.min(sub,dvalue):0;const clientId=upsertClientFromOrder(quoteClient.value.trim(),quoteContact.value.trim());const eventRequestId=currentEventRequestV1277;db.quotes=db.quotes||[];const payload={clientId,client:quoteClient.value.trim(),contact:quoteContact.value.trim(),email:document.getElementById('quoteEmail')?.value.trim()||'',eventDate:quoteEventDate.value,validUntil:quoteValidUntil.value,items:quoteCart.map(x=>x?.type==='free'?({...x}):({...ensureLineCostSnapshotV134(x,'quote_save_v134')})),discount:damount,discountType:dtype,discountValue:dvalue,notes:quoteNotes.value.trim(),eventRequestId:eventRequestId||null,eventRequestedQty:Math.max(0,Number(currentEventRequestedQtyV1279)||0),allowDifferentEventQty:qtyDifferentV1282,eventQtyDifferenceReason:qtyDifferentV1282?eventQtyDifferenceReasonV1282.trim():'',eventQtyOverrideSignature:qtyDifferentV1282?quoteEventQtySignatureV1282(requestedQtyV1280,countedQtyV1280):'',eventLeadDecision:currentEventLeadDecisionV1283?{...currentEventLeadDecisionV1283}:null,paymentTerms:terms,depositPct:dp,balanceDays:Math.max(0,Number(quoteBalanceDays.value)||0),paymentMethod:quotePaymentMethod.value||'MB Way',box:document.getElementById('quoteBox')?.value||'',boxes:Math.max(1,Number(document.getElementById('quoteBoxes')?.value)||1),boxCostSnapshot:(()=>{const pk=(db.packaging||[]).find(p=>p.name===(document.getElementById('quoteBox')?.value||''));return pk?Number(pk.cost)||0:0})()};const qtyHistoryNoteV1282=qtyDifferentV1282?`Diferença de quantidade confirmada: ${countedQtyV1280}/${requestedQtyV1280}. ${eventQtyDifferenceReasonV1282.trim()}`:'',leadHistoryNoteV1283=currentEventLeadDecisionV1283?.action==='exception_accepted'?`Exceção de antecedência: ${currentEventLeadDecisionV1283.available}/${currentEventLeadDecisionV1283.required} dias. ${currentEventLeadDecisionV1283.reason}`:'';if(editingQuoteIdV1279){const q=db.quotes.find(x=>x.id===editingQuoteIdV1279);if(!q)return toast('Orçamento a editar não encontrado');Object.assign(q,payload);q.statusHistory=Array.isArray(q.statusHistory)?q.statusHistory:[];q.statusHistory.push({date:new Date().toISOString(),status:q.status||'Rascunho',from:q.status||'Rascunho',to:q.status||'Rascunho',source:'edit',note:['Orçamento editado',qtyHistoryNoteV1282,leadHistoryNoteV1283].filter(Boolean).join(' · ')});save();clearQuoteForm();go('quotes');toast('Orçamento atualizado com sucesso.');return}const y=new Date().getFullYear(),nums=(db.quotes||[]).filter(q=>q.id?.startsWith('ORC-'+y+'-')).map(q=>Number(q.id.split('-').pop())||0),id='ORC-'+y+'-'+String((Math.max(0,...nums)+1)).padStart(4,'0');db.quotes.push({id,...payload,status:'Rascunho',created:todayISO(),orderId:null,depositPaid:0,paymentHistory:[],statusHistory:[{date:new Date().toISOString(),status:'Rascunho',source:'create',note:[qtyHistoryNoteV1282,leadHistoryNoteV1283].filter(Boolean).join(' · ')}]});save();if(eventRequestId)setEventRequestStatusV1276(eventRequestId,'converted');clearQuoteForm();go('quotes');toast('Orçamento guardado. Já podes gerar PDF e enviar ao cliente.')}
+function saveQuote(){if(!quoteClient.value.trim())return toast('Indique o cliente');const qPhone=quoteContact.value.trim(),qEmail=(document.getElementById('quoteEmail')?.value||'').trim();if(!qPhone&&!qEmail)return toast('Indique pelo menos um telefone ou email do cliente');if(qPhone&&!validCustomerPhone(qPhone))return toast('Confirma o telefone do cliente');if(qEmail&&!validCustomerEmail(qEmail))return toast('Confirma o email do cliente');if(!quoteCart.length)return toast('Adicione pelo menos uma linha');if(!(db.packaging||[]).length||!document.getElementById('quoteBox')?.value)return toast('Configura pelo menos uma embalagem antes de guardar o orçamento');const requestedQtyV1280=quoteRequestedQtyV1280(),countedQtyV1280=quoteCountedQtyV1279();if(requestedQtyV1280>0){currentEventRequestedQtyV1279=requestedQtyV1280;if(countedQtyV1280!==requestedQtyV1280&&!quoteEventQtyOverrideConfirmedV1282(requestedQtyV1280,countedQtyV1280)){renderQuoteEventQtyGuardV1279();requestQuoteQtyDifferenceV1282();return}}const qtyDifferentV1282=requestedQtyV1280>0&&countedQtyV1280!==requestedQtyV1280;const terms=quotePaymentTerms.value||'50_50',dp=terms==='100_upfront'?100:terms==='50_50'?50:Math.min(100,Math.max(0,Number(quoteDepositPct.value)||0));if(terms==='custom'&&dp<=0)return toast('Defina o sinal inicial');const dtype=document.getElementById('quoteDiscountType')?.value||'none',dvalue=Math.max(0,Number(document.getElementById('quoteDiscount')?.value)||0),sub=quoteCart.reduce((a,i)=>a+(Number(i.qty)||0)*(Number(i.price)||0),0),damount=dtype==='percent'?Math.min(sub,sub*Math.min(100,dvalue)/100):dtype==='fixed'?Math.min(sub,dvalue):0;const clientId=upsertClientFromOrder(quoteClient.value.trim(),qPhone,qEmail);const eventRequestId=currentEventRequestV1277;db.quotes=db.quotes||[];const payload={clientId,client:quoteClient.value.trim(),contact:quoteContact.value.trim(),email:qEmail,eventDate:quoteEventDate.value,validUntil:quoteValidUntil.value,items:quoteCart.map(x=>x?.type==='free'?({...x}):({...ensureLineCostSnapshotV134(x,'quote_save_v134')})),discount:damount,discountType:dtype,discountValue:dvalue,notes:quoteNotes.value.trim(),eventRequestId:eventRequestId||null,eventRequestedQty:Math.max(0,Number(currentEventRequestedQtyV1279)||0),allowDifferentEventQty:qtyDifferentV1282,eventQtyDifferenceReason:qtyDifferentV1282?eventQtyDifferenceReasonV1282.trim():'',eventQtyOverrideSignature:qtyDifferentV1282?quoteEventQtySignatureV1282(requestedQtyV1280,countedQtyV1280):'',eventLeadDecision:currentEventLeadDecisionV1283?{...currentEventLeadDecisionV1283}:null,paymentTerms:terms,depositPct:dp,balanceDays:Math.max(0,Number(quoteBalanceDays.value)||0),paymentMethod:quotePaymentMethod.value||'MB Way',box:document.getElementById('quoteBox')?.value||'',boxes:Math.max(1,Number(document.getElementById('quoteBoxes')?.value)||1),boxCostSnapshot:(()=>{const pk=(db.packaging||[]).find(p=>p.name===(document.getElementById('quoteBox')?.value||''));return pk?Number(pk.cost)||0:0})()};const qtyHistoryNoteV1282=qtyDifferentV1282?`Diferença de quantidade confirmada: ${countedQtyV1280}/${requestedQtyV1280}. ${eventQtyDifferenceReasonV1282.trim()}`:'',leadHistoryNoteV1283=currentEventLeadDecisionV1283?.action==='exception_accepted'?`Exceção de antecedência: ${currentEventLeadDecisionV1283.available}/${currentEventLeadDecisionV1283.required} dias. ${currentEventLeadDecisionV1283.reason}`:'';if(editingQuoteIdV1279){const q=db.quotes.find(x=>x.id===editingQuoteIdV1279);if(!q)return toast('Orçamento a editar não encontrado');Object.assign(q,payload);q.statusHistory=Array.isArray(q.statusHistory)?q.statusHistory:[];q.statusHistory.push({date:new Date().toISOString(),status:q.status||'Rascunho',from:q.status||'Rascunho',to:q.status||'Rascunho',source:'edit',note:['Orçamento editado',qtyHistoryNoteV1282,leadHistoryNoteV1283].filter(Boolean).join(' · ')});save();clearQuoteForm();go('quotes');toast('Orçamento atualizado com sucesso.');return}const y=new Date().getFullYear(),nums=(db.quotes||[]).filter(q=>q.id?.startsWith('ORC-'+y+'-')).map(q=>Number(q.id.split('-').pop())||0),id='ORC-'+y+'-'+String((Math.max(0,...nums)+1)).padStart(4,'0');db.quotes.push({id,...payload,status:'Rascunho',created:todayISO(),orderId:null,depositPaid:0,paymentHistory:[],statusHistory:[{date:new Date().toISOString(),status:'Rascunho',source:'create',note:[qtyHistoryNoteV1282,leadHistoryNoteV1283].filter(Boolean).join(' · ')}]});save();if(eventRequestId)setEventRequestStatusV1276(eventRequestId,'converted');clearQuoteForm();go('quotes');toast('Orçamento guardado. Já podes gerar PDF e enviar ao cliente.')}
 
 function setQuoteStatus(id,status){const q=(db.quotes||[]).find(x=>x.id===id);if(!q||q.orderId)return;const previous=q.status||'Rascunho';if(previous===status)return;if(status==='Recusado'){const reason=prompt('Motivo da recusa (opcional): preço, data, apenas consulta, desistência, outra opção...',q.refusalReason||'');if(reason===null){renderQuotes();return}q.refusalReason=reason.trim()}q.status=status;q.statusHistory=Array.isArray(q.statusHistory)?q.statusHistory:[];q.statusHistory.push({date:new Date().toISOString(),status,from:previous,to:status,source:'manual',reason:status==='Recusado'?(q.refusalReason||''):''});save();toast('Estado atualizado')}
 function registerQuotePayment(id){const q=(db.quotes||[]).find(x=>x.id===id);if(!q||q.orderId)return;const c=quoteCalc(q),current=Math.max(0,Number(q.depositPaid)||0),remaining=Math.max(0,c.total-current),raw=prompt(`Novo pagamento para ${q.id}
@@ -9624,6 +9808,27 @@ async function relationalHydrateCore(initial=false){
  }
 }
 document.addEventListener('input',e=>{if(['prodCode','prodPrice','prodOnlinePriceV12620','prodLaborMinutesV110','prodWastePctV110','prodMoldCostV110','prodMoldUsesV110','prodMoldCavitiesV110','prodMoldOverrideV110','prodPackagingCostV110','prodEquipmentPowerWV133','prodEquipmentMinutesV133','prodIndirectCostV110','prodOtherCostV110','prodTargetMarginV110','prodOnlineTargetMarginV110','prodEditionExtraLaborMinutes','prodEditionExtraWastePct'].includes(e.target?.id))refreshProductChannelPricingV12620()});
+function refreshOperationalViewsV1413(reason='local_change'){
+ // Mantém os módulos operacionais coerentes no mesmo ciclo de interface, sem recarregar a página.
+ try{
+  renderOrders();
+  renderDashboard();
+  renderProduction();
+  renderStock();
+  renderPurchases();
+  renderCash();
+  renderClients();
+  renderReports();
+  renderOrderNotificationsV12624();
+  window.dispatchEvent(new CustomEvent('artessencia:datachanged',{detail:{reason,at:Date.now()}}));
+ }catch(e){console.error('refreshOperationalViewsV1413',reason,e)}
+}
+window.addEventListener('artessencia:datachanged',()=>{
+ // Evento interno disponível para módulos que passem a necessitar de reação específica.
+});
+window.addEventListener('pageshow',e=>{if(e.persisted)setTimeout(()=>renderAll(),0)});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(()=>renderAll(),0)});
+
 function renderAll(){ensureQuotePaymentModel();ensureCostModel();syncPackagingSelect();renderDashboard();renderPicker();renderCart();renderOrders();renderProduction();renderCosts();renderStock();renderPurchases();renderCash();renderClients();renderQuotes();renderQuoteCart();renderProducts();renderCatalogs();renderSpecialEditionsAdmin();renderSettings();renderBusinessSettings();renderReports();renderLegalSummaryV1286();renderCloudUI();renderBackupInfo();renderOrderNotificationsV12624();renderPushStatusV12625();const s=sec();if(document.getElementById('lockMinutes'))document.getElementById('lockMinutes').value=String(s.lockMinutes??15)}
 document.addEventListener('input',e=>{if(e.target&&['costPackQty','costPackPrice'].includes(e.target.id))updateCostPreview()});
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;installBtn.classList.remove('hidden');installBanner.classList.remove('hidden')});

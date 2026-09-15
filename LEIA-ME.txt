@@ -1,10 +1,17 @@
-ARTESSENCIA — BACKOFFICE V1.4.12
+ARTESSENCIA — BACKOFFICE V1.4.16
 
-V1.4.12 — REPARAÇÃO DE ENCOMENDAS DUPLICADAS + RASTREABILIDADE
+V1.4.16 — FICHAS TÉCNICAS/CUSTOS: CONFORMIDADE E INTERFACE
 
-Correções incrementais sobre a V1.4.11:
-- identidade técnica (_rid) garantida para encomendas existentes;
-- reparação conservadora de números AS duplicados já existentes, renumerando apenas duplicados sem pagamento/produção/conclusão próprios;
-- novas encomendas em Nova venda exigem Cliente e Contacto;
-- histórico de Stock reconstrói a encomenda através do productionRunId também para movimentos de produção antigos;
+Alterações incrementais sobre a V1.4.15:
+- módulo Fichas Técnicas e Custos alinhado com a estrutura visual dos restantes módulos;
+- preservada uma ficha técnica independente por produto;
+- produto selecionado mantido após guardar, atualizar ou remover componentes;
+- Material/Componente e Quantidade limpos após guardar cada linha;
+- feedback distingue material novo de quantidade atualizada;
+- remoção de componentes passa a exigir confirmação;
+- fichas com componentes inexistentes no Stock ficam assinaladas para revisão;
+- indicadores contam apenas fichas operacionais válidas;
+- atualização manual do custo exige motivo e fica no histórico da matéria-prima;
+- compras recebidas continuam a recalcular automaticamente o custo médio;
+- preservados os snapshots históricos de encomendas e orçamentos;
 - preservados localStorage, schema 7, Cloud Sync, Backup e PWA.
