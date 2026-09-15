@@ -1,17 +1,16 @@
-ARTESSENCIA — BACKOFFICE V1.4.16
+ARTESSENCIA — BACKOFFICE V1.4.17
 
-V1.4.16 — FICHAS TÉCNICAS/CUSTOS: CONFORMIDADE E INTERFACE
+V1.4.17 — PRODUTOS: IDENTIDADE, INTEGRIDADE E INTERFACE
 
-Alterações incrementais sobre a V1.4.15:
-- módulo Fichas Técnicas e Custos alinhado com a estrutura visual dos restantes módulos;
-- preservada uma ficha técnica independente por produto;
-- produto selecionado mantido após guardar, atualizar ou remover componentes;
-- Material/Componente e Quantidade limpos após guardar cada linha;
-- feedback distingue material novo de quantidade atualizada;
-- remoção de componentes passa a exigir confirmação;
-- fichas com componentes inexistentes no Stock ficam assinaladas para revisão;
-- indicadores contam apenas fichas operacionais válidas;
-- atualização manual do custo exige motivo e fica no histórico da matéria-prima;
-- compras recebidas continuam a recalcular automaticamente o custo médio;
-- preservados os snapshots históricos de encomendas e orçamentos;
+Alterações incrementais sobre a V1.4.16:
+- código automático de produto deixa de depender da contagem e nunca reutiliza um código existente;
+- criação com código já utilizado é bloqueada, sem editar silenciosamente o produto anterior;
+- código do produto fica protegido durante a edição para preservar ficha técnica e ligações históricas;
+- preços negativos passam a ser rejeitados;
+- eliminação bloqueada quando o produto existe em encomendas, orçamentos ou rascunhos em curso;
+- carregamento/remoção de fotografia só altera automaticamente o produto efetivamente em edição;
+- argumentos de ações e seletores protegidos para nomes/códigos com caracteres especiais;
+- adicionada a categoria “Outros produtos artesanais”;
+- identidade, categoria, disponibilidade e ações do formulário foram realinhadas;
+- preservados custos atuais, fichas técnicas, snapshots históricos e fluxo de produção;
 - preservados localStorage, schema 7, Cloud Sync, Backup e PWA.

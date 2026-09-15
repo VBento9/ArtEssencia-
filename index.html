@@ -2232,6 +2232,13 @@
 @media(max-width:950px){.costs-summary{grid-template-columns:repeat(3,1fr)}.costs-workspace{grid-template-columns:1fr}}
 @media(max-width:700px){.costs-hero{align-items:stretch;flex-direction:column}.costs-summary{grid-template-columns:1fr 1fr}.costs-recipe-form{grid-template-columns:1fr 1fr}.costs-recipe-form .recipe-product-v146{grid-column:1/-1}.costs-material-actions{align-items:stretch}.recipe-line-v146{grid-template-columns:1fr!important;gap:4px!important}.recipe-line-v146 .btn{justify-self:start}}
 
+/* ArtEssencia V1.4.17 — Produtos: identidade protegida e formulário alinhado */
+.product-code-field-v147 input:disabled{background:#f1ece8!important;color:#6f5d55;cursor:not-allowed}
+.product-code-field-v147 small{display:block;margin-top:4px;color:#806f67}
+.product-actions-v147 .btnrow{align-items:center;justify-content:flex-start}
+.products-form-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+@media(max-width:650px){.products-form-head{flex-direction:column}.product-actions-v147 .btnrow{display:grid;grid-template-columns:1fr 1fr;width:100%}}
+
 /* V1.4.7 — Ficha Técnica integrada no editor de produto */
 .product-techsheet-v1250{border:1px solid rgba(86,54,36,.22)!important;background:linear-gradient(180deg,rgba(255,252,246,.94),rgba(247,239,227,.82))!important}
 .product-techsheet-head-v1250{align-items:center}.product-techsheet-head-v1250>div{display:flex;flex-direction:column;gap:3px}.product-techsheet-head-v1250>div>strong{font-size:15px}.product-techsheet-head-v1250>div>span{font-size:12px;opacity:.75}
@@ -2313,7 +2320,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 <div class="app">
 <aside class="sidebar"><div class="brand"><img src="brand-artessencia.png" alt="ArtEssencia"><small>BACKOFFICE · GESTÃO PRIVADA</small></div><div class="nav" id="nav"></div><div class="sidebar-signature">Mais do que produtos,<br>criamos bem-estar.</div></aside>
 <main class="main">
-  <div class="topbar"><div class="art-global-search"><span class="art-search-icon">⌕</span><input id="globalSearchV142" type="search" placeholder="Pesquisar módulos..." autocomplete="off" onkeydown="globalSearchKeyV142(event)"><span class="art-search-hint">Enter</span></div><div class="top-actions"><button id="orderAlertButtonV12624" class="smallbtn order-alert-button-v12624" onclick="toggleOrderNotificationsV12624()" title="Novas encomendas">🔔<span id="orderAlertBadgeV12624" class="order-alert-count-v12624 hidden">0</span></button><button id="installBtn" class="smallbtn hidden" onclick="installApp()">Instalar app</button><button class="pill cloud-status neutral" id="cloudStatus" onclick="go('cloud')" title="Estado da sincronização"><span class="cloud-dot"></span><span id="cloudStatusText">Cloud desligada</span></button><div class="pill art-date-pill" id="today"></div><div class="art-profile"><span>AE</span><div><b>ArtEssencia</b><small>Backoffice privado</small></div></div><span id="runtimeVersion" class="pill art-version-pill">V1.4.16</span></div><div class="page-heading"><span id="pageContext">GESTÃO ArtEssencia</span><h1 id="pageTitle">Dashboard</h1></div></div>
+  <div class="topbar"><div class="art-global-search"><span class="art-search-icon">⌕</span><input id="globalSearchV142" type="search" placeholder="Pesquisar módulos..." autocomplete="off" onkeydown="globalSearchKeyV142(event)"><span class="art-search-hint">Enter</span></div><div class="top-actions"><button id="orderAlertButtonV12624" class="smallbtn order-alert-button-v12624" onclick="toggleOrderNotificationsV12624()" title="Novas encomendas">🔔<span id="orderAlertBadgeV12624" class="order-alert-count-v12624 hidden">0</span></button><button id="installBtn" class="smallbtn hidden" onclick="installApp()">Instalar app</button><button class="pill cloud-status neutral" id="cloudStatus" onclick="go('cloud')" title="Estado da sincronização"><span class="cloud-dot"></span><span id="cloudStatusText">Cloud desligada</span></button><div class="pill art-date-pill" id="today"></div><div class="art-profile"><span>AE</span><div><b>ArtEssencia</b><small>Backoffice privado</small></div></div><span id="runtimeVersion" class="pill art-version-pill">V1.4.17</span></div><div class="page-heading"><span id="pageContext">GESTÃO ArtEssencia</span><h1 id="pageTitle">Dashboard</h1></div></div>
   <div id="installBanner" class="installBanner hidden"><div><strong>Instalar no dispositivo</strong><br><small>Adiciona a app ao ecrã inicial e abre em modo completo.</small></div><button class="btn primary" onclick="installApp()">Instalar</button></div>
 
   <div id="orderNotificationPanelV12624" class="order-notification-panel-v12624 hidden" aria-live="polite">
@@ -3528,6 +3535,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           <option>Sabonetes</option>
           <option>Resina e Jesmonite</option>
           <option>Personalizados</option>
+          <option>Outros produtos artesanais</option>
         </select>
         <select id="productShopFilter" onchange="renderProducts()">
           <option value="all">Todos</option>
@@ -3554,16 +3562,16 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       </div>
       <div class="form-grid">
         <div class="field span2"><label>Nome</label><input id="prodName" placeholder="Nome do produto"></div>
-        <div class="field"><label>Disponibilidade base na loja</label><select id="prodAvailability" onchange="updateProductAvailabilityUI()"><option value="regular">Todo o ano + coleções</option><option value="edition">Apenas em coleções sazonais</option></select><small class="mix-help">Um produto pode pertencer a várias coleções sem ser duplicado. “Todo o ano + coleções” mantém-no no catálogo normal; “Apenas em coleções sazonais” só o disponibiliza quando pelo menos uma coleção associada estiver ativa e dentro das datas.</small></div>
-        <div class="field" id="prodCategoryField"><label>Categoria</label><select id="prodCat" onchange="syncProductionTypeFromCategoryV130()"><option>Velas em molde</option><option>Velas em recipiente</option><option>Wax melts</option><option>Sabonetes</option><option>Resina e Jesmonite</option><option>Personalizados</option></select></div>
+        <div class="field product-code-field-v147"><label>Código</label><input id="prodCode" maxlength="40" placeholder="Automático se ficar vazio"><small>Identidade interna; fica protegida depois da criação.</small></div>
+        <div class="field" id="prodCategoryField"><label>Categoria</label><select id="prodCat" onchange="syncProductionTypeFromCategoryV130()"><option>Velas em molde</option><option>Velas em recipiente</option><option>Wax melts</option><option>Sabonetes</option><option>Resina e Jesmonite</option><option>Personalizados</option><option>Outros produtos artesanais</option></select></div>
+        <div class="field span2"><label>Disponibilidade base na loja</label><select id="prodAvailability" onchange="updateProductAvailabilityUI()"><option value="regular">Todo o ano + coleções</option><option value="edition">Apenas em coleções sazonais</option></select><small class="mix-help">Um produto pode pertencer a várias coleções sem ser duplicado. “Todo o ano + coleções” mantém-no no catálogo normal; “Apenas em coleções sazonais” só o disponibiliza quando pelo menos uma coleção associada estiver ativa e dentro das datas.</small></div>
         <div class="field span2" id="prodEditionField"><label>Coleções / Edições Especiais</label><div class="edition-select-row"><select id="prodEditionId" multiple size="4" aria-label="Coleções sazonais do produto"></select><button type="button" class="btn ghost" onclick="loadProductEditionsV1245(true).then(list=>{fillProductEditionOptionsV1244(productEditionMembershipIdsV138(productTechSheetProductV1250()));toast(list.length?'Coleções atualizadas':'Nenhuma coleção disponível')})">Atualizar</button></div><small class="mix-help">Seleciona uma ou várias coleções. Usa Ctrl/Cmd para várias seleções no computador; no tablet seleciona diretamente as opções disponíveis.</small></div>
         <div class="field edition-cost-field" id="prodEditionLaborField" style="display:none"><label>Tempo extra por unidade</label><div class="edition-cost-input"><input id="prodEditionExtraLaborMinutes" type="number" min="0" step="0.1" value="0"><span>min</span></div><small class="mix-help">Só o tempo adicional desta edição. O custo é calculado com a mão de obra €/hora já definida na app.</small></div>
         <div class="field edition-cost-field" id="prodEditionWasteField" style="display:none"><label>Desperdício extra da edição</label><div class="edition-cost-input"><input id="prodEditionExtraWastePct" type="number" min="0" step="0.1" value="0"><span>%</span></div><small class="mix-help">Acrescenta-se ao desperdício geral apenas neste produto. Usa 0 se não houver diferença.</small></div>
         <div class="field span2 edition-cost-note" id="prodEditionCostNote" style="display:none"><strong>💶 Custo real da edição</strong><span>Materiais e decoração continuam a ser registados na ficha técnica do produto. Aqui só acrescentamos o tempo e desperdício extra específicos desta edição. O PVP continua totalmente manual.</span></div><div class="field span2 product-techsheet-v1250" id="prodTechSheetBridge" style="display:none"><div class="product-techsheet-head-v1250"><div><strong>🧾 Ficha Técnica</strong><span id="prodTechSheetStatus">Ficha técnica do produto</span></div><button type="button" class="btn ghost" id="prodTechSheetBtn" onclick="openProductTechSheetV1250()">Editar Ficha Técnica</button></div><div class="product-techsheet-stats-v1250"><div><span>Materiais específicos</span><strong id="prodTechSheetIngredientCount">—</strong></div><div><span>Custo calculado</span><strong id="prodTechSheetCost">—</strong></div><div><span>PVP recomendado</span><strong id="prodTechSheetRecommended">—</strong></div></div><div class="product-composition-v144"><div class="product-composition-head-v144"><div><strong>Composição do produto</strong><small>Carregada automaticamente da Ficha Técnica guardada.</small></div><span id="prodCompositionBadgeV144" class="badge">—</span></div><div id="prodCompositionPreviewV144" class="product-composition-list-v144"><div class="empty">Guarda ou seleciona um produto para ver a composição.</div></div></div></div>
-        <div class="field"><label>Código</label><input id="prodCode" placeholder="Ex.: VEL001"></div>
         <div class="field"><label>Custo/un. automático</label><input id="prodCost" type="number" step="0.0001" readonly style="background:#DDF4D2"></div>
-        <div class="field"><label>PVP definido — venda direta</label><input id="prodPrice" type="number" step="0.01"><small class="mix-help">Usado nas encomendas criadas diretamente na app.</small></div>
-        <div class="field"><label>PVP definido — Loja online</label><input id="prodOnlinePriceV12620" type="number" step="0.01"><small class="mix-help">Preço que a loja online publica. Não varia entre MB WAY, Multibanco ou outros métodos.</small></div>
+        <div class="field"><label>PVP definido — venda direta</label><input id="prodPrice" type="number" min="0" step="0.01"><small class="mix-help">Usado nas encomendas criadas diretamente na app.</small></div>
+        <div class="field"><label>PVP definido — Loja online</label><input id="prodOnlinePriceV12620" type="number" min="0" step="0.01"><small class="mix-help">Preço que a loja online publica. Não varia entre MB WAY, Multibanco ou outros métodos.</small></div>
         <div class="field span2"><div class="pricing-policy-v1251"><div><label>PVP recomendado — venda direta</label><strong id="prodDirectRecommendedV12620">—</strong></div><div><label>PVP recomendado — Loja online</label><strong id="prodOnlineRecommendedV12620">—</strong></div><small>O recomendado da Loja inclui a provisão das taxas de pagamento online. Os dois PVP definidos continuam totalmente editáveis e nunca são alterados automaticamente.</small></div></div>
         <div class="field span4 product-cost-editor-v110">
           <div class="product-cost-editor-head-v110"><div><strong>Custos específicos deste produto</strong><small>Todos os valores podem ser alterados. Os materiais da ficha técnica são somados automaticamente.</small></div><span>por unidade</span></div>
@@ -3621,7 +3629,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div class="field"><label>Máximo deste produto por conjunto</label><input id="prodMixMaxQty" type="number" min="0" step="1" value="0" placeholder="0 = sem limite"><small class="mix-help">Ex.: 4 impede o cliente de escolher mais de 4 unidades deste produto no mesmo conjunto.</small></div>
         <div class="field"><label>Embalagens permitidas no conjunto</label><input id="prodMixBoxCaps" placeholder="Ex.: 6, 12, 24"><small class="mix-help">Deixa vazio para permitir em todas as embalagens disponíveis.</small></div>
         <div class="field span2 mix-admin-note"><strong>🕯️ Controlo dos conjuntos</strong><span>“Publicado na loja” e “Disponível para conjuntos” são independentes. Um produto de Edição Especial também pode entrar no conjunto se ativares esta opção.</span></div>
-        <div class="field"><label>&nbsp;</label><div class="btnrow"><button id="productSaveBtnV145" class="btn primary" onclick="saveProduct()">Guardar produto</button><button id="productCancelEditBtnV145" type="button" class="btn ghost hidden" onclick="cancelProductEditV145()">Cancelar edição</button></div></div>
+        <div class="field span2 product-actions-v147"><label>&nbsp;</label><div class="btnrow"><button id="productSaveBtnV145" class="btn primary" onclick="saveProduct()">Guardar produto</button><button id="productCancelEditBtnV145" type="button" class="btn ghost hidden" onclick="cancelProductEditV145()">Cancelar edição</button></div></div>
 <div class="field span2"><div id="productSaveStateV145" class="save-state-v143 neutral"><span>●</span><div><strong>Novo produto</strong><small>Preenche os dados e guarda. Ao editar um produto, este estado muda automaticamente.</small></div></div></div>
       </div>
     </div>
@@ -3783,7 +3791,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.4.16';
+const APP_VERSION='1.4.17';
 const SEED={"products":[],"minMargin":0.65,"businessName":"ArtEssencia"};
 const KEY='artessencia_v9_app_state', SEC='artessencia_v9_security', LAST='artessencia_v9_last_backup', BACKUP_META='artessencia_v9_backup_meta', RESTORE_SAFETY='artessencia_v9_pre_restore', CLOUD_SAFETY='artessencia_v9_pre_cloud_apply';
 const CLOUD_V91_MIGRATION='artessencia_v1_clean_start', CLOUD_CFG='artessencia_v1_cloud_config', CLOUD_META='artessencia_v1_cloud_meta', CLOUD_TABLE='artessencia_v1_state', CLOUD_SHADOW='artessencia_v1_cloud_shadow', CLOUD_LOG='artessencia_v1_cloud_log', DEVICE_KEY='artessencia_v1_device_id';
@@ -6169,9 +6177,13 @@ function deliverWithBalance(id){
 function registerOrderPayment(id){const o=db.orders.find(x=>x.id===id);if(!o)return;const total=calcOrder(o).total,current=Math.max(0,Number(o.paid)||0),remaining=Math.max(0,total-current),amount=Number(document.getElementById('detailNewPaid')?.value)||0,method=document.getElementById('detailPayMethod')?.value||o.payment||'Outro';if(amount<=0||amount>remaining+0.001)return toast('O pagamento deve ser superior a 0 € e não pode exceder '+euro(remaining));const payment={id:uid('PAY'),date:new Date().toISOString(),amount,method,type:'payment'};o.paid=current+amount;o.payment=method;o.paymentHistory=o.paymentHistory||[];o.paymentHistory.push(payment);addOrderPaymentCash(o,payment);save();showOrder(id);toast('Pagamento registado na encomenda e no Caixa: '+euro(amount))}
 function correctOrderPaid(id){const o=db.orders.find(x=>x.id===id);if(!o)return;const total=calcOrder(o).total,current=Math.max(0,Number(o.paid)||0),raw=prompt('Corrigir total recebido da encomenda '+id+' (0 a '+euro(total)+'):',String(current.toFixed(2)).replace('.',','));if(raw===null)return;const value=Number(String(raw).replace(',','.'));if(!Number.isFinite(value)||value<0||value>total+0.001)return toast('Valor inválido');const delta=value-current,payment={id:uid('PAY'),date:new Date().toISOString(),amount:delta,method:o.payment||'Outro',type:'correction',note:'Correção do total recebido'};o.paid=value;o.paymentHistory=o.paymentHistory||[];o.paymentHistory.push(payment);if(Math.abs(delta)>0.001){db.cash=db.cash||[];db.cash.push({id:uid('CASH'),date:todayISO(),type:delta>0?'Entrada':'Saída',desc:'Correção pagamento encomenda '+o.id,method:payment.method,value:Math.abs(delta),source:'order_payment_correction',orderId:o.id,paymentId:payment.id})}save();showOrder(id);toast('Total recebido corrigido')}
 async function deleteProduct(code){
- const p=db.products.find(x=>x.code===code);if(!p)return;
- const used=db.orders.some(o=>(o.items||[]).some(i=>i.code===code));
- if(used)return toast('Este produto já existe no histórico de encomendas e não pode ser apagado. Pode alterá-lo ou deixá-lo oculto.');
+ const p=findProductByCodeV147(code);if(!p)return;
+ const usedInOrders=db.orders.some(o=>(o.items||[]).some(i=>productCodeKeyV147(i.code)===productCodeKeyV147(p.code)));
+ const usedInQuotes=(db.quotes||[]).some(q=>(q.items||[]).some(i=>i.type!=='free'&&productCodeKeyV147(i.code)===productCodeKeyV147(p.code)));
+ const usedInDrafts=(Array.isArray(cart)&&cart.some(i=>productCodeKeyV147(i.code)===productCodeKeyV147(p.code)))||(Array.isArray(quoteCart)&&quoteCart.some(i=>i.type!=='free'&&productCodeKeyV147(i.code)===productCodeKeyV147(p.code)));
+ if(usedInOrders)return toast('Este produto já existe no histórico de encomendas e não pode ser apagado. Pode alterá-lo ou deixá-lo oculto.');
+ if(usedInQuotes)return toast('Este produto está associado a um orçamento e não pode ser apagado. Pode alterá-lo ou deixá-lo oculto.');
+ if(usedInDrafts)return toast('Este produto está numa venda ou orçamento ainda em preparação. Retire primeiro essa linha.');
  if(!confirm('Apagar este produto e a respetiva ficha técnica definitivamente?'))return;
  if(p._rid){
    const u=cloudUser||await ensureCloudSession();
@@ -6188,10 +6200,12 @@ async function deleteProduct(code){
      return;
    }
  }
- db.products=db.products.filter(x=>x.code!==code);
- if(db.productRecipes)delete db.productRecipes[code];
+ db.products=db.products.filter(x=>x!==p);
+ if(db.productRecipes)delete db.productRecipes[p.code];
  cloudApplying=true;
  try{localStorage.setItem(KEY,JSON.stringify(db));renderAll()}finally{cloudApplying=false}
+ localStorage.setItem(REL_DIRTY,'1');setCloudMeta({dirty:true,verified:false,localChangedAt:new Date().toISOString()});
+ if(cloudStartupDone)await cloudPushNow(false);
  cloudLogMsg('Produto eliminado definitivamente: '+code);
  await publishPublicTechnicalProfilesV12815(false);
  toast('Produto eliminado definitivamente');
@@ -6854,10 +6868,18 @@ function renderQuotePipeline(){const el=document.getElementById('quotePipelineBo
 function renderPicker(){
  document.getElementById('productPicker').innerHTML=db.products.map(p=>{
    const c=calculatedProductCost(p);
-   return `<button class="product-btn" onclick="addToCart('${p.code}')"><span class="price">${euro(p.price)}</span><strong>${p.name}</strong><small>${p.category} · custo ${euro(c)}</small></button>`
+   return `<button class="product-btn" onclick="addToCart(decodeURIComponent('${productArgV147(p.code)}'))"><span class="price">${euro(p.price)}</span><strong>${escapeHtml(p.name)}</strong><small>${escapeHtml(p.category)} · custo ${euro(c)}</small></button>`
  }).join('')
 }
 
+let editingProductCodeV147=null;
+function productCodeKeyV147(code){return String(code||'').trim().toLocaleUpperCase('pt-PT')}
+function findProductByCodeV147(code){const key=productCodeKeyV147(code);return (db.products||[]).find(p=>productCodeKeyV147(p.code)===key)||null}
+function nextProductCodeV147(){
+ const used=new Set((db.products||[]).map(p=>productCodeKeyV147(p.code))),numbers=(db.products||[]).map(p=>String(p.code||'').match(/^X(\d+)$/i)).filter(Boolean).map(m=>Number(m[1])||0);let n=Math.max(0,...numbers)+1,code;
+ do{code='X'+String(n++).padStart(3,'0')}while(used.has(productCodeKeyV147(code)));return code
+}
+function productArgV147(value){return encodeURIComponent(String(value??'')).replace(/'/g,'%27')}
 function setProductShopImagePreview(url=''){
  const img=document.getElementById('prodShopImagePreview'),hidden=document.getElementById('prodShopImageUrl');
  if(hidden)hidden.value=url||'';
@@ -6878,6 +6900,7 @@ async function uploadProductShopImage(){
  const code=(prodCode.value||'').trim();
  const name=(prodName.value||'').trim();
  if(!name)return toast('Indica primeiro o nome do produto');
+ if(!editingProductCodeV147&&code&&findProductByCodeV147(code))return toast('Já existe um produto com este código. Escolha outro antes de carregar a fotografia.');
  const c=initCloudClient();if(!c)return toast('Liga primeiro a Cloud');
  const user=await ensureCloudSession();if(!user)return toast('Inicia sessão na Cloud');
  if(file.size>8*1024*1024)return toast('A fotografia é demasiado grande (máx. 8 MB)');
@@ -6892,7 +6915,7 @@ async function uploadProductShopImage(){
    const url=data?.publicUrl||'';
    if(!url)throw new Error('URL pública indisponível');
    setProductShopImagePreview(url);
-   const existing=db.products.find(x=>x.code===code),wasEditing=!!existing;
+   const existing=editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null;
    if(existing){existing.shopImageUrl=url;save()}
    toast('Fotografia carregada')
  }catch(e){cloudLogMsg('Erro fotografia produto: '+cloudErrText(e));toast('Erro ao carregar fotografia')}
@@ -6914,7 +6937,7 @@ async function removeProductShopImage(){
  }catch(e){cloudLogMsg('Aviso ao remover fotografia: '+cloudErrText(e))}
  setProductShopImagePreview('');
  const f=document.getElementById('prodShopImageFile');if(f)f.value='';
- const existing=db.products.find(x=>x.code===code);
+ const existing=editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null;
  if(existing){existing.shopImageUrl='';save()}
  toast('Fotografia removida')
 }
@@ -7130,10 +7153,12 @@ function clearProductTechnicalFormV1287(){for(const id of ['prodIngredientsV1287
 function fillProductTechnicalFormV1287(p){const a=document.getElementById('prodIngredientsV1287'),c=document.getElementById('prodStorageV1287'),u=document.getElementById('prodConsumptionV1287');if(a)a.value=p?.materialsText||p?.additionalIngredientsText||p?.ingredientsText||'';if(c)c.value=p?.careInstructions||p?.storageInstructions||'';if(u)u.value=p?.safetyInstructions||p?.consumptionGuidance||''}
 function setProductEditorModeV145(p){
  const editing=!!p;
- const title=document.getElementById('productEditorTitleV145'),btn=document.getElementById('productSaveBtnV145'),cancel=document.getElementById('productCancelEditBtnV145'),state=document.getElementById('productSaveStateV145');
+ editingProductCodeV147=editing?String(p.code||''):null;
+ const title=document.getElementById('productEditorTitleV145'),btn=document.getElementById('productSaveBtnV145'),cancel=document.getElementById('productCancelEditBtnV145'),state=document.getElementById('productSaveStateV145'),codeInput=document.getElementById('prodCode');
  if(title)title.textContent=editing?`Editar produto · ${p.name||p.code}`:'Novo produto';
  if(btn)btn.textContent=editing?'Guardar alterações':'Guardar produto';
  if(cancel)cancel.classList.toggle('hidden',!editing);
+ if(codeInput){codeInput.disabled=editing;codeInput.title=editing?'O código identifica as fichas, encomendas e produção e não pode ser alterado durante a edição.':''}
  if(state){state.className='save-state-v143 '+(editing?'dirty':'neutral');state.innerHTML=editing?`<span>●</span><div><strong>Produto em edição</strong><small>${escapeHtml(p.name||p.code)} · altera os campos necessários e carrega em “Guardar alterações”.</small></div>`:`<span>●</span><div><strong>Novo produto</strong><small>Preenche os dados e guarda. Ao editar um produto, este estado muda automaticamente.</small></div>`}
 }
 function setProductSaveStateV145(type,title,detail){
@@ -7159,8 +7184,12 @@ function cancelProductEditV145(){
 }
 function saveProduct(){
  ensureProductSafetyEditorV1287();
- const code=prodCode.value.trim()||('X'+String(db.products.length+1).padStart(3,'0')),name=prodName.value.trim();if(!name){setProductSaveStateV145('error','Produto não guardado','Indique o nome do produto.');return toast('Indique o nome do produto')}
- const existing=db.products.find(x=>x.code===code),wasEditing=!!existing;
+ const name=prodName.value.trim();if(!name){setProductSaveStateV145('error','Produto não guardado','Indique o nome do produto.');return toast('Indique o nome do produto')}
+ const existing=editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null,wasEditing=!!existing;
+ if(editingProductCodeV147&&!existing){setProductSaveStateV145('error','Produto não guardado','O produto em edição já não existe. Atualize a lista e tente novamente.');return toast('O produto em edição já não existe')}
+ const requestedCode=String(prodCode.value||'').trim(),code=existing?existing.code:(requestedCode||nextProductCodeV147());
+ if(!existing&&findProductByCodeV147(code)){setProductSaveStateV145('error','Código já utilizado','Escolha outro código ou deixe o campo vazio para gerar um automaticamente.');return toast('Já existe um produto com este código')}
+ prodCode.value=code;
  const mixVisible=!!document.getElementById('prodMixVisible')?.checked;
  const mixMaxQty=Math.max(0,Math.round(Number(document.getElementById('prodMixMaxQty')?.value)||0));
  const mixBoxCapacities=parseMixBoxCaps(document.getElementById('prodMixBoxCaps')?.value||'');
@@ -7173,13 +7202,15 @@ function saveProduct(){
  const laborMinutes=readProductCostFieldV110('prodLaborMinutesV110'),wastePct=readProductCostFieldV110('prodWastePctV110');
  const moldCost=Math.max(0,Number(document.getElementById('prodMoldCostV110')?.value)||0),moldUses=Math.max(0,Number(document.getElementById('prodMoldUsesV110')?.value)||0),moldCavities=Math.max(1,Number(document.getElementById('prodMoldCavitiesV110')?.value)||1),moldUnitOverride=readProductCostFieldV110('prodMoldOverrideV110');
  const packagingCost=Math.max(0,Number(document.getElementById('prodPackagingCostV110')?.value)||0),equipmentPowerW=Math.max(0,Number(document.getElementById('prodEquipmentPowerWV133')?.value)||0),equipmentMinutes=readProductCostFieldV110('prodEquipmentMinutesV133'),indirectCost=Math.max(0,Number(document.getElementById('prodIndirectCostV110')?.value)||0),otherCost=Math.max(0,Number(document.getElementById('prodOtherCostV110')?.value)||0),targetMarginPct=readProductCostFieldV110('prodTargetMarginV110'),onlineTargetMarginPct=readProductCostFieldV110('prodOnlineTargetMarginV110');
- const onlinePriceInput=Number(document.getElementById('prodOnlinePriceV12620')?.value); const onlinePrice=onlinePriceInput>0?onlinePriceInput:(+prodPrice.value||0);
+ const directPriceText=String(prodPrice.value||'').trim(),directPrice=directPriceText===''?0:Number(directPriceText),onlinePriceText=String(document.getElementById('prodOnlinePriceV12620')?.value||'').trim(),onlinePriceInput=onlinePriceText===''?0:Number(onlinePriceText);
+ if(!Number.isFinite(directPrice)||directPrice<0||!Number.isFinite(onlinePriceInput)||onlinePriceInput<0){setProductSaveStateV145('error','Preço inválido','Os preços de venda não podem ser negativos.');return toast('Confirme os preços de venda')}
+ const onlinePrice=onlinePriceInput>0?onlinePriceInput:directPrice;
  const productionType=document.getElementById('prodProductionTypeV130')?.value||'other',manufactured=!!document.getElementById('prodManufacturedV130')?.checked,cureHours=Math.max(0,Number(document.getElementById('prodCureHoursV130')?.value)||0),prepTemp=readOptionalNumberV130('prodPrepTempV130'),mixTemp=readOptionalNumberV130('prodMixTempV130'),pourTemp=readOptionalNumberV130('prodPourTempV130'),productionNotes=document.getElementById('prodProductionNotesV130')?.value.trim()||'',qualityNotes=document.getElementById('prodQualityNotesV130')?.value.trim()||'';
  const additionalIngredientsText=document.getElementById('prodIngredientsV1287')?.value.trim()||'',storageInstructions=document.getElementById('prodStorageV1287')?.value.trim()||'',consumptionGuidance=document.getElementById('prodConsumptionV1287')?.value.trim()||'',technicalInfoVerified=!!document.getElementById('prodTechnicalVerifiedV1287')?.checked;
  if(technicalInfoVerified&&!baseTechnicalProfileCompleteV12811())return toast('Confirma primeiro a informação técnica da materiais comuns em Configuração');
  
  const additionalSafetysContains=productSafetySelectionV1287('contains'),additionalSafetysMayContain=productSafetySelectionV1287('mayContain').filter(code=>!additionalSafetysContains.includes(code));
- const obj={code,name,category:prodCat.value,cost:0,price:+prodPrice.value||0,onlinePrice,shopVisible:!!prodShopVisible.checked,shopDescription:prodShopDescription.value.trim(),shopImageUrl:(document.getElementById('prodShopImageUrl')?.value||existing?.shopImageUrl||'').trim(),mixVisible,mixMaxQty,mixBoxCapacities,availabilityType,editionExclusive:availabilityType==='edition',editionId,editionIds,editionExtraLaborMinutes,editionExtraWastePct,laborMinutes,wastePct,moldCost,moldUses,moldCavities,moldUnitOverride,packagingCost,equipmentPowerW,equipmentMinutes,indirectCost,otherCost,targetMarginPct,onlineTargetMarginPct,productionType,manufactured,cureHours,prepTemp,mixTemp,pourTemp,productionNotes,qualityNotes,materialsText:additionalIngredientsText,careInstructions:storageInstructions,safetyInstructions:consumptionGuidance,additionalIngredientsText,additionalSafetysContains:[],additionalSafetysMayContain:[],storageInstructions,consumptionGuidance,technicalInfoVerified:false,technicalInfoReviewedAt:''};
+ const obj={code,name,category:prodCat.value,cost:0,price:directPrice,onlinePrice,shopVisible:!!prodShopVisible.checked,shopDescription:prodShopDescription.value.trim(),shopImageUrl:(document.getElementById('prodShopImageUrl')?.value||existing?.shopImageUrl||'').trim(),mixVisible,mixMaxQty,mixBoxCapacities,availabilityType,editionExclusive:availabilityType==='edition',editionId,editionIds,editionExtraLaborMinutes,editionExtraWastePct,laborMinutes,wastePct,moldCost,moldUses,moldCavities,moldUnitOverride,packagingCost,equipmentPowerW,equipmentMinutes,indirectCost,otherCost,targetMarginPct,onlineTargetMarginPct,productionType,manufactured,cureHours,prepTemp,mixTemp,pourTemp,productionNotes,qualityNotes,materialsText:additionalIngredientsText,careInstructions:storageInstructions,safetyInstructions:consumptionGuidance,additionalIngredientsText,additionalSafetysContains:[],additionalSafetysMayContain:[],storageInstructions,consumptionGuidance,technicalInfoVerified:false,technicalInfoReviewedAt:''};
  obj.ingredientsText=productFinalIngredientsV12811(obj);obj.safetysContains=productFinalContainsV12811(obj);obj.safetysMayContain=productFinalMayContainV12811(obj);
  existing?Object.assign(existing,obj):db.products.push(obj);
  const savedProduct=existing||db.products[db.products.length-1];
@@ -7198,7 +7229,7 @@ function saveProduct(){
  setProductShopImagePreview('');const f=document.getElementById('prodShopImageFile');if(f)f.value='';setProductEditorModeV145(null);setProductSaveStateV145('saved',wasEditing?'Alterações guardadas':'Produto guardado com sucesso',`${name} · dados e composição associados ao produto.`);toast(wasEditing?'Alterações guardadas':'Produto guardado com sucesso')
 }
 function editProduct(code){
- const p=db.products.find(x=>x.code===code);if(!p)return;
+ const p=findProductByCodeV147(code);if(!p)return;
  prodCode.value=p.code;prodName.value=p.name;prodCat.value=p.category;prodCost.value=calculatedProductCost(p).toFixed(4);prodPrice.value=p.price;prodShopVisible.checked=!!p.shopVisible;prodShopDescription.value=p.shopDescription||'';
  const op=document.getElementById('prodOnlinePriceV12620');if(op)op.value=Number(p.onlinePrice??p.price)||0;
  const costFields={prodLaborMinutesV110:p.laborMinutes,prodWastePctV110:p.wastePct,prodMoldCostV110:p.moldCost,prodMoldUsesV110:p.moldUses,prodMoldCavitiesV110:p.moldCavities??1,prodMoldOverrideV110:p.moldUnitOverride,prodPackagingCostV110:p.packagingCost,prodEquipmentPowerWV133:p.equipmentPowerW,prodEquipmentMinutesV133:p.equipmentMinutes,prodIndirectCostV110:p.indirectCost,prodOtherCostV110:p.otherCost,prodTargetMarginV110:p.targetMarginPct,prodOnlineTargetMarginV110:p.onlineTargetMarginPct};for(const [id,v] of Object.entries(costFields)){const el=document.getElementById(id);if(el)el.value=v==null?'':v}fillProductProductionFieldsV130(p);refreshProductChannelPricingV12620();
@@ -7288,7 +7319,7 @@ function renderProducts(){
        </div>
        <div class="product-card-foot">
          <span>${marginOk?'Margem dentro do objetivo':'Margem abaixo do mínimo'}</span>
-         <div class="product-card-actions"><button class="btn" onclick="editProduct('${p.code}')">Editar</button><button class="btn danger" onclick="deleteProduct('${p.code}')">Apagar</button></div>
+         <div class="product-card-actions"><button class="btn" onclick="editProduct(decodeURIComponent('${productArgV147(p.code)}'))">Editar</button><button class="btn danger" onclick="deleteProduct(decodeURIComponent('${productArgV147(p.code)}'))">Apagar</button></div>
        </div>
      </div>
    </div>`;
@@ -7306,7 +7337,7 @@ function populateCostSelectors(){
  const prevProduct=costProduct.value;
  const mat='<option value="">Selecionar…</option>'+db.stock.map(x=>`<option value="${x.name}">${x.name}</option>`).join('');
  costMaterial.innerHTML=mat;costIngredient.innerHTML=mat;
- costProduct.innerHTML='<option value="">Selecionar…</option>'+db.products.map(p=>`<option value="${p.code}">${p.name}</option>`).join('');
+ costProduct.innerHTML='<option value="">Selecionar…</option>'+db.products.map(p=>`<option value="${escapeHtml(p.code)}">${escapeHtml(p.name)}</option>`).join('');
  if(prevMaterial&&[...costMaterial.options].some(o=>o.value===prevMaterial))costMaterial.value=prevMaterial;
  if(prevIngredient&&[...costIngredient.options].some(o=>o.value===prevIngredient))costIngredient.value=prevIngredient;
  if(prevProduct&&[...costProduct.options].some(o=>o.value===prevProduct))costProduct.value=prevProduct;syncCostUnitV120();
@@ -8643,7 +8674,7 @@ async function setEventRequestStatusV1276(id,status,reload=true){try{const c=clo
 function eventRequestToQuoteV1276(id){const r=eventRequestsV1276.find(x=>String(x.request_id)===String(id));if(!r)return;const leadRuleV1283=eventLeadRuleV1283(r),leadActionV1283=eventLeadSavedActionV1283(id);if(!leadRuleV1283.meets&&leadActionV1283?.action!=='exception_accepted')return acceptEventLeadExceptionV1283(id);clearQuoteForm();currentEventRequestV1277=String(r.request_id||'');currentEventLeadDecisionV1283={...leadRuleV1283,action:leadRuleV1283.meets?'within_rule':'exception_accepted',reason:leadActionV1283?.reason||'',checkedAt:new Date().toISOString()};quoteClient.value=r.customer_name||'';quoteContact.value=r.phone||'';if(document.getElementById('quoteEmail'))quoteEmail.value=r.email||'';quoteEventDate.value=r.event_date||'';const valid=new Date();valid.setDate(valid.getDate()+7);quoteValidUntil.value=valid.toISOString().slice(0,10);const products=Array.isArray(r.products)?r.products.join(', '):'A combinar';currentEventRequestedQtyV1279=Math.max(0,Number(r.unidade_qty)||0);allowDifferentEventQtyV1279=false;eventQtyDifferenceReasonV1282='';confirmedEventQtySignatureV1282='';const qtyGuardV1280=document.getElementById('quoteEventQtyGuardV1279');if(qtyGuardV1280)qtyGuardV1280.dataset.requestedQty=String(currentEventRequestedQtyV1279);quoteCart=[];quoteNotes.value=[`Pedido loja ${String(r.request_id).slice(0,8).toUpperCase()}`,r.event_type?`Evento: ${r.event_type}`:'',r.guest_count?`Pessoas: ${r.guest_count}`:'',r.packaging?`Apresentação: ${r.packaging}`:'',`Produtos: ${products}`,r.personalization?`Personalização: ${r.personalization}`:'',r.notes?`Notas: ${r.notes}`:'',currentEventLeadDecisionV1283.action==='exception_accepted'?`Antecedência: exceção aceite — ${currentEventLeadDecisionV1283.reason}`:`Antecedência: válida (${leadRuleV1283.available}/${leadRuleV1283.required} dias)`].filter(Boolean).join(' · ');renderQuoteCart();setEventRequestStatusV1276(id,'reviewing');document.querySelector('#quotes .card:nth-of-type(2)')?.scrollIntoView({behavior:'smooth',block:'start'});toast('Pedido carregado no orçamento. Define produtos/preços e guarda quando estiver pronto.')}
 function renderQuotes(){
  loadEventRequestsV1276(false);
- const sel=document.getElementById('quoteProduct');if(sel){sel.innerHTML='<option value="">Selecionar...</option>'+db.products.map(p=>`<option value="${p.code}">${p.name} — ${euro(p.price)}</option>`).join('')}
+ const sel=document.getElementById('quoteProduct');if(sel){sel.innerHTML='<option value="">Selecionar...</option>'+db.products.map(p=>`<option value="${escapeHtml(p.code)}">${escapeHtml(p.name)} — ${euro(p.price)}</option>`).join('')}
  const body=document.getElementById('quotesBody');if(!body)return;let expiredChanged=false;(db.quotes||[]).forEach(q=>{if(q.validUntil&&q.validUntil<todayISO()&&!['Aceite','Recusado','Expirado'].includes(q.status)&&!q.orderId){const prev=q.status||'Rascunho';q.status='Expirado';q.statusHistory=Array.isArray(q.statusHistory)?q.statusHistory:[];q.statusHistory.push({date:new Date().toISOString(),status:'Expirado',from:prev,to:'Expirado',source:'automatic'});expiredChanged=true}});if(expiredChanged)setTimeout(()=>save(),0);const st=quoteConversion(),k=document.getElementById('quoteKpis');if(k)k.innerHTML=[['Orçamentos',st.total],['Aceites',st.accepted],['Recusados',st.refused],['Conversão',pct(st.rate)]].map(([a,b])=>`<div class="card kpi"><div class="label">${a}</div><div class="value">${b}</div></div>`).join(''); const rows=(db.quotes||[]).slice().reverse();
  body.innerHTML=rows.length?rows.map(q=>{const c=quoteCalc(q),req=quoteDepositRequired(q),paid=Math.max(0,Number(q.depositPaid)||0),statusCell=q.orderId?`<span class="badge">Convertido</span>`:`<select onchange="setQuoteStatus('${q.id}',this.value)">${quoteStatusOptions(q.status)}</select>`,convertBtn=q.status==='Aceite'&&!q.orderId?`<button class="btn primary" onclick="convertQuoteToOrder('${q.id}')">Converter em encomenda</button>`:'';return `<tr><td>${escapeHtml(q.id)}</td><td>${escapeHtml(q.client||'—')}</td><td>${escapeHtml(q.eventDate||'—')}</td><td>${escapeHtml(q.validUntil||'—')}</td><td>${euro(c.total)}</td><td>${euro(paid)} / ${euro(req)}<br><small>${quotePaymentLabel(q)}</small><br><span class="badge ${['Sinal pago','Pago'].includes(quoteFinancialState(q))?'ok':'warn'}">${quoteFinancialState(q)}</span></td><td>${statusCell}</td><td><button class="btn" onclick="previewQuotePDF('${q.id}')">Ver PDF</button> <button class="btn" onclick="quotePDF('${q.id}')">Guardar PDF</button> <button class="btn primary" onclick="shareQuotePDF('${q.id}')">Partilhar PDF</button> <button class="btn" onclick="quoteEmailV1277('${q.id}')">Email</button> <button class="btn" onclick="quoteWhatsApp('${q.id}')">WhatsApp</button> <button class="btn" onclick="showQuoteHistory('${q.id}')">Histórico</button> ${!q.orderId?`<button class="btn" onclick="registerQuotePayment('${q.id}')">Registar pagamento</button>`:''} ${convertBtn} ${!q.orderId?`<button class="btn" onclick="editQuoteV1279('${q.id}')">Editar</button>`:''} <button class="btn danger" onclick="deleteQuote('${q.id}')">Eliminar</button></td></tr>`}).join(''):'<tr><td colspan="8" class="empty">Sem orçamentos</td></tr>';
 }
