@@ -3,13 +3,13 @@ self.addEventListener('activate',event=>event.waitUntil(clients.claim()));
 
 self.addEventListener('push',event=>{
   let data={};
-  try{data=event.data?event.data.json():{};}catch{data={body:event.data?event.data.text():'Nova notificação ArtEssencia'};}
+  try{data=event.data?event.data.json():{};}catch{data={body:event.data?event.data.text():'Nova notificação DONART'};}
   event.waitUntil((async()=>{
     const notificationData=data?.data||{};
     const eventRequestId=String(notificationData.eventRequestId||data?.eventRequestId||'').trim();
     const orderId=String(notificationData.orderId||notificationData.publicId||data?.orderId||'').trim();
     const isEventRequest=notificationData.type==='event_request'||!!eventRequestId;
-    const messageType=isEventRequest?'ArtEssencia_PUSH_EVENT_REQUEST':'ArtEssencia_PUSH_ORDER';
+    const messageType=isEventRequest?'DONART_PUSH_EVENT_REQUEST':'DONART_PUSH_ORDER';
     const windows=await clients.matchAll({type:'window',includeUncontrolled:true});
     const visible=windows.find(c=>c.visibilityState==='visible');
     if(visible){
@@ -17,7 +17,7 @@ self.addEventListener('push',event=>{
       return;
     }
     const sourceId=isEventRequest?eventRequestId:orderId;
-    const title=data.title||(isEventRequest?'ArtEssencia · Novo pedido de orçamento':'ArtEssencia · Nova encomenda');
+    const title=data.title||(isEventRequest?'DONART · Novo pedido de orçamento':'DONART · Nova encomenda');
     const fallbackUrl=isEventRequest
       ?(eventRequestId?'./?pushEventRequest='+encodeURIComponent(eventRequestId):'./')
       :(orderId?'./?pushOrder='+encodeURIComponent(orderId):'./');
@@ -25,7 +25,7 @@ self.addEventListener('push',event=>{
       body:data.body||(isEventRequest?'Recebeste um novo pedido de orçamento para evento.':'Recebeste uma nova encomenda.'),
       icon:data.icon||'./icon-192.png',
       badge:data.badge||'./icon-192.png',
-      tag:data.tag||(isEventRequest?'artessencia-event-request-':'artessencia-order-')+(sourceId||Date.now()),
+      tag:data.tag||(isEventRequest?'donart-event-request-':'donart-order-')+(sourceId||Date.now()),
       renotify:data.renotify!==false,
       data:{...notificationData,url:notificationData.url||fallbackUrl}
     };
