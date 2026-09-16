@@ -1,28 +1,15 @@
-ARTESSENCIA — BACKOFFICE V1.4.22
+ARTESSENCIA BACKOFFICE V1.4.23 — LOJA INTEGRADA
 
-V1.4.18 — ORÇAMENTOS: VALIDAÇÃO, IDENTIDADE E INTEGRIDADE FINANCEIRA
+Fonte de verdade usada: V1.4.22 Correção Cloud Restore.
+Esta versão é deliberadamente incremental: no index.html apenas a identificação de versão foi alterada. Não foram reescritas funções operacionais existentes.
 
-Alterações incrementais sobre a V1.4.16:
-- código automático de produto deixa de depender da contagem e nunca reutiliza um código existente;
-- criação com código já utilizado é bloqueada, sem editar silenciosamente o produto anterior;
-- código do produto fica protegido durante a edição para preservar ficha técnica e ligações históricas;
-- preços negativos passam a ser rejeitados;
-- eliminação bloqueada quando o produto existe em encomendas, orçamentos ou rascunhos em curso;
-- carregamento/remoção de fotografia só altera automaticamente o produto efetivamente em edição;
-- argumentos de ações e seletores protegidos para nomes/códigos com caracteres especiais;
-- adicionada a categoria “Outros produtos artesanais”;
-- identidade, categoria, disponibilidade e ações do formulário foram realinhadas;
-- preservados custos atuais, fichas técnicas, snapshots históricos e fluxo de produção;
-- preservados localStorage, schema 7, Cloud Sync, Backup e PWA.
+Integração Supabase acrescentada sem substituir as tabelas anteriores:
+- artessencia_shop_settings: Homepage e regras da loja por utilizador;
+- artessencia_shop_special_editions: Edições/Coleções especiais;
+- RPCs autenticadas para listar/guardar/apagar edições e guardar Entregas Loja;
+- bucket público artessencia-shop, com uploads limitados ao utilizador autenticado;
+- endpoint público store_public_content_v2, limitado a Homepage, Entregas e campanhas ativas.
 
+Os módulos Homepage, Edições Especiais e Entregas Loja que já existiam no Backoffice passam a ter o backend necessário para comunicar com a Loja, preservando a lógica existente.
 
-V1.4.18: validação de cliente/contacto/data/validade/condição/linhas; embalagem opcional; numeração pelo próximo ORC livre; proteção de orçamentos convertidos ou com pagamentos; proteção contra edição abaixo do recebido.
-
-V1.4.19 — FASE DE TESTES: a eliminação de orçamentos volta a ser permitida mesmo quando convertidos ou com pagamentos, com aviso explícito e sem cascata automática sobre registos relacionados. Mantidas as restantes validações e correções da V1.4.18.
-
-V1.4.20 — MODO DE UTILIZAÇÃO: adicionada em Configuração a alternância Fase de testes / Negócio real. Em testes mantém-se a eliminação definitiva de dados operacionais; em Negócio real ficam bloqueadas eliminações destrutivas de encomendas, orçamentos, clientes, produtos, movimentos manuais de Caixa e compras. A mudança de modo não altera dados existentes e é persistida nas definições, Backup e Cloud Sync.
-
-
-V1.4.21 — SUPABASE ARTESSENCIA INDEPENDENTE: preparado o Backoffice para o novo projeto Supabase ARTESSENCIA (project ref ihtsonqnnlrxvorfrarl), sem qualquer dependência DONART. A configuração inicial usa apenas a publishable key pública do novo projeto quando ainda não existe configuração Cloud local. A sincronização relacional mantém Clientes/Produtos/Encomendas/Orçamentos privados por utilizador e publica em store_products apenas campos comerciais dos produtos marcados para Loja (código, nome, descrição, categoria, PVP online, imagem, disponibilidade/personalização), nunca custos, margens, matérias-primas ou fichas técnicas. A Loja continua desligada e sem aceitar encomendas até ativação explícita.
-
-V1.4.22 — CORREÇÃO CLOUD RESTORE: removida chamada órfã a renderProductTechnicalMatrixV1289(), função inexistente que interrompia o renderAll() após receber/restaurar dados da Cloud. Alteração mínima e isolada; não altera o modelo de dados, Supabase, Backup, sincronização, Produtos, Encomendas, Custos, PWA ou regras de negócio.
+Não foram alteradas as funções de encomendas, produção, stock, compras, caixa, custos, clientes, relatórios, backup ou sincronização operacional.
