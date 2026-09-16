@@ -1,13 +1,13 @@
 {
-  "id": "donart-backoffice",
-  "name": "DONART Backoffice",
-  "short_name": "DONART BO",
-  "description": "Área privada de gestão DONART",
+  "id": "artessencia-backoffice",
+  "name": "ArtEssencia Backoffice",
+  "short_name": "ArtEssencia BO",
+  "description": "Área privada de gestão ArtEssencia",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#fffaf6",
-  "theme_color": "#F12473",
+  "background_color": "#f7f1e6",
+  "theme_color": "#967451",
   "icons": [
     {"src":"icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
     {"src":"icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}

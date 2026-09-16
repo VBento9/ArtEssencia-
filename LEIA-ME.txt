@@ -1,4 +1,4 @@
-ARTESSENCIA — BACKOFFICE V1.4.21
+ARTESSENCIA — BACKOFFICE V1.4.22
 
 V1.4.18 — ORÇAMENTOS: VALIDAÇÃO, IDENTIDADE E INTEGRIDADE FINANCEIRA
 
@@ -24,3 +24,5 @@ V1.4.20 — MODO DE UTILIZAÇÃO: adicionada em Configuração a alternância Fa
 
 
 V1.4.21 — SUPABASE ARTESSENCIA INDEPENDENTE: preparado o Backoffice para o novo projeto Supabase ARTESSENCIA (project ref ihtsonqnnlrxvorfrarl), sem qualquer dependência DONART. A configuração inicial usa apenas a publishable key pública do novo projeto quando ainda não existe configuração Cloud local. A sincronização relacional mantém Clientes/Produtos/Encomendas/Orçamentos privados por utilizador e publica em store_products apenas campos comerciais dos produtos marcados para Loja (código, nome, descrição, categoria, PVP online, imagem, disponibilidade/personalização), nunca custos, margens, matérias-primas ou fichas técnicas. A Loja continua desligada e sem aceitar encomendas até ativação explícita.
+
+V1.4.22 — CORREÇÃO CLOUD RESTORE: removida chamada órfã a renderProductTechnicalMatrixV1289(), função inexistente que interrompia o renderAll() após receber/restaurar dados da Cloud. Alteração mínima e isolada; não altera o modelo de dados, Supabase, Backup, sincronização, Produtos, Encomendas, Custos, PWA ou regras de negócio.
