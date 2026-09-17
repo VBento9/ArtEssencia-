@@ -2264,6 +2264,10 @@
 #quotes .btnrow{align-items:center}
 @media(max-width:700px){#quotes .form-grid{grid-template-columns:1fr}#quotes .form-grid>.field.span2{grid-column:auto}}
 
+
+/* ArtEssencia V1.4.25 — Catálogo Digital sazonal */
+.catalog-theme-panel{margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(135deg,#fffdf9,#fbf3ec)}
+.catalog-theme-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px}.catalog-theme-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.catalog-theme-preview{margin-top:10px;border-radius:16px;padding:18px;color:#fff;min-height:110px;display:flex;justify-content:space-between;align-items:end;background:linear-gradient(135deg,var(--ct1,#6b3d2e),var(--ct2,#c87845));box-shadow:var(--shadow)}.catalog-theme-preview b{font-family:Georgia,serif;font-size:24px}.catalog-theme-preview small{display:block;opacity:.9;margin-top:4px}.catalog-theme-swatch{width:34px;height:34px;border-radius:50%;border:2px solid rgba(255,255,255,.75);display:inline-block;margin-left:-7px}.catalog-digital-note{padding:10px 12px;background:#eef8f3;border:1px solid #cfe8db;border-radius:12px;color:#355f4b;font-size:9px;margin-top:10px}@media(max-width:850px){.catalog-theme-grid{grid-template-columns:1fr 1fr}}@media(max-width:560px){.catalog-theme-grid{grid-template-columns:1fr}}
 </style>
 
 <style id="artessencia-v142-redesign">
@@ -2328,7 +2332,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 <div class="app">
 <aside class="sidebar"><div class="brand"><img src="brand-artessencia.png" alt="ArtEssencia"><small>BACKOFFICE · GESTÃO PRIVADA</small></div><div class="nav" id="nav"></div><div class="sidebar-signature">Mais do que produtos,<br>criamos bem-estar.</div></aside>
 <main class="main">
-  <div class="topbar"><div class="art-global-search"><span class="art-search-icon">⌕</span><input id="globalSearchV142" type="search" placeholder="Pesquisar módulos..." autocomplete="off" onkeydown="globalSearchKeyV142(event)"><span class="art-search-hint">Enter</span></div><div class="top-actions"><button id="orderAlertButtonV12624" class="smallbtn order-alert-button-v12624" onclick="toggleOrderNotificationsV12624()" title="Novas encomendas">🔔<span id="orderAlertBadgeV12624" class="order-alert-count-v12624 hidden">0</span></button><button id="installBtn" class="smallbtn hidden" onclick="installApp()">Instalar app</button><button class="pill cloud-status neutral" id="cloudStatus" onclick="go('cloud')" title="Estado da sincronização"><span class="cloud-dot"></span><span id="cloudStatusText">Cloud desligada</span></button><div class="pill art-date-pill" id="today"></div><div class="art-profile"><span>AE</span><div><b>ArtEssencia</b><small>Backoffice privado</small></div></div><span id="runtimeVersion" class="pill art-version-pill">V1.4.23</span></div><div class="page-heading"><span id="pageContext">GESTÃO ArtEssencia</span><h1 id="pageTitle">Dashboard</h1></div></div>
+  <div class="topbar"><div class="art-global-search"><span class="art-search-icon">⌕</span><input id="globalSearchV142" type="search" placeholder="Pesquisar módulos..." autocomplete="off" onkeydown="globalSearchKeyV142(event)"><span class="art-search-hint">Enter</span></div><div class="top-actions"><button id="orderAlertButtonV12624" class="smallbtn order-alert-button-v12624" onclick="toggleOrderNotificationsV12624()" title="Novas encomendas">🔔<span id="orderAlertBadgeV12624" class="order-alert-count-v12624 hidden">0</span></button><button id="installBtn" class="smallbtn hidden" onclick="installApp()">Instalar app</button><button class="pill cloud-status neutral" id="cloudStatus" onclick="go('cloud')" title="Estado da sincronização"><span class="cloud-dot"></span><span id="cloudStatusText">Cloud desligada</span></button><div class="pill art-date-pill" id="today"></div><div class="art-profile"><span>AE</span><div><b>ArtEssencia</b><small>Backoffice privado</small></div></div><span id="runtimeVersion" class="pill art-version-pill">V1.4.25</span></div><div class="page-heading"><span id="pageContext">GESTÃO ArtEssencia</span><h1 id="pageTitle">Dashboard</h1></div></div>
   <div id="installBanner" class="installBanner hidden"><div><strong>Instalar no dispositivo</strong><br><small>Adiciona a app ao ecrã inicial e abre em modo completo.</small></div><button class="btn primary" onclick="installApp()">Instalar</button></div>
 
   <div id="orderNotificationPanelV12624" class="order-notification-panel-v12624 hidden" aria-live="polite">
@@ -2990,7 +2994,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       <div class="special-editor-grid">
         <div class="special-editor-main">
           <div class="form-grid">
-            <div class="field span2"><label>Nome da edição</label><input id="specialEditionName" placeholder="Ex.: Natal 2026"></div>
+            <div class="field span2"><label>Nome da edição</label><input id="specialEditionName" placeholder="Ex.: Natal 2026" oninput="refreshCatalogThemePreviewV1425()"></div>
             <div class="field"><label>Identificador</label><input id="specialEditionSlug" placeholder="natal-2026"></div>
             <div class="field"><label>Estado</label><select id="specialEditionActive"><option value="1">Ativa</option><option value="0">Inativa</option></select></div>
             <div class="field"><label>Topo da homepage</label><select id="specialEditionFeatured"><option value="0">Não</option><option value="1">Sim — usar como hero principal</option></select></div>
@@ -3004,6 +3008,17 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
             <div class="field span2"><label>Título no topo da homepage</label><input id="specialEditionHeroTitle" maxlength="70" placeholder="Ex.: O Natal chegou à ArtEssencia"></div>
             <div class="field"><label>Texto do botão principal</label><input id="specialEditionHeroCta" maxlength="30" placeholder="Ver coleção"></div>
             <div class="field"><label>Posição da imagem no topo</label><select id="specialEditionHeroPosition"><option value="center">Centro</option><option value="center top">Topo</option><option value="center bottom">Fundo</option><option value="left center">Esquerda</option><option value="right center">Direita</option></select></div>
+          </div>
+          <div class="catalog-theme-panel">
+            <div class="catalog-theme-head"><div><div class="section-title" style="margin:0">Tema do Catálogo Digital</div><small>Obrigatório por ocasião. Dentro das datas, este tema assume automaticamente o catálogo público.</small></div><span class="badge ok">CATÁLOGO</span></div>
+            <div class="catalog-theme-grid">
+              <div class="field"><label>Tema</label><select id="specialEditionTheme" onchange="applyCatalogThemePresetV1425()"><option value="artessencia">ArtEssencia</option><option value="outono">Outono</option><option value="halloween">Halloween</option><option value="natal">Natal</option><option value="namorados">Dia dos Namorados</option><option value="pascoa">Páscoa</option><option value="primavera">Primavera</option><option value="personalizado">Personalizado</option></select></div>
+              <div class="field"><label>Cor principal</label><input id="specialEditionThemePrimary" type="color" value="#6b3d2e" onchange="refreshCatalogThemePreviewV1425()"></div>
+              <div class="field"><label>Cor secundária</label><input id="specialEditionThemeSecondary" type="color" value="#c87845" onchange="refreshCatalogThemePreviewV1425()"></div>
+              <div class="field"><label>Estilo decorativo</label><select id="specialEditionThemeDecor" onchange="refreshCatalogThemePreviewV1425()"><option value="minimal">Minimalista</option><option value="folhas">Folhas / natureza</option><option value="halloween">Halloween</option><option value="natal">Natal</option><option value="romantico">Romântico</option><option value="primavera">Primavera</option></select></div>
+            </div>
+            <div id="catalogThemePreviewV1425" class="catalog-theme-preview"><div><b id="catalogThemePreviewTitleV1425">ArtEssencia</b><small id="catalogThemePreviewSubV1425">Pré-visualização do tema sazonal</small></div><div><i id="catalogThemeSwatch1V1425" class="catalog-theme-swatch"></i><i id="catalogThemeSwatch2V1425" class="catalog-theme-swatch"></i></div></div>
+            <div class="catalog-digital-note"><b>Regra automática:</b> uma ocasião ativa e dentro das datas aplica o respetivo tema ao catálogo. Se existirem várias, a edição marcada como “Topo da homepage” tem prioridade. Fora de campanhas, regressa ao tema ArtEssencia.</div>
           </div>
         </div>
 
@@ -3814,7 +3829,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.4.23';
+const APP_VERSION='1.4.25';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -8196,6 +8211,9 @@ function refreshSpecialEditionEditorVisual(){
  const fallback=document.getElementById('specialEditionImageFallback');
  if(fallback){const hasImage=img&&!img.classList.contains('hidden');const hasVideo=vid&&!vid.classList.contains('hidden');fallback.style.display=(hasImage||hasVideo)?'none':'grid'}
 }
+const CATALOG_THEME_PRESETS_V1425={artessencia:{p:'#6b3d2e',s:'#c9a78e',d:'minimal'},outono:{p:'#7a4327',s:'#c87845',d:'folhas'},halloween:{p:'#24140f',s:'#d66a2c',d:'halloween'},natal:{p:'#244b37',s:'#b58a3b',d:'natal'},namorados:{p:'#7b263d',s:'#d79aaa',d:'romantico'},pascoa:{p:'#8a6fa8',s:'#e3b6c6',d:'primavera'},primavera:{p:'#557b55',s:'#d6b6c8',d:'primavera'}};
+function applyCatalogThemePresetV1425(){const k=document.getElementById('specialEditionTheme')?.value||'artessencia',x=CATALOG_THEME_PRESETS_V1425[k];if(x){document.getElementById('specialEditionThemePrimary').value=x.p;document.getElementById('specialEditionThemeSecondary').value=x.s;document.getElementById('specialEditionThemeDecor').value=x.d}refreshCatalogThemePreviewV1425()}
+function refreshCatalogThemePreviewV1425(){const p=document.getElementById('specialEditionThemePrimary')?.value||'#6b3d2e',q=document.getElementById('specialEditionThemeSecondary')?.value||'#c87845',k=document.getElementById('specialEditionTheme')?.value||'artessencia',name=(document.getElementById('specialEditionName')?.value||'').trim()||({outono:'Coleção de Outono',halloween:'Coleção de Halloween',natal:'Coleção de Natal',namorados:'Dia dos Namorados',pascoa:'Coleção de Páscoa',primavera:'Primavera ArtEssencia',artessencia:'ArtEssencia'}[k]||'ArtEssencia');const box=document.getElementById('catalogThemePreviewV1425');if(box){box.style.setProperty('--ct1',p);box.style.setProperty('--ct2',q)}const t=document.getElementById('catalogThemePreviewTitleV1425');if(t)t.textContent=name;const a=document.getElementById('catalogThemeSwatch1V1425'),b=document.getElementById('catalogThemeSwatch2V1425');if(a)a.style.background=p;if(b)b.style.background=q}
 function clearSpecialEditionForm(){
  for(const id of ['specialEditionId','specialEditionName','specialEditionSlug','specialEditionStarts','specialEditionEnds','specialEditionEmoji','specialEditionSubtitle','specialEditionBadge','specialEditionNote']){
    const el=document.getElementById(id);if(el)el.value='';
@@ -8205,6 +8223,7 @@ function clearSpecialEditionForm(){
  const f=document.getElementById('specialEditionImageFile');if(f)f.value='';const vf=document.getElementById('specialEditionVideoFile');if(vf)vf.value='';
  setSpecialEditionPreview('');setSpecialEditionVideoPreview('');
  renderSpecialEditionProductPicker([]);
+ const th=document.getElementById('specialEditionTheme');if(th)th.value='artessencia';applyCatalogThemePresetV1425();
  refreshSpecialEditionEditorVisual();
 }
 
@@ -8355,6 +8374,10 @@ function editSpecialEdition(id){
  document.getElementById('specialEditionHeroTitle').value=d.heroTitle||'';
  document.getElementById('specialEditionHeroCta').value=d.heroCta||'Ver coleção';
  document.getElementById('specialEditionHeroPosition').value=d.heroPosition||'center';
+ document.getElementById('specialEditionTheme').value=d.catalogTheme||'artessencia';
+ document.getElementById('specialEditionThemePrimary').value=d.themePrimary||CATALOG_THEME_PRESETS_V1425[d.catalogTheme||'artessencia']?.p||'#6b3d2e';
+ document.getElementById('specialEditionThemeSecondary').value=d.themeSecondary||CATALOG_THEME_PRESETS_V1425[d.catalogTheme||'artessencia']?.s||'#c87845';
+ document.getElementById('specialEditionThemeDecor').value=d.themeDecor||CATALOG_THEME_PRESETS_V1425[d.catalogTheme||'artessencia']?.d||'minimal';refreshCatalogThemePreviewV1425();
  renderSpecialEditionProductPicker(d.products||[]);
  setSpecialEditionPreview(d.imageUrl||d.image_url||'');
  setSpecialEditionVideoPreview(d.videoUrl||d.video_url||'');
@@ -8380,6 +8403,10 @@ async function saveSpecialEdition(){
    heroTitle:(document.getElementById('specialEditionHeroTitle')?.value||'').trim(),
    heroCta:(document.getElementById('specialEditionHeroCta')?.value||'Ver coleção').trim(),
    heroPosition:(document.getElementById('specialEditionHeroPosition')?.value||'center'),
+   catalogTheme:(document.getElementById('specialEditionTheme')?.value||'artessencia'),
+   themePrimary:(document.getElementById('specialEditionThemePrimary')?.value||'#6b3d2e'),
+   themeSecondary:(document.getElementById('specialEditionThemeSecondary')?.value||'#c87845'),
+   themeDecor:(document.getElementById('specialEditionThemeDecor')?.value||'minimal'),
    imageUrl:(document.getElementById('specialEditionImageUrl')?.value||'').trim(),
    videoUrl:(document.getElementById('specialEditionVideoUrl')?.value||'').trim(),
    products:specialEditionProductSnapshot()
