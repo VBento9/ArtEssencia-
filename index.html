@@ -2265,7 +2265,7 @@
 @media(max-width:700px){#quotes .form-grid{grid-template-columns:1fr}#quotes .form-grid>.field.span2{grid-column:auto}}
 
 
-/* ArtEssencia V1.4.25 — Catálogo Digital sazonal */
+/* ArtEssencia V1.5.0 — Catálogo Digital sazonal */
 .catalog-theme-panel{margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(135deg,#fffdf9,#fbf3ec)}
 .catalog-theme-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px}.catalog-theme-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.catalog-theme-preview{margin-top:10px;border-radius:16px;padding:18px;color:#fff;min-height:110px;display:flex;justify-content:space-between;align-items:end;background:linear-gradient(135deg,var(--ct1,#6b3d2e),var(--ct2,#c87845));box-shadow:var(--shadow)}.catalog-theme-preview b{font-family:Georgia,serif;font-size:24px}.catalog-theme-preview small{display:block;opacity:.9;margin-top:4px}.catalog-theme-swatch{width:34px;height:34px;border-radius:50%;border:2px solid rgba(255,255,255,.75);display:inline-block;margin-left:-7px}.catalog-digital-note{padding:10px 12px;background:#eef8f3;border:1px solid #cfe8db;border-radius:12px;color:#355f4b;font-size:9px;margin-top:10px}@media(max-width:850px){.catalog-theme-grid{grid-template-columns:1fr 1fr}}@media(max-width:560px){.catalog-theme-grid{grid-template-columns:1fr}}
 </style>
@@ -2332,7 +2332,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 <div class="app">
 <aside class="sidebar"><div class="brand"><img src="brand-artessencia.png" alt="ArtEssencia"><small>BACKOFFICE · GESTÃO PRIVADA</small></div><div class="nav" id="nav"></div><div class="sidebar-signature">Mais do que produtos,<br>criamos bem-estar.</div></aside>
 <main class="main">
-  <div class="topbar"><div class="art-global-search"><span class="art-search-icon">⌕</span><input id="globalSearchV142" type="search" placeholder="Pesquisar módulos..." autocomplete="off" onkeydown="globalSearchKeyV142(event)"><span class="art-search-hint">Enter</span></div><div class="top-actions"><button id="orderAlertButtonV12624" class="smallbtn order-alert-button-v12624" onclick="toggleOrderNotificationsV12624()" title="Novas encomendas">🔔<span id="orderAlertBadgeV12624" class="order-alert-count-v12624 hidden">0</span></button><button id="installBtn" class="smallbtn hidden" onclick="installApp()">Instalar app</button><button class="pill cloud-status neutral" id="cloudStatus" onclick="go('cloud')" title="Estado da sincronização"><span class="cloud-dot"></span><span id="cloudStatusText">Cloud desligada</span></button><div class="pill art-date-pill" id="today"></div><div class="art-profile"><span>AE</span><div><b>ArtEssencia</b><small>Backoffice privado</small></div></div><span id="runtimeVersion" class="pill art-version-pill">V1.4.25</span></div><div class="page-heading"><span id="pageContext">GESTÃO ArtEssencia</span><h1 id="pageTitle">Dashboard</h1></div></div>
+  <div class="topbar"><div class="art-global-search"><span class="art-search-icon">⌕</span><input id="globalSearchV142" type="search" placeholder="Pesquisar módulos..." autocomplete="off" onkeydown="globalSearchKeyV142(event)"><span class="art-search-hint">Enter</span></div><div class="top-actions"><button id="orderAlertButtonV12624" class="smallbtn order-alert-button-v12624" onclick="toggleOrderNotificationsV12624()" title="Novas encomendas">🔔<span id="orderAlertBadgeV12624" class="order-alert-count-v12624 hidden">0</span></button><button id="installBtn" class="smallbtn hidden" onclick="installApp()">Instalar app</button><button class="pill cloud-status neutral" id="cloudStatus" onclick="go('cloud')" title="Estado da sincronização"><span class="cloud-dot"></span><span id="cloudStatusText">Cloud desligada</span></button><div class="pill art-date-pill" id="today"></div><div class="art-profile"><span>AE</span><div><b>ArtEssencia</b><small>Backoffice privado</small></div></div><span id="runtimeVersion" class="pill art-version-pill">V1.5.0</span></div><div class="page-heading"><span id="pageContext">GESTÃO ArtEssencia</span><h1 id="pageTitle">Dashboard</h1></div></div>
   <div id="installBanner" class="installBanner hidden"><div><strong>Instalar no dispositivo</strong><br><small>Adiciona a app ao ecrã inicial e abre em modo completo.</small></div><button class="btn primary" onclick="installApp()">Instalar</button></div>
 
   <div id="orderNotificationPanelV12624" class="order-notification-panel-v12624 hidden" aria-live="polite">
@@ -2997,9 +2997,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
             <div class="field span2"><label>Nome da edição</label><input id="specialEditionName" placeholder="Ex.: Natal 2026" oninput="refreshCatalogThemePreviewV1425()"></div>
             <div class="field"><label>Identificador</label><input id="specialEditionSlug" placeholder="natal-2026"></div>
             <div class="field"><label>Estado</label><select id="specialEditionActive"><option value="1">Ativa</option><option value="0">Inativa</option></select></div>
-            <div class="field"><label>Topo da homepage</label><select id="specialEditionFeatured"><option value="0">Não</option><option value="1">Sim — usar como hero principal</option></select></div>
-            <div class="field"><label>Encomendas abrem em</label><input id="specialEditionStarts" type="datetime-local"><small class="mix-help">Antes desta data a edição aparece na loja como “Em breve”. A partir desta data fica disponível para encomendas.</small></div>
-            <div class="field"><label>Encomendas fecham em</label><input id="specialEditionEnds" type="datetime-local"><small class="mix-help">Depois desta data a edição deixa de aceitar encomendas e sai da coleção ativa.</small></div>
+            <div class="field"><label>Topo da homepage</label><select id="specialEditionFeatured"><option value="0">Não</option><option value="1">Sim — usar como hero principal</option></select></div><div class="field"><label>Publicar no Catálogo Digital</label><select id="specialEditionCatalogEnabled"><option value="1">Sim — publicar</option><option value="0">Não — manter privada</option></select><small class="mix-help">Permite preparar a ocasião no Backoffice sem a apresentar ainda no catálogo público.</small></div><div class="field"><label>Prioridade do tema</label><input id="specialEditionCatalogPriority" type="number" min="0" step="1" value="0"><small class="mix-help">Quando duas ocasiões coincidem, vence a maior prioridade. Em empate, o destaque da homepage tem prioridade.</small></div>
+            <div class="field"><label>Publicação começa em</label><input id="specialEditionStarts" type="datetime-local"><small class="mix-help">Antes desta data a ocasião não assume o catálogo. A partir desta data pode ficar ativa publicamente.</small></div>
+            <div class="field"><label>Publicação termina em</label><input id="specialEditionEnds" type="datetime-local"><small class="mix-help">Depois desta data a ocasião deixa de assumir o catálogo e os produtos exclusivos deixam de aparecer.</small></div>
             <div class="field"><label>Ordem</label><input id="specialEditionOrder" type="number" step="1" value="0"></div>
             <div class="field"><label>Emoji / ícone</label><input id="specialEditionEmoji" placeholder="🎄"></div>
             <div class="field span2"><label>Subtítulo / descrição</label><input id="specialEditionSubtitle" placeholder="Ex.: A magia do Natal em peças artesanais"></div>
@@ -3018,7 +3018,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
               <div class="field"><label>Estilo decorativo</label><select id="specialEditionThemeDecor" onchange="refreshCatalogThemePreviewV1425()"><option value="minimal">Minimalista</option><option value="folhas">Folhas / natureza</option><option value="halloween">Halloween</option><option value="natal">Natal</option><option value="romantico">Romântico</option><option value="primavera">Primavera</option></select></div>
             </div>
             <div id="catalogThemePreviewV1425" class="catalog-theme-preview"><div><b id="catalogThemePreviewTitleV1425">ArtEssencia</b><small id="catalogThemePreviewSubV1425">Pré-visualização do tema sazonal</small></div><div><i id="catalogThemeSwatch1V1425" class="catalog-theme-swatch"></i><i id="catalogThemeSwatch2V1425" class="catalog-theme-swatch"></i></div></div>
-            <div class="catalog-digital-note"><b>Regra automática:</b> uma ocasião ativa e dentro das datas aplica o respetivo tema ao catálogo. Se existirem várias, a edição marcada como “Topo da homepage” tem prioridade. Fora de campanhas, regressa ao tema ArtEssencia.</div>
+            <div class="catalog-digital-note"><b>Regra automática:</b> uma ocasião publicada, ativa e dentro das datas aplica o respetivo tema. Se existirem várias, vence a maior prioridade; em empate, o destaque da homepage decide. Fora de campanhas, regressa ao tema ArtEssencia.</div>
           </div>
         </div>
 
@@ -3561,7 +3561,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
     <div class="products-hero card">
       <div>
         <div class="section-title" style="margin:0">Produtos</div>
-        <small>Gere velas, sabonetes, peças decorativas, preços e publicação na loja online.</small>
+        <small>Gere velas, sabonetes, peças decorativas, preços e publicação no Catálogo Digital / Loja.</small>
       </div>
       <div class="products-tools">
         <input id="productSearch" placeholder="Pesquisar produto…" oninput="renderProducts()">
@@ -3662,7 +3662,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           </div>
           <input id="prodShopImageUrl" type="hidden">
         </div>
-        <div class="field"><label>Loja online</label><label class="product-shop-toggle"><input id="prodShopVisible" type="checkbox"> Mostrar este produto na loja</label></div>
+        <div class="field"><label>Publicação pública</label><label class="product-shop-toggle"><input id="prodShopVisible" type="checkbox"> Mostrar este produto no Catálogo Digital / Loja</label><small class="mix-help">O mesmo controlo de publicação alimenta o catálogo público e fica preparado para a futura Loja, sem duplicar produtos.</small></div>
         <div class="field"><label>Compor conjunto</label><label class="product-shop-toggle mix-toggle"><input id="prodMixVisible" type="checkbox"> Disponível para conjuntos</label><small class="mix-help">Pode ser de qualquer categoria ou de uma Edição Especial.</small></div>
         <div class="field"><label>Máximo deste produto por conjunto</label><input id="prodMixMaxQty" type="number" min="0" step="1" value="0" placeholder="0 = sem limite"><small class="mix-help">Ex.: 4 impede o cliente de escolher mais de 4 unidades deste produto no mesmo conjunto.</small></div>
         <div class="field"><label>Embalagens permitidas no conjunto</label><input id="prodMixBoxCaps" placeholder="Ex.: 6, 12, 24"><small class="mix-help">Deixa vazio para permitir em todas as embalagens disponíveis.</small></div>
@@ -3829,7 +3829,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.4.25';
+const APP_VERSION='1.5.0';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -8218,7 +8218,7 @@ function clearSpecialEditionForm(){
  for(const id of ['specialEditionId','specialEditionName','specialEditionSlug','specialEditionStarts','specialEditionEnds','specialEditionEmoji','specialEditionSubtitle','specialEditionBadge','specialEditionNote']){
    const el=document.getElementById(id);if(el)el.value='';
  }
- const a=document.getElementById('specialEditionActive');if(a)a.value='1';const ft=document.getElementById('specialEditionFeatured');if(ft)ft.value='0';
+ const a=document.getElementById('specialEditionActive');if(a)a.value='1';const ft=document.getElementById('specialEditionFeatured');if(ft)ft.value='0';const ce=document.getElementById('specialEditionCatalogEnabled');if(ce)ce.value='1';const cp=document.getElementById('specialEditionCatalogPriority');if(cp)cp.value='0';
  const o=document.getElementById('specialEditionOrder');if(o)o.value='0';
  const f=document.getElementById('specialEditionImageFile');if(f)f.value='';const vf=document.getElementById('specialEditionVideoFile');if(vf)vf.value='';
  setSpecialEditionPreview('');setSpecialEditionVideoPreview('');
@@ -8327,14 +8327,14 @@ function renderSpecialEditionsAdmin(){
      <div class="special-edition-body">
        <div class="special-pro-statuses">
          <span class="special-edition-status ${statusClass}">${statusLabel}</span>
-         ${d.featured?'<span class="special-edition-status on">DESTAQUE</span>':''}
+         ${d.featured?'<span class="special-edition-status on">DESTAQUE</span>':''}${d.catalogEnabled===false?'<span class="special-edition-status off">FORA DO CATÁLOGO</span>':'<span class="special-edition-status on">CATÁLOGO</span>'}
        </div>
        <h3>${escapeHtml(ed.name||'Edição Especial')}</h3>
        <div class="special-edition-meta">${escapeHtml(d.subtitle||'Sem subtítulo')}</div>
        <div class="special-pro-metrics">
          <div><small>Produtos</small><strong>${prodCount}</strong></div>
          <div><small>Exclusivos</small><strong>${exclusiveCount}</strong></div>
-         <div><small>Ordem</small><strong>${Number(ed.sort_order)||0}</strong></div>
+         <div><small>Prioridade</small><strong>${Number(d.catalogPriority)||0}</strong></div>
        </div>
        <div class="special-pro-dates"><span>${escapeHtml(startLabel)}</span><b>→</b><span>${escapeHtml(endLabel)}</span></div>
        <div class="special-pro-foot">
@@ -8363,7 +8363,7 @@ function editSpecialEdition(id){
  document.getElementById('specialEditionId').value=ed.id||'';
  document.getElementById('specialEditionName').value=ed.name||'';
  document.getElementById('specialEditionSlug').value=ed.slug||'';
- document.getElementById('specialEditionActive').value=ed.active?'1':'0';document.getElementById('specialEditionFeatured').value=d.featured?'1':'0';
+ document.getElementById('specialEditionActive').value=ed.active?'1':'0';document.getElementById('specialEditionFeatured').value=d.featured?'1':'0';document.getElementById('specialEditionCatalogEnabled').value=d.catalogEnabled===false?'0':'1';document.getElementById('specialEditionCatalogPriority').value=Number(d.catalogPriority)||0;
  document.getElementById('specialEditionStarts').value=specialEditionLocalDatetime(ed.starts_at);
  document.getElementById('specialEditionEnds').value=specialEditionLocalDatetime(ed.ends_at);
  document.getElementById('specialEditionOrder').value=Number(ed.sort_order)||0;
@@ -8397,6 +8397,8 @@ async function saveSpecialEdition(){
  const data={
    emoji:(document.getElementById('specialEditionEmoji')?.value||'').trim(),
    featured:document.getElementById('specialEditionFeatured')?.value==='1',
+   catalogEnabled:document.getElementById('specialEditionCatalogEnabled')?.value!=='0',
+   catalogPriority:Math.max(0,Number(document.getElementById('specialEditionCatalogPriority')?.value)||0),
    subtitle:(document.getElementById('specialEditionSubtitle')?.value||'').trim(),
    badge:(document.getElementById('specialEditionBadge')?.value||'').trim(),
    note:(document.getElementById('specialEditionNote')?.value||'').trim(),

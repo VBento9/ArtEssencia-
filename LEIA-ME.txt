@@ -1,18 +1,12 @@
-ARTESSENCIA BACKOFFICE V1.4.25 — CATÁLOGO DIGITAL SAZONAL
+ARTESSENCIA BACKOFFICE V1.5.0 — MARCO CATÁLOGO DIGITAL
 
-Fonte de verdade usada: V1.4.22 Correção Cloud Restore.
-Esta versão é deliberadamente incremental: no index.html apenas a identificação de versão foi alterada. Não foram reescritas funções operacionais existentes.
+Base consolidada sobre V1.4.26.
 
-Integração Supabase acrescentada sem substituir as tabelas anteriores:
-- artessencia_shop_settings: Homepage e regras da loja por utilizador;
-- artessencia_shop_special_editions: Edições/Coleções especiais;
-- RPCs autenticadas para listar/guardar/apagar edições e guardar Entregas Loja;
-- bucket público artessencia-shop, com uploads limitados ao utilizador autenticado;
-- endpoint público store_public_content_v2, limitado a Homepage, Entregas e campanhas ativas.
+Inclui gestão sazonal do Catálogo Digital no módulo Edições Especiais:
+- publicação independente da preparação interna;
+- prioridade explícita entre ocasiões sobrepostas;
+- tema, cores, decoração, hero, datas e produtos associados;
+- produtos exclusivos por edição;
+- preservação dos módulos operacionais existentes.
 
-Os módulos Homepage, Edições Especiais e Entregas Loja que já existiam no Backoffice passam a ter o backend necessário para comunicar com a Loja, preservando a lógica existente.
-
-Não foram alteradas as funções de encomendas, produção, stock, compras, caixa, custos, clientes, relatórios, backup ou sincronização operacional.
-
-
-V1.4.25: Edições Especiais passam a controlar o tema sazonal do Catálogo Digital (preset, cores e estilo decorativo), guardado na Cloud no mesmo registo da edição.
+A Loja transacional permanece fora deste pacote e em stand-by.
