@@ -1,2 +1,18 @@
-ARTESSENCIA BACKOFFICE V1.6.1 — CENTRO CATÁLOGO DIGITAL
-Marco consolidado: gestão e pré-visualização sazonal reforçadas.
+ARTESSENCIA BACKOFFICE V1.7.1 — MARCO FINAL OPERACIONAL
+Base: V1.6.1 validada.
+Alterações finais: Centro Catálogo Digital preservado; Homepage pública clarificada; categorias em destaque passam a usar categorias reais e lista dinâmica, mantendo compatibilidade legacy Classic/Special/Premium nos dados; nomenclatura separa Catálogo Digital da futura Loja.
+Não foram alterados os motores operacionais validados de encomendas, produção, stock, compras, caixa, clientes, orçamentos, custos, relatórios, backup ou Cloud Sync.
+
+V1.7.1 — COMUNICAÇÕES DE CLIENTES
+- Ações WhatsApp, Email e Telefonar diretamente na ficha/lista do cliente.
+- Modelos editáveis: livre, confirmação, produção, pronta, agendamento e agradecimento.
+- Histórico local de contactos iniciados pelo Backoffice, sem afirmar entrega/leitura pelo destinatário.
+- Email continua a abrir a aplicação de correio do dispositivo (mailto); não existe envio SMTP autónomo.
+
+V1.7.2 — COMUNICAÇÕES DE CLIENTES FINALIZADAS
+- Substituído o prompt do navegador por painel/modal ArtEssencia.
+- Seleção explícita do canal WhatsApp/Email.
+- Seleção da encomenda correta do cliente ou opção sem encomenda.
+- Modelos de mensagem com pré-visualização editável antes de abrir a aplicação externa.
+- Histórico de comunicação passa a poder guardar a referência da encomenda associada.
+- Compatibilidade preservada com os registos de comunicações V1.7.1.
