@@ -1,3 +1,2 @@
-ARTESSENCIA BACKOFFICE V1.6.0
-
-Marco consolidado do Catálogo Digital. Gestão sazonal ligada ao Backoffice, temas automáticos e melhorias visuais responsivas.
+ARTESSENCIA BACKOFFICE V1.6.1 — CENTRO CATÁLOGO DIGITAL
+Marco consolidado: gestão e pré-visualização sazonal reforçadas.
