@@ -1,12 +1,3 @@
-ARTESSENCIA BACKOFFICE V1.5.0 — MARCO CATÁLOGO DIGITAL
+ARTESSENCIA BACKOFFICE V1.6.0
 
-Base consolidada sobre V1.4.26.
-
-Inclui gestão sazonal do Catálogo Digital no módulo Edições Especiais:
-- publicação independente da preparação interna;
-- prioridade explícita entre ocasiões sobrepostas;
-- tema, cores, decoração, hero, datas e produtos associados;
-- produtos exclusivos por edição;
-- preservação dos módulos operacionais existentes.
-
-A Loja transacional permanece fora deste pacote e em stand-by.
+Marco consolidado do Catálogo Digital. Gestão sazonal ligada ao Backoffice, temas automáticos e melhorias visuais responsivas.
