@@ -1,4 +1,4 @@
-ARTESSENCIA BACKOFFICE V1.7.10 — COMUNICAÇÕES · EMAIL · CONVERSAS
+ARTESSENCIA BACKOFFICE V1.7.11 — EMAIL · ASSOCIAÇÕES E PESQUISA
 Base: V1.6.1 validada.
 Alterações finais: Centro Catálogo Digital preservado; Homepage pública clarificada; categorias em destaque passam a usar categorias reais e lista dinâmica, mantendo compatibilidade legacy Classic/Special/Premium nos dados; nomenclatura separa Catálogo Digital da futura Loja.
 Não foram alterados os motores operacionais validados de encomendas, produção, stock, compras, caixa, clientes, orçamentos, custos, relatórios, backup ou Cloud Sync.
@@ -63,3 +63,11 @@ V1.7.10 — CONVERSAS DE EMAIL
 - Resposta direta a partir da conversa, mantendo associação e encadeamento.
 - Pesquisa também funciona na vista Conversas.
 - Sem alterações aos restantes módulos operacionais.
+
+
+V1.7.11 — ASSOCIAÇÕES E PESQUISA DE EMAIL
+- Associação automática segura por email exato do cliente e por referência explícita inequívoca de encomenda/orçamento.
+- Associação manual persistente de Cliente, Encomenda e Orçamento diretamente na mensagem ou conversa.
+- Uma associação manual aplicada numa conversa é guardada nas mensagens desse fio.
+- Pesquisa final por assunto, remetente/destinatário, conteúdo, cliente, encomenda e orçamento, tolerando acentos.
+- Sincronização automática V1.7.10, Responder e Conversas preservados.
