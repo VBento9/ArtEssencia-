@@ -31,3 +31,11 @@ V1.7.5 — CHAMADA HTTP DIRETA À EDGE FUNCTION
 - Usa a sessão autenticada já existente e a publishable key configurada no Backoffice.
 - Passa a expor a resposta HTTP real para diagnóstico, sem expor Secrets.
 - Restantes módulos e canais preservados.
+
+
+V1.7.6 — CORREÇÃO DO CORPO DA MENSAGEM
+- O texto editado no campo Mensagem passa a ser mantido explicitamente no estado do diálogo.
+- Alterar canal ou encomenda associada já não perde o texto escrito.
+- Ao escolher deliberadamente outro modelo de mensagem, o texto é substituído pelo modelo escolhido.
+- O envio usa exatamente o conteúdo visível no campo Mensagem.
+- Sem alterações à Edge Function, Resend ou restantes módulos.
