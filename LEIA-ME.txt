@@ -16,3 +16,10 @@ V1.7.2 — COMUNICAÇÕES DE CLIENTES FINALIZADAS
 - Modelos de mensagem com pré-visualização editável antes de abrir a aplicação externa.
 - Histórico de comunicação passa a poder guardar a referência da encomenda associada.
 - Compatibilidade preservada com os registos de comunicações V1.7.1.
+
+
+V1.7.3 — ENVIO DIRETO DE EMAIL (PASSO 4)
+- O canal Email em Comunicações deixa de usar mailto e invoca a Edge Function artessencia-send-email do projeto Supabase ArtEssencia.
+- Exige sessão autenticada ArtEssencia e mantém WhatsApp/Telefone e restantes módulos inalterados.
+- O histórico local só é registado após confirmação de envio pela função.
+- Preparado para teste real único antes da implementação da receção IMAP.
