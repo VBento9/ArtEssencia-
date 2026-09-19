@@ -23,3 +23,11 @@ V1.7.3 — ENVIO DIRETO DE EMAIL (PASSO 4)
 - Exige sessão autenticada ArtEssencia e mantém WhatsApp/Telefone e restantes módulos inalterados.
 - O histórico local só é registado após confirmação de envio pela função.
 - Preparado para teste real único antes da implementação da receção IMAP.
+
+
+V1.7.5 — CHAMADA HTTP DIRETA À EDGE FUNCTION
+- Mantém a Edge Function protegida por JWT.
+- Substitui apenas a invocação do envio de email por pedido HTTP explícito ao endpoint do projeto ArtEssencia.
+- Usa a sessão autenticada já existente e a publishable key configurada no Backoffice.
+- Passa a expor a resposta HTTP real para diagnóstico, sem expor Secrets.
+- Restantes módulos e canais preservados.
