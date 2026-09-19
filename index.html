@@ -3868,7 +3868,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.9';
+const APP_VERSION='1.7.10';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -4462,6 +4462,88 @@ async function sendEmailThreadReplyV179(index){
  finally{if(btn){btn.disabled=false;btn.textContent='Responder'}}
 }
 function htmlToTextV177(v=''){const el=document.createElement('div');el.innerHTML=String(v||'');return (el.textContent||el.innerText||'').trim()}
+
+// ArtEssencia V1.7.10 — sincronização automática de email ao nível da DONART V12.8.85
+let emailAutoPollTimerV1710=null;
+let emailAutoInitializedV1710=false;
+let emailAutoKnownInboundV1710=new Set();
+let emailAutoCheckingV1710=false;
+const EMAIL_AUTO_SYNC_MS_V1710=15000;
+
+function emailInboundIdentityV1710(m){return String(m?.id||m?.provider_message_id||'')}
+function primeEmailAutoV1710(rows){
+ emailAutoKnownInboundV1710=new Set((rows||[]).filter(m=>m?.direction==='inbound').map(emailInboundIdentityV1710).filter(Boolean));
+ emailAutoInitializedV1710=true
+}
+async function showNewEmailNoticeV1710(messages){
+ const rows=(messages||[]).filter(Boolean);if(!rows.length)return;
+ const m=rows[0],from=String(m.from_email||'Remetente desconhecido'),subject=String(m.subject||'(sem assunto)');
+ toast(rows.length===1?`Novo email: ${subject}`:`${rows.length} novos emails recebidos`);
+ try{
+  if('Notification' in window&&Notification.permission==='granted'&&navigator.serviceWorker){
+   const reg=await navigator.serviceWorker.ready;
+   await reg.showNotification(rows.length===1?'Novo email ArtEssencia':`${rows.length} novos emails ArtEssencia`,{
+    body:rows.length===1?`${from} · ${subject}`:'Abre Comunicações · Email para consultar as novas mensagens.',
+    icon:'icon-192.png',badge:'icon-192.png',
+    tag:'artessencia-email-'+emailInboundIdentityV1710(m),renotify:false,
+    data:{url:location.origin+location.pathname+'#email'}
+   })
+  }
+ }catch(e){console.warn('ArtEssencia email notification',e)}
+}
+async function syncImapNowV1710(c){
+ const {data:s}=await c.auth.getSession(),token=s?.session?.access_token||'';
+ if(!token)throw new Error('Sessão Cloud sem token');
+ const rr=await fetch('/api/email-sync',{
+  method:'POST',
+  headers:{Authorization:'Bearer '+token,'Content-Type':'application/json','Cache-Control':'no-cache'},
+  cache:'no-store'
+ });
+ const rj=await rr.json().catch(()=>({}));
+ if(!rr.ok||!rj?.ok)throw new Error(rj?.detail||rj?.error||`Falha na sincronização IMAP (${rr.status})`);
+ return rj
+}
+async function checkNewEmailsV1710(force=false){
+ if(emailAutoCheckingV1710||(!force&&document.hidden))return false;
+ emailAutoCheckingV1710=true;
+ try{
+  const c=initCloudClient(),u=await ensureCloudSession();if(!c||!u)return false;
+  await syncImapNowV1710(c);
+  const {data,error}=await c.from('artessencia_email_log').select('*').eq('user_id',u.id).order('created_at',{ascending:false}).limit(200);
+  if(error)throw error;
+  const rows=data||[];
+  if(!emailAutoInitializedV1710){
+   primeEmailAutoV1710(rows);
+   emailRowsV177=rows;
+   renderEmailModuleV177();
+   return true
+  }
+  const inbound=rows.filter(m=>m?.direction==='inbound');
+  const fresh=inbound.filter(m=>{const id=emailInboundIdentityV1710(m);return id&&!emailAutoKnownInboundV1710.has(id)});
+  inbound.forEach(m=>{const id=emailInboundIdentityV1710(m);if(id)emailAutoKnownInboundV1710.add(id)});
+  emailRowsV177=rows;
+  renderEmailModuleV177();
+  if(fresh.length)await showNewEmailNoticeV1710(fresh);
+  return true
+ }catch(e){
+  console.warn('ArtEssencia email auto sync',e);
+  return false
+ }finally{emailAutoCheckingV1710=false}
+}
+function scheduleNextEmailSyncV1710(delay=EMAIL_AUTO_SYNC_MS_V1710){
+ clearTimeout(emailAutoPollTimerV1710);
+ emailAutoPollTimerV1710=setTimeout(async()=>{
+  await checkNewEmailsV1710(false);
+  scheduleNextEmailSyncV1710()
+ },delay)
+}
+function startEmailNotificationPollingV1710(){
+ clearTimeout(emailAutoPollTimerV1710);
+ setTimeout(()=>checkNewEmailsV1710(false),1200);
+ scheduleNextEmailSyncV1710(EMAIL_AUTO_SYNC_MS_V1710)
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){checkNewEmailsV1710(true);scheduleNextEmailSyncV1710()}});
+window.addEventListener('focus',()=>{checkNewEmailsV1710(true);scheduleNextEmailSyncV1710()});
 
 function uid(prefix){return prefix+'-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7)}
 function ensureRecordIds(){
@@ -9679,7 +9761,7 @@ async function cloudHydrateStartup(){
 async function cloudStartup(){
  renderCloudUI();
  const u=await ensureCloudSession();
- if(!u){cloudStartupDone=true;renderCloudUI();renderOrderNotificationsV12624();startOrderNotificationPollingV12624();return}
+ if(!u){cloudStartupDone=true;renderCloudUI();renderOrderNotificationsV12624();startOrderNotificationPollingV12624();startEmailNotificationPollingV1710();return}
  cloudLogMsg('Sessão V10 recuperada');
  cloudHydrating=true;cloudStartupDone=false;
  try{
@@ -9692,7 +9774,7 @@ async function cloudStartup(){
  }
  await subscribeCloud();
  await publishPublicTechnicalProfilesV12815(false);
- startOrderNotificationPollingV12624();
+ startOrderNotificationPollingV12624();startEmailNotificationPollingV1710();
  renderOrderNotificationsV12624()
 }
 
