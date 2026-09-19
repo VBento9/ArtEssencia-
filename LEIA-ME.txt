@@ -1,4 +1,4 @@
-ARTESSENCIA BACKOFFICE V1.7.1 — MARCO FINAL OPERACIONAL
+ARTESSENCIA BACKOFFICE V1.7.9 — COMUNICAÇÕES · EMAIL · CONVERSAS
 Base: V1.6.1 validada.
 Alterações finais: Centro Catálogo Digital preservado; Homepage pública clarificada; categorias em destaque passam a usar categorias reais e lista dinâmica, mantendo compatibilidade legacy Classic/Special/Premium nos dados; nomenclatura separa Catálogo Digital da futura Loja.
 Não foram alterados os motores operacionais validados de encomendas, produção, stock, compras, caixa, clientes, orçamentos, custos, relatórios, backup ou Cloud Sync.
@@ -46,4 +46,20 @@ V1.7.7 — COMUNICAÇÕES · EMAIL
 - Pesquisa e abertura da mensagem completa.
 - Botão Atualizar caixa com sessão autenticada ArtEssencia Cloud.
 - Integração com /api/email-sync e artessencia_email_log.
+- Sem alterações aos restantes módulos operacionais.
+
+V1.7.8 — RESPONDER EMAIL
+- Resposta direta a uma mensagem recebida dentro do Backoffice.
+- Destinatário e assunto de resposta preenchidos automaticamente.
+- Associação de cliente/encomenda/orçamento preservada.
+- Ligação à mensagem original através de provider_message_id / in_reply_to.
+- Estado recebido apresentado de forma legível e nome do cliente em vez do UUID técnico.
+
+V1.7.9 — CONVERSAS DE EMAIL
+- Nova vista Conversas no módulo Comunicações · Email.
+- Agrupa mensagens recebidas e enviadas pelo encadeamento provider_message_id / in_reply_to_provider_id.
+- Fallback seguro por assunto normalizado + contacto quando não existe identificador de resposta.
+- Conversa apresentada cronologicamente, distinguindo Cliente e ArtEssencia.
+- Resposta direta a partir da conversa, mantendo associação e encadeamento.
+- Pesquisa também funciona na vista Conversas.
 - Sem alterações aos restantes módulos operacionais.
