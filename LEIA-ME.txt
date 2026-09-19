@@ -39,3 +39,11 @@ V1.7.6 — CORREÇÃO DO CORPO DA MENSAGEM
 - Ao escolher deliberadamente outro modelo de mensagem, o texto é substituído pelo modelo escolhido.
 - O envio usa exatamente o conteúdo visível no campo Mensagem.
 - Sem alterações à Edge Function, Resend ou restantes módulos.
+
+V1.7.7 — COMUNICAÇÕES · EMAIL
+- Novo módulo Comunicações · Email.
+- Recebidos, Enviados, Falhados e Todos.
+- Pesquisa e abertura da mensagem completa.
+- Botão Atualizar caixa com sessão autenticada ArtEssencia Cloud.
+- Integração com /api/email-sync e artessencia_email_log.
+- Sem alterações aos restantes módulos operacionais.
