@@ -1,0 +1,11 @@
+{
+  "name": "artessencia-backoffice",
+  "private": true,
+  "version": "1.0.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "imapflow": "^1.0.181"
+  }
+}
