@@ -2411,7 +2411,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 
   <section id="sale" class="screen">
     <div class="grid4" id="quoteKpis" style="margin-bottom:12px"></div><div class="card"><div class="form-grid">
-      <div class="field span2"><label>Cliente</label><input id="saleClient" list="clientSuggestions" placeholder="Nome do cliente" oninput="fillClientContact()"><datalist id="clientSuggestions"></datalist></div><div class="field"><label>Contacto</label><input id="saleContact" placeholder="Telemóvel"></div><div class="field"><label>Data entrega</label><input id="saleDate" type="date"></div>
+      <div class="field span2"><label>Cliente</label><input id="saleClient" list="clientSuggestions" placeholder="Nome do cliente" oninput="fillClientContact()"><datalist id="clientSuggestions"></datalist></div><div class="field"><label>Contacto</label><input id="saleContact" type="tel" inputmode="tel" placeholder="Telemóvel"></div><div class="field"><label>Email</label><input id="saleEmail" type="email" autocomplete="email" placeholder="cliente@email.pt"></div><div class="field"><label>Data entrega</label><input id="saleDate" type="date"></div>
       <div class="field"><label>Pagamento</label><select id="salePayment"><option>Dinheiro</option><option>MB Way</option><option>Transferência</option><option>Outro</option></select></div><div class="field"><label>Embalagem</label><select id="saleBox"></select></div><div class="field"><label>N.º caixas</label><input id="saleBoxes" type="number" min="1" value="1"></div><div class="field"><label>Valor pago</label><input id="salePaid" type="number" step="0.01" value="0"></div>
       <div class="field span2"><label>Notas / personalização da encomenda</label><textarea id="saleNotes" rows="3" placeholder="Ex.: nome a colocar, cor pretendida, fita, mensagem, acabamento ou outras instruções para produção"></textarea><small class="muted">Estas instruções seguem para a Produção e para a ordem de produção.</small></div>
     </div></div>
@@ -3503,7 +3503,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       <div class="clients-form-head">
         <div>
           <div class="section-title" style="margin:0">Novo / editar cliente</div>
-          <small>Os clientes criados pelas encomendas online continuam a ser reutilizados automaticamente.</small>
+          <small>Telefone é a identificação principal do cliente; email é a segunda referência. Na futura loja online serão pedidos ambos.</small>
         </div>
       </div>
       <div class="form-grid">
@@ -3870,7 +3870,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.12';
+const APP_VERSION='1.7.13';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -4733,12 +4733,25 @@ function validCustomerPhone(v){
 function validCustomerEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(String(v||'').trim())}
 function customerWhatsAppPhone(v){let d=normalizePhone(v);if(d.startsWith('00'))d=d.slice(2);if(d.length===9)d='351'+d;return d}
 function normText(v){return String(v||'').trim().toLocaleLowerCase('pt-PT').replace(/\s+/g,' ')}
+function clientByPhoneThenEmailV1713(phoneValue,emailValue=''){
+ const phone=customerPhoneKey(phoneValue),mail=String(emailValue||'').trim().toLowerCase();
+ if(phone){
+   const byPhone=(db.clients||[]).find(x=>customerPhoneKey(x.phone)===phone);
+   if(byPhone)return byPhone
+ }
+ if(mail){
+   const byMail=(db.clients||[]).find(x=>String(x.email||'').trim().toLowerCase()===mail);
+   if(byMail)return byMail
+ }
+ return null
+}
 function ensureClientsFromOrders(){
  db.clients=db.clients||[];
  db.orders.forEach(o=>{
    if(!o.client||o.clientDeleted)return;
    const phone=customerPhoneKey(o.contact),mail=String(o.email||'').trim().toLowerCase(),name=String(o.client).trim(),nn=normText(name);
-   let c=db.clients.find(x=>(phone&&customerPhoneKey(x.phone)===phone)||(mail&&String(x.email||'').trim().toLowerCase()===mail)||(!phone&&!mail&&normText(x.name)===nn));
+   let c=clientByPhoneThenEmailV1713(o.contact,o.email);
+   if(!c&&!phone&&!mail)c=db.clients.find(x=>normText(x.name)===nn);
    if(!c){c={id:uid('CLI'),name,phone:o.contact||'',email:o.email||'',notes:'',created:o.created||todayISO(),source:o.source==='online_store'?'online_store':'order'};db.clients.push(c)}
    else{if(!c.name&&name)c.name=name;if(!c.phone&&o.contact)c.phone=o.contact;if(!c.email&&o.email)c.email=o.email;if(o.source==='online_store'&&c.source!=='manual')c.source='online_store'}
    o.clientId=c.id
@@ -4747,13 +4760,14 @@ function ensureClientsFromOrders(){
 function upsertClientFromOrder(name,contact,email=''){
  name=String(name||'').trim();if(!name)return null;db.clients=db.clients||[];
  const phone=customerPhoneKey(contact),mail=String(email||'').trim().toLowerCase(),nn=normText(name);
- let c=db.clients.find(x=>(phone&&customerPhoneKey(x.phone)===phone)||(mail&&String(x.email||'').trim().toLowerCase()===mail)||(!phone&&!mail&&normText(x.name)===nn));
+ let c=clientByPhoneThenEmailV1713(contact,email);
+ if(!c&&!phone&&!mail)c=db.clients.find(x=>normText(x.name)===nn);
  if(c){if(!c.name)c.name=name;if(!c.phone&&contact)c.phone=contact;if(!c.email&&mail)c.email=mail;return c.id}
  c={id:uid('CLI'),name,phone:contact||'',email:mail,notes:'',created:todayISO(),source:'order'};db.clients.push(c);return c.id
 }
-function renderClientSuggestions(){ensureClientsFromOrders();const d=document.getElementById('clientSuggestions');if(d)d.innerHTML=db.clients.slice().sort((a,b)=>a.name.localeCompare(b.name,'pt')).map(c=>`<option value="${String(c.name).replace(/"/g,'&quot;')}">${c.phone||''}</option>`).join('')}
+function renderClientSuggestions(){ensureClientsFromOrders();const d=document.getElementById('clientSuggestions');if(d)d.innerHTML=db.clients.slice().sort((a,b)=>a.name.localeCompare(b.name,'pt')).map(c=>`<option value="${String(c.name).replace(/"/g,'&quot;')}">${[c.phone,c.email].filter(Boolean).join(' · ')}</option>`).join('')}
 function clientByUniqueName(value){const n=normText(value),rows=(db.clients||[]).filter(x=>normText(x.name)===n);return rows.length===1?rows[0]:null}
-function fillClientContact(){const c=clientByUniqueName(document.getElementById('saleClient')?.value);if(c&&document.getElementById('saleContact'))document.getElementById('saleContact').value=c.phone||''}
+function fillClientContact(){const c=clientByUniqueName(document.getElementById('saleClient')?.value);if(!c)return;const p=document.getElementById('saleContact'),e=document.getElementById('saleEmail');if(p&&!p.value)p.value=c.phone||'';if(e&&!e.value)e.value=c.email||''}
 function fillQuoteClientContact(){const c=clientByUniqueName(document.getElementById('quoteClient')?.value);if(!c)return;const p=document.getElementById('quoteContact'),e=document.getElementById('quoteEmail');if(p&&!p.value)p.value=c.phone||'';if(e&&!e.value)e.value=c.email||''}
 function orderMessage(id){
  const o=db.orders.find(x=>x.id===id);if(!o)return'';const c=calcOrder(o),remaining=Math.max(c.total-(+o.paid||0),0),s=db.settings||{};let pay='';
@@ -4874,6 +4888,8 @@ async function saveOrder(){
  if(!$('saleClient').value.trim())return toast('Indique o cliente');
  if(!$('saleContact').value.trim())return toast('Indique o contacto do cliente');
  if(!validCustomerPhone($('saleContact').value))return toast('Confirma o telefone do cliente: 9 algarismos em Portugal ou número internacional com indicativo');
+ const saleEmail=String($('saleEmail')?.value||'').trim();
+ if(saleEmail&&!validCustomerEmail(saleEmail))return toast('Confirma o endereço de email do cliente');
  if(!cart.length)return toast('Adicione pelo menos um produto');
  if(!$('saleDate').value)return toast('Indique a data de entrega para integrar a encomenda no planeamento de produção');
  const total=cart.reduce((s,x)=>s+(Number(x.qty)||0)*(Number(x.price)||0),0),
@@ -4886,12 +4902,13 @@ async function saveOrder(){
        pk=db.packaging.find(p=>p.name===boxName),
        clientName=$('saleClient').value.trim(),
        clientContact=$('saleContact').value.trim(),
-       clientId=upsertClientFromOrder(clientName,clientContact),
+       clientEmail=saleEmail,
+       clientId=upsertClientFromOrder(clientName,clientContact,clientEmail),
        payMethod=$('salePayment').value,
        paymentHistory=paid>0?[{id:uid('PAY'),date:new Date().toISOString(),amount:paid,method:payMethod,type:'payment',source:'order_creation'}]:[];
 
  const order={
-   id,created:todayISO(),client:clientName,contact:clientContact,clientId,
+   id,created:todayISO(),client:clientName,contact:clientContact,email:clientEmail,clientId,
    delivery:$('saleDate').value,payment:payMethod,box:boxName,
    boxCostSnapshot:pk?+pk.cost||0:0,boxes:+$('saleBoxes').value||1,
    paid,status:'Pedido',notes:String($('saleNotes')?.value||'').trim(),items:cart.map(x=>({...ensureLineCostSnapshotV134(x,'sale_save_v134')})),paymentHistory
@@ -6106,7 +6123,7 @@ async function deleteClient(id){
    alert('Não foi possível eliminar definitivamente o cliente.\n\n'+detail+'\n\nNada foi alterado localmente.');
  }
 }
-function startOrderForClient(id){const c=(db.clients||[]).find(x=>x.id===id);if(!c)return;go('sale');setTimeout(()=>{saleClient.value=c.name;saleContact.value=c.phone||''},0)}
+function startOrderForClient(id){const c=(db.clients||[]).find(x=>x.id===id);if(!c)return;go('sale');setTimeout(()=>{saleClient.value=c.name;saleContact.value=c.phone||'';if($('saleEmail'))$('saleEmail').value=c.email||''},0)}
 function simpleHash(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}return (h>>>0).toString(16).padStart(8,'0')}
 function backupPayload(){const data=JSON.parse(JSON.stringify(db)),raw=JSON.stringify(data);return{app:'ArtEssencia',version:APP_VERSION,schema:7,exportedAt:new Date().toISOString(),checksum:simpleHash(raw),data}}
 function backupBlob(){return new Blob([JSON.stringify(backupPayload(),null,2)],{type:'application/json'})}
