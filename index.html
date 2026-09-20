@@ -2460,55 +2460,136 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
   </section>
 
   <section id="orders" class="screen">
-    <div class="orders-toolbar card">
-      <div class="orders-toolbar-title"><span>GESTÃO DE ENCOMENDAS</span><h2>Encomendas</h2><p>Acompanha cada pedido desde a entrada até à entrega.</p></div>
-      <div class="orders-toolbar-controls">
+    <div class="orders-toolbar card orders-toolbar-v1728">
+      <div class="orders-toolbar-title">
+        <span>GESTÃO DE ENCOMENDAS</span>
+        <h2>Encomendas</h2>
+        <p>Acompanha cada pedido desde a entrada até à entrega.</p>
+      </div>
+      <div class="orders-toolbar-controls orders-toolbar-controls-v1728">
         <div class="field orders-search"><label>Pesquisar</label><input id="orderSearch" placeholder="N.º ou cliente" oninput="renderOrders()"></div>
         <div class="field"><label>Estado</label><select id="orderFilter" onchange="renderOrders()"><option value="">Todos</option><option>Pedido</option><option>Confirmada</option><option>Em produção</option><option>Pronta</option><option>Entregue</option><option>Cancelado</option></select></div>
         <div class="field"><label>Vista</label><div class="orders-view-switch"><button id="ordersCardsBtn" class="active" onclick="setOrdersView('cards')">▦ Cartões</button><button id="ordersTableBtn" onclick="setOrdersView('table')">☷ Tabela</button></div></div>
-        <button class="btn primary orders-new" onclick="go('sale')">＋ Nova encomenda</button>
+        <div class="orders-new-wrap-v1728"><button class="btn primary orders-new" onclick="go('sale')">＋ Nova encomenda</button></div>
       </div>
     </div>
-    <div id="ordersFlow" class="orders-flow"></div>
-    <div id="ordersCards" class="orders-cards"></div>
-    <div id="ordersTableWrap" class="tablewrap orders-table-wrap" style="margin-top:12px;display:none"><table><thead><tr><th>N.º</th><th>Cliente</th><th>Entrega</th><th>Unidades</th><th>Total</th><th>Pago</th><th>Estado</th><th>Ações</th></tr></thead><tbody id="ordersBody"></tbody></table></div>
+
+    <section class="card orders-flow-card-v1728">
+      <div class="orders-section-head-v1728">
+        <div>
+          <div class="section-title" style="margin:0">Fluxo das encomendas</div>
+          <small>Resumo por estado para leitura rápida da operação.</small>
+        </div>
+      </div>
+      <div id="ordersFlow" class="orders-flow"></div>
+    </section>
+
+    <section class="card orders-list-card-v1728">
+      <div class="orders-section-head-v1728">
+        <div>
+          <div class="section-title" style="margin:0">Lista de encomendas</div>
+          <small>Consulta, edita e acompanha os pedidos registados.</small>
+        </div>
+      </div>
+      <div id="ordersCards" class="orders-cards"></div>
+      <div id="ordersTableWrap" class="tablewrap orders-table-wrap" style="display:none"><table><thead><tr><th>N.º</th><th>Cliente</th><th>Entrega</th><th>Unidades</th><th>Total</th><th>Pago</th><th>Estado</th><th>Ações</th></tr></thead><tbody id="ordersBody"></tbody></table></div>
+    </section>
   </section>
 
   <section id="quotes" class="screen">
-    <div class="card" style="margin-bottom:12px">
-      <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div><div class="section-title" style="margin:0">Pedidos ArtEssencia para Eventos</div><small class="muted">Pedidos enviados pela loja para preparação de orçamento. Não são encomendas.</small></div><button class="btn" onclick="loadEventRequestsV1276(true)">Atualizar pedidos</button></div>
-      <div id="eventRequestsStatusV1276" class="muted" style="margin-top:10px">A carregar pedidos…</div>
-      <div id="eventRequestsV1276" style="display:grid;gap:10px;margin-top:10px"></div>
-    </div>
-    <div class="card"><div class="form-grid">
-      <div class="field span2"><label>Cliente</label><input id="quoteClient" list="clientSuggestions" placeholder="Nome do cliente" oninput="fillQuoteClientContact()"></div>
-      <div class="field"><label>Contacto</label><input id="quoteContact" placeholder="Telemóvel"></div>
-      <div class="field"><label>Email</label><input id="quoteEmail" type="email" placeholder="cliente@email.pt"></div>
-      <div class="field"><label>Data do evento</label><input id="quoteEventDate" type="date"></div>
-      <div class="field"><label>Validade</label><input id="quoteValidUntil" type="date"></div>
-      <div class="field"><label>Condição de pagamento</label><select id="quotePaymentTerms" onchange="syncQuotePaymentFields()"><option value="50_50">50% sinal + 50% antes do evento</option><option value="100_upfront">100% antecipado</option><option value="custom">Personalizado</option></select></div>
-      <div class="field"><label>Sinal inicial (%)</label><input id="quoteDepositPct" type="number" min="0" max="100" step="1" value="50" oninput="renderQuoteCart()"></div>
-      <div class="field"><label>Saldo até (dias antes)</label><input id="quoteBalanceDays" type="number" min="0" step="1" value="3"></div>
-      <div class="field"><label>Meio de pagamento</label><select id="quotePaymentMethod"><option>MB Way</option><option>Transferência</option><option>Dinheiro</option><option>Outro</option></select></div>
-      <div class="field"><label>Embalagem</label><select id="quoteBox"></select></div><div class="field"><label>N.º embalagens</label><input id="quoteBoxes" type="number" min="1" value="1"></div>
-      <div class="field"><label>Produto</label><select id="quoteProduct"></select></div>
-      <div class="field"><label>Quantidade</label><input id="quoteQty" type="number" min="1" value="1"></div>
-      <div class="field"><label>Preço/un. €</label><input id="quoteUnitPrice" type="number" min="0" step="0.01"></div>
-      <div class="field"><label>&nbsp;</label><button class="btn primary" onclick="addQuoteProduct()">Adicionar produto</button></div>
-    </div></div>
-    <div class="card" style="margin-top:12px"><div class="section-title" style="margin-top:0">Linha personalizada</div><div class="form-grid">
-      <div class="field span2"><label>Descrição</label><input id="quoteFreeDesc" placeholder="Ex.: Personalização tema, entrega, embalagem individual"></div>
-      <div class="field"><label>Quantidade</label><input id="quoteFreeQty" type="number" min="1" value="1"></div>
-      <div class="field"><label>Preço/un. €</label><input id="quoteFreePrice" type="number" min="0" step="0.01"></div><div class="field"><label>Custo estimado/un. €</label><input id="quoteFreeCost" type="number" min="0" step="0.01" placeholder="Opcional"></div>
-      <div class="field"><label>&nbsp;</label><button class="btn" onclick="addQuoteFreeLine()">Adicionar linha</button></div>
-    </div></div>
+    <section class="card quotes-events-card-v1730">
+      <div class="quotes-section-head-v1730">
+        <div>
+          <div class="section-title" style="margin:0">Pedidos ArtEssencia para Eventos</div>
+          <small class="muted">Pedidos enviados pela loja para preparação de orçamento. Não são encomendas.</small>
+        </div>
+        <button class="btn" onclick="loadEventRequestsV1276(true)">Atualizar pedidos</button>
+      </div>
+      <div id="eventRequestsStatusV1276" class="muted quotes-events-status-v1730">A carregar pedidos…</div>
+      <div id="eventRequestsV1276" class="quotes-events-list-v1730"></div>
+    </section>
+
+    <section class="card quotes-main-card-v1730">
+      <div class="quotes-section-head-v1730">
+        <div>
+          <div class="section-title" style="margin:0">Criar orçamento</div>
+          <small>Dados do cliente, evento, condições de pagamento e produto.</small>
+        </div>
+      </div>
+
+      <div class="form-grid quotes-main-grid-v1730">
+        <div class="field quotes-client-v1730"><label>Cliente</label><input id="quoteClient" list="clientSuggestions" placeholder="Nome do cliente" oninput="fillQuoteClientContact()"></div>
+        <div class="field"><label>Contacto</label><input id="quoteContact" placeholder="Telemóvel"></div>
+        <div class="field"><label>Email</label><input id="quoteEmail" type="email" placeholder="cliente@email.pt"></div>
+        <div class="field"><label>Data do evento</label><input id="quoteEventDate" type="date"></div>
+        <div class="field"><label>Validade</label><input id="quoteValidUntil" type="date"></div>
+        <div class="field"><label>Condição de pagamento</label><select id="quotePaymentTerms" onchange="syncQuotePaymentFields()"><option value="50_50">50% sinal + 50% antes do evento</option><option value="100_upfront">100% antecipado</option><option value="custom">Personalizado</option></select></div>
+        <div class="field"><label>Sinal inicial (%)</label><input id="quoteDepositPct" type="number" min="0" max="100" step="1" value="50" oninput="renderQuoteCart()"></div>
+        <div class="field"><label>Saldo até (dias antes)</label><input id="quoteBalanceDays" type="number" min="0" step="1" value="3"></div>
+        <div class="field"><label>Meio de pagamento</label><select id="quotePaymentMethod"><option>MB Way</option><option>Transferência</option><option>Dinheiro</option><option>Outro</option></select></div>
+        <div class="field"><label>Embalagem</label><select id="quoteBox"></select></div>
+        <div class="field"><label>N.º embalagens</label><input id="quoteBoxes" type="number" min="1" value="1"></div>
+        <div class="field"><label>Produto</label><select id="quoteProduct"></select></div>
+        <div class="field"><label>Quantidade</label><input id="quoteQty" type="number" min="1" value="1"></div>
+        <div class="field"><label>Preço/un. €</label><input id="quoteUnitPrice" type="number" min="0" step="0.01"></div>
+        <div class="field quotes-product-action-v1730"><label>&nbsp;</label><button class="btn primary" onclick="addQuoteProduct()">Adicionar produto</button></div>
+      </div>
+    </section>
+
+    <section class="card quotes-custom-line-v1730">
+      <div class="quotes-section-head-v1730">
+        <div>
+          <div class="section-title" style="margin:0">Linha personalizada</div>
+          <small>Para serviços, personalizações ou componentes que não existem no catálogo.</small>
+        </div>
+      </div>
+      <div class="form-grid quotes-custom-grid-v1730">
+        <div class="field quotes-free-desc-v1730"><label>Descrição</label><input id="quoteFreeDesc" placeholder="Ex.: Personalização tema, entrega, embalagem individual"></div>
+        <div class="field"><label>Quantidade</label><input id="quoteFreeQty" type="number" min="1" value="1"></div>
+        <div class="field"><label>Preço/un. €</label><input id="quoteFreePrice" type="number" min="0" step="0.01"></div>
+        <div class="field"><label>Custo estimado/un. €</label><input id="quoteFreeCost" type="number" min="0" step="0.01" placeholder="Opcional"></div>
+        <div class="field quotes-free-action-v1730"><label>&nbsp;</label><button class="btn" onclick="addQuoteFreeLine()">Adicionar linha</button></div>
+      </div>
+    </section>
+
     <div id="quoteEventQtyGuardV1279" class="card" style="display:none;margin-top:12px;border-left:4px solid #e62f72"></div>
-    <div class="section-title">Itens do orçamento</div><div class="card" id="quoteCart"></div>
-    <div class="card" style="margin-top:12px"><div class="form-grid"><div class="field span2"><label>Observações</label><input id="quoteNotes" placeholder="Tema, cores, condições, levantamento/entrega..."></div><div class="field"><label>Tipo de desconto</label><select id="quoteDiscountType" onchange="renderQuoteCart()"><option value="none">Sem desconto</option><option value="percent">Percentagem (%)</option><option value="fixed">Valor (€)</option></select></div><div class="field"><label>Desconto</label><input id="quoteDiscount" type="number" min="0" step="0.01" value="0" oninput="renderQuoteCart()"></div></div><div id="quoteDiscountHint" class="soft-note" style="margin-top:8px">O desconto é opcional e controlado manualmente. A app mostra apenas uma sugestão baseada na quantidade.</div>
-      <div class="totalbox"><div class="mini"><span>Subtotal</span><strong id="quoteSubtotal">0,00 €</strong></div><div class="mini"><span>Desconto</span><strong id="quoteDiscountView">0,00 €</strong></div><div class="mini"><span>Poupança cliente</span><strong id="quoteSavingView">0,00 €</strong></div><div class="mini"><span>Total</span><strong id="quoteTotal">0,00 €</strong></div><div class="mini"><span>Pagamento para confirmar</span><strong id="quoteDepositView">0,00 €</strong></div></div>
-      <div class="btnrow"><button id="quoteSaveBtnV1279" class="btn primary" onclick="saveQuote()">Guardar orçamento</button><button class="btn" onclick="clearQuoteForm()">Limpar</button></div>
-    </div>
-    <div class="section-title">Histórico de orçamentos</div><div class="tablewrap"><table><thead><tr><th>N.º</th><th>Cliente</th><th>Evento</th><th>Validade</th><th>Total</th><th>Pagamento</th><th>Estado</th><th>Ações</th></tr></thead><tbody id="quotesBody"></tbody></table></div>
+
+    <section class="card quotes-items-card-v1730">
+      <div class="quotes-section-head-v1730">
+        <div>
+          <div class="section-title" style="margin:0">Itens do orçamento</div>
+          <small>Revê todos os produtos e linhas personalizadas antes de guardar.</small>
+        </div>
+      </div>
+      <div id="quoteCart"></div>
+    </section>
+
+    <section class="card quotes-summary-card-v1730">
+      <div class="quotes-section-head-v1730">
+        <div>
+          <div class="section-title" style="margin:0">Condições e total</div>
+          <small>Observações, desconto e valores finais do orçamento.</small>
+        </div>
+      </div>
+      <div class="form-grid quotes-summary-grid-v1730">
+        <div class="field quotes-notes-v1730"><label>Observações</label><input id="quoteNotes" placeholder="Tema, cores, condições, levantamento/entrega..."></div>
+        <div class="field"><label>Tipo de desconto</label><select id="quoteDiscountType" onchange="renderQuoteCart()"><option value="none">Sem desconto</option><option value="percent">Percentagem (%)</option><option value="fixed">Valor (€)</option></select></div>
+        <div class="field"><label>Desconto</label><input id="quoteDiscount" type="number" min="0" step="0.01" value="0" oninput="renderQuoteCart()"></div>
+      </div>
+      <div id="quoteDiscountHint" class="soft-note quotes-discount-note-v1730">O desconto é opcional e controlado manualmente. A app mostra apenas uma sugestão baseada na quantidade.</div>
+      <div class="totalbox quotes-totalbox-v1730"><div class="mini"><span>Subtotal</span><strong id="quoteSubtotal">0,00 €</strong></div><div class="mini"><span>Desconto</span><strong id="quoteDiscountView">0,00 €</strong></div><div class="mini"><span>Poupança cliente</span><strong id="quoteSavingView">0,00 €</strong></div><div class="mini"><span>Total</span><strong id="quoteTotal">0,00 €</strong></div><div class="mini"><span>Pagamento para confirmar</span><strong id="quoteDepositView">0,00 €</strong></div></div>
+      <div class="quotes-actions-v1730"><button class="btn" onclick="clearQuoteForm()">Limpar</button><button id="quoteSaveBtnV1279" class="btn primary" onclick="saveQuote()">Guardar orçamento</button></div>
+    </section>
+
+    <section class="card quotes-history-card-v1730">
+      <div class="quotes-section-head-v1730">
+        <div>
+          <div class="section-title" style="margin:0">Histórico de orçamentos</div>
+          <small>Consulta estados, validade, pagamentos e ações dos orçamentos guardados.</small>
+        </div>
+      </div>
+      <div class="tablewrap quotes-history-table-v1730"><table><thead><tr><th>N.º</th><th>Cliente</th><th>Evento</th><th>Validade</th><th>Total</th><th>Pagamento</th><th>Estado</th><th>Ações</th></tr></thead><tbody id="quotesBody"></tbody></table></div>
+    </section>
   </section>
 
   <section id="production" class="screen">
@@ -2545,8 +2626,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       <div id="productionDayAgendaV12653" class="prod-day-list-v12653"></div>
     </div>
 
-    <div class="grid2 prod-grid" style="margin-top:12px">
-      <div class="card">
+    <div class="production-stack-v1729" style="margin-top:14px">
+      <section class="card production-section-v1729">
         <div class="prod-card-title">
           <div>
             <div class="section-title" style="margin:0">Encomendas a produzir</div>
@@ -2554,9 +2635,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           </div>
         </div>
         <div id="productionOrders"></div>
-      </div>
+      </section>
 
-      <div class="card">
+      <section class="card production-section-v1729">
         <div class="prod-card-title">
           <div>
             <div class="section-title" style="margin:0">Produção por produto</div>
@@ -2564,11 +2645,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           </div>
         </div>
         <div id="productionProducts"></div>
-      </div>
-    </div>
+      </section>
 
-    <div class="grid2 prod-grid" style="margin-top:12px">
-      <div class="card">
+      <section class="card production-section-v1729">
         <div class="prod-card-title">
           <div>
             <div class="section-title" style="margin:0">Materiais totais</div>
@@ -2576,9 +2655,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           </div>
         </div>
         <div id="productionRecipe"></div>
-      </div>
+      </section>
 
-      <div class="card">
+      <section class="card production-section-v1729">
         <div class="prod-card-title">
           <div>
             <div class="section-title" style="margin:0">Verificação de stock</div>
@@ -2586,11 +2665,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           </div>
         </div>
         <div id="productionStockCheck"></div>
-      </div>
-    </div>
+      </section>
 
-    <div class="grid2 prod-grid" style="margin-top:12px">
-      <div class="card">
+      <section class="card production-section-v1729">
         <div class="prod-card-title">
           <div>
             <div class="section-title" style="margin:0">Embalagens necessárias</div>
@@ -2598,9 +2675,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           </div>
         </div>
         <div id="productionPackaging"></div>
-      </div>
+      </section>
 
-      <div class="card">
+      <section class="card production-section-v1729">
         <div class="prod-card-title">
           <div>
             <div class="section-title" style="margin:0">Sessões concluídas</div>
@@ -2608,7 +2685,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           </div>
         </div>
         <div id="productionHistory"></div>
-      </div>
+      </section>
     </div>
   </section>
 
@@ -2831,34 +2908,35 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 
     <div id="catalogSummary" class="catalog-summary"></div>
 
-    <div class="grid2" style="margin-top:10px">
-      <div class="card catalog-document-card">
+    <section class="catalog-documents-stack-v1731">
+      <article class="card catalog-document-card catalog-document-card-v1731">
         <div>
           <div class="catalog-doc-kicker">CATÁLOGO</div>
           <div class="section-title" style="margin:3px 0 4px">Produtos ArtEssencia</div>
           <p class="muted">Gerado automaticamente a partir dos produtos e PVP definidos em Produtos.</p>
         </div>
-        <div class="catalog-actions">
+        <div class="catalog-actions catalog-actions-v1731">
           <button class="btn" onclick="previewMenuPDF()">Ver PDF</button>
           <button class="btn primary" onclick="shareMenuPDF()">Enviar PDF</button>
           <button class="btn" onclick="downloadMenuPDF()">Guardar PDF</button>
         </div>
-      </div>
-      <div class="card catalog-document-card">
+      </article>
+
+      <article class="card catalog-document-card catalog-document-card-v1731">
         <div>
           <div class="catalog-doc-kicker">CAIXAS TEMÁTICAS</div>
           <div class="section-title" style="margin:3px 0 4px">Catálogo para clientes</div>
           <p class="muted">Fotografia, capacidade, descrição e preço de venda das caixas especiais.</p>
         </div>
-        <div class="catalog-actions">
+        <div class="catalog-actions catalog-actions-v1731">
           <button class="btn" onclick="previewThemedBoxesPDF()">Ver PDF</button>
           <button class="btn primary" onclick="shareThemedBoxesPDF()">Enviar PDF</button>
           <button class="btn" onclick="downloadThemedBoxesPDF()">Guardar PDF</button>
         </div>
-      </div>
-    </div>
+      </article>
+    </section>
 
-    <div class="card catalog-editor-card" style="margin-top:10px">
+    <section class="card catalog-editor-card catalog-editor-card-v1731">
       <div class="catalog-editor-head">
         <div>
           <div class="section-title" style="margin:0">Adicionar / editar conjunto personalizado</div>
@@ -2866,21 +2944,21 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         </div>
       </div>
       <input id="themeBoxId" type="hidden">
-      <div class="form-grid">
-        <div class="field span2"><label>Nome</label><input id="themeBoxName" placeholder="Ex.: Caixa Natal 12"></div>
+      <div class="form-grid catalog-editor-grid-v1731">
+        <div class="field catalog-theme-name-v1731"><label>Nome</label><input id="themeBoxName" placeholder="Ex.: Caixa Natal 12"></div>
         <div class="field"><label>Capacidade</label><input id="themeBoxCapacity" type="number" min="1" placeholder="12"></div>
         <div class="field"><label>Caixa física base</label><select id="themeBoxBasePackaging"></select></div>
         <div class="field"><label>Custo extra decoração €</label><input id="themeBoxDecorationCost" type="number" step="0.01" min="0" placeholder="0,00"></div>
         <div class="field"><label>Preço ao cliente €</label><input id="themeBoxPrice" type="number" step="0.01" min="0" placeholder="6,50"></div>
-        <div class="field span2"><label>Descrição</label><input id="themeBoxDesc" placeholder="Ex.: Caixa natalícia com laço e etiqueta personalizada"></div>
-        <div class="field span2"><label>Imagem <span style="color:#b42318">*</span> <small style="font-weight:700;color:#806b62">obrigatória</small></label><input id="themeBoxImage" type="file" accept="image/*" onchange="previewThemeBoxImage()"><small class="muted">É necessária uma fotografia para guardar a conjunto personalizado.</small></div>
+        <div class="field catalog-theme-desc-v1731"><label>Descrição</label><input id="themeBoxDesc" placeholder="Ex.: Caixa natalícia com laço e etiqueta personalizada"></div>
+        <div class="field catalog-theme-image-v1731"><label>Imagem <span style="color:#b42318">*</span> <small style="font-weight:700;color:#806b62">obrigatória</small></label><input id="themeBoxImage" type="file" accept="image/*" onchange="previewThemeBoxImage()"><small class="muted">É necessária uma fotografia para guardar o conjunto personalizado.</small></div>
         <div class="field"><label>Visível no catálogo</label><select id="themeBoxActive"><option value="1">Sim</option><option value="0">Não</option></select></div>
-        <div class="field"><label>&nbsp;</label><button class="btn primary" onclick="saveThemedBox()">Guardar caixa</button></div>
+        <div class="field catalog-theme-action-v1731"><label>&nbsp;</label><button class="btn primary" onclick="saveThemedBox()">Guardar caixa</button></div>
       </div>
-      <div style="margin-top:10px"><img id="themeBoxPreview" class="image-preview hidden" alt="Pré-visualização"></div>
-    </div>
+      <div class="catalog-theme-preview-v1731"><img id="themeBoxPreview" class="image-preview hidden" alt="Pré-visualização"></div>
+    </section>
 
-    <div class="card catalog-creator-card creator-ui-v114" style="margin-top:10px">
+    <section class="card catalog-creator-card creator-ui-v114 catalog-creator-card-v1731">
       <div class="creator-ui-head creator-head-v1261">
         <div>
           <div class="section-title" style="margin:0">Criador de Caixas</div>
@@ -3023,9 +3101,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div class="creator-ui-note">As alterações ficam aplicadas ao Criador de Caixas da loja após guardar.</div>
         <button class="btn primary creator-save-btn" onclick="saveBoxCreatorSettings()">Guardar Criador de Caixas</button>
       </div>
-    </div>
+    </section>
 
-    <div class="catalog-saved-head">
+    <div class="catalog-saved-head catalog-saved-head-v1731">
       <div>
         <div class="section-title" style="margin:0">Caixas temáticas guardadas</div>
         <small id="themedBoxesCount">0 caixas</small>
@@ -3346,6 +3424,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
   </section>
 
   <section id="settings" class="screen">
+    <div class="settings-hero-v1732 card"><div><div class="section-title" style="margin:0">Configuração</div><small>Parâmetros gerais do Backoffice, custos, segurança, sincronização e dados do atelier.</small></div></div>
     <div class="settings-hero card">
       <div>
         <div class="section-title" style="margin:0">Configuração</div>
@@ -3381,7 +3460,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
             <small>Define as embalagens base e o custo interno de cada uma.</small>
           </div>
         </div>
-        <div class="form-grid">
+        <div class="form-grid settings-form-grid-v1732">
           <div class="field span2"><label>Nome</label><input id="packName" placeholder="Ex.: Caixa presente"></div>
           <div class="field"><label>Capacidade</label><input id="packCapacity" type="number"></div>
           <div class="field"><label>Custo €</label><input id="packCost" type="number" step="0.01"></div>
@@ -3454,7 +3533,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           <small>Dados usados nos contactos e documentos gerados pela ArtEssencia.</small>
         </div>
       </div>
-      <div class="form-grid">
+      <div class="form-grid settings-form-grid-v1732">
         <div class="field span2"><label>Nome comercial</label><input id="businessNameInput" placeholder="ArtEssencia"></div>
         <div class="field span2"><label>Nome legal / titular</label><input id="businessLegalNameV140" placeholder="Nome completo ou denominação legal"></div>
         <div class="field"><label>NIF / NIPC</label><input id="businessTaxIdV140" inputmode="numeric" maxlength="9" placeholder="123456789"></div>
@@ -3960,7 +4039,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.27';
+const APP_VERSION='1.7.32';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -8714,6 +8793,976 @@ function printOrderCompleteV12634(id){
     grid-template-columns:1fr;
   }
   #sale .sale-actions-v1727 .btn{
+    width:100%;
+  }
+}
+</style>
+
+
+<style id="artessencia-orders-layout-v1728">
+/* ArtEssencia V1.7.28 — Encomendas reorganizadas visualmente, sem alteração funcional. */
+#orders .orders-toolbar-v1728{
+  min-height:86px;
+  padding:17px 18px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:linear-gradient(180deg,#fff,#fcf8f5);
+  box-shadow:0 8px 24px rgba(81,54,43,.05);
+}
+#orders .orders-toolbar-title span{
+  font-size:7.5px;
+  letter-spacing:.12em;
+  font-weight:850;
+  color:#9a7f74;
+}
+#orders .orders-toolbar-title h2{
+  margin:2px 0 3px;
+  font-size:22px;
+  line-height:1.1;
+  color:#513a33;
+}
+#orders .orders-toolbar-title p{
+  margin:0;
+  font-size:8.5px;
+  line-height:1.4;
+  color:#8a7770;
+}
+#orders .orders-toolbar-controls-v1728{
+  display:grid;
+  grid-template-columns:minmax(220px,1.25fr) minmax(150px,.75fr) minmax(200px,.85fr) auto;
+  gap:10px;
+  align-items:end;
+}
+#orders .orders-toolbar-controls-v1728 .field{
+  min-width:0;
+}
+#orders .orders-toolbar-controls-v1728 .field label{
+  display:block;
+  min-height:18px;
+  margin-bottom:6px;
+  font-size:8px;
+  line-height:1.15;
+  letter-spacing:.035em;
+  text-transform:uppercase;
+  font-weight:850;
+  color:#745f57;
+}
+#orders .orders-toolbar-controls-v1728 input,
+#orders .orders-toolbar-controls-v1728 select{
+  min-height:42px;
+  border-radius:11px;
+}
+#orders .orders-view-switch{
+  min-height:42px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:4px;
+  padding:3px;
+  border:1px solid #e4d8d2;
+  border-radius:11px;
+  background:#f9f5f2;
+}
+#orders .orders-view-switch button{
+  min-height:34px;
+  border-radius:8px;
+}
+#orders .orders-new-wrap-v1728{
+  align-self:end;
+}
+#orders .orders-new-wrap-v1728 .orders-new{
+  min-height:42px;
+  min-width:150px;
+  white-space:nowrap;
+}
+
+/* Fluxo */
+#orders .orders-flow-card-v1728,
+#orders .orders-list-card-v1728{
+  margin-top:14px;
+  padding:17px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:#fffdfb;
+  box-shadow:0 8px 22px rgba(81,54,43,.04);
+}
+#orders .orders-section-head-v1728{
+  margin-bottom:13px;
+  padding-bottom:10px;
+  border-bottom:1px solid #eee4de;
+}
+#orders .orders-section-head-v1728 small{
+  display:block;
+  margin-top:4px;
+  font-size:8.5px;
+  line-height:1.35;
+  color:#8a7770;
+}
+#orders .orders-flow{
+  display:grid;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:9px;
+}
+#orders .orders-flow>div{
+  min-width:0;
+  min-height:74px;
+  padding:11px 12px;
+  border-radius:13px;
+  border:1px solid #eadfd9;
+  background:linear-gradient(180deg,#fff,#faf7f4);
+}
+
+/* Cartões de encomendas */
+#orders .orders-cards{
+  display:grid;
+  gap:10px;
+}
+#orders .order-card{
+  border-radius:15px;
+  border:1px solid #e8ddd6;
+  background:#fff;
+  box-shadow:none;
+}
+#orders .order-card:hover{
+  box-shadow:0 6px 18px rgba(81,54,43,.05);
+}
+#orders .order-card .btn{
+  min-height:36px;
+}
+
+/* Tabela */
+#orders .orders-table-wrap{
+  margin-top:0!important;
+  border:1px solid #eee5df;
+  border-radius:13px;
+  overflow:auto;
+}
+#orders .orders-table-wrap table{
+  min-width:900px;
+  margin:0;
+}
+#orders .orders-table-wrap th{
+  white-space:nowrap;
+  background:#f8f3ef;
+}
+#orders .orders-table-wrap td,
+#orders .orders-table-wrap th{
+  padding-top:9px;
+  padding-bottom:9px;
+}
+
+/* Tablet horizontal */
+@media (max-width:1180px){
+  #orders .orders-toolbar-v1728{
+    align-items:stretch;
+    flex-direction:column;
+  }
+  #orders .orders-toolbar-controls-v1728{
+    grid-template-columns:1.1fr .75fr .85fr auto;
+    width:100%;
+  }
+  #orders .orders-flow{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
+
+/* Tablet vertical */
+@media (max-width:900px){
+  #orders .orders-toolbar-controls-v1728{
+    grid-template-columns:1fr 1fr;
+  }
+  #orders .orders-new-wrap-v1728{
+    grid-column:1/-1;
+  }
+  #orders .orders-new-wrap-v1728 .orders-new{
+    width:100%;
+  }
+  #orders .orders-flow{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+/* Mobile */
+@media (max-width:620px){
+  #orders .orders-toolbar-controls-v1728,
+  #orders .orders-flow{
+    grid-template-columns:1fr;
+  }
+  #orders .orders-new-wrap-v1728{
+    grid-column:1/-1;
+  }
+}
+</style>
+
+
+<style id="artessencia-production-layout-v1729">
+/* ArtEssencia V1.7.29 — Produção reorganizada em fluxo vertical de secções, sem alterar lógica. */
+#production .prod-head{
+  padding:17px 18px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:linear-gradient(180deg,#fff,#fcf8f5);
+  box-shadow:0 8px 24px rgba(81,54,43,.05);
+}
+#production .prod-head-main{
+  display:grid;
+  grid-template-columns:minmax(220px,.8fr) minmax(0,2.2fr);
+  gap:18px;
+  align-items:end;
+}
+#production .prod-head-main>div:first-child small{
+  display:block;
+  margin-top:5px;
+  font-size:8.5px;
+  line-height:1.35;
+  color:#8a7770;
+}
+#production .prod-head-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:end;
+  justify-content:flex-end;
+}
+#production .prod-head-actions .field{
+  min-width:150px;
+}
+#production .prod-head-actions .field label{
+  display:block;
+  min-height:18px;
+  margin-bottom:6px;
+  font-size:8px;
+  line-height:1.15;
+  letter-spacing:.035em;
+  text-transform:uppercase;
+  font-weight:850;
+  color:#745f57;
+}
+#production .prod-head-actions input{
+  min-height:40px;
+  border-radius:11px;
+}
+#production .prod-head-actions .btn{
+  min-height:40px;
+}
+
+/* Fluxo e resumo */
+#production .production-flow-v147,
+#production .prod-day-agenda-v12653{
+  margin-top:14px;
+  padding:16px 17px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:#fffdfb;
+  box-shadow:0 8px 22px rgba(81,54,43,.04);
+}
+#production .prod-summary{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:10px;
+  margin-top:12px;
+}
+#production .prod-summary>div{
+  min-height:82px;
+  border-radius:15px;
+  border:1px solid #e8ddd6;
+  background:linear-gradient(180deg,#fff,#fbf7f4);
+  box-shadow:0 6px 18px rgba(81,54,43,.035);
+}
+#production .prod-day-alerts-v12653{
+  margin-top:12px;
+}
+#production .prod-day-agenda-head-v12653{
+  margin-bottom:12px;
+  padding-bottom:10px;
+  border-bottom:1px solid #eee4de;
+}
+
+/* Secções operacionais empilhadas */
+#production .production-stack-v1729{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  width:100%;
+}
+#production .production-section-v1729{
+  width:100%;
+  min-width:0;
+  padding:17px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:#fffdfb;
+  box-shadow:0 8px 22px rgba(81,54,43,.04);
+}
+#production .production-section-v1729 .prod-card-title{
+  margin-bottom:12px;
+  padding-bottom:10px;
+  border-bottom:1px solid #eee4de;
+}
+#production .production-section-v1729 .prod-card-title small{
+  display:block;
+  margin-top:4px;
+  font-size:8.5px;
+  line-height:1.35;
+  color:#8a7770;
+}
+#production .production-section-v1729 .tablewrap,
+#production .production-section-v1729 table{
+  width:100%;
+}
+#production .production-section-v1729 .tablewrap{
+  border:1px solid #eee5df;
+  border-radius:13px;
+  overflow:auto;
+}
+#production .production-section-v1729 table{
+  min-width:760px;
+  margin:0;
+}
+#production .production-section-v1729 th{
+  white-space:nowrap;
+  background:#f8f3ef;
+}
+
+/* Tablet horizontal */
+@media (max-width:1180px){
+  #production .prod-head-main{
+    grid-template-columns:1fr;
+  }
+  #production .prod-head-actions{
+    justify-content:flex-start;
+  }
+  #production .prod-summary{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
+
+/* Tablet vertical */
+@media (max-width:900px){
+  #production .prod-head-actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+  }
+  #production .prod-head-actions .field{
+    grid-column:1/-1;
+  }
+  #production .prod-head-actions .btn{
+    width:100%;
+  }
+  #production .prod-summary{
+    grid-template-columns:1fr 1fr;
+  }
+}
+
+/* Mobile */
+@media (max-width:620px){
+  #production .prod-head-actions,
+  #production .prod-summary{
+    grid-template-columns:1fr;
+  }
+  #production .prod-head-actions>*{
+    grid-column:1/-1!important;
+  }
+}
+</style>
+
+
+<style id="artessencia-quotes-layout-v1730">
+/* ArtEssencia V1.7.30 — Orçamentos reorganizados em secções horizontais, sem alterar lógica. */
+#quotes .quotes-events-card-v1730,
+#quotes .quotes-main-card-v1730,
+#quotes .quotes-custom-line-v1730,
+#quotes .quotes-items-card-v1730,
+#quotes .quotes-summary-card-v1730,
+#quotes .quotes-history-card-v1730{
+  width:100%;
+  margin-top:14px;
+  padding:17px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:#fffdfb;
+  box-shadow:0 8px 22px rgba(81,54,43,.04);
+}
+#quotes .quotes-events-card-v1730{
+  margin-top:0;
+}
+#quotes .quotes-section-head-v1730{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:center;
+  margin-bottom:14px;
+  padding-bottom:10px;
+  border-bottom:1px solid #eee4de;
+}
+#quotes .quotes-section-head-v1730 small{
+  display:block;
+  margin-top:4px;
+  font-size:8.5px;
+  line-height:1.35;
+  color:#8a7770;
+}
+#quotes .quotes-events-status-v1730{
+  margin-top:0!important;
+  padding:9px 11px;
+  border-radius:11px;
+  background:#faf7f4;
+}
+#quotes .quotes-events-list-v1730{
+  display:grid;
+  gap:10px;
+  margin-top:10px;
+}
+
+/* Formulário principal */
+#quotes .quotes-main-grid-v1730{
+  display:grid;
+  grid-template-columns:minmax(220px,1.25fr) minmax(150px,.75fr) minmax(210px,1fr) repeat(2,minmax(140px,.72fr)) minmax(190px,.92fr) repeat(3,minmax(130px,.68fr)) minmax(150px,.75fr) minmax(110px,.55fr) minmax(170px,.85fr) minmax(110px,.55fr) minmax(120px,.58fr) minmax(165px,.78fr);
+  gap:12px;
+  align-items:end;
+}
+#quotes .quotes-main-grid-v1730>.field{
+  min-width:0;
+  grid-column:auto!important;
+}
+#quotes .quotes-main-grid-v1730 .field label,
+#quotes .quotes-custom-grid-v1730 .field label,
+#quotes .quotes-summary-grid-v1730 .field label{
+  display:block;
+  min-height:18px;
+  margin-bottom:6px;
+  font-size:8px;
+  line-height:1.15;
+  letter-spacing:.035em;
+  text-transform:uppercase;
+  font-weight:850;
+  color:#745f57;
+}
+#quotes .quotes-main-grid-v1730 input,
+#quotes .quotes-main-grid-v1730 select,
+#quotes .quotes-custom-grid-v1730 input,
+#quotes .quotes-summary-grid-v1730 input,
+#quotes .quotes-summary-grid-v1730 select{
+  min-height:43px;
+  border-radius:12px;
+}
+#quotes .quotes-product-action-v1730 .btn,
+#quotes .quotes-free-action-v1730 .btn{
+  width:100%;
+  min-height:43px;
+  white-space:nowrap;
+}
+
+/* Linha personalizada */
+#quotes .quotes-custom-grid-v1730{
+  display:grid;
+  grid-template-columns:minmax(320px,1.7fr) minmax(120px,.62fr) minmax(130px,.68fr) minmax(155px,.75fr) minmax(160px,.72fr);
+  gap:12px;
+  align-items:end;
+}
+#quotes .quotes-custom-grid-v1730>.field{
+  min-width:0;
+  grid-column:auto!important;
+}
+
+/* Itens / totais */
+#quotes .quotes-items-card-v1730 #quoteCart{
+  min-height:90px;
+}
+#quotes .quotes-summary-grid-v1730{
+  display:grid;
+  grid-template-columns:minmax(300px,1.6fr) minmax(170px,.78fr) minmax(140px,.66fr);
+  gap:12px;
+  align-items:end;
+}
+#quotes .quotes-summary-grid-v1730>.field{
+  min-width:0;
+  grid-column:auto!important;
+}
+#quotes .quotes-discount-note-v1730{
+  margin-top:12px!important;
+  border-radius:12px;
+}
+#quotes .quotes-totalbox-v1730{
+  margin-top:14px;
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:10px;
+}
+#quotes .quotes-totalbox-v1730 .mini{
+  min-height:74px;
+  padding:12px 13px;
+  border:1px solid #e8ddd6;
+  border-radius:14px;
+  background:linear-gradient(180deg,#fff,#fbf7f4);
+}
+#quotes .quotes-actions-v1730{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  margin-top:14px;
+}
+#quotes .quotes-actions-v1730 .btn{
+  min-height:43px;
+  min-width:150px;
+}
+
+/* Histórico */
+#quotes .quotes-history-table-v1730{
+  margin-top:0!important;
+  border:1px solid #eee5df;
+  border-radius:13px;
+  overflow:auto;
+}
+#quotes .quotes-history-table-v1730 table{
+  min-width:900px;
+  margin:0;
+}
+#quotes .quotes-history-table-v1730 th{
+  white-space:nowrap;
+  background:#f8f3ef;
+}
+
+/* Tablet horizontal */
+@media (max-width:1180px){
+  #quotes .quotes-main-grid-v1730{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+  #quotes .quotes-client-v1730{
+    grid-column:span 2!important;
+  }
+  #quotes .quotes-custom-grid-v1730{
+    grid-template-columns:2fr .7fr .8fr .9fr .9fr;
+  }
+  #quotes .quotes-totalbox-v1730{
+    grid-template-columns:repeat(5,minmax(120px,1fr));
+    overflow:auto;
+  }
+}
+
+/* Tablet vertical */
+@media (max-width:900px){
+  #quotes .quotes-section-head-v1730{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  #quotes .quotes-main-grid-v1730,
+  #quotes .quotes-custom-grid-v1730{
+    grid-template-columns:1fr 1fr;
+  }
+  #quotes .quotes-client-v1730,
+  #quotes .quotes-free-desc-v1730,
+  #quotes .quotes-free-action-v1730{
+    grid-column:1/-1!important;
+  }
+  #quotes .quotes-summary-grid-v1730{
+    grid-template-columns:1fr 1fr;
+  }
+  #quotes .quotes-notes-v1730{
+    grid-column:1/-1!important;
+  }
+  #quotes .quotes-totalbox-v1730{
+    grid-template-columns:1fr 1fr;
+    overflow:visible;
+  }
+}
+
+/* Mobile */
+@media (max-width:620px){
+  #quotes .quotes-main-grid-v1730,
+  #quotes .quotes-custom-grid-v1730,
+  #quotes .quotes-summary-grid-v1730,
+  #quotes .quotes-totalbox-v1730{
+    grid-template-columns:1fr;
+  }
+  #quotes .quotes-main-grid-v1730>.field,
+  #quotes .quotes-custom-grid-v1730>.field,
+  #quotes .quotes-summary-grid-v1730>.field{
+    grid-column:1/-1!important;
+  }
+  #quotes .quotes-actions-v1730{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+  #quotes .quotes-actions-v1730 .btn{
+    width:100%;
+  }
+}
+</style>
+
+
+<style id="artessencia-catalogs-layout-v1731">
+/* ArtEssencia V1.7.31 — Catálogos & Caixas reorganizados sem alterar lógica. */
+#catalogs .catalog-dashboard{
+  min-height:82px;
+  padding:17px 18px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:linear-gradient(180deg,#fff,#fcf8f5);
+  box-shadow:0 8px 24px rgba(81,54,43,.05);
+}
+#catalogs .catalog-top-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:center;
+  justify-content:flex-end;
+}
+#catalogs .catalog-top-actions .btn{
+  min-height:40px;
+}
+#catalogs .catalog-summary{
+  margin-top:12px;
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+}
+#catalogs .catalog-summary>div,
+#catalogs .catalog-summary>.card{
+  min-height:86px;
+  border-radius:16px;
+  border:1px solid #e8ddd6;
+  background:linear-gradient(180deg,#fff,#fbf7f4);
+  box-shadow:0 6px 18px rgba(81,54,43,.035);
+}
+
+/* Documentos em secções horizontais completas */
+#catalogs .catalog-documents-stack-v1731{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  margin-top:14px;
+}
+#catalogs .catalog-document-card-v1731{
+  width:100%;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:18px;
+  align-items:center;
+  padding:17px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:#fffdfb;
+  box-shadow:0 8px 22px rgba(81,54,43,.04);
+}
+#catalogs .catalog-document-card-v1731 p{
+  margin:4px 0 0;
+  line-height:1.4;
+}
+#catalogs .catalog-actions-v1731{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  justify-content:flex-end;
+}
+#catalogs .catalog-actions-v1731 .btn{
+  min-height:40px;
+  min-width:108px;
+}
+
+/* Editor do conjunto personalizado */
+#catalogs .catalog-editor-card-v1731{
+  margin-top:14px!important;
+  padding:17px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:#fffdfb;
+  box-shadow:0 8px 22px rgba(81,54,43,.04);
+}
+#catalogs .catalog-editor-head{
+  margin-bottom:14px;
+  padding-bottom:10px;
+  border-bottom:1px solid #eee4de;
+}
+#catalogs .catalog-editor-grid-v1731{
+  display:grid;
+  grid-template-columns:minmax(220px,1.2fr) minmax(120px,.62fr) minmax(180px,.88fr) minmax(150px,.72fr) minmax(150px,.72fr) minmax(280px,1.35fr);
+  gap:12px;
+  align-items:end;
+}
+#catalogs .catalog-editor-grid-v1731>.field{
+  min-width:0;
+  grid-column:auto!important;
+}
+#catalogs .catalog-editor-grid-v1731 .field label{
+  display:block;
+  min-height:18px;
+  margin-bottom:6px;
+  font-size:8px;
+  line-height:1.15;
+  letter-spacing:.035em;
+  text-transform:uppercase;
+  font-weight:850;
+  color:#745f57;
+}
+#catalogs .catalog-editor-grid-v1731 input,
+#catalogs .catalog-editor-grid-v1731 select{
+  min-height:43px;
+  border-radius:12px;
+}
+#catalogs .catalog-theme-desc-v1731,
+#catalogs .catalog-theme-image-v1731{
+  grid-column:span 3!important;
+}
+#catalogs .catalog-theme-action-v1731 .btn{
+  width:100%;
+  min-height:43px;
+  white-space:nowrap;
+}
+#catalogs .catalog-theme-preview-v1731{
+  margin-top:12px;
+}
+#catalogs .catalog-theme-preview-v1731 img{
+  max-width:360px;
+  border-radius:14px;
+}
+
+/* Criador de Caixas mantém toda a lógica, apenas ganha separação visual */
+#catalogs .catalog-creator-card-v1731{
+  margin-top:14px!important;
+  padding:17px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:#fffdfb;
+  box-shadow:0 8px 22px rgba(81,54,43,.04);
+}
+#catalogs .catalog-creator-card-v1731 .creator-ui-head{
+  margin-bottom:14px;
+  padding-bottom:10px;
+  border-bottom:1px solid #eee4de;
+}
+#catalogs .catalog-creator-card-v1731 .creator-section-v1261,
+#catalogs .catalog-creator-card-v1731 .creator-section-v1266{
+  margin-top:16px;
+}
+#catalogs .catalog-creator-card-v1731 .card{
+  border-radius:14px;
+  border-color:#eee4de;
+  background:#fbf8f5;
+}
+#catalogs .catalog-creator-card-v1731 .creator-ui-save{
+  margin-top:16px;
+  padding-top:14px;
+  border-top:1px solid #eee4de;
+}
+#catalogs .catalog-saved-head-v1731{
+  margin-top:18px;
+  padding:0 2px 10px;
+  border-bottom:1px solid #eee4de;
+}
+#catalogs .catalog-grid-pro{
+  margin-top:12px;
+  gap:10px;
+}
+
+/* Tablet horizontal */
+@media (max-width:1180px){
+  #catalogs .catalog-editor-grid-v1731{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+  #catalogs .catalog-theme-name-v1731{
+    grid-column:span 2!important;
+  }
+  #catalogs .catalog-theme-desc-v1731,
+  #catalogs .catalog-theme-image-v1731{
+    grid-column:1/-1!important;
+  }
+}
+
+/* Tablet vertical */
+@media (max-width:900px){
+  #catalogs .catalog-dashboard{
+    align-items:stretch;
+    flex-direction:column;
+  }
+  #catalogs .catalog-top-actions{
+    justify-content:flex-start;
+  }
+  #catalogs .catalog-summary{
+    grid-template-columns:1fr 1fr;
+  }
+  #catalogs .catalog-document-card-v1731{
+    grid-template-columns:1fr;
+  }
+  #catalogs .catalog-actions-v1731{
+    justify-content:flex-start;
+  }
+  #catalogs .catalog-editor-grid-v1731{
+    grid-template-columns:1fr 1fr;
+  }
+  #catalogs .catalog-theme-name-v1731,
+  #catalogs .catalog-theme-desc-v1731,
+  #catalogs .catalog-theme-image-v1731{
+    grid-column:1/-1!important;
+  }
+}
+
+/* Mobile */
+@media (max-width:620px){
+  #catalogs .catalog-summary,
+  #catalogs .catalog-editor-grid-v1731{
+    grid-template-columns:1fr;
+  }
+  #catalogs .catalog-editor-grid-v1731>.field,
+  #catalogs .catalog-theme-name-v1731,
+  #catalogs .catalog-theme-desc-v1731,
+  #catalogs .catalog-theme-image-v1731{
+    grid-column:1/-1!important;
+  }
+  #catalogs .catalog-actions-v1731{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+  #catalogs .catalog-actions-v1731 .btn{
+    width:100%;
+  }
+}
+</style>
+
+
+<style id="artessencia-settings-layout-v1732">
+/* ArtEssencia V1.7.32 — Configuração reorganizada visualmente, sem alteração funcional. */
+#settings .settings-hero-v1732{
+  min-height:78px;
+  padding:17px 18px;
+  margin-bottom:14px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:linear-gradient(180deg,#fff,#fcf8f5);
+  box-shadow:0 8px 24px rgba(81,54,43,.05);
+}
+#settings .settings-hero-v1732 small{
+  display:block;
+  margin-top:5px;
+  font-size:8.5px;
+  line-height:1.4;
+  color:#8a7770;
+}
+#settings .settings-card-v1732{
+  padding:17px!important;
+  border-radius:18px!important;
+  border:1px solid #e8ddd6!important;
+  background:#fffdfb!important;
+  box-shadow:0 8px 22px rgba(81,54,43,.04)!important;
+}
+#settings .settings-card-v1732 .section-title{
+  margin-top:0!important;
+  color:#523b34;
+}
+#settings .settings-card-v1732>small,
+#settings .settings-card-v1732 .muted{
+  line-height:1.4;
+}
+#settings .settings-grid2-v1732,
+#settings .settings-grid3-v1732,
+#settings .settings-grid4-v1732{
+  gap:14px!important;
+}
+#settings .settings-form-grid-v1732{
+  gap:12px!important;
+  align-items:end;
+}
+#settings .settings-form-grid-v1732>.field{
+  min-width:0;
+}
+#settings .settings-form-grid-v1732 .field label{
+  display:block;
+  min-height:18px;
+  margin-bottom:6px;
+  font-size:8px;
+  line-height:1.15;
+  letter-spacing:.035em;
+  text-transform:uppercase;
+  font-weight:850;
+  color:#745f57;
+}
+#settings .settings-form-grid-v1732 input,
+#settings .settings-form-grid-v1732 select,
+#settings .settings-form-grid-v1732 textarea{
+  border-radius:12px;
+}
+#settings .settings-form-grid-v1732 input,
+#settings .settings-form-grid-v1732 select{
+  min-height:43px;
+}
+#settings .settings-form-grid-v1732 textarea{
+  min-height:80px;
+}
+#settings .settings-card-v1732 .btnrow{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:12px;
+}
+#settings .settings-card-v1732 .btn{
+  min-height:40px;
+}
+#settings .save-state-v143{
+  border-radius:12px;
+}
+
+/* Secções técnicas extensas */
+#settings .tablewrap{
+  margin-top:10px;
+  border:1px solid #eee5df;
+  border-radius:13px;
+  overflow:auto;
+}
+#settings .tablewrap table{
+  min-width:760px;
+  margin:0;
+}
+#settings .tablewrap th{
+  white-space:nowrap;
+  background:#f8f3ef;
+}
+
+/* Blocos de segurança/backup/cloud */
+#settings [id*="cloud"],
+#settings [id*="backup"],
+#settings [id*="security"]{
+  scroll-margin-top:20px;
+}
+
+/* Tablet horizontal */
+@media (max-width:1180px){
+  #settings .settings-grid4-v1732{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  #settings .settings-form-grid-v1732{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}
+
+/* Tablet vertical */
+@media (max-width:900px){
+  #settings .settings-grid3-v1732,
+  #settings .settings-grid2-v1732{
+    grid-template-columns:1fr!important;
+  }
+  #settings .settings-form-grid-v1732{
+    grid-template-columns:1fr 1fr!important;
+  }
+}
+
+/* Mobile */
+@media (max-width:620px){
+  #settings .settings-grid4-v1732,
+  #settings .settings-grid3-v1732,
+  #settings .settings-grid2-v1732,
+  #settings .settings-form-grid-v1732{
+    grid-template-columns:1fr!important;
+  }
+  #settings .settings-form-grid-v1732>.field,
+  #settings .settings-form-grid-v1732>.field.span2,
+  #settings .settings-form-grid-v1732>.field.span3,
+  #settings .settings-form-grid-v1732>.field.span4{
+    grid-column:1/-1!important;
+  }
+  #settings .settings-card-v1732 .btnrow{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+  #settings .settings-card-v1732 .btn{
     width:100%;
   }
 }
