@@ -2658,34 +2658,36 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 
     <div id="stockSummary" class="stock-summary"></div>
 
-    <div class="grid2 stock-grid" style="margin-top:10px">
-      <div class="card stock-form-card">
+    <div class="stock-stack-v1721" style="margin-top:10px">
+      <section class="card stock-form-card stock-create-section-v1721">
         <div class="stock-form-head"><div><div class="section-title" style="margin:0">Criar matéria-prima</div><small id="stockFormHintV145">Quantidade e custo iniciais podem ser definidos apenas na criação.</small></div></div>
-        <div class="form-grid">
-          <div class="field span2"><label>Produto / matéria-prima</label><input id="stockName" placeholder="Ex.: Cera de soja APF"></div>
+        <div class="form-grid stock-create-grid-v1721">
+          <div class="field stock-name-v1721"><label>Produto / matéria-prima</label><input id="stockName" placeholder="Ex.: Cera de soja APF"></div>
           <div class="field"><label>Quantidade atual</label><input id="stockQty" type="number" step="0.01"></div>
           <div class="field"><label>Unidade-base</label><select id="stockUnit"><option value="g">g — grama</option><option value="ml">ml — mililitro</option><option value="cm">cm — centímetro</option><option value="un">un — unidade</option></select><small>É nesta unidade que o stock e as fichas técnicas são calculados.</small></div>
           <div class="field"><label>Stock mínimo</label><input id="stockMin" type="number" step="0.01"></div>
           <div class="field"><label>Stock alvo</label><input id="stockTarget" type="number" step="0.01" placeholder="Ex.: 2000"><small>Quantidade desejada após reposição. Se vazio, usa 2× o mínimo.</small></div>
           <div class="field"><label>Custo por unidade base</label><input id="stockUnitCost" type="number" step="0.0001"></div>
           <div class="field"><label>Fornecedor preferencial</label><input id="stockPreferredSupplier" placeholder="Opcional"></div>
-          <div id="stockEditReasonFieldV145" class="field span2 hidden"><label>Motivo da correção</label><input id="stockEditReasonV145" maxlength="180" placeholder="Obrigatório se alterar quantidade ou custo"><small>Fica registado no histórico da matéria-prima.</small></div>
-          <div class="stock-form-actions"><button id="stockSaveBtnV143" class="btn primary" onclick="addStock()">Guardar matéria-prima</button><button id="stockCancelBtnV145" class="btn hidden" onclick="cancelStockEditV145()">Cancelar edição</button></div>
-<div class="field span2"><div id="stockSaveStateV143" class="save-state-v143 neutral"><span>●</span><div><strong>Pronto para registar</strong><small>Depois de guardar, o formulário será limpo automaticamente.</small></div></div></div>
+          <div id="stockEditReasonFieldV145" class="field stock-edit-reason-v1721 hidden"><label>Motivo da correção</label><input id="stockEditReasonV145" maxlength="180" placeholder="Obrigatório se alterar quantidade ou custo"><small>Fica registado no histórico da matéria-prima.</small></div>
         </div>
-      </div>
+        <div class="stock-create-footer-v1721">
+          <div id="stockSaveStateV143" class="save-state-v143 neutral"><span>●</span><div><strong>Pronto para registar</strong><small>Depois de guardar, o formulário será limpo automaticamente.</small></div></div>
+          <div class="stock-form-actions"><button id="stockSaveBtnV143" class="btn primary" onclick="addStock()">Guardar matéria-prima</button><button id="stockCancelBtnV145" class="btn hidden" onclick="cancelStockEditV145()">Cancelar edição</button></div>
+        </div>
+      </section>
 
-      <div class="card stock-form-card">
+      <section class="card stock-form-card stock-move-section-v1721">
         <div class="stock-form-head"><div><div class="section-title" style="margin:0">Movimento rápido</div><small>Compras devem ser registadas no módulo Compras. Use esta área para correções, saídas e desperdício.</small></div></div>
-        <div class="form-grid">
-          <div class="field span2"><label>Artigo</label><select id="moveStockItem"></select></div>
+        <div class="form-grid stock-move-grid-v1721">
+          <div class="field stock-move-item-v1721"><label>Artigo</label><select id="moveStockItem"></select></div>
           <div class="field"><label>Tipo</label><select id="moveStockType"><option value="in">Entrada</option><option value="out">Saída</option><option value="waste">Desperdício</option><option value="adjust">Acerto</option></select></div>
           <div class="field"><label>Quantidade</label><input id="moveStockQty" type="number" step="0.01"></div>
-          <div class="field span2"><label>Motivo</label><input id="moveStockNote" placeholder="Opcional"></div>
-          <div class="stock-form-actions"><button class="btn primary" onclick="moveStock()">Registar movimento</button></div>
-          <div class="field span2"><div id="moveStockSaveStateV145" class="save-state-v143 neutral"><span>●</span><div><strong>Sem movimentos pendentes</strong><small>Saídas, desperdícios e acertos ficam registados no histórico.</small></div></div></div>
+          <div class="field stock-move-note-v1721"><label>Motivo</label><input id="moveStockNote" placeholder="Opcional"></div>
+          <div class="field stock-move-action-v1721"><label>&nbsp;</label><button class="btn primary" onclick="moveStock()">Registar movimento</button></div>
         </div>
-      </div>
+        <div id="moveStockSaveStateV145" class="save-state-v143 neutral stock-move-state-v1721"><span>●</span><div><strong>Sem movimentos pendentes</strong><small>Saídas, desperdícios e acertos ficam registados no histórico.</small></div></div>
+      </section>
     </div>
 
     <div class="card stock-list-card" style="margin-top:10px">
@@ -3894,7 +3896,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.20';
+const APP_VERSION='1.7.21';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -7270,6 +7272,181 @@ function printOrderCompleteV12634(id){
   #costs .costs-manual-grid-v1720>.field,
   #costs .costs-recipe-grid-v1720>.field{
     grid-column:1/-1!important;
+  }
+}
+</style>
+
+
+<style id="artessencia-stock-layout-v1721">
+/* ArtEssencia V1.7.21 — Stock reorganizado em secções horizontais, sem alteração de lógica. */
+#stock .stock-stack-v1721{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  width:100%;
+}
+#stock .stock-stack-v1721>.stock-form-card{
+  width:100%;
+  min-width:0;
+  padding:16px 17px;
+  border-radius:18px;
+}
+#stock .stock-form-head{
+  margin-bottom:13px;
+  padding-bottom:10px;
+}
+#stock .stock-create-grid-v1721{
+  display:grid;
+  grid-template-columns:minmax(220px,1.35fr) minmax(130px,.7fr) minmax(150px,.78fr) minmax(130px,.68fr) minmax(145px,.72fr) minmax(165px,.8fr) minmax(190px,1fr);
+  gap:12px;
+  align-items:end;
+}
+#stock .stock-create-grid-v1721>.field,
+#stock .stock-move-grid-v1721>.field{
+  min-width:0;
+  grid-column:auto!important;
+}
+#stock .stock-create-grid-v1721 .field label,
+#stock .stock-move-grid-v1721 .field label{
+  display:block;
+  min-height:18px;
+  margin-bottom:6px;
+  font-size:8px;
+  line-height:1.15;
+  letter-spacing:.035em;
+  text-transform:uppercase;
+  font-weight:850;
+  color:#745f57;
+}
+#stock .stock-create-grid-v1721 input,
+#stock .stock-create-grid-v1721 select,
+#stock .stock-move-grid-v1721 input,
+#stock .stock-move-grid-v1721 select{
+  min-height:43px;
+  border-radius:12px;
+}
+#stock .stock-create-grid-v1721 small,
+#stock .stock-move-grid-v1721 small{
+  display:block;
+  margin-top:5px;
+  font-size:7.8px;
+  line-height:1.3;
+}
+#stock .stock-edit-reason-v1721{
+  grid-column:1/-1!important;
+}
+#stock .stock-create-footer-v1721{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:12px;
+  align-items:center;
+  margin-top:14px;
+}
+#stock .stock-create-footer-v1721 .save-state-v143{
+  margin:0;
+}
+#stock .stock-create-footer-v1721 .stock-form-actions{
+  display:flex;
+  gap:8px;
+  grid-column:auto;
+  align-items:center;
+}
+#stock .stock-create-footer-v1721 .stock-form-actions .btn{
+  min-width:150px;
+  min-height:42px;
+}
+
+/* Movimento rápido: tudo na horizontal */
+#stock .stock-move-grid-v1721{
+  display:grid;
+  grid-template-columns:minmax(240px,1.35fr) minmax(150px,.72fr) minmax(145px,.68fr) minmax(260px,1.3fr) minmax(170px,.72fr);
+  gap:12px;
+  align-items:end;
+}
+#stock .stock-move-action-v1721 .btn{
+  width:100%;
+  min-height:43px;
+  white-space:nowrap;
+}
+#stock .stock-move-state-v1721{
+  margin-top:14px;
+}
+
+/* A tabela fica claramente separada das zonas de registo */
+#stock .stock-list-card{
+  margin-top:14px!important;
+  padding:16px 17px;
+  border-radius:18px;
+}
+#stock .stock-list-head{
+  margin-bottom:11px;
+}
+#stock .stock-tablewrap{
+  border:1px solid #eee5df;
+  border-radius:13px;
+  overflow:auto;
+}
+#stock .stock-table{
+  min-width:900px;
+}
+
+/* Tablet horizontal */
+@media (max-width:1180px){
+  #stock .stock-create-grid-v1721{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+  #stock .stock-name-v1721{
+    grid-column:1/3!important;
+  }
+  #stock .stock-create-grid-v1721 .field:nth-child(7){
+    grid-column:3/5!important;
+  }
+  #stock .stock-move-grid-v1721{
+    grid-template-columns:1.2fr .7fr .7fr 1.2fr .78fr;
+  }
+}
+
+/* Tablet vertical */
+@media (max-width:900px){
+  #stock .stock-create-grid-v1721,
+  #stock .stock-move-grid-v1721{
+    grid-template-columns:1fr 1fr;
+  }
+  #stock .stock-name-v1721,
+  #stock .stock-edit-reason-v1721,
+  #stock .stock-move-item-v1721,
+  #stock .stock-move-note-v1721,
+  #stock .stock-move-action-v1721{
+    grid-column:1/-1!important;
+  }
+  #stock .stock-create-footer-v1721{
+    grid-template-columns:1fr;
+  }
+  #stock .stock-create-footer-v1721 .stock-form-actions{
+    width:100%;
+  }
+  #stock .stock-create-footer-v1721 .stock-form-actions .btn{
+    flex:1;
+  }
+}
+
+/* Mobile */
+@media (max-width:620px){
+  #stock .stock-create-grid-v1721,
+  #stock .stock-move-grid-v1721{
+    grid-template-columns:1fr;
+  }
+  #stock .stock-create-grid-v1721>.field,
+  #stock .stock-move-grid-v1721>.field{
+    grid-column:1/-1!important;
+  }
+  #stock .stock-create-footer-v1721 .stock-form-actions{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+  #stock .stock-create-footer-v1721 .stock-form-actions .btn,
+  #stock .stock-move-action-v1721 .btn{
+    width:100%;
   }
 }
 </style>
