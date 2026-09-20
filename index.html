@@ -2592,8 +2592,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           <div class="field"><label>Preço pago €</label><input id="costPackPrice" type="number" step="0.01" placeholder="Ex.: 35,00" oninput="updateCostPreview()"></div>
           <div class="field"><label>Custo calculado/unidade base</label><input id="costUnitPreview" readonly style="background:#DDF4D2"></div>
           <div class="field span2"><label>Motivo da atualização</label><input id="costManualReasonV146" maxlength="180" placeholder="Ex.: correção de fatura ou custo inicial confirmado"><small>Obrigatório. Fica registado no histórico da matéria-prima.</small></div>
-          <div class="field span2"><div class="costs-material-actions"><button class="btn primary" onclick="applyMaterialCost()">Atualizar custo</button></div></div>
-          <div class="field span2"><div id="materialCostSaveStateV146" class="save-state-v143 neutral"><span>●</span><div><strong>Sem correções pendentes</strong><small>As compras recebidas continuam a recalcular automaticamente o custo médio.</small></div></div></div>
+          <div class="field span2 costs-manual-action"><div class="costs-material-actions"><button class="btn primary" onclick="applyMaterialCost()">Atualizar custo</button></div></div>
+          <div class="field span2 costs-manual-state"><div id="materialCostSaveStateV146" class="save-state-v143 neutral"><span>●</span><div><strong>Sem correções pendentes</strong><small>As compras recebidas continuam a recalcular automaticamente o custo médio.</small></div></div></div>
         </div>
         <small>Use esta operação apenas para uma correção manual justificada. Para entradas reais de material, utilize Compras.</small>
       </div>
@@ -3504,7 +3504,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       <div class="clients-form-head">
         <div>
           <div class="section-title" style="margin:0">Novo / editar cliente</div>
-          <small>Telefone é a identificação principal do cliente; email é a segunda referência. Na futura loja online serão pedidos ambos.</small>
+          <small>Telefone é a identificação principal do cliente. O email só é usado como segunda referência quando não existe telefone; na futura loja online serão pedidos ambos.</small>
         </div>
       </div>
       <div class="form-grid">
@@ -3892,7 +3892,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.16';
+const APP_VERSION='1.7.18';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -4784,15 +4784,14 @@ function validCustomerPhone(v){
 function validCustomerEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(String(v||'').trim())}
 function customerWhatsAppPhone(v){let d=normalizePhone(v);if(d.startsWith('00'))d=d.slice(2);if(d.length===9)d='351'+d;return d}
 function normText(v){return String(v||'').trim().toLocaleLowerCase('pt-PT').replace(/\s+/g,' ')}
+/* ArtEssencia V1.7.17 — identidade do cliente: telefone tem prioridade absoluta; email apenas sem telefone. */
 function clientByPhoneThenEmailV1713(phoneValue,emailValue=''){
  const phone=customerPhoneKey(phoneValue),mail=String(emailValue||'').trim().toLowerCase();
  if(phone){
-   const byPhone=(db.clients||[]).find(x=>customerPhoneKey(x.phone)===phone);
-   if(byPhone)return byPhone
+   return (db.clients||[]).find(x=>customerPhoneKey(x.phone)===phone)||null
  }
  if(mail){
-   const byMail=(db.clients||[]).find(x=>String(x.email||'').trim().toLowerCase()===mail);
-   if(byMail)return byMail
+   return (db.clients||[]).find(x=>String(x.email||'').trim().toLowerCase()===mail)||null
  }
  return null
 }
@@ -6055,8 +6054,12 @@ function addClient(){
 
  db.clients=db.clients||[];
  const normPhone=customerPhoneKey(phone), normMail=email.toLowerCase();
- const duplicate=db.clients.find(c=>c.id!==editingClientId&&((normPhone&&customerPhoneKey(c.phone)===normPhone)||(normMail&&String(c.email||'').trim().toLowerCase()===normMail)));
- if(duplicate)return toast('Já existe um cliente com este telefone ou email');
+ const duplicate=db.clients.find(c=>{
+   if(c.id===editingClientId)return false;
+   if(normPhone)return customerPhoneKey(c.phone)===normPhone;
+   return !!normMail&&String(c.email||'').trim().toLowerCase()===normMail
+ });
+ if(duplicate)return toast(normPhone?'Já existe um cliente com este número de telemóvel':'Já existe um cliente com este email');
 
  if(editingClientId){
    const c=db.clients.find(x=>x.id===editingClientId);
@@ -6653,6 +6656,367 @@ function printOrderCompleteV12634(id){
 .email1715-detail-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin:12px 0 0;padding-top:10px;border-top:1px solid #eadfd7}
 .email1715-trashed{opacity:.82}.email1715-trashed .email177-row{background:#fbf8f6}
 @media(max-width:650px){.email1715-compose-head,.email1715-bulk,.email1715-trashbar{align-items:stretch;flex-direction:column}.email1715-compose-actions,.email1715-detail-actions{display:grid;grid-template-columns:1fr 1fr}.email1715-compose-actions .btn,.email1715-detail-actions .btn{width:100%}}
+</style>
+
+
+<style id="artessencia-costs-layout-v1718">
+/* ArtEssencia V1.7.18 — reorganização visual real do módulo Custos.
+   Não altera cálculos, IDs, handlers, stock, fichas técnicas ou persistência. */
+
+#costs{
+  --cost-gap:14px;
+  --cost-border:#e8ddd6;
+  --cost-bg:#fffdfb;
+  --cost-soft:#faf6f2;
+  --cost-text:#4f3932;
+  --cost-muted:#89766e;
+}
+
+/* Cabeçalho */
+#costs .costs-hero{
+  min-height:82px;
+  padding:18px 20px;
+  border:1px solid var(--cost-border);
+  border-radius:18px;
+  background:linear-gradient(180deg,#fff,#fcf8f5);
+  box-shadow:0 8px 24px rgba(81,54,43,.05);
+}
+#costs .costs-hero .section-title{
+  font-size:22px;
+  line-height:1.1;
+  color:var(--cost-text);
+}
+#costs .costs-hero p{
+  margin-top:6px!important;
+  font-size:10px;
+  line-height:1.45;
+  color:var(--cost-muted);
+}
+#costs .costs-hero>.btn{
+  min-width:112px;
+  height:42px;
+  align-self:center;
+}
+
+/* KPIs */
+#costs .costs-summary{
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:10px;
+  margin-top:12px;
+}
+#costs .costs-kpi{
+  min-height:92px;
+  padding:14px 15px;
+  justify-content:center;
+  border-radius:16px;
+  border:1px solid var(--cost-border);
+  background:linear-gradient(180deg,#fff,#fbf7f4);
+  box-shadow:0 6px 18px rgba(81,54,43,.035);
+}
+#costs .costs-kpi span{
+  font-size:8px;
+  letter-spacing:.045em;
+}
+#costs .costs-kpi strong{
+  margin:4px 0 2px;
+  font-size:21px;
+  line-height:1;
+}
+#costs .costs-kpi small{
+  font-size:8px;
+  line-height:1.25;
+}
+
+/* Workspace principal: duas colunas equilibradas */
+#costs .costs-workspace{
+  grid-template-columns:minmax(0,.95fr) minmax(0,1.25fr);
+  gap:var(--cost-gap);
+  margin-top:14px;
+  align-items:stretch;
+}
+#costs .costs-card{
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+  padding:17px;
+  border:1px solid var(--cost-border);
+  border-radius:18px;
+  background:var(--cost-bg);
+  box-shadow:0 8px 22px rgba(81,54,43,.04);
+}
+#costs .costs-card-head{
+  margin-bottom:14px;
+  padding-bottom:11px;
+  border-bottom:1px solid #eee4de;
+}
+#costs .costs-card .section-title{
+  font-size:17px;
+  line-height:1.2;
+  color:var(--cost-text);
+}
+#costs .costs-card-head small{
+  display:block;
+  margin-top:5px;
+  font-size:8.5px;
+  line-height:1.35;
+  color:var(--cost-muted);
+}
+
+/* Formulário de correção manual */
+#costs .costs-card:first-child .form-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:11px 12px;
+}
+#costs .costs-card:first-child .field{
+  min-width:0;
+}
+#costs .costs-card:first-child .field.span2{
+  grid-column:1/-1;
+}
+#costs .costs-card:first-child .field label,
+#costs .costs-recipe-form .field label{
+  display:block;
+  min-height:18px;
+  margin-bottom:6px;
+  font-size:8px;
+  line-height:1.15;
+  letter-spacing:.035em;
+  text-transform:uppercase;
+  font-weight:850;
+  color:#745f57;
+}
+#costs .costs-card input,
+#costs .costs-card select{
+  min-height:43px;
+  border-radius:12px;
+  font-size:11px;
+}
+#costs #costUnitPreview{
+  background:#eef5e9!important;
+  border-color:#d4e3cc!important;
+  font-weight:800;
+  color:#49643f;
+}
+#costs #costManualReasonV146 + small{
+  display:block;
+  margin-top:6px;
+  font-size:8px;
+  color:#7d6b64;
+  line-height:1.35;
+}
+#costs .costs-manual-action{
+  order:20;
+  margin-top:2px;
+}
+#costs .costs-manual-state{
+  order:19;
+}
+#costs .costs-material-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+}
+#costs .costs-material-actions .btn{
+  min-height:42px;
+  min-width:150px;
+}
+#costs .save-state-v143{
+  min-height:58px;
+  padding:11px 13px;
+  border-radius:13px;
+}
+#costs .save-state-v143 strong{
+  font-size:10px;
+}
+#costs .save-state-v143 small{
+  font-size:8px;
+  line-height:1.35;
+}
+#costs .costs-card:first-child > small:last-child{
+  display:block;
+  margin-top:12px;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid #eadfd9;
+  background:#faf7f4;
+  color:#7e6c65;
+  line-height:1.4;
+  font-size:8px;
+}
+
+/* Ficha técnica por produto */
+#costs .costs-recipe-form{
+  grid-template-columns:minmax(170px,1.15fr) minmax(170px,1fr) minmax(130px,.7fr) auto;
+  gap:11px;
+  align-items:end;
+}
+#costs .costs-recipe-form .field{
+  min-width:0;
+}
+#costs .costs-recipe-form .field:last-child{
+  align-self:end;
+}
+#costs #recipeSaveBtnV143{
+  min-height:43px;
+  min-width:128px;
+  white-space:normal;
+  line-height:1.15;
+  padding-inline:14px;
+}
+#costs .costs-recipe-state{
+  margin-top:12px;
+}
+#costs #productRecipeEditor{
+  flex:1;
+  min-height:180px;
+  margin-top:12px!important;
+  border:1px solid #eee4de;
+  border-radius:14px;
+  background:linear-gradient(180deg,#fff,#fcf9f7);
+  padding:12px;
+}
+
+/* Tabelas e blocos inferiores */
+#costs .costs-table-card{
+  margin-top:14px;
+  padding:16px 17px;
+  border:1px solid var(--cost-border);
+  border-radius:18px;
+  background:#fffdfb;
+  box-shadow:0 8px 22px rgba(81,54,43,.035);
+}
+#costs .costs-table-card .costs-card-head{
+  margin-bottom:11px;
+  padding-bottom:10px;
+}
+#costs .costs-table-card .section-title{
+  font-size:16px;
+}
+#costs .costs-table-card .costs-card-head small{
+  font-size:8.5px;
+  line-height:1.35;
+}
+#costs .costs-table-card .tablewrap{
+  margin-top:0;
+  border:1px solid #eee5df;
+  border-radius:13px;
+  overflow:auto;
+}
+#costs .costs-table-card table{
+  margin:0;
+  min-width:760px;
+}
+#costs .costs-table-card th{
+  position:sticky;
+  top:0;
+  z-index:1;
+  background:#f8f3ef;
+  white-space:nowrap;
+}
+#costs .costs-table-card td,
+#costs .costs-table-card th{
+  padding-top:9px;
+  padding-bottom:9px;
+}
+
+/* Parâmetros padrão: mais limpos */
+#costs .costs-table-card .form-grid{
+  gap:11px 12px;
+}
+#costs .costs-table-card .form-grid .field label{
+  display:block;
+  min-height:17px;
+  margin-bottom:5px;
+  font-size:8px;
+  text-transform:uppercase;
+  font-weight:800;
+  color:#745f57;
+}
+#costs .costs-table-card .form-grid input{
+  min-height:42px;
+  border-radius:11px;
+}
+
+/* Tablet horizontal: evita a sensação apertada observada na fotografia */
+@media (max-width:1180px){
+  #costs .costs-workspace{
+    grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);
+  }
+  #costs .costs-recipe-form{
+    grid-template-columns:1fr 1fr;
+  }
+  #costs .costs-recipe-form .recipe-product-v146{
+    grid-column:1/2;
+  }
+  #costs .costs-recipe-form .field:last-child{
+    grid-column:2/3;
+  }
+  #costs #recipeSaveBtnV143{
+    width:100%;
+  }
+}
+
+/* Tablet vertical */
+@media (max-width:960px){
+  #costs .costs-summary{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+  #costs .costs-workspace{
+    grid-template-columns:1fr;
+  }
+  #costs .costs-card{
+    padding:15px;
+  }
+  #costs .costs-recipe-form{
+    grid-template-columns:1fr 1fr 1fr auto;
+  }
+  #costs .costs-recipe-form .recipe-product-v146{
+    grid-column:auto;
+  }
+  #costs .costs-recipe-form .field:last-child{
+    grid-column:auto;
+  }
+}
+
+/* Mobile */
+@media (max-width:700px){
+  #costs .costs-hero{
+    min-height:0;
+    align-items:stretch;
+    padding:15px;
+  }
+  #costs .costs-hero>.btn{
+    width:100%;
+  }
+  #costs .costs-summary{
+    grid-template-columns:1fr 1fr;
+  }
+  #costs .costs-kpi{
+    min-height:82px;
+  }
+  #costs .costs-card:first-child .form-grid,
+  #costs .costs-recipe-form{
+    grid-template-columns:1fr;
+  }
+  #costs .costs-card:first-child .field.span2,
+  #costs .costs-recipe-form .recipe-product-v146,
+  #costs .costs-recipe-form .field:last-child{
+    grid-column:auto;
+  }
+  #costs .costs-material-actions .btn,
+  #costs #recipeSaveBtnV143{
+    width:100%;
+  }
+  #costs .costs-table-card{
+    padding:14px;
+  }
+}
+
+@media (max-width:440px){
+  #costs .costs-summary{
+    grid-template-columns:1fr;
+  }
+}
 </style>
 
 </head><body><header><div>${logo?`<img class="logo" src="${h(logo)}">`:'<strong style="font-size:22px">ArtEssencia</strong>'}</div><div class="doc-title"><h1>Ficha completa da encomenda</h1><b>${h(o.id)}</b><br><span class="badge">${h(o.status||'—')}</span></div></header>
