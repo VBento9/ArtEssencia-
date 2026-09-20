@@ -3723,10 +3723,31 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div><h2 style="margin:0">Comunicações · Email</h2><small>Caixa de email ArtEssencia · geral@artessenciatlier.pt</small></div>
         <button class="btn primary" type="button" id="emailSyncBtnV177" onclick="syncEmailInboxV177()">Atualizar caixa</button>
       </div>
+      <div class="email1715-compose">
+        <div class="email1715-compose-head"><div><strong>Nova mensagem</strong><small>Envio direto pela ArtEssencia.</small></div><button type="button" class="smallbtn" onclick="toggleEmailComposeV1715()" id="emailComposeToggleV1715">Escrever email</button></div>
+        <div id="emailComposeBodyV1715" class="email1715-compose-body hidden">
+          <div class="form-grid">
+            <div class="field span2"><label>Cliente <small>(opcional)</small></label><select id="emailComposeClientV1715" onchange="emailComposeClientChangedV1715()"><option value="">Sem cliente associado</option></select></div>
+            <div class="field span2"><label>Destinatário</label><input id="emailComposeToV1715" type="email" autocomplete="email" placeholder="cliente@email.pt"></div>
+            <div class="field span2"><label>Modelo</label><select id="emailComposeTypeV1716" onchange="emailComposeTypeChangedV1716()"><option value="free">Mensagem livre</option><option value="quote">Orçamento</option><option value="order_confirmation">Confirmação de encomenda</option><option value="order_preparing">Encomenda em preparação</option><option value="order_ready">Encomenda pronta</option><option value="delivery_pickup">Entrega / levantamento</option><option value="schedule_change">Alteração de horário/data</option><option value="thanks">Agradecimento</option></select></div>
+            <div id="emailComposeContextWrapV1716" class="field span2 hidden"><label id="emailComposeContextLabelV1716">Referência</label><select id="emailComposeContextV1716" onchange="emailComposeContextChangedV1716()"><option value="">Selecionar…</option></select></div>
+            <div id="emailComposeNoticeV1716" class="field span4 hidden"><div class="soft-note" id="emailComposeNoticeBodyV1716"></div></div>
+            <div class="field span4"><label>Assunto</label><input id="emailComposeSubjectV1715" maxlength="300" placeholder="Assunto"></div>
+            <div class="field span4"><label>Mensagem</label><textarea id="emailComposeTextV1715" rows="7" maxlength="20000" placeholder="Escreve a mensagem…"></textarea></div>
+          </div>
+          <div class="email1715-compose-actions"><button type="button" class="btn" onclick="clearEmailComposeV1715()">Limpar</button><button type="button" class="btn primary" id="emailComposeSendV1715" onclick="sendNewEmailV1715()">Enviar email</button></div>
+        </div>
+      </div>
       <div class="email177-toolbar">
         <div class="email177-tabs" id="emailTabsV177"></div>
         <input class="email177-search" id="emailSearchV177" placeholder="Pesquisar assunto, email, conteúdo, cliente, encomenda ou orçamento…" oninput="renderEmailModuleV177()"><button type="button" id="emailSearchClearV1711" class="email1711-search-clear hidden" onclick="clearEmailSearchV1711()">Limpar</button><div id="emailSearchMetaV1711" class="email1711-search-meta"></div>
       </div>
+      <div id="emailBulkToolbarV1715" class="email1715-bulk hidden">
+        <div><strong id="emailBulkCountV1715">0 selecionadas</strong><button type="button" class="email1715-link" onclick="selectAllVisibleEmailsV1715()">Selecionar visíveis</button><button type="button" class="email1715-link" onclick="clearEmailBulkV1715()">Limpar</button></div>
+        <div id="emailBulkActiveV1715"><button type="button" class="btn" onclick="bulkMarkReadV1715(true)">Marcar lidos</button><button type="button" class="btn" onclick="bulkMarkReadV1715(false)">Marcar não lidos</button><button type="button" class="btn danger" onclick="bulkTrashV1715()">Mover para lixeira</button></div>
+        <div id="emailBulkTrashV1715" class="hidden"><button type="button" class="btn" onclick="bulkRestoreV1715()">Restaurar selecionados</button></div>
+      </div>
+      <div id="emailTrashToolbarV1715" class="email1715-trashbar hidden"><span>As mensagens eliminadas ficam aqui até esvaziares a lixeira.</span><button type="button" class="btn danger" onclick="emptyEmailTrashV1715()">Esvaziar lixeira</button></div>
       <div id="emailStatusV177" class="email177-status">Liga a ArtEssencia Cloud para consultar a caixa.</div>
       <div id="emailListV177" class="email177-list"></div>
     </div>
@@ -3871,7 +3892,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.14';
+const APP_VERSION='1.7.16';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -4086,7 +4107,7 @@ const pageIcons={
  dashboard:'🏠',sale:'➕',orders:'🧾',quotes:'📄',production:'🛠️',costs:'🧮',stock:'📦',purchases:'🛒',cash:'💶',
  clients:'👥',email:'✉️',reports:'📊',products:'🕯️',catalogs:'🗂️',specialEditions:'🎉',homepage:'🖼️',campaigns:'📣',delivery:'🚚',legal:'⚖️',settings:'⚙️',cloud:'☁️',backup:'💾'
 };
-document.getElementById('nav').innerHTML=pages.map(([id,l])=>`<button data-page="${id}" onclick="go('${id}')"><span class="nav-icon">${pageIcons[id]||'•'}</span><span class="nav-label">${l}</span>${id==='orders'?'<span id="navOrderBadgeV12624" class="nav-order-badge-v12624 hidden">0</span>':''}<span class="nav-active-dot"></span></button>`).join('');
+document.getElementById('nav').innerHTML=pages.map(([id,l])=>`<button data-page="${id}" onclick="go('${id}')"><span class="nav-icon">${pageIcons[id]||'•'}</span><span class="nav-label">${l}</span>${id==='orders'?'<span id="navOrderBadgeV12624" class="nav-order-badge-v12624 hidden">0</span>':''}${id==='email'?'<span id="navEmailBadgeV1716" class="nav-order-badge-v12624 hidden">0</span>':''}<span class="nav-active-dot"></span></button>`).join('');
 document.getElementById('today').textContent=new Date().toLocaleDateString('pt-PT',{weekday:'short',day:'2-digit',month:'short'});
 function todayISO(){const d=new Date(),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`}document.getElementById('saleDate').value=todayISO();document.getElementById('prodDate').value=todayISO();
 setTimeout(()=>{if(document.getElementById('purchaseDate'))document.getElementById('purchaseDate').value=todayISO();if(document.getElementById('cashDate'))document.getElementById('cashDate').value=todayISO()},0);
@@ -6616,7 +6637,25 @@ function printOrderCompleteV12634(id){
   font-size:8px!important;
 }
 
-</style></head><body><header><div>${logo?`<img class="logo" src="${h(logo)}">`:'<strong style="font-size:22px">ArtEssencia</strong>'}</div><div class="doc-title"><h1>Ficha completa da encomenda</h1><b>${h(o.id)}</b><br><span class="badge">${h(o.status||'—')}</span></div></header>
+</style>
+<style id="artessencia-email-parity-v1715">
+.email1715-compose{margin:12px 0;padding:12px;border:1px solid #e5d9d1;border-radius:14px;background:#fffaf7}
+.email1715-compose-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.email1715-compose-head strong{display:block;color:#4d362e}.email1715-compose-head small{display:block;color:#806c64;margin-top:2px}
+.email1715-compose-body{margin-top:12px;padding-top:12px;border-top:1px solid #eadfd8}.email1715-compose .soft-note{border:1px solid #e6d6cd;border-radius:12px;background:#fff;padding:10px 12px;color:#6e5147;font-size:11px;line-height:1.45}.email1715-compose-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
+.email1715-bulk{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0;padding:10px 12px;border:1px solid #e5d9d1;border-radius:12px;background:#fff}
+.email1715-bulk>div{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.email1715-link{border:0;background:none;color:#76564a;font-weight:800;cursor:pointer;padding:4px}
+.email1715-trashbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:10px 0;padding:10px 12px;border:1px solid #ead5ce;border-radius:12px;background:#fff7f4;color:#704b43}
+.email1715-row-shell{display:grid;grid-template-columns:36px minmax(0,1fr);align-items:stretch;border-bottom:1px solid #eee4df}.email1715-row-shell:last-child{border-bottom:0}.email1715-row-shell.selected{background:#fbf2ed}
+.email1715-select{display:grid;place-items:center;cursor:pointer}.email1715-select input{width:17px;height:17px}
+.email1715-row-shell .email177-row{border-bottom:0}
+.email1715-unread .email177-row{background:#fffaf5}.email1715-unread .email177-row b{font-weight:950}.email1715-unread-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#a65f45;margin-right:5px}
+.email1715-unread-label{display:inline-flex;align-items:center;margin-top:5px;font-size:9px;font-weight:900;color:#86513e}
+.email1715-detail-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin:12px 0 0;padding-top:10px;border-top:1px solid #eadfd7}
+.email1715-trashed{opacity:.82}.email1715-trashed .email177-row{background:#fbf8f6}
+@media(max-width:650px){.email1715-compose-head,.email1715-bulk,.email1715-trashbar{align-items:stretch;flex-direction:column}.email1715-compose-actions,.email1715-detail-actions{display:grid;grid-template-columns:1fr 1fr}.email1715-compose-actions .btn,.email1715-detail-actions .btn{width:100%}}
+</style>
+
+</head><body><header><div>${logo?`<img class="logo" src="${h(logo)}">`:'<strong style="font-size:22px">ArtEssencia</strong>'}</div><div class="doc-title"><h1>Ficha completa da encomenda</h1><b>${h(o.id)}</b><br><span class="badge">${h(o.status||'—')}</span></div></header>
  <div class="grid"><section class="card"><h3>Cliente</h3><div class="line"><b>Nome</b><span>${h(o.client||'—')}</span></div><div class="line"><b>Contacto</b><span>${h(o.contact||'—')}</span></div><div class="line"><b>Email</b><span>${h(o.email||'—')}</span></div><div class="line"><b>Origem</b><span>${o.source==='online_store'?'Loja Online':'Backoffice'}</span></div></section>
  <section class="card"><h3>Entrega</h3><div class="line"><b>Data</b><span>${h(datePt(o.delivery))}${o.deliveryTime?' · '+h(o.deliveryTime):''}</span></div><div class="line"><b>Método</b><span>${h(deliveryMethod)}</span></div>${o.deliveryMethod==='local_delivery'?`<div class="line"><b>Morada</b><span>${h(o.address||'—')}</span></div><div class="line"><b>Cód. postal</b><span>${h(o.postalCode||'—')}</span></div>`:''}<div class="line"><b>Embalagem</b><span>${h(o.box||((o.thematicBoxes||[])[0]?.box)||'—')} · ${h(o.boxes||1)} caixa(s)</span></div></section>
  <section class="card"><h3>Pagamento</h3><div class="line"><b>Pretendido</b><span>${h(paymentRequested)}</span></div><div class="line"><b>Registado</b><span>${h(o.payment||'Por definir')}</span></div><div class="line"><b>Estado</b><span>${remaining<=0.001&&c.total>0?'PAGO':'PENDENTE'}</span></div><div class="line"><b>Produção</b><span>${produced?'Concluída':'Pendente'}</span></div></section>
@@ -10612,6 +10651,164 @@ function globalSearchKeyV142(ev){
   if(key){go(aliases[key]);ev.currentTarget.value='';return;}
   toast('Não encontrei esse módulo');
 }
+</script>
+<script id="artessenciaEmailParityV1715">
+const emailBulkSelectedV1715=new Set();
+function emailMetaV1715(m){const x=m?.metadata;return x&&typeof x==='object'&&!Array.isArray(x)?{...x}:{}}
+function emailIsPurgedV1715(m){const x=emailMetaV1715(m);return !!(x.purged_at||x.purged)}
+function emailIsTrashedV1715(m){const x=emailMetaV1715(m);return !emailIsPurgedV1715(m)&&!!(x.trashed_at||x.trashed)}
+function emailIsUnreadV1715(m){return m?.direction==='inbound'&&!emailMetaV1715(m).read_at&&!emailIsTrashedV1715(m)&&!emailIsPurgedV1715(m)}
+function emailActiveRowsV1715(){return (emailRowsV177||[]).filter(m=>!emailIsTrashedV1715(m)&&!emailIsPurgedV1715(m))}
+function emailTrashRowsV1715(){return (emailRowsV177||[]).filter(emailIsTrashedV1715)}
+function buildEmailThreadsV179(rows=emailActiveRowsV1715()){const a=(rows||[]).slice(),n=a.length,parent=Array.from({length:n},(_,i)=>i),byProvider=new Map();const find=i=>{while(parent[i]!==i){parent[i]=parent[parent[i]];i=parent[i]}return i};const union=(i,j)=>{i=find(i);j=find(j);if(i!==j)parent[j]=i};a.forEach((x,i)=>{const id=String(x?.provider_message_id||'').trim();if(id)byProvider.set(id,i)});a.forEach((x,i)=>{const p=String(x?.in_reply_to_provider_id||'').trim();if(p&&byProvider.has(p))union(i,byProvider.get(p))});const fallback=new Map();a.forEach((x,i)=>{const key=emailSubjectBaseV179(x?.subject)+'|'+emailContactV179(x);if(!key.endsWith('|')){if(fallback.has(key))union(i,fallback.get(key));else fallback.set(key,i)}});const groups=new Map();a.forEach((x,i)=>{const r=find(i);if(!groups.has(r))groups.set(r,[]);groups.get(r).push(x)});const threads=[...groups.values()].map(messages=>{messages.sort((a,b)=>new Date(emailWhenV179(a)||0)-new Date(emailWhenV179(b)||0));const last=messages[messages.length-1]||{},first=messages[0]||{},inbound=messages.filter(x=>x.direction==='inbound');const contact=emailContactV179(last)||emailContactV179(first)||'',subject=String(first.subject||last.subject||'(sem assunto)').replace(/^\s*((re|fw|fwd)\s*:\s*)+/i,'').trim()||'(sem assunto)';const clientId=(messages.find(x=>x.client_id)||{}).client_id||null,orderId=(messages.find(x=>x.order_id)||{}).order_id||null,quoteId=(messages.find(x=>x.quote_id)||{}).quote_id||null;return{messages,last,contact,subject,clientId,orderId,quoteId,latestInbound:inbound[inbound.length-1]||null,lastAt:emailWhenV179(last)}});threads.sort((a,b)=>new Date(b.lastAt||0)-new Date(a.lastAt||0));return threads}
+function emailCountsV177(){const active=emailActiveRowsV1715(),threads=buildEmailThreadsV179(active);return{inbound:active.filter(x=>x.direction==='inbound').length,unread:active.filter(emailIsUnreadV1715).length,outbound:active.filter(x=>x.direction==='outbound'&&x.status!=='failed').length,failed:active.filter(x=>x.status==='failed').length,all:active.length,threads:threads.length,trash:emailTrashRowsV1715().length}}
+function updateNavEmailBadgeV1716(){
+ const n=emailActiveRowsV1715().filter(emailIsUnreadV1715).length,el=document.getElementById('navEmailBadgeV1716');if(!el)return;
+ el.textContent=String(n);el.classList.toggle('hidden',n<1);
+ const btn=document.querySelector('#nav button[data-page="email"]');if(btn)btn.title=n?`${n} email${n===1?'':'s'} não lido${n===1?'':'s'}`:'Comunicações · Email'
+}
+
+function setEmailFolderV177(folder){emailFolderV177=folder;emailBulkSelectedV1715.clear();renderEmailModuleV177()}
+function emailFolderBaseRowsV1715(){const base=emailFolderV177==='trash'?emailTrashRowsV1715():emailActiveRowsV1715();return base.filter(x=>emailFolderV177==='all'||emailFolderV177==='trash'||(emailFolderV177==='inbound'?x.direction==='inbound':emailFolderV177==='unread'?emailIsUnreadV1715(x):emailFolderV177==='outbound'?x.direction==='outbound'&&x.status!=='failed':emailFolderV177==='failed'?x.status==='failed':true))}
+function emailVisibleRowsV1715(){let rows=emailFolderBaseRowsV1715();const q=emailSearchNormV1711(String(document.getElementById('emailSearchV177')?.value||''));if(q)rows=rows.filter(x=>emailSearchHaystackV1711(x).includes(q));return rows}
+function emailBulkRowsV1715(){return emailVisibleRowsV1715().filter(x=>emailBulkSelectedV1715.has(String(x.id)))}
+function updateEmailBulkToolbarV1715(){const bar=document.getElementById('emailBulkToolbarV1715');if(!bar)return;const rows=emailBulkRowsV1715(),trash=emailFolderV177==='trash',eligible=emailFolderV177!=='threads'&&emailVisibleRowsV1715().length>0;bar.classList.toggle('hidden',!eligible);const c=document.getElementById('emailBulkCountV1715');if(c)c.textContent=`${rows.length} ${rows.length===1?'selecionada':'selecionadas'}`;document.getElementById('emailBulkActiveV1715')?.classList.toggle('hidden',trash||!rows.length);document.getElementById('emailBulkTrashV1715')?.classList.toggle('hidden',!trash||!rows.length)}
+function toggleEmailBulkV1715(id,checked){id=String(id||'');if(!id)return;if(checked)emailBulkSelectedV1715.add(id);else emailBulkSelectedV1715.delete(id);renderEmailModuleV177()}
+function selectAllVisibleEmailsV1715(){emailVisibleRowsV1715().forEach(x=>emailBulkSelectedV1715.add(String(x.id)));renderEmailModuleV177()}
+function clearEmailBulkV1715(){emailBulkSelectedV1715.clear();renderEmailModuleV177()}
+async function patchEmailRowsV1715(rows,patcher){const c=initCloudClient(),u=await ensureCloudSession();if(!c||!u)throw new Error('Liga primeiro a ArtEssencia Cloud');for(const m of rows){const patch=typeof patcher==='function'?patcher(m):patcher;const {error}=await c.from('artessencia_email_log').update(patch).eq('user_id',u.id).eq('id',m.id);if(error)throw error;Object.assign(m,patch)}}
+async function setEmailReadV1715(m,read=true,render=true){if(!m||m.direction!=='inbound'||!m.id)return false;const meta=emailMetaV1715(m);meta.read_at=read?new Date().toISOString():null;try{await patchEmailRowsV1715([m],{metadata:meta,updated_at:new Date().toISOString()});if(render)renderEmailModuleV177();return true}catch(e){console.warn('ArtEssencia email read state',e);return false}}
+async function markCurrentEmailUnreadV1715(){const rows=emailAssocRowsV1711().filter(m=>m.direction==='inbound'&&!emailIsTrashedV1715(m));if(!rows.length)return;for(const m of rows)await setEmailReadV1715(m,false,false);document.getElementById('emailDetailDialogV177')?.close();renderEmailModuleV177();toast(rows.length>1?'Conversa marcada como não lida':'Mensagem marcada como não lida')}
+async function bulkMarkReadV1715(read){const rows=emailBulkRowsV1715().filter(m=>m.direction==='inbound'&&!emailIsTrashedV1715(m));if(!rows.length)return toast('Seleciona pelo menos um email recebido');const at=new Date().toISOString();try{await patchEmailRowsV1715(rows,m=>({metadata:{...emailMetaV1715(m),read_at:read?at:null},updated_at:at}));emailBulkSelectedV1715.clear();renderEmailModuleV177();toast(`${rows.length} mensagem(ns) atualizada(s)`)}catch(e){toast('Emails: '+String(e?.message||e))}}
+async function trashCurrentEmailV1715(){const rows=emailAssocRowsV1711().filter(m=>!emailIsTrashedV1715(m)&&!emailIsPurgedV1715(m));if(!rows.length)return;if(!confirm(rows.length>1?`Mover esta conversa (${rows.length} mensagens) para a lixeira?`:'Mover esta mensagem para a lixeira?'))return;const at=new Date().toISOString();try{await patchEmailRowsV1715(rows,m=>({metadata:{...emailMetaV1715(m),trashed:true,trashed_at:at},updated_at:at}));document.getElementById('emailDetailDialogV177')?.close();renderEmailModuleV177();toast(rows.length>1?'Conversa movida para a lixeira':'Mensagem movida para a lixeira')}catch(e){toast('Lixeira: '+String(e?.message||e))}}
+async function restoreCurrentEmailV1715(){const rows=emailAssocRowsV1711().filter(emailIsTrashedV1715);if(!rows.length)return;const at=new Date().toISOString();try{await patchEmailRowsV1715(rows,m=>{const meta={...emailMetaV1715(m)};delete meta.trashed;delete meta.trashed_at;return{metadata:meta,updated_at:at}});document.getElementById('emailDetailDialogV177')?.close();renderEmailModuleV177();toast(rows.length>1?'Conversa restaurada':'Mensagem restaurada')}catch(e){toast('Restaurar: '+String(e?.message||e))}}
+async function bulkTrashV1715(){const rows=emailBulkRowsV1715().filter(m=>!emailIsTrashedV1715(m)&&!emailIsPurgedV1715(m));if(!rows.length)return;if(!confirm(`Mover ${rows.length} mensagem(ns) para a lixeira?`))return;const at=new Date().toISOString();try{await patchEmailRowsV1715(rows,m=>({metadata:{...emailMetaV1715(m),trashed:true,trashed_at:at},updated_at:at}));emailBulkSelectedV1715.clear();renderEmailModuleV177();toast(`${rows.length} mensagem(ns) movida(s) para a lixeira`)}catch(e){toast('Lixeira: '+String(e?.message||e))}}
+async function bulkRestoreV1715(){const rows=emailBulkRowsV1715().filter(emailIsTrashedV1715);if(!rows.length)return;const at=new Date().toISOString();try{await patchEmailRowsV1715(rows,m=>{const meta={...emailMetaV1715(m)};delete meta.trashed;delete meta.trashed_at;return{metadata:meta,updated_at:at}});emailBulkSelectedV1715.clear();renderEmailModuleV177();toast(`${rows.length} mensagem(ns) restaurada(s)`)}catch(e){toast('Restaurar: '+String(e?.message||e))}}
+async function emptyEmailTrashV1715(){const rows=emailTrashRowsV1715();if(!rows.length)return toast('A lixeira já está vazia');if(!confirm(`Esvaziar a lixeira? ${rows.length} mensagem(ns) deixarão de poder ser restauradas.`))return;const at=new Date().toISOString();try{await patchEmailRowsV1715(rows,m=>({metadata:{...emailMetaV1715(m),trashed:true,trashed_at:emailMetaV1715(m).trashed_at||at,purged:true,purged_at:at},subject:'[eliminado]',body_text:'',body_html:null,from_email:'',to_email:'',reply_to:null,client_id:null,order_id:null,quote_id:null,error:null,updated_at:at}));emailBulkSelectedV1715.clear();renderEmailModuleV177();toast('Lixeira esvaziada')}catch(e){toast('Esvaziar lixeira: '+String(e?.message||e))}}
+function emailComposeClientOptionsV1715(){const sel=document.getElementById('emailComposeClientV1715');if(!sel)return;const current=sel.value;sel.innerHTML='<option value="">Sem cliente associado</option>'+(db.clients||[]).slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'pt')).map(c=>`<option value="${escapeHtml(String(c._rid||c.id||''))}">${escapeHtml(c.name||'Sem nome')}${c.email?' · '+escapeHtml(c.email):''}</option>`).join('');if([...sel.options].some(o=>o.value===current))sel.value=current}
+function toggleEmailComposeV1715(){const body=document.getElementById('emailComposeBodyV1715'),btn=document.getElementById('emailComposeToggleV1715');if(!body)return;const opening=body.classList.contains('hidden');body.classList.toggle('hidden',!opening);if(btn)btn.textContent=opening?'Fechar':'Escrever email';if(opening){emailComposeClientOptionsV1715();emailComposeContextOptionsV1716();setTimeout(()=>document.getElementById('emailComposeToV1715')?.focus(),40)}}
+function clearEmailComposeV1715(){['emailComposeToV1715','emailComposeSubjectV1715','emailComposeTextV1715'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});const c=document.getElementById('emailComposeClientV1715');if(c)c.value='';const t=document.getElementById('emailComposeTypeV1716');if(t)t.value='free';const x=document.getElementById('emailComposeContextV1716');if(x)x.value='';emailComposeContextOptionsV1716()}
+function emailComposeClientChangedV1715(){
+ const rid=String(document.getElementById('emailComposeClientV1715')?.value||''),client=emailFindByRidOrIdV1711(db.clients||[],rid),to=document.getElementById('emailComposeToV1715');
+ if(client&&to)to.value=client.email||'';
+}
+function emailComposeKindV1716(type){
+ if(type==='quote')return'quote';
+ if(['order_confirmation','order_preparing','order_ready','delivery_pickup','schedule_change','thanks'].includes(type))return'order';
+ return'';
+}
+function emailOrderDisplayV1716(o){
+ const c=calcOrder(o),when=[o.delivery,o.deliveryTime].filter(Boolean).join(' · ')||'sem data';
+ return `${o.id||'Encomenda'} · ${o.client||'Cliente'} · ${when} · ${euro(c.total)}`
+}
+function emailQuoteDisplayV1716(q){
+ const c=quoteCalc(q);
+ return `${q.id||'Orçamento'} · ${q.client||'Cliente'} · ${q.eventDate||q.created||'sem data'} · ${euro(c.total)}`
+}
+function emailComposeContextOptionsV1716(){
+ const type=document.getElementById('emailComposeTypeV1716')?.value||'free',kind=emailComposeKindV1716(type),wrap=document.getElementById('emailComposeContextWrapV1716'),sel=document.getElementById('emailComposeContextV1716'),label=document.getElementById('emailComposeContextLabelV1716');
+ if(!wrap||!sel||!label)return;
+ const current=sel.value;
+ if(!kind){wrap.classList.add('hidden');sel.innerHTML='<option value="">Selecionar…</option>';renderEmailComposeNoticeV1716();return}
+ wrap.classList.remove('hidden');label.textContent=kind==='quote'?'Orçamento':'Encomenda';
+ const rows=kind==='quote'?(db.quotes||[]):(db.orders||[]);
+ sel.innerHTML='<option value="">Selecionar…</option>'+rows.slice().reverse().map(x=>`<option value="${escapeHtml(String(x.id||''))}">${escapeHtml(kind==='quote'?emailQuoteDisplayV1716(x):emailOrderDisplayV1716(x))}</option>`).join('');
+ if([...sel.options].some(o=>o.value===current))sel.value=current;
+ renderEmailComposeNoticeV1716()
+}
+function emailComposeContextRecordV1716(){
+ const type=document.getElementById('emailComposeTypeV1716')?.value||'free',kind=emailComposeKindV1716(type),id=document.getElementById('emailComposeContextV1716')?.value||'';
+ if(!kind||!id)return null;
+ return kind==='quote'?(db.quotes||[]).find(x=>String(x.id)===String(id))||null:(db.orders||[]).find(x=>String(x.id)===String(id))||null
+}
+function emailClientForContextV1716(ctx){
+ if(!ctx)return null;
+ if(ctx.clientId){const c=(db.clients||[]).find(x=>String(x.id||'')===String(ctx.clientId)||String(x._rid||'')===String(ctx.clientId));if(c)return c}
+ const phone=customerPhoneKey(ctx.contact),mail=String(ctx.email||'').trim().toLowerCase();
+ if(phone){const c=(db.clients||[]).find(x=>customerPhoneKey(x.phone)===phone);if(c)return c}
+ if(mail){const c=(db.clients||[]).find(x=>String(x.email||'').trim().toLowerCase()===mail);if(c)return c}
+ return null
+}
+function emailTemplateV1716(type,client,ctx){
+ const business=db.settings?.businessName||'ArtEssencia',name=client?.name?` ${client.name}`:(ctx?.client?` ${ctx.client}`:'');
+ if(!ctx){
+  const map={
+   quote:[`Orçamento · ${business}`,`Olá${name},\n\nSegue a informação relativa ao orçamento solicitado.\n\nSe precisares de algum esclarecimento, responde a este email.\n\n${business}`],
+   order_confirmation:[`Encomenda confirmada · ${business}`,`Olá${name},\n\nA tua encomenda está confirmada.\n\nObrigado,\n${business}`],
+   order_preparing:[`A tua encomenda está em preparação · ${business}`,`Olá${name},\n\nA tua encomenda já está em preparação.\n\n${business}`],
+   order_ready:[`A tua encomenda está pronta · ${business}`,`Olá${name},\n\nA tua encomenda está pronta.\n\n${business}`],
+   delivery_pickup:[`Entrega / levantamento · ${business}`,`Olá${name},\n\nContactamos-te relativamente à entrega ou levantamento da tua encomenda.\n\n${business}`],
+   schedule_change:[`Alteração de horário/data · ${business}`,`Olá${name},\n\nPrecisamos de ajustar a data ou horário combinado. Responde a este email para confirmarmos a alternativa.\n\n${business}`],
+   thanks:[`Obrigado · ${business}`,`Olá${name},\n\nObrigado pela tua encomenda e pela confiança na ${business}.\n\n${business}`]
+  };return map[type]||['','']
+ }
+ if(type==='quote'){
+  const qc=quoteCalc(ctx);
+  return [`Orçamento ${ctx.id} · ${business}`,`Olá${name},\n\nSegue a informação do orçamento ${ctx.id}.\n\nData do evento: ${ctx.eventDate||'—'}\nValidade: ${ctx.validUntil||'—'}\nTotal: ${euro(qc.total)}\nEstado: ${ctx.status||'Rascunho'}\n\nSe precisares de algum esclarecimento, responde a este email.\n\n${business}`]
+ }
+ const oc=calcOrder(ctx),when=`${ctx.delivery||'—'}${ctx.deliveryTime?' · '+ctx.deliveryTime:''}`,method=ctx.deliveryMethod==='local_delivery'?'Entrega local':'Levantamento';
+ const map={
+  order_confirmation:[`Encomenda ${ctx.id} confirmada · ${business}`,`Olá${name},\n\nA tua encomenda ${ctx.id} está confirmada.\n\nData/hora prevista: ${when}\nMétodo: ${method}\nTotal: ${euro(oc.total)}\n\nObrigado,\n${business}`],
+  order_preparing:[`Encomenda ${ctx.id} em preparação · ${business}`,`Olá${name},\n\nA tua encomenda ${ctx.id} já está em preparação.\n\nData/hora prevista: ${when}\n\n${business}`],
+  order_ready:[`Encomenda ${ctx.id} pronta · ${business}`,`Olá${name},\n\nA tua encomenda ${ctx.id} está pronta.\n\n${method}: ${when}\n\n${business}`],
+  delivery_pickup:[`${method} · Encomenda ${ctx.id} · ${business}`,`Olá${name},\n\nInformação relativa à tua encomenda ${ctx.id}:\n\n${method}\nData/hora: ${when}\n\nSe precisares de alterar alguma informação, responde a este email.\n\n${business}`],
+  schedule_change:[`Alteração · Encomenda ${ctx.id} · ${business}`,`Olá${name},\n\nPrecisamos de ajustar a data ou horário da encomenda ${ctx.id}.\n\nAgendamento atual: ${when}\n\nResponde a este email para combinarmos a alternativa.\n\n${business}`],
+  thanks:[`Obrigado pela tua encomenda ${ctx.id} · ${business}`,`Olá${name},\n\nObrigado pela tua encomenda ${ctx.id} e pela confiança na ${business}.\n\nEsperamos voltar a preparar algo especial para ti.\n\n${business}`]
+ };
+ return map[type]||['','']
+}
+function emailPriorOperationalV1716(type,ctx){
+ if(!ctx||type==='free')return[];
+ const kind=emailComposeKindV1716(type),rid=String(ctx._rid||ctx.id||'');
+ return (emailRowsV177||[]).filter(m=>m.direction==='outbound'&&m.status==='sent'&&m.message_type===type&&((kind==='order'&&String(m.order_id||'')===rid)||(kind==='quote'&&String(m.quote_id||'')===rid))).sort((a,b)=>String(a.sent_at||a.created_at||'').localeCompare(String(b.sent_at||b.created_at||'')))
+}
+function renderEmailComposeNoticeV1716(){
+ const box=document.getElementById('emailComposeNoticeV1716'),body=document.getElementById('emailComposeNoticeBodyV1716');
+ if(!box||!body)return;
+ const type=document.getElementById('emailComposeTypeV1716')?.value||'free',ctx=emailComposeContextRecordV1716();
+ if(type==='free'||!ctx){box.classList.add('hidden');body.innerHTML='';return}
+ const prior=emailPriorOperationalV1716(type,ctx),last=prior[prior.length-1];
+ box.classList.remove('hidden');
+ body.innerHTML=last?`<strong>Aviso operacional · envio manual</strong><br>⚠️ Este tipo de email já foi enviado ${prior.length} vez${prior.length===1?'':'es'}. Último envio: <strong>${escapeHtml(emailDateV177(last.sent_at||last.created_at))}</strong>. Se voltares a enviar, será pedida confirmação.`:`<strong>Aviso operacional · envio manual</strong><br>Ainda não existe registo deste tipo de email para esta referência.`
+}
+function applyEmailComposeTemplateV1716(){
+ const type=document.getElementById('emailComposeTypeV1716')?.value||'free',ctx=emailComposeContextRecordV1716(),client=ctx?emailClientForContextV1716(ctx):emailFindByRidOrIdV1711(db.clients||[],String(document.getElementById('emailComposeClientV1715')?.value||''));
+ if(ctx&&client){
+  const sel=document.getElementById('emailComposeClientV1715');if(sel){const v=String(client._rid||client.id||'');if([...sel.options].some(o=>o.value===v))sel.value=v}
+  const to=document.getElementById('emailComposeToV1715');if(to)to.value=client.email||ctx.email||''
+ }else if(ctx){
+  const to=document.getElementById('emailComposeToV1715');if(to)to.value=ctx.email||''
+ }
+ if(type==='free')return;
+ const [subject,message]=emailTemplateV1716(type,client,ctx);
+ if(document.getElementById('emailComposeSubjectV1715'))document.getElementById('emailComposeSubjectV1715').value=subject;
+ if(document.getElementById('emailComposeTextV1715'))document.getElementById('emailComposeTextV1715').value=message;
+ renderEmailComposeNoticeV1716()
+}
+function emailComposeTypeChangedV1716(){emailComposeContextOptionsV1716();applyEmailComposeTemplateV1716()}
+function emailComposeContextChangedV1716(){applyEmailComposeTemplateV1716()}
+async function sendNewEmailV1715(){
+ const to=String(document.getElementById('emailComposeToV1715')?.value||'').trim(),subject=String(document.getElementById('emailComposeSubjectV1715')?.value||'').trim(),message=String(document.getElementById('emailComposeTextV1715')?.value||'').trim(),type=document.getElementById('emailComposeTypeV1716')?.value||'free',ctx=emailComposeContextRecordV1716();
+ const clientId=String(document.getElementById('emailComposeClientV1715')?.value||'')||null;
+ if(!validCustomerEmail(to))return toast('Indica um email válido');if(!subject)return toast('Indica o assunto');if(!message)return toast('Escreve a mensagem');
+ const prior=emailPriorOperationalV1716(type,ctx);if(prior.length&&!confirm(`Este tipo de email já foi enviado ${prior.length} vez${prior.length===1?'':'es'} para esta referência. Enviar novamente?`))return;
+ const btn=document.getElementById('emailComposeSendV1715');
+ try{
+  if(btn){btn.disabled=true;btn.textContent='A enviar…'}
+  const c=initCloudClient(),u=await ensureCloudSession();if(!c||!u)throw new Error('Liga primeiro a ArtEssencia Cloud');
+  const {data:sessionData,error:sessionError}=await c.auth.getSession(),token=sessionData?.session?.access_token;if(sessionError||!token)throw new Error('Sessão Cloud expirada');
+  const cfg=cloudCfg(),endpoint=String(cfg.url||'').replace(/\/$/,'')+'/functions/v1/artessencia-send-email',kind=emailComposeKindV1716(type);
+  const payload={to,subject,message,client_id:clientId,template_kind:type,message_type:type,order_id:kind==='order'&&ctx?String(ctx._rid||ctx.id||''):null,quote_id:kind==='quote'&&ctx?String(ctx._rid||ctx.id||''):null};
+  const r=await fetch(endpoint,{method:'POST',headers:{Authorization:`Bearer ${token}`,apikey:cfg.key,'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const data=await r.json().catch(()=>({}));if(!r.ok||data?.ok===false)throw new Error(data?.error||data?.detail||`HTTP ${r.status}`);
+  clearEmailComposeV1715();const t=document.getElementById('emailComposeTypeV1716');if(t)t.value='free';emailComposeContextOptionsV1716();await loadEmailModuleV177(false);emailFolderV177='outbound';renderEmailModuleV177();toast('Email enviado pela ArtEssencia')
+ }catch(e){toast('Falha no email: '+String(e?.message||e).slice(0,180))}
+ finally{if(btn){btn.disabled=false;btn.textContent='Enviar email'}}
+}
+async function loadEmailModuleV177(showToast=false){const status=document.getElementById('emailStatusV177');try{const c=initCloudClient(),u=await ensureCloudSession();if(!c||!u)throw new Error('Liga primeiro a ArtEssencia Cloud');if(status)status.textContent='A carregar mensagens…';const {data,error}=await c.from('artessencia_email_log').select('id,direction,status,from_email,to_email,reply_to,subject,body_text,body_html,provider,provider_message_id,in_reply_to_provider_id,client_id,order_id,quote_id,error,metadata,message_type,created_at,sent_at,received_at,updated_at').eq('user_id',u.id).order('created_at',{ascending:false}).limit(300);if(error)throw error;emailRowsV177=Array.isArray(data)?data:[];emailThreadsV179=buildEmailThreadsV179();emailComposeClientOptionsV1715();renderEmailModuleV177();if(showToast)toast('Caixa de email atualizada');return true}catch(e){emailRowsV177=[];emailThreadsV179=[];renderEmailModuleV177();if(status)status.textContent='Email indisponível · '+String(e?.message||e);if(showToast)toast('Email: '+String(e?.message||e));return false}}
+function renderEmailModuleV177(){const tabs=document.getElementById('emailTabsV177'),list=document.getElementById('emailListV177'),status=document.getElementById('emailStatusV177');if(!tabs||!list)return;updateNavEmailBadgeV1716();const c=emailCountsV177(),defs=[['inbound','Recebidos',c.inbound],['unread','Não lidos',c.unread],['outbound','Enviados',c.outbound],['failed','Falhados',c.failed],['all','Todos',c.all],['threads','Conversas',c.threads],['trash','Lixeira',c.trash]];tabs.innerHTML=defs.map(([v,l,n])=>`<button type="button" class="email177-tab ${emailFolderV177===v?'active':''}" onclick="setEmailFolderV177('${v}')">${l} <span class="email177-count">${n}</span></button>`).join('');const trashMode=emailFolderV177==='trash';document.getElementById('emailTrashToolbarV1715')?.classList.toggle('hidden',!trashMode);const rawQ=String(document.getElementById('emailSearchV177')?.value||'').trim(),q=emailSearchNormV1711(rawQ),clear=document.getElementById('emailSearchClearV1711'),meta=document.getElementById('emailSearchMetaV1711');if(clear)clear.classList.toggle('hidden',!q);if(emailFolderV177==='threads'){emailBulkSelectedV1715.clear();document.getElementById('emailBulkToolbarV1715')?.classList.add('hidden');emailThreadsV179=buildEmailThreadsV179(emailActiveRowsV1715());const all=emailThreadsV179.slice();let threads=all;if(q)threads=threads.filter(t=>{const a=emailAssociationsV1711(t.messages),hay=emailSearchNormV1711([t.subject,t.contact,a.client.record?.name,a.client.record?.email,a.order.record?.id,a.quote.record?.id,...t.messages.flatMap(x=>[x.subject,x.from_email,x.to_email,x.body_text])].filter(Boolean).join(' '));return hay.includes(q)});if(meta)meta.textContent=q?`${threads.length} de ${all.length} conversa(s) correspondem a “${rawQ}”`:'';if(status)status.textContent=emailBusyV177?'A atualizar a caixa…':`${threads.length} conversa(s) nesta vista · última leitura ${emailDateV177(new Date().toISOString())}`;if(!threads.length){list.innerHTML='<div class="email177-empty">Sem conversas nesta vista.</div>';return}list.innerHTML=threads.map(t=>{const realIndex=emailThreadsV179.indexOf(t),a=emailAssociationsV1711(t.messages),client=a.client.record,lastDir=t.last?.direction==='inbound'?'Cliente':'ArtEssencia',unread=t.messages.some(emailIsUnreadV1715);return `<button type="button" class="email179-thread ${unread?'email1715-unread':''}" onclick="openEmailThreadV179(${realIndex})"><div><b>${unread?'<span class="email1715-unread-dot"></span>':''}${escapeHtml(t.subject)} <span class="email179-thread-count">${t.messages.length}</span></b><small>${escapeHtml(client?.name||t.contact||'Contacto não identificado')} · última mensagem: ${lastDir}</small><div class="email177-meta"><span class="email177-pill ${t.last?.direction==='inbound'?'inbound':'outbound'}">${t.last?.direction==='inbound'?'Recebida':'Enviada'}</span>${unread?'<span class="email177-pill">Não lida</span>':''}${client?'<span class="email177-pill">Cliente associado</span>':''}${a.order.record?'<span class="email177-pill">Encomenda</span>':''}${a.quote.record?'<span class="email177-pill">Orçamento</span>':''}</div></div><time>${escapeHtml(emailDateV177(t.lastAt))}</time></button>`}).join('');return}const base=emailFolderBaseRowsV1715(),rows=emailVisibleRowsV1715();if(q&&meta)meta.textContent=`${rows.length} de ${base.length} mensagem(ns) correspondem a “${rawQ}”`;else if(meta)meta.textContent='';if(status)status.textContent=emailBusyV177?'A atualizar a caixa…':`${rows.length} mensagem(ns) nesta vista · última leitura ${emailDateV177(new Date().toISOString())}`;if(!rows.length){list.innerHTML=`<div class="email177-empty">${trashMode?'A lixeira está vazia.':'Sem mensagens nesta vista.'}</div>`;updateEmailBulkToolbarV1715();return}list.innerHTML=rows.map(x=>{const inbound=x.direction==='inbound',who=inbound?(x.from_email||'Remetente desconhecido'):(x.to_email||'Destinatário desconhecido'),when=emailWhenV179(x),a=emailAssociationsV1711([x]),selected=emailBulkSelectedV1715.has(String(x.id)),unread=emailIsUnreadV1715(x);return `<div class="email1715-row-shell ${selected?'selected':''} ${trashMode?'email1715-trashed':''} ${unread?'email1715-unread':''}"><label class="email1715-select" title="Selecionar"><input type="checkbox" ${selected?'checked':''} onchange="toggleEmailBulkV1715('${String(x.id).replace(/'/g,"\\'")}',this.checked)"></label><button type="button" class="email177-row" onclick="openEmailMessageV177('${String(x.id).replace(/'/g,"\\'")}')"><div><b>${escapeHtml(x.subject||'(sem assunto)')}</b><small>${inbound?'De':'Para'}: ${escapeHtml(who)}</small><div class="email177-meta"><span class="email177-pill ${inbound?'inbound':'outbound'}">${trashMode?'Na lixeira':inbound?'Recebido':'Enviado'}</span>${unread?'<span class="email1715-unread-label"><span class="email1715-unread-dot"></span>Não lido</span>':''}${x.status==='failed'?'<span class="email177-pill failed">Falhou</span>':''}${a.client.record?'<span class="email177-pill">Cliente associado</span>':''}${a.order.record?'<span class="email177-pill">Encomenda</span>':''}${a.quote.record?'<span class="email177-pill">Orçamento</span>':''}</div></div><time>${escapeHtml(emailDateV177(when))}</time></button></div>`}).join('');updateEmailBulkToolbarV1715();setTimeout(()=>persistEmailAutoAssociationsV1711(),0)}
+function openEmailMessageV177(id,refresh=false){const x=emailRowsV177.find(r=>String(r.id)===String(id));if(!x)return toast('Mensagem não encontrada');window.__emailOpenMessageIdV1711=String(id);window.__emailOpenThreadIndexV1711=null;emailAssocMessageIdsV1711=[x.id];if(!refresh)emailAssocEditingV1711=false;const d=document.getElementById('emailDetailDialogV177'),title=document.getElementById('emailDetailTitleV177'),sub=document.getElementById('emailDetailSubtitleV177'),body=document.getElementById('emailDetailBodyV177');if(!d||!body)return;if(title)title.textContent=x.subject||'(sem assunto)';if(sub)sub.textContent=emailIsTrashedV1715(x)?'Mensagem na lixeira':x.direction==='inbound'?'Mensagem recebida':'Mensagem enviada';const when=emailWhenV179(x),trashed=emailIsTrashedV1715(x),reply=!trashed&&x.direction==='inbound'?`<div class="email178-reply"><div class="field"><label>Responder a ${escapeHtml(x.from_email||'')}</label><textarea id="emailReplyTextV178" maxlength="5000" placeholder="Escreve a resposta…"></textarea></div><div class="email178-actions"><button class="btn primary" id="emailReplyBtnV178" type="button" onclick="sendEmailReplyV178('${String(x.id).replace(/'/g,"\\'")}')">Responder</button></div></div>`:'',actions=`<div class="email1715-detail-actions">${!trashed&&x.direction==='inbound'?'<button class="btn" type="button" onclick="markCurrentEmailUnreadV1715()">Marcar como não lido</button>':''}${trashed?'<button class="btn primary" type="button" onclick="restoreCurrentEmailV1715()">Restaurar</button>':'<button class="btn danger" type="button" onclick="trashCurrentEmailV1715()">Eliminar</button>'}</div>`;body.innerHTML=`<div class="email177-detail-grid"><b>De</b><span>${escapeHtml(x.from_email||'—')}</span><b>Para</b><span>${escapeHtml(x.to_email||'—')}</span><b>Data</b><span>${escapeHtml(emailDateV177(when))}</span><b>Estado</b><span>${escapeHtml(emailDisplayStatusV178(x))}</span><b>Associação</b><span class="email178-association">${escapeHtml(emailAssociationLabelV1711([x]))}</span></div>${trashed?'':renderEmailAssocEditorV1711()}<div class="email177-message">${escapeHtml(x.body_text||htmlToTextV177(x.body_html||'')||'(mensagem sem conteúdo de texto)')}</div>${x.error?`<div class="email177-status" style="margin-top:10px">Erro: ${escapeHtml(x.error)}</div>`:''}${reply}${actions}`;if(!d.open)d.showModal();if(x.direction==='inbound'&&!trashed&&emailIsUnreadV1715(x))setEmailReadV1715(x,true,true)}
+function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThreadsV179(emailActiveRowsV1715());const t=emailThreadsV179[Number(index)];if(!t)return toast('Conversa não encontrada');window.__emailOpenThreadIndexV1711=Number(index);window.__emailOpenMessageIdV1711='';emailAssocMessageIdsV1711=t.messages.map(x=>x.id).filter(Boolean);if(!refresh)emailAssocEditingV1711=false;const d=document.getElementById('emailDetailDialogV177'),title=document.getElementById('emailDetailTitleV177'),sub=document.getElementById('emailDetailSubtitleV177'),body=document.getElementById('emailDetailBodyV177');if(!d||!body)return;if(title)title.textContent=t.subject;if(sub)sub.textContent=`Conversa · ${t.messages.length} mensagem(ns)`;const messages=t.messages.map(x=>`<div class="email179-msg ${x.direction==='inbound'?'inbound':'outbound'}"><div class="email179-msg-head"><b>${x.direction==='inbound'?escapeHtml(x.from_email||'Cliente'):'ArtEssencia'}</b><time>${escapeHtml(emailDateV177(emailWhenV179(x)))}</time></div><div class="email179-msg-body">${escapeHtml(x.body_text||htmlToTextV177(x.body_html||'')||'(mensagem sem conteúdo de texto)')}</div>${x.status==='failed'?'<div class="email177-pill failed" style="display:inline-block;margin-top:7px">Falhou</div>':''}</div>`).join('');body.innerHTML=`<div class="email179-thread-assoc"><b>Contacto:</b> ${escapeHtml(t.contact||'—')} · <b>Associação:</b> ${escapeHtml(emailAssociationLabelV1711(t.messages))}</div>${renderEmailAssocEditorV1711()}<div class="email179-thread-view">${messages}</div><div class="email179-compose"><div class="field"><label>Responder nesta conversa</label><textarea id="emailThreadReplyV179" maxlength="5000" placeholder="Escreve a resposta…"></textarea></div><div class="email178-actions"><button class="btn primary" id="emailThreadReplyBtnV179" type="button" onclick="sendEmailThreadReplyV179(${Number(index)})">Responder</button></div></div><div class="email1715-detail-actions"><button class="btn" type="button" onclick="markCurrentEmailUnreadV1715()">Marcar como não lida</button><button class="btn danger" type="button" onclick="trashCurrentEmailV1715()">Eliminar conversa</button></div>`;if(!d.open)d.showModal();const unread=t.messages.filter(emailIsUnreadV1715);if(unread.length)Promise.all(unread.map(m=>setEmailReadV1715(m,true,false))).then(()=>renderEmailModuleV177())}
 </script>
 </body></html>
 
