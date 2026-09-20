@@ -2411,14 +2411,52 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
   </section>
 
   <section id="sale" class="screen">
-    <div class="grid4" id="quoteKpis" style="margin-bottom:12px"></div><div class="card"><div class="form-grid">
-      <div class="field span2"><label>Cliente</label><input id="saleClient" list="clientSuggestions" placeholder="Nome do cliente" oninput="fillClientContact()"><datalist id="clientSuggestions"></datalist></div><div class="field"><label>Contacto</label><input id="saleContact" type="tel" inputmode="tel" placeholder="Telemóvel"></div><div class="field"><label>Email</label><input id="saleEmail" type="email" autocomplete="email" placeholder="cliente@email.pt"></div><div class="field"><label>Data entrega</label><input id="saleDate" type="date"></div>
-      <div class="field"><label>Pagamento</label><select id="salePayment"><option>Dinheiro</option><option>MB Way</option><option>Transferência</option><option>Outro</option></select></div><div class="field"><label>Embalagem</label><select id="saleBox"></select></div><div class="field"><label>N.º caixas</label><input id="saleBoxes" type="number" min="1" value="1"></div><div class="field"><label>Valor pago</label><input id="salePaid" type="number" step="0.01" value="0"></div>
-      <div class="field span2"><label>Notas / personalização da encomenda</label><textarea id="saleNotes" rows="3" placeholder="Ex.: nome a colocar, cor pretendida, fita, mensagem, acabamento ou outras instruções para produção"></textarea><small class="muted">Estas instruções seguem para a Produção e para a ordem de produção.</small></div>
-    </div></div>
-    <div class="section-title">Escolher produtos</div><div class="product-picker" id="productPicker"></div><div class="section-title">Carrinho</div><div class="card" id="cart"></div>
-    <div class="totalbox"><div class="mini"><span>Unidades</span><strong id="cartQty">0</strong></div><div class="mini"><span>Total</span><strong id="cartTotal">0,00 €</strong></div><div class="mini"><span>Lucro estimado</span><strong id="cartProfit">0,00 €</strong></div><div class="mini"><span>Margem</span><strong id="cartMargin">0,0%</strong></div></div>
-    <div class="btnrow"><button class="btn primary" onclick="saveOrder()">Guardar encomenda</button><button class="btn" onclick="clearSale()">Limpar</button></div>
+    <div class="sale-hero-v1727 card">
+      <div>
+        <div class="section-title" style="margin:0">Nova encomenda</div>
+        <small>Regista cliente, entrega, produtos e pagamento numa única sequência.</small>
+      </div>
+    </div>
+
+    <div class="grid4 sale-kpis-v1727" id="quoteKpis"></div>
+
+    <section class="card sale-customer-card-v1727">
+      <div class="sale-section-head-v1727">
+        <div class="section-title" style="margin:0">Cliente e entrega</div>
+        <small>Dados essenciais da encomenda e instruções para produção.</small>
+      </div>
+      <div class="form-grid sale-customer-grid-v1727">
+        <div class="field sale-client-v1727"><label>Cliente</label><input id="saleClient" list="clientSuggestions" placeholder="Nome do cliente" oninput="fillClientContact()"><datalist id="clientSuggestions"></datalist></div>
+        <div class="field"><label>Contacto</label><input id="saleContact" type="tel" inputmode="tel" placeholder="Telemóvel"></div>
+        <div class="field"><label>Email</label><input id="saleEmail" type="email" autocomplete="email" placeholder="cliente@email.pt"></div>
+        <div class="field"><label>Data entrega</label><input id="saleDate" type="date"></div>
+        <div class="field"><label>Pagamento</label><select id="salePayment"><option>Dinheiro</option><option>MB Way</option><option>Transferência</option><option>Outro</option></select></div>
+        <div class="field"><label>Embalagem</label><select id="saleBox"></select></div>
+        <div class="field"><label>N.º caixas</label><input id="saleBoxes" type="number" min="1" value="1"></div>
+        <div class="field"><label>Valor pago</label><input id="salePaid" type="number" step="0.01" value="0"></div>
+        <div class="field sale-notes-v1727"><label>Notas / personalização da encomenda</label><textarea id="saleNotes" rows="3" placeholder="Ex.: nome a colocar, cor pretendida, fita, mensagem, acabamento ou outras instruções para produção"></textarea><small class="muted">Estas instruções seguem para a Produção e para a ordem de produção.</small></div>
+      </div>
+    </section>
+
+    <section class="card sale-products-card-v1727">
+      <div class="sale-section-head-v1727">
+        <div class="section-title" style="margin:0">Escolher produtos</div>
+        <small>Adiciona os produtos e quantidades pretendidos para esta encomenda.</small>
+      </div>
+      <div class="product-picker" id="productPicker"></div>
+    </section>
+
+    <section class="card sale-cart-card-v1727">
+      <div class="sale-section-head-v1727">
+        <div class="section-title" style="margin:0">Carrinho da encomenda</div>
+        <small>Revê os artigos antes de guardar a encomenda.</small>
+      </div>
+      <div id="cart"></div>
+    </section>
+
+    <div class="totalbox sale-totalbox-v1727"><div class="mini"><span>Unidades</span><strong id="cartQty">0</strong></div><div class="mini"><span>Total</span><strong id="cartTotal">0,00 €</strong></div><div class="mini"><span>Lucro estimado</span><strong id="cartProfit">0,00 €</strong></div><div class="mini"><span>Margem</span><strong id="cartMargin">0,0%</strong></div></div>
+
+    <div class="sale-actions-v1727"><button class="btn" onclick="clearSale()">Limpar</button><button class="btn primary" onclick="saveOrder()">Guardar encomenda</button></div>
   </section>
 
   <section id="orders" class="screen">
@@ -2727,32 +2765,41 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 
     <div id="purchaseSummary" class="purchase-summary"></div>
 
-    <div class="card purchase-form-card" style="margin-top:10px">
+    <section class="card purchase-form-card purchase-register-v1722" style="margin-top:10px">
       <div class="purchase-form-head">
         <div>
           <div class="section-title" style="margin:0">Registar compra</div>
           <small>A compra atualiza stock, custo médio e caixa automaticamente.</small>
         </div>
       </div>
-      <div class="form-grid purchase-form">
-        <div class="field span2"><label>Fornecedor</label><input id="purchaseSupplier" placeholder="Nome do fornecedor"></div>
-        <div class="field span2"><label>Artigo</label><select id="purchaseItem" onchange="syncPurchaseUnitV120();updatePurchasePreview()"></select></div>
-        <div class="field"><label id="purchaseQtyLabel">Quantidade comprada</label><input id="purchaseQty" type="number" step="0.01" oninput="updatePurchasePreview()"></div><div class="field"><label>Unidade da compra</label><select id="purchaseUnitV120" onchange="updatePurchasePreview()"><option value="">Selecionar artigo primeiro</option></select></div>
+
+      <div class="form-grid purchase-form purchase-main-grid-v1722">
+        <div class="field purchase-supplier-v1722"><label>Fornecedor</label><input id="purchaseSupplier" placeholder="Nome do fornecedor"></div>
+        <div class="field purchase-item-v1722"><label>Artigo</label><select id="purchaseItem" onchange="syncPurchaseUnitV120();updatePurchasePreview()"></select></div>
+        <div class="field"><label id="purchaseQtyLabel">Quantidade comprada</label><input id="purchaseQty" type="number" step="0.01" oninput="updatePurchasePreview()"></div>
+        <div class="field"><label>Unidade da compra</label><select id="purchaseUnitV120" onchange="updatePurchasePreview()"><option value="">Selecionar artigo primeiro</option></select></div>
         <div class="field"><label>Valor total €</label><input id="purchaseTotal" type="number" step="0.01" oninput="updatePurchasePreview()"></div>
         <div class="field"><label>Estado</label><select id="purchaseStatus" onchange="updatePurchasePreview()"><option value="received">Recebida — entra já em stock</option><option value="ordered">Encomendada — aguarda receção</option></select></div>
         <div class="field"><label>Pagamento</label><select id="purchaseMethod"><option>Dinheiro</option><option>MB Way</option><option>Transferência</option><option>Cartão</option><option>Outro</option></select></div>
         <div class="field"><label>Data</label><input id="purchaseDate" type="date"></div>
-        <div class="field span2"><label>Notas</label><input id="purchaseNote" placeholder="Opcional"></div>
-        <div class="field"><label>&nbsp;</label><button class="btn primary" id="purchaseSaveBtn" onclick="savePurchase()">Guardar compra</button></div>
-        <div class="field"><label>&nbsp;</label><button class="btn hidden" id="purchaseCancelBtn" onclick="cancelPurchaseEdit()">Cancelar edição</button></div>
-        <div class="span2 purchase-preview" id="purchasePreview">
-          <div class="purchase-preview-item"><span>Stock atual</span><strong id="purchasePreviewCurrent">—</strong></div>
-          <div class="purchase-preview-item"><span>Após compra</span><strong id="purchasePreviewAfter">—</strong></div>
-          <div class="purchase-preview-item"><span>Custo desta compra</span><strong id="purchasePreviewUnitCost">—</strong></div>
-          <div class="purchase-preview-item"><span>Novo custo médio</span><strong id="purchasePreviewAvgCost">—</strong></div><div class="purchase-preview-item"><span>Convertido para stock</span><strong id="purchasePreviewConvertedV120">—</strong></div>
+      </div>
+
+      <div class="purchase-secondary-row-v1722">
+        <div class="field purchase-note-v1722"><label>Notas</label><input id="purchaseNote" placeholder="Opcional"></div>
+        <div class="purchase-actions-v1722">
+          <button class="btn hidden" id="purchaseCancelBtn" onclick="cancelPurchaseEdit()">Cancelar edição</button>
+          <button class="btn primary" id="purchaseSaveBtn" onclick="savePurchase()">Guardar compra</button>
         </div>
       </div>
-    </div>
+
+      <div class="purchase-preview purchase-preview-v1722" id="purchasePreview">
+        <div class="purchase-preview-item"><span>Stock atual</span><strong id="purchasePreviewCurrent">—</strong></div>
+        <div class="purchase-preview-item"><span>Após compra</span><strong id="purchasePreviewAfter">—</strong></div>
+        <div class="purchase-preview-item"><span>Custo desta compra</span><strong id="purchasePreviewUnitCost">—</strong></div>
+        <div class="purchase-preview-item"><span>Novo custo médio</span><strong id="purchasePreviewAvgCost">—</strong></div>
+        <div class="purchase-preview-item"><span>Convertido para stock</span><strong id="purchasePreviewConvertedV120">—</strong></div>
+      </div>
+    </section>
 
     <div class="card purchase-list-card" style="margin-top:10px">
       <div class="purchase-list-head">
@@ -3451,23 +3498,23 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 
     <div class="grid4 cash-kpis" id="cashKpis"></div>
 
-    <div class="card cash-form-card" style="margin-top:10px">
+    <section class="card cash-form-card cash-register-v1723" style="margin-top:10px">
       <div class="cash-form-head">
         <div>
           <div class="section-title" style="margin:0">Novo movimento</div>
           <small>Compras e pagamentos de encomendas entram automaticamente no Caixa.</small>
         </div>
       </div>
-      <div class="form-grid">
+
+      <div class="form-grid cash-main-grid-v1723">
         <div class="field"><label>Data</label><input id="cashDate" type="date"></div>
         <div class="field"><label>Tipo</label><select id="cashType"><option>Entrada</option><option>Despesa</option><option>Saída</option></select></div>
-        <div class="field span2"><label>Descrição</label><input id="cashDesc" placeholder="Ex.: venda balcão, eletricidade, transporte…"></div>
+        <div class="field cash-desc-v1723"><label>Descrição</label><input id="cashDesc" placeholder="Ex.: venda balcão, eletricidade, transporte…"></div>
         <div class="field"><label>Meio</label><select id="cashMethod"><option>Dinheiro</option><option>MB Way</option><option>Transferência</option><option>Outro</option></select></div>
         <div class="field"><label>Valor €</label><input id="cashValue" type="number" step="0.01"></div>
-        <div class="field"><label>&nbsp;</label><button class="btn primary" id="cashSaveBtn" onclick="addCash()">Registar</button></div>
-        <div class="field"><label>&nbsp;</label><button class="btn hidden" id="cashCancelBtn" onclick="cancelCashEdit()">Cancelar edição</button></div>
+        <div class="field cash-action-v1723"><label>&nbsp;</label><div class="cash-form-actions-v1723"><button class="btn hidden" id="cashCancelBtn" onclick="cancelCashEdit()">Cancelar edição</button><button class="btn primary" id="cashSaveBtn" onclick="addCash()">Registar movimento</button></div></div>
       </div>
-    </div>
+    </section>
 
     <div class="card cash-list-card" style="margin-top:10px">
       <div class="cash-list-head">
@@ -3503,32 +3550,37 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 
     <div id="clientsSummary" class="clients-summary"></div>
 
-    <div class="clients-workspace">
-    <div class="card clients-form-card">
-      <div class="clients-form-head">
-        <div>
-          <div class="section-title" style="margin:0">Novo / editar cliente</div>
-          <small>Telefone é a identificação principal do cliente. O email só é usado como segunda referência quando não existe telefone; na futura loja online serão pedidos ambos.</small>
+    <div class="clients-stack-v1724">
+      <section class="card clients-form-card clients-form-section-v1724">
+        <div class="clients-form-head">
+          <div>
+            <div class="section-title" style="margin:0">Novo / editar cliente</div>
+            <small>Telefone é a identificação principal do cliente. O email só é usado como segunda referência quando não existe telefone; na futura loja online serão pedidos ambos.</small>
+          </div>
         </div>
-      </div>
-      <div class="form-grid">
-        <div class="field span2"><label>Nome</label><input id="clientName" autocomplete="name"></div>
-        <div class="field span2"><label>Telefone</label><input id="clientPhone" type="tel" inputmode="tel" maxlength="20" placeholder="Ex.: 912 345 678"><small class="client-contact-help">Aceita número português com ou sem +351, ou número internacional com indicativo.</small></div>
-        <div class="field span2"><label>Email</label><input id="clientEmail" type="email" autocomplete="email" placeholder="cliente@email.pt"></div>
-        <div class="field span2"><label>Notas</label><textarea id="clientNote" rows="3" placeholder="Preferências, personalizações ou informação útil"></textarea></div>
-        <div class="clients-form-actions"><button class="btn primary" id="clientSaveBtn" onclick="addClient()">Guardar cliente</button><button class="btn hidden" id="clientCancelBtn" onclick="cancelClientEdit()">Cancelar edição</button></div>
-      </div>
-    </div>
 
-    <div class="card clients-list-card">
-      <div class="clients-list-head">
-        <div>
-          <div class="section-title" style="margin:0">Lista de clientes</div>
-          <small id="clientsResultCount">0 clientes</small>
+        <div class="form-grid clients-form-grid-v1724">
+          <div class="field"><label>Nome</label><input id="clientName" autocomplete="name"></div>
+          <div class="field"><label>Telefone</label><input id="clientPhone" type="tel" inputmode="tel" maxlength="20" placeholder="Ex.: 912 345 678"><small class="client-contact-help">Aceita número português com ou sem +351, ou número internacional com indicativo.</small></div>
+          <div class="field"><label>Email</label><input id="clientEmail" type="email" autocomplete="email" placeholder="cliente@email.pt"></div>
+          <div class="field clients-note-v1724"><label>Notas</label><textarea id="clientNote" rows="2" placeholder="Preferências, personalizações ou informação útil"></textarea></div>
         </div>
-      </div>
-      <div id="clientsCards" class="clients-cards"></div>
-    </div>
+
+        <div class="clients-form-footer-v1724">
+          <div class="clients-identity-note-v1724"><strong>Identificação do cliente</strong><span>O número de telemóvel tem prioridade sobre o email para evitar associações incorretas.</span></div>
+          <div class="clients-form-actions"><button class="btn hidden" id="clientCancelBtn" onclick="cancelClientEdit()">Cancelar edição</button><button class="btn primary" id="clientSaveBtn" onclick="addClient()">Guardar cliente</button></div>
+        </div>
+      </section>
+
+      <section class="card clients-list-card clients-list-section-v1724">
+        <div class="clients-list-head">
+          <div>
+            <div class="section-title" style="margin:0">Lista de clientes</div>
+            <small id="clientsResultCount">0 clientes</small>
+          </div>
+        </div>
+        <div id="clientsCards" class="clients-cards"></div>
+      </section>
     </div>
   </section>
 
@@ -3547,26 +3599,38 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 
     <div id="reportKpis" class="reports-kpis"></div>
 
-    <div class="grid2 reports-grid" style="margin-top:10px">
-      <div class="card">
-        <div class="section-title" style="margin-top:0">Resumo financeiro</div>
+    <div class="reports-stack-v1725" style="margin-top:14px">
+      <section class="card reports-section-v1725">
+        <div class="reports-section-head-v1725">
+          <div class="section-title" style="margin:0">Resumo financeiro</div>
+          <small>Receitas, custos e resultado do período selecionado.</small>
+        </div>
         <div id="reportFinancial"></div>
-      </div>
-      <div class="card">
-        <div class="section-title" style="margin-top:0">Meios de pagamento</div>
-        <div id="reportMethods"></div>
-      </div>
-    </div>
+      </section>
 
-    <div class="grid2 reports-grid" style="margin-top:10px">
-      <div class="card">
-        <div class="section-title" style="margin-top:0">Produtos vendidos</div>
+      <section class="card reports-section-v1725">
+        <div class="reports-section-head-v1725">
+          <div class="section-title" style="margin:0">Meios de pagamento</div>
+          <small>Distribuição dos recebimentos por método utilizado.</small>
+        </div>
+        <div id="reportMethods"></div>
+      </section>
+
+      <section class="card reports-section-v1725">
+        <div class="reports-section-head-v1725">
+          <div class="section-title" style="margin:0">Produtos vendidos</div>
+          <small>Leitura comercial dos produtos incluídos nas encomendas do período.</small>
+        </div>
         <div id="reportProducts"></div>
-      </div>
-      <div class="card">
-        <div class="section-title" style="margin-top:0">Atividade do período</div>
+      </section>
+
+      <section class="card reports-section-v1725">
+        <div class="reports-section-head-v1725">
+          <div class="section-title" style="margin:0">Atividade do período</div>
+          <small>Resumo operacional das encomendas e movimentos registados.</small>
+        </div>
         <div id="reportActivity"></div>
-      </div>
+      </section>
     </div>
 
     <div class="card reports-export-card" style="margin-top:10px">
@@ -3626,18 +3690,18 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         </div>
       </div>
       <div class="form-grid">
-        <div class="field span2"><label>Nome</label><input id="prodName" placeholder="Nome do produto"></div>
+        <div class="field span2 product-name-v1726"><label>Nome</label><input id="prodName" placeholder="Nome do produto"></div>
         <div class="field product-code-field-v147"><label>Código</label><input id="prodCode" maxlength="40" placeholder="Automático se ficar vazio"><small>Identidade interna; fica protegida depois da criação.</small></div>
         <div class="field" id="prodCategoryField"><label>Categoria</label><select id="prodCat" onchange="syncProductionTypeFromCategoryV130()"><option>Velas em molde</option><option>Velas em recipiente</option><option>Wax melts</option><option>Sabonetes</option><option>Resina e Jesmonite</option><option>Personalizados</option><option>Outros produtos artesanais</option></select></div>
-        <div class="field span2"><label>Disponibilidade base na loja</label><select id="prodAvailability" onchange="updateProductAvailabilityUI()"><option value="regular">Todo o ano + coleções</option><option value="edition">Apenas em coleções sazonais</option></select><small class="mix-help">Um produto pode pertencer a várias coleções sem ser duplicado. “Todo o ano + coleções” mantém-no no catálogo normal; “Apenas em coleções sazonais” só o disponibiliza quando pelo menos uma coleção associada estiver ativa e dentro das datas.</small></div>
-        <div class="field span2" id="prodEditionField"><label>Coleções / Edições Especiais</label><div class="edition-select-row"><select id="prodEditionId" multiple size="4" aria-label="Coleções sazonais do produto"></select><button type="button" class="btn ghost" onclick="loadProductEditionsV1245(true).then(list=>{fillProductEditionOptionsV1244(productEditionMembershipIdsV138(productTechSheetProductV1250()));toast(list.length?'Coleções atualizadas':'Nenhuma coleção disponível')})">Atualizar</button></div><small class="mix-help">Seleciona uma ou várias coleções. Usa Ctrl/Cmd para várias seleções no computador; no tablet seleciona diretamente as opções disponíveis.</small></div>
+        <div class="field span2 product-availability-v1726"><label>Disponibilidade base na loja</label><select id="prodAvailability" onchange="updateProductAvailabilityUI()"><option value="regular">Todo o ano + coleções</option><option value="edition">Apenas em coleções sazonais</option></select><small class="mix-help">Um produto pode pertencer a várias coleções sem ser duplicado. “Todo o ano + coleções” mantém-no no catálogo normal; “Apenas em coleções sazonais” só o disponibiliza quando pelo menos uma coleção associada estiver ativa e dentro das datas.</small></div>
+        <div class="field span2 product-editions-v1726" id="prodEditionField"><label>Coleções / Edições Especiais</label><div class="edition-select-row"><select id="prodEditionId" multiple size="4" aria-label="Coleções sazonais do produto"></select><button type="button" class="btn ghost" onclick="loadProductEditionsV1245(true).then(list=>{fillProductEditionOptionsV1244(productEditionMembershipIdsV138(productTechSheetProductV1250()));toast(list.length?'Coleções atualizadas':'Nenhuma coleção disponível')})">Atualizar</button></div><small class="mix-help">Seleciona uma ou várias coleções. Usa Ctrl/Cmd para várias seleções no computador; no tablet seleciona diretamente as opções disponíveis.</small></div>
         <div class="field edition-cost-field" id="prodEditionLaborField" style="display:none"><label>Tempo extra por unidade</label><div class="edition-cost-input"><input id="prodEditionExtraLaborMinutes" type="number" min="0" step="0.1" value="0"><span>min</span></div><small class="mix-help">Só o tempo adicional desta edição. O custo é calculado com a mão de obra €/hora já definida na app.</small></div>
         <div class="field edition-cost-field" id="prodEditionWasteField" style="display:none"><label>Desperdício extra da edição</label><div class="edition-cost-input"><input id="prodEditionExtraWastePct" type="number" min="0" step="0.1" value="0"><span>%</span></div><small class="mix-help">Acrescenta-se ao desperdício geral apenas neste produto. Usa 0 se não houver diferença.</small></div>
         <div class="field span2 edition-cost-note" id="prodEditionCostNote" style="display:none"><strong>💶 Custo real da edição</strong><span>Materiais e decoração continuam a ser registados na ficha técnica do produto. Aqui só acrescentamos o tempo e desperdício extra específicos desta edição. O PVP continua totalmente manual.</span></div><div class="field span2 product-techsheet-v1250" id="prodTechSheetBridge" style="display:none"><div class="product-techsheet-head-v1250"><div><strong>🧾 Ficha Técnica</strong><span id="prodTechSheetStatus">Ficha técnica do produto</span></div><button type="button" class="btn ghost" id="prodTechSheetBtn" onclick="openProductTechSheetV1250()">Editar Ficha Técnica</button></div><div class="product-techsheet-stats-v1250"><div><span>Materiais específicos</span><strong id="prodTechSheetIngredientCount">—</strong></div><div><span>Custo calculado</span><strong id="prodTechSheetCost">—</strong></div><div><span>PVP recomendado</span><strong id="prodTechSheetRecommended">—</strong></div></div><div class="product-composition-v144"><div class="product-composition-head-v144"><div><strong>Composição do produto</strong><small>Carregada automaticamente da Ficha Técnica guardada.</small></div><span id="prodCompositionBadgeV144" class="badge">—</span></div><div id="prodCompositionPreviewV144" class="product-composition-list-v144"><div class="empty">Guarda ou seleciona um produto para ver a composição.</div></div></div></div>
-        <div class="field"><label>Custo/un. automático</label><input id="prodCost" type="number" step="0.0001" readonly style="background:#DDF4D2"></div>
-        <div class="field"><label>PVP definido — venda direta</label><input id="prodPrice" type="number" min="0" step="0.01"><small class="mix-help">Usado nas encomendas criadas diretamente na app.</small></div>
-        <div class="field"><label>PVP definido — Loja online</label><input id="prodOnlinePriceV12620" type="number" min="0" step="0.01"><small class="mix-help">Preço que a loja online publica. Não varia entre MB WAY, Multibanco ou outros métodos.</small></div>
-        <div class="field span2"><div class="pricing-policy-v1251"><div><label>PVP recomendado — venda direta</label><strong id="prodDirectRecommendedV12620">—</strong></div><div><label>PVP recomendado — Loja online</label><strong id="prodOnlineRecommendedV12620">—</strong></div><small>O recomendado da Loja inclui a provisão das taxas de pagamento online. Os dois PVP definidos continuam totalmente editáveis e nunca são alterados automaticamente.</small></div></div>
+        <div class="field product-price-v1726"><label>Custo/un. automático</label><input id="prodCost" type="number" step="0.0001" readonly style="background:#DDF4D2"></div>
+        <div class="field product-price-v1726"><label>PVP definido — venda direta</label><input id="prodPrice" type="number" min="0" step="0.01"><small class="mix-help">Usado nas encomendas criadas diretamente na app.</small></div>
+        <div class="field product-price-v1726"><label>PVP definido — Loja online</label><input id="prodOnlinePriceV12620" type="number" min="0" step="0.01"><small class="mix-help">Preço que a loja online publica. Não varia entre MB WAY, Multibanco ou outros métodos.</small></div>
+        <div class="field span2 product-pricing-policy-v1726"><div class="pricing-policy-v1251"><div><label>PVP recomendado — venda direta</label><strong id="prodDirectRecommendedV12620">—</strong></div><div><label>PVP recomendado — Loja online</label><strong id="prodOnlineRecommendedV12620">—</strong></div><small>O recomendado da Loja inclui a provisão das taxas de pagamento online. Os dois PVP definidos continuam totalmente editáveis e nunca são alterados automaticamente.</small></div></div>
         <div class="field span4 product-cost-editor-v110">
           <div class="product-cost-editor-head-v110"><div><strong>Custos específicos deste produto</strong><small>Todos os valores podem ser alterados. Os materiais da ficha técnica são somados automaticamente.</small></div><span>por unidade</span></div>
           <div class="product-cost-grid-v110">
@@ -3672,9 +3736,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
             <div class="field span2"><label>Controlo de qualidade</label><textarea id="prodQualityNotesV130" rows="3" placeholder="Ex.: verificar acabamento, peso, pavio centrado e ausência de fissuras"></textarea></div>
           </div>
         </div>
-        <div class="field span2"><label>Descrição para a loja online</label><textarea id="prodShopDescription" rows="3" placeholder="Descrição curta que o cliente verá na loja"></textarea></div>
+        <div class="field span2 product-shop-desc-v1726"><label>Descrição para o catálogo / loja</label><textarea id="prodShopDescription" rows="3" placeholder="Descrição curta que o cliente verá na loja"></textarea></div>
         <div class="field span2 art-tech-info"><div class="product-technical-head-v1287"><div><strong>🧾 Informação técnica e segurança</strong><small>Dados apresentados ao cliente na ficha do produto.</small></div></div><div class="field"><label>Composição e materiais</label><textarea id="prodIngredientsV1287" rows="4" placeholder="Ex.: cera de soja, fragrância, pavio de algodão, recipiente de vidro..."></textarea></div><div class="form-grid" style="margin-top:10px"><div class="field span2"><label>Conservação e cuidados</label><input id="prodStorageV1287" placeholder="Ex.: conservar em local seco e protegido do calor"></div><div class="field span2"><label>Instruções de utilização e segurança</label><input id="prodConsumptionV1287" placeholder="Ex.: não deixar a vela acesa sem vigilância"></div></div><input id="prodTechnicalVerifiedV1287" type="checkbox" hidden><div id="prodBaseTechnicalSummaryV12811" hidden></div><div id="prodSafetysContainsV1287" hidden></div><div id="prodSafetysMayContainV1287" hidden></div></div>
-        <div class="field span2">
+        <div class="field span2 product-photo-section-v1726">
           <label>Fotografia principal da loja</label>
           <div class="product-photo-editor">
             <img id="prodShopImagePreview" alt="Pré-visualização">
@@ -3689,8 +3753,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           </div>
           <input id="prodShopImageUrl" type="hidden">
         </div>
-        <div class="field"><label>Publicação pública</label><label class="product-shop-toggle"><input id="prodShopVisible" type="checkbox"> Mostrar este produto no Catálogo Digital</label><small class="mix-help">Publica o produto no Catálogo Digital. A futura Loja poderá reutilizar este estado sem duplicar a ficha.</small></div>
-        <div class="field"><label>Compor conjunto</label><label class="product-shop-toggle mix-toggle"><input id="prodMixVisible" type="checkbox"> Disponível para conjuntos</label><small class="mix-help">Pode ser de qualquer categoria ou de uma Edição Especial.</small></div>
+        <div class="field product-publication-v1726"><label>Publicação pública</label><label class="product-shop-toggle"><input id="prodShopVisible" type="checkbox"> Mostrar este produto no Catálogo Digital</label><small class="mix-help">Publica o produto no Catálogo Digital. A futura Loja poderá reutilizar este estado sem duplicar a ficha.</small></div>
+        <div class="field product-mix-v1726"><label>Compor conjunto</label><label class="product-shop-toggle mix-toggle"><input id="prodMixVisible" type="checkbox"> Disponível para conjuntos</label><small class="mix-help">Pode ser de qualquer categoria ou de uma Edição Especial.</small></div>
         <div class="field"><label>Máximo deste produto por conjunto</label><input id="prodMixMaxQty" type="number" min="0" step="1" value="0" placeholder="0 = sem limite"><small class="mix-help">Ex.: 4 impede o cliente de escolher mais de 4 unidades deste produto no mesmo conjunto.</small></div>
         <div class="field"><label>Embalagens permitidas no conjunto</label><input id="prodMixBoxCaps" placeholder="Ex.: 6, 12, 24"><small class="mix-help">Deixa vazio para permitir em todas as embalagens disponíveis.</small></div>
         <div class="field span2 mix-admin-note"><strong>🕯️ Controlo dos conjuntos</strong><span>“Publicado na loja” e “Disponível para conjuntos” são independentes. Um produto de Edição Especial também pode entrar no conjunto se ativares esta opção.</span></div>
@@ -3896,7 +3960,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.21';
+const APP_VERSION='1.7.27';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -7446,6 +7510,1210 @@ function printOrderCompleteV12634(id){
   }
   #stock .stock-create-footer-v1721 .stock-form-actions .btn,
   #stock .stock-move-action-v1721 .btn{
+    width:100%;
+  }
+}
+</style>
+
+
+<style id="artessencia-purchases-layout-v1722">
+/* ArtEssencia V1.7.22 — Compras reorganizadas horizontalmente, sem alterar lógica. */
+#purchases .purchase-hero{
+  min-height:78px;
+  padding:17px 18px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:linear-gradient(180deg,#fff,#fcf8f5);
+  box-shadow:0 8px 24px rgba(81,54,43,.05);
+}
+#purchases .purchase-tools{
+  display:grid;
+  grid-template-columns:minmax(220px,1fr) minmax(180px,.72fr);
+  gap:9px;
+}
+#purchases .purchase-tools input,
+#purchases .purchase-tools select{
+  min-height:40px;
+  border-radius:11px;
+}
+#purchases .purchase-summary{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+  margin-top:12px;
+}
+#purchases .purchase-kpi{
+  min-height:88px;
+  padding:13px 14px;
+  justify-content:center;
+  border:1px solid #e8ddd6;
+  border-radius:16px;
+  background:linear-gradient(180deg,#fff,#fbf7f4);
+  box-shadow:0 6px 18px rgba(81,54,43,.035);
+}
+#purchases .purchase-register-v1722{
+  padding:17px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:#fffdfb;
+  box-shadow:0 8px 22px rgba(81,54,43,.04);
+}
+#purchases .purchase-form-head{
+  margin-bottom:14px;
+  padding-bottom:10px;
+  border-bottom:1px solid #eee4de;
+}
+#purchases .purchase-main-grid-v1722{
+  display:grid;
+  grid-template-columns:minmax(190px,1.05fr) minmax(220px,1.2fr) minmax(120px,.65fr) minmax(130px,.68fr) minmax(120px,.65fr) minmax(170px,.85fr) minmax(145px,.72fr) minmax(130px,.66fr);
+  gap:12px;
+  align-items:end;
+}
+#purchases .purchase-main-grid-v1722>.field{
+  grid-column:auto!important;
+  min-width:0;
+}
+#purchases .purchase-main-grid-v1722 .field label,
+#purchases .purchase-secondary-row-v1722 .field label{
+  display:block;
+  min-height:18px;
+  margin-bottom:6px;
+  font-size:8px;
+  line-height:1.15;
+  letter-spacing:.035em;
+  text-transform:uppercase;
+  font-weight:850;
+  color:#745f57;
+}
+#purchases .purchase-main-grid-v1722 input,
+#purchases .purchase-main-grid-v1722 select,
+#purchases .purchase-secondary-row-v1722 input{
+  min-height:43px;
+  border-radius:12px;
+}
+#purchases .purchase-secondary-row-v1722{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:12px;
+  align-items:end;
+  margin-top:13px;
+}
+#purchases .purchase-note-v1722{
+  min-width:0;
+}
+#purchases .purchase-actions-v1722{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+#purchases .purchase-actions-v1722 .btn{
+  min-height:43px;
+  min-width:140px;
+}
+#purchases .purchase-preview-v1722{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:9px;
+  margin-top:14px;
+}
+#purchases .purchase-preview-v1722 .purchase-preview-item{
+  min-height:65px;
+  padding:10px 11px;
+  border-radius:12px;
+  border:1px solid #eadfdb;
+  background:#faf7f4;
+  justify-content:center;
+}
+#purchases .purchase-list-card{
+  margin-top:14px!important;
+  padding:16px 17px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:#fffdfb;
+  box-shadow:0 8px 22px rgba(81,54,43,.035);
+}
+#purchases .purchase-list-head{
+  margin-bottom:11px;
+  padding-bottom:10px;
+  border-bottom:1px solid #eee4de;
+}
+#purchases .purchase-tablewrap{
+  border:1px solid #eee5df;
+  border-radius:13px;
+  overflow:auto;
+}
+#purchases .purchase-table{
+  min-width:980px;
+}
+
+/* Tablet horizontal */
+@media (max-width:1180px){
+  #purchases .purchase-main-grid-v1722{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+  #purchases .purchase-supplier-v1722,
+  #purchases .purchase-item-v1722{
+    grid-column:span 2!important;
+  }
+  #purchases .purchase-preview-v1722{
+    grid-template-columns:repeat(5,minmax(120px,1fr));
+    overflow:auto;
+  }
+}
+
+/* Tablet vertical */
+@media (max-width:900px){
+  #purchases .purchase-hero{
+    align-items:stretch;
+    flex-direction:column;
+  }
+  #purchases .purchase-tools{
+    grid-template-columns:1fr 1fr;
+  }
+  #purchases .purchase-summary{
+    grid-template-columns:1fr 1fr;
+  }
+  #purchases .purchase-main-grid-v1722{
+    grid-template-columns:1fr 1fr;
+  }
+  #purchases .purchase-supplier-v1722,
+  #purchases .purchase-item-v1722{
+    grid-column:1/-1!important;
+  }
+  #purchases .purchase-secondary-row-v1722{
+    grid-template-columns:1fr;
+  }
+  #purchases .purchase-actions-v1722{
+    width:100%;
+  }
+  #purchases .purchase-actions-v1722 .btn{
+    flex:1;
+  }
+  #purchases .purchase-preview-v1722{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    overflow:visible;
+  }
+}
+
+/* Mobile */
+@media (max-width:620px){
+  #purchases .purchase-tools,
+  #purchases .purchase-summary,
+  #purchases .purchase-main-grid-v1722,
+  #purchases .purchase-preview-v1722{
+    grid-template-columns:1fr;
+  }
+  #purchases .purchase-main-grid-v1722>.field,
+  #purchases .purchase-supplier-v1722,
+  #purchases .purchase-item-v1722{
+    grid-column:1/-1!important;
+  }
+  #purchases .purchase-actions-v1722{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+  #purchases .purchase-actions-v1722 .btn{
+    width:100%;
+  }
+}
+</style>
+
+
+<style id="artessencia-cash-layout-v1723">
+/* ArtEssencia V1.7.23 — Caixa reorganizado horizontalmente, sem alteração da lógica financeira. */
+#cash .cash-hero{
+  min-height:78px;
+  padding:17px 18px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:linear-gradient(180deg,#fff,#fcf8f5);
+  box-shadow:0 8px 24px rgba(81,54,43,.05);
+}
+#cash .cash-tools{
+  display:grid;
+  grid-template-columns:minmax(220px,1fr) minmax(150px,.72fr) minmax(150px,.72fr);
+  gap:9px;
+  align-items:center;
+}
+#cash .cash-tools input,
+#cash .cash-tools select{
+  min-height:40px;
+  height:40px;
+  border-radius:11px;
+}
+#cash .cash-tools input{
+  min-width:0;
+}
+#cash .cash-kpis{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+  margin-top:12px;
+}
+#cash .cash-kpi{
+  min-height:88px;
+  padding:13px 14px;
+  border:1px solid #e8ddd6;
+  border-radius:16px;
+  background:linear-gradient(180deg,#fff,#fbf7f4);
+  box-shadow:0 6px 18px rgba(81,54,43,.035);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+#cash .cash-register-v1723{
+  padding:17px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:#fffdfb;
+  box-shadow:0 8px 22px rgba(81,54,43,.04);
+}
+#cash .cash-form-head{
+  margin-bottom:14px;
+  padding-bottom:10px;
+  border-bottom:1px solid #eee4de;
+}
+#cash .cash-main-grid-v1723{
+  display:grid;
+  grid-template-columns:minmax(130px,.7fr) minmax(145px,.72fr) minmax(300px,1.6fr) minmax(145px,.72fr) minmax(130px,.68fr) minmax(210px,.95fr);
+  gap:12px;
+  align-items:end;
+}
+#cash .cash-main-grid-v1723>.field{
+  grid-column:auto!important;
+  min-width:0;
+}
+#cash .cash-main-grid-v1723 .field label{
+  display:block;
+  min-height:18px;
+  margin-bottom:6px;
+  font-size:8px;
+  line-height:1.15;
+  letter-spacing:.035em;
+  text-transform:uppercase;
+  font-weight:850;
+  color:#745f57;
+}
+#cash .cash-main-grid-v1723 input,
+#cash .cash-main-grid-v1723 select{
+  min-height:43px;
+  border-radius:12px;
+}
+#cash .cash-form-actions-v1723{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+#cash .cash-form-actions-v1723 .btn{
+  min-height:43px;
+  white-space:nowrap;
+}
+#cash .cash-action-v1723 .btn.primary{
+  min-width:150px;
+}
+#cash .cash-list-card{
+  margin-top:14px!important;
+  padding:16px 17px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:#fffdfb;
+  box-shadow:0 8px 22px rgba(81,54,43,.035);
+}
+#cash .cash-list-head{
+  margin-bottom:11px;
+  padding-bottom:10px;
+  border-bottom:1px solid #eee4de;
+}
+#cash .cash-tablewrap{
+  border:1px solid #eee5df;
+  border-radius:13px;
+  overflow:auto;
+}
+#cash .cash-table{
+  min-width:900px;
+}
+#cash .cash-table th{
+  white-space:nowrap;
+  background:#f8f3ef;
+}
+#cash .cash-actions{
+  gap:6px;
+}
+
+/* Tablet horizontal */
+@media (max-width:1180px){
+  #cash .cash-main-grid-v1723{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+  #cash .cash-desc-v1723{
+    grid-column:3/5!important;
+  }
+  #cash .cash-action-v1723{
+    grid-column:3/5!important;
+  }
+  #cash .cash-form-actions-v1723{
+    justify-content:flex-end;
+  }
+}
+
+/* Tablet vertical */
+@media (max-width:900px){
+  #cash .cash-hero{
+    align-items:stretch;
+    flex-direction:column;
+  }
+  #cash .cash-tools{
+    grid-template-columns:1fr 1fr;
+  }
+  #cash .cash-tools input{
+    grid-column:1/-1;
+  }
+  #cash .cash-kpis{
+    grid-template-columns:1fr 1fr;
+  }
+  #cash .cash-main-grid-v1723{
+    grid-template-columns:1fr 1fr;
+  }
+  #cash .cash-desc-v1723,
+  #cash .cash-action-v1723{
+    grid-column:1/-1!important;
+  }
+  #cash .cash-form-actions-v1723{
+    width:100%;
+  }
+  #cash .cash-form-actions-v1723 .btn{
+    flex:1;
+  }
+}
+
+/* Mobile */
+@media (max-width:620px){
+  #cash .cash-tools,
+  #cash .cash-kpis,
+  #cash .cash-main-grid-v1723{
+    grid-template-columns:1fr;
+  }
+  #cash .cash-tools input,
+  #cash .cash-desc-v1723,
+  #cash .cash-action-v1723,
+  #cash .cash-main-grid-v1723>.field{
+    grid-column:1/-1!important;
+  }
+  #cash .cash-form-actions-v1723{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+  #cash .cash-form-actions-v1723 .btn{
+    width:100%;
+  }
+}
+</style>
+
+
+<style id="artessencia-clients-layout-v1724">
+/* ArtEssencia V1.7.24 — Clientes reorganizados em secções horizontais, sem alterar lógica. */
+#clients .clients-hero{
+  min-height:78px;
+  padding:17px 18px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:linear-gradient(180deg,#fff,#fcf8f5);
+  box-shadow:0 8px 24px rgba(81,54,43,.05);
+}
+#clients .clients-tools{
+  display:grid;
+  grid-template-columns:minmax(230px,1fr) minmax(180px,.72fr);
+  gap:9px;
+}
+#clients .clients-tools input,
+#clients .clients-tools select{
+  min-height:40px;
+  border-radius:11px;
+}
+#clients .clients-summary{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+  margin-top:12px;
+}
+#clients .clients-summary .clients-kpi,
+#clients .clients-summary>.card{
+  min-height:88px;
+  padding:13px 14px;
+  border:1px solid #e8ddd6;
+  border-radius:16px;
+  background:linear-gradient(180deg,#fff,#fbf7f4);
+  box-shadow:0 6px 18px rgba(81,54,43,.035);
+}
+#clients .clients-stack-v1724{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  margin-top:14px;
+}
+#clients .clients-form-section-v1724,
+#clients .clients-list-section-v1724{
+  width:100%;
+  padding:17px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:#fffdfb;
+  box-shadow:0 8px 22px rgba(81,54,43,.04);
+}
+#clients .clients-form-head,
+#clients .clients-list-head{
+  margin-bottom:14px;
+  padding-bottom:10px;
+  border-bottom:1px solid #eee4de;
+}
+#clients .clients-form-grid-v1724{
+  display:grid;
+  grid-template-columns:minmax(210px,1.05fr) minmax(180px,.82fr) minmax(230px,1.05fr) minmax(300px,1.4fr);
+  gap:12px;
+  align-items:start;
+}
+#clients .clients-form-grid-v1724>.field{
+  grid-column:auto!important;
+  min-width:0;
+}
+#clients .clients-form-grid-v1724 .field label{
+  display:block;
+  min-height:18px;
+  margin-bottom:6px;
+  font-size:8px;
+  line-height:1.15;
+  letter-spacing:.035em;
+  text-transform:uppercase;
+  font-weight:850;
+  color:#745f57;
+}
+#clients .clients-form-grid-v1724 input,
+#clients .clients-form-grid-v1724 textarea{
+  width:100%;
+  border-radius:12px;
+}
+#clients .clients-form-grid-v1724 input{
+  min-height:43px;
+}
+#clients .clients-form-grid-v1724 textarea{
+  min-height:68px;
+  resize:vertical;
+}
+#clients .client-contact-help{
+  display:block;
+  margin-top:5px;
+  font-size:7.8px;
+  line-height:1.3;
+}
+#clients .clients-form-footer-v1724{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:12px;
+  align-items:center;
+  margin-top:14px;
+}
+#clients .clients-identity-note-v1724{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  padding:10px 12px;
+  border:1px solid #eadfd9;
+  border-radius:12px;
+  background:#faf7f4;
+}
+#clients .clients-identity-note-v1724 strong{
+  font-size:9px;
+  color:#5e453d;
+}
+#clients .clients-identity-note-v1724 span{
+  font-size:8px;
+  line-height:1.35;
+  color:#7d6b64;
+}
+#clients .clients-form-actions{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+#clients .clients-form-actions .btn{
+  min-height:43px;
+  min-width:135px;
+}
+#clients .clients-cards{
+  display:grid;
+  gap:10px;
+}
+#clients .clients-list-section-v1724 .client-card{
+  border-radius:14px;
+  border:1px solid #eee4de;
+  background:#fff;
+}
+#clients .clients-list-section-v1724 .client-card:hover{
+  box-shadow:0 6px 16px rgba(81,54,43,.05);
+}
+
+/* Tablet horizontal */
+@media (max-width:1180px){
+  #clients .clients-form-grid-v1724{
+    grid-template-columns:1fr 1fr 1fr;
+  }
+  #clients .clients-note-v1724{
+    grid-column:1/-1!important;
+  }
+}
+
+/* Tablet vertical */
+@media (max-width:900px){
+  #clients .clients-hero{
+    align-items:stretch;
+    flex-direction:column;
+  }
+  #clients .clients-tools{
+    grid-template-columns:1fr 1fr;
+  }
+  #clients .clients-summary{
+    grid-template-columns:1fr 1fr;
+  }
+  #clients .clients-form-grid-v1724{
+    grid-template-columns:1fr 1fr;
+  }
+  #clients .clients-note-v1724{
+    grid-column:1/-1!important;
+  }
+  #clients .clients-form-footer-v1724{
+    grid-template-columns:1fr;
+  }
+  #clients .clients-form-actions{
+    width:100%;
+  }
+  #clients .clients-form-actions .btn{
+    flex:1;
+  }
+}
+
+/* Mobile */
+@media (max-width:620px){
+  #clients .clients-tools,
+  #clients .clients-summary,
+  #clients .clients-form-grid-v1724{
+    grid-template-columns:1fr;
+  }
+  #clients .clients-form-grid-v1724>.field{
+    grid-column:1/-1!important;
+  }
+  #clients .clients-form-actions{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+  #clients .clients-form-actions .btn{
+    width:100%;
+  }
+}
+</style>
+
+
+<style id="artessencia-reports-layout-v1725">
+/* ArtEssencia V1.7.25 — Relatórios reorganizados em secções horizontais, sem alterar cálculos. */
+#reports .reports-hero{
+  min-height:78px;
+  padding:17px 18px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:linear-gradient(180deg,#fff,#fcf8f5);
+  box-shadow:0 8px 24px rgba(81,54,43,.05);
+}
+#reports .reports-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:center;
+  justify-content:flex-end;
+}
+#reports .reports-actions .btn{
+  min-height:40px;
+}
+#reports .reports-kpis{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:10px;
+  margin-top:12px;
+}
+#reports .reports-kpis>.card,
+#reports .reports-kpis>div{
+  min-height:88px;
+  border-radius:16px;
+  border:1px solid #e8ddd6;
+  background:linear-gradient(180deg,#fff,#fbf7f4);
+  box-shadow:0 6px 18px rgba(81,54,43,.035);
+}
+#reports .reports-stack-v1725{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+#reports .reports-section-v1725{
+  width:100%;
+  min-width:0;
+  padding:17px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:#fffdfb;
+  box-shadow:0 8px 22px rgba(81,54,43,.04);
+}
+#reports .reports-section-head-v1725{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  margin-bottom:12px;
+  padding-bottom:10px;
+  border-bottom:1px solid #eee4de;
+}
+#reports .reports-section-head-v1725 .section-title{
+  font-size:16px;
+  color:#523b34;
+}
+#reports .reports-section-head-v1725 small{
+  font-size:8.5px;
+  line-height:1.35;
+  color:#8a7770;
+}
+#reports .reports-section-v1725 table{
+  width:100%;
+}
+#reports .reports-section-v1725 .tablewrap,
+#reports .reports-section-v1725 [class*="table"]{
+  border-radius:13px;
+}
+#reports .reports-export-card{
+  margin-top:14px!important;
+  padding:17px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:#fffdfb;
+  box-shadow:0 8px 22px rgba(81,54,43,.035);
+}
+#reports .reports-export-card .btnrow{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+#reports .reports-export-card .btn{
+  min-height:40px;
+}
+#reports .reports-note{
+  margin-top:14px!important;
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  padding:13px 15px;
+  border-radius:14px;
+  border:1px solid #eadfd9;
+  background:#faf7f4;
+}
+#reports .reports-note strong{
+  white-space:nowrap;
+  font-size:9px;
+  color:#5f463e;
+}
+#reports .reports-note span{
+  font-size:8.5px;
+  line-height:1.4;
+  color:#7c6a63;
+}
+
+/* Tablet */
+@media (max-width:980px){
+  #reports .reports-kpis{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+  #reports .reports-actions{
+    justify-content:flex-start;
+  }
+}
+
+/* Mobile */
+@media (max-width:620px){
+  #reports .reports-hero{
+    align-items:stretch;
+    flex-direction:column;
+  }
+  #reports .reports-actions{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+  #reports .reports-actions .btn{
+    width:100%;
+  }
+  #reports .reports-kpis{
+    grid-template-columns:1fr 1fr;
+  }
+  #reports .reports-export-card .btnrow{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+  #reports .reports-export-card .btn{
+    width:100%;
+  }
+  #reports .reports-note{
+    flex-direction:column;
+  }
+}
+
+@media (max-width:430px){
+  #reports .reports-kpis{
+    grid-template-columns:1fr;
+  }
+}
+</style>
+
+
+<style id="artessencia-products-layout-v1726">
+/* ArtEssencia V1.7.26 — Produtos reorganizados visualmente, sem alteração funcional. */
+#products .products-hero{
+  min-height:82px;
+  padding:17px 18px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:linear-gradient(180deg,#fff,#fcf8f5);
+  box-shadow:0 8px 24px rgba(81,54,43,.05);
+}
+#products .products-tools{
+  display:grid;
+  grid-template-columns:minmax(220px,1.15fr) repeat(3,minmax(150px,.75fr));
+  gap:9px;
+  align-items:center;
+}
+#products .products-tools input,
+#products .products-tools select{
+  min-height:40px;
+  border-radius:11px;
+}
+#products .products-summary{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:10px;
+  margin-top:12px;
+}
+#products .products-summary>.card,
+#products .products-summary>div{
+  min-height:88px;
+  border:1px solid #e8ddd6;
+  border-radius:16px;
+  background:linear-gradient(180deg,#fff,#fbf7f4);
+  box-shadow:0 6px 18px rgba(81,54,43,.035);
+}
+#products .products-form-card{
+  padding:17px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:#fffdfb;
+  box-shadow:0 8px 22px rgba(81,54,43,.04);
+}
+#products .products-form-head{
+  margin-bottom:14px;
+  padding-bottom:10px;
+  border-bottom:1px solid #eee4de;
+}
+#products .products-form-card>.form-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+  align-items:start;
+}
+#products .products-form-card>.form-grid>.field{
+  min-width:0;
+}
+#products .products-form-card>.form-grid>.field.span2{
+  grid-column:span 2;
+}
+#products .products-form-card>.form-grid>.field.span4,
+#products .product-cost-editor-v110,
+#products .production-profile-v130{
+  grid-column:1/-1!important;
+}
+#products .products-form-card label{
+  line-height:1.25;
+}
+#products .products-form-card input,
+#products .products-form-card select{
+  min-height:42px;
+  border-radius:11px;
+}
+#products .products-form-card textarea{
+  border-radius:11px;
+}
+#products .products-form-card small{
+  line-height:1.35;
+}
+
+/* Dados base */
+#products .product-name-v1726{
+  grid-column:span 2!important;
+}
+#products .product-code-field-v147,
+#products #prodCategoryField{
+  grid-column:span 1!important;
+}
+#products .product-availability-v1726,
+#products .product-editions-v1726{
+  padding:12px;
+  border:1px solid #eee4de;
+  border-radius:14px;
+  background:#fbf8f5;
+}
+#products .edition-select-row{
+  align-items:stretch;
+}
+#products .edition-select-row select{
+  min-height:96px;
+}
+
+/* Bloco de preços */
+#products .product-price-v1726{
+  padding:11px 12px;
+  border:1px solid #eadfd9;
+  border-radius:13px;
+  background:#faf7f4;
+}
+#products .product-pricing-policy-v1726{
+  grid-column:span 1!important;
+}
+#products .pricing-policy-v1251{
+  height:100%;
+  border-radius:13px;
+}
+#products .pricing-policy-v1251>div{
+  min-width:0;
+}
+
+/* Blocos técnicos principais */
+#products .product-cost-editor-v110,
+#products .production-profile-v130{
+  margin-top:2px;
+  padding:15px;
+  border:1px solid #e5d9d3;
+  border-radius:16px;
+  background:linear-gradient(180deg,#fff,#fbf7f4);
+}
+#products .product-cost-editor-head-v110{
+  margin-bottom:12px;
+  padding-bottom:10px;
+  border-bottom:1px solid #eee4de;
+}
+#products .product-cost-grid-v110{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:11px 12px;
+}
+#products .product-cost-summary-v110{
+  margin-top:13px;
+  display:grid;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:8px;
+}
+#products .production-profile-grid-v130{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:11px 12px;
+}
+#products .production-profile-grid-v130>.field.span2{
+  grid-column:span 2;
+}
+
+/* Informação pública / catálogo */
+#products .product-shop-desc-v1726,
+#products .art-tech-info,
+#products .product-photo-section-v1726{
+  padding:13px;
+  border:1px solid #eee4de;
+  border-radius:14px;
+  background:#fbf8f5;
+}
+#products .product-photo-editor{
+  align-items:flex-start;
+}
+#products .product-photo-editor img{
+  border-radius:12px;
+}
+#products .product-publication-v1726,
+#products .product-mix-v1726{
+  padding:11px 12px;
+  border:1px solid #eadfd9;
+  border-radius:13px;
+  background:#faf7f4;
+}
+
+/* Rodapé de gravação */
+#products .product-actions-v147{
+  grid-column:1/3!important;
+  align-self:end;
+}
+#products .product-actions-v147 .btnrow{
+  display:flex;
+  gap:8px;
+}
+#products .product-actions-v147 .btn{
+  min-height:43px;
+  min-width:145px;
+}
+#products #productSaveStateV145{
+  min-height:58px;
+}
+
+/* Catálogo de produtos */
+#products .products-list-card{
+  margin-top:14px!important;
+  padding:16px 17px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:#fffdfb;
+  box-shadow:0 8px 22px rgba(81,54,43,.035);
+}
+#products .products-list-head{
+  margin-bottom:12px;
+  padding-bottom:10px;
+  border-bottom:1px solid #eee4de;
+}
+#products .products-cards{
+  gap:10px;
+}
+
+/* Tablet horizontal */
+@media (max-width:1180px){
+  #products .products-tools{
+    grid-template-columns:1fr 1fr;
+  }
+  #products .products-form-card>.form-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  #products .product-name-v1726,
+  #products .product-availability-v1726,
+  #products .product-editions-v1726,
+  #products .product-shop-desc-v1726,
+  #products .art-tech-info,
+  #products .product-photo-section-v1726{
+    grid-column:1/-1!important;
+  }
+  #products .product-code-field-v147,
+  #products #prodCategoryField,
+  #products .product-price-v1726,
+  #products .product-pricing-policy-v1726{
+    grid-column:span 1!important;
+  }
+  #products .product-cost-grid-v110,
+  #products .production-profile-grid-v130{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  #products .product-cost-summary-v110{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
+
+/* Tablet vertical */
+@media (max-width:900px){
+  #products .products-summary{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  #products .products-form-card>.form-grid{
+    grid-template-columns:1fr 1fr;
+  }
+  #products .product-actions-v147{
+    grid-column:1/-1!important;
+  }
+}
+
+/* Mobile */
+@media (max-width:620px){
+  #products .products-hero{
+    align-items:stretch;
+    flex-direction:column;
+  }
+  #products .products-tools,
+  #products .products-summary,
+  #products .products-form-card>.form-grid,
+  #products .product-cost-grid-v110,
+  #products .production-profile-grid-v130,
+  #products .product-cost-summary-v110{
+    grid-template-columns:1fr;
+  }
+  #products .products-form-card>.form-grid>.field,
+  #products .product-name-v1726,
+  #products .product-code-field-v147,
+  #products #prodCategoryField,
+  #products .product-price-v1726,
+  #products .product-pricing-policy-v1726,
+  #products .product-actions-v147,
+  #products .production-profile-grid-v130>.field.span2{
+    grid-column:1/-1!important;
+  }
+  #products .product-actions-v147 .btnrow{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+  #products .product-actions-v147 .btn{
+    width:100%;
+  }
+}
+</style>
+
+
+<style id="artessencia-sale-layout-v1727">
+/* ArtEssencia V1.7.27 — Nova encomenda reorganizada, sem alteração funcional. */
+#sale .sale-hero-v1727{
+  min-height:78px;
+  padding:17px 18px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:linear-gradient(180deg,#fff,#fcf8f5);
+  box-shadow:0 8px 24px rgba(81,54,43,.05);
+}
+#sale .sale-hero-v1727 small{
+  display:block;
+  margin-top:5px;
+  font-size:8.5px;
+  color:#8a7770;
+}
+#sale .sale-kpis-v1727{
+  gap:10px;
+  margin:12px 0 0!important;
+}
+#sale .sale-kpis-v1727>.card,
+#sale .sale-kpis-v1727>div{
+  min-height:86px;
+  border-radius:16px;
+  border:1px solid #e8ddd6;
+  background:linear-gradient(180deg,#fff,#fbf7f4);
+  box-shadow:0 6px 18px rgba(81,54,43,.035);
+}
+#sale .sale-customer-card-v1727,
+#sale .sale-products-card-v1727,
+#sale .sale-cart-card-v1727{
+  margin-top:14px;
+  padding:17px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:#fffdfb;
+  box-shadow:0 8px 22px rgba(81,54,43,.04);
+}
+#sale .sale-section-head-v1727{
+  margin-bottom:14px;
+  padding-bottom:10px;
+  border-bottom:1px solid #eee4de;
+}
+#sale .sale-section-head-v1727 small{
+  display:block;
+  margin-top:4px;
+  font-size:8.5px;
+  line-height:1.35;
+  color:#8a7770;
+}
+#sale .sale-customer-grid-v1727{
+  display:grid;
+  grid-template-columns:minmax(220px,1.2fr) minmax(150px,.75fr) minmax(210px,1fr) minmax(145px,.72fr) minmax(145px,.72fr) minmax(160px,.75fr) minmax(110px,.55fr) minmax(125px,.62fr);
+  gap:12px;
+  align-items:start;
+}
+#sale .sale-customer-grid-v1727>.field{
+  min-width:0;
+  grid-column:auto!important;
+}
+#sale .sale-customer-grid-v1727 .field label{
+  display:block;
+  min-height:18px;
+  margin-bottom:6px;
+  font-size:8px;
+  line-height:1.15;
+  letter-spacing:.035em;
+  text-transform:uppercase;
+  font-weight:850;
+  color:#745f57;
+}
+#sale .sale-customer-grid-v1727 input,
+#sale .sale-customer-grid-v1727 select{
+  min-height:43px;
+  border-radius:12px;
+}
+#sale .sale-customer-grid-v1727 textarea{
+  width:100%;
+  min-height:82px;
+  border-radius:12px;
+  resize:vertical;
+}
+#sale .sale-notes-v1727{
+  grid-column:1/-1!important;
+}
+#sale .sale-notes-v1727 small{
+  display:block;
+  margin-top:5px;
+  line-height:1.35;
+}
+#sale .sale-products-card-v1727 .product-picker{
+  margin:0;
+}
+#sale .sale-cart-card-v1727 #cart{
+  min-height:90px;
+}
+#sale .sale-totalbox-v1727{
+  margin-top:14px;
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+}
+#sale .sale-totalbox-v1727 .mini{
+  min-height:76px;
+  padding:12px 14px;
+  border:1px solid #e8ddd6;
+  border-radius:15px;
+  background:linear-gradient(180deg,#fff,#fbf7f4);
+}
+#sale .sale-actions-v1727{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  margin-top:14px;
+}
+#sale .sale-actions-v1727 .btn{
+  min-height:43px;
+  min-width:150px;
+}
+
+/* Tablet horizontal */
+@media (max-width:1180px){
+  #sale .sale-customer-grid-v1727{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+  #sale .sale-client-v1727{
+    grid-column:span 2!important;
+  }
+}
+
+/* Tablet vertical */
+@media (max-width:900px){
+  #sale .sale-customer-grid-v1727{
+    grid-template-columns:1fr 1fr;
+  }
+  #sale .sale-client-v1727,
+  #sale .sale-notes-v1727{
+    grid-column:1/-1!important;
+  }
+  #sale .sale-totalbox-v1727{
+    grid-template-columns:1fr 1fr;
+  }
+}
+
+/* Mobile */
+@media (max-width:620px){
+  #sale .sale-customer-grid-v1727,
+  #sale .sale-totalbox-v1727{
+    grid-template-columns:1fr;
+  }
+  #sale .sale-customer-grid-v1727>.field,
+  #sale .sale-client-v1727,
+  #sale .sale-notes-v1727{
+    grid-column:1/-1!important;
+  }
+  #sale .sale-actions-v1727{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+  #sale .sale-actions-v1727 .btn{
     width:100%;
   }
 }
