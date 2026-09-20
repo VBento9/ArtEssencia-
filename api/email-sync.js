@@ -676,9 +676,42 @@ async function verifyUser(req) {
       .json()
       .catch(() => null);
 
-  return Boolean(
-    user?.id
-  );
+  if (!user?.id) {
+    return false;
+  }
+
+  const ownerResponse =
+    await fetch(
+      `${SUPABASE_URL}/rest/v1/rpc/artessencia_is_owner_v1`,
+      {
+        method: 'POST',
+
+        headers: {
+          apikey:
+            SUPABASE_KEY,
+
+          Authorization:
+            `Bearer ${token}`,
+
+          'Content-Type':
+            'application/json'
+        },
+
+        body:
+          JSON.stringify({})
+      }
+    );
+
+  if (!ownerResponse.ok) {
+    return false;
+  }
+
+  const isOwner =
+    await ownerResponse
+      .json()
+      .catch(() => false);
+
+  return isOwner === true;
 }
 
 async function ingest(message) {
