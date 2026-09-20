@@ -2284,6 +2284,7 @@
 /* ArtEssencia V1.7.9 — Conversas de email */
 .email179-thread{width:100%;text-align:left;border:1px solid #e6d9cf;background:#fff;border-radius:14px;padding:13px;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}.email179-thread:hover{border-color:#b99587}.email179-thread b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.email179-thread small{color:#78645d}.email179-thread-count{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:#f1e7e0;color:#5e453c;font-size:10px;font-weight:800;margin-left:6px}.email179-thread-view{display:grid;gap:10px;margin-top:12px;max-height:58vh;overflow:auto;padding:2px 3px 4px}.email179-msg{max-width:88%;border-radius:14px;padding:11px 12px;border:1px solid #e6d9cf}.email179-msg.inbound{justify-self:start;background:#fff}.email179-msg.outbound{justify-self:end;background:#f2ece8;border-color:#dccbc0}.email179-msg-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:7px}.email179-msg-head b{font-size:11px}.email179-msg-head time{font-size:9px;color:#88756d;white-space:nowrap}.email179-msg-body{white-space:pre-wrap;line-height:1.5;font-size:13px}.email179-thread-assoc{margin:9px 0;padding:9px 10px;border-radius:11px;background:#faf6f2;border:1px solid #eadfd7;font-size:11px;color:#5f4b43}.email179-compose{margin-top:12px;padding-top:12px;border-top:1px solid #eadfd7}.email179-compose textarea{width:100%;min-height:120px;resize:vertical}
 @media(max-width:650px){.email177-row,.email179-thread{grid-template-columns:1fr}.email177-row>time,.email179-thread>time{font-size:11px}.email177-detail-grid{grid-template-columns:1fr;gap:2px}.email177-detail-grid b{margin-top:7px}.email177-toolbar>.btn{width:100%}.email177-search{min-width:100%}.email178-actions .btn{flex:1}.email179-msg{max-width:94%}}
+/* ArtEssencia V1.7.14 — associação persistente por conversa; telefone principal, email secundário */
 /* ArtEssencia V1.7.12 — associações seguras + pesquisa final de email */
 .email1711-assoc{margin:12px 0;padding:12px;border:1px solid #e4d7ce;border-radius:14px;background:#fbf8f5}.email1711-assoc-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.email1711-assoc-head strong{color:#513b33}.email1711-assoc-head small{color:#846f67}.email1711-assoc-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:9px}.email1711-assoc-card{border:1px solid #eadfd8;border-radius:11px;padding:9px 10px;background:#fff}.email1711-assoc-card span{display:block;font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.07em;color:#9a8178}.email1711-assoc-card b{display:block;margin-top:3px;font-size:11px;color:#513b33;overflow-wrap:anywhere}.email1711-assoc-card small{display:block;margin-top:2px;font-size:9px;color:#806c64;overflow-wrap:anywhere}.email1711-assoc-card.matched{background:#f2f8f3;border-color:#d3e5d5}.email1711-assoc-card.unmatched{background:#fbf7f4}.email1711-assoc-actions{display:flex;justify-content:flex-end;margin-top:9px}.email1711-assoc-editor{margin-top:10px;padding-top:10px;border-top:1px solid #eadfd8}.email1711-assoc-form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.email1711-assoc-form label{display:grid;gap:4px;font-size:9px;font-weight:800;color:#6b554c}.email1711-assoc-form select{width:100%;min-height:40px;border:1px solid #dfd1c5;border-radius:9px;background:#fff;padding:7px;color:#3f302b}.email1711-assoc-save{display:flex;justify-content:flex-end;gap:8px;margin-top:9px}.email1711-assoc-note{margin-top:8px;font-size:9px;color:#806b63}.email1711-search-clear{border:1px solid #dfd1c5;background:#fff;border-radius:999px;padding:8px 11px;cursor:pointer;color:#6a5149}.email1711-search-meta{font-size:10px;color:#816e66;flex-basis:100%}@media(max-width:700px){.email1711-assoc-grid,.email1711-assoc-form{grid-template-columns:1fr}.email1711-assoc-head{flex-direction:column}.email1711-assoc-save .btn{flex:1}}
 </style>
@@ -3870,7 +3871,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.13';
+const APP_VERSION='1.7.14';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -4540,7 +4541,7 @@ function emailAssocOptionsV1711(rows){
  const q='<option value="">Sem associação</option>'+quotes.map(x=>{const v=String(x._rid||x.id||'');return `<option value="${escapeHtml(v)}" ${quote&&v===String(quote._rid||quote.id||'')?'selected':''}>${escapeHtml(x.id||'Orçamento')}${x.client?' · '+escapeHtml(x.client):''}${x.status?' · '+escapeHtml(x.status):''}</option>`}).join('');
  return {clients:c,orders:o,quotes:q}
 }
-function renderEmailAssocEditorV1711(){const rows=emailAssocRowsV1711(),a=emailAssociationsV1711(rows),opts=emailAssocOptionsV1711(rows),persisted=rows.some(x=>x.client_id||x.order_id||x.quote_id);return `<div class="email1711-assoc"><div class="email1711-assoc-head"><div><strong>Contexto relacionado</strong><small>${persisted?'Associação guardada na Cloud':'Correspondências seguras encontradas automaticamente'}</small></div><button type="button" class="smallbtn" onclick="toggleEmailAssocEditorV1711()">${emailAssocEditingV1711?'Fechar edição':'Alterar associação'}</button></div><div class="email1711-assoc-grid">${emailAssocCardV1711('Cliente',a.client)}${emailAssocCardV1711('Encomenda',a.order)}${emailAssocCardV1711('Orçamento',a.quote)}</div>${emailAssocEditingV1711?`<div class="email1711-assoc-editor"><div class="email1711-assoc-form"><label>Cliente<select id="emailAssocClientV1711">${opts.clients}</select></label><label>Encomenda<select id="emailAssocOrderV1711">${opts.orders}</select></label><label>Orçamento<select id="emailAssocQuoteV1711">${opts.quotes}</select></label></div><div class="email1711-assoc-save"><button type="button" class="btn" onclick="toggleEmailAssocEditorV1711(false)">Cancelar</button><button id="emailAssocSaveV1711" type="button" class="btn primary" onclick="saveEmailAssocV1711()">Guardar associação</button></div></div>`:''}<div class="email1711-assoc-note"><strong>Regra de associação:</strong> telefone primeiro, email como segunda opção. Se existir mais do que uma encomenda/orçamento compatível, a ArtEssencia não escolhe por ti — usa <b>Alterar associação</b> para ligar manualmente.</div></div>`}
+function renderEmailAssocEditorV1711(){const rows=emailAssocRowsV1711(),a=emailAssociationsV1711(rows),opts=emailAssocOptionsV1711(rows),persisted=rows.some(x=>x.client_id||x.order_id||x.quote_id);return `<div class="email1711-assoc"><div class="email1711-assoc-head"><div><strong>Contexto relacionado</strong><small>${persisted?'Associação guardada na Cloud':'Correspondências seguras encontradas automaticamente'}</small></div><button type="button" class="smallbtn" onclick="toggleEmailAssocEditorV1711()">${emailAssocEditingV1711?'Fechar edição':'Alterar associação'}</button></div><div class="email1711-assoc-grid">${emailAssocCardV1711('Cliente',a.client)}${emailAssocCardV1711('Encomenda',a.order)}${emailAssocCardV1711('Orçamento',a.quote)}</div>${emailAssocEditingV1711?`<div class="email1711-assoc-editor"><div class="email1711-assoc-form"><label>Cliente<select id="emailAssocClientV1711">${opts.clients}</select></label><label>Encomenda<select id="emailAssocOrderV1711">${opts.orders}</select></label><label>Orçamento<select id="emailAssocQuoteV1711">${opts.quotes}</select></label></div><div class="email1711-assoc-save"><button type="button" class="btn" onclick="toggleEmailAssocEditorV1711(false)">Cancelar</button><button id="emailAssocSaveV1711" type="button" class="btn primary" onclick="saveEmailAssocV1711()">Guardar associação</button></div></div>`:''}<div class="email1711-assoc-note"><strong>Regra de associação:</strong> telefone primeiro, email como segunda opção. Se o cliente escrever de outro email, podes associar manualmente a conversa sem alterar o email guardado na ficha do cliente. Se existir mais do que uma encomenda/orçamento compatível, a ArtEssencia não escolhe por ti.</div></div>`}
 function toggleEmailAssocEditorV1711(force){emailAssocEditingV1711=typeof force==='boolean'?force:!emailAssocEditingV1711;refreshOpenEmailDetailV1711()}
 function emailRecordBelongsToClientV1711(record,client){
  if(!record||!client)return true;
@@ -4594,7 +4595,36 @@ function openEmailThreadV179(index,refresh=false){
  const d=document.getElementById('emailDetailDialogV177'),title=document.getElementById('emailDetailTitleV177'),sub=document.getElementById('emailDetailSubtitleV177'),body=document.getElementById('emailDetailBodyV177');if(!d||!body)return;if(title)title.textContent=t.subject;if(sub)sub.textContent=`Conversa · ${t.messages.length} mensagem(ns)`;const messages=t.messages.map(x=>`<div class="email179-msg ${x.direction==='inbound'?'inbound':'outbound'}"><div class="email179-msg-head"><b>${x.direction==='inbound'?escapeHtml(x.from_email||'Cliente'):'ArtEssencia'}</b><time>${escapeHtml(emailDateV177(emailWhenV179(x)))}</time></div><div class="email179-msg-body">${escapeHtml(x.body_text||htmlToTextV177(x.body_html||'')||'(mensagem sem conteúdo de texto)')}</div>${x.status==='failed'?'<div class="email177-pill failed" style="display:inline-block;margin-top:7px">Falhou</div>':''}</div>`).join('');body.innerHTML=`<div class="email179-thread-assoc"><b>Contacto:</b> ${escapeHtml(t.contact||'—')} · <b>Associação:</b> ${escapeHtml(emailAssociationLabelV1711(t.messages))}</div>${renderEmailAssocEditorV1711()}<div class="email179-thread-view">${messages}</div><div class="email179-compose"><div class="field"><label>Responder nesta conversa</label><textarea id="emailThreadReplyV179" maxlength="5000" placeholder="Escreve a resposta…"></textarea></div><div class="email178-actions"><button class="btn primary" id="emailThreadReplyBtnV179" type="button" onclick="sendEmailThreadReplyV179(${Number(index)})">Responder</button></div></div>`;if(!d.open)d.showModal()
 }
 async function persistEmailAutoAssociationsV1711(){
- if(emailAutoAssocBusyV1711||!emailRowsV177.length)return;emailAutoAssocBusyV1711=true;try{const c=initCloudClient(),u=await ensureCloudSession();if(!c||!u)return;const threads=buildEmailThreadsV179();for(const t of threads){const a=emailAssociationsV1711(t.messages),patch={};if(a.client.record&&!t.messages.some(x=>x.client_id))patch.client_id=String(a.client.record._rid||a.client.record.id||'');if(a.order.record&&!t.messages.some(x=>x.order_id))patch.order_id=String(a.order.record._rid||a.order.record.id||'');if(a.quote.record&&!t.messages.some(x=>x.quote_id))patch.quote_id=String(a.quote.record._rid||a.quote.record.id||'');if(!Object.keys(patch).length)continue;patch.updated_at=new Date().toISOString();const ids=t.messages.map(x=>x.id).filter(Boolean);const {error}=await c.from('artessencia_email_log').update(patch).eq('user_id',u.id).in('id',ids);if(error){console.warn('ArtEssencia auto associação email',error);continue}const set=new Set(ids.map(String));emailRowsV177.forEach(x=>{if(set.has(String(x.id)))Object.assign(x,patch)})}}finally{emailAutoAssocBusyV1711=false}}
+ if(emailAutoAssocBusyV1711||!emailRowsV177.length)return;
+ emailAutoAssocBusyV1711=true;
+ try{
+  const c=initCloudClient(),u=await ensureCloudSession();
+  if(!c||!u)return;
+  const threads=buildEmailThreadsV179();
+  for(const t of threads){
+   const a=emailAssociationsV1711(t.messages);
+   const resolved={
+    client_id:a.client.record?String(a.client.record._rid||a.client.record.id||''):'',
+    order_id:a.order.record?String(a.order.record._rid||a.order.record.id||''):'',
+    quote_id:a.quote.record?String(a.quote.record._rid||a.quote.record.id||''):''
+   };
+   for(const m of t.messages){
+    if(!m?.id)continue;
+    const patch={};
+    if(resolved.client_id&&!m.client_id)patch.client_id=resolved.client_id;
+    if(resolved.order_id&&!m.order_id)patch.order_id=resolved.order_id;
+    if(resolved.quote_id&&!m.quote_id)patch.quote_id=resolved.quote_id;
+    if(!Object.keys(patch).length)continue;
+    patch.updated_at=new Date().toISOString();
+    const {error}=await c.from('artessencia_email_log').update(patch).eq('user_id',u.id).eq('id',m.id);
+    if(error){console.warn('ArtEssencia auto associação email',error);continue}
+    Object.assign(m,patch)
+   }
+  }
+ }finally{
+  emailAutoAssocBusyV1711=false
+ }
+}
 
 // ArtEssencia V1.7.10 — sincronização automática de email ao nível da DONART V12.8.85
 let emailAutoPollTimerV1710=null;
