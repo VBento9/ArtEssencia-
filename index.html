@@ -3885,24 +3885,71 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div class="field product-price-v1726"><label>PVP definido — Loja online</label><input id="prodOnlinePriceV12620" type="number" min="0" step="0.01"><small class="mix-help">Preço que a loja online publica. Não varia entre MB WAY, Multibanco ou outros métodos.</small></div>
         <div class="field span2 product-pricing-policy-v1726"><div class="pricing-policy-v1251"><div><label>PVP recomendado — venda direta</label><strong id="prodDirectRecommendedV12620">—</strong></div><div><label>PVP recomendado — Loja online</label><strong id="prodOnlineRecommendedV12620">—</strong></div><small>O recomendado da Loja inclui a provisão das taxas de pagamento online. Os dois PVP definidos continuam totalmente editáveis e nunca são alterados automaticamente.</small></div></div>
         <div class="field span4 product-cost-editor-v110">
-          <div class="product-cost-editor-head-v110"><div><strong>Custos específicos deste produto</strong><small>Todos os valores podem ser alterados. Os materiais da ficha técnica são somados automaticamente.</small></div><span>por unidade</span></div>
-          <div class="product-cost-grid-v110">
-            <div class="field"><label>Tempo de trabalho</label><div class="cost-input-suffix-v110"><input id="prodLaborMinutesV110" type="number" min="0" step="0.1"><span>min</span></div><small>Se vazio, usa o tempo padrão.</small></div>
-            <div class="field"><label>Desperdício</label><div class="cost-input-suffix-v110"><input id="prodWastePctV110" type="number" min="0" step="0.1"><span>%</span></div><small>Se vazio, usa a percentagem padrão.</small></div>
-            <div class="field"><label>Custo de aquisição do molde</label><div class="cost-input-suffix-v110"><input id="prodMoldCostV110" type="number" min="0" step="0.01"><span>€</span></div></div>
-            <div class="field"><label>Utilizações previstas</label><input id="prodMoldUsesV110" type="number" min="0" step="1" placeholder="Ex.: 100"></div>
-            <div class="field"><label>Peças por utilização</label><input id="prodMoldCavitiesV110" type="number" min="1" step="1" value="1"></div>
-            <div class="field"><label>Amortização molde manual</label><div class="cost-input-suffix-v110"><input id="prodMoldOverrideV110" type="number" min="0" step="0.0001"><span>€/un.</span></div><small>Opcional: substitui o cálculo automático.</small></div>
-            <div class="field"><label>Embalagem individual</label><div class="cost-input-suffix-v110"><input id="prodPackagingCostV110" type="number" min="0" step="0.01"><span>€/un.</span></div></div>
-            <div class="field"><label>Potência do equipamento</label><div class="cost-input-suffix-v110"><input id="prodEquipmentPowerWV133" type="number" min="0" step="1" placeholder="Ex.: 500"><span>W</span></div><small>0 = sem cálculo de energia.</small></div>
-            <div class="field"><label>Tempo de equipamento</label><div class="cost-input-suffix-v110"><input id="prodEquipmentMinutesV133" type="number" min="0" step="0.1" placeholder="vazio = tempo de trabalho"><span>min</span></div><small>Usado para energia, desgaste e consumíveis gerais.</small></div>
-            <div class="field"><label>Indiretos manuais</label><div class="cost-input-suffix-v110"><input id="prodIndirectCostV110" type="number" min="0" step="0.01"><span>€/un.</span></div><small>Custos adicionais não calculados automaticamente.</small></div>
-            <div class="field"><label>Outros custos</label><div class="cost-input-suffix-v110"><input id="prodOtherCostV110" type="number" min="0" step="0.01"><span>€/un.</span></div></div>
-            <div class="field"><label>Margem alvo direta</label><div class="cost-input-suffix-v110"><input id="prodTargetMarginV110" type="number" min="0" max="95" step="0.1"><span>%</span></div><small>Se vazio, usa a margem geral.</small></div>
-            <div class="field"><label>Margem alvo Loja</label><div class="cost-input-suffix-v110"><input id="prodOnlineTargetMarginV110" type="number" min="0" max="95" step="0.1"><span>%</span></div><small>Se vazio, usa a margem direta.</small></div>
+          <div class="product-cost-editor-head-v110"><div><strong>Custos específicos deste produto</strong><small>Preenche apenas os custos médios necessários. Materiais e embalagem são somados automaticamente pela Ficha Técnica.</small></div><span>por unidade</span></div>
+          <div class="product-cost-grid-v1740">
+            <div class="field">
+              <label>Tempo de trabalho</label>
+              <div class="cost-input-suffix-v110"><input id="prodLaborMinutesV110" type="number" min="0" step="0.1"><span>min</span></div>
+              <small>Se vazio, usa o tempo padrão definido em Configuração.</small>
+            </div>
+
+            <div class="field">
+              <label>Desperdício</label>
+              <div class="cost-input-suffix-v110"><input id="prodWastePctV110" type="number" min="0" step="0.1"><span>%</span></div>
+              <small>Percentagem média de perdas deste produto.</small>
+            </div>
+
+            <div class="field cost-average-v1740">
+              <label>Custo médio do molde / desgaste</label>
+              <div class="cost-input-suffix-v110"><input id="prodMoldAverageV1740" type="number" min="0" step="0.01"><span>€/un.</span></div>
+              <small>Valor médio por peça. Não é necessário calcular preço do molde, usos ou cavidades.</small>
+            </div>
+
+            <div class="field cost-average-v1740">
+              <label>Custo médio de operação</label>
+              <div class="cost-input-suffix-v110"><input id="prodOperatingAverageV1740" type="number" min="0" step="0.01"><span>€/un.</span></div>
+              <small>Energia, equipamento, consumíveis e outros custos gerais de produção.</small>
+            </div>
+
+            <div class="field">
+              <label>Outros custos</label>
+              <div class="cost-input-suffix-v110"><input id="prodOtherCostV110" type="number" min="0" step="0.01"><span>€/un.</span></div>
+              <small>Usa apenas para um custo específico que não esteja na ficha técnica.</small>
+            </div>
+
+            <div class="field">
+              <label>Margem alvo direta</label>
+              <div class="cost-input-suffix-v110"><input id="prodTargetMarginV110" type="number" min="0" max="95" step="0.1"><span>%</span></div>
+              <small>Se vazio, usa a margem geral.</small>
+            </div>
+
+            <div class="field">
+              <label>Margem alvo Loja</label>
+              <div class="cost-input-suffix-v110"><input id="prodOnlineTargetMarginV110" type="number" min="0" max="95" step="0.1"><span>%</span></div>
+              <small>Se vazio, usa a margem direta.</small>
+            </div>
+
+            <div class="field span2 packaging-as-material-v1740">
+              <div class="packaging-material-note-v1740">
+                <strong>📦 Embalagem</strong>
+                <span>Passa a ser tratada como matéria-prima: adiciona caixa, saco, etiqueta, fita ou outro material diretamente na <b>Ficha Técnica</b>. Assim o custo entra automaticamente no produto.</span>
+              </div>
+            </div>
+
+            <!-- Campos antigos mantidos ocultos para compatibilidade com produtos já existentes. -->
+            <div class="hidden" aria-hidden="true">
+              <input id="prodMoldCostV110" type="number">
+              <input id="prodMoldUsesV110" type="number">
+              <input id="prodMoldCavitiesV110" type="number" value="1">
+              <input id="prodMoldOverrideV110" type="number">
+              <input id="prodPackagingCostV110" type="number">
+              <input id="prodEquipmentPowerWV133" type="number">
+              <input id="prodEquipmentMinutesV133" type="number">
+              <input id="prodIndirectCostV110" type="number">
+            </div>
           </div>
           <div class="product-cost-summary-v110">
-            <div><span>Materiais</span><strong id="prodCostMaterialsV110">0,00 €</strong></div><div><span>Mão de obra</span><strong id="prodCostLaborV110">0,00 €</strong></div><div><span>Molde</span><strong id="prodCostMoldV110">0,00 €</strong></div><div><span>Indiretos + extras</span><strong id="prodCostExtrasV110">0,00 €</strong></div><div><span>Desperdício</span><strong id="prodCostWasteV110">0,00 €</strong></div><div class="total"><span>Custo real</span><strong id="prodCostTotalV110">0,00 €</strong></div>
+            <div><span>Materiais</span><strong id="prodCostMaterialsV110">0,00 €</strong></div><div><span>Mão de obra</span><strong id="prodCostLaborV110">0,00 €</strong></div><div><span>Molde</span><strong id="prodCostMoldV110">0,00 €</strong></div><div><span>Operação + extras</span><strong id="prodCostExtrasV110">0,00 €</strong></div><div><span>Desperdício</span><strong id="prodCostWasteV110">0,00 €</strong></div><div class="total"><span>Custo real</span><strong id="prodCostTotalV110">0,00 €</strong></div>
           </div>
         </div>
         <div class="field span4 production-profile-v130">
@@ -4142,7 +4189,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.38';
+const APP_VERSION='1.7.40';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -10828,6 +10875,60 @@ function printOrderCompleteV12634(id){
 }
 </style>
 
+
+<style id="artessencia-product-costs-simple-v1740">
+#products .product-cost-grid-v1740{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+  align-items:start;
+}
+#products .product-cost-grid-v1740>.field{
+  min-width:0;
+}
+#products .product-cost-grid-v1740>.field.span2{
+  grid-column:span 2;
+}
+#products .cost-average-v1740{
+  padding:12px;
+  border:1px solid #d9e5d3;
+  border-radius:14px;
+  background:#f4f8f1;
+}
+#products .packaging-as-material-v1740{
+  align-self:stretch;
+}
+#products .packaging-material-note-v1740{
+  height:100%;
+  min-height:76px;
+  padding:12px 14px;
+  border:1px solid #e5ddd3;
+  border-radius:14px;
+  background:#faf7f2;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:4px;
+}
+#products .packaging-material-note-v1740 strong{
+  font-size:10px;
+  color:#5c453d;
+}
+#products .packaging-material-note-v1740 span{
+  font-size:8.5px;
+  line-height:1.4;
+  color:#796861;
+}
+@media(max-width:1180px){
+  #products .product-cost-grid-v1740{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:620px){
+  #products .product-cost-grid-v1740{grid-template-columns:1fr}
+  #products .product-cost-grid-v1740>.field,
+  #products .product-cost-grid-v1740>.field.span2{grid-column:1/-1!important}
+}
+</style>
+
 </head><body><header><div>${logo?`<img class="logo" src="${h(logo)}">`:'<strong style="font-size:22px">ArtEssencia</strong>'}</div><div class="doc-title"><h1>Ficha completa da encomenda</h1><b>${h(o.id)}</b><br><span class="badge">${h(o.status||'—')}</span></div></header>
  <div class="grid"><section class="card"><h3>Cliente</h3><div class="line"><b>Nome</b><span>${h(o.client||'—')}</span></div><div class="line"><b>Contacto</b><span>${h(o.contact||'—')}</span></div><div class="line"><b>Email</b><span>${h(o.email||'—')}</span></div><div class="line"><b>Origem</b><span>${o.source==='online_store'?'Loja Online':'Backoffice'}</span></div></section>
  <section class="card"><h3>Entrega</h3><div class="line"><b>Data</b><span>${h(datePt(o.delivery))}${o.deliveryTime?' · '+h(o.deliveryTime):''}</span></div><div class="line"><b>Método</b><span>${h(deliveryMethod)}</span></div>${o.deliveryMethod==='local_delivery'?`<div class="line"><b>Morada</b><span>${h(o.address||'—')}</span></div><div class="line"><b>Cód. postal</b><span>${h(o.postalCode||'—')}</span></div>`:''}<div class="line"><b>Embalagem</b><span>${h(o.box||((o.thematicBoxes||[])[0]?.box)||'—')} · ${h(o.boxes||1)} caixa(s)</span></div></section>
@@ -11591,12 +11692,14 @@ function productNullableNumberV110(v){if(v===null||v===undefined||v==='')return 
 function productLaborMinutesV110(p){const n=productNullableNumberV110(p?.laborMinutes);return Math.max(0,n===null?(Number(db.settings.laborMinutes)||0):n)}
 function productLaborCostV110(p){return (Number(db.settings.laborRate)||0)*productLaborMinutesV110(p)/60}
 function productWasteRateV110(p){const n=productNullableNumberV110(p?.wastePct);return Math.max(0,(n===null?(Number(db.settings.wasteRate)||0):n/100))}
-function productMoldCostV110(p){const manual=productNullableNumberV110(p?.moldUnitOverride);if(manual!==null)return Math.max(0,manual);const cost=Math.max(0,Number(p?.moldCost)||0),uses=Math.max(0,Number(p?.moldUses)||0),cavities=Math.max(1,Number(p?.moldCavities)||1);return uses>0?cost/(uses*cavities):0}
+function productMoldCostV110(p){const avg=productNullableNumberV110(p?.moldAverageCost);if(avg!==null)return Math.max(0,avg);const manual=productNullableNumberV110(p?.moldUnitOverride);if(manual!==null)return Math.max(0,manual);const cost=Math.max(0,Number(p?.moldCost)||0),uses=Math.max(0,Number(p?.moldUses)||0),cavities=Math.max(1,Number(p?.moldCavities)||1);return uses>0?cost/(uses*cavities):0}
 function productTargetMarginV110(p,online=false){const own=productNullableNumberV110(online?p?.onlineTargetMarginPct:p?.targetMarginPct);if(online&&own===null)return productTargetMarginV110(p,false);return Math.max(0,Math.min(.95,own===null?artessenciaPricingTargetMarginV1251():own/100))}
 function productEquipmentMinutesV133(p){const n=productNullableNumberV110(p?.equipmentMinutes);return Math.max(0,n===null?productLaborMinutesV110(p):n)}
 function productEnergyCostV133(p){const watts=Math.max(0,Number(p?.equipmentPowerW)||0),mins=productEquipmentMinutesV133(p),rate=Math.max(0,Number(db.settings.electricityRate)||0);return (watts/1000)*(mins/60)*rate}
 function productAutoIndirectCostV133(p){const hours=productEquipmentMinutesV133(p)/60,wear=Math.max(0,Number(db.settings.equipmentWearRate)||0)*hours,consumables=Math.max(0,Number(db.settings.consumablesHourlyRate)||0)*hours,energy=productEnergyCostV133(p);return {energy,wear,consumables,total:energy+wear+consumables}}
-function productCostBreakdownV110(product){const materials=toppingUnitCost(product?.code),labor=productLaborCostV110(product),editionLabor=productEditionExtraLaborCost(product),mold=productMoldCostV110(product),packaging=Math.max(0,Number(product?.packagingCost)||0),autoIndirect=productAutoIndirectCostV133(product),manualIndirect=Math.max(0,Number(product?.indirectCost)||0),indirect=manualIndirect+autoIndirect.total,other=Math.max(0,Number(product?.otherCost)||0),subtotal=materials+labor+editionLabor+mold+packaging+indirect+other,wasteRate=productWasteRateV110(product)+productEditionExtraWasteRate(product),waste=subtotal*wasteRate,total=subtotal+waste;return {materials,labor,editionLabor,mold,packaging,indirect,manualIndirect,energy:autoIndirect.energy,equipmentWear:autoIndirect.wear,generalConsumables:autoIndirect.consumables,other,subtotal,wasteRate,waste,total}}
+function productOperatingAverageV1740(p){const avg=productNullableNumberV110(p?.operatingAverageCost);if(avg!==null)return Math.max(0,avg);const auto=productAutoIndirectCostV133(p),manual=Math.max(0,Number(p?.indirectCost)||0);return auto.total+manual}
+
+function productCostBreakdownV110(product){const materials=toppingUnitCost(product?.code),labor=productLaborCostV110(product),editionLabor=productEditionExtraLaborCost(product),mold=productMoldCostV110(product),packaging=Math.max(0,Number(product?.packagingCost)||0),autoIndirect=productAutoIndirectCostV133(product),manualIndirect=Math.max(0,Number(product?.indirectCost)||0),indirect=productOperatingAverageV1740(product),other=Math.max(0,Number(product?.otherCost)||0),subtotal=materials+labor+editionLabor+mold+packaging+indirect+other,wasteRate=productWasteRateV110(product)+productEditionExtraWasteRate(product),waste=subtotal*wasteRate,total=subtotal+waste;return {materials,labor,editionLabor,mold,packaging,indirect,manualIndirect,energy:autoIndirect.energy,equipmentWear:autoIndirect.wear,generalConsumables:autoIndirect.consumables,other,subtotal,wasteRate,waste,total}}
 function calculatedProductCost(product){return productCostBreakdownV110(product).total}
 function effectiveProduct(product){return {...product,cost:calculatedProductCost(product)}}
 function productCostSnapshotV134(product,source='catalog'){
@@ -11629,7 +11732,7 @@ function artessenciaOnlinePaymentPctV12620(){return Math.max(0,Number(db.setting
 function artessenciaOnlinePaymentFixedV12620(){return Math.max(0,Number(db.settings.onlinePaymentReserveFixed)||.05)}
 function artessenciaRecommendedOnlinePriceV12620(p){const c=calculatedProductCost(p)+artessenciaOnlinePaymentFixedV12620(),m=productTargetMarginV110(p,true),fee=artessenciaOnlinePaymentPctV12620(),den=1-m-fee,s=artessenciaPricingRoundStepV1251();if(den<=0)return 0;const raw=c/den;return raw?Math.ceil((raw-1e-9)/s)*s:0}
 function readProductCostFieldV110(id){const el=document.getElementById(id);return !el||el.value===''?null:Number(el.value)}
-function productDraftV110(){const code=document.getElementById('prodCode')?.value||'',saved=(db.products||[]).find(x=>x.code===code)||{};return {...saved,code,laborMinutes:readProductCostFieldV110('prodLaborMinutesV110'),wastePct:readProductCostFieldV110('prodWastePctV110'),moldCost:Math.max(0,Number(document.getElementById('prodMoldCostV110')?.value)||0),moldUses:Math.max(0,Number(document.getElementById('prodMoldUsesV110')?.value)||0),moldCavities:Math.max(1,Number(document.getElementById('prodMoldCavitiesV110')?.value)||1),moldUnitOverride:readProductCostFieldV110('prodMoldOverrideV110'),packagingCost:Math.max(0,Number(document.getElementById('prodPackagingCostV110')?.value)||0),equipmentPowerW:Math.max(0,Number(document.getElementById('prodEquipmentPowerWV133')?.value)||0),equipmentMinutes:readProductCostFieldV110('prodEquipmentMinutesV133'),indirectCost:Math.max(0,Number(document.getElementById('prodIndirectCostV110')?.value)||0),otherCost:Math.max(0,Number(document.getElementById('prodOtherCostV110')?.value)||0),targetMarginPct:readProductCostFieldV110('prodTargetMarginV110'),onlineTargetMarginPct:readProductCostFieldV110('prodOnlineTargetMarginV110')}}
+function productDraftV110(){const code=document.getElementById('prodCode')?.value||'',saved=(db.products||[]).find(x=>x.code===code)||{};return {...saved,code,laborMinutes:readProductCostFieldV110('prodLaborMinutesV110'),wastePct:readProductCostFieldV110('prodWastePctV110'),moldAverageCost:readProductCostFieldV110('prodMoldAverageV1740'),operatingAverageCost:readProductCostFieldV110('prodOperatingAverageV1740'),otherCost:Math.max(0,Number(document.getElementById('prodOtherCostV110')?.value)||0),targetMarginPct:readProductCostFieldV110('prodTargetMarginV110'),onlineTargetMarginPct:readProductCostFieldV110('prodOnlineTargetMarginV110')}}
 function refreshProductChannelPricingV12620(){if(!document.getElementById('prodCode'))return;const p=productDraftV110(),x=productCostBreakdownV110(p),set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=euro(v)};const c=document.getElementById('prodCost');if(c)c.value=x.total.toFixed(4);set('prodCostMaterialsV110',x.materials);set('prodCostLaborV110',x.labor+x.editionLabor);set('prodCostMoldV110',x.mold);set('prodCostExtrasV110',x.packaging+x.indirect+x.other);set('prodCostWasteV110',x.waste);set('prodCostTotalV110',x.total);set('prodDirectRecommendedV12620',artessenciaRecommendedPriceV1251(p));set('prodOnlineRecommendedV12620',artessenciaRecommendedOnlinePriceV12620(p))}
 function artessenciaPriceHealthV1251(p){const price=Number(p.price)||0,cost=calculatedProductCost(p),min=minPriceForMargin(cost),rec=artessenciaRecommendedPriceV1251(p);if(price<cost)return {key:'loss',label:'Abaixo do custo',detail:'PVP inferior ao custo total'};if(price<min)return {key:'low',label:'Margem reduzida',detail:'Abaixo da margem mínima'};if(price<rec)return {key:'ok',label:'Aceitável',detail:'Entre a margem mínima e a alvo'};return {key:'good',label:'Saudável',detail:'Atinge a margem alvo'}}
 function minPriceForMargin(cost){
@@ -11998,7 +12101,7 @@ function cancelProductEditV145(){
  const av=document.getElementById('prodAvailability');if(av)av.value='regular';
  const ei=document.getElementById('prodEditionId');if(ei)[...ei.options].forEach(o=>o.selected=false);
  for(const id of ['prodEditionExtraLaborMinutes','prodEditionExtraWastePct']){const el=document.getElementById(id);if(el)el.value='0'}
- for(const id of ['prodLaborMinutesV110','prodWastePctV110','prodMoldCostV110','prodMoldUsesV110','prodMoldOverrideV110','prodPackagingCostV110','prodEquipmentPowerWV133','prodEquipmentMinutesV133','prodIndirectCostV110','prodOtherCostV110','prodTargetMarginV110','prodOnlineTargetMarginV110']){const el=document.getElementById(id);if(el)el.value=''}
+ for(const id of ['prodLaborMinutesV110','prodWastePctV110','prodMoldAverageV1740','prodOperatingAverageV1740','prodMoldCostV110','prodMoldUsesV110','prodMoldOverrideV110','prodPackagingCostV110','prodEquipmentPowerWV133','prodEquipmentMinutesV133','prodIndirectCostV110','prodOtherCostV110','prodTargetMarginV110','prodOnlineTargetMarginV110']){const el=document.getElementById(id);if(el)el.value=''}
  const cavities=document.getElementById('prodMoldCavitiesV110');if(cavities)cavities.value='1';
  clearProductProductionFieldsV130();clearProductTechnicalFormV1287();setProductShopImagePreview('');
  const f=document.getElementById('prodShopImageFile');if(f)f.value='';
@@ -12022,8 +12125,9 @@ function saveProduct(){
  const editionExtraLaborMinutes=availabilityType==='edition'?Math.max(0,Number(document.getElementById('prodEditionExtraLaborMinutes')?.value)||0):0;
  const editionExtraWastePct=availabilityType==='edition'?Math.max(0,Number(document.getElementById('prodEditionExtraWastePct')?.value)||0):0;
  const laborMinutes=readProductCostFieldV110('prodLaborMinutesV110'),wastePct=readProductCostFieldV110('prodWastePctV110');
- const moldCost=Math.max(0,Number(document.getElementById('prodMoldCostV110')?.value)||0),moldUses=Math.max(0,Number(document.getElementById('prodMoldUsesV110')?.value)||0),moldCavities=Math.max(1,Number(document.getElementById('prodMoldCavitiesV110')?.value)||1),moldUnitOverride=readProductCostFieldV110('prodMoldOverrideV110');
- const packagingCost=Math.max(0,Number(document.getElementById('prodPackagingCostV110')?.value)||0),equipmentPowerW=Math.max(0,Number(document.getElementById('prodEquipmentPowerWV133')?.value)||0),equipmentMinutes=readProductCostFieldV110('prodEquipmentMinutesV133'),indirectCost=Math.max(0,Number(document.getElementById('prodIndirectCostV110')?.value)||0),otherCost=Math.max(0,Number(document.getElementById('prodOtherCostV110')?.value)||0),targetMarginPct=readProductCostFieldV110('prodTargetMarginV110'),onlineTargetMarginPct=readProductCostFieldV110('prodOnlineTargetMarginV110');
+ const moldAverageCost=readProductCostFieldV110('prodMoldAverageV1740'),operatingAverageCost=readProductCostFieldV110('prodOperatingAverageV1740');
+ const moldCost=existing?.moldCost??0,moldUses=existing?.moldUses??0,moldCavities=existing?.moldCavities??1,moldUnitOverride=existing?.moldUnitOverride??null;
+ const packagingCost=existing?.packagingCost??0,equipmentPowerW=existing?.equipmentPowerW??0,equipmentMinutes=existing?.equipmentMinutes??null,indirectCost=existing?.indirectCost??0,otherCost=Math.max(0,Number(document.getElementById('prodOtherCostV110')?.value)||0),targetMarginPct=readProductCostFieldV110('prodTargetMarginV110'),onlineTargetMarginPct=readProductCostFieldV110('prodOnlineTargetMarginV110');
  const directPriceText=String(prodPrice.value||'').trim(),directPrice=directPriceText===''?0:Number(directPriceText),onlinePriceText=String(document.getElementById('prodOnlinePriceV12620')?.value||'').trim(),onlinePriceInput=onlinePriceText===''?0:Number(onlinePriceText);
  if(!Number.isFinite(directPrice)||directPrice<0||!Number.isFinite(onlinePriceInput)||onlinePriceInput<0){setProductSaveStateV145('error','Preço inválido','Os preços de venda não podem ser negativos.');return toast('Confirme os preços de venda')}
  const onlinePrice=onlinePriceInput>0?onlinePriceInput:directPrice;
@@ -12032,7 +12136,7 @@ function saveProduct(){
  if(technicalInfoVerified&&!baseTechnicalProfileCompleteV12811())return toast('Confirma primeiro a informação técnica da materiais comuns em Configuração');
  
  const additionalSafetysContains=productSafetySelectionV1287('contains'),additionalSafetysMayContain=productSafetySelectionV1287('mayContain').filter(code=>!additionalSafetysContains.includes(code));
- const obj={code,name,category:prodCat.value,cost:0,price:directPrice,onlinePrice,shopVisible:!!prodShopVisible.checked,shopDescription:prodShopDescription.value.trim(),shopImageUrl:(document.getElementById('prodShopImageUrl')?.value||existing?.shopImageUrl||'').trim(),mixVisible,mixMaxQty,mixBoxCapacities,availabilityType,editionExclusive:availabilityType==='edition',editionId,editionIds,editionExtraLaborMinutes,editionExtraWastePct,laborMinutes,wastePct,moldCost,moldUses,moldCavities,moldUnitOverride,packagingCost,equipmentPowerW,equipmentMinutes,indirectCost,otherCost,targetMarginPct,onlineTargetMarginPct,productionType,manufactured,cureHours,prepTemp,mixTemp,pourTemp,productionNotes,qualityNotes,materialsText:additionalIngredientsText,careInstructions:storageInstructions,safetyInstructions:consumptionGuidance,additionalIngredientsText,additionalSafetysContains:[],additionalSafetysMayContain:[],storageInstructions,consumptionGuidance,technicalInfoVerified:false,technicalInfoReviewedAt:''};
+ const obj={code,name,category:prodCat.value,cost:0,price:directPrice,onlinePrice,shopVisible:!!prodShopVisible.checked,shopDescription:prodShopDescription.value.trim(),shopImageUrl:(document.getElementById('prodShopImageUrl')?.value||existing?.shopImageUrl||'').trim(),mixVisible,mixMaxQty,mixBoxCapacities,availabilityType,editionExclusive:availabilityType==='edition',editionId,editionIds,editionExtraLaborMinutes,editionExtraWastePct,laborMinutes,wastePct,moldAverageCost,operatingAverageCost,moldCost,moldUses,moldCavities,moldUnitOverride,packagingCost,equipmentPowerW,equipmentMinutes,indirectCost,otherCost,targetMarginPct,onlineTargetMarginPct,productionType,manufactured,cureHours,prepTemp,mixTemp,pourTemp,productionNotes,qualityNotes,materialsText:additionalIngredientsText,careInstructions:storageInstructions,safetyInstructions:consumptionGuidance,additionalIngredientsText,additionalSafetysContains:[],additionalSafetysMayContain:[],storageInstructions,consumptionGuidance,technicalInfoVerified:false,technicalInfoReviewedAt:''};
  obj.ingredientsText=productFinalIngredientsV12811(obj);obj.safetysContains=productFinalContainsV12811(obj);obj.safetysMayContain=productFinalMayContainV12811(obj);
  existing?Object.assign(existing,obj):db.products.push(obj);
  const savedProduct=existing||db.products[db.products.length-1];
@@ -12045,7 +12149,7 @@ function saveProduct(){
  const ei=document.getElementById('prodEditionId');if(ei)[...ei.options].forEach(o=>o.selected=false);
  const elm=document.getElementById('prodEditionExtraLaborMinutes');if(elm)elm.value='0';
  const ewp=document.getElementById('prodEditionExtraWastePct');if(ewp)ewp.value='0';
- for(const id of ['prodLaborMinutesV110','prodWastePctV110','prodMoldCostV110','prodMoldUsesV110','prodMoldOverrideV110','prodPackagingCostV110','prodEquipmentPowerWV133','prodEquipmentMinutesV133','prodIndirectCostV110','prodOtherCostV110','prodTargetMarginV110','prodOnlineTargetMarginV110']){const el=document.getElementById(id);if(el)el.value=''}const cavities=document.getElementById('prodMoldCavitiesV110');if(cavities)cavities.value='1';clearProductProductionFieldsV130();
+ for(const id of ['prodLaborMinutesV110','prodWastePctV110','prodMoldAverageV1740','prodOperatingAverageV1740','prodMoldCostV110','prodMoldUsesV110','prodMoldOverrideV110','prodPackagingCostV110','prodEquipmentPowerWV133','prodEquipmentMinutesV133','prodIndirectCostV110','prodOtherCostV110','prodTargetMarginV110','prodOnlineTargetMarginV110']){const el=document.getElementById(id);if(el)el.value=''}const cavities=document.getElementById('prodMoldCavitiesV110');if(cavities)cavities.value='1';clearProductProductionFieldsV130();
  updateProductAvailabilityUI();refreshProductChannelPricingV12620();
  clearProductTechnicalFormV1287();
  setProductShopImagePreview('');const f=document.getElementById('prodShopImageFile');if(f)f.value='';setProductEditorModeV145(null);setProductSaveStateV145('saved',wasEditing?'Alterações guardadas':'Produto guardado com sucesso',`${name} · dados e composição associados ao produto.`);toast(wasEditing?'Alterações guardadas':'Produto guardado com sucesso')
@@ -12054,7 +12158,7 @@ function editProduct(code){
  const p=findProductByCodeV147(code);if(!p)return;
  prodCode.value=p.code;prodName.value=p.name;prodCat.value=p.category;prodCost.value=calculatedProductCost(p).toFixed(4);prodPrice.value=p.price;prodShopVisible.checked=!!p.shopVisible;prodShopDescription.value=p.shopDescription||'';
  const op=document.getElementById('prodOnlinePriceV12620');if(op)op.value=Number(p.onlinePrice??p.price)||0;
- const costFields={prodLaborMinutesV110:p.laborMinutes,prodWastePctV110:p.wastePct,prodMoldCostV110:p.moldCost,prodMoldUsesV110:p.moldUses,prodMoldCavitiesV110:p.moldCavities??1,prodMoldOverrideV110:p.moldUnitOverride,prodPackagingCostV110:p.packagingCost,prodEquipmentPowerWV133:p.equipmentPowerW,prodEquipmentMinutesV133:p.equipmentMinutes,prodIndirectCostV110:p.indirectCost,prodOtherCostV110:p.otherCost,prodTargetMarginV110:p.targetMarginPct,prodOnlineTargetMarginV110:p.onlineTargetMarginPct};for(const [id,v] of Object.entries(costFields)){const el=document.getElementById(id);if(el)el.value=v==null?'':v}fillProductProductionFieldsV130(p);refreshProductChannelPricingV12620();
+ const costFields={prodLaborMinutesV110:p.laborMinutes,prodWastePctV110:p.wastePct,prodMoldAverageV1740:p.moldAverageCost??productMoldCostV110(p),prodOperatingAverageV1740:p.operatingAverageCost??productOperatingAverageV1740(p),prodMoldCostV110:p.moldCost,prodMoldUsesV110:p.moldUses,prodMoldCavitiesV110:p.moldCavities??1,prodMoldOverrideV110:p.moldUnitOverride,prodPackagingCostV110:p.packagingCost,prodEquipmentPowerWV133:p.equipmentPowerW,prodEquipmentMinutesV133:p.equipmentMinutes,prodIndirectCostV110:p.indirectCost,prodOtherCostV110:p.otherCost,prodTargetMarginV110:p.targetMarginPct,prodOnlineTargetMarginV110:p.onlineTargetMarginPct};for(const [id,v] of Object.entries(costFields)){const el=document.getElementById(id);if(el)el.value=v==null?'':v}fillProductProductionFieldsV130(p);refreshProductChannelPricingV12620();
  const mv=document.getElementById('prodMixVisible');if(mv)mv.checked=!!p.mixVisible;
  const mm=document.getElementById('prodMixMaxQty');if(mm)mm.value=Number(p.mixMaxQty)||0;
  const mb=document.getElementById('prodMixBoxCaps');if(mb)mb.value=formatMixBoxCaps(p.mixBoxCapacities);
@@ -13756,8 +13860,15 @@ function renderCloudUICore(){
  const log=document.getElementById('cloudLog');if(log){const a=cloudLogData();log.innerHTML=a.length?a.map(x=>'<div>'+escapeHtml(x)+'</div>').join(''):'Sem atividade de sincronização.'}
 }
 function renderCloudUI(){
+ let meta=cloudMeta();
+ const realPending=localStorage.getItem(REL_DIRTY)==='1'||relOrderPendingSet().size>0;
+ if(meta.dirty&&!realPending&&!cloudBusy&&!cloudHydrating){
+   meta={...meta,dirty:false,verified:true};
+   localStorage.setItem(CLOUD_META,JSON.stringify(meta));
+ }
  renderCloudUICore();
- const meta=cloudMeta(),cfg=cloudCfg(),online=navigator.onLine!==false;
+ meta=cloudMeta();
+ const cfg=cloudCfg(),online=navigator.onLine!==false;
  const connected=!!cloudUser;
  const dirty=!!meta.dirty;
  const hero=document.getElementById('cloudHeroStatus');
@@ -14080,7 +14191,38 @@ async function pullOperationalCloudStateV139(user){
  }
  return changed
 }
+
+function cloudLocalChangedMsV1739(){
+ const raw=cloudMeta().localChangedAt;
+ const ms=raw?Date.parse(raw):0;
+ return Number.isFinite(ms)?ms:0
+}
+function finalizeCloudCleanV1739(syncStartedMs,showToast=false){
+ const apply=()=>{
+   // Se houve nova edição depois do início deste envio, não limpar o estado pendente.
+   if(cloudLocalChangedMsV1739()>syncStartedMs)return false;
+   if(relOrderPendingSet().size>0)return false;
+   localStorage.removeItem(REL_DIRTY);
+   setCloudMeta({
+     dirty:false,
+     conflict:false,
+     verified:true,
+     lastSync:new Date().toISOString()
+   });
+   renderCloudUI();
+   return true
+ };
+ const clean=apply();
+ // Segunda confirmação curta para neutralizar atualizações assíncronas tardias
+ // provenientes do mesmo ciclo de sincronização.
+ setTimeout(()=>apply(),180);
+ setTimeout(()=>apply(),900);
+ if(clean&&showToast)toast('Sincronização concluída');
+ return clean
+}
+
 async function cloudPushNow(showToast=true){
+ const syncStartedMs=Date.now();
  if(hasRestorePendingV12645()){
    cloudLogMsg('Envio automático bloqueado: existe um restauro pendente de reconciliação');
    if(showToast)toast('Restauro pendente — escolhe primeiro manter este dispositivo ou usar a Cloud');
@@ -14112,15 +14254,11 @@ async function cloudPushNow(showToast=true){
    // V1.7.38 — só marcar como sincronizado depois de TODOS os blocos terem sido enviados.
    const stillPending=relOrderPendingSet().size>0;
    if(!stillPending){
-     localStorage.removeItem(REL_DIRTY);
-     setCloudMeta({
-       dirty:false,
-       conflict:false,
-       verified:true,
-       lastSync:new Date().toISOString()
-     });
-     cloudLogMsg('Sincronização concluída · sem alterações locais pendentes');
-     if(showToast)toast('Dados V10 sincronizados');
+     const clean=finalizeCloudCleanV1739(syncStartedMs,false);
+     if(clean){
+       cloudLogMsg('Sincronização concluída · sem alterações locais pendentes');
+       if(showToast)toast('Dados sincronizados');
+     }
    }else{
      localStorage.setItem(REL_DIRTY,'1');
      setCloudMeta({dirty:true,verified:true});
@@ -14749,7 +14887,7 @@ async function relationalHydrateCore(initial=false){
    renderCloudUI()
  }
 }
-document.addEventListener('input',e=>{if(['prodCode','prodPrice','prodOnlinePriceV12620','prodLaborMinutesV110','prodWastePctV110','prodMoldCostV110','prodMoldUsesV110','prodMoldCavitiesV110','prodMoldOverrideV110','prodPackagingCostV110','prodEquipmentPowerWV133','prodEquipmentMinutesV133','prodIndirectCostV110','prodOtherCostV110','prodTargetMarginV110','prodOnlineTargetMarginV110','prodEditionExtraLaborMinutes','prodEditionExtraWastePct'].includes(e.target?.id))refreshProductChannelPricingV12620()});
+document.addEventListener('input',e=>{if(['prodCode','prodPrice','prodOnlinePriceV12620','prodLaborMinutesV110','prodWastePctV110','prodMoldAverageV1740','prodOperatingAverageV1740','prodOtherCostV110','prodTargetMarginV110','prodOnlineTargetMarginV110','prodEditionExtraLaborMinutes','prodEditionExtraWastePct'].includes(e.target?.id))refreshProductChannelPricingV12620()});
 function refreshOperationalViewsV1413(reason='local_change'){
  // Mantém os módulos operacionais coerentes no mesmo ciclo de interface, sem recarregar a página.
  try{
