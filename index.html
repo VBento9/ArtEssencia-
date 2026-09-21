@@ -4529,7 +4529,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.63';
+const APP_VERSION='1.7.65';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -16145,3 +16145,131 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 </style>
 <!-- V1.7.59 — catálogo sazonal sincronizado e PVP Loja coerente nas Edições Especiais -->
 <!-- V1.7.60 — remoção de fotografia de produto persistente: campo vazio passa a significar remoção explícita e já não recupera a URL anterior -->
+
+<style id="artessencia-v1764-layout-modules">
+/* V1.7.64 — harmonização visual dos módulos Custos, Stock, Clientes e Precificação em quantidade */
+#costs .costs-hero,#stock .stock-hero,#clients .clients-hero,#quantityPricing .quantity-pricing-hero-v1750{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-radius:20px;background:linear-gradient(180deg,#fffaf7 0%,#fff 100%);box-shadow:0 10px 26px rgba(90,36,11,.06)}
+#costs .costs-hero .section-title,#stock .stock-hero .section-title,#clients .clients-hero .section-title,#quantityPricing .quantity-pricing-hero-v1750 .section-title{background:#6a4539;color:#fff;border-radius:13px;padding:10px 14px}
+#costs .costs-summary,#stock .stock-summary,#clients .clients-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:10px}
+#costs .costs-summary .card,#stock .stock-summary .card,#clients .clients-summary .card{min-width:0;border-radius:18px;padding:14px 15px;box-shadow:0 8px 22px rgba(90,36,11,.06)}
+#costs .costs-stack-v1720,#clients .clients-stack-v1724{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px;align-items:start}
+#costs .costs-card,#stock .stock-form-card,#stock .stock-list-card,#clients .clients-form-card,#clients .clients-list-card,#quantityPricing .quantity-pricing-card-v1750{border-radius:20px;padding:16px;box-shadow:0 10px 24px rgba(90,36,11,.06)}
+#costs .costs-card-head,#stock .stock-form-head,#clients .clients-form-head,#quantityPricing .quantity-pricing-head-row-v1750{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+#costs .costs-card-head small,#stock .stock-form-head small,#clients .clients-form-head small,#quantityPricing .quantity-pricing-section-v1750 small{display:block;line-height:1.45;color:#7e695f}
+#costs .costs-manual-grid-v1720{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+#costs .costs-manual-grid-v1720>.field,#costs .costs-recipe-grid-v1720>.field{background:#fffaf7;border:1px solid #eee1db;border-radius:16px;padding:10px 11px;min-width:0}
+#costs .costs-manual-grid-v1720 .costs-manual-reason-v1720{grid-column:span 2}
+#costs .costs-manual-footer-v1720{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px}
+#costs .costs-manual-help-v1720{display:block;margin-top:8px;color:#7f6c64;line-height:1.45}
+#costs .costs-recipe-grid-v1720{display:grid;grid-template-columns:1.3fr 1.3fr .85fr .85fr;gap:10px;align-items:start}
+#costs .costs-recipe-action-v1720{display:flex;align-items:flex-end}
+#costs .costs-recipe-action-v1720 .btn{width:100%}
+#costs .costs-table-card{margin-top:12px}
+#stock .stock-tools,#clients .clients-tools{display:grid;grid-template-columns:minmax(220px,1fr) 180px;gap:10px;align-items:center}
+#stock .stock-stack-v1721{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(320px,.9fr);gap:12px;align-items:start}
+#stock .stock-simple-grid-v1736{display:grid;grid-template-columns:1.35fr repeat(3,minmax(0,1fr));gap:10px}
+#stock .stock-simple-grid-v1736 .field,#stock .stock-move-grid-v1721 .field{background:#fffaf7;border:1px solid #eee1db;border-radius:16px;padding:10px 11px;min-width:0}
+#stock .stock-simple-grid-v1736 .field:last-child{grid-column:span 2}
+#stock .stock-auto-calc-v1736{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+#stock .stock-auto-item-v1736{background:#fffaf7;border:1px solid #eee1db;border-radius:16px;padding:12px 13px}
+#stock .stock-auto-item-v1736 span{display:block;font-size:11px;font-weight:800;color:#705950;text-transform:uppercase;margin-bottom:4px}
+#stock .stock-auto-item-v1736 strong{font-size:18px;color:#3f2a21}
+#stock .stock-advanced-v1736{margin-top:12px;border:1px solid #efe0d8;border-radius:16px;padding:10px 12px;background:#fffdfb}
+#stock .stock-advanced-v1736 summary{cursor:pointer;font-weight:900;color:#5f4337}
+#stock .stock-advanced-grid-v1736{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+#stock .stock-edit-reason-v1736{margin-top:12px}
+#stock .stock-create-actions-v1736{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px}
+#stock .stock-move-grid-v1721{display:grid;grid-template-columns:1.35fr .9fr .8fr 1.1fr .9fr;gap:10px;align-items:end}
+#stock .stock-move-action-v1721 .btn{width:100%}
+#stock .stock-move-state-v1721{margin-top:12px}
+#clients .clients-tools{grid-template-columns:minmax(220px,1fr) 170px}
+#clients .clients-form-grid-v1724{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#clients .clients-form-grid-v1724>.field{background:#fffaf7;border:1px solid #eee1db;border-radius:16px;padding:10px 11px;min-width:0}
+#clients .clients-note-v1724{grid-column:span 2}
+#clients .clients-form-footer-v1724{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px}
+#clients .clients-identity-note-v1724{display:grid;gap:3px;max-width:560px;background:#fffaf7;border:1px solid #eee1db;border-radius:15px;padding:11px 13px}
+#clients .clients-identity-note-v1724 span{line-height:1.45}
+#clients .clients-form-actions{display:flex;gap:8px;flex-wrap:wrap}
+#quantityPricing .quantity-pricing-card-v1750{padding:16px 16px 18px}
+#quantityPricing .quantity-pricing-base-grid-v1750{grid-template-columns:1fr 1.2fr 1fr 1fr;gap:10px}
+#quantityPricing .quantity-pricing-cost-grid-v1750{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+#quantityPricing .quantity-pricing-base-grid-v1750>.field,#quantityPricing .quantity-pricing-cost-grid-v1750>.field{background:#fffaf7;border:1px solid #eee1db;border-radius:16px;padding:10px 11px}
+#quantityPricing .quantity-pricing-reference-v1750{margin-top:10px}
+#quantityPricing .quantity-pricing-materials-v1750{margin-top:10px}
+#quantityPricing .quantity-pricing-material-total-v1750{margin-top:12px;padding:12px 14px;border-radius:16px;background:#fffaf7;border:1px solid #eee1db}
+#quantityPricing .quantity-pricing-results-v1750{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+#quantityPricing .quantity-pricing-results-v1750>div{background:#fffaf7;border:1px solid #eee1db;border-radius:16px;padding:11px 12px;min-width:0}
+#quantityPricing .quantity-pricing-results-v1750>div span{display:block;font-size:11px;font-weight:800;color:#705950;text-transform:uppercase;margin-bottom:4px}
+#quantityPricing .quantity-pricing-results-v1750>div strong{font-size:19px;color:#3f2a21}
+#quantityPricing .quantity-pricing-results-v1750>div.highlight{background:#f8efe8;border-color:#d4b3a5}
+#quantityPricing .quantity-pricing-results-v1750>div.recommended{background:#eef8f2;border-color:#cde6d7}
+#quantityPricing .quantity-pricing-convert-v1751{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px;padding:12px 14px;border-radius:16px;background:#fffaf7;border:1px solid #eee1db}
+@media(max-width:1180px){
+  #costs .costs-stack-v1720,#clients .clients-stack-v1724,#stock .stock-stack-v1721{grid-template-columns:1fr}
+  #costs .costs-manual-grid-v1720,#costs .costs-recipe-grid-v1720,#stock .stock-simple-grid-v1736,#stock .stock-move-grid-v1721,#quantityPricing .quantity-pricing-base-grid-v1750,#quantityPricing .quantity-pricing-cost-grid-v1750,#quantityPricing .quantity-pricing-results-v1750{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #stock .stock-simple-grid-v1736 .field:last-child,#clients .clients-note-v1724{grid-column:span 2}
+}
+@media(max-width:760px){
+  #costs .costs-hero,#stock .stock-hero,#clients .clients-hero,#quantityPricing .quantity-pricing-hero-v1750,#quantityPricing .quantity-pricing-convert-v1751,#clients .clients-form-footer-v1724,#stock .stock-create-actions-v1736{align-items:stretch;flex-direction:column}
+  #stock .stock-tools,#clients .clients-tools,#costs .costs-manual-grid-v1720,#costs .costs-recipe-grid-v1720,#stock .stock-simple-grid-v1736,#stock .stock-auto-calc-v1736,#stock .stock-advanced-grid-v1736,#stock .stock-move-grid-v1721,#clients .clients-form-grid-v1724,#quantityPricing .quantity-pricing-base-grid-v1750,#quantityPricing .quantity-pricing-cost-grid-v1750,#quantityPricing .quantity-pricing-results-v1750{grid-template-columns:1fr}
+  #costs .costs-manual-grid-v1720 .costs-manual-reason-v1720,#stock .stock-simple-grid-v1736 .field:last-child,#clients .clients-note-v1724{grid-column:span 1}
+  #costs .recipe-touch-choice-v1763{grid-template-columns:1fr}
+  #costs .recipe-search-button-v1763,#quantityPricing .quantity-pricing-actions-v1750 .btn,#clients .clients-form-actions .btn,#stock .stock-create-actions-v1736 .btn{width:100%}
+}
+</style>
+<!-- V1.7.64 — harmonização visual dos módulos Custos, Stock, Clientes e Precificação em quantidade -->
+
+<style id="artessencia-v1765-layout-purchases-cash-reports">
+/* V1.7.65 — harmonização visual de Compras, Caixa e Relatórios */
+#purchases .purchase-hero,#cash .cash-hero,#reports .reports-hero{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-radius:20px;background:linear-gradient(180deg,#fffaf7 0%,#fff 100%);box-shadow:0 10px 26px rgba(90,36,11,.06)}
+#purchases .purchase-hero .section-title,#cash .cash-hero .section-title,#reports .reports-hero .section-title{background:#6a4539;color:#fff;border-radius:13px;padding:10px 14px}
+#purchases .purchase-hero small,#cash .cash-hero small,#reports .reports-hero small{display:block;margin-top:5px;line-height:1.45;color:#7e695f}
+#purchases .purchase-tools,#cash .cash-tools{display:grid;grid-template-columns:minmax(220px,1fr) 180px;gap:9px;align-items:center;min-width:min(470px,52%)}
+#cash .cash-tools{grid-template-columns:minmax(210px,1fr) 145px 160px;min-width:min(620px,62%)}
+#purchases .purchase-tools input,#purchases .purchase-tools select,#cash .cash-tools input,#cash .cash-tools select{min-height:44px;border-radius:12px;background:#fff;border:1px solid #e7d9d2;padding:9px 11px}
+#purchases .purchase-summary,#cash .cash-kpis,#reports .reports-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:10px}
+#purchases .purchase-summary .card,#cash .cash-kpis .card,#reports .reports-kpis .card{min-width:0;border-radius:18px;padding:14px 15px;box-shadow:0 8px 22px rgba(90,36,11,.06)}
+#purchases .purchase-form-card,#purchases .purchase-list-card,#cash .cash-form-card,#cash .cash-list-card,#reports .reports-section-v1725,#reports .reports-export-card,#reports .reports-note{border-radius:20px;padding:16px;box-shadow:0 10px 24px rgba(90,36,11,.06)}
+#purchases .purchase-form-head,#purchases .purchase-list-head,#cash .cash-form-head,#cash .cash-list-head,#reports .reports-section-head-v1725{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+#purchases .purchase-form-head small,#purchases .purchase-list-head small,#cash .cash-form-head small,#cash .cash-list-head small,#reports .reports-section-head-v1725 small{display:block;line-height:1.45;color:#7e695f}
+#purchases .purchase-main-grid-v1722{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+#purchases .purchase-main-grid-v1722>.field,#purchases .purchase-secondary-row-v1722 .field,#cash .cash-main-grid-v1723>.field{background:#fffaf7;border:1px solid #eee1db;border-radius:16px;padding:10px 11px;min-width:0}
+#purchases .purchase-supplier-v1722,#purchases .purchase-item-v1722{grid-column:span 2}
+#purchases .purchase-secondary-row-v1722{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end;margin-top:10px}
+#purchases .purchase-actions-v1722{display:flex;gap:8px;flex-wrap:wrap}
+#purchases .purchase-preview-v1722{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;margin-top:12px}
+#purchases .purchase-preview-item{background:#fffaf7;border:1px solid #eee1db;border-radius:15px;padding:11px 12px;min-width:0}
+#purchases .purchase-preview-item span{display:block;font-size:10px;font-weight:800;color:#705950;text-transform:uppercase;margin-bottom:4px}
+#purchases .purchase-preview-item strong{font-size:17px;color:#3f2a21}
+#cash .cash-main-grid-v1723{display:grid;grid-template-columns:.85fr .85fr 1.6fr .95fr .8fr 1.1fr;gap:10px;align-items:end}
+#cash .cash-action-v1723{display:flex;align-items:end}
+#cash .cash-form-actions-v1723{display:flex;gap:8px;width:100%}
+#cash .cash-form-actions-v1723 .btn{flex:1}
+#reports .reports-actions{display:flex;gap:8px;flex-wrap:wrap}
+#reports .reports-stack-v1725{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px!important;align-items:start}
+#reports .reports-section-v1725{min-width:0;margin:0}
+#reports .reports-section-head-v1725 .section-title{background:#f4ebe6;color:#56392f;border:1px solid #e4d2c9;border-radius:12px;padding:9px 12px}
+#reports .reports-export-card{margin-top:12px!important}
+#reports .reports-export-card .section-title{background:#6a4539;color:#fff;border-radius:13px;padding:10px 14px}
+#reports .reports-export-card .btnrow{display:flex;gap:8px;flex-wrap:wrap}
+#reports .reports-note{display:flex;align-items:flex-start;gap:10px;margin-top:12px!important;background:#fffaf7;border-color:#eadbd4}
+#reports .reports-note strong{white-space:nowrap;color:#5f4337}
+#reports .reports-note span{line-height:1.5;color:#755f56}
+#purchases .purchase-tablewrap,#cash .cash-tablewrap,#reports .reports-section-v1725 .tablewrap{border-radius:15px}
+@media(max-width:1180px){
+ #purchases .purchase-tools,#cash .cash-tools{min-width:0}
+ #purchases .purchase-main-grid-v1722{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #purchases .purchase-supplier-v1722,#purchases .purchase-item-v1722{grid-column:span 1}
+ #purchases .purchase-preview-v1722{grid-template-columns:repeat(3,minmax(0,1fr))}
+ #cash .cash-main-grid-v1723{grid-template-columns:repeat(3,minmax(0,1fr))}
+ #reports .reports-stack-v1725{grid-template-columns:1fr}
+}
+@media(max-width:760px){
+ #purchases .purchase-hero,#cash .cash-hero,#reports .reports-hero{align-items:stretch;flex-direction:column}
+ #purchases .purchase-tools,#cash .cash-tools,#purchases .purchase-main-grid-v1722,#purchases .purchase-preview-v1722,#cash .cash-main-grid-v1723{grid-template-columns:1fr}
+ #purchases .purchase-secondary-row-v1722{grid-template-columns:1fr}
+ #purchases .purchase-actions-v1722 .btn,#cash .cash-form-actions-v1723 .btn,#reports .reports-actions .btn,#reports .reports-export-card .btn{width:100%}
+ #reports .reports-actions,#reports .reports-export-card .btnrow{display:grid;grid-template-columns:1fr}
+}
+</style>
+<!-- V1.7.65 — harmonização visual de Compras, Caixa e Relatórios -->
