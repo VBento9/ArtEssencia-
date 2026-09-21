@@ -4461,7 +4461,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.58';
+const APP_VERSION='1.7.59';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -13750,7 +13750,7 @@ function renderSpecialEditionProductPicker(selected=[]){
    return `<div class="special-product-option">
      <input data-role="include" type="checkbox" value="${safeId}" ${checked} onchange="syncSpecialExclusiveState('${safeId}')">
      ${img?`<img src="${escapeHtml(img)}" alt="">`:`<div style="width:42px;height:42px;display:grid;place-items:center;background:#f5efeb;border-radius:9px">🕯️</div>`}
-     <span><b>${escapeHtml(p.name)}</b><small>${escapeHtml(p.category||'ArtEssencia')} · ${euro(p.price)}</small></span>
+     <span><b>${escapeHtml(p.name)}</b><small>${escapeHtml(p.category||'ArtEssencia')} · Loja ${euro(Number(p.onlinePrice)>0?Number(p.onlinePrice):(Number(p.price)||0))}</small></span>
      <label class="special-product-exclusive"><input data-role="exclusive" data-product-id="${safeId}" type="checkbox" ${exclusive} ${checked?'':'disabled'}> Apenas nesta edição — fora das datas não aparece na loja</label>
    </div>`;
  }).join('');
@@ -13765,7 +13765,7 @@ function specialEditionProductSnapshot(){
  return ids.map(id=>{
    const p=(db.products||[]).find(x=>String(x._rid)===String(id));
    const ex=[...document.querySelectorAll('#specialEditionProducts input[data-role="exclusive"]')].find(x=>x.dataset.productId===String(id));
-   return p?{id:p._rid,name:p.name,category:p.category||'',price:Number(p.price)||0,exclusive:!!ex?.checked}:null
+   return p?{id:p._rid,name:p.name,category:p.category||'',price:Number(p.onlinePrice)>0?Number(p.onlinePrice):(Number(p.price)||0),exclusive:!!ex?.checked}:null
  }).filter(Boolean);
 }
 
@@ -13782,11 +13782,38 @@ function reconcileProductEditionMembershipV138(){
 }
 
 
+
+function specialEditionBoolV1759(value,fallback=false){
+ if(value===true||value===1||value==='1'||String(value).toLowerCase()==='true')return true;
+ if(value===false||value===0||value==='0'||String(value).toLowerCase()==='false')return false;
+ return fallback;
+}
+function specialEditionDateMsV1759(value,endOfDay=false){
+ if(value==null||value==='')return null;
+ const raw=String(value).trim();
+ if(/^\d{4}-\d{2}-\d{2}$/.test(raw)){
+   const ms=new Date(raw+(endOfDay?'T23:59:59.999':'T00:00:00')).getTime();
+   return Number.isFinite(ms)?ms:null;
+ }
+ const ms=new Date(value).getTime();
+ return Number.isFinite(ms)?ms:null;
+}
+function specialEditionIsLiveV1759(ed,{requireCatalog=true,now=Date.now()}={}){
+ if(!ed||!specialEditionBoolV1759(ed.active,false))return false;
+ const d=ed.data||{};
+ if(requireCatalog&&d.catalogEnabled===false)return false;
+ const start=specialEditionDateMsV1759(ed.starts_at,false);
+ const end=specialEditionDateMsV1759(ed.ends_at,true);
+ return (start==null||start<=now)&&(end==null||end>=now);
+}
+
 function catalogLiveEditionV160(){
- const now=Date.now();return (Array.isArray(specialEditionsAdmin)?specialEditionsAdmin:[]).filter(ed=>{const d=ed.data||{};if(!ed.active||d.catalogEnabled===false)return false;const a=ed.starts_at?+new Date(ed.starts_at):null,b=ed.ends_at?+new Date(ed.ends_at):null;return(!a||a<=now)&&(!b||b>=now)}).sort((a,b)=>(Number(b.data?.catalogPriority)||0)-(Number(a.data?.catalogPriority)||0)||(Number(!!b.data?.featured)-Number(!!a.data?.featured))||(Number(a.sort_order)||0)-(Number(b.sort_order)||0))[0]||null
+ return (Array.isArray(specialEditionsAdmin)?specialEditionsAdmin:[])
+   .filter(ed=>specialEditionIsLiveV1759(ed,{requireCatalog:true}))
+   .sort((a,b)=>(Number(b.data?.catalogPriority)||0)-(Number(a.data?.catalogPriority)||0)||(Number(!!b.data?.featured)-Number(!!a.data?.featured))||(Number(a.sort_order)||0)-(Number(b.sort_order)||0))[0]||null
 }
 function renderCatalogDigitalCenterV160(){
- const el=$('catalogCenterKpisV160');if(!el)return;const pubs=(db.products||[]).filter(p=>p.shopVisible!==false&&p.active!==false);const eds=Array.isArray(specialEditionsAdmin)?specialEditionsAdmin:[],live=catalogLiveEditionV160();const liveCount=eds.filter(ed=>{const d=ed.data||{},n=Date.now(),a=ed.starts_at?+new Date(ed.starts_at):null,b=ed.ends_at?+new Date(ed.ends_at):null;return ed.active&&d.catalogEnabled!==false&&(!a||a<=n)&&(!b||b>=n)}).length;
+ const el=$('catalogCenterKpisV160');if(!el)return;const pubs=(db.products||[]).filter(p=>p.shopVisible!==false&&p.active!==false);const eds=Array.isArray(specialEditionsAdmin)?specialEditionsAdmin:[],live=catalogLiveEditionV160();const liveCount=eds.filter(ed=>specialEditionIsLiveV1759(ed,{requireCatalog:true})).length;
  el.innerHTML=[[pubs.length,'Produtos publicados','Fichas marcadas para publicação'],[eds.filter(x=>x.data?.catalogEnabled!==false).length,'Coleções públicas','Preparadas para o catálogo'],[liveCount,'Ocasiões válidas agora','Dentro das respetivas datas'],[live?Number(live.data?.catalogPriority)||0:'—','Prioridade ativa',live?.name||'Tema ArtEssencia']].map(([v,l,n])=>`<div class="card catalog-center-kpi"><small>${escapeHtml(l)}</small><b>${escapeHtml(v)}</b><span>${escapeHtml(n)}</span></div>`).join('');
  const p=$('catalogCenterPreviewV160');if(!p)return;const d=live?.data||{},theme=d.catalogTheme||'artessencia',pres={artessencia:['#5b3d2b','#c9a78e','✦',['🕯️','✦','❦']],outono:['#704025','#bd7446','🍂',['🍂','🍁','🌿']],halloween:['#211512','#c9672f','🎃',['🎃','🦇','🕯️']],natal:['#274735','#a67b39','🎄',['🎄','✦','❄']],namorados:['#772b42','#d193a4','♡',['♡','♥','✦']],pascoa:['#7e6b94','#d8afc2','🐣',['✿','🐣','❀']],primavera:['#50734e','#c7a9bb','❀',['❀','🌿','✿']],personalizado:['#5b3d2b','#c9a78e','✦',['✦','❦','🕯️']]},x=pres[theme]||pres.artessencia;p.style.setProperty('--cc1',d.themePrimary||x[0]);p.style.setProperty('--cc2',d.themeSecondary||x[1]);p.dataset.decor=x[2];p.querySelector('.ey').textContent=d.badge||'ARTESSENCIA';p.querySelector('h3').textContent=d.heroTitle||live?.name||'Identidade ArtEssencia';p.querySelector('p').textContent=d.subtitle||(live?'Ocasião ativa no Catálogo Digital.':'Nenhuma ocasião sazonal ativa neste momento.');const scene=$('catalogPreviewSceneV161');if(scene)scene.innerHTML=(x[3]||[]).map(v=>`<span>${escapeHtml(v)}</span>`).join('');const st=$('catalogCenterStatusV161');if(st)st.innerHTML=`<span class=\"catalog-status-pill\">Tema: <b>${escapeHtml(theme)}</b></span><span class=\"catalog-status-pill\">Ocasião: <b>${escapeHtml(live?.name||'Nenhuma')}</b></span><span class=\"catalog-status-pill\">Produtos públicos: <b>${pubs.length}</b></span>`;
 }
@@ -13825,11 +13852,12 @@ function renderSpecialEditionsAdmin(){
    const d=ed.data||{},img=String(d.imageUrl||d.image_url||'').trim(),emoji=d.emoji||'🎁';
    const start=ed.starts_at?new Date(ed.starts_at):null;
    const end=ed.ends_at?new Date(ed.ends_at):null;
-   const startLabel=start?start.toLocaleDateString('pt-PT'):'Sem início';
-   const endLabel=end?end.toLocaleDateString('pt-PT'):'Sem fim';
-   const isLive=ed.active&&(!start||start.getTime()<=now)&&(!end||end.getTime()>=now);
-   const isFuture=ed.active&&start&&start.getTime()>now;
-   const isExpired=end&&end.getTime()<now;
+   const startLabel=start&&!Number.isNaN(start.getTime())?start.toLocaleDateString('pt-PT'):'Sem início';
+   const endLabel=end&&!Number.isNaN(end.getTime())?end.toLocaleDateString('pt-PT'):'Sem fim';
+   const startMs=specialEditionDateMsV1759(ed.starts_at,false),endMs=specialEditionDateMsV1759(ed.ends_at,true);
+   const isLive=specialEditionIsLiveV1759(ed,{requireCatalog:false,now});
+   const isFuture=specialEditionBoolV1759(ed.active,false)&&startMs!=null&&startMs>now;
+   const isExpired=endMs!=null&&endMs<now;
    const statusLabel=isLive?'NA LOJA':isFuture?'AGENDADA':isExpired?'TERMINADA':ed.active?'ATIVA':'INATIVA';
    const statusClass=isLive?'on':isFuture?'planned':'off';
    const prodCount=Array.isArray(d.products)?d.products.length:0;
@@ -13867,6 +13895,7 @@ async function loadSpecialEditionsAdmin(showToast=false){
    specialEditionsAdmin=Array.isArray(data)?data:[];
    reconcileProductEditionMembershipV138();
    renderSpecialEditionsAdmin();
+   if(document.getElementById('catalogDigital')?.classList.contains('active'))renderCatalogDigitalCenterV160();
    if(showToast)toast('Edições atualizadas')
  }catch(e){console.error(e);cloudLogMsg('Erro edições especiais: '+cloudErrText(e));if(showToast)toast('Não foi possível carregar Edições Especiais')}
 }
@@ -15887,6 +15916,7 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 .sale-client-match-empty-v1756{padding:9px 10px;font-size:9px;color:#907d75}
 
 
+</style>
 <style id="artessencia-v1758-touch-collections-material-search">
 /* V1.7.58 — coleções touch-friendly + pesquisa de matérias-primas na Ficha Técnica */
 #products .product-edition-touch-head-v1758{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 0 9px}
@@ -15910,7 +15940,4 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 #costs #recipeMaterialSearchCountV1758{display:block;margin-top:6px;color:#7c6961;font-weight:700}
 @media(max-width:720px){#products .product-edition-touch-list-v1758{grid-template-columns:1fr}#products .product-edition-touch-item-v1758{min-height:62px}#costs .recipe-material-select-row-v1758{grid-template-columns:1fr auto}#costs .recipe-material-search-row-v1758{grid-template-columns:1fr auto}}
 </style>
-
-/* V1.7.58 — coleções touch-friendly e pesquisa de matérias-primas; preserva editionIds e db.stock como fontes de verdade */
-/* V1.7.57 — ciclo real: snapshot técnico por encomenda, pagamentos+Caixa sincronizados, embalagem-stock quando aplicável, saldo entregue visível, conversão orçamento com numeração robusta */
-</style>
+<!-- V1.7.59 — catálogo sazonal sincronizado e PVP Loja coerente nas Edições Especiais -->
