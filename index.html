@@ -3120,24 +3120,47 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       <div class="catalog-center-actions"><button class="btn" onclick="loadCatalogDigitalCenterV160(true)">Atualizar</button><button class="btn primary" onclick="go('specialEditions');clearSpecialEditionForm();setTimeout(()=>document.getElementById('specialEditionName')?.focus(),80)">Nova ocasião</button></div>
     </div>
     <div id="catalogCenterKpisV160" class="catalog-center-kpis"></div>
-    <div class="catalog-center-grid">
-      <div class="card">
-        <div class="section-title" style="margin:0">Gestão do catálogo</div>
-        <p class="muted">Os dados continuam nas fichas originais. Este centro não duplica produtos nem campanhas.</p>
+    <div class="catalog-center-stack-v1733">
+      <section class="card catalog-center-management-v1733">
+        <div class="catalog-center-section-head-v1733">
+          <div>
+            <div class="section-title" style="margin:0">Gestão do catálogo</div>
+            <p class="muted">Os dados continuam nas fichas originais. Este centro não duplica produtos nem campanhas.</p>
+          </div>
+        </div>
+
         <div class="catalog-center-workflow">
           <button class="catalog-center-step" onclick="go('products')"><i>🕯️</i><b>Produtos</b><small>Fotografia, descrição, PVP e publicação.</small></button>
           <button class="catalog-center-step" onclick="go('specialEditions')"><i>🎃</i><b>Coleções / Ocasiões</b><small>Datas, produtos, tema, banner e prioridade.</small></button>
           <button class="catalog-center-step" onclick="go('homepage')"><i>⌂</i><b>Homepage</b><small>Hero e conteúdo permanente ArtEssencia.</small></button>
           <button class="catalog-center-step" onclick="go('catalogs')"><i>▦</i><b>Catálogos PDF</b><small>Documentos e catálogos imprimíveis existentes.</small></button>
         </div>
-        <div class="section-title">Temas disponíveis</div>
-        <div class="catalog-theme-list"><div class="catalog-theme-mini"><span>🍂</span>Outono</div><div class="catalog-theme-mini"><span>🎃</span>Halloween</div><div class="catalog-theme-mini"><span>🎄</span>Natal</div><div class="catalog-theme-mini"><span>♡</span>Namorados</div><div class="catalog-theme-mini"><span>🐣</span>Páscoa</div><div class="catalog-theme-mini"><span>❀</span>Primavera</div><div class="catalog-theme-mini"><span>✦</span>ArtEssencia</div><div class="catalog-theme-mini"><span>⚙</span>Personalizado</div></div>
-        <div class="catalog-center-note">Regra automática: entre várias ocasiões válidas, assume a de maior prioridade; em empate, o destaque da homepage prevalece. Fora das datas, regressa ao tema permanente ArtEssencia.</div><div class="catalog-quick-actions"><button class="catalog-quick-action" onclick="go('products')"><b>1 · Publicar produtos</b><small>Define fotografia, descrição pública, PVP e visibilidade.</small></button><button class="catalog-quick-action" onclick="go('specialEditions')"><b>2 · Preparar ocasião</b><small>Escolhe tema, capa, datas, prioridade e produtos.</small></button><button class="catalog-quick-action" onclick="go('homepage')"><b>3 · Conteúdo permanente</b><small>Configura o conteúdo usado quando não existe campanha sazonal.</small></button></div><div id="catalogCenterStatusV161" class="catalog-status-line"></div>
-      </div>
-      <div class="card">
-        <div class="section-title" style="margin:0 0 10px">Pré-visualização do tema ativo</div>
+
+        <div class="catalog-center-subsection-v1733">
+          <div class="section-title" style="margin:0">Temas disponíveis</div>
+          <div class="catalog-theme-list"><div class="catalog-theme-mini"><span>🍂</span>Outono</div><div class="catalog-theme-mini"><span>🎃</span>Halloween</div><div class="catalog-theme-mini"><span>🎄</span>Natal</div><div class="catalog-theme-mini"><span>♡</span>Namorados</div><div class="catalog-theme-mini"><span>🐣</span>Páscoa</div><div class="catalog-theme-mini"><span>❀</span>Primavera</div><div class="catalog-theme-mini"><span>✦</span>ArtEssencia</div><div class="catalog-theme-mini"><span>⚙</span>Personalizado</div></div>
+        </div>
+
+        <div class="catalog-center-note">Regra automática: entre várias ocasiões válidas, assume a de maior prioridade; em empate, o destaque da homepage prevalece. Fora das datas, regressa ao tema permanente ArtEssencia.</div>
+
+        <div class="catalog-quick-actions">
+          <button class="catalog-quick-action" onclick="go('products')"><b>1 · Publicar produtos</b><small>Define fotografia, descrição pública, PVP e visibilidade.</small></button>
+          <button class="catalog-quick-action" onclick="go('specialEditions')"><b>2 · Preparar ocasião</b><small>Escolhe tema, capa, datas, prioridade e produtos.</small></button>
+          <button class="catalog-quick-action" onclick="go('homepage')"><b>3 · Conteúdo permanente</b><small>Configura o conteúdo usado quando não existe campanha sazonal.</small></button>
+        </div>
+
+        <div id="catalogCenterStatusV161" class="catalog-status-line"></div>
+      </section>
+
+      <section class="card catalog-center-preview-card-v1733">
+        <div class="catalog-center-section-head-v1733">
+          <div>
+            <div class="section-title" style="margin:0">Pré-visualização do tema ativo</div>
+            <small>Mostra a identidade que terá prioridade no catálogo público.</small>
+          </div>
+        </div>
         <div id="catalogCenterPreviewV160" class="catalog-live-preview" data-decor="✦"><div id="catalogPreviewSceneV161" class="catalog-preview-scene" aria-hidden="true"></div><div class="ey">ARTESSENCIA</div><h3>Catálogo Digital</h3><p>Atualiza a Cloud para visualizar aqui a ocasião que terá prioridade no catálogo.</p><span class="badge" style="align-self:flex-start;background:#fff;color:#4a3325">PRÉ-VISUALIZAÇÃO</span></div>
-      </div>
+      </section>
     </div>
   </section>
 
@@ -3155,7 +3178,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 
     <div id="specialEditionsSummary" class="special-summary"></div>
 
-    <div class="card special-editor-card" style="margin-top:10px">
+    <section class="card special-editor-card special-editor-card-v1734">
       <div class="special-editor-head">
         <div>
           <div class="section-title" style="margin:0">Criar / editar edição</div>
@@ -3167,8 +3190,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       <input id="specialEditionId" type="hidden">
       <input id="specialEditionImageUrl" type="hidden"><input id="specialEditionVideoUrl" type="hidden">
 
-      <div class="special-editor-grid">
-        <div class="special-editor-main">
+      <div class="special-editor-grid special-editor-grid-v1734">
+        <div class="special-editor-main special-editor-main-v1734">
           <div class="form-grid">
             <div class="field span2"><label>Nome da edição</label><input id="specialEditionName" placeholder="Ex.: Natal 2026" oninput="refreshCatalogThemePreviewV1425()"></div>
             <div class="field"><label>Identificador</label><input id="specialEditionSlug" placeholder="natal-2026"></div>
@@ -3198,7 +3221,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           </div>
         </div>
 
-        <div class="special-editor-side">
+        <div class="special-editor-side special-editor-side-v1734">
           <div class="special-cover-panel">
             <div class="special-cover-title">Capa da edição · imagem ou vídeo em movimento</div><small class="mix-help" style="display:block;margin-bottom:8px">Podes usar uma imagem estática ou um vídeo curto em loop. O vídeo aparece sem som e em movimento no carrossel da loja.</small>
             <img id="specialEditionPreview" class="special-edition-preview hidden" alt="Pré-visualização da imagem">
@@ -3220,7 +3243,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         </div>
       </div>
 
-      <div class="special-products-panel">
+      <div class="special-products-panel special-products-panel-v1734">
         <div class="special-products-head">
           <div>
             <div class="section-title" style="margin:0">Produtos desta edição</div>
@@ -3230,13 +3253,13 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div id="specialEditionProducts" class="special-product-picker"></div>
       </div>
 
-      <div class="special-editor-actions">
+      <div class="special-editor-actions special-editor-actions-v1734">
         <button class="btn primary" onclick="saveSpecialEdition()">Guardar edição</button>
         <button class="btn" onclick="clearSpecialEditionForm()">Limpar formulário</button>
       </div>
-    </div>
+    </section>
 
-    <div class="special-saved-head">
+    <div class="special-saved-head special-saved-head-v1734">
       <div>
         <div class="section-title" style="margin:0">Edições guardadas</div>
         <small id="specialEditionsCount">0 edições</small>
@@ -3259,10 +3282,10 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       </div>
     </div>
 
-    <div class="homepage-workspace-v12649">
-      <div class="homepage-editor-v12649">
+    <div class="homepage-workspace-v12649 homepage-workspace-v1735">
+      <div class="homepage-editor-v12649 homepage-editor-v1735">
 
-        <div class="card homepage-card homepage-block-v12649">
+        <div class="card homepage-card homepage-block-v12649 homepage-block-v1735">
           <div class="homepage-block-head-v12649">
             <div><span class="homepage-step-v12649">01</span><div><div class="section-title">Hero principal</div><small>A primeira mensagem e imagem que o cliente vê.</small></div></div>
           </div>
@@ -3281,7 +3304,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           </div>
         </div>
 
-        <div class="card homepage-card homepage-block-v12649">
+        <div class="card homepage-card homepage-block-v12649 homepage-block-v1735">
           <div class="homepage-block-head-v12649">
             <div><span class="homepage-step-v12649">02</span><div><div class="section-title">Destaques rápidos</div><small>Três argumentos curtos imediatamente abaixo do hero.</small></div></div>
           </div>
@@ -3292,7 +3315,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           </div>
         </div>
 
-        <div class="card homepage-card homepage-block-v12649">
+        <div class="card homepage-card homepage-block-v12649 homepage-block-v1735">
           <div class="homepage-block-head-v12649">
             <div><span class="homepage-step-v12649">03</span><div><div class="section-title">Categorias em destaque</div><small>Escolhe categorias reais da ArtEssencia. Podes adicionar, ordenar ou retirar destaques sem alterar as categorias dos produtos.</small></div></div>
             <button class="btn" type="button" onclick="addHomepageFeaturedCategoryV170()">+ Adicionar categoria</button>
@@ -3302,8 +3325,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         </div>
       </div>
 
-      <aside class="homepage-preview-column-v12649">
-        <div class="card homepage-card homepage-preview-card-v12649">
+      <aside class="homepage-preview-column-v12649 homepage-preview-column-v1735">
+        <div class="card homepage-card homepage-preview-card-v12649 homepage-preview-card-v1735">
           <div class="homepage-preview-head-v12649"><div><div class="section-title">Pré-visualização</div><small>Atualização visual do conteúdo principal.</small></div><span class="homepage-live-v12649">● CATÁLOGO</span></div>
           <div class="homepage-preview"><img id="homePreviewImageV12637" alt=""><div class="homepage-preview-copy"><small id="homePreviewEyebrowV12637">AROMAS E PEÇAS COM ALMA</small><h3 id="homePreviewTitleV12637">Feito à mão para dar alma aos teus espaços</h3><p id="homePreviewSubtitleV12637">Velas, aromas, sabonetes e peças decorativas feitas artesanalmente.</p></div></div>
           <div class="homepage-note">O enquadramento final adapta-se automaticamente a telemóvel, tablet e desktop.</div>
@@ -4039,7 +4062,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.32';
+const APP_VERSION='1.7.35';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -9763,6 +9786,677 @@ function printOrderCompleteV12634(id){
     grid-template-columns:1fr;
   }
   #settings .settings-card-v1732 .btn{
+    width:100%;
+  }
+}
+</style>
+
+
+<style id="artessencia-catalog-digital-layout-v1733">
+/* ArtEssencia V1.7.33 — Catálogo Digital reorganizado, sem alteração funcional. */
+#catalogDigital .catalog-center-hero{
+  min-height:82px;
+  padding:17px 18px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:linear-gradient(180deg,#fff,#fcf8f5);
+  box-shadow:0 8px 24px rgba(81,54,43,.05);
+}
+#catalogDigital .catalog-center-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  justify-content:flex-end;
+}
+#catalogDigital .catalog-center-actions .btn{
+  min-height:40px;
+}
+#catalogDigital .catalog-center-kpis{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+  margin-top:12px;
+}
+#catalogDigital .catalog-center-kpis>div{
+  min-height:86px;
+  border:1px solid #e8ddd6;
+  border-radius:16px;
+  background:linear-gradient(180deg,#fff,#fbf7f4);
+  box-shadow:0 6px 18px rgba(81,54,43,.035);
+}
+#catalogDigital .catalog-center-stack-v1733{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  margin-top:14px;
+}
+#catalogDigital .catalog-center-management-v1733,
+#catalogDigital .catalog-center-preview-card-v1733{
+  width:100%;
+  padding:17px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:#fffdfb;
+  box-shadow:0 8px 22px rgba(81,54,43,.04);
+}
+#catalogDigital .catalog-center-section-head-v1733{
+  margin-bottom:14px;
+  padding-bottom:10px;
+  border-bottom:1px solid #eee4de;
+}
+#catalogDigital .catalog-center-section-head-v1733 p,
+#catalogDigital .catalog-center-section-head-v1733 small{
+  display:block;
+  margin:4px 0 0;
+  font-size:8.5px;
+  line-height:1.4;
+  color:#8a7770;
+}
+
+/* Gestão */
+#catalogDigital .catalog-center-workflow{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+}
+#catalogDigital .catalog-center-step{
+  min-height:112px;
+  padding:14px;
+  border-radius:14px;
+  border:1px solid #e8ddd6;
+  background:linear-gradient(180deg,#fff,#fbf7f4);
+  text-align:left;
+}
+#catalogDigital .catalog-center-step i{
+  display:block;
+  margin-bottom:7px;
+  font-size:20px;
+}
+#catalogDigital .catalog-center-step b{
+  display:block;
+  margin-bottom:4px;
+}
+#catalogDigital .catalog-center-step small{
+  line-height:1.35;
+}
+#catalogDigital .catalog-center-subsection-v1733{
+  margin-top:16px;
+  padding-top:14px;
+  border-top:1px solid #eee4de;
+}
+#catalogDigital .catalog-theme-list{
+  display:grid;
+  grid-template-columns:repeat(8,minmax(0,1fr));
+  gap:8px;
+  margin-top:10px;
+}
+#catalogDigital .catalog-theme-mini{
+  min-height:54px;
+  padding:9px 8px;
+  border-radius:12px;
+  border:1px solid #eadfd9;
+  background:#faf7f4;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  text-align:center;
+}
+#catalogDigital .catalog-center-note{
+  margin-top:14px;
+  padding:11px 13px;
+  border-radius:12px;
+  border:1px solid #eadfd9;
+  background:#faf7f4;
+  line-height:1.4;
+}
+#catalogDigital .catalog-quick-actions{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin-top:14px;
+}
+#catalogDigital .catalog-quick-action{
+  min-height:86px;
+  padding:12px 13px;
+  border-radius:13px;
+  border:1px solid #e8ddd6;
+  background:#fff;
+  text-align:left;
+}
+#catalogDigital .catalog-quick-action b{
+  display:block;
+  margin-bottom:4px;
+}
+#catalogDigital .catalog-quick-action small{
+  line-height:1.35;
+}
+#catalogDigital .catalog-status-line{
+  margin-top:12px;
+}
+
+/* Pré-visualização */
+#catalogDigital .catalog-live-preview{
+  min-height:280px;
+  border-radius:16px;
+  overflow:hidden;
+}
+
+/* Tablet horizontal */
+@media (max-width:1180px){
+  #catalogDigital .catalog-center-workflow{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  #catalogDigital .catalog-theme-list{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+}
+
+/* Tablet vertical */
+@media (max-width:900px){
+  #catalogDigital .catalog-center-hero{
+    align-items:stretch;
+    flex-direction:column;
+  }
+  #catalogDigital .catalog-center-actions{
+    justify-content:flex-start;
+  }
+  #catalogDigital .catalog-center-kpis{
+    grid-template-columns:1fr 1fr;
+  }
+  #catalogDigital .catalog-quick-actions{
+    grid-template-columns:1fr;
+  }
+}
+
+/* Mobile */
+@media (max-width:620px){
+  #catalogDigital .catalog-center-kpis,
+  #catalogDigital .catalog-center-workflow,
+  #catalogDigital .catalog-theme-list{
+    grid-template-columns:1fr;
+  }
+  #catalogDigital .catalog-center-actions{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+  #catalogDigital .catalog-center-actions .btn{
+    width:100%;
+  }
+}
+</style>
+
+
+<style id="artessencia-special-editions-layout-v1734">
+/* ArtEssencia V1.7.34 — Edições Especiais reorganizadas visualmente, sem alterar lógica. */
+#specialEditions .special-hero{
+  min-height:82px;
+  padding:17px 18px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:linear-gradient(180deg,#fff,#fcf8f5);
+  box-shadow:0 8px 24px rgba(81,54,43,.05);
+}
+#specialEditions .special-hero-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  justify-content:flex-end;
+}
+#specialEditions .special-hero-actions .btn{
+  min-height:40px;
+}
+#specialEditions .special-summary{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+  margin-top:12px;
+}
+#specialEditions .special-summary>div,
+#specialEditions .special-summary>.card{
+  min-height:86px;
+  border-radius:16px;
+  border:1px solid #e8ddd6;
+  background:linear-gradient(180deg,#fff,#fbf7f4);
+  box-shadow:0 6px 18px rgba(81,54,43,.035);
+}
+
+/* Editor principal */
+#specialEditions .special-editor-card-v1734{
+  margin-top:14px!important;
+  padding:17px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:#fffdfb;
+  box-shadow:0 8px 22px rgba(81,54,43,.04);
+}
+#specialEditions .special-editor-head{
+  margin-bottom:14px;
+  padding-bottom:10px;
+  border-bottom:1px solid #eee4de;
+}
+#specialEditions .special-editor-grid-v1734{
+  display:grid;
+  grid-template-columns:minmax(0,1.55fr) minmax(320px,.75fr);
+  gap:14px;
+  align-items:start;
+}
+#specialEditions .special-editor-main-v1734,
+#specialEditions .special-editor-side-v1734{
+  min-width:0;
+}
+#specialEditions .special-editor-main-v1734>.form-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+  align-items:start;
+}
+#specialEditions .special-editor-main-v1734>.form-grid>.field{
+  min-width:0;
+}
+#specialEditions .special-editor-main-v1734>.form-grid>.field.span2{
+  grid-column:span 2;
+}
+#specialEditions .special-editor-main-v1734 label,
+#specialEditions .catalog-theme-grid label{
+  display:block;
+  min-height:18px;
+  margin-bottom:6px;
+  font-size:8px;
+  line-height:1.15;
+  letter-spacing:.035em;
+  text-transform:uppercase;
+  font-weight:850;
+  color:#745f57;
+}
+#specialEditions .special-editor-main-v1734 input,
+#specialEditions .special-editor-main-v1734 select,
+#specialEditions .catalog-theme-grid input,
+#specialEditions .catalog-theme-grid select{
+  min-height:43px;
+  border-radius:12px;
+}
+#specialEditions .mix-help{
+  display:block;
+  margin-top:5px;
+  line-height:1.35;
+}
+
+/* Tema do catálogo */
+#specialEditions .catalog-theme-panel{
+  margin-top:14px;
+  padding:15px;
+  border:1px solid #e8ddd6;
+  border-radius:16px;
+  background:#fbf8f5;
+}
+#specialEditions .catalog-theme-head{
+  margin-bottom:12px;
+  padding-bottom:10px;
+  border-bottom:1px solid #eee4de;
+}
+#specialEditions .catalog-theme-grid{
+  display:grid;
+  grid-template-columns:minmax(170px,1.1fr) repeat(2,minmax(120px,.65fr)) minmax(170px,.9fr);
+  gap:12px;
+  align-items:end;
+}
+#specialEditions .catalog-theme-preview{
+  margin-top:12px;
+  min-height:72px;
+  border-radius:14px;
+}
+#specialEditions .catalog-digital-note{
+  margin-top:12px;
+  border-radius:12px;
+  line-height:1.4;
+}
+
+/* Capa */
+#specialEditions .special-cover-panel{
+  padding:15px;
+  border:1px solid #e8ddd6;
+  border-radius:16px;
+  background:#fbf8f5;
+}
+#specialEditions .special-cover-title{
+  margin-bottom:6px;
+  font-weight:800;
+  color:#5b433b;
+}
+#specialEditions .special-edition-preview,
+#specialEditions .special-image-fallback{
+  width:100%;
+  min-height:230px;
+  max-height:320px;
+  border-radius:14px;
+  overflow:hidden;
+}
+#specialEditions .special-edition-preview{
+  object-fit:cover;
+}
+#specialEditions .special-cover-panel input[type="file"]{
+  width:100%;
+  margin-top:10px;
+}
+#specialEditions .special-cover-panel .btnrow{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+#specialEditions .special-cover-panel .btn{
+  min-height:38px;
+}
+
+/* Produtos da edição */
+#specialEditions .special-products-panel-v1734{
+  margin-top:14px;
+  padding:15px;
+  border:1px solid #e8ddd6;
+  border-radius:16px;
+  background:#fbf8f5;
+}
+#specialEditions .special-products-head{
+  margin-bottom:12px;
+  padding-bottom:10px;
+  border-bottom:1px solid #eee4de;
+}
+#specialEditions .special-product-picker{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:9px;
+}
+
+/* Ações */
+#specialEditions .special-editor-actions-v1734{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  margin-top:14px;
+  padding-top:14px;
+  border-top:1px solid #eee4de;
+}
+#specialEditions .special-editor-actions-v1734 .btn{
+  min-height:43px;
+  min-width:145px;
+}
+
+/* Guardadas */
+#specialEditions .special-saved-head-v1734{
+  margin-top:18px;
+  padding:0 2px 10px;
+  border-bottom:1px solid #eee4de;
+}
+#specialEditions .special-editions-grid-pro{
+  margin-top:12px;
+  gap:10px;
+}
+#specialEditions .special-editions-grid-pro>div{
+  border-radius:15px;
+}
+
+/* Tablet horizontal */
+@media (max-width:1180px){
+  #specialEditions .special-editor-grid-v1734{
+    grid-template-columns:1fr;
+  }
+  #specialEditions .special-editor-main-v1734>.form-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  #specialEditions .catalog-theme-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  #specialEditions .special-product-picker{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+  #specialEditions .special-cover-panel{
+    max-width:none;
+  }
+}
+
+/* Tablet vertical */
+@media (max-width:900px){
+  #specialEditions .special-hero{
+    align-items:stretch;
+    flex-direction:column;
+  }
+  #specialEditions .special-hero-actions{
+    justify-content:flex-start;
+  }
+  #specialEditions .special-summary{
+    grid-template-columns:1fr 1fr;
+  }
+  #specialEditions .special-product-picker{
+    grid-template-columns:1fr 1fr;
+  }
+}
+
+/* Mobile */
+@media (max-width:620px){
+  #specialEditions .special-summary,
+  #specialEditions .special-editor-main-v1734>.form-grid,
+  #specialEditions .catalog-theme-grid,
+  #specialEditions .special-product-picker{
+    grid-template-columns:1fr;
+  }
+  #specialEditions .special-editor-main-v1734>.form-grid>.field,
+  #specialEditions .special-editor-main-v1734>.form-grid>.field.span2{
+    grid-column:1/-1!important;
+  }
+  #specialEditions .special-editor-actions-v1734{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+  #specialEditions .special-editor-actions-v1734 .btn{
+    width:100%;
+  }
+}
+</style>
+
+
+<style id="artessencia-homepage-layout-v1735">
+/* ArtEssencia V1.7.35 — Homepage pública reorganizada, sem alteração funcional. */
+#homepage .homepage-hero{
+  min-height:82px;
+  padding:17px 18px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:linear-gradient(180deg,#fff,#fcf8f5);
+  box-shadow:0 8px 24px rgba(81,54,43,.05);
+}
+#homepage .homepage-hero .btnrow{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  justify-content:flex-end;
+}
+#homepage .homepage-hero .btn{
+  min-height:40px;
+}
+
+/* Editor em largura total e preview numa secção seguinte */
+#homepage .homepage-workspace-v1735{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:14px!important;
+  margin-top:14px!important;
+}
+#homepage .homepage-editor-v1735{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  width:100%;
+}
+#homepage .homepage-block-v1735{
+  width:100%;
+  margin:0!important;
+  padding:17px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:#fffdfb;
+  box-shadow:0 8px 22px rgba(81,54,43,.04);
+}
+#homepage .homepage-block-head-v12649{
+  margin-bottom:14px;
+  padding-bottom:10px;
+  border-bottom:1px solid #eee4de;
+}
+#homepage .homepage-block-head-v12649 small{
+  line-height:1.35;
+}
+
+/* Hero principal */
+#homepage .homepage-form-v12649{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:12px!important;
+  align-items:start;
+}
+#homepage .homepage-form-v12649>.field{
+  min-width:0;
+}
+#homepage .homepage-form-v12649>.field.span2{
+  grid-column:span 2!important;
+}
+#homepage .homepage-form-v12649 .field label,
+#homepage .homepage-benefit-box .field label{
+  display:block;
+  min-height:18px;
+  margin-bottom:6px;
+  font-size:8px;
+  line-height:1.15;
+  letter-spacing:.035em;
+  text-transform:uppercase;
+  font-weight:850;
+  color:#745f57;
+}
+#homepage .homepage-form-v12649 input,
+#homepage .homepage-benefit-box input{
+  min-height:43px;
+  border-radius:12px;
+}
+#homepage .homepage-image-current-v12649{
+  grid-column:1/-1!important;
+}
+#homepage .homepage-media-control-v12649{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:12px;
+}
+#homepage .homepage-media-control-v12649 .btn{
+  min-height:40px;
+  min-width:120px;
+}
+
+/* Destaques rápidos */
+#homepage .homepage-benefits-v12649{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:10px!important;
+}
+#homepage .homepage-benefit-box{
+  min-width:0;
+  padding:13px;
+  border:1px solid #e8ddd6;
+  border-radius:14px;
+  background:#fbf8f5;
+}
+#homepage .homepage-benefit-number-v12649{
+  margin-bottom:8px;
+}
+
+/* Categorias */
+#homepage .homepage-categories-v12649{
+  display:grid;
+  gap:9px;
+}
+#homepage .homepage-priority-v12649{
+  margin-top:12px;
+  border-radius:12px;
+  line-height:1.4;
+}
+
+/* Preview */
+#homepage .homepage-preview-column-v1735{
+  width:100%;
+  position:static!important;
+}
+#homepage .homepage-preview-card-v1735{
+  width:100%;
+  margin:0!important;
+  padding:17px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:#fffdfb;
+  box-shadow:0 8px 22px rgba(81,54,43,.04);
+}
+#homepage .homepage-preview-head-v12649{
+  margin-bottom:12px;
+  padding-bottom:10px;
+  border-bottom:1px solid #eee4de;
+}
+#homepage .homepage-preview{
+  display:grid!important;
+  grid-template-columns:minmax(280px,1.05fr) minmax(0,1fr)!important;
+  min-height:260px;
+  border-radius:16px;
+  overflow:hidden;
+}
+#homepage .homepage-preview>img{
+  width:100%;
+  height:100%;
+  min-height:260px;
+  object-fit:cover;
+}
+#homepage .homepage-preview-copy{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:24px;
+}
+#homepage .homepage-note{
+  margin-top:12px;
+}
+
+/* Tablet */
+@media (max-width:980px){
+  #homepage .homepage-form-v12649{
+    grid-template-columns:1fr 1fr!important;
+  }
+  #homepage .homepage-benefits-v12649{
+    grid-template-columns:1fr!important;
+  }
+  #homepage .homepage-preview{
+    grid-template-columns:1fr!important;
+  }
+  #homepage .homepage-preview>img{
+    max-height:300px;
+  }
+}
+
+/* Mobile */
+@media (max-width:620px){
+  #homepage .homepage-hero{
+    align-items:stretch;
+    flex-direction:column;
+  }
+  #homepage .homepage-hero .btnrow,
+  #homepage .homepage-form-v12649{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+  }
+  #homepage .homepage-form-v12649>.field,
+  #homepage .homepage-form-v12649>.field.span2,
+  #homepage .homepage-image-current-v12649{
+    grid-column:1/-1!important;
+  }
+  #homepage .homepage-media-control-v12649{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+  #homepage .homepage-media-control-v12649 .btn{
     width:100%;
   }
 }
