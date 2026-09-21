@@ -4185,7 +4185,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.45';
+const APP_VERSION='1.7.46';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -11067,7 +11067,17 @@ function printOrderCompleteV12634(id){
 #settings .apreco-fixed-costs-v1744{margin-top:14px;padding:14px;border:1px solid #e8ddd6;border-radius:14px;background:#fffdfb}
 #settings .apreco-fixed-head-v1744{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:10px}
 #settings .apreco-fixed-head-v1744>div{display:flex;flex-direction:column;gap:3px}
-#settings .pricing-fixed-row-v1744{display:grid;grid-template-columns:1fr 190px auto;gap:8px;margin-top:8px;align-items:center}
+#settings .pricing-fixed-table-v1746{border:1px solid #eee4de;border-radius:12px;overflow:hidden;background:#fff}
+#settings .pricing-fixed-columns-v1746{display:grid;grid-template-columns:minmax(180px,1fr) minmax(120px,170px) 42px;gap:8px;align-items:center;padding:7px 9px;background:#f8f4f1;border-bottom:1px solid #eee4de;color:#7b665d;font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.05em}
+#settings .pricing-fixed-columns-v1746 span:nth-child(2){text-align:right}
+#settings .pricing-fixed-row-v1744{display:grid;grid-template-columns:minmax(180px,1fr) minmax(120px,170px) 42px;gap:8px;padding:6px 9px;align-items:center;border-bottom:1px solid #f0e8e4;margin:0}
+#settings .pricing-fixed-row-v1744:last-child{border-bottom:0}
+#settings .pricing-fixed-row-v1744>input,#settings .pricing-fixed-row-v1744 .cost-input-suffix-v110 input{min-height:34px!important;height:34px!important;padding:6px 9px!important;border-radius:9px!important;font-size:10px!important}
+#settings .pricing-fixed-row-v1744 .cost-input-suffix-v110{min-width:0}
+#settings .pricing-fixed-row-v1744 .cost-input-suffix-v110 span{font-size:8px!important;padding-right:7px!important;white-space:nowrap}
+#settings .pricing-fixed-remove-v1746{width:34px!important;height:34px!important;min-height:34px!important;padding:0!important;border-radius:9px!important;display:grid!important;place-items:center;font-size:15px!important;line-height:1!important;background:#f6e6e4!important;color:#9b3029!important}
+#settings .pricing-fixed-remove-v1746:hover{background:#efd5d1!important}
+#settings .pricing-fixed-empty-v1746{padding:13px 10px}
 #settings .apreco-config-summary-v1744{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
 #settings .apreco-config-summary-v1744>div{padding:12px;border:1px solid #e8ddd6;border-radius:13px;background:#faf7f4;display:flex;flex-direction:column;gap:3px}
 #settings .apreco-config-summary-v1744 .highlight{background:#f0f6ec;border-color:#d5e4cf}
@@ -11090,7 +11100,8 @@ function printOrderCompleteV12634(id){
 #products .apreco-batch-results-v1744{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px;margin-top:13px}
 #products .apreco-batch-results-v1744>div{padding:11px;border:1px solid #e8ddd6;border-radius:12px;background:#fff;display:flex;flex-direction:column;min-height:70px;justify-content:center}
 @media(max-width:1180px){#settings .apreco-config-grid-v1744{grid-template-columns:1fr 1fr}#products .apreco-product-grid-v1744{grid-template-columns:1fr}#products .apreco-price-result-v1744{grid-template-columns:1fr 1fr}#products .apreco-batch-inputs-v1744{grid-template-columns:1fr 1fr}#products .apreco-batch-results-v1744{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:700px){#settings .apreco-config-grid-v1744,#settings .apreco-config-summary-v1744,#products .apreco-price-result-v1744,#products .apreco-online-v1744,#products .apreco-batch-inputs-v1744,#products .apreco-batch-results-v1744{grid-template-columns:1fr}#settings .pricing-fixed-row-v1744{grid-template-columns:1fr}}
+@media(max-width:700px){#settings .apreco-config-grid-v1744,#settings .apreco-config-summary-v1744,#products .apreco-price-result-v1744,#products .apreco-online-v1744,#products .apreco-batch-inputs-v1744,#products .apreco-batch-results-v1744{grid-template-columns:1fr}#settings .pricing-fixed-columns-v1746,#settings .pricing-fixed-row-v1744{grid-template-columns:minmax(135px,1fr) minmax(100px,135px) 38px}}
+@media(max-width:480px){#settings .apreco-fixed-head-v1744{align-items:stretch;flex-direction:column}#settings .apreco-fixed-head-v1744 .btn{width:100%}#settings .pricing-fixed-columns-v1746{display:none}#settings .pricing-fixed-row-v1744{grid-template-columns:minmax(0,1fr) 112px 36px;padding:6px}#settings .pricing-fixed-row-v1744>input,#settings .pricing-fixed-row-v1744 .cost-input-suffix-v110 input{font-size:9px!important;padding:5px 7px!important}#settings .pricing-fixed-row-v1744 .cost-input-suffix-v110 span{font-size:7px!important}}
 #products .apreco-product-grid-v1745{grid-template-columns:repeat(5,minmax(0,1fr))}
 #products .apreco-price-result-v1745{grid-template-columns:repeat(4,minmax(0,1fr))}
 #products .apreco-batch-inputs-v1745{grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -11805,6 +11816,7 @@ function renderShopCapacityAgenda(){
  box.innerHTML=html;
 }
 
+// V1.7.46 — layout compacto dos custos fixos; mantém o modelo de dados e cálculo da V1.7.45.
 // V1.7.45 — helpers operacionais recuperados pela auditoria de integridade.
 let editingProductCodeV147=null;
 function productCodeKeyV147(v){return String(v||'').trim().toUpperCase()}
@@ -13404,14 +13416,14 @@ function shareThemedBoxesPDF(){return sharePdfBlob(buildThemedBoxesPdfBlob,'ArtE
 function pricingFixedCostsV1744(){return Array.isArray(db.settings.pricingFixedCosts)?db.settings.pricingFixedCosts:[]}
 function renderPricingFixedCostsV1744(){
  const list=document.getElementById('pricingFixedCostsListV1744');
- if(list){const rows=pricingFixedCostsV1744();list.innerHTML=rows.length?rows.map((x,i)=>`<div class="pricing-fixed-row-v1744"><input value="${escapeAttr(x.name||'')}" placeholder="Descrição" onchange="updatePricingFixedCostV1744(${i},'name',this.value)"><div class="cost-input-suffix-v110"><input type="number" min="0" step="0.01" value="${Number(x.value)||0}" onchange="updatePricingFixedCostV1744(${i},'value',this.value)"><span>€/mês</span></div><button type="button" class="btn danger" onclick="removePricingFixedCostV1744(${i})">Remover</button></div>`).join(''):'<div class="empty">Sem custos fixos mensais registados.</div>'}
+ if(list){const rows=pricingFixedCostsV1744();list.innerHTML=rows.length?`<div class="pricing-fixed-table-v1746"><div class="pricing-fixed-columns-v1746"><span>Descrição</span><span>Valor mensal</span><span></span></div>${rows.map((x,i)=>`<div class="pricing-fixed-row-v1744"><input value="${escapeAttr(x.name||'')}" placeholder="Descrição" aria-label="Descrição do custo fixo" onchange="updatePricingFixedCostV1744(${i},'name',this.value)"><div class="cost-input-suffix-v110"><input type="number" min="0" step="0.01" value="${Number(x.value)||0}" aria-label="Valor mensal do custo fixo" onchange="updatePricingFixedCostV1744(${i},'value',this.value)"><span>€/mês</span></div><button type="button" class="btn pricing-fixed-remove-v1746" title="Remover custo" aria-label="Remover ${escapeAttr(x.name||'custo fixo')}" onclick="removePricingFixedCostV1744(${i})">×</button></div>`).join('')}</div>`:'<div class="empty pricing-fixed-empty-v1746">Sem custos fixos mensais registados.</div>'}
  const total=pricingFixedCostsTotalV1744(),labor=pricingLaborHourlyRateV1745(),fixed=pricingFixedHourlyRateV1745();
  const a=document.getElementById('pricingFixedTotalV1744'),b=document.getElementById('pricingLaborHourlyV1745'),c=document.getElementById('pricingFixedHourlyV1745');if(a)a.textContent=euro(total);if(b)b.textContent=euro(labor)+'/h';if(c)c.textContent=euro(fixed)+'/h';
 }
 function renderPricingLaborModeV1745(){const mode=document.getElementById('cfgPricingLaborModeV1745')?.value||'hourly',h=document.getElementById('cfgPricingHourlyFieldV1745'),s=document.getElementById('cfgPricingSalaryFieldV1745');if(h)h.style.display=mode==='hourly'?'':'none';if(s)s.style.display=mode==='salary'?'':'none'}
 function addPricingFixedCostV1744(){db.settings.pricingFixedCosts=pricingFixedCostsV1744();db.settings.pricingFixedCosts.push({name:'',value:0});save();renderPricingFixedCostsV1744()}
 function updatePricingFixedCostV1744(i,key,val){const rows=pricingFixedCostsV1744();if(!rows[i])return;rows[i][key]=key==='value'?Math.max(0,Number(val)||0):String(val||'');db.settings.pricingFixedCosts=rows;save();renderPricingFixedCostsV1744();refreshProductChannelPricingV12620()}
-function removePricingFixedCostV1744(i){const rows=pricingFixedCostsV1744();if(!rows[i])return;rows.splice(i,1);db.settings.pricingFixedCosts=rows;save();renderPricingFixedCostsV1744();refreshProductChannelPricingV12620()}
+function removePricingFixedCostV1744(i){const rows=pricingFixedCostsV1744();if(!rows[i])return;const label=String(rows[i].name||'este custo').trim()||'este custo';if(!confirm(`Remover ${label}?`))return;rows.splice(i,1);db.settings.pricingFixedCosts=rows;save();renderPricingFixedCostsV1744();refreshProductChannelPricingV12620()}
 
 function renderSettings(){renderOperatingModeV1420();
  const mode=document.getElementById('cfgPricingLaborModeV1745'),ps=document.getElementById('cfgPricingSalaryV1744'),hr=document.getElementById('cfgPricingHourlyRateV1745'),hm=document.getElementById('cfgPricingHoursMonthV1745'),pm=document.getElementById('cfgPricingMarginPctV1745');
