@@ -2459,6 +2459,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 }
 
 /* V1.7.50 — Precificação em quantidade independente do editor de Produtos */
+/* V1.7.52 — filtros de Produtos por tipo/família e coleção/tema. */
 .product-pricing-quantity-link-v1750{margin-top:10px;padding:11px 12px;border:1px solid #e8ddd7;border-radius:12px;background:#fbf8f5;display:flex;justify-content:space-between;gap:12px;align-items:center}
 .product-pricing-quantity-link-v1750 strong{display:block;font-size:10px;color:#4e3a33}.product-pricing-quantity-link-v1750 small{display:block;margin-top:3px;font-size:8px;line-height:1.35;color:#88756d;max-width:720px}
 .quantity-pricing-hero-v1750{display:flex;justify-content:space-between;align-items:center;gap:12px}.quantity-pricing-hero-v1750 small{display:block;margin-top:4px}
@@ -2468,8 +2469,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 .quantity-pricing-reference-v1750{margin-top:10px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.quantity-pricing-reference-v1750>div{padding:9px 10px;border:1px solid #eee4de;border-radius:11px;background:#fbf8f5}.quantity-pricing-reference-v1750 span{display:block;font-size:7.5px;text-transform:uppercase;letter-spacing:.04em;color:#8a766d;font-weight:800}.quantity-pricing-reference-v1750 strong{display:block;margin-top:3px;font-size:11px;color:#4f3a33}
 .quantity-pricing-head-row-v1750{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:10px}.quantity-pricing-actions-v1750{margin:0!important}.quantity-pricing-materials-v1750{border:1px solid #e6dbd5;border-radius:12px;overflow:hidden;background:#fff}.quantity-pricing-material-head-v1750,.quantity-pricing-material-row-v1750{display:grid;grid-template-columns:minmax(180px,1.25fr) 110px 145px 120px 38px;gap:8px;align-items:center;padding:7px 9px}.quantity-pricing-material-head-v1750{background:#f3ece8;border-bottom:1px solid #e6dbd5}.quantity-pricing-material-head-v1750 span{font-size:7.5px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;color:#806b62}.quantity-pricing-material-row-v1750{border-bottom:1px solid #f0e8e4}.quantity-pricing-material-row-v1750:last-child{border-bottom:0}.quantity-pricing-material-row-v1750 select,.quantity-pricing-material-row-v1750 input{width:100%;min-width:0;height:34px;min-height:34px;padding:6px 8px;border-radius:9px;font-size:9px}.quantity-pricing-material-row-v1750 .material-unit-v1750,.quantity-pricing-material-row-v1750 .material-cost-v1750{font-size:9px;color:#5c4740}.quantity-pricing-material-row-v1750 .material-cost-v1750{font-weight:800;text-align:right}.quantity-pricing-material-remove-v1750{width:32px;height:32px;min-width:32px;padding:0;border-radius:9px}.quantity-pricing-material-total-v1750{display:flex;justify-content:flex-end;gap:12px;align-items:center;margin-top:9px;padding:9px 11px;border-radius:11px;background:#fbf8f5}.quantity-pricing-material-total-v1750 span{font-size:8px;color:#806d65}.quantity-pricing-material-total-v1750 strong{font-size:12px;color:#4c3932}
 .quantity-pricing-results-v1750{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.quantity-pricing-results-v1750>div{padding:10px 11px;border:1px solid #eee4de;border-radius:12px;background:#fff;min-height:66px}.quantity-pricing-results-v1750 span{display:block;font-size:7.5px;color:#806d65;text-transform:uppercase;letter-spacing:.035em;font-weight:800}.quantity-pricing-results-v1750 strong{display:block;margin-top:6px;font-size:13px;color:#4d3932}.quantity-pricing-results-v1750 .highlight{background:#f7f1ed}.quantity-pricing-results-v1750 .recommended{background:#edf6ef;border-color:#d8e9dc}.quantity-pricing-warning-v1750.ok{background:#eef8f1;border-color:#d6eadb}.quantity-pricing-warning-v1750.warn{background:#fff5e8;border-color:#f0dfc9}
+.quantity-pricing-convert-v1751{margin-top:12px;padding:12px;border:1px solid #e7dcd6;border-radius:13px;background:#fbf8f5;display:flex;justify-content:space-between;gap:14px;align-items:center}.quantity-pricing-convert-v1751>div:first-child{min-width:0}.quantity-pricing-convert-v1751 strong{display:block;font-size:10px;color:#4e3a33}.quantity-pricing-convert-v1751 small{display:block;margin-top:3px;font-size:8px;line-height:1.4;color:#88756d;max-width:680px}.quantity-pricing-convert-v1751 .btnrow{margin:0;flex:0 0 auto}
 @media(max-width:1180px){.quantity-pricing-base-grid-v1750,.quantity-pricing-cost-grid-v1750,.quantity-pricing-results-v1750{grid-template-columns:repeat(2,minmax(0,1fr))}.quantity-pricing-material-head-v1750,.quantity-pricing-material-row-v1750{grid-template-columns:minmax(160px,1fr) 85px 125px 100px 36px}.quantity-pricing-reference-v1750{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:700px){.quantity-pricing-hero-v1750,.quantity-pricing-head-row-v1750,.product-pricing-quantity-link-v1750{align-items:stretch;flex-direction:column}.quantity-pricing-actions-v1750 .btn{flex:1}.quantity-pricing-material-head-v1750{display:none}.quantity-pricing-material-row-v1750{grid-template-columns:minmax(0,1fr) 88px 36px}.quantity-pricing-material-row-v1750 .material-unit-v1750{display:none}.quantity-pricing-material-row-v1750 .material-cost-v1750{grid-column:1/3;text-align:left;padding:2px 4px 4px}.quantity-pricing-base-grid-v1750,.quantity-pricing-cost-grid-v1750,.quantity-pricing-results-v1750,.quantity-pricing-reference-v1750{grid-template-columns:1fr}}
+@media(max-width:700px){.quantity-pricing-hero-v1750,.quantity-pricing-head-row-v1750,.product-pricing-quantity-link-v1750,.quantity-pricing-convert-v1751{align-items:stretch;flex-direction:column}.quantity-pricing-actions-v1750 .btn,.quantity-pricing-convert-v1751 .btn{flex:1}.quantity-pricing-material-head-v1750{display:none}.quantity-pricing-material-row-v1750{grid-template-columns:minmax(0,1fr) 88px 36px}.quantity-pricing-material-row-v1750 .material-unit-v1750{display:none}.quantity-pricing-material-row-v1750 .material-cost-v1750{grid-column:1/3;text-align:left;padding:2px 4px 4px}.quantity-pricing-base-grid-v1750,.quantity-pricing-cost-grid-v1750,.quantity-pricing-results-v1750,.quantity-pricing-reference-v1750{grid-template-columns:1fr}}
 </style>
 
 </head>
@@ -4038,7 +4040,10 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div><span>Margem final</span><strong id="qtyPricingResultMarginV1750">0,0%</strong></div>
       </div>
       <div id="qtyPricingWarningV1750" class="soft-note quantity-pricing-warning-v1750" style="margin-top:10px"></div>
-      <div class="btnrow" style="margin-top:10px"><button class="btn" type="button" onclick="clearQuantityPricingV1750()">Nova simulação</button></div>
+      <div class="quantity-pricing-convert-v1751">
+        <div><strong>Queres transformar esta simulação numa encomenda?</strong><small>É opcional. A aplicação abre uma Nova encomenda já com o produto, quantidade, preço final e custo desta simulação. Nada é guardado até confirmares a encomenda.</small></div>
+        <div class="btnrow"><button class="btn primary" type="button" onclick="quantityPricingToOrderV1751()">Criar encomenda</button><button class="btn" type="button" onclick="clearQuantityPricingV1750()">Nova simulação</button></div>
+      </div>
     </div>
   </section>
 
@@ -4049,19 +4054,23 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <small>Gere velas, sabonetes, peças decorativas, preços e publicação no Catálogo Digital; a futura Loja reutilizará os mesmos produtos.</small>
       </div>
       <div class="products-tools">
-        <input id="productSearch" placeholder="Pesquisar produto…" oninput="renderProducts()">
-        <select id="productCategoryFilter" onchange="renderProducts()">
-          <option value="all">Todas as categorias</option>
-          <option>Velas em molde</option>
-          <option>Velas em recipiente</option>
-          <option>Wax melts</option>
-          <option>Sabonetes</option>
-          <option>Resina e Jesmonite</option>
-          <option>Personalizados</option>
-          <option>Outros produtos artesanais</option>
+        <input id="productSearch" placeholder="Pesquisar nome, código, tipo ou coleção…" oninput="renderProducts()">
+        <select id="productCategoryFilter" onchange="renderProducts()" aria-label="Filtrar por tipo de produto">
+          <option value="all">Todos os tipos</option>
+          <option value="Velas em molde">Velas decorativas / em molde</option>
+          <option value="Velas em recipiente">Velas em recipiente</option>
+          <option value="Wax melts">Wax melts</option>
+          <option value="Sabonetes">Sabonetes</option>
+          <option value="Resina e Jesmonite">Resina e Jesmonite</option>
+          <option value="Personalizados">Personalizados</option>
+          <option value="Outros produtos artesanais">Outros produtos artesanais</option>
+        </select>
+        <select id="productCollectionFilterV1752" onchange="renderProducts()" aria-label="Filtrar por coleção ou tema">
+          <option value="all">Todas as coleções / temas</option>
+          <option value="none">Sem coleção</option>
         </select>
         <select id="productShopFilter" onchange="renderProducts()">
-          <option value="all">Todos</option>
+          <option value="all">Publicação: todos</option>
           <option value="published">Publicados</option>
           <option value="hidden">Ocultos</option>
         </select>
@@ -4087,9 +4096,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div class="product-section-divider-v1748"><span>1</span><div><strong>Identificação e disponibilidade</strong><small>Dados base, categoria, disponibilidade e coleções.</small></div></div>
         <div class="field span2 product-name-v1726"><label>Nome</label><input id="prodName" placeholder="Nome do produto"></div>
         <div class="field product-code-field-v147"><label>Código</label><input id="prodCode" maxlength="40" placeholder="Automático se ficar vazio"><small>Identidade interna; fica protegida depois da criação.</small></div>
-        <div class="field" id="prodCategoryField"><label>Categoria</label><select id="prodCat" onchange="syncProductionTypeFromCategoryV130()"><option>Velas em molde</option><option>Velas em recipiente</option><option>Wax melts</option><option>Sabonetes</option><option>Resina e Jesmonite</option><option>Personalizados</option><option>Outros produtos artesanais</option></select></div>
+        <div class="field" id="prodCategoryField"><label>Tipo / família do produto</label><select id="prodCat" onchange="syncProductionTypeFromCategoryV130()"><option value="Velas em molde">Velas decorativas / em molde</option><option value="Velas em recipiente">Velas em recipiente</option><option value="Wax melts">Wax melts</option><option value="Sabonetes">Sabonetes</option><option value="Resina e Jesmonite">Resina e Jesmonite</option><option value="Personalizados">Personalizados</option><option value="Outros produtos artesanais">Outros produtos artesanais</option></select><small class="mix-help">Define o tipo físico do produto. Ex.: uma vela decorativa pode depois pertencer simultaneamente a Natal, Páscoa ou outra coleção.</small></div>
         <div class="field span2 product-availability-v1726"><label>Disponibilidade base na loja</label><select id="prodAvailability" onchange="updateProductAvailabilityUI()"><option value="regular">Todo o ano + coleções</option><option value="edition">Apenas em coleções sazonais</option></select><small class="mix-help">Um produto pode pertencer a várias coleções sem ser duplicado. “Todo o ano + coleções” mantém-no no catálogo normal; “Apenas em coleções sazonais” só o disponibiliza quando pelo menos uma coleção associada estiver ativa e dentro das datas.</small></div>
-        <div class="field span2 product-editions-v1726" id="prodEditionField"><label>Coleções / Edições Especiais</label><div class="edition-select-row"><select id="prodEditionId" multiple size="4" aria-label="Coleções sazonais do produto"></select><button type="button" class="btn ghost" onclick="loadProductEditionsV1245(true).then(list=>{fillProductEditionOptionsV1244(productEditionMembershipIdsV138(productTechSheetProductV1250()));toast(list.length?'Coleções atualizadas':'Nenhuma coleção disponível')})">Atualizar</button></div><small class="mix-help">Seleciona uma ou várias coleções. Usa Ctrl/Cmd para várias seleções no computador; no tablet seleciona diretamente as opções disponíveis.</small></div>
+        <div class="field span2 product-editions-v1726" id="prodEditionField"><label>Coleções / temas (Natal, Páscoa, Halloween…)</label><div class="edition-select-row"><select id="prodEditionId" multiple size="4" aria-label="Coleções sazonais do produto"></select><button type="button" class="btn ghost" onclick="loadProductEditionsV1245(true).then(list=>{fillProductEditionOptionsV1244(productEditionMembershipIdsV138(productTechSheetProductV1250()));toast(list.length?'Coleções atualizadas':'Nenhuma coleção disponível')})">Atualizar</button></div><small class="mix-help">Seleciona uma ou várias coleções/temas para poderes localizar o produto por ocasião. Um produto pode pertencer a várias sem ser duplicado. Usa Ctrl/Cmd para várias seleções no computador; no tablet seleciona diretamente as opções disponíveis.</small></div>
         <div class="field edition-cost-field" id="prodEditionLaborField" hidden aria-hidden="true"><label>Tempo extra por unidade</label><div class="edition-cost-input"><input id="prodEditionExtraLaborMinutes" type="number" min="0" step="0.1" value="0"><span>min</span></div><small class="mix-help">Só o tempo adicional desta edição. O custo é calculado com a mão de obra €/hora já definida na app.</small></div>
         <div class="field edition-cost-field" id="prodEditionWasteField" hidden aria-hidden="true"><label>Desperdício extra da edição</label><div class="edition-cost-input"><input id="prodEditionExtraWastePct" type="number" min="0" step="0.1" value="0"><span>%</span></div><small class="mix-help">Acrescenta-se ao desperdício geral apenas neste produto. Usa 0 se não houver diferença.</small></div>
         <div class="field span2 edition-cost-note" id="prodEditionCostNote" hidden aria-hidden="true"><strong>💶 Custo real da edição</strong><span>Materiais e decoração continuam a ser registados na ficha técnica do produto. Aqui só acrescentamos o tempo e desperdício extra específicos desta edição. O PVP continua totalmente manual.</span></div><div class="field span2 product-techsheet-v1250" id="prodTechSheetBridge" style="display:none"><div class="product-techsheet-head-v1250"><div><strong>🧾 Ficha Técnica</strong><span id="prodTechSheetStatus">Ficha técnica do produto</span></div><button type="button" class="btn ghost" id="prodTechSheetBtn" onclick="openProductTechSheetV1250()">Editar Ficha Técnica</button></div><div class="product-techsheet-stats-v1250"><div><span>Materiais específicos</span><strong id="prodTechSheetIngredientCount">—</strong></div><div><span>Custo calculado</span><strong id="prodTechSheetCost">—</strong></div><div><span>PVP recomendado</span><strong id="prodTechSheetRecommended">—</strong></div></div><div class="product-composition-v144"><div class="product-composition-head-v144"><div><strong>Composição do produto</strong><small>Carregada automaticamente da Ficha Técnica guardada.</small></div><span id="prodCompositionBadgeV144" class="badge">—</span></div><div id="prodCompositionPreviewV144" class="product-composition-list-v144"><div class="empty">Guarda ou seleciona um produto para ver a composição.</div></div></div></div>
@@ -4387,7 +4396,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.50';
+const APP_VERSION='1.7.52';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -7361,7 +7370,7 @@ function printOrderCompleteV12634(id){
 
 /* KPIs */
 #costs .costs-summary{
-  grid-template-columns:repeat(5,minmax(0,1fr));
+  grid-template-columns:repeat(6,minmax(0,1fr));
   gap:10px;
   margin-top:12px;
 }
@@ -8869,7 +8878,7 @@ function printOrderCompleteV12634(id){
 }
 #products .products-tools{
   display:grid;
-  grid-template-columns:minmax(220px,1.15fr) repeat(3,minmax(150px,.75fr));
+  grid-template-columns:minmax(230px,1.2fr) repeat(4,minmax(135px,.72fr));
   gap:9px;
   align-items:center;
 }
@@ -12237,6 +12246,29 @@ function refreshQuantityPricingV1750(){
  const w=document.getElementById('qtyPricingWarningV1750');if(w){if(finalUnit+1e-9<costUnit){w.className='soft-note quantity-pricing-warning-v1750 warn';w.innerHTML=`<strong>Atenção:</strong> o preço final está abaixo do custo real. Prejuízo estimado: <b>${euro(Math.abs(profit))}</b>.`}else{w.className='soft-note quantity-pricing-warning-v1750 ok';w.innerHTML=`Esta simulação não altera Produtos, Fichas Técnicas, Stock ou Encomendas. Margem real do cenário: <b>${pct(marginReal)}</b>.`}}
 }
 function clearQuantityPricingV1750(){const other=document.getElementById('qtyPricingOtherLotV1750');if(other)delete other.dataset.manual;const mode=document.getElementById('qtyPricingModeV1750');if(mode)mode.value='product';const units=document.getElementById('qtyPricingUnitsV1750');if(units)units.value='50';for(const [id,val] of [['qtyPricingEfficiencyV1750','0'],['qtyPricingTotalMinutesV1750',''],['qtyPricingOtherLotV1750','0'],['qtyPricingDiscountV1750','0'],['qtyPricingManualUnitV1750','']]){const e=document.getElementById(id);if(e)e.value=val}quantityPricingRowsV1750=[];quantityPricingProductCodeV1750='';renderQuantityPricingV1750();toast('Nova simulação pronta')}
+function quantityPricingSnapshotV1751(){
+ const units=quantityPricingUnitsV1750(),p=quantityPricingProductV1750(),mode=document.getElementById('qtyPricingModeV1750')?.value||'product';
+ const materials=quantityPricingRowsV1750.reduce((sum,r)=>sum+Math.max(0,Number(r.totalQty)||0)*Math.max(0,Number(stockByName(r.item)?.unitCost)||0),0);
+ const minsUnit=Math.max(0,Number(document.getElementById('qtyPricingMinutesUnitV1750')?.value)||0),normalMins=minsUnit*units,eff=Math.max(0,Math.min(95,Number(document.getElementById('qtyPricingEfficiencyV1750')?.value)||0)),manualTime=String(document.getElementById('qtyPricingTotalMinutesV1750')?.value||'').trim(),totalMins=manualTime===''?normalMins*(1-eff/100):Math.max(0,Number(manualTime)||0);
+ const labor=pricingLaborHourlyRateV1745()*totalMins/60,fixed=pricingFixedHourlyRateV1745()*totalMins/60,other=Math.max(0,Number(document.getElementById('qtyPricingOtherLotV1750')?.value)||0),costTotal=materials+labor+fixed+other,costUnit=costTotal/units,marginPct=Math.max(0,Math.min(95,Number(document.getElementById('qtyPricingMarginV1750')?.value)||0)),recommendedUnit=batchPriceRoundV1743(pricingPriceFromMarginV1745(costUnit,marginPct)),discount=Math.max(0,Math.min(100,Number(document.getElementById('qtyPricingDiscountV1750')?.value)||0)),manualUnitRaw=String(document.getElementById('qtyPricingManualUnitV1750')?.value||'').trim(),finalUnit=manualUnitRaw===''?recommendedUnit*(1-discount/100):Math.max(0,Number(manualUnitRaw)||0),finalTotal=finalUnit*units,profit=finalTotal-costTotal,marginReal=finalTotal>0?profit/finalTotal:0;
+ return {version:'1.7.52',createdAt:new Date().toISOString(),mode,productCode:p?.code||'',productName:p?.name||'',units,materials:quantityPricingRowsV1750.map(r=>{const st=stockByName(r.item);return {item:r.item,unit:st?.unit||'un',perUnit:Math.max(0,Number(r.perUnit)||0),totalQty:Math.max(0,Number(r.totalQty)||0),unitCost:Math.max(0,Number(st?.unitCost)||0),cost:Math.max(0,Number(r.totalQty)||0)*Math.max(0,Number(st?.unitCost)||0)}}),materialsCost:materials,minutesPerUnit:minsUnit,efficiencyPct:eff,totalMinutes:totalMins,laborCost:labor,fixedCost:fixed,otherCost:other,costTotal,costUnit,marginPct,recommendedUnit,recommendedTotal:recommendedUnit*units,discountPct:discount,finalUnit,finalTotal,profit,marginReal};
+}
+function quantityPricingToOrderV1751(){
+ const snap=quantityPricingSnapshotV1751(),p=quantityPricingProductV1750();
+ if(snap.mode!=='product'||!p)return toast('Para transformar em encomenda, usa a simulação a partir de um produto existente. O lote personalizado pode continuar apenas como simulação.');
+ if(!snap.units||snap.units<1)return toast('Indica uma quantidade válida');
+ if(!Number.isFinite(snap.finalUnit)||snap.finalUnit<=0)return toast('Define um preço final válido antes de criar a encomenda');
+ if(snap.finalUnit+1e-9<snap.costUnit&&!confirm('O preço final está abaixo do custo real e esta encomenda terá prejuízo. Queres continuar mesmo assim?'))return;
+ const hasDraft=(Array.isArray(cart)&&cart.length)||String(document.getElementById('saleClient')?.value||'').trim()||String(document.getElementById('saleNotes')?.value||'').trim();
+ if(hasDraft&&!confirm('Já existe uma Nova encomenda em preparação. Continuar irá substituir esse rascunho pelos dados desta simulação.'))return;
+ clearSale();
+ cart=[{code:p.code,name:p.name,category:p.category||'',qty:snap.units,price:snap.finalUnit,cost:snap.costUnit,pricingSource:'quantity_pricing_v1751',quantityPricingSnapshot:snap}];
+ renderCart();
+ const notes=document.getElementById('saleNotes');if(notes)notes.value=`Criada a partir da Precificação em quantidade · ${snap.units} un · custo simulado ${euro(snap.costUnit)}/un · preço ${euro(snap.finalUnit)}/un · margem ${pct(snap.marginReal)}.`;
+ go('sale');
+ setTimeout(()=>document.getElementById('saleClient')?.focus(),40);
+ toast('Simulação transferida para Nova encomenda. Confirma cliente, entrega, pagamento e embalagem antes de guardar.');
+}
 function batchPriceRoundV1743(value){const step=artessenciaPricingRoundStepV1251();value=Math.max(0,Number(value)||0);return value?Math.ceil((value-1e-9)/step)*step:0}
 function refreshBatchPricingV1744(){
  if(!document.getElementById('batchQtyV1743'))return;
@@ -12478,9 +12510,23 @@ function editProduct(code){
  fillProductTechnicalFormV1287(p);
  setProductShopImagePreview(p.shopImageUrl||'');const f=document.getElementById('prodShopImageFile');if(f)f.value='';setProductEditorModeV145(p);window.scrollTo({top:0,behavior:'smooth'})
 }
+function updateProductCollectionFilterV1752(){
+ const sel=document.getElementById('productCollectionFilterV1752');if(!sel)return;
+ const prev=sel.value||'all';
+ const editions=(Array.isArray(specialEditionsAdmin)?specialEditionsAdmin:[]).slice().sort((a,b)=>String(a?.name||'').localeCompare(String(b?.name||''),'pt'));
+ const opts=['<option value="all">Todas as coleções / temas</option>','<option value="none">Sem coleção</option>'];
+ for(const ed of editions){const id=editionIdV1244(ed);if(!id)continue;opts.push(`<option value="${escapeAttr(id)}">${escapeHtml(ed.name||ed.slug||id)}</option>`)}
+ sel.innerHTML=opts.join('');
+ if([...sel.options].some(o=>o.value===prev))sel.value=prev;else sel.value='all';
+}
+function productSearchTextV1752(p){
+ const collections=productEditionNamesV138(p).join(' ');
+ return [p?.name,p?.code,p?.shopDescription,p?.category,collections,normalizeProductAvailabilityV1244(p)==='edition'?'sazonal edição especial':''].filter(Boolean).join(' ').toLowerCase();
+}
 function renderProducts(){
  ensureProductSafetyEditorV1287();if(!document.getElementById('prodCode')?.value){renderProductBaseSummaryV12811(false);setProductEditorModeV145(null);}updateProductTechnicalStatusV1287();
- loadProductEditionsV1245(false).then(()=>fillProductEditionOptionsV1244(selectedProductEditionIdsV138()));updateProductAvailabilityUI();
+ loadProductEditionsV1245(false).then(()=>{fillProductEditionOptionsV1244(selectedProductEditionIdsV138());updateProductCollectionFilterV1752();});updateProductAvailabilityUI();
+ updateProductCollectionFilterV1752();
  const all=Array.isArray(db.products)?db.products:[];
  const published=all.filter(p=>p.shopVisible).length;
  const mixEnabled=all.filter(p=>p.mixVisible).length;
@@ -12502,17 +12548,20 @@ function renderProducts(){
 
  const q=(document.getElementById('productSearch')?.value||'').trim().toLowerCase();
  const cat=document.getElementById('productCategoryFilter')?.value||'all';
+ const collection=document.getElementById('productCollectionFilterV1752')?.value||'all';
  const shop=document.getElementById('productShopFilter')?.value||'all';
  const mix=document.getElementById('productMixFilter')?.value||'all';
  const technical=document.getElementById('productTechnicalFilterV1288')?.value||'all';
 
  const rows=all.filter(p=>{
-   const mq=!q||String(p.name||'').toLowerCase().includes(q)||String(p.code||'').toLowerCase().includes(q)||String(p.shopDescription||'').toLowerCase().includes(q);
+   const mq=!q||productSearchTextV1752(p).includes(q);
    const mc=cat==='all'||p.category===cat;
+   const editionIds=productEditionMembershipIdsV138(p);
+   const mcollection=collection==='all'||(collection==='none'&&!editionIds.length)||editionIds.includes(collection);
    const ms=shop==='all'||(shop==='published'&&p.shopVisible)||(shop==='hidden'&&!p.shopVisible);
    const mm=mix==='all'||(mix==='enabled'&&p.mixVisible)||(mix==='disabled'&&!p.mixVisible);
    const mf=technical==='all'||(technical==='reviewed'&&productTechnicalInfoCompleteV1287(p))||(technical==='pending'&&!productTechnicalInfoCompleteV1287(p));
-   return mq&&mc&&ms&&mm&&mf;
+   return mq&&mc&&mcollection&&ms&&mm&&mf;
  });
 
  const count=document.getElementById('productsResultCount');
@@ -12528,12 +12577,12 @@ function renderProducts(){
      ${img}
      <div class="product-card-body">
        <div class="product-card-top">
-         <div><span class="badge">${normalizeProductAvailabilityV1244(p)==='edition'?'✨ Edição Especial':escapeHtml(p.category||'—')}</span><h3>${escapeHtml(p.name||'Sem nome')}</h3><small>${escapeHtml(p.code||'—')}</small></div>
+         <div><span class="badge">${normalizeProductAvailabilityV1244(p)==='edition'?'✨ Edição Especial':escapeHtml(p.category==='Velas em molde'?'Velas decorativas / em molde':(p.category||'—'))}</span><h3>${escapeHtml(p.name||'Sem nome')}</h3><small>${escapeHtml(p.code||'—')}</small></div>
          <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end">
            <span class="badge ${p.shopVisible?'ok':'warn'}">${p.shopVisible?'Publicado':'Oculto'}</span>
            <span class="badge product-mix-badge ${p.mixVisible?'':'off'}">${p.mixVisible?'Conjuntos ✓':'Fora dos conjuntos'}</span>
            <span class="badge ${productTechSheetStateV146(p).ok?'ok':'warn'}">Ficha técnica · ${escapeHtml(productTechSheetStateV146(p).label)}</span>
-           ${productEditionMembershipIdsV138(p).length?`<span class="badge edition-product-badge">${productEditionMembershipIdsV138(p).length} coleção(ões)</span>`:''}
+           ${productEditionMembershipIdsV138(p).length?`<span class="badge edition-product-badge">${escapeHtml(productEditionNamesV138(p).join(' · ')||productEditionMembershipIdsV138(p).length+' coleção(ões)')}</span>`:''}
          </div>
        </div>
        ${p.shopDescription?`<p>${escapeHtml(p.shopDescription)}</p>`:''}
