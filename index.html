@@ -4142,7 +4142,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.36';
+const APP_VERSION='1.7.37';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -5889,6 +5889,62 @@ function hydrateSimpleStockFormV1736(x){
  syncSimpleStockCreateV1736();
 }
 
+
+function renameObjectKeyV1737(obj,oldName,newName){
+ if(!obj||typeof obj!=='object'||oldName===newName||!Object.prototype.hasOwnProperty.call(obj,oldName))return;
+ if(!Object.prototype.hasOwnProperty.call(obj,newName))obj[newName]=obj[oldName];
+ else if(typeof obj[newName]==='number'&&typeof obj[oldName]==='number')obj[newName]+=obj[oldName];
+ delete obj[oldName];
+}
+function renameStockReferencesV1737(oldName,newName){
+ if(!oldName||!newName||oldName===newName)return;
+ (db.purchases||[]).forEach(x=>{if(x.item===oldName)x.item=newName});
+ (db.stockMoves||[]).forEach(x=>{if(x.item===oldName)x.item=newName});
+ for(const lines of Object.values(db.productRecipes||{}))for(const line of (lines||[]))if(line.item===oldName)line.item=newName;
+
+ if(db.costMeta&&Object.prototype.hasOwnProperty.call(db.costMeta,oldName)){
+   if(!Object.prototype.hasOwnProperty.call(db.costMeta,newName))db.costMeta[newName]=db.costMeta[oldName];
+   else db.costMeta[newName]={...db.costMeta[oldName],...db.costMeta[newName]};
+   delete db.costMeta[oldName];
+ }
+
+ (db.productionRuns||[]).forEach(run=>{
+   renameObjectKeyV1737(run.materials,oldName,newName);
+   renameObjectKeyV1737(run.materialUnitCosts,oldName,newName);
+   if(run.orderMaterials&&typeof run.orderMaterials==='object'){
+     Object.values(run.orderMaterials).forEach(obj=>renameObjectKeyV1737(obj,oldName,newName));
+   }
+ });
+}
+function stockReferencesCountV1737(name){
+ let recipes=0;
+ for(const lines of Object.values(db.productRecipes||{}))recipes+=(lines||[]).filter(x=>x.item===name).length;
+ return{
+   recipes,
+   purchases:(db.purchases||[]).filter(x=>x.item===name).length,
+   moves:(db.stockMoves||[]).filter(x=>x.item===name).length
+ };
+}
+function deleteStockItemV1737(i){
+ if(!destructiveDeleteAllowedV1420('a matéria-prima'))return;
+ const x=(db.stock||[])[i];if(!x)return toast('Matéria-prima não encontrada');
+ const refs=stockReferencesCountV1737(x.name);
+ const extra=refs.recipes?`\n\nA matéria-prima está em ${refs.recipes} linha(s) de ficha técnica. Essas ligações serão removidas.`:'';
+ if(!confirm(`Eliminar "${x.name}" dos artigos em stock?${extra}\n\nO histórico de compras e movimentos já registados será mantido para rastreabilidade.`))return;
+
+ for(const [code,lines] of Object.entries(db.productRecipes||{})){
+   db.productRecipes[code]=(lines||[]).filter(r=>r.item!==x.name);
+ }
+ if(db.costMeta)delete db.costMeta[x.name];
+ db.stock.splice(i,1);
+
+ if(editingStockIndex===i)resetStockFormV145(false);
+ else if(editingStockIndex!=null&&editingStockIndex>i)editingStockIndex--;
+
+ save();
+ toast('Matéria-prima eliminada do Stock');
+}
+
 function resetStockFormV145(message=true){
  editingStockIndex=null;
  stockName.value='';stockQty.value='';stockMin.value='';stockUnitCost.value='';stockUnit.value='g';
@@ -5918,12 +5974,21 @@ function addStock(){
  }
  if(editingStockIndex!=null){
    const current=db.stock[editingStockIndex];if(!current){resetStockFormV145();return toast('A matéria-prima já não existe')}
+   const oldName=String(current.name||'').trim(),nameChanged=n!==oldName;
+   if(nameChanged&&db.stock.some((x,idx)=>idx!==editingStockIndex&&String(x.name||'').trim().toLowerCase()===n.toLowerCase())){
+     setStockSaveStateV143('error','Nome já utilizado','Já existe outra matéria-prima com este nome.');
+     return toast('Já existe uma matéria-prima com este nome')
+   }
    const beforeQty=Number(current.qty)||0,beforeCost=Number(current.unitCost)||0,changedQty=Math.abs(qty-beforeQty)>1e-9,changedCost=Math.abs(unitCost-beforeCost)>1e-12,reason=String(document.getElementById('stockEditReasonV145')?.value||'').trim();
    if((changedQty||changedCost)&&!reason){setStockSaveStateV143('error','Falta justificar a correção','Indique o motivo para alterar quantidade ou custo.');return toast('Indique o motivo da correção')}
    db.stockMoves=db.stockMoves||[];
-   if(changedQty)db.stockMoves.push({date:new Date().toISOString(),item:current.name,type:'adjust',qty,note:'Correção manual: '+reason,beforeQty,afterQty:qty,delta:qty-beforeQty});
-   if(changedCost)db.stockMoves.push({date:new Date().toISOString(),item:current.name,type:'cost_adjustment',qty:0,note:'Correção de custo: '+reason,previousUnitCost:beforeCost,newUnitCost:unitCost,beforeQty:qty,afterQty:qty,delta:0});
-   current.qty=qty;current.unitCost=unitCost;current.min=min;current.target=target;current.preferredSupplier=supplier;save();resetStockFormV145(false);setStockSaveStateV143('saved','Alterações guardadas',n+' · correções de quantidade/custo registadas no histórico.');return toast('Alterações guardadas')
+   if(nameChanged)renameStockReferencesV1737(oldName,n);
+   if(changedQty)db.stockMoves.push({date:new Date().toISOString(),item:n,type:'adjust',qty,note:'Correção manual: '+reason,beforeQty,afterQty:qty,delta:qty-beforeQty});
+   if(changedCost)db.stockMoves.push({date:new Date().toISOString(),item:n,type:'cost_adjustment',qty:0,note:'Correção de custo: '+reason,previousUnitCost:beforeCost,newUnitCost:unitCost,beforeQty:qty,afterQty:qty,delta:0});
+   current.name=n;current.qty=qty;current.unitCost=unitCost;current.min=min;current.target=target;current.preferredSupplier=supplier;
+   save();resetStockFormV145(false);
+   const detail=nameChanged?`Nome atualizado: ${oldName} → ${n}. As referências foram atualizadas.`:(changedQty||changedCost?n+' · correções de quantidade/custo registadas no histórico.':n+' · dados atualizados.');
+   setStockSaveStateV143('saved','Alterações guardadas',detail);return toast('Alterações guardadas')
  }
  if(db.stock.some(x=>String(x.name||'').trim().toLowerCase()===n.toLowerCase())){setStockSaveStateV143('error','Matéria-prima já existente','Use o botão Editar na lista para alterar os dados.');return toast('Esta matéria-prima já existe — utilize Editar')}
  const o={name:n,qty,unit:normalizeBaseUnitV120(stockUnit.value),min,target,unitCost,preferredSupplier:supplier};db.stock.push(o);
@@ -5989,7 +6054,7 @@ function renderStock(){
      <td>${formatUnitCostV145(x.unitCost||0,x.unit||'')}</td>
      <td>${euro(qty*(Number(x.unitCost)||0))}</td>
      <td>${qty<=min?`<button class="badge ${cls} stock-status-btn" onclick="stockGoPurchase(${i})">${status}</button>`:`<span class="badge ${cls}">${status}</span>`}</td>
-     <td><div class="stock-actions"><button class="btn" onclick="loadStock(${i})">Editar</button><button class="btn" onclick="showStockHistory(${i})">Histórico</button></div></td>
+     <td><div class="stock-actions"><button class="btn" onclick="loadStock(${i})">Editar</button><button class="btn" onclick="showStockHistory(${i})">Histórico</button><button class="btn danger" onclick="deleteStockItemV1737(${i})">Eliminar</button></div></td>
    </tr>`
  }).join(''):`<tr><td colspan="10" class="empty">Nenhum artigo corresponde ao filtro.</td></tr>`;
 }
@@ -6025,9 +6090,9 @@ function loadStock(i){
  const x=db.stock[i];if(!x)return toast('Matéria-prima não encontrada');
  editingStockIndex=i;stockName.value=x.name;stockQty.value=x.qty;stockUnit.value=x.unit;stockMin.value=x.min;stockUnitCost.value=x.unitCost||0;hydrateSimpleStockFormV1736(x);
  if(document.getElementById('stockTarget'))stockTarget.value=x.target??'';if(document.getElementById('stockPreferredSupplier'))stockPreferredSupplier.value=x.preferredSupplier||'';
- for(const id of ['stockName','stockUnit']){const el=document.getElementById(id);if(el)el.disabled=true}
+ for(const id of ['stockUnit']){const el=document.getElementById(id);if(el)el.disabled=true}
  const title=document.querySelector('#stock .stock-form-card .section-title'),hint=document.getElementById('stockFormHintV145'),saveBtn=document.getElementById('stockSaveBtnV143'),cancelBtn=document.getElementById('stockCancelBtnV145'),reasonField=document.getElementById('stockEditReasonFieldV145');
- if(title)title.textContent='Editar matéria-prima';if(hint)hint.textContent='Nome e unidade ficam protegidos. Alterações de quantidade/custo exigem justificação.';if(saveBtn)saveBtn.textContent='Guardar alterações';if(cancelBtn)cancelBtn.classList.remove('hidden');if(reasonField)reasonField.classList.remove('hidden');
+ if(title)title.textContent='Editar matéria-prima';if(hint)hint.textContent='Podes corrigir o nome. A unidade interna fica protegida para não quebrar cálculos; alterações de quantidade/custo exigem justificação.';if(saveBtn)saveBtn.textContent='Guardar alterações';if(cancelBtn)cancelBtn.classList.remove('hidden');if(reasonField)reasonField.classList.remove('hidden');
  setStockSaveStateV143('dirty','Edição em curso',x.name+' · correções de quantidade/custo ficarão no histórico.');document.getElementById('stock')?.scrollIntoView({behavior:'smooth',block:'start'})
 }
 function addCash(){
@@ -10743,6 +10808,23 @@ function printOrderCompleteV12634(id){
   #stock .stock-create-footer-v1736 .btn{
     width:100%;
   }
+}
+</style>
+
+
+<style id="artessencia-stock-edit-delete-v1737">
+#stock .stock-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  align-items:center;
+}
+#stock .stock-actions .btn{
+  min-height:34px;
+  padding-inline:10px;
+}
+#stock .stock-actions .btn.danger{
+  border-color:#e6c8c2;
 }
 </style>
 
