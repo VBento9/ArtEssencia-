@@ -2504,7 +2504,20 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 @media(max-width:900px){#sale .sale-product-workspace-v1754{grid-template-columns:1fr}#sale .sale-cart-side-v1754{position:static;max-height:none;overflow:visible;grid-row:1}#sale .sale-products-browser-v1754{grid-row:2}#sale .sale-product-picker-v1754{max-height:480px}}
 @media(max-width:620px){#sale .sale-product-filters-v1754{grid-template-columns:1fr}.sale-product-search-v1754{grid-column:auto}#sale .sale-product-picker-v1754{grid-template-columns:1fr;max-height:430px}#sale .sale-cart-row-v1754{grid-template-columns:minmax(0,1fr) 58px 78px 32px}.sale-cart-line-total-v1754{grid-column:1/4;text-align:right}.sale-cart-remove-v1754{grid-column:4;grid-row:1/3;align-self:center}#sale .sale-picker-meta-v1754{align-items:flex-start;flex-direction:column}}
 </style>
-</head>
+<style>
+/* V1.7.62 — Produtos: editor por etapas + precificação rápida */
+#products .product-editor-nav-v1762{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0 10px;position:sticky;top:76px;z-index:8;background:rgba(255,250,247,.94);backdrop-filter:blur(10px);padding:8px;border:1px solid #eadfd8;border-radius:16px}
+#products .product-editor-nav-v1762 button{border:1px solid #e7d9d1;background:#fff;border-radius:13px;padding:9px 10px;display:grid;grid-template-columns:28px 1fr;grid-template-rows:auto auto;text-align:left;column-gap:8px;cursor:pointer;color:#5a463f;min-height:58px}
+#products .product-editor-nav-v1762 button b{grid-row:1/3;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#f2e7e1;color:#76584d;align-self:center}
+#products .product-editor-nav-v1762 button span{font-weight:850;font-size:13px}.product-editor-nav-v1762 button small{font-size:10px;color:#8b746a}
+#products .product-editor-nav-v1762 button.active{background:#fff8f3;border-color:#c78c6a;box-shadow:0 5px 16px rgba(78,47,34,.08)}#products .product-editor-nav-v1762 button.active b{background:#6b4438;color:#fff}
+#products .product-editor-panel-v1762{display:none;grid-column:1/-1;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;min-width:0}#products .product-editor-panel-v1762.active{display:grid}
+#products .product-completeness-editor-v1762{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 9px}.product-completeness-editor-v1762 span{padding:5px 9px;border-radius:999px;background:#f3efec;color:#725e55;font-size:10px;font-weight:750}.product-completeness-editor-v1762 span.ok{background:#e7f6ed;color:#176b3a}.product-completeness-editor-v1762 span.warn{background:#fff0dd;color:#8b5718}
+#products .pricing-quick-v1762{margin-top:12px;padding:13px;border:1px solid #e8ddd6;background:#fffaf6;border-radius:16px}.pricing-quick-inputs-v1762{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.pricing-quick-inputs-v1762 label>span{display:block;font-size:10px;font-weight:800;color:#725e55;margin-bottom:5px}.pricing-quick-results-v1762{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}.pricing-quick-results-v1762>div{background:#fff;border:1px solid #eadfd8;border-radius:12px;padding:9px}.pricing-quick-results-v1762 small,.pricing-quick-results-v1762 span{display:block;font-size:10px;color:#806b62}.pricing-quick-results-v1762 strong{display:block;font-size:17px;margin-top:3px}.pricing-quick-actions-v1762{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:10px}.pricing-health-pill-v1762{padding:7px 10px;border-radius:999px;font-size:11px;font-weight:850;background:#eee;color:#666}.pricing-health-pill-v1762.good{background:#e7f6ed;color:#176b3a}.pricing-health-pill-v1762.warn{background:#fff0dd;color:#8b5718}.pricing-health-pill-v1762.bad{background:#fde8e8;color:#9b2929}.pricing-details-v1762{margin-top:10px;border-top:1px solid #eadfd8;padding-top:8px}.pricing-details-v1762>summary{cursor:pointer;font-size:11px;font-weight:850;color:#6d544b;padding:8px 2px}.pricing-apreco-compare-v1762{margin-top:9px;padding:9px 11px;border-radius:11px;background:#f6f1ec;font-size:11px;color:#6f5b53}.pricing-apreco-compare-v1762.hidden{display:none}
+#products .product-card .product-completeness-mini-v1762{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}.product-completeness-mini-v1762 span{font-size:9px;padding:3px 6px;border-radius:999px;background:#f4efec;color:#715d55}.product-completeness-mini-v1762 span.missing{background:#fff0dd;color:#8b5718}
+@media(max-width:900px){#products .product-editor-nav-v1762{top:62px;grid-template-columns:repeat(4,minmax(100px,1fr));overflow-x:auto}#products .product-editor-panel-v1762{grid-template-columns:repeat(2,minmax(0,1fr))}.pricing-quick-inputs-v1762,.pricing-quick-results-v1762{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){#products .product-editor-nav-v1762{grid-template-columns:repeat(4,130px)}#products .product-editor-panel-v1762{grid-template-columns:1fr}.pricing-quick-inputs-v1762,.pricing-quick-results-v1762{grid-template-columns:1fr 1fr}}
+</style></head>
 <body>
 <div id="lockScreen" class="lock">
   <div class="lockbox">
@@ -4147,6 +4160,15 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           <option value="enabled">Conjuntos: disponíveis</option>
           <option value="disabled">Conjuntos: indisponíveis</option>
         </select>
+        <select id="productCompletenessFilterV1762" onchange="renderProducts()" aria-label="Filtrar pelo estado de preenchimento">
+          <option value="all">Preenchimento: todos</option>
+          <option value="ready">Prontos para publicar</option>
+          <option value="photo">Sem fotografia</option>
+          <option value="tech">Sem Ficha Técnica</option>
+          <option value="description">Sem descrição pública</option>
+          <option value="price">Sem PVP</option>
+          <option value="review">Por rever</option>
+        </select>
         
       </div>
     </div>
@@ -4160,8 +4182,16 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           <small>Cria o produto, associa a Ficha Técnica e define uma precificação simples e coerente.</small>
         </div>
       </div>
+      <div class="product-editor-nav-v1762" role="tablist" aria-label="Secções do produto">
+        <button type="button" class="active" data-product-panel-btn="identity" onclick="showProductPanelV1762('identity')"><b>1</b><span>Essencial</span><small>Identificação e ficha</small></button>
+        <button type="button" data-product-panel-btn="pricing" onclick="showProductPanelV1762('pricing')"><b>2</b><span>Preço</span><small>Custo e PVP</small></button>
+        <button type="button" data-product-panel-btn="production" onclick="showProductPanelV1762('production')"><b>3</b><span>Produção</span><small>Parâmetros técnicos</small></button>
+        <button type="button" data-product-panel-btn="public" onclick="showProductPanelV1762('public')"><b>4</b><span>Loja</span><small>Foto e publicação</small></button>
+      </div>
+      <div id="productCompletenessEditorV1762" class="product-completeness-editor-v1762"></div>
       <div class="form-grid">
-        <div class="product-section-divider-v1748"><span>1</span><div><strong>Identificação e disponibilidade</strong><small>Dados base, categoria, disponibilidade e coleções.</small></div></div>
+        <div class="product-editor-panel-v1762 active" data-product-panel="identity">
+        <div class="product-section-divider-v1748"><span>1</span><div><strong>Identificação e disponibilidade</strong><small>Dados base, categoria, disponibilidade, coleções e Ficha Técnica.</small></div></div>
         <div class="field span2 product-name-v1726"><label>Nome</label><input id="prodName" placeholder="Nome do produto"></div>
         <div class="field product-code-field-v147"><label>Código</label><input id="prodCode" maxlength="40" placeholder="Automático se ficar vazio"><small>Identidade interna; fica protegida depois da criação.</small></div>
         <div class="field" id="prodCategoryField"><label>Tipo / família do produto</label><select id="prodCat" onchange="syncProductionTypeFromCategoryV130()"><option value="Velas em molde">Velas decorativas / em molde</option><option value="Velas em recipiente">Velas em recipiente</option><option value="Wax melts">Wax melts</option><option value="Sabonetes">Sabonetes</option><option value="Resina e Jesmonite">Resina e Jesmonite</option><option value="Personalizados">Personalizados</option><option value="Outros produtos artesanais">Outros produtos artesanais</option></select><small class="mix-help">Define o tipo físico do produto. Ex.: uma vela decorativa pode depois pertencer simultaneamente a Natal, Páscoa ou outra coleção.</small></div>
@@ -4174,9 +4204,35 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div id="prodAprecoSourceV1753" class="field span4 apreco-source-v1753 hidden"></div>
         <div class="field span2 edition-cost-note" id="prodEditionCostNote" hidden aria-hidden="true"><strong>💶 Custo real da edição</strong><span>Materiais e decoração continuam a ser registados na ficha técnica do produto. Aqui só acrescentamos o tempo e desperdício extra específicos desta edição. O PVP continua totalmente manual.</span></div><div class="field span2 product-techsheet-v1250" id="prodTechSheetBridge" style="display:none"><div class="product-techsheet-head-v1250"><div><strong>🧾 Ficha Técnica</strong><span id="prodTechSheetStatus">Ficha técnica do produto</span></div><button type="button" class="btn ghost" id="prodTechSheetBtn" onclick="openProductTechSheetV1250()">Editar Ficha Técnica</button></div><div class="product-techsheet-stats-v1250"><div><span>Materiais específicos</span><strong id="prodTechSheetIngredientCount">—</strong></div><div><span>Custo calculado</span><strong id="prodTechSheetCost">—</strong></div><div><span>PVP recomendado</span><strong id="prodTechSheetRecommended">—</strong></div></div><div class="product-composition-v144"><div class="product-composition-head-v144"><div><strong>Composição do produto</strong><small>Carregada automaticamente da Ficha Técnica guardada.</small></div><span id="prodCompositionBadgeV144" class="badge">—</span></div><div id="prodCompositionPreviewV144" class="product-composition-list-v144"><div class="empty">Guarda ou seleciona um produto para ver a composição.</div></div></div></div>
 
+        </div>
+        <div class="product-editor-panel-v1762" data-product-panel="pricing">
         <div class="field span4 product-cost-editor-v110 product-pricing-apreco-v1744">
-          <div class="product-cost-editor-head-v110"><div class="product-block-title-v1748"><span>2</span><div><strong>Precificação</strong><small>O custo real fica separado por componente. A margem é calculada sobre o preço de venda.</small></div></div><span>método artesanal</span></div>
+          <div class="product-cost-editor-head-v110"><div class="product-block-title-v1748"><span>2</span><div><strong>Precificação</strong><small>Define quatro dados essenciais. O detalhe do cálculo fica disponível apenas quando precisares.</small></div></div><span>método artesanal</span></div>
 
+          <div class="pricing-quick-v1762">
+            <div class="pricing-quick-inputs-v1762">
+              <label><span>Tempo / unidade</span><div class="cost-input-suffix-v110"><input id="prodLaborMinutesQuickV1762" type="number" min="0" step="1" oninput="pricingQuickChangedV1762('minutes',this.value)"><span>min</span></div></label>
+              <label><span>Margem pretendida</span><div class="cost-input-suffix-v110"><input id="prodMarginQuickV1762" type="number" min="0" max="95" step="0.1" oninput="pricingQuickChangedV1762('margin',this.value)"><span>%</span></div></label>
+              <label><span>PVP direto</span><div class="cost-input-suffix-v110"><input id="prodPriceQuickV1762" type="number" min="0" step="0.01" oninput="pricingQuickChangedV1762('direct',this.value)"><span>€</span></div></label>
+              <label><span>PVP loja</span><div class="cost-input-suffix-v110"><input id="prodOnlinePriceQuickV1762" type="number" min="0" step="0.01" oninput="pricingQuickChangedV1762('online',this.value)"><span>€</span></div></label>
+            </div>
+            <div class="pricing-quick-results-v1762">
+              <div><small>Custo real</small><strong id="pricingQuickCostV1762">0,00 €</strong></div>
+              <div><small>PVP recomendado</small><strong id="pricingQuickRecV1762">0,00 €</strong></div>
+              <div><small>Recomendado loja</small><strong id="pricingQuickOnlineRecV1762">0,00 €</strong></div>
+              <div><small>Lucro / margem real</small><strong id="pricingQuickProfitV1762">—</strong><span id="pricingQuickMarginV1762">—</span></div>
+            </div>
+            <div class="pricing-quick-actions-v1762">
+              <span id="pricingQuickHealthV1762" class="pricing-health-pill-v1762 neutral">A definir</span>
+              <button type="button" class="btn" onclick="applyRecommendedPriceV1742('direct');syncPricingQuickFromBaseV1762()">Usar PVP recomendado</button>
+              <button type="button" class="btn" onclick="applyRecommendedPriceV1742('online');syncPricingQuickFromBaseV1762()">Usar recomendado na loja</button>
+              <button type="button" class="btn ghost" onclick="copyDirectPriceToOnlineV1762()">Copiar PVP → Loja</button>
+            </div>
+            <div id="pricingAprecoCompareV1762" class="pricing-apreco-compare-v1762 hidden"></div>
+          </div>
+
+          <details class="pricing-details-v1762">
+            <summary>Ver detalhe do cálculo de custo e margem</summary>
           <div class="pricing-components-v1747">
             <div class="pricing-component-v1747">
               <div class="pricing-component-head-v1747"><span class="pricing-step-badge-v1747">1</span><div><strong>Materiais</strong><small>Ficha Técnica</small></div><b id="prodMaterialsCostV1744">0,00 €</b></div>
@@ -4217,6 +4273,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
             <div class="field"><label>PVP definido Loja</label><div class="cost-input-suffix-v110"><input id="prodOnlinePriceV12620" type="number" min="0" step="0.01"><span>€</span></div></div>
           </div>
 
+          </details>
           <div class="product-pricing-quantity-link-v1750">
             <div><strong>Precificação em quantidade</strong><small>As simulações de lotes e encomendas deixaram de fazer parte da criação do produto. Usa o módulo próprio sem alterar esta Ficha Técnica.</small></div>
             <button type="button" class="btn" onclick="go('quantityPricing')">Abrir Precificação em quantidade</button>
@@ -4228,6 +4285,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
             <span id="prodCostMaterialsV110"></span><span id="prodCostLaborV110"></span><span id="prodCostMoldV110"></span><span id="prodCostExtrasV110"></span><span id="prodCostWasteV110"></span><span id="prodCostTotalV110"></span><span id="prodDirectActualMarginV1742"></span><span id="prodOnlineActualMarginV1742"></span>
           </div>
         </div>
+        </div>
+        <div class="product-editor-panel-v1762" data-product-panel="production">
         <div class="field span4 production-profile-v130">
           <div class="product-cost-editor-head-v110"><div class="product-block-title-v1748"><span>3</span><div><strong>Parâmetros técnicos de produção</strong><small>Informação interna para preparar e controlar este produto. Todos os campos são editáveis e opcionais.</small></div></div><span>por produto</span></div>
           <div class="production-profile-grid-v130">
@@ -4241,6 +4300,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
             <div class="field span2"><label>Controlo de qualidade</label><textarea id="prodQualityNotesV130" rows="3" placeholder="Ex.: verificar acabamento, peso, pavio centrado e ausência de fissuras"></textarea></div>
           </div>
         </div>
+        </div>
+        <div class="product-editor-panel-v1762" data-product-panel="public">
         <div class="product-section-divider-v1748"><span>4</span><div><strong>Catálogo e apresentação pública</strong><small>Descrição, segurança, fotografia, publicação e utilização em conjuntos.</small></div></div>
         <div class="field span2 product-shop-desc-v1726"><label>Descrição para o catálogo / loja</label><textarea id="prodShopDescription" rows="3" placeholder="Descrição curta que o cliente verá na loja"></textarea></div>
         <div class="field span2 art-tech-info"><div class="product-technical-head-v1287"><div><strong>🧾 Informação técnica e segurança</strong><small>Dados apresentados ao cliente na ficha do produto.</small></div></div><div class="field"><label>Composição e materiais</label><textarea id="prodIngredientsV1287" rows="4" placeholder="Ex.: cera de soja, fragrância, pavio de algodão, recipiente de vidro..."></textarea></div><div class="form-grid" style="margin-top:10px"><div class="field span2"><label>Conservação e cuidados</label><input id="prodStorageV1287" placeholder="Ex.: conservar em local seco e protegido do calor"></div><div class="field span2"><label>Instruções de utilização e segurança</label><input id="prodConsumptionV1287" placeholder="Ex.: não deixar a vela acesa sem vigilância"></div></div><input id="prodTechnicalVerifiedV1287" type="checkbox" hidden><div id="prodBaseTechnicalSummaryV12811" hidden></div><div id="prodSafetysContainsV1287" hidden></div><div id="prodSafetysMayContainV1287" hidden></div></div>
@@ -4264,6 +4325,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div class="field"><label>Máximo deste produto por conjunto</label><input id="prodMixMaxQty" type="number" min="0" step="1" value="0" placeholder="0 = sem limite"><small class="mix-help">Ex.: 4 impede o cliente de escolher mais de 4 unidades deste produto no mesmo conjunto.</small></div>
         <div class="field"><label>Embalagens permitidas no conjunto</label><input id="prodMixBoxCaps" placeholder="Ex.: 6, 12, 24"><small class="mix-help">Deixa vazio para permitir em todas as embalagens disponíveis.</small></div>
         <div class="field span2 mix-admin-note"><strong>🕯️ Controlo dos conjuntos</strong><span>“Publicado na loja” e “Disponível para conjuntos” são independentes. Um produto de Edição Especial também pode entrar no conjunto se ativares esta opção.</span></div>
+        </div>
         <div class="field span2 product-actions-v147"><label>&nbsp;</label><div class="btnrow"><button id="productSaveBtnV145" class="btn primary" onclick="saveProduct()">Guardar produto</button><button id="productCancelEditBtnV145" type="button" class="btn ghost hidden" onclick="cancelProductEditV145()">Cancelar edição</button></div></div>
 <div class="field span2"><div id="productSaveStateV145" class="save-state-v143 neutral"><span>●</span><div><strong>Novo produto</strong><small>Preenche os dados e guarda. Ao editar um produto, este estado muda automaticamente.</small></div></div></div>
       </div>
@@ -4467,7 +4529,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.61';
+const APP_VERSION='1.7.62';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -12519,6 +12581,9 @@ function artessenciaRecommendedOnlinePriceV12620(p){const base=pricingBaseCostV1
 function readProductCostFieldV110(id){const el=document.getElementById(id);return !el||el.value===''?null:Number(el.value)}
 function productDraftV110(){const code=document.getElementById('prodCode')?.value||'',saved=(db.products||[]).find(x=>x.code===code)||{};const margin=readProductCostFieldV110('prodProfitPctV1744');return {...saved,code,laborMinutes:readProductCostFieldV110('prodLaborMinutesV110'),otherCost:readProductCostFieldV110('prodOtherCostV110')??saved.otherCost??0,marginPct:margin,profitPct:margin}}
 function pricingActualMarginV1742(price,cost){price=Number(price)||0;cost=Number(cost)||0;return price>0?(price-cost)/price:null}
+function pricingQuickChangedV1762(kind,value){const map={minutes:'prodLaborMinutesV110',margin:'prodProfitPctV1744',direct:'prodPrice',online:'prodOnlinePriceV12620'},el=document.getElementById(map[kind]||'');if(el)el.value=value;refreshProductChannelPricingV12620()}
+function syncPricingQuickFromBaseV1762(){const map=[['prodLaborMinutesQuickV1762','prodLaborMinutesV110'],['prodMarginQuickV1762','prodProfitPctV1744'],['prodPriceQuickV1762','prodPrice'],['prodOnlinePriceQuickV1762','prodOnlinePriceV12620']];for(const[a,b]of map){const q=document.getElementById(a),src=document.getElementById(b);if(q&&src&&document.activeElement!==q)q.value=src.value||''}}
+function copyDirectPriceToOnlineV1762(){const d=document.getElementById('prodPrice'),o=document.getElementById('prodOnlinePriceV12620');if(o&&d)o.value=d.value||'';refreshProductChannelPricingV12620();syncPricingQuickFromBaseV1762()}
 function refreshProductChannelPricingV12620(){
  if(!document.getElementById('prodCode'))return;
  const p=productDraftV110(),materials=pricingMaterialCostV1744(p),labor=pricingLaborCostV1745(p),fixed=pricingFixedCostV1745(p),other=pricingOtherCostV1745(p),base=materials+labor+fixed+other,marginPct=pricingProductMarginPctV1745(p),rec=pricingSalePriceV1744(p),profit=rec-base;
@@ -12529,6 +12594,10 @@ function refreshProductChannelPricingV12620(){
  const pr=document.getElementById('prodDirectProfitRealV1744');if(pr)pr.textContent=defined>0?euro(realProfit):'—';
  const mr=document.getElementById('prodDirectMarginRealV1744');if(mr)mr.textContent=margin==null?'Margem real: —':'Margem real: '+pct(margin);
  const c=document.getElementById('prodCost');if(c)c.value=base.toFixed(4);
+ const qset=(id,text)=>{const el=document.getElementById(id);if(el)el.textContent=text};qset('pricingQuickCostV1762',euro(base));qset('pricingQuickRecV1762',euro(rec));qset('pricingQuickOnlineRecV1762',euro(artessenciaRecommendedOnlinePriceV12620(p)));qset('pricingQuickProfitV1762',defined>0?euro(realProfit):'—');qset('pricingQuickMarginV1762',margin==null?'Margem —':'Margem '+pct(margin));
+ const health=document.getElementById('pricingQuickHealthV1762');if(health){let cls='neutral',txt='A definir';if(defined>0){if(defined+1e-9<base){cls='bad';txt='PVP abaixo do custo'}else if(margin+1e-9<marginPct/100){cls='warn';txt='Abaixo da margem pretendida'}else{cls='good';txt='Margem pretendida atingida'}}health.className='pricing-health-pill-v1762 '+cls;health.textContent=txt}
+ const ap=document.getElementById('pricingAprecoCompareV1762'),saved=(db.products||[]).find(x=>String(x.code||'')===String(p.code||''));if(ap){const sc=Array.isArray(saved?.aprecoPricingScenariosV1753)?saved.aprecoPricingScenariosV1753:[],old=Number(sc[0]?.unitPrice)||0;if(old>0){ap.classList.remove('hidden');const diff=defined>0?defined-old:rec-old;ap.innerHTML=`<strong>Referência Apreço:</strong> ${euro(old)}/un. · ${defined>0?'PVP atual':'PVP recomendado'} ${diff>=0?'+':''}${euro(diff)} face ao histórico.`}else{ap.classList.add('hidden');ap.innerHTML=''}}
+ syncPricingQuickFromBaseV1762();
 }
 function applyRecommendedPriceV1742(channel){const p=productDraftV110();if(channel==='online'){const el=document.getElementById('prodOnlinePriceV12620');if(el)el.value=artessenciaRecommendedOnlinePriceV12620(p).toFixed(2)}else{const el=document.getElementById('prodPrice');if(el)el.value=artessenciaRecommendedPriceV1251(p).toFixed(2)}refreshProductChannelPricingV12620()}
 let quantityPricingRowsV1750=[];
@@ -12742,6 +12811,7 @@ function setProductEditorModeV145(p){
  if(btn)btn.textContent=editing?'Guardar alterações':'Guardar produto';
  if(cancel)cancel.classList.toggle('hidden',!editing);
  if(codeInput){codeInput.disabled=editing;codeInput.title=editing?'O código identifica as fichas, encomendas e produção e não pode ser alterado durante a edição.':''}
+ renderProductCompletenessEditorV1762(p||null);
  if(state){state.className='save-state-v143 '+(editing?'dirty':'neutral');state.innerHTML=editing?`<span>●</span><div><strong>Produto em edição</strong><small>${escapeHtml(p.name||p.code)} · altera os campos necessários e carrega em “Guardar alterações”.</small></div>`:`<span>●</span><div><strong>Novo produto</strong><small>Preenche os dados e guarda. Ao editar um produto, este estado muda automaticamente.</small></div>`}
 }
 function setProductSaveStateV145(type,title,detail){
@@ -12859,7 +12929,7 @@ function editProduct(code){
  loadProductEditionsV1245(false).then(()=>fillProductEditionOptionsV1244(productEditionIds));
  refreshProductTechSheetBridgeV1250();
  fillProductTechnicalFormV1287(p);
- setProductShopImagePreview(p.shopImageUrl||'');const f=document.getElementById('prodShopImageFile');if(f)f.value='';setProductEditorModeV145(p);window.scrollTo({top:0,behavior:'smooth'})
+ setProductShopImagePreview(p.shopImageUrl||'');const f=document.getElementById('prodShopImageFile');if(f)f.value='';setProductEditorModeV145(p);syncPricingQuickFromBaseV1762();restoreProductPanelV1762();window.scrollTo({top:0,behavior:'smooth'})
 }
 function updateProductCollectionFilterV1752(){
  const sel=document.getElementById('productCollectionFilterV1752');if(!sel)return;
@@ -12874,6 +12944,11 @@ function productSearchTextV1752(p){
  const collections=productEditionNamesV138(p).join(' ');
  return [p?.name,p?.code,p?.shopDescription,p?.category,(Array.isArray(p?.tagsV1753)?p.tagsV1753.join(' '):''),(Array.isArray(p?.seasonalTagsV1761)?p.seasonalTagsV1761.join(' '):''),collections,normalizeProductAvailabilityV1244(p)==='edition'?'sazonal edição especial':''].filter(Boolean).join(' ').toLowerCase();
 }
+function productPublicDescriptionV1762(p){const raw=String(p?.shopDescription||'').trim();if(!raw)return '';if(p?.aprecoImportIdV1753&&/^[\d\s.,x×-]{1,12}$/i.test(raw))return '';return raw}
+function productCompletenessV1762(p){const photo=!!String(p?.shopImageUrl||'').trim(),tech=productTechSheetStateV146(p).ok,description=!!productPublicDescriptionV1762(p),price=(Number(p?.onlinePrice)>0||Number(p?.price)>0),review=(Array.isArray(p?.tagsV1753)&&p.tagsV1753.includes('Por rever'))||!!p?.aprecoNeedsReviewV1753;return{photo,tech,description,price,review,ready:photo&&tech&&description&&price&&!review}}
+function renderProductCompletenessEditorV1762(p=null){const el=document.getElementById('productCompletenessEditorV1762');if(!el)return;if(!p){el.innerHTML='<span>Seleciona ou cria um produto para acompanhar o preenchimento.</span>';return}const c=productCompletenessV1762(p);el.innerHTML=[[c.photo,'Fotografia'],[c.tech,'Ficha Técnica'],[c.description,'Descrição'],[c.price,'PVP'],[!c.review,'Revisão']].map(([ok,l])=>`<span class="${ok?'ok':'warn'}">${ok?'✓':'•'} ${l}</span>`).join('')+`<span class="${c.ready?'ok':'warn'}">${c.ready?'✓ Pronto para publicar':'Ainda incompleto'}</span>`}
+function showProductPanelV1762(name='identity'){document.querySelectorAll('#products [data-product-panel]').forEach(x=>x.classList.toggle('active',x.dataset.productPanel===name));document.querySelectorAll('#products [data-product-panel-btn]').forEach(x=>x.classList.toggle('active',x.dataset.productPanelBtn===name));try{localStorage.setItem('artessencia_product_panel_v1762',name)}catch(_){}}
+function restoreProductPanelV1762(){let n='identity';try{n=localStorage.getItem('artessencia_product_panel_v1762')||'identity'}catch(_){};if(!['identity','pricing','production','public'].includes(n))n='identity';showProductPanelV1762(n)}
 function renderProducts(){
  ensureProductSafetyEditorV1287();if(!document.getElementById('prodCode')?.value){renderProductBaseSummaryV12811(false);setProductEditorModeV145(null);}updateProductTechnicalStatusV1287();
  loadProductEditionsV1245(false).then(()=>{fillProductEditionOptionsV1244(selectedProductEditionIdsV138());updateProductCollectionFilterV1752();});updateProductAvailabilityUI();
@@ -12884,6 +12959,7 @@ function renderProducts(){
  const lowMargin=all.filter(p=>{const c=calculatedProductCost(p),m=p.price?(p.price-c)/p.price:0;return m+1e-9<pricingProductMarginPctV1745(p)/100}).length;
  const avgMargin=all.length?all.reduce((s,p)=>{const c=calculatedProductCost(p);return s+(p.price?(p.price-c)/p.price:0)},0)/all.length:0;
  const technicalPending=all.filter(p=>!productTechnicalInfoCompleteV1287(p)).length;
+ const missingPhoto=all.filter(p=>!productCompletenessV1762(p).photo).length,readyCount=all.filter(p=>productCompletenessV1762(p).ready).length;
 
  const summary=document.getElementById('productsSummary');
  if(summary)summary.innerHTML=[
@@ -12892,7 +12968,9 @@ function renderProducts(){
    ['Em conjuntos',mixEnabled,'Disponíveis para conjuntos'],
    ['Margem baixa',lowMargin,'Abaixo da margem mínima'],
    ['Margem média',pct(avgMargin),'Média do catálogo'],
-   ['Sem ficha técnica',technicalPending,'Materiais ainda por definir']
+   ['Sem ficha técnica',technicalPending,'Materiais ainda por definir'],
+   ['Sem fotografia',missingPhoto,'Imagem pública em falta'],
+   ['Prontos',readyCount,'Completos para publicação']
  ].map(([label,value,note])=>`<div class="card products-kpi ${(label==='Margem baixa'&&lowMargin)||(label==='Sem ficha técnica'&&technicalPending)?'products-kpi-warn':''}">
    <span>${label}</span><strong>${value}</strong><small>${note}</small>
  </div>`).join('');
@@ -12905,6 +12983,7 @@ function renderProducts(){
  const shop=document.getElementById('productShopFilter')?.value||'all';
  const mix=document.getElementById('productMixFilter')?.value||'all';
  const technical=document.getElementById('productTechnicalFilterV1288')?.value||'all';
+ const completeness=document.getElementById('productCompletenessFilterV1762')?.value||'all';
 
  const rows=all.filter(p=>{
    const mq=!q||productSearchTextV1752(p).includes(q);
@@ -12916,7 +12995,8 @@ function renderProducts(){
    const ms=shop==='all'||(shop==='published'&&p.shopVisible)||(shop==='hidden'&&!p.shopVisible);
    const mm=mix==='all'||(mix==='enabled'&&p.mixVisible)||(mix==='disabled'&&!p.mixVisible);
    const mf=technical==='all'||(technical==='reviewed'&&productTechnicalInfoCompleteV1287(p))||(technical==='pending'&&!productTechnicalInfoCompleteV1287(p));
-   return mq&&mc&&mt&&mse&&mcollection&&ms&&mm&&mf;
+   const pc=productCompletenessV1762(p);const mcomp=completeness==='all'||(completeness==='ready'&&pc.ready)||(completeness==='photo'&&!pc.photo)||(completeness==='tech'&&!pc.tech)||(completeness==='description'&&!pc.description)||(completeness==='price'&&!pc.price)||(completeness==='review'&&pc.review);
+   return mq&&mc&&mt&&mse&&mcollection&&ms&&mm&&mf&&mcomp;
  });
 
  const count=document.getElementById('productsResultCount');
@@ -12941,7 +13021,8 @@ function renderProducts(){
            ${p.aprecoImportIdV1753?`<span class="badge apreco-badge-v1753">Apreço importado${p.aprecoNeedsReviewV1753?' · rever':''}</span>`:''}
          </div>
        </div>
-       ${p.shopDescription?`<p>${escapeHtml(p.shopDescription)}</p>`:''}
+       ${productPublicDescriptionV1762(p)?`<p>${escapeHtml(productPublicDescriptionV1762(p))}</p>`:''}
+       ${(()=>{const pc=productCompletenessV1762(p);return `<div class="product-completeness-mini-v1762">${!pc.photo?'<span class="missing">Sem foto</span>':''}${!pc.tech?'<span class="missing">Sem ficha</span>':''}${!pc.description?'<span class="missing">Sem descrição</span>':''}${!pc.price?'<span class="missing">Sem PVP</span>':''}${pc.ready?'<span>Pronto ✓</span>':''}</div>`})()}
        ${Array.isArray(p.tagsV1753)&&p.tagsV1753.length?`<div class="product-tags-v1753">${p.tagsV1753.map(t=>`<span>${escapeHtml(t)}</span>`).join('')}</div>`:''}
        ${Array.isArray(p.seasonalTagsV1761)&&p.seasonalTagsV1761.length?`<div class="product-tags-v1753">${p.seasonalTagsV1761.map(t=>`<span>🍂 ${escapeHtml(t)}</span>`).join('')}</div>`:''}
        <div class="product-safety-meta-v1287"><b>Produção:</b> ${escapeHtml(productionProfileSummaryV130(p))} · <b>Materiais:</b> ${productManufacturedV130(p)?(((db.productRecipes[p.code]||[]).length)+' componente(s)'):'sem desconto de stock'}</div>
@@ -15491,7 +15572,7 @@ async function syncStoreCatalogV1421(user){
    const online=!!p.shopVisible;if(online)visibleCodes.add(code.toLowerCase());
    const category=String(p.category||'Outros produtos artesanais').trim();
    const price=Number(p.onlinePrice)>0?Number(p.onlinePrice):(Number(p.price)||0);
-   const row={backoffice_product_id:p._rid||code,code,name:String(p.name||code),slug:storeSlugV1421(code+'-'+(p.name||'')),description:String(p.shopDescription||''),category_id:categoryMap.get(category)||null,price_online:Math.max(0,price),image_url:p.shopImageUrl||null,active:online,available:online,customizable:!!(p.customizable||p.allowCustomization),updated_at:new Date().toISOString()};
+   const row={backoffice_product_id:p._rid||code,code,name:String(p.name||code),slug:storeSlugV1421(code+'-'+(p.name||'')),description:productPublicDescriptionV1762(p),category_id:categoryMap.get(category)||null,price_online:Math.max(0,price),image_url:p.shopImageUrl||null,active:online,available:online,customizable:!!(p.customizable||p.allowCustomization),updated_at:new Date().toISOString()};
    const {error}=await cloudClient.from('store_products').upsert(row,{onConflict:'code'});if(error)throw error;
  }
  const {data:remote,error:readErr}=await cloudClient.from('store_products').select('id,code,active');if(readErr)throw readErr;
@@ -15785,6 +15866,7 @@ ensureCostModel();syncPackagingSelect();go('dashboard');configureLock();setTimeo
 
 
 document.getElementById('runtimeVersion').textContent='V'+APP_VERSION;
+setTimeout(()=>{restoreProductPanelV1762();syncPricingQuickFromBaseV1762();renderProductCompletenessEditorV1762(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null)},40);
 function globalSearchKeyV142(ev){
   if(ev.key!=='Enter')return;
   const q=String(ev.currentTarget?.value||'').trim().toLocaleLowerCase('pt-PT');
