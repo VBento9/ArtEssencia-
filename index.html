@@ -2595,7 +2595,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <small>Dados essenciais da encomenda e instruções para produção.</small>
       </div>
       <div class="form-grid sale-customer-grid-v1727">
-        <div class="field sale-client-v1727"><label>Cliente</label><input id="saleClient" list="clientSuggestions" placeholder="Nome do cliente" oninput="fillClientContact()"><datalist id="clientSuggestions"></datalist></div>
+        <div class="field sale-client-v1727 sale-client-autocomplete-v1756"><label>Cliente</label><input id="saleClient" list="clientSuggestions" placeholder="Começa a escrever o nome do cliente" autocomplete="off" onfocus="renderSaleClientMatchesV1756()" oninput="handleSaleClientInputV1756()" onblur="hideSaleClientMatchesV1756()"><datalist id="clientSuggestions"></datalist><div id="saleClientMatchesV1756" class="sale-client-matches-v1756 hidden"></div></div>
         <div class="field"><label>Contacto</label><input id="saleContact" type="tel" inputmode="tel" placeholder="Telemóvel"></div>
         <div class="field"><label>Email</label><input id="saleEmail" type="email" autocomplete="email" placeholder="cliente@email.pt"></div>
         <div class="field"><label>Data entrega</label><input id="saleDate" type="date"></div>
@@ -4461,7 +4461,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.55';
+const APP_VERSION='1.7.56';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -5501,9 +5501,14 @@ function upsertClientFromOrder(name,contact,email=''){
  if(c){if(!c.name)c.name=name;if(!c.phone&&contact)c.phone=contact;if(!c.email&&mail)c.email=mail;return c.id}
  c={id:uid('CLI'),name,phone:contact||'',email:mail,notes:'',created:todayISO(),source:'order'};db.clients.push(c);return c.id
 }
-function renderClientSuggestions(){ensureClientsFromOrders();const d=document.getElementById('clientSuggestions');if(d)d.innerHTML=db.clients.slice().sort((a,b)=>a.name.localeCompare(b.name,'pt')).map(c=>`<option value="${String(c.name).replace(/"/g,'&quot;')}">${[c.phone,c.email].filter(Boolean).join(' · ')}</option>`).join('')}
+function renderClientSuggestions(){ensureClientsFromOrders();const rows=(db.clients||[]).slice().filter(c=>String(c.name||'').trim()).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'pt'));const d=document.getElementById('clientSuggestions');if(d)d.innerHTML=rows.map(c=>`<option value="${String(c.name).replace(/"/g,'&quot;')}">${[c.phone,c.email].filter(Boolean).join(' · ')}</option>`).join('')}
 function clientByUniqueName(value){const n=normText(value),rows=(db.clients||[]).filter(x=>normText(x.name)===n);return rows.length===1?rows[0]:null}
 function fillClientContact(){const c=clientByUniqueName(document.getElementById('saleClient')?.value);if(!c)return;const p=document.getElementById('saleContact'),e=document.getElementById('saleEmail');if(p&&!p.value)p.value=c.phone||'';if(e&&!e.value)e.value=c.email||''}
+function saleClientMatchesV1756(value){ensureClientsFromOrders();const q=normText(value||'');let rows=(db.clients||[]).filter(c=>String(c.name||'').trim());if(q)rows=rows.filter(c=>normText(c.name).includes(q)||normText(c.phone).includes(q)||normText(c.email).includes(q));return rows.sort((a,b)=>{const an=normText(a.name),bn=normText(b.name),ap=q&&an.startsWith(q)?0:1,bp=q&&bn.startsWith(q)?0:1;return ap-bp||String(a.name||'').localeCompare(String(b.name||''),'pt')}).slice(0,8)}
+function renderSaleClientMatchesV1756(){const input=document.getElementById('saleClient'),box=document.getElementById('saleClientMatchesV1756');if(!input||!box)return;const rows=saleClientMatchesV1756(input.value);if(!rows.length){box.innerHTML=input.value.trim()?'<div class="sale-client-match-empty-v1756">Sem clientes correspondentes</div>':'';box.classList.toggle('hidden',!input.value.trim());return}box.innerHTML=rows.map(c=>`<button type="button" class="sale-client-match-v1756" onmousedown="event.preventDefault()" onclick="chooseSaleClientV1756('${String(c.id||'').replace(/'/g,"\\'")}')"><strong>${escapeHtml(c.name||'Cliente')}</strong><small>${escapeHtml([c.phone,c.email].filter(Boolean).join(' · ')||'Sem contacto')}</small></button>`).join('');box.classList.remove('hidden')}
+function handleSaleClientInputV1756(){fillClientContact();renderSaleClientMatchesV1756()}
+function chooseSaleClientV1756(id){const c=(db.clients||[]).find(x=>String(x.id||'')===String(id));if(!c)return;const n=document.getElementById('saleClient'),p=document.getElementById('saleContact'),e=document.getElementById('saleEmail'),box=document.getElementById('saleClientMatchesV1756');if(n)n.value=c.name||'';if(p)p.value=c.phone||'';if(e)e.value=c.email||'';if(box)box.classList.add('hidden')}
+function hideSaleClientMatchesV1756(){setTimeout(()=>document.getElementById('saleClientMatchesV1756')?.classList.add('hidden'),140)}
 function fillQuoteClientContact(){const c=clientByUniqueName(document.getElementById('quoteClient')?.value);if(!c)return;const p=document.getElementById('quoteContact'),e=document.getElementById('quoteEmail');if(p&&!p.value)p.value=c.phone||'';if(e&&!e.value)e.value=c.email||''}
 function orderMessage(id){
  const o=db.orders.find(x=>x.id===id);if(!o)return'';const c=calcOrder(o),remaining=Math.max(c.total-(+o.paid||0),0),s=db.settings||{};let pay='';
@@ -12399,20 +12404,21 @@ function loadQuantityPricingProductV1750(userTriggered=false){
 function resetQuantityPricingMaterialsV1750(){const p=quantityPricingProductV1750();if(!p)return toast('Seleciona um produto para repor a Ficha Técnica');quantityPricingRowsV1750=quantityPricingRowsFromProductV1750(p);renderQuantityPricingMaterialsV1750();refreshQuantityPricingV1750();toast('Materiais repostos a partir da Ficha Técnica')}
 function quantityPricingUnitsChangedV1750(){
  const newQty=quantityPricingUnitsV1750(),p=quantityPricingProductV1750();
- if((document.getElementById('qtyPricingModeV1750')?.value||'product')==='product'&&p){for(const r of quantityPricingRowsV1750)if(!r.manual)r.totalQty=Math.max(0,Number(r.perUnit)||0)*newQty;const other=document.getElementById('qtyPricingOtherLotV1750');if(other&&!other.dataset.manual)other.value=String((pricingOtherCostV1745(p)*newQty).toFixed(2))}
- renderQuantityPricingMaterialsV1750();refreshQuantityPricingV1750();
+ if((document.getElementById('qtyPricingModeV1750')?.value||'product')==='product'&&p){for(const [i,r] of quantityPricingRowsV1750.entries())if(!r.manual){r.totalQty=Math.max(0,Number(r.perUnit)||0)*newQty;const input=document.querySelector(`#qtyPricingMaterialsV1750 input[data-qpm-index="${i}"]`);if(input&&document.activeElement!==input)input.value=String(Number(r.totalQty||0))}const other=document.getElementById('qtyPricingOtherLotV1750');if(other&&!other.dataset.manual)other.value=String((pricingOtherCostV1745(p)*newQty).toFixed(2))}
+ refreshQuantityPricingMaterialCostsV1756();refreshQuantityPricingV1750();
 }
 function quantityPricingTimeInputV1750(){refreshQuantityPricingV1750()}
 function quantityPricingOtherInputV1750(){const e=document.getElementById('qtyPricingOtherLotV1750');if(e)e.dataset.manual='1';refreshQuantityPricingV1750()}
 function addQuantityPricingMaterialV1750(){
  if(!(db.stock||[]).length)return toast('Não existem matérias-primas no Stock');const first=db.stock[0];quantityPricingRowsV1750.push({id:uid('QPM'),item:first.name,perUnit:0,totalQty:0,manual:true});renderQuantityPricingMaterialsV1750();refreshQuantityPricingV1750()
 }
-function updateQuantityPricingMaterialV1750(ix,kind,value){const r=quantityPricingRowsV1750[ix];if(!r)return;if(kind==='item'){r.item=value;r.manual=true}else if(kind==='qty'){r.totalQty=Math.max(0,Number(value)||0);r.manual=true}renderQuantityPricingMaterialsV1750();refreshQuantityPricingV1750()}
+function updateQuantityPricingMaterialV1750(ix,kind,value){const r=quantityPricingRowsV1750[ix];if(!r)return;if(kind==='item'){r.item=value;r.manual=true;renderQuantityPricingMaterialsV1750();refreshQuantityPricingV1750();return}if(kind==='qty'){r.totalQty=Math.max(0,Number(value)||0);r.manual=true;refreshQuantityPricingMaterialCostsV1756();refreshQuantityPricingV1750()}}
+function refreshQuantityPricingMaterialCostsV1756(){const rows=quantityPricingRowsV1750;rows.forEach((r,i)=>{const st=stockByName(r.item),cost=Math.max(0,Number(r.totalQty)||0)*Math.max(0,Number(st?.unitCost)||0),cell=document.querySelector(`#qtyPricingMaterialsV1750 [data-qpm-cost="${i}"]`);if(cell)cell.textContent=euro(cost)});const total=rows.reduce((sum,r)=>sum+Math.max(0,Number(r.totalQty)||0)*Math.max(0,Number(stockByName(r.item)?.unitCost)||0),0),t=document.getElementById('qtyPricingMaterialsTotalV1750');if(t)t.textContent=euro(total)}
 function removeQuantityPricingMaterialV1750(ix){quantityPricingRowsV1750.splice(ix,1);renderQuantityPricingMaterialsV1750();refreshQuantityPricingV1750()}
 function renderQuantityPricingMaterialsV1750(){
  const el=document.getElementById('qtyPricingMaterialsV1750');if(!el)return;const rows=quantityPricingRowsV1750;
  if(!rows.length){el.innerHTML='<div class="empty" style="padding:18px">Sem materiais nesta simulação. Adiciona materiais ou seleciona um produto com Ficha Técnica.</div>';const t=document.getElementById('qtyPricingMaterialsTotalV1750');if(t)t.textContent=euro(0);return}
- el.innerHTML='<div class="quantity-pricing-material-head-v1750"><span>Material</span><span>Base / unidade</span><span>Quantidade total do lote</span><span>Custo do lote</span><span></span></div>'+rows.map((r,i)=>{const st=stockByName(r.item),uc=Math.max(0,Number(st?.unitCost)||0),cost=uc*Math.max(0,Number(r.totalQty)||0);return `<div class="quantity-pricing-material-row-v1750"><select onchange="updateQuantityPricingMaterialV1750(${i},'item',this.value)">${quantityPricingStockOptionsV1750(r.item)}</select><span class="material-unit-v1750">${Number(r.perUnit)>0?`${Number(r.perUnit).toLocaleString('pt-PT')} ${escapeHtml(st?.unit||'un')}/un · `:'manual · '}${euro(uc)}/${escapeHtml(st?.unit||'un')}</span><input type="number" min="0" step="0.01" value="${Number(r.totalQty||0)}" oninput="updateQuantityPricingMaterialV1750(${i},'qty',this.value)"><span class="material-cost-v1750">${euro(cost)}</span><button class="btn danger quantity-pricing-material-remove-v1750" type="button" onclick="removeQuantityPricingMaterialV1750(${i})" title="Remover">×</button></div>`}).join('');
+ el.innerHTML='<div class="quantity-pricing-material-head-v1750"><span>Material</span><span>Base / unidade</span><span>Quantidade total do lote</span><span>Custo do lote</span><span></span></div>'+rows.map((r,i)=>{const st=stockByName(r.item),uc=Math.max(0,Number(st?.unitCost)||0),cost=uc*Math.max(0,Number(r.totalQty)||0);return `<div class="quantity-pricing-material-row-v1750"><select onchange="updateQuantityPricingMaterialV1750(${i},'item',this.value)">${quantityPricingStockOptionsV1750(r.item)}</select><span class="material-unit-v1750">${Number(r.perUnit)>0?`${Number(r.perUnit).toLocaleString('pt-PT')} ${escapeHtml(st?.unit||'un')}/un · `:'manual · '}${euro(uc)}/${escapeHtml(st?.unit||'un')}</span><input type="number" min="0" step="0.01" inputmode="decimal" data-qpm-index="${i}" value="${Number(r.totalQty||0)}" oninput="updateQuantityPricingMaterialV1750(${i},'qty',this.value)"><span class="material-cost-v1750" data-qpm-cost="${i}">${euro(cost)}</span><button class="btn danger quantity-pricing-material-remove-v1750" type="button" onclick="removeQuantityPricingMaterialV1750(${i})" title="Remover">×</button></div>`}).join('');
  const total=rows.reduce((sum,r)=>sum+Math.max(0,Number(r.totalQty)||0)*Math.max(0,Number(stockByName(r.item)?.unitCost)||0),0),t=document.getElementById('qtyPricingMaterialsTotalV1750');if(t)t.textContent=euro(total)
 }
 function refreshQuantityPricingV1750(){
@@ -12429,7 +12435,7 @@ function quantityPricingSnapshotV1751(){
  const materials=quantityPricingRowsV1750.reduce((sum,r)=>sum+Math.max(0,Number(r.totalQty)||0)*Math.max(0,Number(stockByName(r.item)?.unitCost)||0),0);
  const minsUnit=Math.max(0,Number(document.getElementById('qtyPricingMinutesUnitV1750')?.value)||0),normalMins=minsUnit*units,eff=Math.max(0,Math.min(95,Number(document.getElementById('qtyPricingEfficiencyV1750')?.value)||0)),manualTime=String(document.getElementById('qtyPricingTotalMinutesV1750')?.value||'').trim(),totalMins=manualTime===''?normalMins*(1-eff/100):Math.max(0,Number(manualTime)||0);
  const labor=pricingLaborHourlyRateV1745()*totalMins/60,fixed=pricingFixedHourlyRateV1745()*totalMins/60,other=Math.max(0,Number(document.getElementById('qtyPricingOtherLotV1750')?.value)||0),costTotal=materials+labor+fixed+other,costUnit=costTotal/units,marginPct=Math.max(0,Math.min(95,Number(document.getElementById('qtyPricingMarginV1750')?.value)||0)),recommendedUnit=batchPriceRoundV1743(pricingPriceFromMarginV1745(costUnit,marginPct)),discount=Math.max(0,Math.min(100,Number(document.getElementById('qtyPricingDiscountV1750')?.value)||0)),manualUnitRaw=String(document.getElementById('qtyPricingManualUnitV1750')?.value||'').trim(),finalUnit=manualUnitRaw===''?recommendedUnit*(1-discount/100):Math.max(0,Number(manualUnitRaw)||0),finalTotal=finalUnit*units,profit=finalTotal-costTotal,marginReal=finalTotal>0?profit/finalTotal:0;
- return {version:'1.7.52',createdAt:new Date().toISOString(),mode,productCode:p?.code||'',productName:p?.name||'',units,materials:quantityPricingRowsV1750.map(r=>{const st=stockByName(r.item);return {item:r.item,unit:st?.unit||'un',perUnit:Math.max(0,Number(r.perUnit)||0),totalQty:Math.max(0,Number(r.totalQty)||0),unitCost:Math.max(0,Number(st?.unitCost)||0),cost:Math.max(0,Number(r.totalQty)||0)*Math.max(0,Number(st?.unitCost)||0)}}),materialsCost:materials,minutesPerUnit:minsUnit,efficiencyPct:eff,totalMinutes:totalMins,laborCost:labor,fixedCost:fixed,otherCost:other,costTotal,costUnit,marginPct,recommendedUnit,recommendedTotal:recommendedUnit*units,discountPct:discount,finalUnit,finalTotal,profit,marginReal};
+ return {version:'1.7.56',createdAt:new Date().toISOString(),mode,productCode:p?.code||'',productName:p?.name||'',units,materials:quantityPricingRowsV1750.map(r=>{const st=stockByName(r.item);return {item:r.item,unit:st?.unit||'un',perUnit:Math.max(0,Number(r.perUnit)||0),totalQty:Math.max(0,Number(r.totalQty)||0),unitCost:Math.max(0,Number(st?.unitCost)||0),cost:Math.max(0,Number(r.totalQty)||0)*Math.max(0,Number(st?.unitCost)||0)}}),materialsCost:materials,minutesPerUnit:minsUnit,efficiencyPct:eff,totalMinutes:totalMins,laborCost:labor,fixedCost:fixed,otherCost:other,costTotal,costUnit,marginPct,recommendedUnit,recommendedTotal:recommendedUnit*units,discountPct:discount,finalUnit,finalTotal,profit,marginReal};
 }
 function quantityPricingToOrderV1751(){
  const snap=quantityPricingSnapshotV1751(),p=quantityPricingProductV1750();
@@ -14968,46 +14974,36 @@ function manualOrderNumber(id,yr){
 
 async function nextManualOrderId(){
  const yr=new Date().getFullYear();
+ const format=n=>'AS-'+yr+'-'+String(Math.max(1,Math.floor(Number(n)||1))).padStart(4,'0');
+ const numsFrom=rows=>(rows||[]).map(o=>manualOrderNumber(o?.id??o?.data?.id,yr)).filter(n=>Number.isFinite(n)&&n>0);
+ const localNums=numsFrom(db.orders||[]);
+ let cloudNums=[],rpcN=0;
  const u=cloudUser||await ensureCloudSession();
-
- // Caminho principal: numeração atómica no Supabase.
  if(u&&cloudClient&&navigator.onLine){
-   const {data,error}=await cloudClient.rpc('artessencia_next_manual_order_id_v1',{p_year:yr});
-   if(!error&&data){
-     // V1.4.11: nunca aceitar da Cloud um número que já exista localmente.
-     // Isto protege dados antigos criados antes do contador atómico e evita
-     // que uma nova encomenda abra/assuma o histórico de outra com o mesmo nº.
-     const candidate=String(data),used=new Set((db.orders||[]).map(o=>String(o?.id||'')));
-     if(!used.has(candidate))return candidate;
-     const cloudN=manualOrderNumber(candidate,yr),localNums=(db.orders||[]).map(o=>manualOrderNumber(o?.id,yr)).filter(Boolean);
-     const n=Math.max(cloudN,...localNums)+1;
-     return 'AS-'+yr+'-'+String(n).padStart(4,'0')
-   }
-
-   // Compatibilidade temporária caso o RPC ainda não esteja instalado:
-   // lê a Cloud antes de calcular, para nunca depender só do localStorage.
-   const {data:rows,error:readError}=await cloudClient
-     .from(REL_TABLES.orders)
-     .select('data')
-     .eq('user_id',u.id);
-   if(!readError){
-     const cloudNums=(Array.isArray(rows)?rows:[])
-       .map(r=>manualOrderNumber(r?.data?.id,yr))
-       .filter(Boolean);
-     const localNums=(db.orders||[])
-       .map(o=>manualOrderNumber(o?.id,yr))
-       .filter(Boolean);
-     const n=Math.max(0,...cloudNums,...localNums)+1;
-     return 'AS-'+yr+'-'+String(n).padStart(4,'0')
-   }
+   // Ler primeiro as encomendas já existentes na Cloud. O contador RPC deixa de ser
+   // a única fonte de verdade, evitando regressar a AS-AAAA-0001 se o contador remoto
+   // estiver ausente, reiniciado ou dessincronizado.
+   try{
+     const {data:rows,error}=await cloudClient.from(REL_TABLES.orders).select('data').eq('user_id',u.id);
+     if(!error)cloudNums=numsFrom(Array.isArray(rows)?rows:[]);
+   }catch(e){}
+   try{
+     const {data,error}=await cloudClient.rpc('artessencia_next_manual_order_id_v1',{p_year:yr});
+     if(!error&&data){
+       const raw=Array.isArray(data)?data[0]:data;
+       const candidate=typeof raw==='object'&&raw!==null?(raw.id||raw.order_id||raw.order_number||raw.value||''):raw;
+       rpcN=manualOrderNumber(String(candidate||''),yr);
+       if(!rpcN&&/^\d+$/.test(String(candidate||'').trim()))rpcN=Number(candidate)||0;
+     }
+   }catch(e){}
  }
-
- // Offline: apenas como último recurso. O índice único do Supabase continua a
- // impedir duplicados quando a ligação regressar.
- const localNums=(db.orders||[])
-   .map(o=>manualOrderNumber(o?.id,yr))
-   .filter(Boolean);
- return 'AS-'+yr+'-'+String(Math.max(0,...localNums)+1).padStart(4,'0')
+ const existingMax=Math.max(0,...localNums,...cloudNums);
+ // Um RPC correto devolve o próximo número e pode estar acima do máximo observado.
+ // Se devolver 1 repetidamente, prevalece sempre o histórico real local/Cloud.
+ let n=Math.max(existingMax+1,rpcN||0);
+ const used=new Set((db.orders||[]).map(o=>String(o?.id||'')));
+ let id=format(n);while(used.has(id)){n++;id=format(n)}
+ return id
 }
 
 async function bindOrderRidFromCloud(order,u){
@@ -15524,7 +15520,7 @@ window.addEventListener('artessencia:datachanged',()=>{
 window.addEventListener('pageshow',e=>{if(e.persisted)setTimeout(()=>renderAll(),0)});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(()=>renderAll(),0)});
 
-function renderAll(){ensureQuotePaymentModel();ensureCostModel();syncPackagingSelect();renderDashboard();renderPicker();renderCart();renderOrders();renderProduction();renderCosts();renderStock();renderPurchases();renderCash();renderClients();renderQuotes();renderQuoteCart();renderProducts();renderCatalogs();renderSpecialEditionsAdmin();renderCatalogDigitalCenterV160();renderSettings();renderAprecoImportV1753();renderBusinessSettings();renderReports();renderQuantityPricingV1750();renderLegalSummaryV1286();renderCloudUI();renderBackupInfo();renderOrderNotificationsV12624();renderPushStatusV12625();const s=sec();if(document.getElementById('lockMinutes'))document.getElementById('lockMinutes').value=String(s.lockMinutes??15)}
+function renderAll(){ensureQuotePaymentModel();ensureCostModel();syncPackagingSelect();renderClientSuggestions();renderDashboard();renderPicker();renderCart();renderOrders();renderProduction();renderCosts();renderStock();renderPurchases();renderCash();renderClients();renderQuotes();renderQuoteCart();renderProducts();renderCatalogs();renderSpecialEditionsAdmin();renderCatalogDigitalCenterV160();renderSettings();renderAprecoImportV1753();renderBusinessSettings();renderReports();renderQuantityPricingV1750();renderLegalSummaryV1286();renderCloudUI();renderBackupInfo();renderOrderNotificationsV12624();renderPushStatusV12625();const s=sec();if(document.getElementById('lockMinutes'))document.getElementById('lockMinutes').value=String(s.lockMinutes??15)}
 document.addEventListener('input',e=>{if(e.target&&['costPackQty','costPackPrice'].includes(e.target.id))updateCostPreview()});
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;installBtn.classList.remove('hidden');installBanner.classList.remove('hidden')});
 async function installApp(){if(!deferredPrompt)return toast('No Chrome: menu ⋮ → Adicionar ao ecrã principal / Instalar app');deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;installBtn.classList.add('hidden');installBanner.classList.add('hidden')}
@@ -15755,4 +15751,13 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 .product-composition-v144{margin-top:12px;border-top:1px solid #dfd1bf;padding-top:12px}
 .product-composition-head-v144{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}.product-composition-head-v144>div{display:flex;flex-direction:column;gap:2px}.product-composition-head-v144 strong{font-family:Georgia,"Times New Roman",serif;font-size:15px;color:#3d2b20}.product-composition-head-v144 small{font-size:10px;color:#8a7564}
 .product-composition-list-v144{display:grid;gap:6px}.composition-row-v144{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;background:#fffaf3;border:1px solid #e5d8c8;border-radius:9px;padding:8px 10px}.composition-row-v144 .name{font-weight:750;color:#4d3829}.composition-row-v144 .qty{font-weight:800;color:#654a36;white-space:nowrap}.composition-row-v144 .cost{font-size:11px;color:#8b7461;white-space:nowrap}.composition-total-v144{display:flex;justify-content:flex-end;gap:8px;padding:5px 2px 0;color:#725b48;font-size:11px}.composition-total-v144 strong{color:#3e2d21}
+
+/* V1.7.56 — autocomplete de clientes sem depender do datalist do browser */
+.sale-client-autocomplete-v1756{position:relative}
+.sale-client-matches-v1756{position:absolute;left:0;right:0;top:calc(100% - 2px);z-index:90;background:#fff;border:1px solid #ddcfc7;border-radius:12px;box-shadow:0 12px 28px rgba(73,48,41,.16);max-height:260px;overflow:auto;padding:5px}
+.sale-client-matches-v1756.hidden{display:none}
+.sale-client-match-v1756{display:flex;width:100%;border:0;background:transparent;padding:9px 10px;border-radius:9px;text-align:left;flex-direction:column;gap:2px;cursor:pointer;color:inherit}
+.sale-client-match-v1756:hover,.sale-client-match-v1756:focus{background:#f7efeb;outline:none}
+.sale-client-match-v1756 strong{font-size:11px;color:#513a34}.sale-client-match-v1756 small{font-size:8px;color:#8d7870}
+.sale-client-match-empty-v1756{padding:9px 10px;font-size:9px;color:#907d75}
 </style>
