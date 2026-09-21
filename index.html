@@ -3822,8 +3822,10 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         </div>
         <div class="btnrow" style="margin-top:10px">
           <button class="btn primary" type="button" onclick="importAprecoDataV1753()">Integrar dados Apreço</button>
+          <button class="btn" type="button" onclick="organizeAprecoProductsV1761(true)">Organizar produtos por famílias</button>
           <button class="btn" type="button" onclick="go('products');setTimeout(()=>{const f=document.getElementById('productTagFilterV1753');if(f)f.value='Por rever';renderProducts()},120)">Ver produtos por rever</button>
         </div>
+        <div id="aprecoOrganizationSummaryV1761" class="soft-note" style="margin-top:10px"></div>
         <div id="aprecoImportResultV1753" class="apreco-import-result-v1753"></div>
       </div>
 
@@ -4128,6 +4130,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <select id="productTagFilterV1753" onchange="renderProducts()" aria-label="Filtrar por grupo ou utilização">
           <option value="all">Todos os grupos / utilizações</option>
         </select>
+        <select id="productSeasonFilterV1761" onchange="renderProducts()" aria-label="Filtrar por sazonalidade">
+          <option value="all">Todas as sazonalidades</option>
+        </select>
         <select id="productCollectionFilterV1752" onchange="renderProducts()" aria-label="Filtrar por coleção ou tema">
           <option value="all">Todas as coleções / temas</option>
           <option value="none">Sem coleção</option>
@@ -4161,6 +4166,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div class="field product-code-field-v147"><label>Código</label><input id="prodCode" maxlength="40" placeholder="Automático se ficar vazio"><small>Identidade interna; fica protegida depois da criação.</small></div>
         <div class="field" id="prodCategoryField"><label>Tipo / família do produto</label><select id="prodCat" onchange="syncProductionTypeFromCategoryV130()"><option value="Velas em molde">Velas decorativas / em molde</option><option value="Velas em recipiente">Velas em recipiente</option><option value="Wax melts">Wax melts</option><option value="Sabonetes">Sabonetes</option><option value="Resina e Jesmonite">Resina e Jesmonite</option><option value="Personalizados">Personalizados</option><option value="Outros produtos artesanais">Outros produtos artesanais</option></select><small class="mix-help">Define o tipo físico do produto. Ex.: uma vela decorativa pode depois pertencer simultaneamente a Natal, Páscoa ou outra coleção.</small></div>
         <div class="field span2" id="prodTagsFieldV1753"><label>Grupos / etiquetas para pesquisa</label><input id="prodTagsV1753" placeholder="Ex.: Lembrancinhas, Decoração, Molde / decorativa"><small class="mix-help">Podes usar várias etiquetas separadas por vírgulas. Servem apenas para organização e filtros; não alteram a Ficha Técnica nem a precificação.</small></div>
+        <div class="field span2" id="prodSeasonFieldV1761"><label>Sazonalidade / família temática</label><input id="prodSeasonTagsV1761" placeholder="Ex.: Natal, Outono, Páscoa, Halloween"><small class="mix-help">Usa uma ou mais famílias temáticas separadas por vírgulas. É apenas classificação interna para pesquisa e filtros; não publica nem associa automaticamente o produto a uma Edição Especial.</small></div>
         <div class="field span2 product-availability-v1726"><label>Disponibilidade base na loja</label><select id="prodAvailability" onchange="updateProductAvailabilityUI()"><option value="regular">Todo o ano + coleções</option><option value="edition">Apenas em coleções sazonais</option></select><small class="mix-help">Um produto pode pertencer a várias coleções sem ser duplicado. “Todo o ano + coleções” mantém-no no catálogo normal; “Apenas em coleções sazonais” só o disponibiliza quando pelo menos uma coleção associada estiver ativa e dentro das datas.</small></div>
         <div class="field span2 product-editions-v1726" id="prodEditionField"><label>Coleções / temas (Natal, Páscoa, Halloween…)</label><select id="prodEditionId" multiple hidden aria-hidden="true" tabindex="-1"></select><div class="product-edition-touch-head-v1758"><span id="prodEditionSelectionCountV1758">Nenhuma coleção selecionada</span><button type="button" class="btn ghost" onclick="refreshProductEditionOptionsV1758()">Atualizar</button></div><div id="prodEditionPickerV1758" class="product-edition-touch-list-v1758" role="group" aria-label="Coleções sazonais do produto"></div><small class="mix-help">Toca nas coleções para associar ou remover. Não é necessário usar Ctrl/Cmd. Um produto pode pertencer a várias coleções sem ser duplicado.</small></div>
         <div class="field edition-cost-field" id="prodEditionLaborField" hidden aria-hidden="true"><label>Tempo extra por unidade</label><div class="edition-cost-input"><input id="prodEditionExtraLaborMinutes" type="number" min="0" step="0.1" value="0"><span>min</span></div><small class="mix-help">Só o tempo adicional desta edição. O custo é calculado com a mão de obra €/hora já definida na app.</small></div>
@@ -4461,7 +4467,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.59';
+const APP_VERSION='1.7.61';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -4633,6 +4639,80 @@ function aprecoMaterialToStockV1753(m){
  return {name:String(m.name||'').trim(),qty:(Number(m.stock)||0)*factor,unit,min:0,target:null,unitCost:(Number(m.price)||0)/factor,preferredSupplier:'',notesV1753:String(m.notes||''),aprecoImportIdV1753:m.id,aprecoSourceNameV1753:m.sourceName||m.name};
 }
 function updateProductTagFilterV1753(products){const el=document.getElementById('productTagFilterV1753');if(!el)return;const prev=el.value||'all',tags=[...new Set((products||[]).flatMap(p=>Array.isArray(p.tagsV1753)?p.tagsV1753:[]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt'));el.innerHTML='<option value="all">Todos os grupos / utilizações</option>'+tags.map(t=>`<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('');el.value=[...el.options].some(o=>o.value===prev)?prev:'all'}
+function uniqueSeasonTagsV1761(arr){return [...new Set((arr||[]).map(x=>String(x||'').trim()).filter(Boolean))]}
+function parseSeasonTagsV1761(v){return uniqueSeasonTagsV1761(String(v||'').split(/[,;]+/))}
+function seasonalTagsForV1761(name,description=''){
+ const t=normalizeImportTextV1753(String(name||'')+' '+String(description||'')),out=[],add=x=>{if(!out.includes(x))out.push(x)};
+ const any=patterns=>patterns.some(rx=>rx.test(t));
+ if(any([/\bnatal\b/,/natalic/,/pai natal/,/\brena\b/,/boneco de neve/,/snowman/,/quebra nozes/,/\bpresepio\b/,/floco de gelo/,/flocos neve/,/pinheiro de natal/,/pinheiro e presente/,/arvore(s)? natal/,/presente de natal/,/bola de natal/,/doce de natal/,/gengibre com laco/]))add('Natal');
+ if(any([/halloween/,/\babobora\b/,/\bbruxa\b/,/\bfantasma\b/,/\bmumia/,/\bmumias\b/]))add('Halloween');
+ if(any([/\bpascoa\b/,/happy easter/,/\bovo da pascoa\b/,/\bcoelho\b/]))add('Páscoa');
+ if(any([/\bbolota\b/,/\besquilo\b/,/\bpinha\b/,/\bourico/,/\bcogumelo/,/\bfolha\b/,/\babobora\b/]))add('Outono');
+ if(any([/dia dos namorados/,/\bapaixonad/,/\blove\b/,/i love you/,/\bcoracao\b/,/geometria romantica/,/rosa dia dos namorados/]))add('Dia dos Namorados');
+ if(any([/\bprimavera\b/,/\btulipa/,/\bgirassol\b/,/\bhortencia\b/,/\bborboleta\b/,/\bflor(es)?\b/,/\bpeonia\b/,/\blotus\b/,/jardim botanico/,/bouquet/,/\bramo\b/]))add('Primavera / Floral');
+ if(any([/\bverao\b/,/brisa marinha/]))add('Verão');
+ return out
+}
+function organizationUseTagsV1761(name,description=''){
+ const t=normalizeImportTextV1753(String(name||'')+' '+String(description||'')),out=[],add=x=>{if(!out.includes(x))out.push(x)};
+ if(/\bteste\b|\borcamento\b|\bcopia\b|\bvariacoes\b/.test(t))add('Arquivo / testes');
+ if(/lembranc|\b25un\b|\b50un\b|\b100un\b|\b200un\b|45 unidades|36 unidades|batiz|comunhao|profissao de fe/.test(t)){add('Lembrancinhas');add('Eventos')}
+ if(/personaliz|\bnome\b|\bletra\b|\bnumero\b/.test(t))add('Personalizados');
+ if(/bouquet|\bramo\b|arranjo|presente|box oferta|cestinha/.test(t))add('Presente');
+ if(/\bcruz\b|jesus|santa luzia|santa a rezar|\banjo\b|\bpresepio\b/.test(t))add('Religioso');
+ if(/wax melt/.test(t))add(/queimador|embalagem/.test(t)?'Acessórios Wax Melts':'Wax melts');
+ if(/\bsabonete\b/.test(t))add('Sabonetes');
+ if(/\bresina\b|jesmonite/.test(t))add('Resina / Jesmonite');
+ if(/lata|frasco|copo|vidro|pote|recipiente|barro vidrado/.test(t)&&/vela|fragr|cera|lavanda|baunilha|kiwi|camomila/.test(t))add('Recipiente');
+ if(/\banjo\b|\bgnomo\b|\burso\b|\bursinho\b|\brena\b|\barvore\b|\bestrela\b|\bcoracao\b|\bpinha\b|\bcasinha\b|\bsoldado\b|\bpresepio\b|\bcoruja\b|\besquilo\b|\bcoelho\b|\babobora\b|\bfantasma\b|\bcogumelo\b|\bmocho\b|\belefante\b|\bleao\b|\bovelha\b|\bourico\b|\bborboleta\b|\btulipa\b|\bflor\b|\bgirassol\b|\bhortencia\b/.test(t)&&!out.includes('Recipiente')&&!out.includes('Resina / Jesmonite'))add('Molde / decorativa');
+ if(/\bbase\b|bandeja|castical|centro de mesa|suporte|jarra|saboneteira/.test(t))add('Decoração');
+ if(/porta chaves|botoes magneticos|caneta/.test(t))add('Acessórios / personalizados');
+ const ambiguous=/^(colecao|lumi|arte colorida|variacoes|molde [a-g])$/.test(normalizeImportTextV1753(name));
+ if(ambiguous)add('Por rever');
+ return out
+}
+function suggestedCategoryV1761(p,text=''){
+ const t=normalizeImportTextV1753(String(p?.name||'')+' '+String(text||''));
+ if(/\bsabonete\b/.test(t)&&!/saboneteira/.test(t))return 'Sabonetes';
+ if(/wax melts?/.test(t)&&!/queimador|embalagem/.test(t))return 'Wax melts';
+ if(/\bresina\b|jesmonite/.test(t))return 'Resina e Jesmonite';
+ if(/\bvela\b/.test(t)&&/lata|frasco|copo|vidro|pote|recipiente|barro vidrado/.test(t))return 'Velas em recipiente';
+ if(/^vela\b/.test(t)&&!/lata|frasco|copo|vidro|pote|recipiente|barro vidrado/.test(t))return 'Velas em molde';
+ return ''
+}
+function updateProductSeasonFilterV1761(products){
+ const el=document.getElementById('productSeasonFilterV1761');if(!el)return;const prev=el.value||'all';
+ const tags=[...new Set((products||[]).flatMap(p=>Array.isArray(p.seasonalTagsV1761)?p.seasonalTagsV1761:[]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt'));
+ el.innerHTML='<option value="all">Todas as sazonalidades</option><option value="none">Sem sazonalidade</option>'+tags.map(t=>`<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('');
+ el.value=[...el.options].some(o=>o.value===prev)?prev:'all'
+}
+function renderAprecoOrganizationV1761(){
+ const el=document.getElementById('aprecoOrganizationSummaryV1761');if(!el)return;
+ const rows=(db.products||[]).filter(p=>p?.aprecoImportIdV1753||/^APR-/i.test(String(p?.code||''))),count=tag=>rows.filter(p=>(p.seasonalTagsV1761||[]).includes(tag)).length;
+ const review=rows.filter(p=>(p.tagsV1753||[]).includes('Por rever')).length,done=rows.filter(p=>p.aprecoOrganizedV1761).length;
+ el.innerHTML=`<strong>Organização assistida:</strong> ${done}/${rows.length} produtos analisados · Natal ${count('Natal')} · Halloween ${count('Halloween')} · Outono ${count('Outono')} · Páscoa ${count('Páscoa')} · Namorados ${count('Dia dos Namorados')} · Primavera/Floral ${count('Primavera / Floral')} · por rever ${review}.<br><small>A classificação é interna. Não publica produtos nem os associa automaticamente a Edições Especiais.</small>`
+}
+function organizeAprecoProductsV1761(showConfirm=true){
+ const rows=(db.products||[]).filter(p=>p?.aprecoImportIdV1753||/^APR-/i.test(String(p?.code||'')));
+ if(!rows.length){if(showConfirm)toast('Não existem produtos Apreço para organizar');return false}
+ if(showConfirm&&!confirm(`Organizar automaticamente ${rows.length} produtos importados?\n\n• Agrupa por Natal, Halloween, Outono, Páscoa, Namorados, Primavera/Floral e Verão.\n• Acrescenta grupos úteis como Lembrancinhas, Eventos, Religioso e Decoração.\n• Não publica produtos e não altera Edições Especiais.\n• Não substitui classificações sazonais que já tenhas editado manualmente.`))return false;
+ let changed=0,review=0,categoryChanged=0;
+ for(const p of rows){
+   const scenarios=Array.isArray(p.aprecoPricingScenariosV1753)?p.aprecoPricingScenariosV1753:[],desc=[p.shopDescription,...scenarios.map(x=>x?.description||'')].join(' ');
+   const seasons=seasonalTagsForV1761(p.name,desc),uses=organizationUseTagsV1761(p.name,desc);
+   const before=JSON.stringify({s:p.seasonalTagsV1761,t:p.tagsV1753,c:p.category});
+   if(!p.seasonalTagsManualV1761)p.seasonalTagsV1761=uniqueSeasonTagsV1761([...(p.seasonalTagsV1761||[]),...seasons]);
+   p.seasonalAutoTagsV1761=seasons;
+   p.tagsV1753=uniqueTagsV1753([...(p.tagsV1753||[]),...uses]);
+   const cat=suggestedCategoryV1761(p,desc);if(cat&&String(p.category||'')==='Outros produtos artesanais'){p.category=cat;categoryChanged++}
+   p.aprecoOrganizedV1761=true;p.aprecoOrganizedAtV1761=new Date().toISOString();
+   if((p.tagsV1753||[]).includes('Por rever'))review++;
+   if(before!==JSON.stringify({s:p.seasonalTagsV1761,t:p.tagsV1753,c:p.category}))changed++
+ }
+ db.aprecoOrganizationV1761={completedAt:new Date().toISOString(),products:rows.length,changed,review,categoryChanged};
+ save();renderAprecoOrganizationV1761();if(showConfirm)toast(`Organização concluída · ${changed} atualizados · ${review} por rever`);return true
+}
+
 function renderAprecoSourceV1753(p){const box=document.getElementById('prodAprecoSourceV1753');if(!box)return;const sc=Array.isArray(p?.aprecoPricingScenariosV1753)?p.aprecoPricingScenariosV1753:[];if(!p?.aprecoImportIdV1753||!sc.length){box.classList.add('hidden');box.innerHTML='';return}const a=sc[0];box.classList.remove('hidden');box.innerHTML=`<h4>Dados importados do Apreço</h4><p>Referência histórica. Não substitui a Ficha Técnica da ArtEssencia. ${sc.length>1?'Este produto tem '+sc.length+' cenários/variantes de preço importados.':'Foi importado 1 cenário de preço.'}</p><div class="apreco-source-grid-v1753"><div><small>Produção</small><strong>${Number(a.hours||0).toLocaleString('pt-PT')} h</strong></div><div><small>Materiais Apreço</small><strong>${euro(Number(a.materialCost)||0)}</strong></div><div><small>Custo total Apreço</small><strong>${euro(Number(a.totalCost)||0)}</strong></div><div><small>Rendimento</small><strong>${Number(a.yield||1)} un.</strong></div><div><small>Preço unitário</small><strong>${euro(Number(a.unitPrice)||0)}</strong></div></div>${sc.length>1?`<div class="apreco-source-scenarios-v1753">Cenários: ${sc.map(x=>`${Number(x.yield||1)} un. → ${euro(Number(x.unitPrice)||0)}/un.`).join(' · ')}</div>`:''}`}
 function renderAprecoImportV1753(){
  const s=document.getElementById('aprecoImportSummaryV1753'),b=document.getElementById('aprecoImportBadgeV1753'),r=document.getElementById('aprecoImportResultV1753');if(!s)return;
@@ -4640,6 +4720,7 @@ function renderAprecoImportV1753(){
  s.innerHTML=`<div><span>Matérias-primas</span><strong>165</strong></div><div><span>Linhas de produto</span><strong>294</strong></div><div><span>Famílias únicas</span><strong>238</strong></div><div><span>Grupos repetidos</span><strong>39</strong></div>`;
  if(b){b.textContent=meta?.completedAt?'Importado':'Pronto para importar';b.className='badge '+(meta?.completedAt?'ok':'')}
  if(r)r.textContent=meta?.completedAt?`Última integração: ${new Date(meta.completedAt).toLocaleString('pt-PT')} · ${meta.materialsAdded||0} matérias adicionadas · ${meta.productsAdded||0} produtos adicionados · ${meta.productsMatched||0} produtos existentes enriquecidos.`:'';
+ renderAprecoOrganizationV1761();
 }
 function importAprecoDataV1753(){
  const already=db?.aprecoImportV1753?.completedAt;
@@ -4658,7 +4739,7 @@ function importAprecoDataV1753(){
    db.products.push(p);db.productRecipes[code]=db.productRecipes[code]||[];productsAdded++;
  }
  db.aprecoImportV1753={completedAt:new Date().toISOString(),materialsAdded,materialsSkipped,productsAdded,productsMatched,sourceMaterialRows:165,sourceProductRows:294,productFamilies:238,duplicateGroups:39};
- save();renderAprecoImportV1753();toast(`Apreço integrado · ${materialsAdded} matérias · ${productsAdded} produtos novos · ${productsMatched} existentes atualizados`);
+ organizeAprecoProductsV1761(false);renderAprecoImportV1753();toast(`Apreço integrado · ${materialsAdded} matérias · ${productsAdded} produtos novos · ${productsMatched} existentes atualizados`);
 }
 
 function meaningfulState(s){return !!(s&&((s.orders||[]).length||(s.quotes||[]).length||(s.clients||[]).length||(s.purchases||[]).length||(s.cash||[]).length||(s.productionRuns||[]).length||(s.themedBoxes||[]).length||(s.stock||[]).some(x=>Number(x.qty)>0)))}
@@ -7100,7 +7181,7 @@ function repairDuplicateManualOrdersV1412(d){
  });
  return d;
 }
-function normalizeImportedDb(d){d=d&&typeof d==='object'?d:{};d.settings=d.settings&&typeof d.settings==='object'&&!Array.isArray(d.settings)?d.settings:{};if(d.settings.minMargin==null)d.settings.minMargin=.65;if(d.settings.laborRate==null)d.settings.laborRate=8;if(d.settings.wasteRate==null)d.settings.wasteRate=.10;if(d.settings.electricityRate==null)d.settings.electricityRate=.20;if(d.settings.equipmentWearRate==null)d.settings.equipmentWearRate=0;if(d.settings.consumablesHourlyRate==null)d.settings.consumablesHourlyRate=0;if(d.settings.defaultOperatingCostPerUnit==null)d.settings.defaultOperatingCostPerUnit=0;if(d.settings.defaultMoldCostPerUnit==null)d.settings.defaultMoldCostPerUnit=0;if(d.settings.pricingSalaryMonthly==null)d.settings.pricingSalaryMonthly=0;if(d.settings.pricingDaysPerMonth==null)d.settings.pricingDaysPerMonth=20;if(d.settings.pricingHoursPerDay==null)d.settings.pricingHoursPerDay=4;if(d.settings.pricingDefaultProfitPct==null)d.settings.pricingDefaultProfitPct=30;if(!d.settings.pricingLaborMode)d.settings.pricingLaborMode=Number(d.settings.pricingSalaryMonthly)>0?'salary':'hourly';if(d.settings.pricingProductiveHoursMonthly==null)d.settings.pricingProductiveHoursMonthly=Math.max(1,(Number(d.settings.pricingDaysPerMonth)||20)*(Number(d.settings.pricingHoursPerDay)||4));if(d.settings.pricingHourlyRate==null)d.settings.pricingHourlyRate=Math.max(0,Number(d.settings.laborRate)||8);if(d.settings.pricingDefaultMarginPct==null){const oldMarkup=Math.max(0,Number(d.settings.pricingDefaultProfitPct)||30);d.settings.pricingDefaultMarginPct=oldMarkup>0?(oldMarkup/(100+oldMarkup))*100:0}if(!Array.isArray(d.settings.pricingFixedCosts))d.settings.pricingFixedCosts=[];d.settings.businessName=d.settings.businessName||SEED.businessName;d.settings.businessLegalName=d.settings.businessLegalName||'';d.settings.businessTaxId=d.settings.businessTaxId||'';d.settings.businessPhone=d.settings.businessPhone||'';d.settings.businessEmail=d.settings.businessEmail||'';d.settings.businessAddress=d.settings.businessAddress||'';d.settings.businessPostalCode=d.settings.businessPostalCode||'';d.settings.businessLocation=d.settings.businessLocation||'';d.settings.iban=d.settings.iban||'';d.settings.paymentNote=d.settings.paymentNote||'';delete d.settings.yield;delete d.settings.baseRecipeV12812;for(const k of ['orders','clients','quotes','purchases','cash','stockMoves','productionRuns','themedBoxes'])if(!Array.isArray(d[k]))d[k]=[];if(!Array.isArray(d.products))d.products=[];d.products.forEach(p=>{if(!p)return;if(!Array.isArray(p.tagsV1753))p.tagsV1753=[];if(p.laborMinutes==null)p.laborMinutes=Math.max(0,Number(d.settings.laborMinutes)||0);if(p.marginPct==null&&p.profitPct!=null){const oldMarkup=Math.max(0,Number(p.profitPct)||0);p.marginPct=oldMarkup>0?(oldMarkup/(100+oldMarkup))*100:0}});if(!Array.isArray(d.stock))d.stock=[];d.clients.forEach(c=>{const note=String(c?.note??c?.notes??'');c.note=note;c.notes=note});repairDuplicateManualOrdersV1412(d);if(!Array.isArray(d.packaging)||!d.packaging.length)d.packaging=[{name:'Caixa pequena',capacity:2,cost:0},{name:'Caixa média',capacity:4,cost:0},{name:'Caixa presente',capacity:6,cost:0},{name:'Saco kraft',capacity:3,cost:0}];d.quotes=(d.quotes||[]);d.quotes.forEach(q=>{if(!q.box)q.box=d.packaging[0]?.name||''});d.orders.forEach(o=>{o.items=Array.isArray(o.items)?o.items:[];o.paymentHistory=Array.isArray(o.paymentHistory)?o.paymentHistory:[];if(o.status==='Confirmado')o.status='Confirmada';if(o.source==='online_store')ensureOnlineOrderCostSnapshotV12644(o,d);});d.quotes.forEach(q=>{q.items=Array.isArray(q.items)?q.items:[];q.paymentHistory=Array.isArray(q.paymentHistory)?q.paymentHistory:[];if(q.box==null)q.box='';if(!q.boxes)q.boxes=1});
+function normalizeImportedDb(d){d=d&&typeof d==='object'?d:{};d.settings=d.settings&&typeof d.settings==='object'&&!Array.isArray(d.settings)?d.settings:{};if(d.settings.minMargin==null)d.settings.minMargin=.65;if(d.settings.laborRate==null)d.settings.laborRate=8;if(d.settings.wasteRate==null)d.settings.wasteRate=.10;if(d.settings.electricityRate==null)d.settings.electricityRate=.20;if(d.settings.equipmentWearRate==null)d.settings.equipmentWearRate=0;if(d.settings.consumablesHourlyRate==null)d.settings.consumablesHourlyRate=0;if(d.settings.defaultOperatingCostPerUnit==null)d.settings.defaultOperatingCostPerUnit=0;if(d.settings.defaultMoldCostPerUnit==null)d.settings.defaultMoldCostPerUnit=0;if(d.settings.pricingSalaryMonthly==null)d.settings.pricingSalaryMonthly=0;if(d.settings.pricingDaysPerMonth==null)d.settings.pricingDaysPerMonth=20;if(d.settings.pricingHoursPerDay==null)d.settings.pricingHoursPerDay=4;if(d.settings.pricingDefaultProfitPct==null)d.settings.pricingDefaultProfitPct=30;if(!d.settings.pricingLaborMode)d.settings.pricingLaborMode=Number(d.settings.pricingSalaryMonthly)>0?'salary':'hourly';if(d.settings.pricingProductiveHoursMonthly==null)d.settings.pricingProductiveHoursMonthly=Math.max(1,(Number(d.settings.pricingDaysPerMonth)||20)*(Number(d.settings.pricingHoursPerDay)||4));if(d.settings.pricingHourlyRate==null)d.settings.pricingHourlyRate=Math.max(0,Number(d.settings.laborRate)||8);if(d.settings.pricingDefaultMarginPct==null){const oldMarkup=Math.max(0,Number(d.settings.pricingDefaultProfitPct)||30);d.settings.pricingDefaultMarginPct=oldMarkup>0?(oldMarkup/(100+oldMarkup))*100:0}if(!Array.isArray(d.settings.pricingFixedCosts))d.settings.pricingFixedCosts=[];d.settings.businessName=d.settings.businessName||SEED.businessName;d.settings.businessLegalName=d.settings.businessLegalName||'';d.settings.businessTaxId=d.settings.businessTaxId||'';d.settings.businessPhone=d.settings.businessPhone||'';d.settings.businessEmail=d.settings.businessEmail||'';d.settings.businessAddress=d.settings.businessAddress||'';d.settings.businessPostalCode=d.settings.businessPostalCode||'';d.settings.businessLocation=d.settings.businessLocation||'';d.settings.iban=d.settings.iban||'';d.settings.paymentNote=d.settings.paymentNote||'';delete d.settings.yield;delete d.settings.baseRecipeV12812;for(const k of ['orders','clients','quotes','purchases','cash','stockMoves','productionRuns','themedBoxes'])if(!Array.isArray(d[k]))d[k]=[];if(!Array.isArray(d.products))d.products=[];d.products.forEach(p=>{if(!p)return;if(!Array.isArray(p.tagsV1753))p.tagsV1753=[];if(!Array.isArray(p.seasonalTagsV1761))p.seasonalTagsV1761=[];if(p.laborMinutes==null)p.laborMinutes=Math.max(0,Number(d.settings.laborMinutes)||0);if(p.marginPct==null&&p.profitPct!=null){const oldMarkup=Math.max(0,Number(p.profitPct)||0);p.marginPct=oldMarkup>0?(oldMarkup/(100+oldMarkup))*100:0}});if(!Array.isArray(d.stock))d.stock=[];d.clients.forEach(c=>{const note=String(c?.note??c?.notes??'');c.note=note;c.notes=note});repairDuplicateManualOrdersV1412(d);if(!Array.isArray(d.packaging)||!d.packaging.length)d.packaging=[{name:'Caixa pequena',capacity:2,cost:0},{name:'Caixa média',capacity:4,cost:0},{name:'Caixa presente',capacity:6,cost:0},{name:'Saco kraft',capacity:3,cost:0}];d.quotes=(d.quotes||[]);d.quotes.forEach(q=>{if(!q.box)q.box=d.packaging[0]?.name||''});d.orders.forEach(o=>{o.items=Array.isArray(o.items)?o.items:[];o.paymentHistory=Array.isArray(o.paymentHistory)?o.paymentHistory:[];if(o.status==='Confirmado')o.status='Confirmada';if(o.source==='online_store')ensureOnlineOrderCostSnapshotV12644(o,d);});d.quotes.forEach(q=>{q.items=Array.isArray(q.items)?q.items:[];q.paymentHistory=Array.isArray(q.paymentHistory)?q.paymentHistory:[];if(q.box==null)q.box='';if(!q.boxes)q.boxes=1});
  d.stock.forEach(x=>{if(x.target===undefined)x.target=null;if(x.preferredSupplier==null)x.preferredSupplier='';x.unit=normalizeBaseUnitV120(x.unit||'un')||'un'});
  d.products.forEach(p=>{if(!Array.isArray(p.editionIds))p.editionIds=p.editionId?[p.editionId]:[];p.editionIds=[...new Set(p.editionIds.filter(Boolean).map(String))];p.editionId=p.editionIds[0]||'';if(p.manufactured==null)p.manufactured=true});
  if(!d.productRecipes||typeof d.productRecipes!=='object'||Array.isArray(d.productRecipes))d.productRecipes={};
@@ -12669,7 +12750,7 @@ function setProductSaveStateV145(type,title,detail){
  el.innerHTML=`<span>${type==='saved'?'✓':type==='error'?'!':'●'}</span><div><strong>${escapeHtml(title)}</strong><small>${escapeHtml(detail||'')}</small></div>`;
 }
 function cancelProductEditV145(){
- prodName.value=prodCode.value=prodPrice.value=prodShopDescription.value='';const tagsEl=document.getElementById('prodTagsV1753');if(tagsEl)tagsEl.value='';renderAprecoSourceV1753(null);
+ prodName.value=prodCode.value=prodPrice.value=prodShopDescription.value='';const tagsEl=document.getElementById('prodTagsV1753');if(tagsEl)tagsEl.value='';const seasonEl=document.getElementById('prodSeasonTagsV1761');if(seasonEl)seasonEl.value='';renderAprecoSourceV1753(null);
  const op=document.getElementById('prodOnlinePriceV12620');if(op)op.value='';
  prodShopVisible.checked=false;
  const mv=document.getElementById('prodMixVisible');if(mv)mv.checked=false;
@@ -12694,7 +12775,7 @@ function cancelProductEditV145(){
 function resetProductEditorAfterSaveV1749(){
  // Um novo produto deve começar num estado realmente vazio. Esta rotina limpa apenas o editor;
  // não altera o produto/ficha técnica já guardados no modelo de dados.
- prodName.value='';prodCode.value='';prodPrice.value='';prodShopDescription.value='';const tagsEl=document.getElementById('prodTagsV1753');if(tagsEl)tagsEl.value='';renderAprecoSourceV1753(null);
+ prodName.value='';prodCode.value='';prodPrice.value='';prodShopDescription.value='';const tagsEl=document.getElementById('prodTagsV1753');if(tagsEl)tagsEl.value='';const seasonEl=document.getElementById('prodSeasonTagsV1761');if(seasonEl)seasonEl.value='';renderAprecoSourceV1753(null);
  const cost=document.getElementById('prodCost');if(cost)cost.value='0.0000';
  const op=document.getElementById('prodOnlinePriceV12620');if(op)op.value='';
  prodShopVisible.checked=false;
@@ -12748,10 +12829,11 @@ function saveProduct(){
  const productionType=document.getElementById('prodProductionTypeV130')?.value||'other',manufactured=!!document.getElementById('prodManufacturedV130')?.checked,cureHours=Math.max(0,Number(document.getElementById('prodCureHoursV130')?.value)||0),prepTemp=readOptionalNumberV130('prodPrepTempV130'),mixTemp=readOptionalNumberV130('prodMixTempV130'),pourTemp=readOptionalNumberV130('prodPourTempV130'),productionNotes=document.getElementById('prodProductionNotesV130')?.value.trim()||'',qualityNotes=document.getElementById('prodQualityNotesV130')?.value.trim()||'';
  const additionalIngredientsText=document.getElementById('prodIngredientsV1287')?.value.trim()||'',storageInstructions=document.getElementById('prodStorageV1287')?.value.trim()||'',consumptionGuidance=document.getElementById('prodConsumptionV1287')?.value.trim()||'',technicalInfoVerified=!!document.getElementById('prodTechnicalVerifiedV1287')?.checked;
  const productTagsV1753=parseProductTagsV1753(document.getElementById('prodTagsV1753')?.value||'');
+ const seasonalTagsV1761=parseSeasonTagsV1761(document.getElementById('prodSeasonTagsV1761')?.value||'');
  if(technicalInfoVerified&&!baseTechnicalProfileCompleteV12811())return toast('Confirma primeiro a informação técnica da materiais comuns em Configuração');
  
  const additionalSafetysContains=productSafetySelectionV1287('contains'),additionalSafetysMayContain=productSafetySelectionV1287('mayContain').filter(code=>!additionalSafetysContains.includes(code));
- const obj={code,name,category:prodCat.value,tagsV1753:productTagsV1753,cost:0,price:directPrice,onlinePrice,shopVisible:!!prodShopVisible.checked,shopDescription:prodShopDescription.value.trim(),shopImageUrl:(document.getElementById('prodShopImageUrl')?.value||existing?.shopImageUrl||'').trim(),mixVisible,mixMaxQty,mixBoxCapacities,availabilityType,editionExclusive:availabilityType==='edition',editionId,editionIds,editionExtraLaborMinutes,editionExtraWastePct,laborMinutes,profitPct,marginPct,wastePct,moldAverageCost,operatingAverageCost,moldCost,moldUses,moldCavities,moldUnitOverride,packagingCost,equipmentPowerW,equipmentMinutes,indirectCost,otherCost,targetMarginPct,onlineTargetMarginPct,productionType,manufactured,cureHours,prepTemp,mixTemp,pourTemp,productionNotes,qualityNotes,materialsText:additionalIngredientsText,careInstructions:storageInstructions,safetyInstructions:consumptionGuidance,additionalIngredientsText,additionalSafetysContains:[],additionalSafetysMayContain:[],storageInstructions,consumptionGuidance,technicalInfoVerified:false,technicalInfoReviewedAt:''};
+ const obj={code,name,category:prodCat.value,tagsV1753:productTagsV1753,seasonalTagsV1761,seasonalTagsManualV1761:true,cost:0,price:directPrice,onlinePrice,shopVisible:!!prodShopVisible.checked,shopDescription:prodShopDescription.value.trim(),shopImageUrl:String(document.getElementById('prodShopImageUrl')?.value||'').trim(),mixVisible,mixMaxQty,mixBoxCapacities,availabilityType,editionExclusive:availabilityType==='edition',editionId,editionIds,editionExtraLaborMinutes,editionExtraWastePct,laborMinutes,profitPct,marginPct,wastePct,moldAverageCost,operatingAverageCost,moldCost,moldUses,moldCavities,moldUnitOverride,packagingCost,equipmentPowerW,equipmentMinutes,indirectCost,otherCost,targetMarginPct,onlineTargetMarginPct,productionType,manufactured,cureHours,prepTemp,mixTemp,pourTemp,productionNotes,qualityNotes,materialsText:additionalIngredientsText,careInstructions:storageInstructions,safetyInstructions:consumptionGuidance,additionalIngredientsText,additionalSafetysContains:[],additionalSafetysMayContain:[],storageInstructions,consumptionGuidance,technicalInfoVerified:false,technicalInfoReviewedAt:''};
  obj.ingredientsText=productFinalIngredientsV12811(obj);obj.safetysContains=productFinalContainsV12811(obj);obj.safetysMayContain=productFinalMayContainV12811(obj);
  existing?Object.assign(existing,obj):db.products.push(obj);
  const savedProduct=existing||db.products[db.products.length-1];
@@ -12762,7 +12844,7 @@ function saveProduct(){
 }
 function editProduct(code){
  const p=findProductByCodeV147(code);if(!p)return;
- prodCode.value=p.code;prodName.value=p.name;prodCat.value=p.category;const tagsEl=document.getElementById('prodTagsV1753');if(tagsEl)tagsEl.value=(Array.isArray(p.tagsV1753)?p.tagsV1753:[]).join(', ');renderAprecoSourceV1753(p);prodCost.value=calculatedProductCost(p).toFixed(4);prodPrice.value=p.price;prodShopVisible.checked=!!p.shopVisible;prodShopDescription.value=p.shopDescription||'';
+ prodCode.value=p.code;prodName.value=p.name;prodCat.value=p.category;const tagsEl=document.getElementById('prodTagsV1753');if(tagsEl)tagsEl.value=(Array.isArray(p.tagsV1753)?p.tagsV1753:[]).join(', ');const seasonEl=document.getElementById('prodSeasonTagsV1761');if(seasonEl)seasonEl.value=(Array.isArray(p.seasonalTagsV1761)?p.seasonalTagsV1761:[]).join(', ');renderAprecoSourceV1753(p);prodCost.value=calculatedProductCost(p).toFixed(4);prodPrice.value=p.price;prodShopVisible.checked=!!p.shopVisible;prodShopDescription.value=p.shopDescription||'';
  const op=document.getElementById('prodOnlinePriceV12620');if(op)op.value=Number(p.onlinePrice??p.price)||0;
  const costFields={prodLaborMinutesV110:p.laborMinutes,prodProfitPctV1744:p.marginPct??p.profitPct,prodWastePctV110:p.wastePct,prodMoldAverageV1740:p.moldAverageCost??productMoldCostV110(p),prodOperatingAverageV1740:p.operatingAverageCost??productOperatingAverageV1740(p),prodMoldCostV110:p.moldCost,prodMoldUsesV110:p.moldUses,prodMoldCavitiesV110:p.moldCavities??1,prodMoldOverrideV110:p.moldUnitOverride,prodPackagingCostV110:p.packagingCost,prodEquipmentPowerWV133:p.equipmentPowerW,prodEquipmentMinutesV133:p.equipmentMinutes,prodIndirectCostV110:p.indirectCost,prodOtherCostV110:p.otherCost,prodTargetMarginV110:p.targetMarginPct,prodOnlineTargetMarginV110:p.onlineTargetMarginPct};for(const [id,v] of Object.entries(costFields)){const el=document.getElementById(id);if(el)el.value=v==null?'':v}fillProductProductionFieldsV130(p);refreshProductChannelPricingV12620();
  const mv=document.getElementById('prodMixVisible');if(mv)mv.checked=!!p.mixVisible;
@@ -12790,13 +12872,13 @@ function updateProductCollectionFilterV1752(){
 }
 function productSearchTextV1752(p){
  const collections=productEditionNamesV138(p).join(' ');
- return [p?.name,p?.code,p?.shopDescription,p?.category,(Array.isArray(p?.tagsV1753)?p.tagsV1753.join(' '):''),collections,normalizeProductAvailabilityV1244(p)==='edition'?'sazonal edição especial':''].filter(Boolean).join(' ').toLowerCase();
+ return [p?.name,p?.code,p?.shopDescription,p?.category,(Array.isArray(p?.tagsV1753)?p.tagsV1753.join(' '):''),(Array.isArray(p?.seasonalTagsV1761)?p.seasonalTagsV1761.join(' '):''),collections,normalizeProductAvailabilityV1244(p)==='edition'?'sazonal edição especial':''].filter(Boolean).join(' ').toLowerCase();
 }
 function renderProducts(){
  ensureProductSafetyEditorV1287();if(!document.getElementById('prodCode')?.value){renderProductBaseSummaryV12811(false);setProductEditorModeV145(null);}updateProductTechnicalStatusV1287();
  loadProductEditionsV1245(false).then(()=>{fillProductEditionOptionsV1244(selectedProductEditionIdsV138());updateProductCollectionFilterV1752();});updateProductAvailabilityUI();
  updateProductCollectionFilterV1752();
- const all=Array.isArray(db.products)?db.products:[];updateProductTagFilterV1753(all);
+ const all=Array.isArray(db.products)?db.products:[];updateProductTagFilterV1753(all);updateProductSeasonFilterV1761(all);
  const published=all.filter(p=>p.shopVisible).length;
  const mixEnabled=all.filter(p=>p.mixVisible).length;
  const lowMargin=all.filter(p=>{const c=calculatedProductCost(p),m=p.price?(p.price-c)/p.price:0;return m+1e-9<pricingProductMarginPctV1745(p)/100}).length;
@@ -12819,6 +12901,7 @@ function renderProducts(){
  const cat=document.getElementById('productCategoryFilter')?.value||'all';
  const collection=document.getElementById('productCollectionFilterV1752')?.value||'all';
  const tag=document.getElementById('productTagFilterV1753')?.value||'all';
+ const season=document.getElementById('productSeasonFilterV1761')?.value||'all';
  const shop=document.getElementById('productShopFilter')?.value||'all';
  const mix=document.getElementById('productMixFilter')?.value||'all';
  const technical=document.getElementById('productTechnicalFilterV1288')?.value||'all';
@@ -12827,12 +12910,13 @@ function renderProducts(){
    const mq=!q||productSearchTextV1752(p).includes(q);
    const mc=cat==='all'||p.category===cat;
    const mt=tag==='all'||(Array.isArray(p.tagsV1753)&&p.tagsV1753.includes(tag));
+   const seasons=Array.isArray(p.seasonalTagsV1761)?p.seasonalTagsV1761:[];const mse=season==='all'||(season==='none'&&!seasons.length)||seasons.includes(season);
    const editionIds=productEditionMembershipIdsV138(p);
    const mcollection=collection==='all'||(collection==='none'&&!editionIds.length)||editionIds.includes(collection);
    const ms=shop==='all'||(shop==='published'&&p.shopVisible)||(shop==='hidden'&&!p.shopVisible);
    const mm=mix==='all'||(mix==='enabled'&&p.mixVisible)||(mix==='disabled'&&!p.mixVisible);
    const mf=technical==='all'||(technical==='reviewed'&&productTechnicalInfoCompleteV1287(p))||(technical==='pending'&&!productTechnicalInfoCompleteV1287(p));
-   return mq&&mc&&mt&&mcollection&&ms&&mm&&mf;
+   return mq&&mc&&mt&&mse&&mcollection&&ms&&mm&&mf;
  });
 
  const count=document.getElementById('productsResultCount');
@@ -12859,6 +12943,7 @@ function renderProducts(){
        </div>
        ${p.shopDescription?`<p>${escapeHtml(p.shopDescription)}</p>`:''}
        ${Array.isArray(p.tagsV1753)&&p.tagsV1753.length?`<div class="product-tags-v1753">${p.tagsV1753.map(t=>`<span>${escapeHtml(t)}</span>`).join('')}</div>`:''}
+       ${Array.isArray(p.seasonalTagsV1761)&&p.seasonalTagsV1761.length?`<div class="product-tags-v1753">${p.seasonalTagsV1761.map(t=>`<span>🍂 ${escapeHtml(t)}</span>`).join('')}</div>`:''}
        <div class="product-safety-meta-v1287"><b>Produção:</b> ${escapeHtml(productionProfileSummaryV130(p))} · <b>Materiais:</b> ${productManufacturedV130(p)?(((db.productRecipes[p.code]||[]).length)+' componente(s)'):'sem desconto de stock'}</div>
        ${productEditionMembershipIdsV138(p).length?`<div class="product-safety-meta-v1287"><b>Coleções:</b> ${escapeHtml(productEditionNamesV138(p).join(' · '))}${normalizeProductAvailabilityV1244(p)==='edition'?' · <b>Só sazonal</b>':' · mantém catálogo anual'}</div>`:''}
        ${p.mixVisible?`<div class="product-card-mixmeta">
@@ -15062,7 +15147,7 @@ async function cloudHydrateStartup(){
 async function cloudStartup(){
  renderCloudUI();
  const u=await ensureCloudSession();
- if(!u){cloudStartupDone=true;renderCloudUI();renderOrderNotificationsV12624();startOrderNotificationPollingV12624();startEmailNotificationPollingV1710();return}
+ if(!u){cloudStartupDone=true;renderCloudUI();renderOrderNotificationsV12624();startOrderNotificationPollingV12624();startEmailNotificationPollingV1710();try{if(db?.aprecoImportV1753?.completedAt&&!db?.aprecoOrganizationV1761?.completedAt)organizeAprecoProductsV1761(false);else renderAprecoOrganizationV1761()}catch(e){console.error('organização Apreço V1.7.61',e)}return}
  cloudLogMsg('Sessão V10 recuperada');
  cloudHydrating=true;cloudStartupDone=false;
  try{
@@ -15074,6 +15159,7 @@ async function cloudStartup(){
  }finally{
    cloudHydrating=false;cloudStartupDone=true;renderCloudUI()
  }
+ try{if(db?.aprecoImportV1753?.completedAt&&!db?.aprecoOrganizationV1761?.completedAt)organizeAprecoProductsV1761(false);else renderAprecoOrganizationV1761()}catch(e){console.error('organização Apreço V1.7.61',e)}
  await subscribeCloud();
  await publishPublicTechnicalProfilesV12815(false);
  startOrderNotificationPollingV12624();startEmailNotificationPollingV1710();
@@ -15941,3 +16027,4 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 @media(max-width:720px){#products .product-edition-touch-list-v1758{grid-template-columns:1fr}#products .product-edition-touch-item-v1758{min-height:62px}#costs .recipe-material-select-row-v1758{grid-template-columns:1fr auto}#costs .recipe-material-search-row-v1758{grid-template-columns:1fr auto}}
 </style>
 <!-- V1.7.59 — catálogo sazonal sincronizado e PVP Loja coerente nas Edições Especiais -->
+<!-- V1.7.60 — remoção de fotografia de produto persistente: campo vazio passa a significar remoção explícita e já não recupera a URL anterior -->
