@@ -2911,8 +2911,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       <section class="card costs-card costs-recipe-section-v1720">
         <div class="costs-card-head"><div><div class="section-title" style="margin:0">Ficha técnica por produto</div><small>Cada quantidade corresponde ao consumo de uma unidade do produto selecionado.</small></div></div>
         <div class="costs-recipe-form costs-recipe-grid-v1720">
-          <div class="field"><label>Produto</label><select id="costProduct" onchange="renderProductRecipeEditor()"></select></div>
-          <div class="field recipe-material-picker-v1758"><label>Material / componente</label><div class="recipe-material-select-row-v1758"><select id="costIngredient"></select><button type="button" class="btn ghost recipe-material-search-btn-v1758" onclick="toggleRecipeMaterialSearchV1758()">Pesquisar</button></div><div id="recipeMaterialSearchPanelV1758" class="recipe-material-search-panel-v1758" hidden><div class="recipe-material-search-row-v1758"><input id="recipeMaterialSearchInputV1758" type="search" inputmode="search" autocomplete="off" placeholder="Pesquisar cera, lavanda, caixa…" oninput="filterRecipeMaterialsV1758()"><button type="button" class="btn ghost" onclick="clearRecipeMaterialSearchV1758()">Limpar</button></div><small id="recipeMaterialSearchCountV1758">0 resultados</small></div></div>
+          <div class="field recipe-product-picker-v1763"><label>Produto</label><select id="costProduct" onchange="syncRecipeProductChoiceV1763();renderProductRecipeEditor()" hidden aria-hidden="true" tabindex="-1"></select><div class="recipe-touch-choice-v1763"><button id="recipeProductChoiceV1763" type="button" class="recipe-choice-display-v1763" onclick="toggleRecipeProductSearchV1763()"><span>Selecionar produto…</span><small>Toque para pesquisar</small></button><button type="button" class="btn ghost recipe-search-button-v1763" onclick="toggleRecipeProductSearchV1763()">Pesquisar</button></div><div id="recipeProductSearchPanelV1763" class="recipe-search-panel-v1763" hidden><div class="recipe-search-row-v1763"><input id="recipeProductSearchInputV1763" type="search" inputmode="search" autocomplete="off" placeholder="Pesquisar nome, código, tipo…" oninput="renderRecipeProductResultsV1763()"><button type="button" class="btn ghost" onclick="clearRecipeProductSearchV1763()">Limpar</button></div><small id="recipeProductSearchCountV1763">0 produtos</small><div id="recipeProductSearchResultsV1763" class="recipe-search-results-v1763"></div></div></div>
+          <div class="field recipe-material-picker-v1758"><label>Material / componente</label><select id="costIngredient" hidden aria-hidden="true" tabindex="-1"></select><div class="recipe-touch-choice-v1763"><button id="recipeMaterialChoiceV1763" type="button" class="recipe-choice-display-v1763" onclick="toggleRecipeMaterialSearchV1758()"><span>Selecionar material…</span><small>Toque para pesquisar</small></button><button type="button" class="btn ghost recipe-search-button-v1763" onclick="toggleRecipeMaterialSearchV1758()">Pesquisar</button></div><div id="recipeMaterialSearchPanelV1758" class="recipe-search-panel-v1763" hidden><div class="recipe-search-row-v1763"><input id="recipeMaterialSearchInputV1758" type="search" inputmode="search" autocomplete="off" placeholder="Pesquisar cera, lavanda, caixa…" oninput="filterRecipeMaterialsV1758()"><button type="button" class="btn ghost" onclick="clearRecipeMaterialSearchV1758()">Limpar</button></div><small id="recipeMaterialSearchCountV1758">0 resultados</small><div id="recipeMaterialSearchResultsV1763" class="recipe-search-results-v1763"></div></div></div>
           <div class="field"><label>Quantidade por unidade</label><input id="costIngredientQty" type="number" min="0" step="any" placeholder="g/ml/cm/un"></div>
           <div class="field costs-recipe-action-v1720"><label>&nbsp;</label><button id="recipeSaveBtnV143" class="btn primary" onclick="addRecipeLine()">Guardar material</button></div>
         </div>
@@ -4529,7 +4529,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.62';
+const APP_VERSION='1.7.63';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -13049,23 +13049,31 @@ function renderProducts(){
 
 function normalizeRecipeMaterialSearchV1758(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-PT').trim().replace(/\s+/g,' ')}
 function recipeMaterialSearchQueryV1758(){return String(document.getElementById('recipeMaterialSearchInputV1758')?.value||'')}
+function syncRecipeMaterialChoiceV1763(){const sel=document.getElementById('costIngredient'),btn=document.getElementById('recipeMaterialChoiceV1763');if(!btn)return;const value=String(sel?.value||''),st=value?stockByName(value):null;btn.querySelector('span').textContent=value||'Selecionar material…';btn.querySelector('small').textContent=value?(st?`${Number(st.qty||0).toLocaleString('pt-PT')} ${st.unit||''} em stock · ${formatUnitCostV145(Number(st.unitCost)||0,st.unit||'un')}`:'Material selecionado'):'Toque para pesquisar'}
+function chooseRecipeMaterialV1763(name){const sel=document.getElementById('costIngredient');if(!sel)return;const value=String(name||'');if(![...sel.options].some(o=>o.value===value)){const o=document.createElement('option');o.value=value;o.textContent=value;sel.appendChild(o)}sel.value=value;syncRecipeMaterialChoiceV1763();const panel=document.getElementById('recipeMaterialSearchPanelV1758');if(panel)panel.hidden=true;setTimeout(()=>document.getElementById('costIngredientQty')?.focus(),30)}
 function renderCostIngredientOptionsV1758(query='',preserve=''){
  const sel=document.getElementById('costIngredient');if(!sel)return;
  const q=normalizeRecipeMaterialSearchV1758(query),selected=String(preserve||sel.value||''),all=Array.isArray(db.stock)?db.stock:[];
  const matches=q?all.filter(x=>normalizeRecipeMaterialSearchV1758(x?.name).includes(q)):all.slice();
- const shown=matches.slice();
- if(selected&&!shown.some(x=>String(x?.name)===selected)){const keep=all.find(x=>String(x?.name)===selected);if(keep)shown.unshift(keep)}
- sel.innerHTML='<option value="">Selecionar…</option>'+shown.map(x=>`<option value="${escapeAttr(x.name)}">${escapeHtml(x.name)}</option>`).join('');
+ sel.innerHTML='<option value="">Selecionar…</option>'+all.map(x=>`<option value="${escapeAttr(x.name)}">${escapeHtml(x.name)}</option>`).join('');
  if(selected&&[...sel.options].some(o=>o.value===selected))sel.value=selected;
  const count=document.getElementById('recipeMaterialSearchCountV1758');if(count)count.textContent=`${matches.length} resultado${matches.length===1?'':'s'} de ${all.length} matérias-primas`;
+ const results=document.getElementById('recipeMaterialSearchResultsV1763');if(results){const show=matches.slice(0,40);results.innerHTML=show.length?show.map(x=>`<button type="button" class="recipe-result-v1763${String(x.name)===selected?' selected':''}" onclick="chooseRecipeMaterialV1763(decodeURIComponent('${encodeURIComponent(String(x.name||'')).replace(/'/g,'%27')}'))"><span><b>${escapeHtml(x.name||'Material')}</b><small>${Number(x.qty||0).toLocaleString('pt-PT')} ${escapeHtml(x.unit||'')} em stock</small></span><em>${formatUnitCostV145(Number(x.unitCost)||0,x.unit||'un')}</em></button>`).join(''):'<div class="empty recipe-search-empty-v1763">Nenhuma matéria-prima encontrada.</div>';if(matches.length>40)results.insertAdjacentHTML('beforeend',`<small class="recipe-search-more-v1763">Mostrados 40 de ${matches.length}. Escreva mais letras para reduzir os resultados.</small>`)}
+ syncRecipeMaterialChoiceV1763();
 }
 function filterRecipeMaterialsV1758(){const sel=document.getElementById('costIngredient'),selected=sel?.value||'';renderCostIngredientOptionsV1758(recipeMaterialSearchQueryV1758(),selected)}
 function toggleRecipeMaterialSearchV1758(){
  const panel=document.getElementById('recipeMaterialSearchPanelV1758');if(!panel)return;
  panel.hidden=!panel.hidden;
- if(!panel.hidden){filterRecipeMaterialsV1758();setTimeout(()=>document.getElementById('recipeMaterialSearchInputV1758')?.focus(),30)}
+ if(!panel.hidden){const pp=document.getElementById('recipeProductSearchPanelV1763');if(pp)pp.hidden=true;filterRecipeMaterialsV1758();setTimeout(()=>document.getElementById('recipeMaterialSearchInputV1758')?.focus(),30)}
 }
 function clearRecipeMaterialSearchV1758(){const input=document.getElementById('recipeMaterialSearchInputV1758');if(input)input.value='';filterRecipeMaterialsV1758()}
+function recipeProductSearchQueryV1763(){return String(document.getElementById('recipeProductSearchInputV1763')?.value||'')}
+function syncRecipeProductChoiceV1763(){const sel=document.getElementById('costProduct'),btn=document.getElementById('recipeProductChoiceV1763');if(!btn)return;const p=(db.products||[]).find(x=>String(x.code||'')===String(sel?.value||''));btn.querySelector('span').textContent=p?.name||'Selecionar produto…';btn.querySelector('small').textContent=p?`${p.code||'Sem código'} · ${p.category||'Sem tipo'}`:'Toque para pesquisar'}
+function renderRecipeProductResultsV1763(){const q=normalizeRecipeMaterialSearchV1758(recipeProductSearchQueryV1763()),sel=document.getElementById('costProduct'),selected=String(sel?.value||''),all=Array.isArray(db.products)?db.products:[];const matches=q?all.filter(p=>normalizeRecipeMaterialSearchV1758([p?.name,p?.code,p?.category,(p?.seasonalTagsV1761||[]).join(' '),(p?.tagsV1753||[]).join(' ')].filter(Boolean).join(' ')).includes(q)):all.slice();const count=document.getElementById('recipeProductSearchCountV1763');if(count)count.textContent=`${matches.length} produto${matches.length===1?'':'s'} de ${all.length}`;const box=document.getElementById('recipeProductSearchResultsV1763');if(box){const show=matches.slice(0,40);box.innerHTML=show.length?show.map(p=>`<button type="button" class="recipe-result-v1763${String(p.code||'')===selected?' selected':''}" onclick="chooseRecipeProductV1763(decodeURIComponent('${encodeURIComponent(String(p.code||'')).replace(/'/g,'%27')}'))"><span><b>${escapeHtml(p.name||p.code||'Produto')}</b><small>${escapeHtml(p.code||'Sem código')} · ${escapeHtml(p.category||'Sem tipo')}</small></span><em>${productTechSheetStateV146(p).ok?'Ficha ✓':'Por completar'}</em></button>`).join(''):'<div class="empty recipe-search-empty-v1763">Nenhum produto encontrado.</div>';if(matches.length>40)box.insertAdjacentHTML('beforeend',`<small class="recipe-search-more-v1763">Mostrados 40 de ${matches.length}. Escreva mais letras para reduzir os resultados.</small>`)}}
+function chooseRecipeProductV1763(code){const sel=document.getElementById('costProduct');if(!sel)return;sel.value=String(code||'');syncRecipeProductChoiceV1763();const panel=document.getElementById('recipeProductSearchPanelV1763');if(panel)panel.hidden=true;renderProductRecipeEditor()}
+function toggleRecipeProductSearchV1763(){const panel=document.getElementById('recipeProductSearchPanelV1763');if(!panel)return;panel.hidden=!panel.hidden;if(!panel.hidden){const mp=document.getElementById('recipeMaterialSearchPanelV1758');if(mp)mp.hidden=true;renderRecipeProductResultsV1763();setTimeout(()=>document.getElementById('recipeProductSearchInputV1763')?.focus(),30)}}
+function clearRecipeProductSearchV1763(){const input=document.getElementById('recipeProductSearchInputV1763');if(input)input.value='';renderRecipeProductResultsV1763()}
 function populateCostSelectors(){
  if(!document.getElementById('costMaterial'))return;
  // V12.6.37 / V1.7.58 — preservar produto, material e pesquisa ao gravar/recalcular.
@@ -13079,6 +13087,7 @@ function populateCostSelectors(){
  costProduct.innerHTML='<option value="">Selecionar…</option>'+db.products.map(p=>`<option value="${escapeAttr(p.code)}">${escapeHtml(p.name)}</option>`).join('');
  if(prevMaterial&&[...costMaterial.options].some(o=>o.value===prevMaterial))costMaterial.value=prevMaterial;
  if(prevProduct&&[...costProduct.options].some(o=>o.value===prevProduct))costProduct.value=prevProduct;
+ syncRecipeProductChoiceV1763();syncRecipeMaterialChoiceV1763();renderRecipeProductResultsV1763();
  syncCostUnitV120();
 }
 function updateCostPreview(){
@@ -13105,6 +13114,7 @@ function restoreCostProductSelectionV12628(code){
  // o produto ativo depois da gravação para que a Ficha Técnica permaneça no mesmo produto.
  const sel=document.getElementById('costProduct');
  if(sel&&code&&[...sel.options].some(o=>o.value===code))sel.value=code;
+ syncRecipeProductChoiceV1763();
  renderProductRecipeEditor();
 }
 function setRecipeSaveStateV143(type,title,detail){
@@ -13122,7 +13132,7 @@ function addRecipeLine(){
  save();restoreCostProductSelectionV12628(code);
  const qtyInput=document.getElementById('costIngredientQty');if(qtyInput)qtyInput.value='';
  const ing=document.getElementById('costIngredient');if(ing)ing.value='';
- renderCostIngredientOptionsV1758(recipeMaterialSearchQueryV1758(),'');
+ renderCostIngredientOptionsV1758(recipeMaterialSearchQueryV1758(),'');syncRecipeMaterialChoiceV1763();
  const p=db.products.find(x=>x.code===code),count=(db.productRecipes[code]||[]).length;
  setRecipeSaveStateV143('saved',ex?'Quantidade do material atualizada':'Material adicionado à ficha',`${p?.name||code} · ${item} · ${qty.toLocaleString('pt-PT')} ${stockByName(item)?.unit||''}.`);
  if(ing)ing.focus();toast(ex?'Quantidade atualizada na ficha técnica':'Material adicionado à ficha técnica')
@@ -16107,6 +16117,31 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 #costs .recipe-material-search-row-v1758 input{min-height:44px}
 #costs #recipeMaterialSearchCountV1758{display:block;margin-top:6px;color:#7c6961;font-weight:700}
 @media(max-width:720px){#products .product-edition-touch-list-v1758{grid-template-columns:1fr}#products .product-edition-touch-item-v1758{min-height:62px}#costs .recipe-material-select-row-v1758{grid-template-columns:1fr auto}#costs .recipe-material-search-row-v1758{grid-template-columns:1fr auto}}
+
+/* V1.7.63 — Ficha Técnica: seletores pesquisáveis e touch-friendly */
+#costs .recipe-touch-choice-v1763{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:stretch}
+#costs .recipe-choice-display-v1763{min-width:0;min-height:48px;border:1px solid #dfd2cc;border-radius:12px;background:#fff;padding:8px 11px;text-align:left;color:#4b3933;display:flex;flex-direction:column;justify-content:center;gap:2px;cursor:pointer}
+#costs .recipe-choice-display-v1763 span{font-weight:800;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#costs .recipe-choice-display-v1763 small{font-size:9.5px;color:#8a756d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#costs .recipe-search-button-v1763{min-width:105px;min-height:48px}
+#costs .recipe-search-panel-v1763{margin-top:8px;padding:10px;border:1px solid #e2d4ce;border-radius:14px;background:#fffaf7;box-shadow:0 10px 28px rgba(74,45,42,.08)}
+#costs .recipe-search-panel-v1763[hidden]{display:none!important}
+#costs .recipe-search-row-v1763{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
+#costs .recipe-search-row-v1763 input{min-height:46px;border-radius:11px;font-size:14px}
+#costs .recipe-search-panel-v1763>small{display:block;margin:7px 2px;color:#745f57;font-weight:800}
+#costs .recipe-search-results-v1763{display:grid;gap:6px;max-height:330px;overflow:auto;overscroll-behavior:contain;padding-right:2px}
+#costs .recipe-result-v1763{width:100%;border:1px solid #eaded8;border-radius:11px;background:#fff;min-height:52px;padding:8px 10px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;text-align:left;color:#493631;cursor:pointer}
+#costs .recipe-result-v1763 span{min-width:0;display:grid;gap:2px}
+#costs .recipe-result-v1763 b{font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#costs .recipe-result-v1763 small{font-size:9.5px;color:#8a756d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#costs .recipe-result-v1763 em{font-style:normal;font-size:9.5px;font-weight:800;color:#6e554d;white-space:nowrap}
+#costs .recipe-result-v1763.selected{background:#f4eae5;border-color:#9b7668;box-shadow:0 0 0 1px rgba(121,95,85,.08)}
+#costs .recipe-search-empty-v1763{padding:16px!important}
+#costs .recipe-search-more-v1763{display:block;text-align:center;padding:7px;color:#8a756d}
+#costs .costs-recipe-grid-v1720{align-items:start}
+#costs .costs-recipe-action-v1720{padding-top:20px}
+@media(max-width:980px){#costs .costs-recipe-grid-v1720{grid-template-columns:1fr 1fr}#costs .costs-recipe-action-v1720{padding-top:0}#costs .costs-recipe-action-v1720,#costs .costs-recipe-grid-v1720>.field:nth-child(3){align-self:end}}
+@media(max-width:700px){#costs .costs-recipe-grid-v1720{grid-template-columns:1fr}#costs .recipe-touch-choice-v1763{grid-template-columns:minmax(0,1fr) auto}#costs .recipe-search-results-v1763{max-height:280px}#costs .costs-recipe-action-v1720 #recipeSaveBtnV143{width:100%}}
 </style>
 <!-- V1.7.59 — catálogo sazonal sincronizado e PVP Loja coerente nas Edições Especiais -->
 <!-- V1.7.60 — remoção de fotografia de produto persistente: campo vazio passa a significar remoção explícita e já não recupera a URL anterior -->
