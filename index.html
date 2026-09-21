@@ -2774,20 +2774,100 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
     <div id="stockSummary" class="stock-summary"></div>
 
     <div class="stock-stack-v1721" style="margin-top:10px">
-      <section class="card stock-form-card stock-create-section-v1721">
-        <div class="stock-form-head"><div><div class="section-title" style="margin:0">Criar matéria-prima</div><small id="stockFormHintV145">Quantidade e custo iniciais podem ser definidos apenas na criação.</small></div></div>
-        <div class="form-grid stock-create-grid-v1721">
-          <div class="field stock-name-v1721"><label>Produto / matéria-prima</label><input id="stockName" placeholder="Ex.: Cera de soja APF"></div>
-          <div class="field"><label>Quantidade atual</label><input id="stockQty" type="number" step="0.01"></div>
-          <div class="field"><label>Unidade-base</label><select id="stockUnit"><option value="g">g — grama</option><option value="ml">ml — mililitro</option><option value="cm">cm — centímetro</option><option value="un">un — unidade</option></select><small>É nesta unidade que o stock e as fichas técnicas são calculados.</small></div>
-          <div class="field"><label>Stock mínimo</label><input id="stockMin" type="number" step="0.01"></div>
-          <div class="field"><label>Stock alvo</label><input id="stockTarget" type="number" step="0.01" placeholder="Ex.: 2000"><small>Quantidade desejada após reposição. Se vazio, usa 2× o mínimo.</small></div>
-          <div class="field"><label>Custo por unidade base</label><input id="stockUnitCost" type="number" step="0.0001"></div>
-          <div class="field"><label>Fornecedor preferencial</label><input id="stockPreferredSupplier" placeholder="Opcional"></div>
-          <div id="stockEditReasonFieldV145" class="field stock-edit-reason-v1721 hidden"><label>Motivo da correção</label><input id="stockEditReasonV145" maxlength="180" placeholder="Obrigatório se alterar quantidade ou custo"><small>Fica registado no histórico da matéria-prima.</small></div>
+      <section class="card stock-form-card stock-create-section-v1736">
+        <div class="stock-form-head">
+          <div>
+            <div class="section-title" style="margin:0">Criar matéria-prima</div>
+            <small id="stockFormHintV145">Indica o que compraste e quanto pagaste. A app converte automaticamente para a unidade usada no stock e nas fichas técnicas.</small>
+          </div>
         </div>
-        <div class="stock-create-footer-v1721">
-          <div id="stockSaveStateV143" class="save-state-v143 neutral"><span>●</span><div><strong>Pronto para registar</strong><small>Depois de guardar, o formulário será limpo automaticamente.</small></div></div>
+
+        <div class="stock-simple-grid-v1736">
+          <div class="field stock-name-simple-v1736">
+            <label>Matéria-prima</label>
+            <input id="stockName" placeholder="Ex.: Cera de soja alto ponto de fusão">
+          </div>
+
+          <div class="field">
+            <label>Quantidade comprada</label>
+            <input id="stockPurchaseQtyV1736" type="number" min="0" step="0.001" placeholder="Ex.: 2" oninput="syncSimpleStockCreateV1736()">
+          </div>
+
+          <div class="field">
+            <label>Unidade da compra</label>
+            <select id="stockPurchaseUnitV1736" onchange="syncSimpleStockCreateV1736()">
+              <option value="kg">kg — quilograma</option>
+              <option value="g">g — grama</option>
+              <option value="l">L — litro</option>
+              <option value="ml">ml — mililitro</option>
+              <option value="m">m — metro</option>
+              <option value="cm">cm — centímetro</option>
+              <option value="un">un — unidade</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Valor total pago €</label>
+            <input id="stockPurchaseTotalV1736" type="number" min="0" step="0.01" placeholder="Ex.: 18,50" oninput="syncSimpleStockCreateV1736()">
+          </div>
+
+          <div class="field">
+            <label>Fornecedor</label>
+            <input id="stockPreferredSupplier" placeholder="Opcional">
+          </div>
+        </div>
+
+        <div class="stock-auto-calc-v1736">
+          <div class="stock-auto-item-v1736">
+            <span>Stock que será registado</span>
+            <strong id="stockConvertedQtyV1736">—</strong>
+          </div>
+          <div class="stock-auto-item-v1736">
+            <span>Unidade usada internamente</span>
+            <strong id="stockBaseUnitPreviewV1736">g</strong>
+          </div>
+          <div class="stock-auto-item-v1736">
+            <span>Custo automático por unidade</span>
+            <strong id="stockUnitCostPreviewV1736">—</strong>
+          </div>
+        </div>
+
+        <details class="stock-advanced-v1736">
+          <summary>Reposição e alertas — opcional</summary>
+          <div class="stock-advanced-help-v1736">
+            Não precisas de preencher estes campos para criar a matéria-prima. Servem apenas para avisos futuros de reposição.
+          </div>
+          <div class="stock-advanced-grid-v1736">
+            <div class="field">
+              <label>Avisar quando restarem</label>
+              <input id="stockMinPurchaseV1736" type="number" min="0" step="0.001" placeholder="Ex.: 0,5" oninput="syncSimpleStockCreateV1736()">
+              <small>Usa a mesma unidade escolhida na compra.</small>
+            </div>
+            <div class="field">
+              <label>Stock ideal após reposição</label>
+              <input id="stockTargetPurchaseV1736" type="number" min="0" step="0.001" placeholder="Ex.: 2" oninput="syncSimpleStockCreateV1736()">
+              <small>Se não definires, fica sem objetivo de reposição.</small>
+            </div>
+          </div>
+        </details>
+
+        <!-- Campos internos mantidos para preservar compatibilidade com a lógica e dados existentes. -->
+        <div class="hidden" aria-hidden="true">
+          <input id="stockQty" type="number" step="0.01">
+          <select id="stockUnit"><option value="g">g</option><option value="ml">ml</option><option value="cm">cm</option><option value="un">un</option></select>
+          <input id="stockMin" type="number" step="0.01">
+          <input id="stockTarget" type="number" step="0.01">
+          <input id="stockUnitCost" type="number" step="0.0001">
+        </div>
+
+        <div id="stockEditReasonFieldV145" class="field stock-edit-reason-v1736 hidden">
+          <label>Motivo da correção</label>
+          <input id="stockEditReasonV145" maxlength="180" placeholder="Obrigatório se alterar quantidade ou custo">
+          <small>Fica registado no histórico da matéria-prima.</small>
+        </div>
+
+        <div class="stock-create-footer-v1736">
+          <div id="stockSaveStateV143" class="save-state-v143 neutral"><span>●</span><div><strong>Pronto para registar</strong><small>Preenche quantidade, unidade e valor total. O custo por grama/ml/cm/un é calculado automaticamente.</small></div></div>
           <div class="stock-form-actions"><button id="stockSaveBtnV143" class="btn primary" onclick="addStock()">Guardar matéria-prima</button><button id="stockCancelBtnV145" class="btn hidden" onclick="cancelStockEditV145()">Cancelar edição</button></div>
         </div>
       </section>
@@ -4062,7 +4142,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.35';
+const APP_VERSION='1.7.36';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -5768,24 +5848,74 @@ function setMoveStockStateV145(type,title,detail){
  el.className='save-state-v143 '+(type||'neutral');
  el.innerHTML=`<span>${type==='saved'?'✓':type==='error'?'!':'●'}</span><div><strong>${escapeHtml(title)}</strong><small>${escapeHtml(detail||'')}</small></div>`;
 }
+
+function stockPurchaseUnitInfoV1736(unit){
+ const u=String(unit||'').toLowerCase();
+ if(u==='kg')return{base:'g',factor:1000,label:'g'};
+ if(u==='g')return{base:'g',factor:1,label:'g'};
+ if(u==='l')return{base:'ml',factor:1000,label:'ml'};
+ if(u==='ml')return{base:'ml',factor:1,label:'ml'};
+ if(u==='m')return{base:'cm',factor:100,label:'cm'};
+ if(u==='cm')return{base:'cm',factor:1,label:'cm'};
+ return{base:'un',factor:1,label:'un'};
+}
+function syncSimpleStockCreateV1736(){
+ const qEl=document.getElementById('stockPurchaseQtyV1736'),uEl=document.getElementById('stockPurchaseUnitV1736'),tEl=document.getElementById('stockPurchaseTotalV1736');
+ if(!qEl||!uEl||!tEl)return;
+ const q=Math.max(0,Number(qEl.value)||0),info=stockPurchaseUnitInfoV1736(uEl.value),baseQty=q*info.factor,total=Math.max(0,Number(tEl.value)||0),unitCost=baseQty>0?total/baseQty:0;
+ const minPurchase=Math.max(0,Number(document.getElementById('stockMinPurchaseV1736')?.value)||0);
+ const targetPurchaseRaw=String(document.getElementById('stockTargetPurchaseV1736')?.value||'').trim();
+ const targetPurchase=targetPurchaseRaw===''?null:Math.max(0,Number(targetPurchaseRaw)||0);
+ if(document.getElementById('stockQty'))stockQty.value=baseQty||'';
+ if(document.getElementById('stockUnit'))stockUnit.value=info.base;
+ if(document.getElementById('stockUnitCost'))stockUnitCost.value=unitCost||'';
+ if(document.getElementById('stockMin'))stockMin.value=minPurchase*info.factor||'';
+ if(document.getElementById('stockTarget'))stockTarget.value=targetPurchase==null?'':targetPurchase*info.factor;
+ const qtyPreview=document.getElementById('stockConvertedQtyV1736'),basePreview=document.getElementById('stockBaseUnitPreviewV1736'),costPreview=document.getElementById('stockUnitCostPreviewV1736');
+ if(qtyPreview)qtyPreview.textContent=baseQty>0?baseQty.toLocaleString('pt-PT',{maximumFractionDigits:3})+' '+info.label:'—';
+ if(basePreview)basePreview.textContent=info.label;
+ if(costPreview)costPreview.textContent=baseQty>0&&total>=0?formatUnitCostV145(unitCost,info.label):'—';
+}
+function purchaseUnitFromBaseV1736(base){return base==='ml'?'ml':base==='cm'?'cm':base==='un'?'un':'g'}
+function hydrateSimpleStockFormV1736(x){
+ const u=purchaseUnitFromBaseV1736(String(x?.unit||'g'));
+ const info=stockPurchaseUnitInfoV1736(u);
+ const q=(Number(x?.qty)||0)/info.factor;
+ const total=(Number(x?.qty)||0)*(Number(x?.unitCost)||0);
+ const min=(Number(x?.min)||0)/info.factor;
+ const target=(x?.target==null||x?.target==='')?'':(Number(x.target)||0)/info.factor;
+ const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v};
+ set('stockPurchaseUnitV1736',u);set('stockPurchaseQtyV1736',q||'');set('stockPurchaseTotalV1736',total||'');set('stockMinPurchaseV1736',min||'');set('stockTargetPurchaseV1736',target);
+ syncSimpleStockCreateV1736();
+}
+
 function resetStockFormV145(message=true){
  editingStockIndex=null;
  stockName.value='';stockQty.value='';stockMin.value='';stockUnitCost.value='';stockUnit.value='g';
+ for(const id of ['stockPurchaseQtyV1736','stockPurchaseTotalV1736','stockMinPurchaseV1736','stockTargetPurchaseV1736']){const el=document.getElementById(id);if(el)el.value=''}
+ if(document.getElementById('stockPurchaseUnitV1736'))stockPurchaseUnitV1736.value='kg';
+ syncSimpleStockCreateV1736();
  if(document.getElementById('stockTarget'))stockTarget.value='';
  if(document.getElementById('stockPreferredSupplier'))stockPreferredSupplier.value='';
  for(const id of ['stockName','stockQty','stockUnit','stockUnitCost']){const el=document.getElementById(id);if(el)el.disabled=false}
  const reason=document.getElementById('stockEditReasonV145'),reasonField=document.getElementById('stockEditReasonFieldV145');if(reason)reason.value='';if(reasonField)reasonField.classList.add('hidden');
  const title=document.querySelector('#stock .stock-form-card .section-title'),hint=document.getElementById('stockFormHintV145'),saveBtn=document.getElementById('stockSaveBtnV143'),cancelBtn=document.getElementById('stockCancelBtnV145');
- if(title)title.textContent='Criar matéria-prima';if(hint)hint.textContent='Quantidade e custo iniciais podem ser definidos apenas na criação.';if(saveBtn)saveBtn.textContent='Guardar matéria-prima';if(cancelBtn)cancelBtn.classList.add('hidden');
+ if(title)title.textContent='Criar matéria-prima';if(hint)hint.textContent='Indica o que compraste e quanto pagaste. A app calcula automaticamente a quantidade e o custo por unidade base.';if(saveBtn)saveBtn.textContent='Guardar matéria-prima';if(cancelBtn)cancelBtn.classList.add('hidden');
  if(message)setStockSaveStateV143('neutral','Pronto para registar','Depois de guardar, o formulário será limpo automaticamente.')
 }
 function cancelStockEditV145(){resetStockFormV145(true);toast('Edição cancelada')}
 function addStock(){
+ syncSimpleStockCreateV1736();
  const n=stockName.value.trim();if(!n){setStockSaveStateV143('error','Falta o nome','Indique a matéria-prima antes de guardar.');return toast('Indique a matéria-prima')}
  const targetRaw=String(document.getElementById('stockTarget')?.value||'').trim();
  const qty=Number(stockQty.value||0),min=Number(stockMin.value||0),target=targetRaw===''?null:Number(targetRaw),unitCost=Number(stockUnitCost.value||0),supplier=String(document.getElementById('stockPreferredSupplier')?.value||'').trim();
  if(!Number.isFinite(qty)||qty<0||!Number.isFinite(min)||min<0||target!=null&&(!Number.isFinite(target)||target<0)||!Number.isFinite(unitCost)||unitCost<0){setStockSaveStateV143('error','Valores inválidos','Quantidade, mínimos, alvo e custo não podem ser negativos.');return toast('Confirma os valores da matéria-prima')}
  if(target!=null&&target<min){setStockSaveStateV143('error','Stock alvo inválido','O stock alvo não pode ser inferior ao stock mínimo.');return toast('O stock alvo deve ser igual ou superior ao mínimo')}
+ if(editingStockIndex==null){
+   const purchaseQty=Number(document.getElementById('stockPurchaseQtyV1736')?.value||0),purchaseTotal=Number(document.getElementById('stockPurchaseTotalV1736')?.value||0);
+   if(!Number.isFinite(purchaseQty)||purchaseQty<=0){setStockSaveStateV143('error','Falta a quantidade comprada','Indique, por exemplo, 2 kg, 500 g ou 1 litro.');return toast('Indique a quantidade comprada')}
+   if(!Number.isFinite(purchaseTotal)||purchaseTotal<0){setStockSaveStateV143('error','Valor da compra inválido','Indique o valor total pago pela matéria-prima.');return toast('Confirme o valor total pago')}
+ }
  if(editingStockIndex!=null){
    const current=db.stock[editingStockIndex];if(!current){resetStockFormV145();return toast('A matéria-prima já não existe')}
    const beforeQty=Number(current.qty)||0,beforeCost=Number(current.unitCost)||0,changedQty=Math.abs(qty-beforeQty)>1e-9,changedCost=Math.abs(unitCost-beforeCost)>1e-12,reason=String(document.getElementById('stockEditReasonV145')?.value||'').trim();
@@ -5893,7 +6023,7 @@ function stockGoPurchase(i){
 function showStockHistory(i){const x=db.stock[i];if(!x)return;const moves=[];(db.purchases||[]).filter(p=>p.item===x.name).forEach(p=>moves.push({date:p.date||'',type:(p.status||'received')==='ordered'?'Compra encomendada':'Compra recebida',qty:Number(p.qty)||0,note:[p.supplier?('Fornecedor: '+p.supplier):'',Number.isFinite(Number(p.previousAvgUnitCost))?('Custo médio: '+euro(p.previousAvgUnitCost)+' → '+euro(p.newAvgUnitCost)):'' ].filter(Boolean).join(' · '),value:Number(p.total)||0}));(db.stockMoves||[]).filter(m=>m.item===x.name).forEach(m=>{let note=m.note||'';if(m.type==='production'){const run=(db.productionRuns||[]).find(r=>r.id===m.productionRunId),ids=(Array.isArray(m.orderIds)&&m.orderIds.length?m.orderIds:(run?.orders||[]));if(ids.length){const label=ids.length===1?'Encomenda '+ids[0]:'Encomendas '+ids.join(', ');if(!note.includes(ids[0]))note=(note?note+' · ':'')+label}}moves.push({date:String(m.date||'').slice(0,10),type:m.type==='production'?'Produção':m.type==='in'?'Entrada':m.type==='out'?'Saída':m.type==='waste'?'Desperdício':m.type==='initial'?'Saldo inicial':m.type==='cost_adjustment'?'Correção custo':'Acerto',qty:Number(m.qty)||0,note,value:null,beforeQty:m.beforeQty,afterQty:m.afterQty,previousUnitCost:m.previousUnitCost,newUnitCost:m.newUnitCost})});moves.sort((a,b)=>(b.date||'').localeCompare(a.date||''));stockDialogTitle.textContent='Histórico - '+x.name;stockHistoryDetail.innerHTML=`<div class="totalbox"><div class="mini"><span>Stock atual</span><strong>${Number(x.qty||0).toLocaleString('pt-PT')} ${x.unit}</strong></div><div class="mini"><span>Stock alvo</span><strong>${stockTargetValueV135(x)?stockTargetValueV135(x).toLocaleString('pt-PT')+' '+x.unit:'—'}</strong></div><div class="mini"><span>Custo/base</span><strong>${formatUnitCostV145(x.unitCost||0,x.unit||'')}</strong></div><div class="mini"><span>Valor stock</span><strong>${euro((Number(x.qty)||0)*(Number(x.unitCost)||0))}</strong></div><div class="mini"><span>Fornecedor</span><strong>${escapeHtml(x.preferredSupplier||'—')}</strong></div><div class="mini"><span>Movimentos</span><strong>${moves.length}</strong></div></div><div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>Data</th><th>Tipo</th><th>Quantidade</th><th>Valor</th><th>Nota</th></tr></thead><tbody>${moves.length?moves.map(m=>`<tr><td>${m.date||'—'}</td><td>${m.type}</td><td>${m.type==='Correção custo'?formatUnitCostV145(m.previousUnitCost,x.unit)+' → '+formatUnitCostV145(m.newUnitCost,x.unit):m.type==='Acerto'&&Number.isFinite(Number(m.beforeQty))?Number(m.beforeQty).toLocaleString('pt-PT')+' → '+Number(m.afterQty).toLocaleString('pt-PT')+' '+x.unit:m.qty.toLocaleString('pt-PT')+' '+x.unit}</td><td>${m.value==null?'—':euro(m.value)}</td><td>${m.note||'—'}</td></tr>`).join(''):'<tr><td colspan="5" class="empty">Sem movimentos registados.</td></tr>'}</tbody></table></div>`;stockDialog.showModal()}
 function loadStock(i){
  const x=db.stock[i];if(!x)return toast('Matéria-prima não encontrada');
- editingStockIndex=i;stockName.value=x.name;stockQty.value=x.qty;stockUnit.value=x.unit;stockMin.value=x.min;stockUnitCost.value=x.unitCost||0;
+ editingStockIndex=i;stockName.value=x.name;stockQty.value=x.qty;stockUnit.value=x.unit;stockMin.value=x.min;stockUnitCost.value=x.unitCost||0;hydrateSimpleStockFormV1736(x);
  if(document.getElementById('stockTarget'))stockTarget.value=x.target??'';if(document.getElementById('stockPreferredSupplier'))stockPreferredSupplier.value=x.preferredSupplier||'';
  for(const id of ['stockName','stockUnit']){const el=document.getElementById(id);if(el)el.disabled=true}
  const title=document.querySelector('#stock .stock-form-card .section-title'),hint=document.getElementById('stockFormHintV145'),saveBtn=document.getElementById('stockSaveBtnV143'),cancelBtn=document.getElementById('stockCancelBtnV145'),reasonField=document.getElementById('stockEditReasonFieldV145');
@@ -10457,6 +10587,160 @@ function printOrderCompleteV12634(id){
     grid-template-columns:1fr;
   }
   #homepage .homepage-media-control-v12649 .btn{
+    width:100%;
+  }
+}
+</style>
+
+
+<style id="artessencia-stock-simple-create-v1736">
+/* ArtEssencia V1.7.36 — criação de matéria-prima simplificada com conversão automática. */
+#stock .stock-create-section-v1736{
+  width:100%;
+  padding:17px;
+  border-radius:18px;
+  border:1px solid #e8ddd6;
+  background:#fffdfb;
+  box-shadow:0 8px 22px rgba(81,54,43,.04);
+}
+#stock .stock-simple-grid-v1736{
+  display:grid;
+  grid-template-columns:minmax(250px,1.4fr) minmax(145px,.72fr) minmax(165px,.8fr) minmax(155px,.76fr) minmax(210px,1fr);
+  gap:12px;
+  align-items:end;
+}
+#stock .stock-simple-grid-v1736 .field{
+  min-width:0;
+}
+#stock .stock-simple-grid-v1736 label,
+#stock .stock-advanced-grid-v1736 label,
+#stock .stock-edit-reason-v1736 label{
+  display:block;
+  min-height:18px;
+  margin-bottom:6px;
+  font-size:8px;
+  line-height:1.15;
+  letter-spacing:.035em;
+  text-transform:uppercase;
+  font-weight:850;
+  color:#745f57;
+}
+#stock .stock-simple-grid-v1736 input,
+#stock .stock-simple-grid-v1736 select,
+#stock .stock-advanced-grid-v1736 input,
+#stock .stock-edit-reason-v1736 input{
+  min-height:43px;
+  border-radius:12px;
+}
+#stock .stock-auto-calc-v1736{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin-top:14px;
+}
+#stock .stock-auto-item-v1736{
+  min-height:70px;
+  padding:11px 13px;
+  border:1px solid #d9e5d3;
+  border-radius:13px;
+  background:#f4f8f1;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+#stock .stock-auto-item-v1736 span{
+  font-size:8px;
+  line-height:1.3;
+  color:#65765d;
+}
+#stock .stock-auto-item-v1736 strong{
+  margin-top:4px;
+  font-size:16px;
+  color:#40543a;
+}
+#stock .stock-advanced-v1736{
+  margin-top:14px;
+  padding:12px 14px;
+  border:1px solid #eadfd9;
+  border-radius:13px;
+  background:#faf7f4;
+}
+#stock .stock-advanced-v1736 summary{
+  cursor:pointer;
+  font-weight:800;
+  color:#604940;
+}
+#stock .stock-advanced-help-v1736{
+  margin:9px 0 11px;
+  font-size:8.5px;
+  line-height:1.4;
+  color:#806e67;
+}
+#stock .stock-advanced-grid-v1736{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+#stock .stock-advanced-grid-v1736 small{
+  display:block;
+  margin-top:5px;
+  font-size:7.8px;
+  line-height:1.3;
+}
+#stock .stock-edit-reason-v1736{
+  margin-top:14px;
+}
+#stock .stock-create-footer-v1736{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:12px;
+  align-items:center;
+  margin-top:14px;
+}
+#stock .stock-create-footer-v1736 .stock-form-actions{
+  display:flex;
+  gap:8px;
+}
+#stock .stock-create-footer-v1736 .btn{
+  min-height:43px;
+}
+
+/* Tablet */
+@media (max-width:1180px){
+  #stock .stock-simple-grid-v1736{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+  #stock .stock-name-simple-v1736{
+    grid-column:span 2;
+  }
+}
+@media (max-width:900px){
+  #stock .stock-simple-grid-v1736{
+    grid-template-columns:1fr 1fr;
+  }
+  #stock .stock-name-simple-v1736{
+    grid-column:1/-1;
+  }
+  #stock .stock-auto-calc-v1736{
+    grid-template-columns:1fr;
+  }
+  #stock .stock-create-footer-v1736{
+    grid-template-columns:1fr;
+  }
+}
+@media (max-width:620px){
+  #stock .stock-simple-grid-v1736,
+  #stock .stock-advanced-grid-v1736{
+    grid-template-columns:1fr;
+  }
+  #stock .stock-name-simple-v1736{
+    grid-column:1/-1;
+  }
+  #stock .stock-create-footer-v1736 .stock-form-actions{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+  #stock .stock-create-footer-v1736 .btn{
     width:100%;
   }
 }
