@@ -4142,7 +4142,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.37';
+const APP_VERSION='1.7.38';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -14092,14 +14092,41 @@ async function cloudPushNow(showToast=true){
    setCloudMeta({dirty:true,verified:false,conflict:false});
    return false
  }
- const ok=await relationalSyncCore(showToast);
+ const ok=await relationalSyncCore(false);
  if(ok){
    const u=cloudUser||await ensureCloudSession();
    if(u){
-     try{await pushOperationalCloudStateV139(u);cloudLogMsg('Dados operacionais enviados · stock, compras, caixa, produção e configuração')}
-     catch(e){localStorage.setItem(REL_DIRTY,'1');setCloudMeta({dirty:true,verified:false});cloudLogMsg('Falha ao enviar dados operacionais: '+cloudErrText(e));if(showToast)toast('Dados principais sincronizados, mas faltou sincronizar Stock/Configuração');return false}
+     try{
+       await pushOperationalCloudStateV139(u);
+       cloudLogMsg('Dados operacionais enviados · stock, compras, caixa, produção e configuração');
+     }catch(e){
+       localStorage.setItem(REL_DIRTY,'1');
+       setCloudMeta({dirty:true,verified:false});
+       cloudLogMsg('Falha ao enviar dados operacionais: '+cloudErrText(e));
+       if(showToast)toast('Dados principais sincronizados, mas faltou sincronizar Stock/Configuração');
+       return false
+     }
    }
    await publishPublicTechnicalProfilesV12815(false);
+
+   // V1.7.38 — só marcar como sincronizado depois de TODOS os blocos terem sido enviados.
+   const stillPending=relOrderPendingSet().size>0;
+   if(!stillPending){
+     localStorage.removeItem(REL_DIRTY);
+     setCloudMeta({
+       dirty:false,
+       conflict:false,
+       verified:true,
+       lastSync:new Date().toISOString()
+     });
+     cloudLogMsg('Sincronização concluída · sem alterações locais pendentes');
+     if(showToast)toast('Dados V10 sincronizados');
+   }else{
+     localStorage.setItem(REL_DIRTY,'1');
+     setCloudMeta({dirty:true,verified:true});
+     if(showToast)toast('Sincronização parcial — existem encomendas pendentes');
+   }
+   renderCloudUI();
  }
  return ok
 }
