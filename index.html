@@ -4461,7 +4461,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.56';
+const APP_VERSION='1.7.57';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -5553,7 +5553,7 @@ function renderDashboardDaily(){
  const remainingToday=deliveriesToday.filter(o=>o.status!=='Entregue');
  const inProd=live.filter(o=>o.status==='Em produção');
  const ready=live.filter(o=>o.status==='Pronta');
- const unpaid=live.filter(o=>{const c=calcOrder(o);return Math.max(0,(Number(c.total)||0)-(Number(o.paid)||0))>.001&&o.status!=='Entregue'});
+ const unpaid=live.filter(o=>{const c=calcOrder(o);return Math.max(0,(Number(c.total)||0)-(Number(o.paid)||0))>.001});
  const unpaidTotal=unpaid.reduce((sum,o)=>{const c=calcOrder(o);return sum+Math.max(0,(Number(c.total)||0)-(Number(o.paid)||0))},0);
  const prodUnits=inProd.reduce((sum,o)=>sum+calcOrder(o).qty,0);
 
@@ -5720,8 +5720,8 @@ async function saveOrder(){
 
  // 2. Depois tentar sincronizar APENAS esta encomenda.
  try{
-   await syncSingleOrderToCloud(order);
-   cloudLogMsg('Encomenda confirmada na Cloud: '+id);
+   const synced=await syncOrderBusinessStateV1757(order,'criação da encomenda');
+   if(synced)cloudLogMsg('Encomenda e estado operacional confirmados na Cloud: '+id);
    renderCloudUI();
  }catch(e){
    localStorage.setItem(REL_DIRTY,'1');
@@ -5740,9 +5740,7 @@ function testOrderProductionRuns(id){
 }
 function testOrderProductionNeeds(o,run){
  const saved=productionRunOrderNeedsV148(o,run);if(saved)return saved;
- const needs={},add=(name,qty)=>needs[name]=(needs[name]||0)+(Number(qty)||0);
- (o.items||[]).forEach(line=>{if(productionLineIgnoredV148(line))return;const p=productionProductForLineV130(line);if(p&&productManufacturedV130(p))(db.productRecipes[p.code]||[]).forEach(r=>add(r.item,(Number(r.qty)||0)*(Number(line.qty)||0)))});
- return needs;
+ return productionOrderNeedsV12632(o);
 }
 function removeTestProductionMove(run,item,qty){
  if(adjustProductionMoveForRunV148(run,item,qty))return true;
@@ -6133,6 +6131,48 @@ function productionUnresolvedLinesV148(orders){
  }));
  return rows;
 }
+// V1.7.57 — congelar a composição técnica por encomenda quando fica confirmada.
+// A Ficha Técnica do catálogo pode continuar a evoluir sem alterar uma encomenda já aceite.
+function captureOrderTechnicalSnapshotV1757(o,force=false){
+ if(!o)return null;
+ if(o.technicalSnapshotV1757&&!force)return o.technicalSnapshotV1757;
+ const lines=[];
+ (o.items||[]).forEach((line,index)=>{
+  if(productionLineIgnoredV148(line)||(Number(line?.qty)||0)<=0)return;
+  const p=productionProductForLineV130(line),manufactured=!!(p&&productManufacturedV130(p));
+  const recipe=manufactured&&p?((db.productRecipes?.[p.code]||[]).map(r=>({item:String(r.item||''),qtyPerUnit:Math.max(0,Number(r.qty)||0),unit:stockByName(r.item)?.unit||''})).filter(r=>r.item&&r.qtyPerUnit>0)):[];
+  lines.push({index,code:String(line?.code||p?.code||''),name:String(line?.name||p?.name||''),qty:Math.max(0,Number(line?.qty)||0),manufactured,materialsCaptured:!manufactured||recipe.length>0,materials:recipe});
+ });
+ o.technicalSnapshotV1757={version:1,capturedAt:new Date().toISOString(),lines};
+ return o.technicalSnapshotV1757;
+}
+function orderSnapshotLineV1757(o,line,index){
+ const rows=o?.technicalSnapshotV1757?.lines;
+ if(!Array.isArray(rows))return null;
+ return rows.find(x=>Number(x.index)===Number(index))||rows.find(x=>x.code&&line?.code&&x.code===line.code)||null;
+}
+function productionRecipeForOrderLineV1757(o,line,index){
+ const snap=orderSnapshotLineV1757(o,line,index);
+ if(snap?.materialsCaptured)return (snap.materials||[]).map(r=>({item:r.item,qty:Number(r.qtyPerUnit)||0}));
+ const p=productionProductForLineV130(line);
+ return p&&productManufacturedV130(p)?(db.productRecipes[p.code]||[]):[];
+}
+function productionMissingRecipesV1757(orders){
+ const rows=[];
+ (orders||[]).forEach(o=>(o.items||[]).forEach((line,index)=>{
+  if(productionLineIgnoredV148(line)||(Number(line?.qty)||0)<=0)return;
+  const p=productionProductForLineV130(line);
+  if(p&&productManufacturedV130(p)&&!productionRecipeForOrderLineV1757(o,line,index).length)rows.push({orderId:o.id||'',name:p.name||line.name||p.code||'Produto'});
+ }));
+ return rows;
+}
+function orderPackagingStockNeedV1757(o){
+ const name=String(o?.box||'').trim(),qty=Math.max(0,Number(o?.boxes)||0);
+ if(!name||qty<=0)return null;
+ const stock=stockByName(name);
+ return stock?{name:stock.name,qty}:null;
+}
+
 function productionNeedsSnapshotV148(needs){
  const out={};
  Object.entries(needs||{}).forEach(([name,qty])=>{const n=Number(qty)||0;if(n>0)out[name]=n});
@@ -6172,8 +6212,11 @@ function detachSharedProductionOrderV148(run,o){
  return !!exact;
 }
 function productionOrderNeedsV12632(o){
- const needs={},add=(name,v)=>needs[name]=(needs[name]||0)+(Number(v)||0);
- (o.items||[]).forEach(line=>{if(productionLineIgnoredV148(line))return;const p=productionProductForLineV130(line);if(p&&productManufacturedV130(p))(db.productRecipes[p.code]||[]).forEach(r=>add(r.item,(Number(r.qty)||0)*(Number(line.qty)||0)))});
+ const needs={},add=(name,v)=>{if(name)needs[name]=(needs[name]||0)+(Number(v)||0)};
+ (o.items||[]).forEach((line,index)=>{if(productionLineIgnoredV148(line))return;const p=productionProductForLineV130(line);if(p&&productManufacturedV130(p))productionRecipeForOrderLineV1757(o,line,index).forEach(r=>add(r.item,(Number(r.qty)||0)*(Number(line.qty)||0)))});
+ // Embalagem escolhida na encomenda também é consumida, mas apenas quando existe
+ // como artigo real no Stock com o mesmo nome. Caso contrário mantém-se apenas como custo.
+ const pkg=orderPackagingStockNeedV1757(o);if(pkg)add(pkg.name,pkg.qty);
  return needs;
 }
 function productionFmtQtyV12632(v){
@@ -7201,7 +7244,7 @@ function setOrderStatus(id,status){
  o.statusHistory.push({from:prev,to:status,date:new Date().toISOString(),source:o.source==='online_store'?'online_store':'manual'});
  if(status==='Entregue'&&!o.deliveredAt)o.deliveredAt=new Date().toISOString();
  if(status!=='Entregue'&&prev==='Entregue')o.deliveredAt=null;
- if(status==='Confirmada'&&!o.confirmedAt)o.confirmedAt=new Date().toISOString();
+ if(status==='Confirmada'){if(!o.confirmedAt)o.confirmedAt=new Date().toISOString();captureOrderTechnicalSnapshotV1757(o,false)}
  if(status==='Em produção'&&isOrderProduced(id)){
    toast('Esta encomenda já tem produção concluída; não pode consumir stock novamente');
    o.status=prev;
@@ -7340,8 +7383,8 @@ function printOrderCompleteV12634(id){
  const datePt=(v)=>{if(!v)return '—';const a=String(v).slice(0,10).split('-');return a.length===3?`${a[2]}/${a[1]}/${a[0]}`:String(v)};
  const paymentRequested=o.paymentRequested==='mbway_manual'?'MB WAY':o.paymentRequested==='multibanco'?'Multibanco':o.paymentRequested==='bank_transfer'?'Transferência':o.paymentRequested==='pay_later'?'No levantamento/entrega':(o.payment||'Por definir');
  const deliveryMethod=o.deliveryMethod==='local_delivery'?'Entrega local':'Levantamento';
- const productBlocks=(o.items||[]).map(line=>{
-   const rec=(db.productRecipes?.[line.code]||[]);
+ const productBlocks=(o.items||[]).map((line,index)=>{
+   const rec=productionRecipeForOrderLineV1757(o,line,index);
    const rows=rec.length?rec.map(r=>`<tr><td>${h(r.item)}</td><td class="num">${h(fmt((Number(r.qty)||0)*(Number(line.qty)||0)))} ${h(stockByName(r.item)?.unit||'')}</td></tr>`).join(''):`<tr><td colspan="2" class="muted">Sem materiais registados na ficha técnica.</td></tr>`;
    return `<div class="product"><h4>${h(line.name)} <span>× ${h(line.qty)}</span></h4><table><tbody>${rows}</tbody></table></div>`;
  }).join('');
@@ -11663,7 +11706,7 @@ function settleOrderAndDeliver(id){
  const method=document.getElementById('deliveryPayMethod')?.value||'Dinheiro';
  const payId=uid('PAY'),payment={id:payId,date:new Date().toISOString(),amount:remaining,method,type:'payment',note:'Pagamento no ato da entrega'};
  o.paid=current+remaining;o.payment=method;o.paymentHistory=o.paymentHistory||[];o.paymentHistory.push(payment);addOrderPaymentCash(o,payment);
- save();setOrderStatus(id,'Entregue');toast('Pagamento recebido e encomenda entregue');
+ save();setOrderStatus(id,'Entregue');queueOrderBusinessSyncV1757(o,'pagamento na entrega');toast('Pagamento recebido e encomenda entregue');
 }
 function deliverWithBalance(id){
  const o=db.orders.find(x=>x.id===id);if(!o)return;
@@ -11672,8 +11715,8 @@ function deliverWithBalance(id){
  setOrderStatus(id,'Entregue');
 }
 
-function registerOrderPayment(id){const o=db.orders.find(x=>x.id===id);if(!o)return;const total=calcOrder(o).total,current=Math.max(0,Number(o.paid)||0),remaining=Math.max(0,total-current),amount=Number(document.getElementById('detailNewPaid')?.value)||0,method=document.getElementById('detailPayMethod')?.value||o.payment||'Outro';if(amount<=0||amount>remaining+0.001)return toast('O pagamento deve ser superior a 0 € e não pode exceder '+euro(remaining));const payment={id:uid('PAY'),date:new Date().toISOString(),amount,method,type:'payment'};o.paid=current+amount;o.payment=method;o.paymentHistory=o.paymentHistory||[];o.paymentHistory.push(payment);addOrderPaymentCash(o,payment);save();showOrder(id);toast('Pagamento registado na encomenda e no Caixa: '+euro(amount))}
-function correctOrderPaid(id){const o=db.orders.find(x=>x.id===id);if(!o)return;const total=calcOrder(o).total,current=Math.max(0,Number(o.paid)||0),raw=prompt('Corrigir total recebido da encomenda '+id+' (0 a '+euro(total)+'):',String(current.toFixed(2)).replace('.',','));if(raw===null)return;const value=Number(String(raw).replace(',','.'));if(!Number.isFinite(value)||value<0||value>total+0.001)return toast('Valor inválido');const delta=value-current,payment={id:uid('PAY'),date:new Date().toISOString(),amount:delta,method:o.payment||'Outro',type:'correction',note:'Correção do total recebido'};o.paid=value;o.paymentHistory=o.paymentHistory||[];o.paymentHistory.push(payment);if(Math.abs(delta)>0.001){db.cash=db.cash||[];db.cash.push({id:uid('CASH'),date:todayISO(),type:delta>0?'Entrada':'Saída',desc:'Correção pagamento encomenda '+o.id,method:payment.method,value:Math.abs(delta),source:'order_payment_correction',orderId:o.id,paymentId:payment.id})}save();showOrder(id);toast('Total recebido corrigido')}
+function registerOrderPayment(id){const o=db.orders.find(x=>x.id===id);if(!o)return;const total=calcOrder(o).total,current=Math.max(0,Number(o.paid)||0),remaining=Math.max(0,total-current),amount=Number(document.getElementById('detailNewPaid')?.value)||0,method=document.getElementById('detailPayMethod')?.value||o.payment||'Outro';if(amount<=0||amount>remaining+0.001)return toast('O pagamento deve ser superior a 0 € e não pode exceder '+euro(remaining));const payment={id:uid('PAY'),date:new Date().toISOString(),amount,method,type:'payment'};o.paid=current+amount;o.payment=method;o.paymentHistory=o.paymentHistory||[];o.paymentHistory.push(payment);addOrderPaymentCash(o,payment);save();queueOrderBusinessSyncV1757(o,'pagamento registado');showOrder(id);toast('Pagamento registado na encomenda e no Caixa: '+euro(amount))}
+function correctOrderPaid(id){const o=db.orders.find(x=>x.id===id);if(!o)return;const total=calcOrder(o).total,current=Math.max(0,Number(o.paid)||0),raw=prompt('Corrigir total recebido da encomenda '+id+' (0 a '+euro(total)+'):',String(current.toFixed(2)).replace('.',','));if(raw===null)return;const value=Number(String(raw).replace(',','.'));if(!Number.isFinite(value)||value<0||value>total+0.001)return toast('Valor inválido');const delta=value-current,payment={id:uid('PAY'),date:new Date().toISOString(),amount:delta,method:o.payment||'Outro',type:'correction',note:'Correção do total recebido'};o.paid=value;o.paymentHistory=o.paymentHistory||[];o.paymentHistory.push(payment);if(Math.abs(delta)>0.001){db.cash=db.cash||[];db.cash.push({id:uid('CASH'),date:todayISO(),type:delta>0?'Entrada':'Saída',desc:'Correção pagamento encomenda '+o.id,method:payment.method,value:Math.abs(delta),source:'order_payment_correction',orderId:o.id,paymentId:payment.id})}save();queueOrderBusinessSyncV1757(o,'correção de pagamento');showOrder(id);toast('Total recebido corrigido')}
 async function deleteProduct(code){
  if(!destructiveDeleteAllowedV1420('o produto'))return;
  const p=findProductByCodeV147(code);if(!p)return;
@@ -12435,7 +12478,7 @@ function quantityPricingSnapshotV1751(){
  const materials=quantityPricingRowsV1750.reduce((sum,r)=>sum+Math.max(0,Number(r.totalQty)||0)*Math.max(0,Number(stockByName(r.item)?.unitCost)||0),0);
  const minsUnit=Math.max(0,Number(document.getElementById('qtyPricingMinutesUnitV1750')?.value)||0),normalMins=minsUnit*units,eff=Math.max(0,Math.min(95,Number(document.getElementById('qtyPricingEfficiencyV1750')?.value)||0)),manualTime=String(document.getElementById('qtyPricingTotalMinutesV1750')?.value||'').trim(),totalMins=manualTime===''?normalMins*(1-eff/100):Math.max(0,Number(manualTime)||0);
  const labor=pricingLaborHourlyRateV1745()*totalMins/60,fixed=pricingFixedHourlyRateV1745()*totalMins/60,other=Math.max(0,Number(document.getElementById('qtyPricingOtherLotV1750')?.value)||0),costTotal=materials+labor+fixed+other,costUnit=costTotal/units,marginPct=Math.max(0,Math.min(95,Number(document.getElementById('qtyPricingMarginV1750')?.value)||0)),recommendedUnit=batchPriceRoundV1743(pricingPriceFromMarginV1745(costUnit,marginPct)),discount=Math.max(0,Math.min(100,Number(document.getElementById('qtyPricingDiscountV1750')?.value)||0)),manualUnitRaw=String(document.getElementById('qtyPricingManualUnitV1750')?.value||'').trim(),finalUnit=manualUnitRaw===''?recommendedUnit*(1-discount/100):Math.max(0,Number(manualUnitRaw)||0),finalTotal=finalUnit*units,profit=finalTotal-costTotal,marginReal=finalTotal>0?profit/finalTotal:0;
- return {version:'1.7.56',createdAt:new Date().toISOString(),mode,productCode:p?.code||'',productName:p?.name||'',units,materials:quantityPricingRowsV1750.map(r=>{const st=stockByName(r.item);return {item:r.item,unit:st?.unit||'un',perUnit:Math.max(0,Number(r.perUnit)||0),totalQty:Math.max(0,Number(r.totalQty)||0),unitCost:Math.max(0,Number(st?.unitCost)||0),cost:Math.max(0,Number(r.totalQty)||0)*Math.max(0,Number(st?.unitCost)||0)}}),materialsCost:materials,minutesPerUnit:minsUnit,efficiencyPct:eff,totalMinutes:totalMins,laborCost:labor,fixedCost:fixed,otherCost:other,costTotal,costUnit,marginPct,recommendedUnit,recommendedTotal:recommendedUnit*units,discountPct:discount,finalUnit,finalTotal,profit,marginReal};
+ return {version:'1.7.57',createdAt:new Date().toISOString(),mode,productCode:p?.code||'',productName:p?.name||'',units,materials:quantityPricingRowsV1750.map(r=>{const st=stockByName(r.item);return {item:r.item,unit:st?.unit||'un',perUnit:Math.max(0,Number(r.perUnit)||0),totalQty:Math.max(0,Number(r.totalQty)||0),unitCost:Math.max(0,Number(st?.unitCost)||0),cost:Math.max(0,Number(r.totalQty)||0)*Math.max(0,Number(st?.unitCost)||0)}}),materialsCost:materials,minutesPerUnit:minsUnit,efficiencyPct:eff,totalMinutes:totalMins,laborCost:labor,fixedCost:fixed,otherCost:other,costTotal,costUnit,marginPct,recommendedUnit,recommendedTotal:recommendedUnit*units,discountPct:discount,finalUnit,finalTotal,profit,marginReal};
 }
 function quantityPricingToOrderV1751(){
  const snap=quantityPricingSnapshotV1751(),p=quantityPricingProductV1750();
@@ -12905,7 +12948,7 @@ function renderProductionFlowV147(){
  const produced=dayOrders.filter(o=>done.has(o.id)||['Pronta','Entregue'].includes(o.status));
  const delivered=dayOrders.filter(o=>o.status==='Entregue');
  let missing=productionUnresolvedLinesV148(confirmed).map(x=>x.name+' ('+x.orderId+')');
- confirmed.forEach(o=>(o.items||[]).forEach(line=>{if(productionLineIgnoredV148(line))return;const p=productionProductForLineV130(line);if(p&&productManufacturedV130(p)&&!((db.productRecipes[p.code]||[]).length))missing.push(p.name||line.name||p.code)}));
+ productionMissingRecipesV1757(confirmed).forEach(x=>missing.push(x.name+' ('+x.orderId+')'));
  missing=[...new Set(missing)];
  const steps=[
   {n:1,t:'Encomenda',v:dayOrders.length+' para o dia',done:dayOrders.length>0},
@@ -12919,10 +12962,10 @@ function renderProductionFlowV147(){
 function consumeProduction(){
  const d=prodDate.value||todayISO(),done=orderAlreadyProducedIds(),ords=db.orders.filter(o=>o.delivery===d&&['Em produção','Produção'].includes(o.status)&&!done.has(o.id));if(!ords.length)return toast('Sem encomendas em produção para concluir');
  const unresolved=productionUnresolvedLinesV148(ords);if(unresolved.length)return toast('Produção bloqueada — produto não encontrado no catálogo: '+unresolved.map(x=>x.name+' ('+x.orderId+')').join(' · '));
- const products=new Map();ords.forEach(o=>(o.items||[]).forEach(line=>{if(productionLineIgnoredV148(line))return;const p=productionProductForLineV130(line),key=p?.code||line.code||line.name,cur=products.get(key)||{p,name:p?.name||line.name||'Produto',qty:0};cur.qty+=(Number(line.qty)||0);products.set(key,cur)}));const manufactured=[...products.values()].filter(x=>x.p&&productManufacturedV130(x.p)),missing=manufactured.filter(x=>!((db.productRecipes[x.p.code]||[]).length));if(missing.length)return toast('Produção bloqueada — falta a ficha técnica de: '+missing.map(x=>x.name).join(' · '));
- const needs={},addNeed=(n,q)=>needs[n]=(needs[n]||0)+(Number(q)||0);manufactured.forEach(x=>(db.productRecipes[x.p.code]||[]).forEach(r=>addNeed(r.item,(Number(r.qty)||0)*x.qty)));const committed=productionCommittedNeedsV136(d);const shortages=Object.entries(needs).filter(([name,need])=>{const x=stockByName(name),have=x?Number(x.qty)||0:0,prior=Math.max(0,(Number(committed[name])||0)-(Number(need)||0));return !x||have-prior+1e-9<need});if(shortages.length){const msg=shortages.slice(0,5).map(([name,need])=>{const x=stockByName(name),have=x?Number(x.qty)||0:0,unit=x?.unit||'',prior=Math.max(0,(Number(committed[name])||0)-(Number(need)||0)),available=Math.max(0,have-prior);return name+': precisa '+Number(need).toLocaleString('pt-PT')+' '+unit+', disponível após compromissos '+available.toLocaleString('pt-PT')+' '+unit}).join(' · ');return toast('Produção bloqueada — stock comprometido/insuficiente. '+msg)}
+ const products=new Map();ords.forEach(o=>(o.items||[]).forEach(line=>{if(productionLineIgnoredV148(line))return;const p=productionProductForLineV130(line),key=p?.code||line.code||line.name,cur=products.get(key)||{p,name:p?.name||line.name||'Produto',qty:0};cur.qty+=(Number(line.qty)||0);products.set(key,cur)}));const manufactured=[...products.values()].filter(x=>x.p&&productManufacturedV130(x.p)),missing=productionMissingRecipesV1757(ords);if(missing.length)return toast('Produção bloqueada — falta a ficha técnica de: '+missing.map(x=>x.name+' ('+x.orderId+')').join(' · '));
+ const needs={},addNeed=(n,q)=>needs[n]=(needs[n]||0)+(Number(q)||0);ords.forEach(o=>Object.entries(productionOrderNeedsV12632(o)).forEach(([name,qty])=>addNeed(name,qty)));const committed=productionCommittedNeedsV136(d);const shortages=Object.entries(needs).filter(([name,need])=>{const x=stockByName(name),have=x?Number(x.qty)||0:0,prior=Math.max(0,(Number(committed[name])||0)-(Number(need)||0));return !x||have-prior+1e-9<need});if(shortages.length){const msg=shortages.slice(0,5).map(([name,need])=>{const x=stockByName(name),have=x?Number(x.qty)||0:0,unit=x?.unit||'',prior=Math.max(0,(Number(committed[name])||0)-(Number(need)||0)),available=Math.max(0,have-prior);return name+': precisa '+Number(need).toLocaleString('pt-PT')+' '+unit+', disponível após compromissos '+available.toLocaleString('pt-PT')+' '+unit}).join(' · ');return toast('Produção bloqueada — stock comprometido/insuficiente. '+msg)}
  const orderMaterials={},orderProducts={};ords.forEach(o=>{orderMaterials[o.id]=productionNeedsSnapshotV148(productionOrderNeedsV12632(o));orderProducts[o.id]=(o.items||[]).filter(line=>!productionLineIgnoredV148(line)).map(line=>({code:line.code||'',name:line.name||'',qty:Number(line.qty)||0}))});
- const runId=uid('PROD'),productionOrderIds=ords.map(o=>o.id),productionOrderLabel=productionOrderIds.length===1?'Encomenda '+productionOrderIds[0]:'Encomendas '+productionOrderIds.join(', ');Object.entries(needs).forEach(([name,need])=>{const x=stockByName(name);x.qty=(Number(x.qty)||0)-need;db.stockMoves.push({date:new Date().toISOString(),item:x.name,type:'production',qty:need,note:'Produção '+d+' · '+productionOrderLabel,productionRunId:runId,orderIds:[...productionOrderIds]})});ords.forEach(o=>{const prev=o.status||'Em produção';o.status='Pronta';o.readyAt=o.readyAt||new Date().toISOString();o.statusHistory=Array.isArray(o.statusHistory)?o.statusHistory:[];o.statusHistory.push({from:prev,to:'Pronta',date:new Date().toISOString(),source:'production'})});const total=ords.reduce((sum,o)=>sum+calcOrder(o).qty,0);const materialUnitCosts={};let materialCostTotal=0;Object.entries(needs).forEach(([name,need])=>{const uc=materialUnitCost(name);materialUnitCosts[name]=uc;materialCostTotal+=(Number(need)||0)*uc});db.productionRuns.push({id:runId,date:d,createdAt:new Date().toISOString(),total,batches:0,orders:ords.map(o=>o.id),materials:{...needs},orderMaterials,orderProducts,materialUnitCosts,materialCostTotal,materialCostSnapshotAt:new Date().toISOString(),products:[...products.values()].map(x=>({code:x.p?.code||'',name:x.name,qty:x.qty,productionType:productProductionTypeV130(x.p)})),orderInstructions:ords.map(o=>({orderId:o.id,instructions:productionOrderInstructionsV136(o)})),missing:[]});save();renderProduction();renderProductionFlowV147();toast('Produção concluída com sucesso · stock descontado automaticamente · encomendas marcadas como Prontas')
+ const runId=uid('PROD'),productionOrderIds=ords.map(o=>o.id),productionOrderLabel=productionOrderIds.length===1?'Encomenda '+productionOrderIds[0]:'Encomendas '+productionOrderIds.join(', ');Object.entries(needs).forEach(([name,need])=>{const x=stockByName(name);x.qty=(Number(x.qty)||0)-need;db.stockMoves.push({date:new Date().toISOString(),item:x.name,type:'production',qty:need,note:'Produção '+d+' · '+productionOrderLabel,productionRunId:runId,orderIds:[...productionOrderIds]})});ords.forEach(o=>{const prev=o.status||'Em produção';o.status='Pronta';o.readyAt=o.readyAt||new Date().toISOString();o.statusHistory=Array.isArray(o.statusHistory)?o.statusHistory:[];o.statusHistory.push({from:prev,to:'Pronta',date:new Date().toISOString(),source:'production'})});const total=ords.reduce((sum,o)=>sum+calcOrder(o).qty,0);const materialUnitCosts={};let materialCostTotal=0;Object.entries(needs).forEach(([name,need])=>{const uc=materialUnitCost(name);materialUnitCosts[name]=uc;materialCostTotal+=(Number(need)||0)*uc});db.productionRuns.push({id:runId,date:d,createdAt:new Date().toISOString(),total,batches:0,orders:ords.map(o=>o.id),materials:{...needs},orderMaterials,orderProducts,materialUnitCosts,materialCostTotal,materialCostSnapshotAt:new Date().toISOString(),products:[...products.values()].map(x=>({code:x.p?.code||'',name:x.name,qty:x.qty,productionType:productProductionTypeV130(x.p)})),orderInstructions:ords.map(o=>({orderId:o.id,instructions:productionOrderInstructionsV136(o)})),missing:[]});save();setTimeout(()=>cloudPushNow(false),0);renderProduction();renderProductionFlowV147();toast('Produção concluída com sucesso · stock descontado automaticamente · encomendas marcadas como Prontas')
 }
 
 function escapeHtml(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
@@ -14255,7 +14298,7 @@ async function previewQuotePDF(id){const q=(db.quotes||[]).find(x=>x.id===id);if
 async function quotePDF(id){const q=(db.quotes||[]).find(x=>x.id===id);if(!q)return;try{const blob=await buildQuotePdfBlob(q),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=quoteFileName(q);document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2500);toast('PDF guardado')}catch(e){toast('Não foi possível gerar o PDF')}}
 async function shareQuotePDF(id){const q=(db.quotes||[]).find(x=>x.id===id);if(!q)return;try{const blob=await buildQuotePdfBlob(q),file=new File([blob],quoteFileName(q),{type:'application/pdf'}),text=`Olá ${q.client||''}! Segue em anexo o orçamento ${q.id} da ${db.settings.businessName||'ArtEssencia'}.`;if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({title:'Orçamento '+q.id,text,files:[file]});if(q.status==='Rascunho'){const prev=q.status;q.status='Enviado';q.statusHistory=Array.isArray(q.statusHistory)?q.statusHistory:[];q.statusHistory.push({date:new Date().toISOString(),status:'Enviado',from:prev,to:'Enviado',source:'share'});save()}toast('Orçamento partilhado')}else{await quotePDF(id);toast('O dispositivo não permite anexar diretamente. O PDF foi guardado para anexares no WhatsApp ou email.')}}catch(e){if(e.name!=='AbortError')toast('Não foi possível partilhar o PDF')}}
 function quotePdfLines(q){const c=quoteCalc(q),lines=['ArtEssencia ATELIÊ ARTESANAL - ORCAMENTO',q.id,'Emitido em: '+q.created,'Cliente: '+(q.client||'-'),'Contacto cliente: '+(q.contact||'-'),q.eventDate?'Data do evento: '+q.eventDate:'',q.validUntil?'Valido ate: '+q.validUntil:'','','ITENS'];(q.items||[]).forEach(i=>lines.push(`${i.qty} x ${i.name} | ${euro(i.price)}/un | ${euro(i.qty*i.price)}`));lines.push('','Subtotal: '+euro(c.sub));if(c.disc)lines.push('Desconto'+(q.discountType==='percent'?' ('+Number(q.discountValue||0).toLocaleString('pt-PT')+'%)':'')+': '+euro(c.disc));if(q.box)lines.push('Embalagem: '+q.box+' x '+Math.max(1,Number(q.boxes)||1));lines.push('TOTAL: '+euro(c.total),'','Pagamento: '+quotePaymentLabel(q),'Para confirmar: '+euro(quoteDepositRequired(q)));const due=quoteBalanceDueDate(q);if(due)lines.push('Saldo ate: '+due);if(db.settings.businessPhone)lines.push('Contacto / MB Way: '+db.settings.businessPhone);if(db.settings.iban)lines.push('IBAN: '+db.settings.iban);if(db.settings.paymentNote)lines.push(db.settings.paymentNote);if(q.notes)lines.push('','Observacoes: '+q.notes);lines.push('','Estado: '+(q.orderId?'Convertido':q.status),'Este documento e um orcamento e nao substitui fatura.');return lines.filter(Boolean)}
-function convertQuoteToOrder(id){
+async function convertQuoteToOrder(id){
  const q=(db.quotes||[]).find(x=>x.id===id);if(!q||q.orderId)return;
  if(q.status!=='Aceite')return toast('Marque primeiro o orçamento como Aceite');
  if(!q.eventDate)return toast('Defina a data do evento/entrega no orçamento antes de converter em encomenda');
@@ -14269,13 +14312,13 @@ Total: ${euro(target)}
 Recebido: ${euro(paid)}
 
 O orçamento ficará ligado à nova encomenda e deixa de poder ser alterado.`))return;
- const y=new Date().getFullYear(),nums=db.orders.filter(o=>o.id?.startsWith('AS-'+y+'-')).map(o=>+o.id.split('-').pop()||0),oid='AS-'+y+'-'+String(Math.max(0,...nums)+1).padStart(4,'0');
+ const oid=await nextManualOrderId();
  const items=[];(q.items||[]).forEach((i,n)=>{if(i.type==='free'){items.push({code:'ORC-EXTRA-'+String(n+1).padStart(2,'0'),name:i.name,qty:Number(i.qty)||1,price:Number(i.price)||0,cost:Number(i.cost)||0,type:'quote_extra'})}else{const p=db.products.find(x=>x.code===i.code);if(p){const snap=Number.isFinite(Number(i.cost))?{cost:Number(i.cost)||0,costSnapshotAt:i.costSnapshotAt||q.created||new Date().toISOString(),costSnapshotSource:i.costSnapshotSource||'quote'}:productCostSnapshotV134(p,'quote_conversion_fallback');items.push({code:i.code,name:i.name,qty:Number(i.qty)||1,price:Number(i.price)||0,...snap})}}});
  if(!items.length)return toast('O orçamento não tem linhas convertíveis');
  const qdisc=quoteCalc(q).disc;if(qdisc>0)items.push({code:'ORC-DESCONTO',name:'Desconto do orçamento',qty:1,price:-Math.abs(qdisc),cost:0,type:'quote_discount'});
  const current=items.reduce((a,i)=>a+i.qty*i.price,0),roundAdjust=Math.round((target-current)*100)/100;if(Math.abs(roundAdjust)>0.009)items.push({code:'ORC-AJUSTE',name:'Ajuste do orçamento',qty:1,price:roundAdjust,cost:0,type:'quote_adjustment'});
  const newOrder={id:oid,clientId:q.clientId,client:q.client,contact:q.contact,delivery:q.eventDate||'',payment:q.paymentMethod||'MB Way',box:q.box||'',boxCostSnapshot:q.boxCostSnapshot!=null?Number(q.boxCostSnapshot)||0:((db.packaging||[]).find(p=>p.name===(q.box||''))?.cost||0),boxes:Math.max(1,Number(q.boxes)||1),paid:Math.min(paid,target),status:'Confirmada',created:todayISO(),items,sourceQuoteId:q.id,notes:q.notes||'',quotePaymentTerms:q.paymentTerms,quoteBalanceDue:quoteBalanceDueDate(q),paymentHistory:(q.paymentHistory||[]).map(x=>({...x,source:'quote'})),statusHistory:[{date:new Date().toISOString(),from:'—',to:'Confirmada',status:'Confirmada',source:'quote_conversion',quoteId:q.id}]};
- db.orders.push(newOrder);ensureOrderPaymentCashLedger(db);q.orderId=oid;q.convertedAt=new Date().toISOString();q.status='Convertido';q.statusHistory=Array.isArray(q.statusHistory)?q.statusHistory:[];q.statusHistory.push({date:q.convertedAt,status:'Convertido',from:'Aceite',to:'Convertido',source:'conversion',orderId:oid});save();toast('Orçamento convertido em '+oid);go('orders')
+ captureOrderTechnicalSnapshotV1757(newOrder,false);db.orders.push(newOrder);ensureOrderPaymentCashLedger(db);q.orderId=oid;q.convertedAt=new Date().toISOString();q.status='Convertido';q.statusHistory=Array.isArray(q.statusHistory)?q.statusHistory:[];q.statusHistory.push({date:q.convertedAt,status:'Convertido',from:'Aceite',to:'Convertido',source:'conversion',orderId:oid});save();queueOrderBusinessSyncV1757(newOrder,'conversão de orçamento');toast('Orçamento convertido em '+oid);go('orders')
 }
 
 function showQuoteHistory(id){
@@ -15085,6 +15128,27 @@ async function syncSingleOrderToCloud(order){
  return true
 }
 
+async function syncOrderBusinessStateV1757(order,reason='atualização'){
+ try{
+  await syncSingleOrderToCloud(order);
+  const u=cloudUser||await ensureCloudSession();
+  if(u&&cloudClient&&navigator.onLine)await pushOperationalCloudStateV139(u);
+  cloudLogMsg('Ciclo da encomenda sincronizado · '+(order?.id||'')+' · '+reason);
+  renderCloudUI();
+  return true;
+ }catch(e){
+  localStorage.setItem(REL_DIRTY,'1');
+  setCloudMeta({dirty:true,verified:false,conflict:false});
+  cloudLogMsg('Sincronização do ciclo da encomenda pendente · '+(order?.id||'')+' · '+cloudErrText(e));
+  renderCloudUI();
+  scheduleRelationalSync();
+  return false;
+ }
+}
+function queueOrderBusinessSyncV1757(order,reason){
+ setTimeout(()=>syncOrderBusinessStateV1757(order,reason),0);
+}
+
 async function diagnoseOrdersCloud(showToast=true){
  const u=cloudUser||await ensureCloudSession();
  if(!u||!cloudClient){if(showToast)toast('Cloud sem sessão');return null}
@@ -15760,4 +15824,6 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 .sale-client-match-v1756:hover,.sale-client-match-v1756:focus{background:#f7efeb;outline:none}
 .sale-client-match-v1756 strong{font-size:11px;color:#513a34}.sale-client-match-v1756 small{font-size:8px;color:#8d7870}
 .sale-client-match-empty-v1756{padding:9px 10px;font-size:9px;color:#907d75}
+
+/* V1.7.57 — ciclo real: snapshot técnico por encomenda, pagamentos+Caixa sincronizados, embalagem-stock quando aplicável, saldo entregue visível, conversão orçamento com numeração robusta */
 </style>
