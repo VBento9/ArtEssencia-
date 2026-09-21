@@ -3609,6 +3609,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           <div class="field cost-field-v1256"><label>Mão de obra €/hora</label><input id="laborRate" type="number" step="0.01"></div>
           <div class="field cost-field-v1256"><label>Desperdício %</label><input id="wasteRate" type="number" step="0.01"></div>
           <div class="field cost-field-v1256"><label>Minutos médios de mão de obra/unidade</label><input id="laborMinutes" type="number" step="1"></div>
+          <div class="field cost-field-v1256"><label>Operação média padrão €/un.</label><input id="cfgDefaultOperatingCostV1742" type="number" min="0" step="0.01" placeholder="Ex.: 0,40"><small class="mix-help">Usado quando o produto não tiver valor próprio.</small></div>
+          <div class="field cost-field-v1256"><label>Molde / desgaste padrão €/un.</label><input id="cfgDefaultMoldCostV1742" type="number" min="0" step="0.01" placeholder="Ex.: 0,10"><small class="mix-help">Usado quando o produto não tiver valor próprio.</small></div>
           <div class="field cost-field-v1256"><label>Eletricidade €/kWh</label><input id="cfgElectricityRateV133" type="number" min="0" step="0.001" placeholder="Ex.: 0.20"><small class="mix-help">Usado no custo automático de energia de cada produto.</small></div>
           <div class="field cost-field-v1256"><label>Desgaste equipamento €/hora</label><input id="cfgEquipmentWearRateV133" type="number" min="0" step="0.01" placeholder="Ex.: 0.20"><small class="mix-help">Amortização geral de equipamentos, além do molde específico.</small></div>
           <div class="field cost-field-v1256"><label>Consumíveis gerais €/hora</label><input id="cfgConsumablesHourlyRateV133" type="number" min="0" step="0.01" placeholder="Ex.: 0.10"><small class="mix-help">Luvas, papel, limpeza e pequenos consumíveis não registados na ficha técnica.</small></div>
@@ -3868,7 +3870,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       <div class="products-form-head">
         <div>
           <div class="section-title" id="productEditorTitleV145" style="margin:0">Novo produto</div>
-          <small>Define materiais, trabalho, molde, embalagem, desperdício, margens e preços para cada produto.</small>
+          <small>Cria o produto, associa a Ficha Técnica e define uma precificação simples e coerente.</small>
         </div>
       </div>
       <div class="form-grid">
@@ -3880,77 +3882,26 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div class="field edition-cost-field" id="prodEditionLaborField" style="display:none"><label>Tempo extra por unidade</label><div class="edition-cost-input"><input id="prodEditionExtraLaborMinutes" type="number" min="0" step="0.1" value="0"><span>min</span></div><small class="mix-help">Só o tempo adicional desta edição. O custo é calculado com a mão de obra €/hora já definida na app.</small></div>
         <div class="field edition-cost-field" id="prodEditionWasteField" style="display:none"><label>Desperdício extra da edição</label><div class="edition-cost-input"><input id="prodEditionExtraWastePct" type="number" min="0" step="0.1" value="0"><span>%</span></div><small class="mix-help">Acrescenta-se ao desperdício geral apenas neste produto. Usa 0 se não houver diferença.</small></div>
         <div class="field span2 edition-cost-note" id="prodEditionCostNote" style="display:none"><strong>💶 Custo real da edição</strong><span>Materiais e decoração continuam a ser registados na ficha técnica do produto. Aqui só acrescentamos o tempo e desperdício extra específicos desta edição. O PVP continua totalmente manual.</span></div><div class="field span2 product-techsheet-v1250" id="prodTechSheetBridge" style="display:none"><div class="product-techsheet-head-v1250"><div><strong>🧾 Ficha Técnica</strong><span id="prodTechSheetStatus">Ficha técnica do produto</span></div><button type="button" class="btn ghost" id="prodTechSheetBtn" onclick="openProductTechSheetV1250()">Editar Ficha Técnica</button></div><div class="product-techsheet-stats-v1250"><div><span>Materiais específicos</span><strong id="prodTechSheetIngredientCount">—</strong></div><div><span>Custo calculado</span><strong id="prodTechSheetCost">—</strong></div><div><span>PVP recomendado</span><strong id="prodTechSheetRecommended">—</strong></div></div><div class="product-composition-v144"><div class="product-composition-head-v144"><div><strong>Composição do produto</strong><small>Carregada automaticamente da Ficha Técnica guardada.</small></div><span id="prodCompositionBadgeV144" class="badge">—</span></div><div id="prodCompositionPreviewV144" class="product-composition-list-v144"><div class="empty">Guarda ou seleciona um produto para ver a composição.</div></div></div></div>
-        <div class="field product-price-v1726"><label>Custo/un. automático</label><input id="prodCost" type="number" step="0.0001" readonly style="background:#DDF4D2"></div>
-        <div class="field product-price-v1726"><label>PVP definido — venda direta</label><input id="prodPrice" type="number" min="0" step="0.01"><small class="mix-help">Usado nas encomendas criadas diretamente na app.</small></div>
-        <div class="field product-price-v1726"><label>PVP definido — Loja online</label><input id="prodOnlinePriceV12620" type="number" min="0" step="0.01"><small class="mix-help">Preço que a loja online publica. Não varia entre MB WAY, Multibanco ou outros métodos.</small></div>
-        <div class="field span2 product-pricing-policy-v1726"><div class="pricing-policy-v1251"><div><label>PVP recomendado — venda direta</label><strong id="prodDirectRecommendedV12620">—</strong></div><div><label>PVP recomendado — Loja online</label><strong id="prodOnlineRecommendedV12620">—</strong></div><small>O recomendado da Loja inclui a provisão das taxas de pagamento online. Os dois PVP definidos continuam totalmente editáveis e nunca são alterados automaticamente.</small></div></div>
-        <div class="field span4 product-cost-editor-v110">
-          <div class="product-cost-editor-head-v110"><div><strong>Custos específicos deste produto</strong><small>Preenche apenas os custos médios necessários. Materiais e embalagem são somados automaticamente pela Ficha Técnica.</small></div><span>por unidade</span></div>
-          <div class="product-cost-grid-v1740">
-            <div class="field">
-              <label>Tempo de trabalho</label>
-              <div class="cost-input-suffix-v110"><input id="prodLaborMinutesV110" type="number" min="0" step="0.1"><span>min</span></div>
-              <small>Se vazio, usa o tempo padrão definido em Configuração.</small>
-            </div>
 
-            <div class="field">
-              <label>Desperdício</label>
-              <div class="cost-input-suffix-v110"><input id="prodWastePctV110" type="number" min="0" step="0.1"><span>%</span></div>
-              <small>Percentagem média de perdas deste produto.</small>
-            </div>
-
-            <div class="field cost-average-v1740">
-              <label>Custo médio do molde / desgaste</label>
-              <div class="cost-input-suffix-v110"><input id="prodMoldAverageV1740" type="number" min="0" step="0.01"><span>€/un.</span></div>
-              <small>Valor médio por peça. Não é necessário calcular preço do molde, usos ou cavidades.</small>
-            </div>
-
-            <div class="field cost-average-v1740">
-              <label>Custo médio de operação</label>
-              <div class="cost-input-suffix-v110"><input id="prodOperatingAverageV1740" type="number" min="0" step="0.01"><span>€/un.</span></div>
-              <small>Energia, equipamento, consumíveis e outros custos gerais de produção.</small>
-            </div>
-
-            <div class="field">
-              <label>Outros custos</label>
-              <div class="cost-input-suffix-v110"><input id="prodOtherCostV110" type="number" min="0" step="0.01"><span>€/un.</span></div>
-              <small>Usa apenas para um custo específico que não esteja na ficha técnica.</small>
-            </div>
-
-            <div class="field">
-              <label>Margem alvo direta</label>
-              <div class="cost-input-suffix-v110"><input id="prodTargetMarginV110" type="number" min="0" max="95" step="0.1"><span>%</span></div>
-              <small>Se vazio, usa a margem geral.</small>
-            </div>
-
-            <div class="field">
-              <label>Margem alvo Loja</label>
-              <div class="cost-input-suffix-v110"><input id="prodOnlineTargetMarginV110" type="number" min="0" max="95" step="0.1"><span>%</span></div>
-              <small>Se vazio, usa a margem direta.</small>
-            </div>
-
-            <div class="field span2 packaging-as-material-v1740">
-              <div class="packaging-material-note-v1740">
-                <strong>📦 Embalagem</strong>
-                <span>Passa a ser tratada como matéria-prima: adiciona caixa, saco, etiqueta, fita ou outro material diretamente na <b>Ficha Técnica</b>. Assim o custo entra automaticamente no produto.</span>
-              </div>
-            </div>
-
-            <!-- Campos antigos mantidos ocultos para compatibilidade com produtos já existentes. -->
-            <div class="hidden" aria-hidden="true">
-              <input id="prodMoldCostV110" type="number">
-              <input id="prodMoldUsesV110" type="number">
-              <input id="prodMoldCavitiesV110" type="number" value="1">
-              <input id="prodMoldOverrideV110" type="number">
-              <input id="prodPackagingCostV110" type="number">
-              <input id="prodEquipmentPowerWV133" type="number">
-              <input id="prodEquipmentMinutesV133" type="number">
-              <input id="prodIndirectCostV110" type="number">
+        <div class="field span4 product-cost-editor-v110 product-pricing-simple-v1742">
+          <div class="product-cost-editor-head-v110"><div><strong>Precificação simples</strong><small>A Ficha Técnica calcula materiais e embalagem. Aqui só indicas trabalho, perdas e custos médios por unidade.</small></div><span>por unidade</span></div>
+          <div class="pricing-step-v1742">
+            <div class="pricing-step-head-v1742"><b>1 · Custos do produto</b><small>Preenche apenas o que se aplica. Campos vazios usam os valores padrão da Configuração.</small></div>
+            <div class="product-cost-grid-v1742">
+              <div class="field"><label>Tempo de trabalho</label><div class="cost-input-suffix-v110"><input id="prodLaborMinutesV110" type="number" min="0" step="0.1"><span>min</span></div><small>Quanto tempo efetivo gastas por unidade.</small></div>
+              <div class="field"><label>Desperdício médio</label><div class="cost-input-suffix-v110"><input id="prodWastePctV110" type="number" min="0" step="0.1"><span>%</span></div><small>Ex.: 5% para pequenas perdas de produção.</small></div>
+              <div class="field"><label>Molde / desgaste médio</label><div class="cost-input-suffix-v110"><input id="prodMoldAverageV1740" type="number" min="0" step="0.01" placeholder="vazio = padrão"><span>€/un.</span></div><small>Valor médio por peça. Usa 0 se não houver molde/desgaste.</small></div>
+              <div class="field"><label>Operação média</label><div class="cost-input-suffix-v110"><input id="prodOperatingAverageV1740" type="number" min="0" step="0.01" placeholder="vazio = padrão"><span>€/un.</span></div><small>Energia, equipamento e pequenos consumíveis gerais.</small></div>
+              <div class="field"><label>Outros custos</label><div class="cost-input-suffix-v110"><input id="prodOtherCostV110" type="number" min="0" step="0.01"><span>€/un.</span></div><small>Só para um custo específico que não esteja na Ficha Técnica.</small></div>
+              <div class="field span2 packaging-as-material-v1740"><div class="packaging-material-note-v1740"><strong>📦 Materiais e embalagem</strong><span>Cera, fragrância, pavio, recipiente, caixa, etiqueta, fita, saco e restantes consumos entram pela <b>Ficha Técnica</b>. Não precisas de voltar a inserir aqui esses custos.</span></div></div>
+              <div class="hidden" aria-hidden="true"><input id="prodMoldCostV110" type="number"><input id="prodMoldUsesV110" type="number"><input id="prodMoldCavitiesV110" type="number" value="1"><input id="prodMoldOverrideV110" type="number"><input id="prodPackagingCostV110" type="number"><input id="prodEquipmentPowerWV133" type="number"><input id="prodEquipmentMinutesV133" type="number"><input id="prodIndirectCostV110" type="number"></div>
             </div>
           </div>
-          <div class="product-cost-summary-v110">
-            <div><span>Materiais</span><strong id="prodCostMaterialsV110">0,00 €</strong></div><div><span>Mão de obra</span><strong id="prodCostLaborV110">0,00 €</strong></div><div><span>Molde</span><strong id="prodCostMoldV110">0,00 €</strong></div><div><span>Operação + extras</span><strong id="prodCostExtrasV110">0,00 €</strong></div><div><span>Desperdício</span><strong id="prodCostWasteV110">0,00 €</strong></div><div class="total"><span>Custo real</span><strong id="prodCostTotalV110">0,00 €</strong></div>
-          </div>
+          <div class="pricing-step-v1742"><div class="pricing-step-head-v1742"><b>2 · Custo real estimado</b><small>Calculado automaticamente com base na Ficha Técnica e nos valores acima.</small></div><div class="product-cost-summary-v1742"><div><span>Materiais + embalagem</span><strong id="prodCostMaterialsV110">0,00 €</strong></div><div><span>Mão de obra</span><strong id="prodCostLaborV110">0,00 €</strong></div><div><span>Molde / desgaste</span><strong id="prodCostMoldV110">0,00 €</strong></div><div><span>Operação + outros</span><strong id="prodCostExtrasV110">0,00 €</strong></div><div><span>Desperdício</span><strong id="prodCostWasteV110">0,00 €</strong></div><div class="total"><span>Custo real estimado</span><strong id="prodCostTotalV110">0,00 €</strong></div></div><input id="prodCost" type="number" step="0.0001" readonly hidden></div>
+          <div class="pricing-step-v1742"><div class="pricing-step-head-v1742"><b>3 · Preço de venda</b><small>A app recomenda um PVP, mas o preço final continua sempre editável.</small></div><div class="product-pricing-grid-v1742">
+            <div class="pricing-channel-v1742"><div class="pricing-channel-title-v1742">Venda direta</div><div class="field"><label>Margem alvo</label><div class="cost-input-suffix-v110"><input id="prodTargetMarginV110" type="number" min="0" max="95" step="0.1" placeholder="vazio = geral"><span>%</span></div></div><div class="pricing-recommended-v1742"><span>PVP recomendado</span><strong id="prodDirectRecommendedV12620">—</strong><button type="button" class="btn ghost" onclick="applyRecommendedPriceV1742('direct')">Usar recomendado</button></div><div class="field"><label>PVP definido</label><div class="cost-input-suffix-v110"><input id="prodPrice" type="number" min="0" step="0.01"><span>€</span></div></div><div class="pricing-margin-result-v1742"><span>Margem real</span><strong id="prodDirectActualMarginV1742">—</strong></div></div>
+            <div class="pricing-channel-v1742"><div class="pricing-channel-title-v1742">Loja online</div><div class="field"><label>Margem alvo</label><div class="cost-input-suffix-v110"><input id="prodOnlineTargetMarginV110" type="number" min="0" max="95" step="0.1" placeholder="vazio = direta"><span>%</span></div></div><div class="pricing-recommended-v1742"><span>PVP recomendado</span><strong id="prodOnlineRecommendedV12620">—</strong><button type="button" class="btn ghost" onclick="applyRecommendedPriceV1742('online')">Usar recomendado</button></div><div class="field"><label>PVP definido</label><div class="cost-input-suffix-v110"><input id="prodOnlinePriceV12620" type="number" min="0" step="0.01"><span>€</span></div></div><div class="pricing-margin-result-v1742"><span>Margem real</span><strong id="prodOnlineActualMarginV1742">—</strong></div></div>
+          </div></div>
         </div>
         <div class="field span4 production-profile-v130">
           <div class="product-cost-editor-head-v110"><div><strong>Parâmetros técnicos de produção</strong><small>Informação interna para preparar e controlar este produto. Todos os campos são editáveis e opcionais.</small></div><span>por produto</span></div>
@@ -4189,7 +4140,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.40';
+const APP_VERSION='1.7.42';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -4247,6 +4198,22 @@ function relOrderPendingSet(){
 function relSaveOrderPending(set){
  try{localStorage.setItem(REL_ORDER_PENDING,JSON.stringify([...set]))}catch(e){}
 }
+function relPruneOrphanPendingOrdersV1741(){
+ const pending=relOrderPendingSet();
+ if(!pending.size)return 0;
+ const valid=new Set();
+ (db.orders||[]).forEach(o=>{
+   if(o?._rid)valid.add('rid:'+String(o._rid));
+   if(o?.id)valid.add('id:'+String(o.id));
+ });
+ let removed=0;
+ [...pending].forEach(k=>{
+   if(!valid.has(String(k))){pending.delete(k);removed++}
+ });
+ if(removed)relSaveOrderPending(pending);
+ return removed
+}
+
 function relOrderShadowMap(){
  const x=parseLocal(REL_ORDER_SHADOW);
  return x&&typeof x==='object'&&!Array.isArray(x)?x:{};
@@ -6616,7 +6583,7 @@ function repairDuplicateManualOrdersV1412(d){
  });
  return d;
 }
-function normalizeImportedDb(d){d=d&&typeof d==='object'?d:{};d.settings=d.settings&&typeof d.settings==='object'&&!Array.isArray(d.settings)?d.settings:{};if(d.settings.minMargin==null)d.settings.minMargin=.65;if(d.settings.laborRate==null)d.settings.laborRate=8;if(d.settings.wasteRate==null)d.settings.wasteRate=.10;if(d.settings.electricityRate==null)d.settings.electricityRate=.20;if(d.settings.equipmentWearRate==null)d.settings.equipmentWearRate=0;if(d.settings.consumablesHourlyRate==null)d.settings.consumablesHourlyRate=0;d.settings.businessName=d.settings.businessName||SEED.businessName;d.settings.businessLegalName=d.settings.businessLegalName||'';d.settings.businessTaxId=d.settings.businessTaxId||'';d.settings.businessPhone=d.settings.businessPhone||'';d.settings.businessEmail=d.settings.businessEmail||'';d.settings.businessAddress=d.settings.businessAddress||'';d.settings.businessPostalCode=d.settings.businessPostalCode||'';d.settings.businessLocation=d.settings.businessLocation||'';d.settings.iban=d.settings.iban||'';d.settings.paymentNote=d.settings.paymentNote||'';delete d.settings.yield;delete d.settings.baseRecipeV12812;for(const k of ['orders','clients','quotes','purchases','cash','stockMoves','productionRuns','themedBoxes'])if(!Array.isArray(d[k]))d[k]=[];if(!Array.isArray(d.products))d.products=[];if(!Array.isArray(d.stock))d.stock=[];d.clients.forEach(c=>{const note=String(c?.note??c?.notes??'');c.note=note;c.notes=note});repairDuplicateManualOrdersV1412(d);if(!Array.isArray(d.packaging)||!d.packaging.length)d.packaging=[{name:'Caixa pequena',capacity:2,cost:0},{name:'Caixa média',capacity:4,cost:0},{name:'Caixa presente',capacity:6,cost:0},{name:'Saco kraft',capacity:3,cost:0}];d.quotes=(d.quotes||[]);d.quotes.forEach(q=>{if(!q.box)q.box=d.packaging[0]?.name||''});d.orders.forEach(o=>{o.items=Array.isArray(o.items)?o.items:[];o.paymentHistory=Array.isArray(o.paymentHistory)?o.paymentHistory:[];if(o.status==='Confirmado')o.status='Confirmada';if(o.source==='online_store')ensureOnlineOrderCostSnapshotV12644(o,d);});d.quotes.forEach(q=>{q.items=Array.isArray(q.items)?q.items:[];q.paymentHistory=Array.isArray(q.paymentHistory)?q.paymentHistory:[];if(q.box==null)q.box='';if(!q.boxes)q.boxes=1});
+function normalizeImportedDb(d){d=d&&typeof d==='object'?d:{};d.settings=d.settings&&typeof d.settings==='object'&&!Array.isArray(d.settings)?d.settings:{};if(d.settings.minMargin==null)d.settings.minMargin=.65;if(d.settings.laborRate==null)d.settings.laborRate=8;if(d.settings.wasteRate==null)d.settings.wasteRate=.10;if(d.settings.electricityRate==null)d.settings.electricityRate=.20;if(d.settings.equipmentWearRate==null)d.settings.equipmentWearRate=0;if(d.settings.consumablesHourlyRate==null)d.settings.consumablesHourlyRate=0;if(d.settings.defaultOperatingCostPerUnit==null)d.settings.defaultOperatingCostPerUnit=0;if(d.settings.defaultMoldCostPerUnit==null)d.settings.defaultMoldCostPerUnit=0;d.settings.businessName=d.settings.businessName||SEED.businessName;d.settings.businessLegalName=d.settings.businessLegalName||'';d.settings.businessTaxId=d.settings.businessTaxId||'';d.settings.businessPhone=d.settings.businessPhone||'';d.settings.businessEmail=d.settings.businessEmail||'';d.settings.businessAddress=d.settings.businessAddress||'';d.settings.businessPostalCode=d.settings.businessPostalCode||'';d.settings.businessLocation=d.settings.businessLocation||'';d.settings.iban=d.settings.iban||'';d.settings.paymentNote=d.settings.paymentNote||'';delete d.settings.yield;delete d.settings.baseRecipeV12812;for(const k of ['orders','clients','quotes','purchases','cash','stockMoves','productionRuns','themedBoxes'])if(!Array.isArray(d[k]))d[k]=[];if(!Array.isArray(d.products))d.products=[];if(!Array.isArray(d.stock))d.stock=[];d.clients.forEach(c=>{const note=String(c?.note??c?.notes??'');c.note=note;c.notes=note});repairDuplicateManualOrdersV1412(d);if(!Array.isArray(d.packaging)||!d.packaging.length)d.packaging=[{name:'Caixa pequena',capacity:2,cost:0},{name:'Caixa média',capacity:4,cost:0},{name:'Caixa presente',capacity:6,cost:0},{name:'Saco kraft',capacity:3,cost:0}];d.quotes=(d.quotes||[]);d.quotes.forEach(q=>{if(!q.box)q.box=d.packaging[0]?.name||''});d.orders.forEach(o=>{o.items=Array.isArray(o.items)?o.items:[];o.paymentHistory=Array.isArray(o.paymentHistory)?o.paymentHistory:[];if(o.status==='Confirmado')o.status='Confirmada';if(o.source==='online_store')ensureOnlineOrderCostSnapshotV12644(o,d);});d.quotes.forEach(q=>{q.items=Array.isArray(q.items)?q.items:[];q.paymentHistory=Array.isArray(q.paymentHistory)?q.paymentHistory:[];if(q.box==null)q.box='';if(!q.boxes)q.boxes=1});
  d.stock.forEach(x=>{if(x.target===undefined)x.target=null;if(x.preferredSupplier==null)x.preferredSupplier='';x.unit=normalizeBaseUnitV120(x.unit||'un')||'un'});
  d.products.forEach(p=>{if(!Array.isArray(p.editionIds))p.editionIds=p.editionId?[p.editionId]:[];p.editionIds=[...new Set(p.editionIds.filter(Boolean).map(String))];p.editionId=p.editionIds[0]||'';if(p.manufactured==null)p.manufactured=true});
  if(!d.productRecipes||typeof d.productRecipes!=='object'||Array.isArray(d.productRecipes))d.productRecipes={};
@@ -10929,6 +10896,17 @@ function printOrderCompleteV12634(id){
 }
 </style>
 
+
+<style id="artessencia-pricing-simple-v1742">
+#products .product-pricing-simple-v1742{padding:17px!important}
+#products .pricing-step-v1742{margin-top:14px;padding:15px;border:1px solid #e8ddd6;border-radius:16px;background:#fffdfb}
+#products .pricing-step-head-v1742{display:flex;flex-direction:column;gap:3px;margin-bottom:12px;padding-bottom:9px;border-bottom:1px solid #eee4de}
+#products .pricing-step-head-v1742 b{font-size:11px;color:#513a33}#products .pricing-step-head-v1742 small{font-size:8.5px;line-height:1.35;color:#85736c}
+#products .product-cost-grid-v1742{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;align-items:start}#products .product-cost-grid-v1742>.field{min-width:0}#products .product-cost-grid-v1742>.field.span2{grid-column:span 2}
+#products .product-cost-summary-v1742{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px}#products .product-cost-summary-v1742>div{min-height:72px;padding:11px 12px;border:1px solid #e8ddd6;border-radius:13px;background:#faf7f4;display:flex;flex-direction:column;justify-content:center}#products .product-cost-summary-v1742 span{font-size:8px;line-height:1.25;color:#7b6962}#products .product-cost-summary-v1742 strong{margin-top:4px;font-size:15px;color:#4d3932}#products .product-cost-summary-v1742 .total{background:#f0f6ec;border-color:#d5e4cf}#products .product-cost-summary-v1742 .total strong{font-size:18px;color:#3f5738}
+#products .product-pricing-grid-v1742{display:grid;grid-template-columns:1fr 1fr;gap:12px}.pricing-channel-v1742{padding:14px;border:1px solid #e8ddd6;border-radius:15px;background:#faf7f4}.pricing-channel-title-v1742{margin-bottom:10px;font-size:12px;font-weight:850;color:#513a33}.pricing-recommended-v1742{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;margin:10px 0;padding:10px 12px;border:1px solid #d9e5d3;border-radius:12px;background:#f3f8f0}.pricing-recommended-v1742 span{font-size:8px;color:#65765d}.pricing-recommended-v1742 strong{font-size:18px;color:#40543a}.pricing-recommended-v1742 .btn{grid-column:2;grid-row:1/3;min-height:36px}.pricing-margin-result-v1742{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:9px;border-top:1px solid #e5dbd6}.pricing-margin-result-v1742 span{font-size:8px;color:#7d6b64}.pricing-margin-result-v1742 strong{font-size:13px;color:#4d3932}
+@media(max-width:1180px){#products .product-cost-grid-v1742{grid-template-columns:repeat(3,minmax(0,1fr))}#products .product-cost-summary-v1742{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:760px){#products .product-pricing-grid-v1742{grid-template-columns:1fr}}@media(max-width:620px){#products .product-cost-grid-v1742,#products .product-cost-summary-v1742{grid-template-columns:1fr}#products .product-cost-grid-v1742>.field,#products .product-cost-grid-v1742>.field.span2{grid-column:1/-1!important}}
+</style>
 </head><body><header><div>${logo?`<img class="logo" src="${h(logo)}">`:'<strong style="font-size:22px">ArtEssencia</strong>'}</div><div class="doc-title"><h1>Ficha completa da encomenda</h1><b>${h(o.id)}</b><br><span class="badge">${h(o.status||'—')}</span></div></header>
  <div class="grid"><section class="card"><h3>Cliente</h3><div class="line"><b>Nome</b><span>${h(o.client||'—')}</span></div><div class="line"><b>Contacto</b><span>${h(o.contact||'—')}</span></div><div class="line"><b>Email</b><span>${h(o.email||'—')}</span></div><div class="line"><b>Origem</b><span>${o.source==='online_store'?'Loja Online':'Backoffice'}</span></div></section>
  <section class="card"><h3>Entrega</h3><div class="line"><b>Data</b><span>${h(datePt(o.delivery))}${o.deliveryTime?' · '+h(o.deliveryTime):''}</span></div><div class="line"><b>Método</b><span>${h(deliveryMethod)}</span></div>${o.deliveryMethod==='local_delivery'?`<div class="line"><b>Morada</b><span>${h(o.address||'—')}</span></div><div class="line"><b>Cód. postal</b><span>${h(o.postalCode||'—')}</span></div>`:''}<div class="line"><b>Embalagem</b><span>${h(o.box||((o.thematicBoxes||[])[0]?.box)||'—')} · ${h(o.boxes||1)} caixa(s)</span></div></section>
@@ -11692,12 +11670,12 @@ function productNullableNumberV110(v){if(v===null||v===undefined||v==='')return 
 function productLaborMinutesV110(p){const n=productNullableNumberV110(p?.laborMinutes);return Math.max(0,n===null?(Number(db.settings.laborMinutes)||0):n)}
 function productLaborCostV110(p){return (Number(db.settings.laborRate)||0)*productLaborMinutesV110(p)/60}
 function productWasteRateV110(p){const n=productNullableNumberV110(p?.wastePct);return Math.max(0,(n===null?(Number(db.settings.wasteRate)||0):n/100))}
-function productMoldCostV110(p){const avg=productNullableNumberV110(p?.moldAverageCost);if(avg!==null)return Math.max(0,avg);const manual=productNullableNumberV110(p?.moldUnitOverride);if(manual!==null)return Math.max(0,manual);const cost=Math.max(0,Number(p?.moldCost)||0),uses=Math.max(0,Number(p?.moldUses)||0),cavities=Math.max(1,Number(p?.moldCavities)||1);return uses>0?cost/(uses*cavities):0}
+function productMoldCostV110(p){const avg=productNullableNumberV110(p?.moldAverageCost);if(avg!==null)return Math.max(0,avg);const def=Math.max(0,Number(db.settings.defaultMoldCostPerUnit)||0);if(def>0)return def;const manual=productNullableNumberV110(p?.moldUnitOverride);if(manual!==null)return Math.max(0,manual);const cost=Math.max(0,Number(p?.moldCost)||0),uses=Math.max(0,Number(p?.moldUses)||0),cavities=Math.max(1,Number(p?.moldCavities)||1);return uses>0?cost/(uses*cavities):0}
 function productTargetMarginV110(p,online=false){const own=productNullableNumberV110(online?p?.onlineTargetMarginPct:p?.targetMarginPct);if(online&&own===null)return productTargetMarginV110(p,false);return Math.max(0,Math.min(.95,own===null?artessenciaPricingTargetMarginV1251():own/100))}
 function productEquipmentMinutesV133(p){const n=productNullableNumberV110(p?.equipmentMinutes);return Math.max(0,n===null?productLaborMinutesV110(p):n)}
 function productEnergyCostV133(p){const watts=Math.max(0,Number(p?.equipmentPowerW)||0),mins=productEquipmentMinutesV133(p),rate=Math.max(0,Number(db.settings.electricityRate)||0);return (watts/1000)*(mins/60)*rate}
 function productAutoIndirectCostV133(p){const hours=productEquipmentMinutesV133(p)/60,wear=Math.max(0,Number(db.settings.equipmentWearRate)||0)*hours,consumables=Math.max(0,Number(db.settings.consumablesHourlyRate)||0)*hours,energy=productEnergyCostV133(p);return {energy,wear,consumables,total:energy+wear+consumables}}
-function productOperatingAverageV1740(p){const avg=productNullableNumberV110(p?.operatingAverageCost);if(avg!==null)return Math.max(0,avg);const auto=productAutoIndirectCostV133(p),manual=Math.max(0,Number(p?.indirectCost)||0);return auto.total+manual}
+function productOperatingAverageV1740(p){const avg=productNullableNumberV110(p?.operatingAverageCost);if(avg!==null)return Math.max(0,avg);const def=Math.max(0,Number(db.settings.defaultOperatingCostPerUnit)||0);if(def>0)return def;const auto=productAutoIndirectCostV133(p),manual=Math.max(0,Number(p?.indirectCost)||0);return auto.total+manual}
 
 function productCostBreakdownV110(product){const materials=toppingUnitCost(product?.code),labor=productLaborCostV110(product),editionLabor=productEditionExtraLaborCost(product),mold=productMoldCostV110(product),packaging=Math.max(0,Number(product?.packagingCost)||0),autoIndirect=productAutoIndirectCostV133(product),manualIndirect=Math.max(0,Number(product?.indirectCost)||0),indirect=productOperatingAverageV1740(product),other=Math.max(0,Number(product?.otherCost)||0),subtotal=materials+labor+editionLabor+mold+packaging+indirect+other,wasteRate=productWasteRateV110(product)+productEditionExtraWasteRate(product),waste=subtotal*wasteRate,total=subtotal+waste;return {materials,labor,editionLabor,mold,packaging,indirect,manualIndirect,energy:autoIndirect.energy,equipmentWear:autoIndirect.wear,generalConsumables:autoIndirect.consumables,other,subtotal,wasteRate,waste,total}}
 function calculatedProductCost(product){return productCostBreakdownV110(product).total}
@@ -11733,7 +11711,9 @@ function artessenciaOnlinePaymentFixedV12620(){return Math.max(0,Number(db.setti
 function artessenciaRecommendedOnlinePriceV12620(p){const c=calculatedProductCost(p)+artessenciaOnlinePaymentFixedV12620(),m=productTargetMarginV110(p,true),fee=artessenciaOnlinePaymentPctV12620(),den=1-m-fee,s=artessenciaPricingRoundStepV1251();if(den<=0)return 0;const raw=c/den;return raw?Math.ceil((raw-1e-9)/s)*s:0}
 function readProductCostFieldV110(id){const el=document.getElementById(id);return !el||el.value===''?null:Number(el.value)}
 function productDraftV110(){const code=document.getElementById('prodCode')?.value||'',saved=(db.products||[]).find(x=>x.code===code)||{};return {...saved,code,laborMinutes:readProductCostFieldV110('prodLaborMinutesV110'),wastePct:readProductCostFieldV110('prodWastePctV110'),moldAverageCost:readProductCostFieldV110('prodMoldAverageV1740'),operatingAverageCost:readProductCostFieldV110('prodOperatingAverageV1740'),otherCost:Math.max(0,Number(document.getElementById('prodOtherCostV110')?.value)||0),targetMarginPct:readProductCostFieldV110('prodTargetMarginV110'),onlineTargetMarginPct:readProductCostFieldV110('prodOnlineTargetMarginV110')}}
-function refreshProductChannelPricingV12620(){if(!document.getElementById('prodCode'))return;const p=productDraftV110(),x=productCostBreakdownV110(p),set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=euro(v)};const c=document.getElementById('prodCost');if(c)c.value=x.total.toFixed(4);set('prodCostMaterialsV110',x.materials);set('prodCostLaborV110',x.labor+x.editionLabor);set('prodCostMoldV110',x.mold);set('prodCostExtrasV110',x.packaging+x.indirect+x.other);set('prodCostWasteV110',x.waste);set('prodCostTotalV110',x.total);set('prodDirectRecommendedV12620',artessenciaRecommendedPriceV1251(p));set('prodOnlineRecommendedV12620',artessenciaRecommendedOnlinePriceV12620(p))}
+function pricingActualMarginV1742(price,cost){price=Number(price)||0;cost=Number(cost)||0;return price>0?(price-cost)/price:null}
+function refreshProductChannelPricingV12620(){if(!document.getElementById('prodCode'))return;const p=productDraftV110(),x=productCostBreakdownV110(p),set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=euro(v)};const c=document.getElementById('prodCost');if(c)c.value=x.total.toFixed(4);set('prodCostMaterialsV110',x.materials+x.packaging);set('prodCostLaborV110',x.labor+x.editionLabor);set('prodCostMoldV110',x.mold);set('prodCostExtrasV110',x.indirect+x.other);set('prodCostWasteV110',x.waste);set('prodCostTotalV110',x.total);set('prodDirectRecommendedV12620',artessenciaRecommendedPriceV1251(p));set('prodOnlineRecommendedV12620',artessenciaRecommendedOnlinePriceV12620(p));const d=pricingActualMarginV1742(document.getElementById('prodPrice')?.value,x.total),o=pricingActualMarginV1742(document.getElementById('prodOnlinePriceV12620')?.value,x.total);const de=document.getElementById('prodDirectActualMarginV1742'),oe=document.getElementById('prodOnlineActualMarginV1742');if(de)de.textContent=d==null?'—':pct(d);if(oe)oe.textContent=o==null?'—':pct(o)}
+function applyRecommendedPriceV1742(channel){const p=productDraftV110();if(channel==='online'){const el=document.getElementById('prodOnlinePriceV12620');if(el)el.value=artessenciaRecommendedOnlinePriceV12620(p).toFixed(2)}else{const el=document.getElementById('prodPrice');if(el)el.value=artessenciaRecommendedPriceV1251(p).toFixed(2)}refreshProductChannelPricingV12620()}
 function artessenciaPriceHealthV1251(p){const price=Number(p.price)||0,cost=calculatedProductCost(p),min=minPriceForMargin(cost),rec=artessenciaRecommendedPriceV1251(p);if(price<cost)return {key:'loss',label:'Abaixo do custo',detail:'PVP inferior ao custo total'};if(price<min)return {key:'low',label:'Margem reduzida',detail:'Abaixo da margem mínima'};if(price<rec)return {key:'ok',label:'Aceitável',detail:'Entre a margem mínima e a alvo'};return {key:'good',label:'Saudável',detail:'Atinge a margem alvo'}}
 function minPriceForMargin(cost){
   const m=Number(db.settings.minMargin)||0;
@@ -13404,6 +13384,8 @@ function renderSettings(){renderOperatingModeV1420();setTimeout(()=>{let a=docum
  if(document.getElementById('cfgElectricityRateV133'))document.getElementById('cfgElectricityRateV133').value=Number(db.settings.electricityRate??.20);
  if(document.getElementById('cfgEquipmentWearRateV133'))document.getElementById('cfgEquipmentWearRateV133').value=Number(db.settings.equipmentWearRate??0);
  if(document.getElementById('cfgConsumablesHourlyRateV133'))document.getElementById('cfgConsumablesHourlyRateV133').value=Number(db.settings.consumablesHourlyRate??0);
+ if(document.getElementById('cfgDefaultOperatingCostV1742'))document.getElementById('cfgDefaultOperatingCostV1742').value=Number(db.settings.defaultOperatingCostPerUnit??0);
+ if(document.getElementById('cfgDefaultMoldCostV1742'))document.getElementById('cfgDefaultMoldCostV1742').value=Number(db.settings.defaultMoldCostPerUnit??0);
 
  const packs=db.packaging||[];
  const themed=db.themedBoxes||[];
@@ -13438,16 +13420,17 @@ function renderSettings(){renderOperatingModeV1420();setTimeout(()=>{let a=docum
 function saveSettings(){
  const minMargin=Math.max(0,Math.min(.95,(Number(minMarginInput.value)||65)/100));
  const targetMargin=Math.max(minMargin,Math.min(.95,(Number(document.getElementById('cfgTargetMarginV1251')?.value)||70)/100));
- const labor=Number(laborRate.value),waste=Number(wasteRate.value),laborMins=Number(document.getElementById('laborMinutes')?.value||0),electricityRate=Number(document.getElementById('cfgElectricityRateV133')?.value||0),equipmentWearRate=Number(document.getElementById('cfgEquipmentWearRateV133')?.value||0),consumablesHourlyRate=Number(document.getElementById('cfgConsumablesHourlyRateV133')?.value||0);
+ const labor=Number(laborRate.value),waste=Number(wasteRate.value),laborMins=Number(document.getElementById('laborMinutes')?.value||0),electricityRate=Number(document.getElementById('cfgElectricityRateV133')?.value||0),equipmentWearRate=Number(document.getElementById('cfgEquipmentWearRateV133')?.value||0),consumablesHourlyRate=Number(document.getElementById('cfgConsumablesHourlyRateV133')?.value||0),defaultOperatingCostPerUnit=Number(document.getElementById('cfgDefaultOperatingCostV1742')?.value||0),defaultMoldCostPerUnit=Number(document.getElementById('cfgDefaultMoldCostV1742')?.value||0);
  if(!Number.isFinite(labor)||labor<0)return toast('A mão de obra não pode ter valor negativo');
  if(!Number.isFinite(waste)||waste<0||waste>1)return toast('O desperdício deve estar entre 0 e 1 (ex.: 0,10 = 10%)');
  if(!Number.isFinite(laborMins)||laborMins<0)return toast('Os minutos de mão de obra não podem ser negativos');
  if([electricityRate,equipmentWearRate,consumablesHourlyRate].some(v=>!Number.isFinite(v)||v<0))return toast('Os custos indiretos automáticos não podem ser negativos');
+ if([defaultOperatingCostPerUnit,defaultMoldCostPerUnit].some(v=>!Number.isFinite(v)||v<0))return toast('Os custos médios padrão não podem ser negativos');
  db.settings.minMargin=minMargin;db.settings.targetMargin=targetMargin;
  db.settings.priceRoundStep=Math.max(.01,Number(document.getElementById('cfgPriceRoundStepV1251')?.value)||.10);
  db.settings.onlinePaymentReservePct=Math.max(0,Math.min(.20,(Number(document.getElementById('cfgOnlinePaymentPctV12620')?.value)||2)/100));
  db.settings.onlinePaymentReserveFixed=Math.max(0,Number(document.getElementById('cfgOnlinePaymentFixedV12620')?.value)||.05);
- db.settings.laborRate=labor;db.settings.wasteRate=waste;db.settings.laborMinutes=laborMins;db.settings.electricityRate=electricityRate;db.settings.equipmentWearRate=equipmentWearRate;db.settings.consumablesHourlyRate=consumablesHourlyRate;
+ db.settings.laborRate=labor;db.settings.wasteRate=waste;db.settings.laborMinutes=laborMins;db.settings.electricityRate=electricityRate;db.settings.equipmentWearRate=equipmentWearRate;db.settings.consumablesHourlyRate=consumablesHourlyRate;db.settings.defaultOperatingCostPerUnit=defaultOperatingCostPerUnit;db.settings.defaultMoldCostPerUnit=defaultMoldCostPerUnit;
  save();toast('Configuração de custos guardada')
 }
 
@@ -13860,6 +13843,7 @@ function renderCloudUICore(){
  const log=document.getElementById('cloudLog');if(log){const a=cloudLogData();log.innerHTML=a.length?a.map(x=>'<div>'+escapeHtml(x)+'</div>').join(''):'Sem atividade de sincronização.'}
 }
 function renderCloudUI(){
+ relPruneOrphanPendingOrdersV1741();
  let meta=cloudMeta();
  const realPending=localStorage.getItem(REL_DIRTY)==='1'||relOrderPendingSet().size>0;
  if(meta.dirty&&!realPending&&!cloudBusy&&!cloudHydrating){
@@ -14201,6 +14185,7 @@ function finalizeCloudCleanV1739(syncStartedMs,showToast=false){
  const apply=()=>{
    // Se houve nova edição depois do início deste envio, não limpar o estado pendente.
    if(cloudLocalChangedMsV1739()>syncStartedMs)return false;
+   relPruneOrphanPendingOrdersV1741();
    if(relOrderPendingSet().size>0)return false;
    localStorage.removeItem(REL_DIRTY);
    setCloudMeta({
@@ -14498,7 +14483,8 @@ async function diagnoseOrdersCloud(showToast=true){
      local:(db.orders||[]).length,
      pending:pending.size
    };
-   cloudLogMsg(`Diagnóstico encomendas · local ${info.local} · relacional ${info.relational} · loja ${info.onlineRpc} · pendentes ${info.pending}`);
+   const pendingKeys=[...relOrderPendingSet()];
+   cloudLogMsg(`Diagnóstico encomendas · local ${info.local} · relacional ${info.relational} · loja ${info.onlineRpc} · pendentes ${info.pending}${pendingKeys.length?' · '+pendingKeys.join(', '):''}`);
    if(showToast)toast(`Cloud: ${info.relational} · Loja: ${info.onlineRpc} · Local: ${info.local} · Pendentes: ${info.pending}`);
    return info
  }catch(e){
@@ -14511,9 +14497,16 @@ async function diagnoseOrdersCloud(showToast=true){
 async function syncPendingOrdersOnly(showToast=false){
  const u=cloudUser||await ensureCloudSession();
  if(!u||!cloudClient)return false;
+ const pruned=relPruneOrphanPendingOrdersV1741();
+ if(pruned)cloudLogMsg(`Limpeza de sincronização · ${pruned} referência(s) antiga(s) removida(s)`);
  const pending=relOrderPendingSet();
  const rows=(db.orders||[]).filter(o=>relIsOrderPending(o,pending));
- if(!rows.length)return true;
+ if(!rows.length){
+   localStorage.removeItem(REL_DIRTY);
+   setCloudMeta({dirty:false,verified:true,conflict:false,lastSync:new Date().toISOString()});
+   renderCloudUI();
+   return true
+ }
 
  let ok=0;
  for(const order of rows){
@@ -14653,6 +14646,7 @@ async function syncStoreCatalogV1421(user){
 
 async function relationalSyncCore(showToast=false){
  if(cloudBusy)return false;
+ relPruneOrphanPendingOrdersV1741();
  const u=cloudUser||await ensureCloudSession();
  if(!u){if(showToast)toast('Cloud sem sessão');return false}
  if(!navigator.onLine){localStorage.setItem(REL_DIRTY,'1');setCloudMeta({dirty:true,verified:false});if(showToast)toast('Sem internet — dados guardados localmente');return false}
