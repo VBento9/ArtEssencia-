@@ -2530,7 +2530,15 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 .stock-thumb-v1771,.stock-thumb-placeholder-v1771{width:48px;height:48px;flex:0 0 48px;border-radius:10px;object-fit:cover;border:1px solid var(--line);background:#f4eee9}
 .stock-thumb-placeholder-v1771{display:grid;place-items:center;font-weight:800;color:var(--muted)}
 @media(max-width:760px){.stock-photo-editor-v1771{align-items:flex-start}.stock-photo-preview-v1771,.stock-photo-placeholder-v1771{width:68px;height:68px;flex-basis:68px}.stock-thumb-v1771,.stock-thumb-placeholder-v1771{width:42px;height:42px;flex-basis:42px}}
-</style></head>
+</style><style id="artessencia-v1772-margin-guide">
+/* V1.7.72 — orientação prática de margem na precificação */
+.pricing-margin-guide-v1772{margin:10px 0 4px;padding:11px 12px;border:1px solid #e7d7c5;border-radius:14px;background:linear-gradient(135deg,#fffaf3,#fffdf9)}
+.pricing-margin-guide-copy-v1772{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:8px}.pricing-margin-guide-copy-v1772 strong{font-size:12px;color:#4c352b}.pricing-margin-guide-copy-v1772 span{font-size:10px;color:#806b62}
+.pricing-margin-guide-options-v1772{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.pricing-margin-guide-options-v1772 button{border:1px solid #dfd0c2;border-radius:11px;background:#fff;padding:9px 10px;text-align:left;color:#513b31;cursor:pointer}.pricing-margin-guide-options-v1772 button b{display:block;font-size:16px}.pricing-margin-guide-options-v1772 button small{display:block;margin-top:2px;font-size:9px;color:#806b62;line-height:1.3}.pricing-margin-guide-options-v1772 button.recommended{background:#f6eee3;border-color:#c9ab88;box-shadow:inset 0 0 0 1px #ead5bc}.pricing-margin-guide-options-v1772 button.recommended b:after{content:' · recomendado';font-size:8px;font-weight:800;color:#8a643f}
+.pricing-margin-guide-note-v1772{display:block;margin-top:7px;color:#765f53;font-size:9px;line-height:1.4}.pricing-margin-mini-v1772{grid-column:1/-1;margin-top:8px;padding:8px 10px;border-radius:10px;background:#fffaf3;border:1px solid #eadfce;font-size:10px;color:#6b554b;line-height:1.45}.pricing-margin-mini-v1772 span{font-weight:800}.pricing-margin-guide-v1772.quantity-v1772{margin-top:10px}
+@media(max-width:760px){.pricing-margin-guide-options-v1772{grid-template-columns:1fr}.pricing-margin-guide-options-v1772 button{text-align:center}}
+</style>
+</head>
 <body>
 <div id="lockScreen" class="lock">
   <div class="lockbox">
@@ -4106,6 +4114,14 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div class="field"><label>Unidades a produzir</label><input id="qtyPricingUnitsV1750" type="number" min="1" step="1" value="50" oninput="quantityPricingUnitsChangedV1750()"></div>
         <div class="field"><label>Margem pretendida</label><div class="cost-input-suffix-v110"><input id="qtyPricingMarginV1750" type="number" min="0" max="95" step="0.1" oninput="refreshQuantityPricingV1750()"><span>%</span></div></div>
       </div>
+      <div class="pricing-margin-guide-v1772 quantity-v1772" aria-label="Orientação de margem para quantidade">
+        <div class="pricing-margin-guide-copy-v1772"><strong>Orientação</strong><span>Em quantidade, 35% é uma referência competitiva; mantém 40% quando o desconto de volume não é necessário.</span></div>
+        <div class="pricing-margin-guide-options-v1772">
+          <button type="button" onclick="applyMarginGuideV1772(35,'quantity')"><b>35%</b><small>Quantidade</small></button>
+          <button type="button" class="recommended" onclick="applyMarginGuideV1772(40,'quantity')"><b>40%</b><small>Padrão</small></button>
+          <button type="button" onclick="applyMarginGuideV1772(45,'quantity')"><b>45%</b><small>Maior personalização</small></button>
+        </div>
+      </div>
       <div id="qtyPricingProductReferenceV1750" class="quantity-pricing-reference-v1750"></div>
     </div>
 
@@ -4250,6 +4266,15 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
               <label><span>PVP direto</span><div class="cost-input-suffix-v110"><input id="prodPriceQuickV1762" type="number" min="0" step="0.01" oninput="pricingQuickChangedV1762('direct',this.value)"><span>€</span></div></label>
               <label><span>PVP loja</span><div class="cost-input-suffix-v110"><input id="prodOnlinePriceQuickV1762" type="number" min="0" step="0.01" oninput="pricingQuickChangedV1762('online',this.value)"><span>€</span></div></label>
             </div>
+            <div class="pricing-margin-guide-v1772" aria-label="Orientação de margem">
+              <div class="pricing-margin-guide-copy-v1772"><strong>Orientação de margem</strong><span>Na ArtEssencia esta percentagem é margem real sobre o preço de venda, não markup sobre o custo.</span></div>
+              <div class="pricing-margin-guide-options-v1772">
+                <button type="button" onclick="applyMarginGuideV1772(35,'product')"><b>35%</b><small>Competitivo / quantidade</small></button>
+                <button type="button" class="recommended" onclick="applyMarginGuideV1772(40,'product')"><b>40%</b><small>Padrão recomendado</small></button>
+                <button type="button" onclick="applyMarginGuideV1772(45,'product')"><b>45%</b><small>Personalizado / maior trabalho ou risco</small></button>
+              </div>
+              <small class="pricing-margin-guide-note-v1772">Regra prática: 35–45% é a faixa de referência. Abaixo de 35% confirma se o PVP cobre bem o negócio; acima de 45% usa quando o produto, personalização, desperdício ou posicionamento o justificarem.</small>
+            </div>
             <div class="pricing-quick-results-v1762">
               <div><small>Custo real</small><strong id="pricingQuickCostV1762">0,00 €</strong></div>
               <div><small>PVP recomendado</small><strong id="pricingQuickRecV1762">0,00 €</strong></div>
@@ -4292,6 +4317,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
               <div class="pricing-inline-input-v1747"><label for="prodProfitPctV1744">Margem</label><div class="cost-input-suffix-v110"><input id="prodProfitPctV1744" type="number" min="0" max="95" step="0.1" placeholder="padrão" oninput="refreshProductChannelPricingV12620()"><span>%</span></div></div>
               <div class="pricing-margin-profit-v1747"><span>Lucro previsto / un.</span><strong id="prodProfitValueV1744">0,00 €</strong></div>
             </div>
+            <div class="pricing-margin-mini-v1772"><b>35%</b> quantidade/competitivo · <b>40%</b> padrão · <b>45%</b> personalizado/maior trabalho. <span>É margem real sobre a venda.</span></div>
           </div>
 
           <div class="apreco-price-result-v1744 apreco-price-result-v1745">
@@ -4563,7 +4589,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.71';
+const APP_VERSION='1.7.72';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -12741,6 +12767,13 @@ function artessenciaOnlinePaymentPctV12620(){const n=productNullableNumberV110(d
 function artessenciaOnlinePaymentFixedV12620(){const n=productNullableNumberV110(db.settings.onlinePaymentReserveFixed);return Math.max(0,n===null ? 0.05 : n)}
 function artessenciaRecommendedOnlinePriceV12620(p){const base=pricingBaseCostV1744(p),fee=artessenciaOnlinePaymentPctV12620(),fixed=artessenciaOnlinePaymentFixedV12620(),step=artessenciaPricingRoundStepV1251(),raw=pricingPriceFromMarginV1745(base,pricingProductMarginPctV1745(p),fixed,fee);return raw?Math.ceil((raw-1e-9)/step)*step:0}
 function readProductCostFieldV110(id){const el=document.getElementById(id);return !el||el.value===''?null:Number(el.value)}
+function applyMarginGuideV1772(value,scope){
+ const v=Math.max(0,Math.min(95,Number(value)||0));
+ if(scope==='quantity'){const q=document.getElementById('qtyPricingMarginV1750');if(q){q.value=String(v);refreshQuantityPricingV1750()}return}
+ const base=document.getElementById('prodProfitPctV1744'),quick=document.getElementById('prodMarginQuickV1762');
+ if(base)base.value=String(v);if(quick)quick.value=String(v);refreshProductChannelPricingV12620();
+}
+
 function productDraftV110(){const code=document.getElementById('prodCode')?.value||'',saved=(db.products||[]).find(x=>x.code===code)||{};const margin=readProductCostFieldV110('prodProfitPctV1744');return {...saved,code,laborMinutes:readProductCostFieldV110('prodLaborMinutesV110'),otherCost:readProductCostFieldV110('prodOtherCostV110')??saved.otherCost??0,marginPct:margin,profitPct:margin}}
 function pricingActualMarginV1742(price,cost){price=Number(price)||0;cost=Number(cost)||0;return price>0?(price-cost)/price:null}
 function pricingQuickChangedV1762(kind,value){const map={minutes:'prodLaborMinutesV110',margin:'prodProfitPctV1744',direct:'prodPrice',online:'prodOnlinePriceV12620'},el=document.getElementById(map[kind]||'');if(el)el.value=value;refreshProductChannelPricingV12620()}
