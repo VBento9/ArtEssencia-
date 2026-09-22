@@ -4529,7 +4529,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.65';
+const APP_VERSION='1.7.66';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -16273,3 +16273,57 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 }
 </style>
 <!-- V1.7.65 — harmonização visual de Compras, Caixa e Relatórios -->
+
+<style id="artessencia-v1766-tablet-layout-system">
+/* V1.7.66 — Tablet Layout System: evitar desktop comprimido em 651–1300 px */
+@media(min-width:651px) and (max-width:1300px){
+  .app{grid-template-columns:178px minmax(0,1fr)}
+  .sidebar{padding:12px 8px}.brand img{max-width:150px}.nav button{padding:11px 9px;min-height:42px;font-size:12px}
+  .main{padding:0 12px 24px}.topbar{margin:0 -12px 14px;padding:10px 12px 12px}
+
+  /* CUSTOS */
+  #costs .costs-stack-v1720{grid-template-columns:1fr!important;gap:12px}
+  #costs .costs-manual-grid-v1720{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #costs .costs-manual-grid-v1720 .costs-manual-reason-v1720{grid-column:span 1!important}
+  #costs .costs-recipe-grid-v1720{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #costs .recipe-product-picker-v1763,#costs .recipe-material-picker-v1758{grid-column:span 1}
+  #costs .costs-recipe-grid-v1720>.field:nth-child(3),#costs .costs-recipe-action-v1720{align-self:end}
+  #costs .costs-recipe-action-v1720{padding-top:0!important}
+  #costs .recipe-search-button-v1763{min-width:92px}
+  #costs .costs-card{padding:15px}
+
+  /* STOCK */
+  #stock .stock-stack-v1721{grid-template-columns:1fr!important}
+  #stock .stock-simple-grid-v1736{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #stock .stock-simple-grid-v1736 .field:last-child{grid-column:span 2!important}
+  #stock .stock-move-grid-v1721{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #stock .stock-move-action-v1721{grid-column:span 2}
+  #stock .stock-move-action-v1721 .btn{width:100%}
+  #stock .stock-tools{grid-template-columns:minmax(220px,1fr) 150px!important}
+
+  /* CLIENTES */
+  #clients .clients-stack-v1724{grid-template-columns:1fr!important}
+  #clients .clients-form-grid-v1724{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #clients .clients-note-v1724{grid-column:span 2!important}
+  #clients .clients-list-section-v1724{margin-top:0}
+  #clients .clients-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  #clients .client-actions{gap:7px}
+  #clients .client-actions .btn{min-height:36px}
+  #clients .clients-tools{grid-template-columns:minmax(220px,1fr) 160px!important}
+
+  /* CAIXA */
+  #cash .cash-main-grid-v1723{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #cash .cash-main-grid-v1723>.field:nth-child(3){grid-column:span 2}
+  #cash .cash-action-v1723{grid-column:span 2}
+  #cash .cash-form-actions-v1723 .btn{min-height:44px}
+  #cash .cash-tools{grid-template-columns:minmax(220px,1fr) 135px 145px!important;min-width:0!important}
+  #cash .cash-tablewrap table{min-width:760px}
+}
+@media(min-width:651px) and (max-width:900px){
+  #clients .clients-cards{grid-template-columns:1fr}
+  #cash .cash-tools,#stock .stock-tools,#clients .clients-tools{grid-template-columns:1fr!important}
+  #cash .cash-main-grid-v1723,#stock .stock-move-grid-v1721,#costs .costs-recipe-grid-v1720,#costs .costs-manual-grid-v1720{grid-template-columns:1fr!important}
+  #cash .cash-main-grid-v1723>.field:nth-child(3),#cash .cash-action-v1723,#stock .stock-move-action-v1721,#stock .stock-simple-grid-v1736 .field:last-child,#clients .clients-note-v1724{grid-column:span 1!important}
+}
+</style>
+<!-- V1.7.66 — Tablet Layout System -->
