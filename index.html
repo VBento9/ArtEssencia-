@@ -4529,7 +4529,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.67';
+const APP_VERSION='1.7.68';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -16356,3 +16356,31 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 }
 </style>
 <!-- V1.7.67 — Clientes tablet legível -->
+
+<style id="artessencia-v1768-clientes-tablet-breakpoint">
+/* V1.7.68 — Honor Pad / tablets touch largos: Clientes realmente a uma coluna */
+@media (pointer:coarse) and (min-width:651px) and (max-width:1400px){
+  #clients .clients-stack-v1724{grid-template-columns:1fr!important}
+  #clients .clients-cards{display:grid!important;grid-template-columns:1fr!important;gap:12px!important}
+  #clients .clients-list-section-v1724{width:100%;min-width:0}
+  #clients .clients-list-section-v1724 .client-card{width:100%;min-width:0;border-radius:16px}
+  #clients .client-card-main{display:grid!important;grid-template-columns:52px minmax(200px,.9fr) minmax(0,2.1fr)!important;gap:14px!important;padding:14px 16px!important;align-items:center!important}
+  #clients .client-info{min-width:0!important}
+  #clients .client-info strong{font-size:15px!important;line-height:1.25!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+  #clients .client-info small{font-size:10px!important;line-height:1.35!important;white-space:normal!important;overflow-wrap:anywhere!important}
+  #clients .client-metrics{display:grid!important;grid-template-columns:repeat(5,minmax(82px,1fr))!important;gap:8px!important;min-width:0!important}
+  #clients .client-metrics>div{padding:9px 10px!important;border-radius:11px!important}
+  #clients .client-metrics small{font-size:8px!important;line-height:1.2!important}
+  #clients .client-metrics strong{font-size:12px!important;margin-top:3px!important}
+  #clients .client-card-foot{display:grid!important;grid-template-columns:minmax(170px,.7fr) minmax(0,2fr)!important;gap:12px!important;padding:10px 16px 14px!important;align-items:start!important}
+  #clients .client-actions{display:flex!important;flex-wrap:wrap!important;gap:8px!important}
+  #clients .client-actions .btn{min-height:39px!important;padding:9px 12px!important;font-size:10px!important}
+  #clients .client-actions .danger{flex-basis:100%!important;width:max-content!important;max-width:230px!important;margin-top:2px!important}
+}
+@media (pointer:coarse) and (min-width:651px) and (max-width:1000px){
+  #clients .client-card-main{grid-template-columns:48px minmax(0,1fr)!important}
+  #clients .client-metrics{grid-column:1/-1!important;grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  #clients .client-card-foot{grid-template-columns:1fr!important}
+}
+</style>
+<!-- V1.7.68 — correção do breakpoint real do tablet no módulo Clientes -->
