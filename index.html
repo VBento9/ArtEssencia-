@@ -2556,6 +2556,10 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
     </div>
     <div class="grid4 dashboard-kpis" id="kpis"></div>
 
+    <div class="dashboard-section-head"><div><span>RENTABILIDADE</span><h3>Para onde foi o valor vendido</h3></div><small>Materiais consumidos, trabalho, custos gerais e lucro do período selecionado.</small></div>
+    <div id="dashboardProfitabilityV1769" class="dashboard-profitability-v1769"></div>
+    <div id="dashboardProfitabilityNoteV1769" class="dashboard-profitability-note-v1769"></div>
+
     <div class="dashboard-section-head"><div><span>HOJE</span><h3>Centro de controlo diário</h3></div></div>
     <div class="dashboard-ops-strip" id="dashboardOpsStrip"></div>
     <div class="dashboard-daily" id="dashboardDaily"></div>
@@ -4529,7 +4533,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.68';
+const APP_VERSION='1.7.69';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -5590,9 +5594,79 @@ function completed(o){return o.status!=='Cancelado'&&!o.voidedAt}function filter
  const m=+(document.getElementById('dashMonth')?.value||0);
  return db.orders.filter(o=>{if(!completed(o))return false;const d=new Date((o.delivery||o.created)+'T12:00:00');return d.getFullYear()===y&&(m===0||d.getMonth()+1===m)})
 }
+function dashboardLineCostComponentsV1769(line){
+ const qty=Math.max(0,Number(line?.qty)||0),unitCost=Math.max(0,Number(line?.cost)||0);
+ if(!line||['quote_discount','quote_adjustment'].includes(line.type))return {materials:0,labor:0,fixed:0,other:0,total:0,estimated:false};
+ if(line.type==='quote_extra')return {materials:0,labor:0,fixed:0,other:unitCost*qty,total:unitCost*qty,estimated:false};
+ const saved=line.costBreakdownSnapshotV1769;
+ if(saved&&typeof saved==='object'){
+   return {materials:Math.max(0,Number(saved.materials)||0)*qty,labor:Math.max(0,Number(saved.labor)||0)*qty,fixed:Math.max(0,Number(saved.fixed)||0)*qty,other:Math.max(0,Number(saved.other)||0)*qty,total:Math.max(0,Number(saved.total)||unitCost)*qty,estimated:!!saved.estimated};
+ }
+ const qp=line.quantityPricingSnapshot;
+ if(qp&&Number(qp.units)>0){
+   const u=Math.max(1,Number(qp.units)||1);
+   return {materials:Math.max(0,Number(qp.materialsCost)||0)/u*qty,labor:Math.max(0,Number(qp.laborCost)||0)/u*qty,fixed:Math.max(0,Number(qp.fixedCost)||0)/u*qty,other:Math.max(0,Number(qp.otherCost)||0)/u*qty,total:unitCost*qty,estimated:false};
+ }
+ const code=String(line.code||''),name=normText(line.name||'');
+ const p=(db.products||[]).find(x=>(code&&String(x.code||'')===code)||(name&&normText(x.name||'')===name));
+ if(p){
+   const b=productCostBreakdownV110(p),base=Math.max(0,Number(b.total)||0),target=unitCost;
+   if(base>0){const scale=target/base;return {materials:b.materials*scale*qty,labor:b.labor*scale*qty,fixed:b.fixed*scale*qty,other:b.other*scale*qty,total:target*qty,estimated:true}}
+ }
+ return {materials:0,labor:0,fixed:0,other:unitCost*qty,total:unitCost*qty,estimated:true};
+}
+function dashboardProductionMaterialCostV1769(order){
+ let found=false,cost=0,includesPackaging=false;
+ for(const run of (db.productionRuns||[])){
+   if(!(run?.orders||[]).some(id=>String(id)===String(order?.id)))continue;
+   const needs=productionRunOrderNeedsV148(order,run);if(!needs)continue;
+   let runCost=0;for(const [name,qty] of Object.entries(needs)){const uc=Number(run.materialUnitCosts?.[name]);if(!Number.isFinite(uc))continue;found=true;runCost+=(Number(qty)||0)*uc;if(String(name)===String(order?.box||''))includesPackaging=true}
+   cost+=runCost;
+ }
+ return {found,cost,includesPackaging};
+}
+function dashboardOrderCostComponentsV1769(order){
+ let materials=0,labor=0,fixed=0,other=0,estimated=false;
+ for(const line of (order?.items||[])){const c=dashboardLineCostComponentsV1769(line);materials+=c.materials;labor+=c.labor;fixed+=c.fixed;other+=c.other;estimated=estimated||c.estimated}
+ const boxCost=Math.max(0,Number(order?.boxCostSnapshot)||0)*Math.max(0,Number(order?.boxes)||0);
+ const prod=dashboardProductionMaterialCostV1769(order);
+ if(prod.found){materials=prod.cost+(prod.includesPackaging?0:boxCost)}else materials+=boxCost;
+ const total=materials+labor+fixed+other;
+ return {materials,labor,fixed,other,total,estimated:estimated||!prod.found,productionMaterials:prod.found};
+}
+function dashboardCashPeriodV1769(){
+ const y=+(document.getElementById('dashYear')?.value||new Date().getFullYear()),m=+(document.getElementById('dashMonth')?.value||0);let incoming=0,outgoing=0;
+ for(const x of (db.cash||[])){const d=new Date(String(x.date||'').slice(0,10)+'T12:00:00');if(!Number.isFinite(d.getTime())||d.getFullYear()!==y||(m&&d.getMonth()+1!==m))continue;const v=Math.max(0,Number(x.value)||0);if(x.type==='Entrada')incoming+=v;else outgoing+=v}
+ return {incoming,outgoing,balance:incoming-outgoing};
+}
+function dashboardProfitabilityV1769(){
+ const orders=filteredOrders();let sales=0,paid=0,materials=0,labor=0,fixed=0,other=0,legacyOrders=0,productionActual=0;
+ for(const o of orders){const c=calcOrder(o),b=dashboardOrderCostComponentsV1769(o);sales+=c.total;paid+=Math.min(Math.max(Number(o.paid)||0,0),c.total);materials+=b.materials;labor+=b.labor;fixed+=b.fixed;other+=b.other;if(b.estimated)legacyOrders++;if(b.productionMaterials)productionActual++}
+ const costTotal=materials+labor+fixed+other,profit=sales-costTotal,margin=sales?profit/sales:0,cash=dashboardCashPeriodV1769();
+ return {orders:orders.length,sales,paid,due:Math.max(0,sales-paid),materials,labor,fixed,other,costTotal,profit,margin,legacyOrders,productionActual,cash};
+}
+function renderDashboardProfitabilityV1769(data=dashboardProfitabilityV1769()){
+ const el=document.getElementById('dashboardProfitabilityV1769'),note=document.getElementById('dashboardProfitabilityNoteV1769');if(!el)return;
+ const rows=[
+  ['🧱','Materiais + embalagem',data.materials,'Consumo da produção / snapshots'],
+  ['⏱️','Trabalho',data.labor,'Valor do tempo de produção'],
+  ['🏠','Custos gerais',data.fixed,'Rateio pelos tempos produtivos'],
+  ['➕','Outros custos',data.other,'Custos específicos dos produtos'],
+  ['🧾','Custo total',data.costTotal,'Materiais + trabalho + gerais + outros'],
+  ['💶','Lucro calculado',data.profit,'Vendas menos custo total'],
+  ['％','Margem real',data.margin,'Lucro ÷ vendas',true],
+  ['↘','Saídas de caixa',data.cash.outgoing,'Compras/despesas pagas no período',false,true]
+ ];
+ el.innerHTML=rows.map(([icon,label,value,help,isPct,isCash])=>`<div class="dashboard-profit-card-v1769${label==='Lucro calculado'?(value>=0?' good':' bad'):''}${isCash?' cash':''}"><span class="dashboard-profit-icon-v1769">${icon}</span><div><small>${label}</small><strong>${isPct?pct(value):euro(value)}</strong><em>${help}</em></div></div>`).join('');
+ const hundred=data.sales>0?{m:data.materials/data.sales*100,l:data.labor/data.sales*100,f:data.fixed/data.sales*100,o:data.other/data.sales*100,p:data.profit/data.sales*100}:null;
+ const hundredText=hundred?`De cada 100 € vendidos: ${hundred.m.toFixed(1).replace('.',',')} € materiais · ${hundred.l.toFixed(1).replace('.',',')} € trabalho · ${hundred.f.toFixed(1).replace('.',',')} € custos gerais · ${hundred.o.toFixed(1).replace('.',',')} € outros · ${hundred.p.toFixed(1).replace('.',',')} € lucro.`:'Sem vendas no período selecionado.';
+ const legacy=data.legacyOrders?` ${data.legacyOrders} encomenda(s) antiga(s) não têm decomposição histórica completa; o custo total congelado foi preservado e apenas a repartição por componente é estimada.`:'';
+ const production=data.productionActual?` Materiais de ${data.productionActual} encomenda(s) usam o custo registado na Produção.`:'';
+ if(note)note.innerHTML=`<strong>${hundredText}</strong><span>“Saídas de caixa” é fluxo financeiro (compras/despesas) e não entra novamente no custo dos produtos, evitando dupla contagem.${production}${legacy}</span>`;
+}
 function dash(){
- const v=filteredOrders(),total=v.reduce((s,o)=>s+calcOrder(o).total,0),paid=v.reduce((s,o)=>s+Math.min(Math.max(+o.paid||0,0),calcOrder(o).total),0),cost=v.reduce((s,o)=>s+calcOrder(o).cost,0),profit=total-cost,pending=v.filter(o=>o.status!=='Entregue').length,stockLow=db.stock.filter(x=>+x.qty<=+x.min).length;
- return{total,paid,due:Math.max(total-paid,0),cost,profit,margin:total?profit/total:0,pending,stockLow,orders:v.length}
+ const v=filteredOrders(),p=dashboardProfitabilityV1769(),pending=v.filter(o=>o.status!=='Entregue').length,stockLow=db.stock.filter(x=>+x.qty<=+x.min).length;
+ return{total:p.sales,paid:p.paid,due:p.due,cost:p.costTotal,profit:p.profit,margin:p.margin,pending,stockLow,orders:v.length,profitability:p}
 }
 function normalizePhone(v){return String(v||'').replace(/\D/g,'')}
 function customerPhoneKey(v){
@@ -5663,7 +5737,7 @@ function sendWhatsApp(id){const o=db.orders.find(x=>x.id===id);if(!o)return;let 
 function sendSMS(id){const o=db.orders.find(x=>x.id===id);if(!o)return;const phone=normalizePhone(o.contact);if(!phone)return toast('Cliente sem número de telemóvel');location.href='sms:'+phone+'?body='+encodeURIComponent(orderMessage(id))}
 function renderTrend(){const el=document.getElementById('trendChart');if(!el)return;const now=new Date(),vals=[];for(let i=11;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1),y=d.getFullYear(),m=d.getMonth();const os=db.orders.filter(o=>completed(o)&&o.status==='Entregue'&&(()=>{const x=new Date((o.delivery||o.created)+'T12:00:00');return x.getFullYear()===y&&x.getMonth()===m})());const sales=os.reduce((a,o)=>a+calcOrder(o).total,0),profit=os.reduce((a,o)=>a+calcOrder(o).profit,0);vals.push({label:d.toLocaleDateString('pt-PT',{month:'short'}),sales,profit})}const max=Math.max(1,...vals.map(x=>x.sales));el.innerHTML=vals.map(x=>`<div class="trend-col"><div class="trend-value">${x.sales?euro(x.sales):''}</div><div style="display:flex;align-items:flex-end;gap:3px;height:150px;width:100%;justify-content:center"><div class="trend-bar" title="Faturação ${euro(x.sales)}" style="height:${Math.max(2,x.sales/max*145)}px"></div><div class="trend-bar profit" title="Lucro ${euro(x.profit)}" style="height:${Math.max(2,x.profit/max*145)}px"></div></div><div class="trend-label">${x.label}</div></div>`).join('')}
 function dashboardKpiGo(label){
- const map={'Encomendado':'reports','Recebido':'cash','Por receber':'orders','Encomendas':'orders','Lucro previsto':'reports','Margem prevista':'reports','Pendentes':'orders','Stock baixo':'stock'};
+ const map={'Encomendado':'reports','Recebido':'cash','Por receber':'orders','Encomendas':'orders','Lucro calculado':'reports','Margem real':'reports','Pendentes':'orders','Stock baixo':'stock'};
  go(map[label]||'dashboard');
 }
 function dashboardDailyOpen(id){
@@ -5804,13 +5878,14 @@ function renderDashboard(){
   ['✅','Recebido',euro(d.paid),'good'],
   ['⏳','Por receber',euro(d.due),d.due>0?'warn':'good'],
   ['🧾','Encomendas',d.orders,'neutral'],
-  ['📈','Lucro previsto',euro(d.profit),d.profit>=0?'good':'bad'],
-  ['％','Margem prevista',pct(d.margin),d.margin>=.5?'good':'neutral'],
+  ['📈','Lucro calculado',euro(d.profit),d.profit>=0?'good':'bad'],
+  ['％','Margem real',pct(d.margin),d.margin>=.5?'good':'neutral'],
   ['⚠️','Pendentes',d.pending,d.pending>0?'warn':'good'],
   ['📦','Stock baixo',d.stockLow,d.stockLow>0?'bad':'good']
  ];
  document.getElementById('kpis').innerHTML=kpiData.map(([icon,l,v,state])=>`<button class="card kpi dashboard-kpi-card ${state}" type="button" onclick="dashboardKpiGo('${l}')"><div class="dashboard-kpi-icon">${icon}</div><div><div class="label">${l}</div><div class="value">${v}</div></div><span class="dashboard-kpi-arrow">›</span></button>`).join('');
  const rows=filteredOrders().filter(o=>o.status!=='Entregue').slice(-8).reverse();
+ renderDashboardProfitabilityV1769(d.profitability);
  document.getElementById('pendingOrders').innerHTML=rows.length?rows.map(o=>{const c=calcOrder(o);return`<tr><td>${o.id}${o.source==='online_store'?'<br><span class="badge ok">ONLINE</span>':''}</td><td>${o.client||'—'}</td><td>${o.delivery||'—'}</td><td>${euro(c.total)}</td><td>${euro(o.paid)}</td><td><span class="badge warn">${o.status}</span></td></tr>`}).join(''):`<tr><td colspan="6" class="empty">Sem encomendas pendentes</td></tr>`;renderDashboardDaily();renderReceivables();renderQuotePipeline();renderTrend()
 }
 function renderCart(){const el=document.getElementById('cart');if(!el)return;el.innerHTML=cart.length?cart.map((x,i)=>`<div class="cart-row sale-cart-row-v1754"><div class="sale-cart-product-v1754"><strong>${escapeHtml(x.name||'Produto')}</strong><small>${escapeHtml(x.category||'')}</small></div><label class="sale-cart-mini-field-v1754"><span>Qtd.</span><input type="number" min="1" step="1" value="${Number(x.qty)||1}" onchange="cart[${i}].qty=Math.max(1,+this.value||1);renderCart();renderPicker()"></label><label class="sale-cart-mini-field-v1754"><span>Preço/un.</span><input type="number" min="0" step="0.01" value="${Number(x.price)||0}" onchange="cart[${i}].price=Math.max(0,+this.value||0);renderCart();renderPicker()"></label><strong class="sale-cart-line-total-v1754">${euro((Number(x.qty)||0)*(Number(x.price)||0))}</strong><button type="button" class="btn danger sale-cart-remove-v1754" aria-label="Remover ${escapeAttr(x.name||'produto')}" onclick="cart.splice(${i},1);renderCart();renderPicker()">×</button></div>`).join(''):'<div class="empty">Escolhe um produto à esquerda. O carrinho fica sempre visível nesta área.</div>';const q=cart.reduce((s,x)=>s+(Number(x.qty)||0),0),t=cart.reduce((s,x)=>s+(Number(x.qty)||0)*(Number(x.price)||0),0),c=cart.reduce((s,x)=>s+(Number(x.qty)||0)*(Number(x.cost)||0),0),p=t-c;$('cartQty').textContent=q;$('cartTotal').textContent=euro(t);$('cartProfit').textContent=euro(p);$('cartMargin').textContent=pct(t?p/t:0)}
@@ -5842,7 +5917,7 @@ async function saveOrder(){
    id,created:todayISO(),client:clientName,contact:clientContact,email:clientEmail,clientId,
    delivery:$('saleDate').value,payment:payMethod,box:boxName,
    boxCostSnapshot:pk?+pk.cost||0:0,boxes:+$('saleBoxes').value||1,
-   paid,status:'Pedido',notes:String($('saleNotes')?.value||'').trim(),items:cart.map(x=>({...ensureLineCostSnapshotV134(x,'sale_save_v134')})),paymentHistory
+   paid,status:'Pedido',notes:String($('saleNotes')?.value||'').trim(),items:cart.map(x=>({...ensureLineDetailedCostSnapshotV1769(ensureLineCostSnapshotV134(x,'sale_save_v134'),'sale_save_v1769')})),paymentHistory
  };
 
  // 1. Guardar SEMPRE primeiro no dispositivo.
@@ -12550,8 +12625,15 @@ function productCostBreakdownV110(product){const materials=pricingMaterialCostV1
 function calculatedProductCost(product){return productCostBreakdownV110(product).total}
 function effectiveProduct(product){return {...product,cost:calculatedProductCost(product)}}
 function productCostSnapshotV134(product,source='catalog'){
- const cost=product?calculatedProductCost(product):0;
- return {cost:Number(cost)||0,costSnapshotAt:new Date().toISOString(),costSnapshotSource:source};
+ const cost=product?calculatedProductCost(product):0,b=product?productCostBreakdownV110(product):{materials:0,labor:0,fixed:0,other:0,total:0};
+ return {cost:Number(cost)||0,costSnapshotAt:new Date().toISOString(),costSnapshotSource:source,costBreakdownSnapshotV1769:{version:1,materials:Number(b.materials)||0,labor:Number(b.labor)||0,fixed:Number(b.fixed)||0,other:Number(b.other)||0,total:Number(b.total)||0,capturedAt:new Date().toISOString(),source,estimated:false}};
+}
+function ensureLineDetailedCostSnapshotV1769(line,source='order'){
+ if(!line||['quote_discount','quote_adjustment'].includes(line.type)||line.costBreakdownSnapshotV1769)return line;
+ const qp=line.quantityPricingSnapshot;if(qp&&Number(qp.units)>0){const u=Math.max(1,Number(qp.units)||1);return {...line,costBreakdownSnapshotV1769:{version:1,materials:(Number(qp.materialsCost)||0)/u,labor:(Number(qp.laborCost)||0)/u,fixed:(Number(qp.fixedCost)||0)/u,other:(Number(qp.otherCost)||0)/u,total:Number(line.cost)||Number(qp.costUnit)||0,capturedAt:new Date().toISOString(),source:'quantity_pricing',estimated:false}}}
+ const code=String(line.code||''),name=normText(line.name||'');const p=(db.products||[]).find(x=>(code&&String(x.code||'')===code)||(name&&normText(x.name||'')===name));if(!p)return line;
+ const b=productCostBreakdownV110(p),target=Number.isFinite(Number(line.cost))?Math.max(0,Number(line.cost)):Math.max(0,Number(b.total)||0),base=Math.max(0,Number(b.total)||0),scale=base>0?target/base:1;
+ return {...line,cost:target,costBreakdownSnapshotV1769:{version:1,materials:(Number(b.materials)||0)*scale,labor:(Number(b.labor)||0)*scale,fixed:(Number(b.fixed)||0)*scale,other:(Number(b.other)||0)*scale,total:target,capturedAt:new Date().toISOString(),source,estimated:false}};
 }
 function ensureLineCostSnapshotV134(line,source='migration'){
  if(!line||['quote_discount','quote_adjustment'].includes(line.type))return line;
@@ -16384,3 +16466,23 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 }
 </style>
 <!-- V1.7.68 — correção do breakpoint real do tablet no módulo Clientes -->
+
+<style id="artessencia-v1769-dashboard-rentabilidade">
+/* V1.7.69 — Dashboard de rentabilidade real */
+#dashboard .dashboard-section-head>small{font-size:10px;color:#87736a;max-width:460px;text-align:right;line-height:1.4}
+#dashboard .dashboard-profitability-v1769{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-bottom:9px}
+#dashboard .dashboard-profit-card-v1769{min-width:0;background:#fffdf9;border:1px solid #e2d5c5;border-radius:12px;padding:12px;display:grid;grid-template-columns:38px minmax(0,1fr);gap:9px;align-items:center;box-shadow:var(--shadow-soft)}
+#dashboard .dashboard-profit-icon-v1769{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#efe2d0;font-size:17px}
+#dashboard .dashboard-profit-card-v1769 small{display:block;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;color:#756251}
+#dashboard .dashboard-profit-card-v1769 strong{display:block;font-family:Georgia,"Times New Roman",serif;font-size:20px;color:#36261c;margin:3px 0}
+#dashboard .dashboard-profit-card-v1769 em{display:block;font-style:normal;font-size:8.5px;color:#917c70;line-height:1.3}
+#dashboard .dashboard-profit-card-v1769.good{background:#f4faf5;border-color:#d4e8d8}
+#dashboard .dashboard-profit-card-v1769.bad{background:#fff3f1;border-color:#edd0cb}
+#dashboard .dashboard-profit-card-v1769.cash{background:#f5f5f2;border-style:dashed}
+#dashboard .dashboard-profitability-note-v1769{display:grid;gap:4px;padding:11px 13px;border-radius:11px;background:#fffaf3;border:1px solid #e1d4c5;margin-bottom:16px;color:#655044}
+#dashboard .dashboard-profitability-note-v1769 strong{font-size:10px;line-height:1.45}
+#dashboard .dashboard-profitability-note-v1769 span{font-size:9px;line-height:1.45;color:#89756a}
+@media(max-width:1180px){#dashboard .dashboard-profitability-v1769{grid-template-columns:repeat(2,minmax(0,1fr))}#dashboard .dashboard-section-head>small{text-align:left}}
+@media(max-width:650px){#dashboard .dashboard-profitability-v1769{grid-template-columns:1fr 1fr}#dashboard .dashboard-profit-card-v1769{grid-template-columns:32px minmax(0,1fr);padding:10px}.dashboard-profit-icon-v1769{width:32px!important;height:32px!important}.dashboard-profit-card-v1769 strong{font-size:17px!important}}
+</style>
+<!-- V1.7.69 — Dashboard: materiais, trabalho, custos gerais, custo total, lucro e fluxo de caixa separados -->
