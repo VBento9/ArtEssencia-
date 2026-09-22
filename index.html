@@ -2517,6 +2517,19 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 #products .product-card .product-completeness-mini-v1762{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}.product-completeness-mini-v1762 span{font-size:9px;padding:3px 6px;border-radius:999px;background:#f4efec;color:#715d55}.product-completeness-mini-v1762 span.missing{background:#fff0dd;color:#8b5718}
 @media(max-width:900px){#products .product-editor-nav-v1762{top:62px;grid-template-columns:repeat(4,minmax(100px,1fr));overflow-x:auto}#products .product-editor-panel-v1762{grid-template-columns:repeat(2,minmax(0,1fr))}.pricing-quick-inputs-v1762,.pricing-quick-results-v1762{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){#products .product-editor-nav-v1762{grid-template-columns:repeat(4,130px)}#products .product-editor-panel-v1762{grid-template-columns:1fr}.pricing-quick-inputs-v1762,.pricing-quick-results-v1762{grid-template-columns:1fr 1fr}}
+
+/* V1.7.71 — fotografias de matérias-primas */
+.stock-photo-field-v1771{grid-column:1/-1}
+.stock-photo-editor-v1771{display:flex;gap:14px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.62)}
+.stock-photo-preview-v1771,.stock-photo-placeholder-v1771{width:82px;height:82px;flex:0 0 82px;border-radius:14px;object-fit:cover;border:1px solid var(--line);background:#f7f2ee}
+.stock-photo-placeholder-v1771{display:grid;place-items:center;font-size:30px}
+.stock-photo-controls-v1771{display:flex;flex:1;min-width:0;flex-direction:column;gap:8px}
+.stock-photo-controls-v1771 input[type=file]{max-width:100%}
+.stock-photo-actions-v1771{display:flex;gap:8px;flex-wrap:wrap}
+.stock-name-cell-v1771{display:flex;gap:10px;align-items:center;min-width:185px}
+.stock-thumb-v1771,.stock-thumb-placeholder-v1771{width:48px;height:48px;flex:0 0 48px;border-radius:10px;object-fit:cover;border:1px solid var(--line);background:#f4eee9}
+.stock-thumb-placeholder-v1771{display:grid;place-items:center;font-weight:800;color:var(--muted)}
+@media(max-width:760px){.stock-photo-editor-v1771{align-items:flex-start}.stock-photo-preview-v1771,.stock-photo-placeholder-v1771{width:68px;height:68px;flex-basis:68px}.stock-thumb-v1771,.stock-thumb-placeholder-v1771{width:42px;height:42px;flex-basis:42px}}
 </style></head>
 <body>
 <div id="lockScreen" class="lock">
@@ -3012,6 +3025,23 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           <div class="field">
             <label>Fornecedor</label>
             <input id="stockPreferredSupplier" placeholder="Opcional">
+          </div>
+
+          <div class="field stock-photo-field-v1771">
+            <label>Fotografia da matéria-prima <span class="muted">(opcional)</span></label>
+            <div class="stock-photo-editor-v1771">
+              <div id="stockImagePlaceholderV1771" class="stock-photo-placeholder-v1771">📷</div>
+              <img id="stockImagePreviewV1771" class="stock-photo-preview-v1771 hidden" alt="Pré-visualização da matéria-prima">
+              <div class="stock-photo-controls-v1771">
+                <input id="stockImageFileV1771" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onchange="previewStockImageFileV1771()">
+                <div class="stock-photo-actions-v1771">
+                  <button type="button" class="btn" onclick="uploadStockImageV1771()">Carregar fotografia</button>
+                  <button type="button" class="btn ghost" onclick="removeStockImageV1771()">Remover</button>
+                </div>
+                <small>JPG, PNG ou WebP · máx. 8 MB. No telemóvel/tablet podes usar a câmara.</small>
+              </div>
+            </div>
+            <input id="stockImageUrlV1771" type="hidden">
           </div>
         </div>
 
@@ -4533,7 +4563,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.69';
+const APP_VERSION='1.7.71';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -4702,7 +4732,7 @@ function aprecoCategoryForV1753(name,description,tags){
 function aprecoMaterialToStockV1753(m){
  const type=String(m.type||'');let factor=1,unit='un';
  if(type==='Peso (Kg)'){factor=1000;unit='g'}else if(type==='Volume (L)'){factor=1000;unit='ml'}
- return {name:String(m.name||'').trim(),qty:(Number(m.stock)||0)*factor,unit,min:0,target:null,unitCost:(Number(m.price)||0)/factor,preferredSupplier:'',notesV1753:String(m.notes||''),aprecoImportIdV1753:m.id,aprecoSourceNameV1753:m.sourceName||m.name};
+ return {name:String(m.name||'').trim(),qty:(Number(m.stock)||0)*factor,unit,min:0,target:null,unitCost:(Number(m.price)||0)/factor,preferredSupplier:'',imageUrl:'',notesV1753:String(m.notes||''),aprecoImportIdV1753:m.id,aprecoSourceNameV1753:m.sourceName||m.name};
 }
 function updateProductTagFilterV1753(products){const el=document.getElementById('productTagFilterV1753');if(!el)return;const prev=el.value||'all',tags=[...new Set((products||[]).flatMap(p=>Array.isArray(p.tagsV1753)?p.tagsV1753:[]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt'));el.innerHTML='<option value="all">Todos os grupos / utilizações</option>'+tags.map(t=>`<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('');el.value=[...el.options].some(o=>o.value===prev)?prev:'all'}
 function uniqueSeasonTagsV1761(arr){return [...new Set((arr||[]).map(x=>String(x||'').trim()).filter(Boolean))]}
@@ -6694,6 +6724,36 @@ function deleteStockItemV1737(i){
  toast('Matéria-prima eliminada do Stock');
 }
 
+function setStockImagePreviewV1771(url=''){
+ const hidden=document.getElementById('stockImageUrlV1771'),img=document.getElementById('stockImagePreviewV1771'),ph=document.getElementById('stockImagePlaceholderV1771');
+ if(hidden)hidden.value=url||'';
+ if(img){if(url){img.src=url;img.classList.remove('hidden')}else{img.removeAttribute('src');img.classList.add('hidden')}}
+ if(ph)ph.classList.toggle('hidden',!!url);
+}
+function previewStockImageFileV1771(){
+ const file=document.getElementById('stockImageFileV1771')?.files?.[0];if(!file)return;
+ if(!/^image\/(jpeg|png|webp)$/i.test(file.type))return toast('Formato de imagem não suportado');
+ if(file.size>8*1024*1024)return toast('A imagem é demasiado grande (máx. 8 MB)');
+ const img=document.getElementById('stockImagePreviewV1771'),ph=document.getElementById('stockImagePlaceholderV1771');
+ if(img){img.src=URL.createObjectURL(file);img.classList.remove('hidden')}if(ph)ph.classList.add('hidden');
+}
+function stockImageSafeNameV1771(v){return String(v||'materia-prima').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'materia-prima'}
+async function uploadStockImageV1771(){
+ const file=document.getElementById('stockImageFileV1771')?.files?.[0];if(!file)return toast('Escolhe primeiro uma fotografia');
+ if(!/^image\/(jpeg|png|webp)$/i.test(file.type))return toast('Formato de imagem não suportado');
+ if(file.size>8*1024*1024)return toast('A imagem é demasiado grande (máx. 8 MB)');
+ const name=String(document.getElementById('stockName')?.value||'').trim();if(!name)return toast('Indica primeiro o nome da matéria-prima');
+ const c=initCloudClient();if(!c)return toast('Liga primeiro a Cloud para carregar a fotografia');
+ const user=cloudUser||await ensureCloudSession();if(!user)return toast('Inicia sessão na Cloud');
+ const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg',path=`${user.id}/stock/${stockImageSafeNameV1771(name)}/photo-${Date.now()}.${ext}`;
+ try{toast('A carregar fotografia…');const {error}=await c.storage.from('artessencia-shop').upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type});if(error)throw error;const {data}=c.storage.from('artessencia-shop').getPublicUrl(path),url=data?.publicUrl||'';if(!url)throw new Error('URL pública indisponível');setStockImagePreviewV1771(url);toast('Fotografia carregada — guarda a matéria-prima')}catch(e){cloudLogMsg('Erro fotografia matéria-prima: '+cloudErrText(e));toast('Não foi possível carregar a fotografia')}
+}
+async function removeStockImageV1771(){
+ const url=String(document.getElementById('stockImageUrlV1771')?.value||'');
+ if(url&&!confirm('Remover a fotografia desta matéria-prima?'))return;
+ try{const c=initCloudClient(),user=cloudUser||await ensureCloudSession();if(c&&user&&url){const marker='/storage/v1/object/public/artessencia-shop/',i=url.indexOf(marker);if(i>=0){const path=decodeURIComponent(url.slice(i+marker.length));if(path.startsWith(user.id+'/'))await c.storage.from('artessencia-shop').remove([path])}}}catch(e){cloudLogMsg('Aviso ao remover fotografia matéria-prima: '+cloudErrText(e))}
+ setStockImagePreviewV1771('');const f=document.getElementById('stockImageFileV1771');if(f)f.value='';toast('Fotografia removida — guarda a matéria-prima');
+}
 function resetStockFormV145(message=true){
  editingStockIndex=null;
  stockName.value='';stockQty.value='';stockMin.value='';stockUnitCost.value='';stockUnit.value='g';
@@ -6702,6 +6762,7 @@ function resetStockFormV145(message=true){
  syncSimpleStockCreateV1736();
  if(document.getElementById('stockTarget'))stockTarget.value='';
  if(document.getElementById('stockPreferredSupplier'))stockPreferredSupplier.value='';
+ setStockImagePreviewV1771('');const stockImgFileV1771=document.getElementById('stockImageFileV1771');if(stockImgFileV1771)stockImgFileV1771.value='';
  for(const id of ['stockName','stockQty','stockUnit','stockUnitCost']){const el=document.getElementById(id);if(el)el.disabled=false}
  const reason=document.getElementById('stockEditReasonV145'),reasonField=document.getElementById('stockEditReasonFieldV145');if(reason)reason.value='';if(reasonField)reasonField.classList.add('hidden');
  const title=document.querySelector('#stock .stock-form-card .section-title'),hint=document.getElementById('stockFormHintV145'),saveBtn=document.getElementById('stockSaveBtnV143'),cancelBtn=document.getElementById('stockCancelBtnV145');
@@ -6713,7 +6774,7 @@ function addStock(){
  syncSimpleStockCreateV1736();
  const n=stockName.value.trim();if(!n){setStockSaveStateV143('error','Falta o nome','Indique a matéria-prima antes de guardar.');return toast('Indique a matéria-prima')}
  const targetRaw=String(document.getElementById('stockTarget')?.value||'').trim();
- const qty=Number(stockQty.value||0),min=Number(stockMin.value||0),target=targetRaw===''?null:Number(targetRaw),unitCost=Number(stockUnitCost.value||0),supplier=String(document.getElementById('stockPreferredSupplier')?.value||'').trim();
+ const qty=Number(stockQty.value||0),min=Number(stockMin.value||0),target=targetRaw===''?null:Number(targetRaw),unitCost=Number(stockUnitCost.value||0),supplier=String(document.getElementById('stockPreferredSupplier')?.value||'').trim(),imageUrl=String(document.getElementById('stockImageUrlV1771')?.value||'').trim();
  if(!Number.isFinite(qty)||qty<0||!Number.isFinite(min)||min<0||target!=null&&(!Number.isFinite(target)||target<0)||!Number.isFinite(unitCost)||unitCost<0){setStockSaveStateV143('error','Valores inválidos','Quantidade, mínimos, alvo e custo não podem ser negativos.');return toast('Confirma os valores da matéria-prima')}
  if(target!=null&&target<min){setStockSaveStateV143('error','Stock alvo inválido','O stock alvo não pode ser inferior ao stock mínimo.');return toast('O stock alvo deve ser igual ou superior ao mínimo')}
  if(editingStockIndex==null){
@@ -6734,13 +6795,13 @@ function addStock(){
    if(nameChanged)renameStockReferencesV1737(oldName,n);
    if(changedQty)db.stockMoves.push({date:new Date().toISOString(),item:n,type:'adjust',qty,note:'Correção manual: '+reason,beforeQty,afterQty:qty,delta:qty-beforeQty});
    if(changedCost)db.stockMoves.push({date:new Date().toISOString(),item:n,type:'cost_adjustment',qty:0,note:'Correção de custo: '+reason,previousUnitCost:beforeCost,newUnitCost:unitCost,beforeQty:qty,afterQty:qty,delta:0});
-   current.name=n;current.qty=qty;current.unitCost=unitCost;current.min=min;current.target=target;current.preferredSupplier=supplier;
+   current.name=n;current.qty=qty;current.unitCost=unitCost;current.min=min;current.target=target;current.preferredSupplier=supplier;current.imageUrl=imageUrl;
    save();resetStockFormV145(false);
    const detail=nameChanged?`Nome atualizado: ${oldName} → ${n}. As referências foram atualizadas.`:(changedQty||changedCost?n+' · correções de quantidade/custo registadas no histórico.':n+' · dados atualizados.');
    setStockSaveStateV143('saved','Alterações guardadas',detail);return toast('Alterações guardadas')
  }
  if(db.stock.some(x=>String(x.name||'').trim().toLowerCase()===n.toLowerCase())){setStockSaveStateV143('error','Matéria-prima já existente','Use o botão Editar na lista para alterar os dados.');return toast('Esta matéria-prima já existe — utilize Editar')}
- const o={name:n,qty,unit:normalizeBaseUnitV120(stockUnit.value),min,target,unitCost,preferredSupplier:supplier};db.stock.push(o);
+ const o={name:n,qty,unit:normalizeBaseUnitV120(stockUnit.value),min,target,unitCost,preferredSupplier:supplier,imageUrl};db.stock.push(o);
  if(qty>0){db.stockMoves=db.stockMoves||[];db.stockMoves.push({date:new Date().toISOString(),item:n,type:'initial',qty,note:'Saldo inicial',beforeQty:0,afterQty:qty,delta:qty})}
  save();resetStockFormV145(false);setStockSaveStateV143('saved','Matéria-prima guardada com sucesso',n+' · formulário limpo e pronto para novo registo.');toast('Matéria-prima guardada com sucesso')
 }
@@ -6794,7 +6855,7 @@ function renderStock(){
    const status=qty<=0?'SEM STOCK':qty<=min?'COMPRAR':'OK';
    const cls=qty<=0?'bad':qty<=min?'warn':'ok';
    return `<tr class="${qty<=0?'stock-row-out':qty<=min?'stock-row-low':''}">
-     <td><strong>${escapeHtml(x.name||'—')}</strong>${x.preferredSupplier?`<br><small>${escapeHtml(x.preferredSupplier)}</small>`:''}</td>
+     <td><div class="stock-name-cell-v1771">${x.imageUrl?`<img class="stock-thumb-v1771" src="${escapeHtml(x.imageUrl)}" alt="">`:`<div class="stock-thumb-placeholder-v1771">${escapeHtml((x.name||'?').charAt(0).toUpperCase())}</div>`}<div><strong>${escapeHtml(x.name||'—')}</strong>${x.preferredSupplier?`<br><small>${escapeHtml(x.preferredSupplier)}</small>`:''}</div></div></td>
      <td><strong>${qty.toLocaleString('pt-PT')}</strong></td>
      <td>${escapeHtml(x.unit||'—')}</td>
      <td>${min.toLocaleString('pt-PT')}</td>
@@ -6834,11 +6895,12 @@ function stockGoPurchase(i){
    toast('Compra preparada: '+x.name+(rec>0?' · '+rec.toLocaleString('pt-PT')+' '+(x.unit||''):'') );
  },80);
 }
-function showStockHistory(i){const x=db.stock[i];if(!x)return;const moves=[];(db.purchases||[]).filter(p=>p.item===x.name).forEach(p=>moves.push({date:p.date||'',type:(p.status||'received')==='ordered'?'Compra encomendada':'Compra recebida',qty:Number(p.qty)||0,note:[p.supplier?('Fornecedor: '+p.supplier):'',Number.isFinite(Number(p.previousAvgUnitCost))?('Custo médio: '+euro(p.previousAvgUnitCost)+' → '+euro(p.newAvgUnitCost)):'' ].filter(Boolean).join(' · '),value:Number(p.total)||0}));(db.stockMoves||[]).filter(m=>m.item===x.name).forEach(m=>{let note=m.note||'';if(m.type==='production'){const run=(db.productionRuns||[]).find(r=>r.id===m.productionRunId),ids=(Array.isArray(m.orderIds)&&m.orderIds.length?m.orderIds:(run?.orders||[]));if(ids.length){const label=ids.length===1?'Encomenda '+ids[0]:'Encomendas '+ids.join(', ');if(!note.includes(ids[0]))note=(note?note+' · ':'')+label}}moves.push({date:String(m.date||'').slice(0,10),type:m.type==='production'?'Produção':m.type==='in'?'Entrada':m.type==='out'?'Saída':m.type==='waste'?'Desperdício':m.type==='initial'?'Saldo inicial':m.type==='cost_adjustment'?'Correção custo':'Acerto',qty:Number(m.qty)||0,note,value:null,beforeQty:m.beforeQty,afterQty:m.afterQty,previousUnitCost:m.previousUnitCost,newUnitCost:m.newUnitCost})});moves.sort((a,b)=>(b.date||'').localeCompare(a.date||''));stockDialogTitle.textContent='Histórico - '+x.name;stockHistoryDetail.innerHTML=`<div class="totalbox"><div class="mini"><span>Stock atual</span><strong>${Number(x.qty||0).toLocaleString('pt-PT')} ${x.unit}</strong></div><div class="mini"><span>Stock alvo</span><strong>${stockTargetValueV135(x)?stockTargetValueV135(x).toLocaleString('pt-PT')+' '+x.unit:'—'}</strong></div><div class="mini"><span>Custo/base</span><strong>${formatUnitCostV145(x.unitCost||0,x.unit||'')}</strong></div><div class="mini"><span>Valor stock</span><strong>${euro((Number(x.qty)||0)*(Number(x.unitCost)||0))}</strong></div><div class="mini"><span>Fornecedor</span><strong>${escapeHtml(x.preferredSupplier||'—')}</strong></div><div class="mini"><span>Movimentos</span><strong>${moves.length}</strong></div></div><div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>Data</th><th>Tipo</th><th>Quantidade</th><th>Valor</th><th>Nota</th></tr></thead><tbody>${moves.length?moves.map(m=>`<tr><td>${m.date||'—'}</td><td>${m.type}</td><td>${m.type==='Correção custo'?formatUnitCostV145(m.previousUnitCost,x.unit)+' → '+formatUnitCostV145(m.newUnitCost,x.unit):m.type==='Acerto'&&Number.isFinite(Number(m.beforeQty))?Number(m.beforeQty).toLocaleString('pt-PT')+' → '+Number(m.afterQty).toLocaleString('pt-PT')+' '+x.unit:m.qty.toLocaleString('pt-PT')+' '+x.unit}</td><td>${m.value==null?'—':euro(m.value)}</td><td>${m.note||'—'}</td></tr>`).join(''):'<tr><td colspan="5" class="empty">Sem movimentos registados.</td></tr>'}</tbody></table></div>`;stockDialog.showModal()}
+function showStockHistory(i){const x=db.stock[i];if(!x)return;const moves=[];(db.purchases||[]).filter(p=>p.item===x.name).forEach(p=>moves.push({date:p.date||'',type:purchaseIsTestVoidedV1770(p)?'Compra teste anulada':((p.status||'received')==='ordered'?'Compra encomendada':'Compra recebida'),qty:Number(p.qty)||0,note:[p.supplier?('Fornecedor: '+p.supplier):'',purchaseIsTestVoidedV1770(p)?'Fora das contas; stock preservado':'',Number.isFinite(Number(p.previousAvgUnitCost))?('Custo médio: '+euro(p.previousAvgUnitCost)+' → '+euro(p.newAvgUnitCost)):'' ].filter(Boolean).join(' · '),value:Number(p.total)||0}));(db.stockMoves||[]).filter(m=>m.item===x.name).forEach(m=>{let note=m.note||'';if(m.type==='production'){const run=(db.productionRuns||[]).find(r=>r.id===m.productionRunId),ids=(Array.isArray(m.orderIds)&&m.orderIds.length?m.orderIds:(run?.orders||[]));if(ids.length){const label=ids.length===1?'Encomenda '+ids[0]:'Encomendas '+ids.join(', ');if(!note.includes(ids[0]))note=(note?note+' · ':'')+label}}moves.push({date:String(m.date||'').slice(0,10),type:m.type==='production'?'Produção':m.type==='in'?'Entrada':m.type==='out'?'Saída':m.type==='waste'?'Desperdício':m.type==='initial'?'Saldo inicial':m.type==='cost_adjustment'?'Correção custo':'Acerto',qty:Number(m.qty)||0,note,value:null,beforeQty:m.beforeQty,afterQty:m.afterQty,previousUnitCost:m.previousUnitCost,newUnitCost:m.newUnitCost})});moves.sort((a,b)=>(b.date||'').localeCompare(a.date||''));stockDialogTitle.textContent='Histórico - '+x.name;stockHistoryDetail.innerHTML=`<div class="totalbox"><div class="mini"><span>Stock atual</span><strong>${Number(x.qty||0).toLocaleString('pt-PT')} ${x.unit}</strong></div><div class="mini"><span>Stock alvo</span><strong>${stockTargetValueV135(x)?stockTargetValueV135(x).toLocaleString('pt-PT')+' '+x.unit:'—'}</strong></div><div class="mini"><span>Custo/base</span><strong>${formatUnitCostV145(x.unitCost||0,x.unit||'')}</strong></div><div class="mini"><span>Valor stock</span><strong>${euro((Number(x.qty)||0)*(Number(x.unitCost)||0))}</strong></div><div class="mini"><span>Fornecedor</span><strong>${escapeHtml(x.preferredSupplier||'—')}</strong></div><div class="mini"><span>Movimentos</span><strong>${moves.length}</strong></div></div><div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>Data</th><th>Tipo</th><th>Quantidade</th><th>Valor</th><th>Nota</th></tr></thead><tbody>${moves.length?moves.map(m=>`<tr><td>${m.date||'—'}</td><td>${m.type}</td><td>${m.type==='Correção custo'?formatUnitCostV145(m.previousUnitCost,x.unit)+' → '+formatUnitCostV145(m.newUnitCost,x.unit):m.type==='Acerto'&&Number.isFinite(Number(m.beforeQty))?Number(m.beforeQty).toLocaleString('pt-PT')+' → '+Number(m.afterQty).toLocaleString('pt-PT')+' '+x.unit:m.qty.toLocaleString('pt-PT')+' '+x.unit}</td><td>${m.value==null?'—':euro(m.value)}</td><td>${m.note||'—'}</td></tr>`).join(''):'<tr><td colspan="5" class="empty">Sem movimentos registados.</td></tr>'}</tbody></table></div>`;stockDialog.showModal()}
 function loadStock(i){
  const x=db.stock[i];if(!x)return toast('Matéria-prima não encontrada');
  editingStockIndex=i;stockName.value=x.name;stockQty.value=x.qty;stockUnit.value=x.unit;stockMin.value=x.min;stockUnitCost.value=x.unitCost||0;hydrateSimpleStockFormV1736(x);
  if(document.getElementById('stockTarget'))stockTarget.value=x.target??'';if(document.getElementById('stockPreferredSupplier'))stockPreferredSupplier.value=x.preferredSupplier||'';
+ setStockImagePreviewV1771(x.imageUrl||'');const stockImgFileV1771=document.getElementById('stockImageFileV1771');if(stockImgFileV1771)stockImgFileV1771.value='';
  for(const id of ['stockUnit']){const el=document.getElementById(id);if(el)el.disabled=true}
  const title=document.querySelector('#stock .stock-form-card .section-title'),hint=document.getElementById('stockFormHintV145'),saveBtn=document.getElementById('stockSaveBtnV143'),cancelBtn=document.getElementById('stockCancelBtnV145'),reasonField=document.getElementById('stockEditReasonFieldV145');
  if(title)title.textContent='Editar matéria-prima';if(hint)hint.textContent='Podes corrigir o nome. A unidade interna fica protegida para não quebrar cálculos; alterações de quantidade/custo exigem justificação.';if(saveBtn)saveBtn.textContent='Guardar alterações';if(cancelBtn)cancelBtn.classList.remove('hidden');if(reasonField)reasonField.classList.remove('hidden');
@@ -7319,7 +7381,7 @@ function repairDuplicateManualOrdersV1412(d){
  return d;
 }
 function normalizeImportedDb(d){d=d&&typeof d==='object'?d:{};d.settings=d.settings&&typeof d.settings==='object'&&!Array.isArray(d.settings)?d.settings:{};if(d.settings.minMargin==null)d.settings.minMargin=.65;if(d.settings.laborRate==null)d.settings.laborRate=8;if(d.settings.wasteRate==null)d.settings.wasteRate=.10;if(d.settings.electricityRate==null)d.settings.electricityRate=.20;if(d.settings.equipmentWearRate==null)d.settings.equipmentWearRate=0;if(d.settings.consumablesHourlyRate==null)d.settings.consumablesHourlyRate=0;if(d.settings.defaultOperatingCostPerUnit==null)d.settings.defaultOperatingCostPerUnit=0;if(d.settings.defaultMoldCostPerUnit==null)d.settings.defaultMoldCostPerUnit=0;if(d.settings.pricingSalaryMonthly==null)d.settings.pricingSalaryMonthly=0;if(d.settings.pricingDaysPerMonth==null)d.settings.pricingDaysPerMonth=20;if(d.settings.pricingHoursPerDay==null)d.settings.pricingHoursPerDay=4;if(d.settings.pricingDefaultProfitPct==null)d.settings.pricingDefaultProfitPct=30;if(!d.settings.pricingLaborMode)d.settings.pricingLaborMode=Number(d.settings.pricingSalaryMonthly)>0?'salary':'hourly';if(d.settings.pricingProductiveHoursMonthly==null)d.settings.pricingProductiveHoursMonthly=Math.max(1,(Number(d.settings.pricingDaysPerMonth)||20)*(Number(d.settings.pricingHoursPerDay)||4));if(d.settings.pricingHourlyRate==null)d.settings.pricingHourlyRate=Math.max(0,Number(d.settings.laborRate)||8);if(d.settings.pricingDefaultMarginPct==null){const oldMarkup=Math.max(0,Number(d.settings.pricingDefaultProfitPct)||30);d.settings.pricingDefaultMarginPct=oldMarkup>0?(oldMarkup/(100+oldMarkup))*100:0}if(!Array.isArray(d.settings.pricingFixedCosts))d.settings.pricingFixedCosts=[];d.settings.businessName=d.settings.businessName||SEED.businessName;d.settings.businessLegalName=d.settings.businessLegalName||'';d.settings.businessTaxId=d.settings.businessTaxId||'';d.settings.businessPhone=d.settings.businessPhone||'';d.settings.businessEmail=d.settings.businessEmail||'';d.settings.businessAddress=d.settings.businessAddress||'';d.settings.businessPostalCode=d.settings.businessPostalCode||'';d.settings.businessLocation=d.settings.businessLocation||'';d.settings.iban=d.settings.iban||'';d.settings.paymentNote=d.settings.paymentNote||'';delete d.settings.yield;delete d.settings.baseRecipeV12812;for(const k of ['orders','clients','quotes','purchases','cash','stockMoves','productionRuns','themedBoxes'])if(!Array.isArray(d[k]))d[k]=[];if(!Array.isArray(d.products))d.products=[];d.products.forEach(p=>{if(!p)return;if(!Array.isArray(p.tagsV1753))p.tagsV1753=[];if(!Array.isArray(p.seasonalTagsV1761))p.seasonalTagsV1761=[];if(p.laborMinutes==null)p.laborMinutes=Math.max(0,Number(d.settings.laborMinutes)||0);if(p.marginPct==null&&p.profitPct!=null){const oldMarkup=Math.max(0,Number(p.profitPct)||0);p.marginPct=oldMarkup>0?(oldMarkup/(100+oldMarkup))*100:0}});if(!Array.isArray(d.stock))d.stock=[];d.clients.forEach(c=>{const note=String(c?.note??c?.notes??'');c.note=note;c.notes=note});repairDuplicateManualOrdersV1412(d);if(!Array.isArray(d.packaging)||!d.packaging.length)d.packaging=[{name:'Caixa pequena',capacity:2,cost:0},{name:'Caixa média',capacity:4,cost:0},{name:'Caixa presente',capacity:6,cost:0},{name:'Saco kraft',capacity:3,cost:0}];d.quotes=(d.quotes||[]);d.quotes.forEach(q=>{if(!q.box)q.box=d.packaging[0]?.name||''});d.orders.forEach(o=>{o.items=Array.isArray(o.items)?o.items:[];o.paymentHistory=Array.isArray(o.paymentHistory)?o.paymentHistory:[];if(o.status==='Confirmado')o.status='Confirmada';if(o.source==='online_store')ensureOnlineOrderCostSnapshotV12644(o,d);});d.quotes.forEach(q=>{q.items=Array.isArray(q.items)?q.items:[];q.paymentHistory=Array.isArray(q.paymentHistory)?q.paymentHistory:[];if(q.box==null)q.box='';if(!q.boxes)q.boxes=1});
- d.stock.forEach(x=>{if(x.target===undefined)x.target=null;if(x.preferredSupplier==null)x.preferredSupplier='';x.unit=normalizeBaseUnitV120(x.unit||'un')||'un'});
+ d.stock.forEach(x=>{if(x.target===undefined)x.target=null;if(x.preferredSupplier==null)x.preferredSupplier='';if(x.imageUrl==null)x.imageUrl='';x.unit=normalizeBaseUnitV120(x.unit||'un')||'un'});
  d.products.forEach(p=>{if(!Array.isArray(p.editionIds))p.editionIds=p.editionId?[p.editionId]:[];p.editionIds=[...new Set(p.editionIds.filter(Boolean).map(String))];p.editionId=p.editionIds[0]||'';if(p.manufactured==null)p.manufactured=true});
  if(!d.productRecipes||typeof d.productRecipes!=='object'||Array.isArray(d.productRecipes))d.productRecipes={};
  if(!d.costMeta||typeof d.costMeta!=='object'||Array.isArray(d.costMeta))d.costMeta={};
@@ -11973,12 +12035,29 @@ async function deleteProduct(code){
 
 
 function purchaseStatusV135(rec){return rec?.status==='ordered'?'ordered':'received'}
+function purchaseIsTestVoidedV1770(rec){return !!rec?.testVoidedV1770}
 function purchaseCanReverse(rec){
  if(purchaseStatusV135(rec)==='ordered')return true;
  const recDate=String(rec.date||'');
- const newerPurchase=db.purchases.some(p=>p.id!==rec.id&&p.item===rec.item&&purchaseStatusV135(p)==='received'&&String(p.date||'')>recDate);
+ const newerPurchase=db.purchases.some(p=>p.id!==rec.id&&!purchaseIsTestVoidedV1770(p)&&p.item===rec.item&&purchaseStatusV135(p)==='received'&&String(p.date||'')>recDate);
  const laterMove=(db.stockMoves||[]).some(m=>m.item===rec.item&&String(m.date||'').slice(0,10)>=recDate&&m.type!=='purchase');
  return !newerPurchase&&!laterMove;
+}
+function removePurchaseCashV1770(rec){
+ db.cash=db.cash||[];
+ const before=db.cash.length;
+ db.cash=db.cash.filter(c=>c.id!==rec.cashId&&!(c.source==='purchase'&&c.purchaseId===rec.id));
+ rec.cashId=null;
+ return before-db.cash.length;
+}
+function voidTestPurchaseFinancialV1770(id){
+ const r=db.purchases.find(x=>x.id===id);if(!r)return;
+ if(isBusinessModeV1420())return toast('Disponível apenas em Fase de testes.');
+ if(purchaseIsTestVoidedV1770(r))return toast('Esta compra de teste já foi retirada das contas.');
+ if(!confirm('Retirar esta compra de TESTE das contas? O movimento associado será removido da Caixa. Como existem movimentos de stock posteriores, o stock atual não será alterado.'))return;
+ const removed=removePurchaseCashV1770(r);
+ r.testVoidedV1770=true;r.testVoidedAtV1770=new Date().toISOString();r.testVoidedReasonV1770='Limpeza de dados de teste com movimentos de stock posteriores';
+ save();renderAll();toast(removed?'Compra de teste retirada das contas e da Caixa':'Compra de teste marcada como anulada nas contas')
 }
 function applyPurchaseEffectsV135(rec){
  const x=stockByName(rec.item);if(!x)throw new Error('Artigo de stock não encontrado');
@@ -11997,9 +12076,9 @@ function savePurchase(){
  db.purchases.push(rec);editingPurchaseId=null;save();cancelPurchaseEdit();toast(status==='received'?'Compra recebida; stock, caixa e custos recalculados':'Compra registada como encomendada; o stock só muda quando for recebida')
 }
 function reversePurchaseEffects(rec,removeRecord=true){if(purchaseStatusV135(rec)==='received'){const x=stockByName(rec.item);if(x){const curQty=Number(x.qty)||0,curVal=curQty*(Number(x.unitCost)||0),newQty=curQty-(Number(rec.qty)||0),newVal=curVal-(Number(rec.total)||0);x.qty=newQty;x.unitCost=newQty>0?Math.max(0,newVal/newQty):0}if(rec.cashId)db.cash=db.cash.filter(c=>c.id!==rec.cashId);else{const idx=db.cash.findIndex(c=>c.source==='purchase'&&c.purchaseId===rec.id);if(idx>=0)db.cash.splice(idx,1)}}if(removeRecord)db.purchases=db.purchases.filter(p=>p.id!==rec.id)}
-function editPurchase(id){const r=db.purchases.find(x=>x.id===id);if(!r)return;editingPurchaseId=id;purchaseSupplier.value=r.supplier||'';purchaseItem.value=r.item;syncPurchaseUnitV120(r.purchaseUnit||r.baseUnit||stockByName(r.item)?.unit||'un');purchaseQty.value=r.purchaseQtyEntered??r.qty;purchaseTotal.value=r.total;purchaseMethod.value=r.method||'Dinheiro';if(document.getElementById('purchaseStatus'))purchaseStatus.value=purchaseStatusV135(r);purchaseDate.value=r.date||todayISO();purchaseNote.value=r.note||'';purchaseSaveBtn.textContent='Guardar correção';purchaseCancelBtn.classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'})}
+function editPurchase(id){const r=db.purchases.find(x=>x.id===id);if(!r)return;if(purchaseIsTestVoidedV1770(r))return toast('Compra de teste anulada nas contas: não pode ser editada.');editingPurchaseId=id;purchaseSupplier.value=r.supplier||'';purchaseItem.value=r.item;syncPurchaseUnitV120(r.purchaseUnit||r.baseUnit||stockByName(r.item)?.unit||'un');purchaseQty.value=r.purchaseQtyEntered??r.qty;purchaseTotal.value=r.total;purchaseMethod.value=r.method||'Dinheiro';if(document.getElementById('purchaseStatus'))purchaseStatus.value=purchaseStatusV135(r);purchaseDate.value=r.date||todayISO();purchaseNote.value=r.note||'';purchaseSaveBtn.textContent='Guardar correção';purchaseCancelBtn.classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'})}
 function cancelPurchaseEdit(clear=true){editingPurchaseId=null;if(clear){purchaseSupplier.value='';purchaseQty.value='';purchaseTotal.value='';purchaseNote.value='';purchaseDate.value=todayISO();if(document.getElementById('purchaseStatus'))purchaseStatus.value='received'}purchaseSaveBtn.textContent='Guardar compra';purchaseCancelBtn.classList.add('hidden')}
-function voidPurchase(id){const r=db.purchases.find(x=>x.id===id);if(!r)return;if(!destructiveDeleteAllowedV1420('a compra'))return;if(!purchaseCanReverse(r))return toast('Esta compra já tem movimentos posteriores. Não é seguro revertê-la automaticamente; faça um ajuste de stock/caixa.');if(!confirm(purchaseStatusV135(r)==='ordered'?'Eliminar esta compra encomendada?':'Anular esta compra? O stock e a saída de caixa serão revertidos.'))return;reversePurchaseEffects(r,true);save();toast(purchaseStatusV135(r)==='ordered'?'Compra encomendada eliminada':'Compra anulada e efeitos revertidos')}
+function voidPurchase(id){const r=db.purchases.find(x=>x.id===id);if(!r)return;if(!destructiveDeleteAllowedV1420('a compra'))return;if(purchaseIsTestVoidedV1770(r))return toast('Esta compra de teste já está anulada nas contas.');if(!purchaseCanReverse(r)){if(!isBusinessModeV1420())return voidTestPurchaseFinancialV1770(id);return toast('Esta compra já tem movimentos posteriores. Não é seguro revertê-la automaticamente.');}if(!confirm(purchaseStatusV135(r)==='ordered'?'Eliminar esta compra encomendada?':'Anular esta compra? O stock e a saída de caixa serão revertidos.'))return;reversePurchaseEffects(r,true);save();toast(purchaseStatusV135(r)==='ordered'?'Compra encomendada eliminada':'Compra anulada e efeitos revertidos')}
 function receivePurchaseV135(id){const r=db.purchases.find(x=>x.id===id);if(!r||purchaseStatusV135(r)!=='ordered')return;const st=stockByName(r.item);if(!st)return toast('O artigo já não existe no Stock');if(!confirm('Confirmar receção de '+r.item+'? A quantidade entrará no Stock e o valor será registado no Caixa.'))return;r.receivedDate=todayISO();applyPurchaseEffectsV135(r);save();toast('Compra recebida; stock, custo médio e caixa atualizados')}
 
 function updatePurchasePreview(){
@@ -12012,18 +12091,19 @@ function renderPurchases(){
  refreshStockSelectors();ensureRecordIds();updatePurchasePreview();
 
  const all=Array.isArray(db.purchases)?db.purchases:[];
- const received=all.filter(x=>purchaseStatusV135(x)==='received');
+ const active=all.filter(x=>!purchaseIsTestVoidedV1770(x));
+ const received=active.filter(x=>purchaseStatusV135(x)==='received');
  const totalSpent=received.reduce((s,x)=>s+(Number(x.total)||0),0);
  const thisMonth=todayISO().slice(0,7);
- const monthRows=all.filter(x=>String(x.date||'').slice(0,7)===thisMonth);
+ const monthRows=active.filter(x=>String(x.date||'').slice(0,7)===thisMonth);
  const monthReceived=received.filter(x=>String(x.receivedDate||x.date||'').slice(0,7)===thisMonth);
  const monthSpent=monthReceived.reduce((s,x)=>s+(Number(x.total)||0),0);
- const suppliers=new Set(all.map(x=>String(x.supplier||'').trim()).filter(Boolean)).size;
- const orderedCount=all.filter(x=>purchaseStatusV135(x)==='ordered').length;
+ const suppliers=new Set(active.map(x=>String(x.supplier||'').trim()).filter(Boolean)).size;
+ const orderedCount=active.filter(x=>purchaseStatusV135(x)==='ordered').length;
 
  const summary=document.getElementById('purchaseSummary');
  if(summary)summary.innerHTML=[
-   ['Compras',all.length,'Total registado'],
+   ['Compras',active.length,'Ativas nas contas'],
    ['Este mês',monthRows.length,'Compras no mês'],
    ['Gasto no mês',euro(monthSpent),'Apenas compras recebidas'],
    ['A receber',orderedCount,'Compras encomendadas'],
@@ -12051,9 +12131,9 @@ function renderPurchases(){
    <td>${x.purchaseQtyEntered!=null?`${Number(x.purchaseQtyEntered).toLocaleString('pt-PT')} ${x.purchaseUnit||''}<br><small>${Number(x.qty||0).toLocaleString('pt-PT')} ${x.baseUnit||stockByName(x.item)?.unit||''} no stock</small>`:`${Number(x.qty||0).toLocaleString('pt-PT')} ${stockByName(x.item)?.unit||''}`}</td>
    <td><strong>${euro(x.total)}</strong></td>
    <td>${purchaseStatusV135(x)==='received'&&Number.isFinite(Number(x.newAvgUnitCost))?`${euro(x.previousAvgUnitCost||0)} → <strong>${euro(x.newAvgUnitCost||0)}</strong>`:euro(x.unitCost)}</td>
-   <td><span class="badge ${purchaseStatusV135(x)==='ordered'?'warn':'ok'}">${purchaseStatusV135(x)==='ordered'?'ENCOMENDADA':'RECEBIDA'}</span></td>
+   <td>${purchaseIsTestVoidedV1770(x)?'<span class="badge warn">ANULADA · TESTE</span>':`<span class="badge ${purchaseStatusV135(x)==='ordered'?'warn':'ok'}">${purchaseStatusV135(x)==='ordered'?'ENCOMENDADA':'RECEBIDA'}</span>`}</td>
    <td><span class="badge">${escapeHtml(x.method||'—')}</span></td>
-   <td><div class="purchase-actions">${purchaseStatusV135(x)==='ordered'?`<button class="btn primary" onclick="receivePurchaseV135('${x.id}')">Receber</button>`:''}<button class="btn" onclick="editPurchase('${x.id}')">Editar</button><button class="btn danger" onclick="voidPurchase('${x.id}')">${purchaseStatusV135(x)==='ordered'?'Eliminar':'Anular'}</button></div></td>
+   <td><div class="purchase-actions">${purchaseIsTestVoidedV1770(x)?'<span class="cash-locked">Fora das contas · stock preservado</span>':`${purchaseStatusV135(x)==='ordered'?`<button class="btn primary" onclick="receivePurchaseV135('${x.id}')">Receber</button>`:''}<button class="btn" onclick="editPurchase('${x.id}')">Editar</button><button class="btn danger" onclick="voidPurchase('${x.id}')">${purchaseCanReverse(x)?(purchaseStatusV135(x)==='ordered'?'Eliminar':'Anular'):'Retirar das contas'}</button>`}</div></td>
  </tr>`).join(''):`<tr><td colspan="9" class="empty">Sem compras registadas</td></tr>`;
 }
 async function syncShopPackagingCloud(){
@@ -14403,7 +14483,7 @@ function saveSettings(){
 function csvEscape(v){v=String(v??'');return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
 function downloadCSV(name,headers,rows){const body='\ufeff'+[headers,...rows].map(r=>r.map(csvEscape).join(';')).join('\n'),blob=new Blob([body],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name+'_'+todayISO()+'.csv';a.click();URL.revokeObjectURL(a.href)}
 function exportOrdersCSV(){const rows=db.orders.map(o=>{const c=calcOrder(o);return[o.id,o.created,o.delivery,o.client,o.contact,o.status,o.payment,c.qty,c.total,o.paid,c.cost,c.profit,c.margin]});downloadCSV('ArtEssencia_encomendas',['Nº','Criada','Entrega','Cliente','Contacto','Estado','Pagamento','Unidades','Total','Pago','Custo','Lucro','Margem'],rows)}
-function exportPurchasesCSV(){downloadCSV('ArtEssencia_compras',['Data encomenda','Data receção','Fornecedor','Artigo','Quantidade','Total','Custo médio','Estado','Pagamento','Notas'],db.purchases.map(p=>[p.date,p.receivedDate||'',p.supplier,p.item,p.qty,p.total,p.unitCost,purchaseStatusV135(p)==='ordered'?'Encomendada':'Recebida',p.method,p.note]))}
+function exportPurchasesCSV(){downloadCSV('ArtEssencia_compras',['Data encomenda','Data receção','Fornecedor','Artigo','Quantidade','Total','Custo médio','Estado','Pagamento','Notas'],db.purchases.map(p=>[p.date,p.receivedDate||'',p.supplier,p.item,p.qty,p.total,p.unitCost,purchaseIsTestVoidedV1770(p)?'Anulada - teste':(purchaseStatusV135(p)==='ordered'?'Encomendada':'Recebida'),p.method,p.note]))}
 function exportCashCSV(){downloadCSV('ArtEssencia_caixa',['Data','Tipo','Descrição','Meio','Valor','Origem'],db.cash.map(c=>[c.date,c.type,c.desc,c.method,c.value,c.source||'manual']))}
 function reportPeriodData(){
   const y=Number(document.getElementById('dashYear')?.value)||new Date().getFullYear(),m=Number(document.getElementById('dashMonth')?.value??0);
@@ -14412,7 +14492,7 @@ function reportPeriodData(){
   const validOrders=db.orders.filter(o=>completed(o)&&matchDate(o.delivery||o.created));
   const orders=validOrders.filter(o=>o.status==='Entregue');
   const openOrders=validOrders.filter(o=>o.status!=='Entregue');
-  const purchases=db.purchases.filter(p=>purchaseStatusV135(p)==='received'&&matchDate(p.receivedDate||p.date));
+  const purchases=db.purchases.filter(p=>!purchaseIsTestVoidedV1770(p)&&purchaseStatusV135(p)==='received'&&matchDate(p.receivedDate||p.date));
   const cash=(db.cash||[]).filter(c=>matchDate(c.date));
   const summarize=list=>{const total=list.reduce((s,o)=>s+calcOrder(o).total,0),paid=list.reduce((s,o)=>s+Math.min(Math.max(Number(o.paid)||0,0),calcOrder(o).total),0),cost=list.reduce((s,o)=>s+calcOrder(o).cost,0),profit=total-cost;return{total,paid,due:Math.max(total-paid,0),cost,profit,margin:total?profit/total:0,orders:list.length}};
   const d=summarize(orders),booked=summarize(validOrders);
