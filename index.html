@@ -2653,215 +2653,19 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 @media (pointer:coarse) and (min-width:651px) and (max-width:1400px){
   .app{grid-template-columns:205px minmax(0,1fr)!important}
   .sidebar{padding:14px 10px 16px!important}
-  .sidebar .brand img{max-width:164px!important;height:86px!important}
-  .sidebar .nav button{padding:7px 8px!important;gap:7px!important}
-  .sidebar .nav-label{font-size:12px!important}
-  .main{padding:14px!important;overflow-x:hidden}
-
-  /* Cabeçalhos e ações: impedir compressão lateral. */
-  #sale .sale-hero-v1727,#orders .orders-toolbar-v1728,#quotes .quotes-events-card-v1730,
-  #production .prod-head-main,#catalogs .catalog-dashboard,#catalogDigital .catalog-center-hero,
-  #specialEditions .special-hero,#homepage .homepage-hero,#campaigns .campaign-hero,
-  #settings .settings-hero-v1732,#reports .reports-hero,#products .products-hero,
-  #delivery .delivery-hero{min-width:0}
-
-  /* Dashboard */
-  #dashboard .grid4{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  #dashboard .dashboard-profitability-v1769{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  #dashboard .dashboard-section-head{align-items:flex-start!important;flex-wrap:wrap!important}
-  #dashboard .dashboard-section-head>small{text-align:left!important;max-width:none!important}
-
-  /* Vendas / nova encomenda */
-  #sale .sale-customer-grid-v1727{grid-template-columns:repeat(4,minmax(0,1fr))!important}
-  #sale .sale-client-v1727{grid-column:span 2!important}
-  #sale .sale-notes-v1727{grid-column:1/-1!important}
-  #sale .sale-totalbox-v1727{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  #sale .product-picker{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-
-  /* Encomendas */
-  #orders .orders-cards{grid-template-columns:1fr!important}
-  #orders .orders-toolbar-v1728{gap:12px!important}
-
-  /* Orçamentos: o formulário desktop tinha demasiadas colunas para tablet largo. */
-  #quotes .quotes-main-grid-v1730{grid-template-columns:repeat(4,minmax(0,1fr))!important}
-  #quotes .quotes-client-v1730{grid-column:span 2!important}
-  #quotes .quotes-custom-grid-v1730{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  #quotes .quotes-free-desc-v1730,#quotes .quotes-free-action-v1730{grid-column:1/-1!important}
-  #quotes .quotes-summary-grid-v1730{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  #quotes .quotes-notes-v1730{grid-column:1/-1!important}
-  #quotes .quotes-totalbox-v1730{grid-template-columns:repeat(3,minmax(0,1fr))!important;overflow:visible!important}
-
-  /* Produção */
-  #production .prod-head-main{grid-template-columns:1fr!important}
-  #production .prod-head-actions{justify-content:flex-start!important;flex-wrap:wrap!important}
-  #production .prod-summary{grid-template-columns:repeat(3,minmax(0,1fr))!important}
-
-  /* Catálogos / criador */
-  #catalogs .catalog-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  #catalogs .catalog-editor-grid-v1731{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  #catalogs .catalog-theme-name-v1731,#catalogs .catalog-theme-desc-v1731,#catalogs .catalog-theme-image-v1731{grid-column:1/-1!important}
-  #catalogs .catalog-document-card-v1731{grid-template-columns:minmax(0,1fr) auto!important}
-
-  /* Centro do Catálogo Digital */
-  #catalogDigital .catalog-center-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  #catalogDigital .catalog-center-workflow{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  #catalogDigital .catalog-theme-list{grid-template-columns:repeat(4,minmax(0,1fr))!important}
-  #catalogDigital .catalog-quick-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-
-  /* Edições especiais */
-  #specialEditions .special-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  #specialEditions .special-editor-grid-v1734{grid-template-columns:1fr!important}
-  #specialEditions .special-editor-main-v1734>.form-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  #specialEditions .catalog-theme-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  #specialEditions .special-product-picker{grid-template-columns:repeat(3,minmax(0,1fr))!important}
-
-  /* Homepage pública */
-  #homepage .homepage-form-v12649{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  #homepage .homepage-benefits-v12649{grid-template-columns:repeat(3,minmax(0,1fr))!important}
-  #homepage .homepage-preview{grid-template-columns:minmax(260px,.9fr) minmax(0,1.1fr)!important}
-
-  /* Campanhas */
-  #campaigns .campaign-grid{grid-template-columns:1fr!important}
-  #campaigns .campaign-kpis{grid-template-columns:repeat(3,minmax(0,1fr))!important}
-
-  /* Configuração */
-  #settings .settings-grid4-v1732{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  #settings .settings-form-grid-v1732{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  #settings .settings-grid3-v1732{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-
-  /* Relatórios */
-  #reports .reports-kpis{grid-template-columns:repeat(3,minmax(0,1fr))!important}
-  #reports .reports-stack-v1725{grid-template-columns:1fr!important}
-
-  /* Precificação em quantidade */
-  #quantityPricing .quantity-pricing-base-grid-v1750,
-  #quantityPricing .quantity-pricing-cost-grid-v1750,
-  #quantityPricing .quantity-pricing-results-v1750,
-  #quantityPricing .quantity-pricing-reference-v1750{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  #quantityPricing .quantity-pricing-material-row-v1750{min-width:0}
-
-  /* Produtos: estender as regras tablet para o breakpoint real do dispositivo. */
-  #products .products-tools{grid-template-columns:1fr 1fr!important}
-  #products .products-form-card>.form-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  #products .product-name-v1726,#products .product-availability-v1726,#products .product-editions-v1726,
-  #products .product-shop-desc-v1726,#products .art-tech-info,#products .product-photo-section-v1726{grid-column:1/-1!important}
-  #products .product-code-field-v147,#products #prodCategoryField,#products .product-price-v1726,#products .product-pricing-policy-v1726{grid-column:span 1!important}
-  #products .product-cost-grid-v110,#products .production-profile-grid-v130{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  #products .product-cost-summary-v110{grid-template-columns:repeat(3,minmax(0,1fr))!important}
-  #products .product-editor-panel-v1762{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  #products .products-cards{grid-template-columns:1fr!important}
-
-  /* Entregas */
-  #delivery .delivery-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-
-  /* Email / Cloud / Backup */
-  #email .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  #cloud .grid2,#cloud .cloud-pro-grid,#backup .grid2,#backup .backup-pro-grid{grid-template-columns:1fr!important}
-}
-
-/* Tablet mais estreito / vertical: ações e formulários que ainda ficavam densos. */
-@media (pointer:coarse) and (min-width:651px) and (max-width:980px){
-  .app{grid-template-columns:185px minmax(0,1fr)!important}
-  #sale .sale-customer-grid-v1727,#quotes .quotes-main-grid-v1730,#quotes .quotes-custom-grid-v1730,
-  #quotes .quotes-summary-grid-v1730,#catalogs .catalog-editor-grid-v1731,
-  #settings .settings-form-grid-v1732,#products .products-form-card>.form-grid{grid-template-columns:1fr 1fr!important}
-  #quotes .quotes-totalbox-v1730,#production .prod-summary,#reports .reports-kpis{grid-template-columns:1fr 1fr!important}
-  #specialEditions .special-product-picker{grid-template-columns:1fr 1fr!important}
-  #homepage .homepage-benefits-v12649,#campaigns .campaign-kpis{grid-template-columns:1fr!important}
-  #homepage .homepage-preview{grid-template-columns:1fr!important}
-  #catalogs .catalog-document-card-v1731{grid-template-columns:1fr!important}
-  #catalogs .catalog-actions-v1731{justify-content:flex-start!important}
-  #catalogDigital .catalog-quick-actions{grid-template-columns:1fr!important}
-}
-</style>
-
-
-<style id="artessencia-v1777-layout-fine-audit">
-/* V1.7.77 — segunda passagem de auditoria estrutural: acabamento tablet/touch. */
-@media (pointer:coarse) and (min-width:651px) and (max-width:1400px){
-  /* Barra superior: impedir perfil/estado/pesquisa de competirem pela mesma linha. */
-  .topbar{grid-template-columns:minmax(250px,1fr) auto!important;gap:10px 12px!important}
-  .top-actions{min-width:0!important;flex-wrap:wrap!important;row-gap:6px!important}
-  .art-profile{display:none!important}
-  .art-global-search{min-width:0!important}
-  .art-global-search input{min-width:0!important}
-  .page-heading{min-width:0!important}
-
-  /* Compras: o breakpoint histórico terminava antes da largura real do tablet. */
-  #purchases .purchase-hero{align-items:flex-start!important;flex-wrap:wrap!important}
-  #purchases .purchase-tools{width:100%!important;min-width:0!important;grid-template-columns:minmax(0,1fr) 180px!important}
-  #purchases .purchase-main-grid-v1722{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  #purchases .purchase-supplier-v1722,#purchases .purchase-item-v1722{grid-column:span 1!important}
-  #purchases .purchase-preview-v1722{grid-template-columns:repeat(3,minmax(0,1fr))!important}
-  #purchases .purchase-secondary-row-v1722{grid-template-columns:minmax(0,1fr) auto!important}
-  #purchases .purchase-actions-v1722{justify-content:flex-end!important}
-
-  /* Caixa: distribuir o movimento por duas linhas úteis, sem campos esmagados. */
-  #cash .cash-hero{align-items:flex-start!important;flex-wrap:wrap!important}
-  #cash .cash-tools{width:100%!important;min-width:0!important;grid-template-columns:minmax(0,1fr) 150px 165px!important}
-  #cash .cash-main-grid-v1723{grid-template-columns:repeat(3,minmax(0,1fr))!important}
-  #cash .cash-desc-v1723{grid-column:span 2!important}
-  #cash .cash-action-v1723{grid-column:1/-1!important}
-  #cash .cash-form-actions-v1723{max-width:420px;margin-left:auto!important}
-
-  /* Legal: formulários legíveis e documentos sem cartões demasiado estreitos. */
-  #legal .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  #legal .span2{grid-column:1/-1!important}
-  #legal .legal-section-head-v1286{align-items:flex-start!important;flex-wrap:wrap!important}
-
-  /* Email: pesquisa ganha linha própria; ações continuam acessíveis por toque. */
-  #email .email177-toolbar{align-items:flex-start!important}
-  #email .email177-search{flex:1 0 100%!important;min-width:0!important;order:-1!important}
-  #email .email177-tabs{max-width:100%!important}
-  #email .email178-actions{justify-content:flex-start!important}
-  #email .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-
-  /* Cabeçalhos de cartões e barras de ações devem poder quebrar linha. */
-  .card>.section-title,.card>[class*="-head"]{min-width:0}
-  .btnrow{flex-wrap:wrap!important;gap:8px!important}
-  .tablewrap table{width:100%}
-  .tablewrap th,.tablewrap td{padding-top:10px;padding-bottom:10px}
-  .smallbtn,.btn{min-height:38px}
-}
-
-@media (pointer:coarse) and (min-width:651px) and (max-width:1000px){
-  .topbar{grid-template-columns:1fr!important;grid-template-areas:"search" "actions" "heading"!important}
-  .top-actions{justify-content:flex-start!important;overflow:visible!important}
-  .top-actions #today{display:none!important}
-
-  #purchases .purchase-tools,#cash .cash-tools{grid-template-columns:1fr!important}
-  #purchases .purchase-main-grid-v1722,#cash .cash-main-grid-v1723,#legal .form-grid,#email .form-grid{grid-template-columns:1fr!important}
-  #purchases .purchase-preview-v1722{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  #purchases .purchase-secondary-row-v1722{grid-template-columns:1fr!important}
-  #purchases .purchase-actions-v1722{justify-content:flex-start!important}
-  #cash .cash-desc-v1723,#cash .cash-action-v1723,#legal .span2{grid-column:span 1!important}
-  #cash .cash-form-actions-v1723{max-width:none;margin-left:0!important}
-  #legal .legal-doc-grid-v1286{grid-template-columns:1fr!important}
-}
-</style>
-
-
-<style id="artessencia-v1778-branding">
-/* V1.7.80 — logótipo oficial ArtEssencia + símbolo oficial como ícone */
-.sidebar .brand{
-  margin:0 3px 18px!important;
-  padding:0 4px 15px!important;
-  text-align:center!important;
-  border-bottom:1px solid rgba(255,255,255,.09)!important;
-}
-.sidebar .brand img{
+  .sidebar .brand img{
   display:block!important;
   width:100%!important;
-  max-width:196px!important;
+  max-width:205px!important;
   height:auto!important;
   aspect-ratio:auto!important;
   object-fit:contain!important;
   object-position:center!important;
   margin:0 auto!important;
   padding:0!important;
-  border-radius:11px!important;
+  border-radius:9px!important;
   background:transparent!important;
-  box-shadow:0 6px 18px rgba(0,0,0,.18)!important;
+  box-shadow:none!important;
   filter:none!important;
 }
 .sidebar .brand small{
@@ -2887,14 +2691,14 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 }
 #brandSplashV1778.is-hidden{opacity:0;visibility:hidden;pointer-events:none}
 #brandSplashV1778 .brand-splash-card{
-  width:min(620px,76vw);
+  width:min(520px,70vw);
   text-align:center;
 }
 #brandSplashV1778 img{
   display:block;
   width:100%;
   height:auto;
-  max-height:300px;
+  max-height:330px;
   object-fit:contain;
   margin:0 auto;
 }
@@ -2906,7 +2710,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 }
 @media(max-width:650px){
   #brandSplashV1778 .brand-splash-card{width:min(420px,84vw)}
-  #brandSplashV1778 img{max-height:240px}
+  #brandSplashV1778 img{max-height:270px}
 }
 @media(prefers-reduced-motion:reduce){
   #brandSplashV1778{transition:none}
@@ -4977,7 +4781,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.80';
+const APP_VERSION='1.7.81';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -11852,7 +11656,7 @@ function printOrderCompleteV12634(id){
     grid-template-columns:1fr!important;
   }
   #homepage .homepage-preview>img{
-    max-height:300px;
+    max-height:330px;
   }
 }
 
