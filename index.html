@@ -2637,6 +2637,144 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
   #products .art-tech-info .form-grid>.field.span2{grid-column:1/-1!important}
 }
 </style>
+
+<style id="artessencia-v1776-layout-audit-global">
+/* V1.7.76 — auditoria estrutural global de layout. Sem alterações funcionais. */
+.screen,.screen>*{min-width:0}
+.card,.form-grid,.grid2,.grid4,.tablewrap,[class*="-card"],[class*="-grid"],[class*="-stack"]{min-width:0}
+.field{min-width:0}
+.field input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+.field select,.field textarea{min-width:0;max-width:100%}
+.tablewrap{max-width:100%;overscroll-behavior-inline:contain;-webkit-overflow-scrolling:touch}
+.btnrow,.top-actions{max-width:100%}
+.btn,.smallbtn{max-width:100%}
+
+/* O Honor Pad e tablets touch largos podem expor >1180 CSS px. */
+@media (pointer:coarse) and (min-width:651px) and (max-width:1400px){
+  .app{grid-template-columns:205px minmax(0,1fr)!important}
+  .sidebar{padding:14px 10px 16px!important}
+  .sidebar .brand img{max-width:164px!important;height:86px!important}
+  .sidebar .nav button{padding:7px 8px!important;gap:7px!important}
+  .sidebar .nav-label{font-size:12px!important}
+  .main{padding:14px!important;overflow-x:hidden}
+
+  /* Cabeçalhos e ações: impedir compressão lateral. */
+  #sale .sale-hero-v1727,#orders .orders-toolbar-v1728,#quotes .quotes-events-card-v1730,
+  #production .prod-head-main,#catalogs .catalog-dashboard,#catalogDigital .catalog-center-hero,
+  #specialEditions .special-hero,#homepage .homepage-hero,#campaigns .campaign-hero,
+  #settings .settings-hero-v1732,#reports .reports-hero,#products .products-hero,
+  #delivery .delivery-hero{min-width:0}
+
+  /* Dashboard */
+  #dashboard .grid4{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #dashboard .dashboard-profitability-v1769{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #dashboard .dashboard-section-head{align-items:flex-start!important;flex-wrap:wrap!important}
+  #dashboard .dashboard-section-head>small{text-align:left!important;max-width:none!important}
+
+  /* Vendas / nova encomenda */
+  #sale .sale-customer-grid-v1727{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  #sale .sale-client-v1727{grid-column:span 2!important}
+  #sale .sale-notes-v1727{grid-column:1/-1!important}
+  #sale .sale-totalbox-v1727{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #sale .product-picker{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+
+  /* Encomendas */
+  #orders .orders-cards{grid-template-columns:1fr!important}
+  #orders .orders-toolbar-v1728{gap:12px!important}
+
+  /* Orçamentos: o formulário desktop tinha demasiadas colunas para tablet largo. */
+  #quotes .quotes-main-grid-v1730{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  #quotes .quotes-client-v1730{grid-column:span 2!important}
+  #quotes .quotes-custom-grid-v1730{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #quotes .quotes-free-desc-v1730,#quotes .quotes-free-action-v1730{grid-column:1/-1!important}
+  #quotes .quotes-summary-grid-v1730{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #quotes .quotes-notes-v1730{grid-column:1/-1!important}
+  #quotes .quotes-totalbox-v1730{grid-template-columns:repeat(3,minmax(0,1fr))!important;overflow:visible!important}
+
+  /* Produção */
+  #production .prod-head-main{grid-template-columns:1fr!important}
+  #production .prod-head-actions{justify-content:flex-start!important;flex-wrap:wrap!important}
+  #production .prod-summary{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+
+  /* Catálogos / criador */
+  #catalogs .catalog-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #catalogs .catalog-editor-grid-v1731{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #catalogs .catalog-theme-name-v1731,#catalogs .catalog-theme-desc-v1731,#catalogs .catalog-theme-image-v1731{grid-column:1/-1!important}
+  #catalogs .catalog-document-card-v1731{grid-template-columns:minmax(0,1fr) auto!important}
+
+  /* Centro do Catálogo Digital */
+  #catalogDigital .catalog-center-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #catalogDigital .catalog-center-workflow{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #catalogDigital .catalog-theme-list{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  #catalogDigital .catalog-quick-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+
+  /* Edições especiais */
+  #specialEditions .special-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #specialEditions .special-editor-grid-v1734{grid-template-columns:1fr!important}
+  #specialEditions .special-editor-main-v1734>.form-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #specialEditions .catalog-theme-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #specialEditions .special-product-picker{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+
+  /* Homepage pública */
+  #homepage .homepage-form-v12649{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #homepage .homepage-benefits-v12649{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  #homepage .homepage-preview{grid-template-columns:minmax(260px,.9fr) minmax(0,1.1fr)!important}
+
+  /* Campanhas */
+  #campaigns .campaign-grid{grid-template-columns:1fr!important}
+  #campaigns .campaign-kpis{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+
+  /* Configuração */
+  #settings .settings-grid4-v1732{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #settings .settings-form-grid-v1732{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #settings .settings-grid3-v1732{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+
+  /* Relatórios */
+  #reports .reports-kpis{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  #reports .reports-stack-v1725{grid-template-columns:1fr!important}
+
+  /* Precificação em quantidade */
+  #quantityPricing .quantity-pricing-base-grid-v1750,
+  #quantityPricing .quantity-pricing-cost-grid-v1750,
+  #quantityPricing .quantity-pricing-results-v1750,
+  #quantityPricing .quantity-pricing-reference-v1750{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #quantityPricing .quantity-pricing-material-row-v1750{min-width:0}
+
+  /* Produtos: estender as regras tablet para o breakpoint real do dispositivo. */
+  #products .products-tools{grid-template-columns:1fr 1fr!important}
+  #products .products-form-card>.form-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #products .product-name-v1726,#products .product-availability-v1726,#products .product-editions-v1726,
+  #products .product-shop-desc-v1726,#products .art-tech-info,#products .product-photo-section-v1726{grid-column:1/-1!important}
+  #products .product-code-field-v147,#products #prodCategoryField,#products .product-price-v1726,#products .product-pricing-policy-v1726{grid-column:span 1!important}
+  #products .product-cost-grid-v110,#products .production-profile-grid-v130{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #products .product-cost-summary-v110{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  #products .product-editor-panel-v1762{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #products .products-cards{grid-template-columns:1fr!important}
+
+  /* Entregas */
+  #delivery .delivery-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+
+  /* Email / Cloud / Backup */
+  #email .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #cloud .grid2,#cloud .cloud-pro-grid,#backup .grid2,#backup .backup-pro-grid{grid-template-columns:1fr!important}
+}
+
+/* Tablet mais estreito / vertical: ações e formulários que ainda ficavam densos. */
+@media (pointer:coarse) and (min-width:651px) and (max-width:980px){
+  .app{grid-template-columns:185px minmax(0,1fr)!important}
+  #sale .sale-customer-grid-v1727,#quotes .quotes-main-grid-v1730,#quotes .quotes-custom-grid-v1730,
+  #quotes .quotes-summary-grid-v1730,#catalogs .catalog-editor-grid-v1731,
+  #settings .settings-form-grid-v1732,#products .products-form-card>.form-grid{grid-template-columns:1fr 1fr!important}
+  #quotes .quotes-totalbox-v1730,#production .prod-summary,#reports .reports-kpis{grid-template-columns:1fr 1fr!important}
+  #specialEditions .special-product-picker{grid-template-columns:1fr 1fr!important}
+  #homepage .homepage-benefits-v12649,#campaigns .campaign-kpis{grid-template-columns:1fr!important}
+  #homepage .homepage-preview{grid-template-columns:1fr!important}
+  #catalogs .catalog-document-card-v1731{grid-template-columns:1fr!important}
+  #catalogs .catalog-actions-v1731{justify-content:flex-start!important}
+  #catalogDigital .catalog-quick-actions{grid-template-columns:1fr!important}
+}
+</style>
+
 </head>
 <body>
 <div id="lockScreen" class="lock">
@@ -4701,7 +4839,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.75';
+const APP_VERSION='1.7.76';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -11964,6 +12102,144 @@ function printOrderCompleteV12634(id){
 #products .apreco-batch-results-v1745{grid-template-columns:repeat(6,minmax(0,1fr))}
 @media(max-width:1180px){#products .apreco-product-grid-v1745{grid-template-columns:1fr 1fr}#products .apreco-batch-results-v1745{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:700px){#products .apreco-product-grid-v1745,#products .apreco-price-result-v1745,#products .apreco-batch-inputs-v1745,#products .apreco-batch-results-v1745{grid-template-columns:1fr}}
+</style>
+
+
+<style id="artessencia-v1776-layout-audit-global">
+/* V1.7.76 — auditoria estrutural global de layout. Sem alterações funcionais. */
+.screen,.screen>*{min-width:0}
+.card,.form-grid,.grid2,.grid4,.tablewrap,[class*="-card"],[class*="-grid"],[class*="-stack"]{min-width:0}
+.field{min-width:0}
+.field input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+.field select,.field textarea{min-width:0;max-width:100%}
+.tablewrap{max-width:100%;overscroll-behavior-inline:contain;-webkit-overflow-scrolling:touch}
+.btnrow,.top-actions{max-width:100%}
+.btn,.smallbtn{max-width:100%}
+
+/* O Honor Pad e tablets touch largos podem expor >1180 CSS px. */
+@media (pointer:coarse) and (min-width:651px) and (max-width:1400px){
+  .app{grid-template-columns:205px minmax(0,1fr)!important}
+  .sidebar{padding:14px 10px 16px!important}
+  .sidebar .brand img{max-width:164px!important;height:86px!important}
+  .sidebar .nav button{padding:7px 8px!important;gap:7px!important}
+  .sidebar .nav-label{font-size:12px!important}
+  .main{padding:14px!important;overflow-x:hidden}
+
+  /* Cabeçalhos e ações: impedir compressão lateral. */
+  #sale .sale-hero-v1727,#orders .orders-toolbar-v1728,#quotes .quotes-events-card-v1730,
+  #production .prod-head-main,#catalogs .catalog-dashboard,#catalogDigital .catalog-center-hero,
+  #specialEditions .special-hero,#homepage .homepage-hero,#campaigns .campaign-hero,
+  #settings .settings-hero-v1732,#reports .reports-hero,#products .products-hero,
+  #delivery .delivery-hero{min-width:0}
+
+  /* Dashboard */
+  #dashboard .grid4{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #dashboard .dashboard-profitability-v1769{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #dashboard .dashboard-section-head{align-items:flex-start!important;flex-wrap:wrap!important}
+  #dashboard .dashboard-section-head>small{text-align:left!important;max-width:none!important}
+
+  /* Vendas / nova encomenda */
+  #sale .sale-customer-grid-v1727{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  #sale .sale-client-v1727{grid-column:span 2!important}
+  #sale .sale-notes-v1727{grid-column:1/-1!important}
+  #sale .sale-totalbox-v1727{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #sale .product-picker{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+
+  /* Encomendas */
+  #orders .orders-cards{grid-template-columns:1fr!important}
+  #orders .orders-toolbar-v1728{gap:12px!important}
+
+  /* Orçamentos: o formulário desktop tinha demasiadas colunas para tablet largo. */
+  #quotes .quotes-main-grid-v1730{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  #quotes .quotes-client-v1730{grid-column:span 2!important}
+  #quotes .quotes-custom-grid-v1730{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #quotes .quotes-free-desc-v1730,#quotes .quotes-free-action-v1730{grid-column:1/-1!important}
+  #quotes .quotes-summary-grid-v1730{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #quotes .quotes-notes-v1730{grid-column:1/-1!important}
+  #quotes .quotes-totalbox-v1730{grid-template-columns:repeat(3,minmax(0,1fr))!important;overflow:visible!important}
+
+  /* Produção */
+  #production .prod-head-main{grid-template-columns:1fr!important}
+  #production .prod-head-actions{justify-content:flex-start!important;flex-wrap:wrap!important}
+  #production .prod-summary{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+
+  /* Catálogos / criador */
+  #catalogs .catalog-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #catalogs .catalog-editor-grid-v1731{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #catalogs .catalog-theme-name-v1731,#catalogs .catalog-theme-desc-v1731,#catalogs .catalog-theme-image-v1731{grid-column:1/-1!important}
+  #catalogs .catalog-document-card-v1731{grid-template-columns:minmax(0,1fr) auto!important}
+
+  /* Centro do Catálogo Digital */
+  #catalogDigital .catalog-center-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #catalogDigital .catalog-center-workflow{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #catalogDigital .catalog-theme-list{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  #catalogDigital .catalog-quick-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+
+  /* Edições especiais */
+  #specialEditions .special-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #specialEditions .special-editor-grid-v1734{grid-template-columns:1fr!important}
+  #specialEditions .special-editor-main-v1734>.form-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #specialEditions .catalog-theme-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #specialEditions .special-product-picker{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+
+  /* Homepage pública */
+  #homepage .homepage-form-v12649{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #homepage .homepage-benefits-v12649{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  #homepage .homepage-preview{grid-template-columns:minmax(260px,.9fr) minmax(0,1.1fr)!important}
+
+  /* Campanhas */
+  #campaigns .campaign-grid{grid-template-columns:1fr!important}
+  #campaigns .campaign-kpis{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+
+  /* Configuração */
+  #settings .settings-grid4-v1732{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #settings .settings-form-grid-v1732{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #settings .settings-grid3-v1732{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+
+  /* Relatórios */
+  #reports .reports-kpis{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  #reports .reports-stack-v1725{grid-template-columns:1fr!important}
+
+  /* Precificação em quantidade */
+  #quantityPricing .quantity-pricing-base-grid-v1750,
+  #quantityPricing .quantity-pricing-cost-grid-v1750,
+  #quantityPricing .quantity-pricing-results-v1750,
+  #quantityPricing .quantity-pricing-reference-v1750{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #quantityPricing .quantity-pricing-material-row-v1750{min-width:0}
+
+  /* Produtos: estender as regras tablet para o breakpoint real do dispositivo. */
+  #products .products-tools{grid-template-columns:1fr 1fr!important}
+  #products .products-form-card>.form-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #products .product-name-v1726,#products .product-availability-v1726,#products .product-editions-v1726,
+  #products .product-shop-desc-v1726,#products .art-tech-info,#products .product-photo-section-v1726{grid-column:1/-1!important}
+  #products .product-code-field-v147,#products #prodCategoryField,#products .product-price-v1726,#products .product-pricing-policy-v1726{grid-column:span 1!important}
+  #products .product-cost-grid-v110,#products .production-profile-grid-v130{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #products .product-cost-summary-v110{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  #products .product-editor-panel-v1762{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #products .products-cards{grid-template-columns:1fr!important}
+
+  /* Entregas */
+  #delivery .delivery-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+
+  /* Email / Cloud / Backup */
+  #email .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #cloud .grid2,#cloud .cloud-pro-grid,#backup .grid2,#backup .backup-pro-grid{grid-template-columns:1fr!important}
+}
+
+/* Tablet mais estreito / vertical: ações e formulários que ainda ficavam densos. */
+@media (pointer:coarse) and (min-width:651px) and (max-width:980px){
+  .app{grid-template-columns:185px minmax(0,1fr)!important}
+  #sale .sale-customer-grid-v1727,#quotes .quotes-main-grid-v1730,#quotes .quotes-custom-grid-v1730,
+  #quotes .quotes-summary-grid-v1730,#catalogs .catalog-editor-grid-v1731,
+  #settings .settings-form-grid-v1732,#products .products-form-card>.form-grid{grid-template-columns:1fr 1fr!important}
+  #quotes .quotes-totalbox-v1730,#production .prod-summary,#reports .reports-kpis{grid-template-columns:1fr 1fr!important}
+  #specialEditions .special-product-picker{grid-template-columns:1fr 1fr!important}
+  #homepage .homepage-benefits-v12649,#campaigns .campaign-kpis{grid-template-columns:1fr!important}
+  #homepage .homepage-preview{grid-template-columns:1fr!important}
+  #catalogs .catalog-document-card-v1731{grid-template-columns:1fr!important}
+  #catalogs .catalog-actions-v1731{justify-content:flex-start!important}
+  #catalogDigital .catalog-quick-actions{grid-template-columns:1fr!important}
+}
 </style>
 
 </head><body><header><div>${logo?`<img class="logo" src="${h(logo)}">`:'<strong style="font-size:22px">ArtEssencia</strong>'}</div><div class="doc-title"><h1>Ficha completa da encomenda</h1><b>${h(o.id)}</b><br><span class="badge">${h(o.status||'—')}</span></div></header>
