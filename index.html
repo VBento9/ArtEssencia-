@@ -2547,6 +2547,93 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 .pricing-margin-guide-note-v1772{display:block;margin-top:7px;color:#765f53;font-size:9px;line-height:1.4}.pricing-margin-mini-v1772{grid-column:1/-1;margin-top:8px;padding:8px 10px;border-radius:10px;background:#fffaf3;border:1px solid #eadfce;font-size:10px;color:#6b554b;line-height:1.45}.pricing-margin-mini-v1772 span{font-weight:800}.pricing-margin-guide-v1772.quantity-v1772{margin-top:10px}
 @media(max-width:760px){.pricing-margin-guide-options-v1772{grid-template-columns:1fr}.pricing-margin-guide-options-v1772 button{text-align:center}}
 </style>
+
+<style id="artessencia-v1774-products-public-layout">
+/* V1.7.74 — Produtos: composição equilibrada do painel público em tablet */
+@media (min-width:621px) and (max-width:1400px){
+  #products .product-editor-panel-v1762[data-product-panel="public"]{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:12px!important;
+    align-items:start;
+  }
+  #products .product-editor-panel-v1762[data-product-panel="public"]>.product-section-divider-v1748,
+  #products .product-editor-panel-v1762[data-product-panel="public"]>.product-shop-desc-v1726,
+  #products .product-editor-panel-v1762[data-product-panel="public"]>.product-personalization-v1773,
+  #products .product-editor-panel-v1762[data-product-panel="public"]>.art-tech-info,
+  #products .product-editor-panel-v1762[data-product-panel="public"]>.product-photo-section-v1726,
+  #products .product-editor-panel-v1762[data-product-panel="public"]>.mix-admin-note{
+    grid-column:1/-1!important;
+  }
+  #products .product-shop-desc-v1726 textarea{
+    min-height:92px!important;
+    resize:vertical;
+  }
+  #products .product-personalization-v1773{
+    padding:14px!important;
+  }
+  #products .product-personalization-grid-v1773{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:12px!important;
+  }
+  #products .product-personalization-grid-v1773 .span2{
+    grid-column:1/-1!important;
+  }
+  #products .art-tech-info{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:0!important;
+  }
+  #products .art-tech-info>.field>textarea{
+    min-height:92px!important;
+  }
+  #products .art-tech-info .form-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:10px!important;
+  }
+  #products .art-tech-info .form-grid>.field.span2{
+    grid-column:span 1!important;
+  }
+  #products .product-photo-section-v1726{
+    min-height:0!important;
+  }
+  #products .product-photo-editor{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:10px!important;
+    align-items:start!important;
+  }
+  #products .product-photo-editor img{
+    width:140px!important;
+    height:140px!important;
+  }
+  #products .product-photo-editor input[type="file"]{
+    width:100%;
+  }
+  #products .product-publication-v1726,
+  #products .product-mix-v1726,
+  #products .product-editor-panel-v1762[data-product-panel="public"]>.field:not(.span2):not(.product-publication-v1726):not(.product-mix-v1726){
+    min-width:0;
+  }
+}
+@media (pointer:coarse) and (min-width:621px){
+  #products .product-editor-panel-v1762[data-product-panel="public"]{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  #products .product-editor-panel-v1762[data-product-panel="public"]>.product-section-divider-v1748,
+  #products .product-editor-panel-v1762[data-product-panel="public"]>.product-shop-desc-v1726,
+  #products .product-editor-panel-v1762[data-product-panel="public"]>.product-personalization-v1773,
+  #products .product-editor-panel-v1762[data-product-panel="public"]>.art-tech-info,
+  #products .product-editor-panel-v1762[data-product-panel="public"]>.product-photo-section-v1726,
+  #products .product-editor-panel-v1762[data-product-panel="public"]>.mix-admin-note{
+    grid-column:1/-1!important;
+  }
+}
+@media (max-width:760px){
+  #products .product-personalization-grid-v1773,
+  #products .art-tech-info .form-grid{grid-template-columns:1fr!important}
+  #products .art-tech-info .form-grid>.field.span2{grid-column:1/-1!important}
+}
+</style>
 </head>
 <body>
 <div id="lockScreen" class="lock">
@@ -4611,7 +4698,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.73';
+const APP_VERSION='1.7.74';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
