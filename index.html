@@ -2287,6 +2287,15 @@
 /* ArtEssencia V1.7.14 — associação persistente por conversa; telefone principal, email secundário */
 /* ArtEssencia V1.7.12 — associações seguras + pesquisa final de email */
 .email1711-assoc{margin:12px 0;padding:12px;border:1px solid #e4d7ce;border-radius:14px;background:#fbf8f5}.email1711-assoc-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.email1711-assoc-head strong{color:#513b33}.email1711-assoc-head small{color:#846f67}.email1711-assoc-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:9px}.email1711-assoc-card{border:1px solid #eadfd8;border-radius:11px;padding:9px 10px;background:#fff}.email1711-assoc-card span{display:block;font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.07em;color:#9a8178}.email1711-assoc-card b{display:block;margin-top:3px;font-size:11px;color:#513b33;overflow-wrap:anywhere}.email1711-assoc-card small{display:block;margin-top:2px;font-size:9px;color:#806c64;overflow-wrap:anywhere}.email1711-assoc-card.matched{background:#f2f8f3;border-color:#d3e5d5}.email1711-assoc-card.unmatched{background:#fbf7f4}.email1711-assoc-actions{display:flex;justify-content:flex-end;margin-top:9px}.email1711-assoc-editor{margin-top:10px;padding-top:10px;border-top:1px solid #eadfd8}.email1711-assoc-form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.email1711-assoc-form label{display:grid;gap:4px;font-size:9px;font-weight:800;color:#6b554c}.email1711-assoc-form select{width:100%;min-height:40px;border:1px solid #dfd1c5;border-radius:9px;background:#fff;padding:7px;color:#3f302b}.email1711-assoc-save{display:flex;justify-content:flex-end;gap:8px;margin-top:9px}.email1711-assoc-note{margin-top:8px;font-size:9px;color:#806b63}.email1711-search-clear{border:1px solid #dfd1c5;background:#fff;border-radius:999px;padding:8px 11px;cursor:pointer;color:#6a5149}.email1711-search-meta{font-size:10px;color:#816e66;flex-basis:100%}@media(max-width:700px){.email1711-assoc-grid,.email1711-assoc-form{grid-template-columns:1fr}.email1711-assoc-head{flex-direction:column}.email1711-assoc-save .btn{flex:1}}
+
+/* V1.7.73 — personalização estruturada da Loja: 1–3 cores + fragrância */
+.product-personalization-v1773{border:1px solid #eadfd8!important;background:#fffaf7!important;border-radius:14px!important;padding:12px!important}
+.product-personalization-grid-v1773{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:9px}
+.product-personalization-grid-v1773 .span2{grid-column:1/-1}
+.personalization-switch-v1773{display:flex;align-items:center;gap:8px;font-weight:800}.personalization-switch-v1773 input{width:auto!important}
+.color-preview-v1773{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}.color-chip-v1773{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border:1px solid #e2d6cf;border-radius:999px;background:#fff;font-size:10px}.color-chip-v1773 i{width:18px;height:18px;border-radius:50%;border:1px solid rgba(0,0,0,.12);display:block}
+.personalization-note-v1773{font-size:9px;line-height:1.45;color:#78665d;background:#f8f1ec;border-radius:10px;padding:9px 10px}
+@media(max-width:760px){.product-personalization-grid-v1773{grid-template-columns:1fr}.product-personalization-grid-v1773 .span2{grid-column:auto}}
 </style>
 
 <style id="artessencia-v142-redesign">
@@ -4364,6 +4373,19 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div class="product-editor-panel-v1762" data-product-panel="public">
         <div class="product-section-divider-v1748"><span>4</span><div><strong>Catálogo e apresentação pública</strong><small>Descrição, segurança, fotografia, publicação e utilização em conjuntos.</small></div></div>
         <div class="field span2 product-shop-desc-v1726"><label>Descrição para o catálogo / loja</label><textarea id="prodShopDescription" rows="3" placeholder="Descrição curta que o cliente verá na loja"></textarea></div>
+        <div class="field span2 product-personalization-v1773">
+          <label>Personalização disponível ao cliente</label>
+          <div class="product-personalization-grid-v1773">
+            <div class="field"><label>Máximo de cores</label><select id="prodColorMaxV1773" onchange="syncProductPersonalizationUIV1773()"><option value="0">Sem escolha de cor</option><option value="1">1 cor</option><option value="2">Até 2 cores</option><option value="3">Até 3 cores</option></select><small>É um máximo: se definires 2 ou 3, o cliente pode optar por apenas uma cor.</small></div>
+            <div class="field"><label>Fragrância</label><label class="personalization-switch-v1773"><input id="prodFragranceEnabledV1773" type="checkbox" onchange="syncProductPersonalizationUIV1773()"> Permitir escolher fragrância</label></div>
+            <div class="field" id="prodColorLabel1WrapV1773"><label>Nome da Cor 1</label><input id="prodColorLabel1V1773" placeholder="Ex.: Gnomo"></div>
+            <div class="field" id="prodColorLabel2WrapV1773"><label>Nome da Cor 2</label><input id="prodColorLabel2V1773" placeholder="Ex.: Abóbora"></div>
+            <div class="field" id="prodColorLabel3WrapV1773"><label>Nome da Cor 3</label><input id="prodColorLabel3V1773" placeholder="Ex.: Peça 3"></div>
+            <div class="field span2" id="prodColorsWrapV1773"><label>Paleta de cores disponíveis</label><textarea id="prodColorsV1773" rows="2" oninput="renderProductColorPreviewV1773()" placeholder="Roxo|#73508f, Laranja|#d97832, Creme|#efe0c8"></textarea><small>Formato: Nome|#HEX, separado por vírgulas. A Loja mostra amostras visuais, não um campo de texto livre.</small><div id="prodColorsPreviewV1773" class="color-preview-v1773"></div></div>
+            <div class="field span2" id="prodFragrancesWrapV1773"><label>Fragrâncias disponíveis</label><textarea id="prodFragrancesV1773" rows="2" placeholder="Pumpkin Spice, Laranja e especiarias, Bosque encantado"></textarea><label class="personalization-switch-v1773" style="margin-top:7px"><input id="prodFragranceRequiredV1773" type="checkbox"> Escolha obrigatória</label></div>
+            <div class="span2 personalization-note-v1773"><b>Comportamento na Loja:</b> se o produto admitir 2 cores, o cliente escolhe “Uma cor” ou “Duas cores”. Com 3 cores, pode escolher 1, 2 ou 3. O Backoffice define o máximo e a paleta permitida.</div>
+          </div>
+        </div>
         <div class="field span2 art-tech-info"><div class="product-technical-head-v1287"><div><strong>🧾 Informação técnica e segurança</strong><small>Dados apresentados ao cliente na ficha do produto.</small></div></div><div class="field"><label>Composição e materiais</label><textarea id="prodIngredientsV1287" rows="4" placeholder="Ex.: cera de soja, fragrância, pavio de algodão, recipiente de vidro..."></textarea></div><div class="form-grid" style="margin-top:10px"><div class="field span2"><label>Conservação e cuidados</label><input id="prodStorageV1287" placeholder="Ex.: conservar em local seco e protegido do calor"></div><div class="field span2"><label>Instruções de utilização e segurança</label><input id="prodConsumptionV1287" placeholder="Ex.: não deixar a vela acesa sem vigilância"></div></div><input id="prodTechnicalVerifiedV1287" type="checkbox" hidden><div id="prodBaseTechnicalSummaryV12811" hidden></div><div id="prodSafetysContainsV1287" hidden></div><div id="prodSafetysMayContainV1287" hidden></div></div>
         <div class="field span2 product-photo-section-v1726">
           <label>Fotografia principal da loja</label>
@@ -4589,7 +4611,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.72';
+const APP_VERSION='1.7.73';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -4857,7 +4879,7 @@ function importAprecoDataV1753(){
    let p=db.products.find(x=>normalizeImportTextV1753(x?.name)===normalizeImportTextV1753(g.name));
    if(p){p.tagsV1753=uniqueTagsV1753([...(p.tagsV1753||[]),...tags]);if(!p.aprecoImportIdV1753)p.aprecoImportIdV1753=g.id;p.aprecoPricingScenariosV1753=scenarios;p.aprecoNeedsReviewV1753=scenarios.length>1;productsMatched++;continue}
    let code='APR-'+String(g.id).replace(/\D/g,'').padStart(4,'0');let n=1;while(db.products.some(x=>String(x.code)===code))code='APR-'+String(g.id).replace(/\D/g,'').padStart(4,'0')+'-'+(++n);
-   p={code,name:g.name,category:aprecoCategoryForV1753(g.name,base.description||'',tags),tagsV1753:tags,cost:0,price:Number(base.unitPrice)||0,onlinePrice:Number(base.unitPrice)||0,shopVisible:false,shopDescription:String(base.description||''),shopImageUrl:'',mixVisible:false,mixMaxQty:0,mixBoxCapacities:[],availabilityType:'regular',editionExclusive:false,editionId:'',editionIds:[],editionExtraLaborMinutes:0,editionExtraWastePct:0,laborMinutes:Math.max(0,(Number(base.hours)||0)*60),profitPct:0,marginPct:null,wastePct:0,moldAverageCost:0,operatingAverageCost:0,moldCost:0,moldUses:0,moldCavities:1,moldUnitOverride:0,packagingCost:0,equipmentPowerW:0,equipmentMinutes:0,indirectCost:0,otherCost:0,targetMarginPct:null,onlineTargetMarginPct:null,productionType:'manufactured',manufactured:true,cureHours:0,productionNotes:'',qualityNotes:'',materialsText:'',careInstructions:'',safetyInstructions:'',additionalIngredientsText:'',additionalSafetysContains:[],additionalSafetysMayContain:[],storageInstructions:'',consumptionGuidance:'',technicalInfoVerified:false,technicalInfoReviewedAt:'',aprecoImportIdV1753:g.id,aprecoPricingScenariosV1753:scenarios,aprecoNeedsReviewV1753:scenarios.length>1,aprecoImportedAtV1753:new Date().toISOString()};
+   p={code,name:g.name,category:aprecoCategoryForV1753(g.name,base.description||'',tags),tagsV1753:tags,cost:0,price:Number(base.unitPrice)||0,onlinePrice:Number(base.unitPrice)||0,shopVisible:false,shopDescription:String(base.description||''),shopImageUrl:'',personalizationV1773:{version:1,colors:{max:0,allowFewer:true,labels:[],palette:[]},fragrance:{enabled:false,required:false,options:[]}},customizable:false,mixVisible:false,mixMaxQty:0,mixBoxCapacities:[],availabilityType:'regular',editionExclusive:false,editionId:'',editionIds:[],editionExtraLaborMinutes:0,editionExtraWastePct:0,laborMinutes:Math.max(0,(Number(base.hours)||0)*60),profitPct:0,marginPct:null,wastePct:0,moldAverageCost:0,operatingAverageCost:0,moldCost:0,moldUses:0,moldCavities:1,moldUnitOverride:0,packagingCost:0,equipmentPowerW:0,equipmentMinutes:0,indirectCost:0,otherCost:0,targetMarginPct:null,onlineTargetMarginPct:null,productionType:'manufactured',manufactured:true,cureHours:0,productionNotes:'',qualityNotes:'',materialsText:'',careInstructions:'',safetyInstructions:'',additionalIngredientsText:'',additionalSafetysContains:[],additionalSafetysMayContain:[],storageInstructions:'',consumptionGuidance:'',technicalInfoVerified:false,technicalInfoReviewedAt:'',aprecoImportIdV1753:g.id,aprecoPricingScenariosV1753:scenarios,aprecoNeedsReviewV1753:scenarios.length>1,aprecoImportedAtV1753:new Date().toISOString()};
    db.products.push(p);db.productRecipes[code]=db.productRecipes[code]||[];productsAdded++;
  }
  db.aprecoImportV1753={completedAt:new Date().toISOString(),materialsAdded,materialsSkipped,productsAdded,productsMatched,sourceMaterialRows:165,sourceProductRows:294,productFamilies:238,duplicateGroups:39};
@@ -13017,7 +13039,7 @@ function setProductSaveStateV145(type,title,detail){
 function cancelProductEditV145(){
  prodName.value=prodCode.value=prodPrice.value=prodShopDescription.value='';const tagsEl=document.getElementById('prodTagsV1753');if(tagsEl)tagsEl.value='';const seasonEl=document.getElementById('prodSeasonTagsV1761');if(seasonEl)seasonEl.value='';renderAprecoSourceV1753(null);
  const op=document.getElementById('prodOnlinePriceV12620');if(op)op.value='';
- prodShopVisible.checked=false;
+ prodShopVisible.checked=false;resetProductPersonalizationV1773();
  const mv=document.getElementById('prodMixVisible');if(mv)mv.checked=false;
  const mm=document.getElementById('prodMixMaxQty');if(mm)mm.value='0';
  const mb=document.getElementById('prodMixBoxCaps');if(mb)mb.value='';
@@ -13043,7 +13065,7 @@ function resetProductEditorAfterSaveV1749(){
  prodName.value='';prodCode.value='';prodPrice.value='';prodShopDescription.value='';const tagsEl=document.getElementById('prodTagsV1753');if(tagsEl)tagsEl.value='';const seasonEl=document.getElementById('prodSeasonTagsV1761');if(seasonEl)seasonEl.value='';renderAprecoSourceV1753(null);
  const cost=document.getElementById('prodCost');if(cost)cost.value='0.0000';
  const op=document.getElementById('prodOnlinePriceV12620');if(op)op.value='';
- prodShopVisible.checked=false;
+ prodShopVisible.checked=false;resetProductPersonalizationV1773();
  const mv=document.getElementById('prodMixVisible');if(mv)mv.checked=false;
  const mm=document.getElementById('prodMixMaxQty');if(mm)mm.value='0';
  const mb=document.getElementById('prodMixBoxCaps');if(mb)mb.value='';
@@ -13067,6 +13089,16 @@ function resetProductEditorAfterSaveV1749(){
  refreshProductChannelPricingV12620();
  refreshProductTechSheetBridgeV1250();
 }
+function parseProductColorsV1773(raw){
+ return String(raw||'').split(/[\n,;]+/).map(x=>x.trim()).filter(Boolean).map((x,i)=>{const parts=x.split('|'),name=String(parts[0]||'').trim(),hex=String(parts[1]||'').trim();return {name,hex:/^#[0-9a-f]{6}$/i.test(hex)?hex:'#d8c8be',id:'c'+(i+1)}}).filter(x=>x.name).filter((x,i,a)=>a.findIndex(y=>y.name.toLowerCase()===x.name.toLowerCase())===i).slice(0,30)
+}
+function parseProductFragrancesV1773(raw){return String(raw||'').split(/[\n,;]+/).map(x=>x.trim()).filter(Boolean).filter((x,i,a)=>a.findIndex(y=>y.toLowerCase()===x.toLowerCase())===i).slice(0,50)}
+function renderProductColorPreviewV1773(){const box=document.getElementById('prodColorsPreviewV1773');if(!box)return;const arr=parseProductColorsV1773(document.getElementById('prodColorsV1773')?.value);box.innerHTML=arr.length?arr.map(x=>`<span class="color-chip-v1773"><i style="background:${escapeAttr(x.hex)}"></i>${escapeHtml(x.name)}</span>`).join(''):'<small class="muted">Sem cores configuradas.</small>'}
+function syncProductPersonalizationUIV1773(){const n=Math.max(0,Math.min(3,Number(document.getElementById('prodColorMaxV1773')?.value)||0)),fr=!!document.getElementById('prodFragranceEnabledV1773')?.checked;for(let i=1;i<=3;i++){const w=document.getElementById('prodColorLabel'+i+'WrapV1773');if(w)w.hidden=i>n}const cw=document.getElementById('prodColorsWrapV1773');if(cw)cw.hidden=n===0;const fw=document.getElementById('prodFragrancesWrapV1773');if(fw)fw.hidden=!fr;renderProductColorPreviewV1773()}
+function productPersonalizationFromFormV1773(){const max=Math.max(0,Math.min(3,Number(document.getElementById('prodColorMaxV1773')?.value)||0)),palette=parseProductColorsV1773(document.getElementById('prodColorsV1773')?.value),frEnabled=!!document.getElementById('prodFragranceEnabledV1773')?.checked,fragrances=parseProductFragrancesV1773(document.getElementById('prodFragrancesV1773')?.value),labels=[1,2,3].slice(0,max).map((i,idx)=>String(document.getElementById('prodColorLabel'+i+'V1773')?.value||('Cor '+(idx+1))).trim()||('Cor '+(idx+1)));return {version:1,colors:{max,allowFewer:true,labels,palette},fragrance:{enabled:frEnabled,required:frEnabled&&!!document.getElementById('prodFragranceRequiredV1773')?.checked,options:frEnabled?fragrances:[]}}}
+function fillProductPersonalizationV1773(p){const x=p?.personalizationV1773||p?.personalization||{},c=x.colors||{},f=x.fragrance||{};const max=Math.max(0,Math.min(3,Number(c.max)||0));const m=document.getElementById('prodColorMaxV1773');if(m)m.value=String(max);for(let i=1;i<=3;i++){const el=document.getElementById('prodColorLabel'+i+'V1773');if(el)el.value=String((c.labels||[])[i-1]||'')}const colors=document.getElementById('prodColorsV1773');if(colors)colors.value=(Array.isArray(c.palette)?c.palette:[]).map(v=>`${v.name||''}|${v.hex||'#d8c8be'}`).join(', ');const fe=document.getElementById('prodFragranceEnabledV1773');if(fe)fe.checked=!!f.enabled;const fr=document.getElementById('prodFragrancesV1773');if(fr)fr.value=(Array.isArray(f.options)?f.options:[]).join(', ');const req=document.getElementById('prodFragranceRequiredV1773');if(req)req.checked=!!f.required;syncProductPersonalizationUIV1773()}
+function resetProductPersonalizationV1773(){const m=document.getElementById('prodColorMaxV1773');if(m)m.value='0';for(let i=1;i<=3;i++){const e=document.getElementById('prodColorLabel'+i+'V1773');if(e)e.value=''}const c=document.getElementById('prodColorsV1773');if(c)c.value='';const fe=document.getElementById('prodFragranceEnabledV1773');if(fe)fe.checked=false;const fr=document.getElementById('prodFragrancesV1773');if(fr)fr.value='';const req=document.getElementById('prodFragranceRequiredV1773');if(req)req.checked=false;syncProductPersonalizationUIV1773()}
+function productIsCustomizableV1773(p){const x=p?.personalizationV1773||p?.personalization||{},c=x.colors||{},f=x.fragrance||{};return Number(c.max)>0||!!f.enabled||!!p?.customizable||!!p?.allowCustomization}
 function saveProduct(){
  ensureProductSafetyEditorV1287();
  const name=prodName.value.trim();if(!name){setProductSaveStateV145('error','Produto não guardado','Indique o nome do produto.');return toast('Indique o nome do produto')}
@@ -13098,7 +13130,8 @@ function saveProduct(){
  if(technicalInfoVerified&&!baseTechnicalProfileCompleteV12811())return toast('Confirma primeiro a informação técnica da materiais comuns em Configuração');
  
  const additionalSafetysContains=productSafetySelectionV1287('contains'),additionalSafetysMayContain=productSafetySelectionV1287('mayContain').filter(code=>!additionalSafetysContains.includes(code));
- const obj={code,name,category:prodCat.value,tagsV1753:productTagsV1753,seasonalTagsV1761,seasonalTagsManualV1761:true,cost:0,price:directPrice,onlinePrice,shopVisible:!!prodShopVisible.checked,shopDescription:prodShopDescription.value.trim(),shopImageUrl:String(document.getElementById('prodShopImageUrl')?.value||'').trim(),mixVisible,mixMaxQty,mixBoxCapacities,availabilityType,editionExclusive:availabilityType==='edition',editionId,editionIds,editionExtraLaborMinutes,editionExtraWastePct,laborMinutes,profitPct,marginPct,wastePct,moldAverageCost,operatingAverageCost,moldCost,moldUses,moldCavities,moldUnitOverride,packagingCost,equipmentPowerW,equipmentMinutes,indirectCost,otherCost,targetMarginPct,onlineTargetMarginPct,productionType,manufactured,cureHours,prepTemp,mixTemp,pourTemp,productionNotes,qualityNotes,materialsText:additionalIngredientsText,careInstructions:storageInstructions,safetyInstructions:consumptionGuidance,additionalIngredientsText,additionalSafetysContains:[],additionalSafetysMayContain:[],storageInstructions,consumptionGuidance,technicalInfoVerified:false,technicalInfoReviewedAt:''};
+ const personalizationV1773=productPersonalizationFromFormV1773();
+ const obj={code,name,category:prodCat.value,tagsV1753:productTagsV1753,seasonalTagsV1761,seasonalTagsManualV1761:true,cost:0,price:directPrice,onlinePrice,shopVisible:!!prodShopVisible.checked,shopDescription:prodShopDescription.value.trim(),shopImageUrl:String(document.getElementById('prodShopImageUrl')?.value||'').trim(),personalizationV1773,customizable:(Number(personalizationV1773.colors?.max)||0)>0||!!personalizationV1773.fragrance?.enabled,mixVisible,mixMaxQty,mixBoxCapacities,availabilityType,editionExclusive:availabilityType==='edition',editionId,editionIds,editionExtraLaborMinutes,editionExtraWastePct,laborMinutes,profitPct,marginPct,wastePct,moldAverageCost,operatingAverageCost,moldCost,moldUses,moldCavities,moldUnitOverride,packagingCost,equipmentPowerW,equipmentMinutes,indirectCost,otherCost,targetMarginPct,onlineTargetMarginPct,productionType,manufactured,cureHours,prepTemp,mixTemp,pourTemp,productionNotes,qualityNotes,materialsText:additionalIngredientsText,careInstructions:storageInstructions,safetyInstructions:consumptionGuidance,additionalIngredientsText,additionalSafetysContains:[],additionalSafetysMayContain:[],storageInstructions,consumptionGuidance,technicalInfoVerified:false,technicalInfoReviewedAt:''};
  obj.ingredientsText=productFinalIngredientsV12811(obj);obj.safetysContains=productFinalContainsV12811(obj);obj.safetysMayContain=productFinalMayContainV12811(obj);
  existing?Object.assign(existing,obj):db.products.push(obj);
  const savedProduct=existing||db.products[db.products.length-1];
@@ -13109,7 +13142,7 @@ function saveProduct(){
 }
 function editProduct(code){
  const p=findProductByCodeV147(code);if(!p)return;
- prodCode.value=p.code;prodName.value=p.name;prodCat.value=p.category;const tagsEl=document.getElementById('prodTagsV1753');if(tagsEl)tagsEl.value=(Array.isArray(p.tagsV1753)?p.tagsV1753:[]).join(', ');const seasonEl=document.getElementById('prodSeasonTagsV1761');if(seasonEl)seasonEl.value=(Array.isArray(p.seasonalTagsV1761)?p.seasonalTagsV1761:[]).join(', ');renderAprecoSourceV1753(p);prodCost.value=calculatedProductCost(p).toFixed(4);prodPrice.value=p.price;prodShopVisible.checked=!!p.shopVisible;prodShopDescription.value=p.shopDescription||'';
+ prodCode.value=p.code;prodName.value=p.name;prodCat.value=p.category;const tagsEl=document.getElementById('prodTagsV1753');if(tagsEl)tagsEl.value=(Array.isArray(p.tagsV1753)?p.tagsV1753:[]).join(', ');const seasonEl=document.getElementById('prodSeasonTagsV1761');if(seasonEl)seasonEl.value=(Array.isArray(p.seasonalTagsV1761)?p.seasonalTagsV1761:[]).join(', ');renderAprecoSourceV1753(p);prodCost.value=calculatedProductCost(p).toFixed(4);prodPrice.value=p.price;prodShopVisible.checked=!!p.shopVisible;prodShopDescription.value=p.shopDescription||'';fillProductPersonalizationV1773(p);
  const op=document.getElementById('prodOnlinePriceV12620');if(op)op.value=Number(p.onlinePrice??p.price)||0;
  const costFields={prodLaborMinutesV110:p.laborMinutes,prodProfitPctV1744:p.marginPct??p.profitPct,prodWastePctV110:p.wastePct,prodMoldAverageV1740:p.moldAverageCost??productMoldCostV110(p),prodOperatingAverageV1740:p.operatingAverageCost??productOperatingAverageV1740(p),prodMoldCostV110:p.moldCost,prodMoldUsesV110:p.moldUses,prodMoldCavitiesV110:p.moldCavities??1,prodMoldOverrideV110:p.moldUnitOverride,prodPackagingCostV110:p.packagingCost,prodEquipmentPowerWV133:p.equipmentPowerW,prodEquipmentMinutesV133:p.equipmentMinutes,prodIndirectCostV110:p.indirectCost,prodOtherCostV110:p.otherCost,prodTargetMarginV110:p.targetMarginPct,prodOnlineTargetMarginV110:p.onlineTargetMarginPct};for(const [id,v] of Object.entries(costFields)){const el=document.getElementById(id);if(el)el.value=v==null?'':v}fillProductProductionFieldsV130(p);refreshProductChannelPricingV12620();
  const mv=document.getElementById('prodMixVisible');if(mv)mv.checked=!!p.mixVisible;
@@ -15777,7 +15810,7 @@ async function syncStoreCatalogV1421(user){
    const online=!!p.shopVisible;if(online)visibleCodes.add(code.toLowerCase());
    const category=String(p.category||'Outros produtos artesanais').trim();
    const price=Number(p.onlinePrice)>0?Number(p.onlinePrice):(Number(p.price)||0);
-   const row={backoffice_product_id:p._rid||code,code,name:String(p.name||code),slug:storeSlugV1421(code+'-'+(p.name||'')),description:productPublicDescriptionV1762(p),category_id:categoryMap.get(category)||null,price_online:Math.max(0,price),image_url:p.shopImageUrl||null,active:online,available:online,customizable:!!(p.customizable||p.allowCustomization),updated_at:new Date().toISOString()};
+   const row={backoffice_product_id:p._rid||code,code,name:String(p.name||code),slug:storeSlugV1421(code+'-'+(p.name||'')),description:productPublicDescriptionV1762(p),category_id:categoryMap.get(category)||null,price_online:Math.max(0,price),image_url:p.shopImageUrl||null,active:online,available:online,customizable:productIsCustomizableV1773(p),personalization:(p.personalizationV1773||p.personalization||{}),updated_at:new Date().toISOString()};
    const {error}=await cloudClient.from('store_products').upsert(row,{onConflict:'code'});if(error)throw error;
  }
  const {data:remote,error:readErr}=await cloudClient.from('store_products').select('id,code,active');if(readErr)throw readErr;
@@ -16070,7 +16103,7 @@ if('serviceWorker'in navigator&&location.protocol.startsWith('http')){
 ensureCostModel();syncPackagingSelect();go('dashboard');configureLock();setTimeout(cloudStartup,250);setTimeout(()=>{openPushOrderFromUrlV12625();openPushEventRequestFromUrlV1285()},900);
 
 
-document.getElementById('runtimeVersion').textContent='V'+APP_VERSION;
+document.getElementById('runtimeVersion').textContent='V'+APP_VERSION;syncProductPersonalizationUIV1773();
 setTimeout(()=>{restoreProductPanelV1762();syncPricingQuickFromBaseV1762();renderProductCompletenessEditorV1762(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null)},40);
 function globalSearchKeyV142(ev){
   if(ev.key!=='Enter')return;
