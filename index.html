@@ -2840,8 +2840,81 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 }
 </style>
 
+
+<style id="artessencia-v1778-branding">
+/* V1.7.78 — identidade visual coerente: sidebar, ícone e splash */
+.sidebar .brand{
+  margin:0 3px 18px!important;
+  padding:0 4px 15px!important;
+  text-align:center!important;
+  border-bottom:1px solid rgba(255,255,255,.09)!important;
+}
+.sidebar .brand img{
+  display:block!important;
+  width:100%!important;
+  max-width:190px!important;
+  height:auto!important;
+  aspect-ratio:10/3!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  margin:0 auto!important;
+  padding:0!important;
+  border-radius:11px!important;
+  background:#f7f1e6!important;
+  box-shadow:0 6px 18px rgba(0,0,0,.16)!important;
+  filter:none!important;
+}
+.sidebar .brand small{
+  display:block!important;
+  margin:9px 0 0!important;
+  text-align:center!important;
+  color:#dccab3!important;
+  font-size:8.5px!important;
+  line-height:1.35!important;
+  letter-spacing:.19em!important;
+  font-weight:800!important;
+}
+#brandSplashV1778{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  display:grid;
+  place-items:center;
+  background:#f7f1e6;
+  opacity:1;
+  visibility:visible;
+  transition:opacity .28s ease,visibility .28s ease;
+}
+#brandSplashV1778.is-hidden{opacity:0;visibility:hidden;pointer-events:none}
+#brandSplashV1778 .brand-splash-card{
+  width:min(560px,78vw);
+  text-align:center;
+}
+#brandSplashV1778 img{
+  display:block;
+  width:100%;
+  height:auto;
+  max-height:190px;
+  object-fit:contain;
+  margin:0 auto;
+}
+#brandSplashV1778 .brand-splash-line{
+  width:min(340px,62%);
+  height:1px;
+  margin:18px auto 0;
+  background:rgba(90,36,11,.18);
+}
+@media(max-width:650px){
+  #brandSplashV1778 .brand-splash-card{width:min(420px,84vw)}
+  #brandSplashV1778 img{max-height:150px}
+}
+@media(prefers-reduced-motion:reduce){
+  #brandSplashV1778{transition:none}
+}
+</style>
 </head>
 <body>
+<div id="brandSplashV1778" aria-hidden="true"><div class="brand-splash-card"><img src="brand-artessencia.png" alt=""><div class="brand-splash-line"></div></div></div>
 <div id="lockScreen" class="lock">
   <div class="lockbox">
     <img src="icon-192.png" alt="ArtEssencia">
@@ -4904,7 +4977,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.77';
+const APP_VERSION='1.7.78';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -16726,6 +16799,16 @@ function renderEmailModuleV177(){const tabs=document.getElementById('emailTabsV1
 function openEmailMessageV177(id,refresh=false){const x=emailRowsV177.find(r=>String(r.id)===String(id));if(!x)return toast('Mensagem não encontrada');window.__emailOpenMessageIdV1711=String(id);window.__emailOpenThreadIndexV1711=null;emailAssocMessageIdsV1711=[x.id];if(!refresh)emailAssocEditingV1711=false;const d=document.getElementById('emailDetailDialogV177'),title=document.getElementById('emailDetailTitleV177'),sub=document.getElementById('emailDetailSubtitleV177'),body=document.getElementById('emailDetailBodyV177');if(!d||!body)return;if(title)title.textContent=x.subject||'(sem assunto)';if(sub)sub.textContent=emailIsTrashedV1715(x)?'Mensagem na lixeira':x.direction==='inbound'?'Mensagem recebida':'Mensagem enviada';const when=emailWhenV179(x),trashed=emailIsTrashedV1715(x),reply=!trashed&&x.direction==='inbound'?`<div class="email178-reply"><div class="field"><label>Responder a ${escapeHtml(x.from_email||'')}</label><textarea id="emailReplyTextV178" maxlength="5000" placeholder="Escreve a resposta…"></textarea></div><div class="email178-actions"><button class="btn primary" id="emailReplyBtnV178" type="button" onclick="sendEmailReplyV178('${String(x.id).replace(/'/g,"\\'")}')">Responder</button></div></div>`:'',actions=`<div class="email1715-detail-actions">${!trashed&&x.direction==='inbound'?'<button class="btn" type="button" onclick="markCurrentEmailUnreadV1715()">Marcar como não lido</button>':''}${trashed?'<button class="btn primary" type="button" onclick="restoreCurrentEmailV1715()">Restaurar</button>':'<button class="btn danger" type="button" onclick="trashCurrentEmailV1715()">Eliminar</button>'}</div>`;body.innerHTML=`<div class="email177-detail-grid"><b>De</b><span>${escapeHtml(x.from_email||'—')}</span><b>Para</b><span>${escapeHtml(x.to_email||'—')}</span><b>Data</b><span>${escapeHtml(emailDateV177(when))}</span><b>Estado</b><span>${escapeHtml(emailDisplayStatusV178(x))}</span><b>Associação</b><span class="email178-association">${escapeHtml(emailAssociationLabelV1711([x]))}</span></div>${trashed?'':renderEmailAssocEditorV1711()}<div class="email177-message">${escapeHtml(x.body_text||htmlToTextV177(x.body_html||'')||'(mensagem sem conteúdo de texto)')}</div>${x.error?`<div class="email177-status" style="margin-top:10px">Erro: ${escapeHtml(x.error)}</div>`:''}${reply}${actions}`;if(!d.open)d.showModal();if(x.direction==='inbound'&&!trashed&&emailIsUnreadV1715(x))setEmailReadV1715(x,true,true)}
 function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThreadsV179(emailActiveRowsV1715());const t=emailThreadsV179[Number(index)];if(!t)return toast('Conversa não encontrada');window.__emailOpenThreadIndexV1711=Number(index);window.__emailOpenMessageIdV1711='';emailAssocMessageIdsV1711=t.messages.map(x=>x.id).filter(Boolean);if(!refresh)emailAssocEditingV1711=false;const d=document.getElementById('emailDetailDialogV177'),title=document.getElementById('emailDetailTitleV177'),sub=document.getElementById('emailDetailSubtitleV177'),body=document.getElementById('emailDetailBodyV177');if(!d||!body)return;if(title)title.textContent=t.subject;if(sub)sub.textContent=`Conversa · ${t.messages.length} mensagem(ns)`;const messages=t.messages.map(x=>`<div class="email179-msg ${x.direction==='inbound'?'inbound':'outbound'}"><div class="email179-msg-head"><b>${x.direction==='inbound'?escapeHtml(x.from_email||'Cliente'):'ArtEssencia'}</b><time>${escapeHtml(emailDateV177(emailWhenV179(x)))}</time></div><div class="email179-msg-body">${escapeHtml(x.body_text||htmlToTextV177(x.body_html||'')||'(mensagem sem conteúdo de texto)')}</div>${x.status==='failed'?'<div class="email177-pill failed" style="display:inline-block;margin-top:7px">Falhou</div>':''}</div>`).join('');body.innerHTML=`<div class="email179-thread-assoc"><b>Contacto:</b> ${escapeHtml(t.contact||'—')} · <b>Associação:</b> ${escapeHtml(emailAssociationLabelV1711(t.messages))}</div>${renderEmailAssocEditorV1711()}<div class="email179-thread-view">${messages}</div><div class="email179-compose"><div class="field"><label>Responder nesta conversa</label><textarea id="emailThreadReplyV179" maxlength="5000" placeholder="Escreve a resposta…"></textarea></div><div class="email178-actions"><button class="btn primary" id="emailThreadReplyBtnV179" type="button" onclick="sendEmailThreadReplyV179(${Number(index)})">Responder</button></div></div><div class="email1715-detail-actions"><button class="btn" type="button" onclick="markCurrentEmailUnreadV1715()">Marcar como não lida</button><button class="btn danger" type="button" onclick="trashCurrentEmailV1715()">Eliminar conversa</button></div>`;if(!d.open)d.showModal();const unread=t.messages.filter(emailIsUnreadV1715);if(unread.length)Promise.all(unread.map(m=>setEmailReadV1715(m,true,false))).then(()=>renderEmailModuleV177())}
 
+</script>
+
+<script id="artessencia-v1778-brand-splash">
+(function(){
+  const splash=document.getElementById('brandSplashV1778');
+  if(!splash)return;
+  const hide=()=>{setTimeout(()=>{splash.classList.add('is-hidden');setTimeout(()=>splash.remove(),320)},420)};
+  if(document.readyState==='complete')hide();
+  else window.addEventListener('load',hide,{once:true});
+})();
 </script>
 </body></html>
 
