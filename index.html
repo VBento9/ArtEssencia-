@@ -2842,7 +2842,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 
 
 <style id="artessencia-v1778-branding">
-/* V1.7.78 — identidade visual coerente: sidebar, ícone e splash */
+/* V1.7.80 — logótipo oficial ArtEssencia + símbolo oficial como ícone */
 .sidebar .brand{
   margin:0 3px 18px!important;
   padding:0 4px 15px!important;
@@ -2852,16 +2852,16 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 .sidebar .brand img{
   display:block!important;
   width:100%!important;
-  max-width:190px!important;
+  max-width:196px!important;
   height:auto!important;
-  aspect-ratio:10/3!important;
+  aspect-ratio:auto!important;
   object-fit:contain!important;
   object-position:center!important;
   margin:0 auto!important;
   padding:0!important;
   border-radius:11px!important;
-  background:#f7f1e6!important;
-  box-shadow:0 6px 18px rgba(0,0,0,.16)!important;
+  background:transparent!important;
+  box-shadow:0 6px 18px rgba(0,0,0,.18)!important;
   filter:none!important;
 }
 .sidebar .brand small{
@@ -2887,14 +2887,14 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 }
 #brandSplashV1778.is-hidden{opacity:0;visibility:hidden;pointer-events:none}
 #brandSplashV1778 .brand-splash-card{
-  width:min(560px,78vw);
+  width:min(620px,76vw);
   text-align:center;
 }
 #brandSplashV1778 img{
   display:block;
   width:100%;
   height:auto;
-  max-height:190px;
+  max-height:300px;
   object-fit:contain;
   margin:0 auto;
 }
@@ -2906,7 +2906,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 }
 @media(max-width:650px){
   #brandSplashV1778 .brand-splash-card{width:min(420px,84vw)}
-  #brandSplashV1778 img{max-height:150px}
+  #brandSplashV1778 img{max-height:240px}
 }
 @media(prefers-reduced-motion:reduce){
   #brandSplashV1778{transition:none}
@@ -2914,7 +2914,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 </style>
 </head>
 <body>
-<div id="brandSplashV1778" aria-hidden="true"><div class="brand-splash-card"><img src="brand-artessencia.png" alt=""><div class="brand-splash-line"></div></div></div>
+<div id="brandSplashV1778" aria-hidden="true"><div class="brand-splash-card"><img src="brand-artessencia.png" alt=""></div></div>
 <div id="lockScreen" class="lock">
   <div class="lockbox">
     <img src="icon-192.png" alt="ArtEssencia">
@@ -4977,7 +4977,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.78';
+const APP_VERSION='1.7.80';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
