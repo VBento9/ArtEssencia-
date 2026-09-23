@@ -2775,6 +2775,71 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 }
 </style>
 
+
+<style id="artessencia-v1777-layout-fine-audit">
+/* V1.7.77 — segunda passagem de auditoria estrutural: acabamento tablet/touch. */
+@media (pointer:coarse) and (min-width:651px) and (max-width:1400px){
+  /* Barra superior: impedir perfil/estado/pesquisa de competirem pela mesma linha. */
+  .topbar{grid-template-columns:minmax(250px,1fr) auto!important;gap:10px 12px!important}
+  .top-actions{min-width:0!important;flex-wrap:wrap!important;row-gap:6px!important}
+  .art-profile{display:none!important}
+  .art-global-search{min-width:0!important}
+  .art-global-search input{min-width:0!important}
+  .page-heading{min-width:0!important}
+
+  /* Compras: o breakpoint histórico terminava antes da largura real do tablet. */
+  #purchases .purchase-hero{align-items:flex-start!important;flex-wrap:wrap!important}
+  #purchases .purchase-tools{width:100%!important;min-width:0!important;grid-template-columns:minmax(0,1fr) 180px!important}
+  #purchases .purchase-main-grid-v1722{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #purchases .purchase-supplier-v1722,#purchases .purchase-item-v1722{grid-column:span 1!important}
+  #purchases .purchase-preview-v1722{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  #purchases .purchase-secondary-row-v1722{grid-template-columns:minmax(0,1fr) auto!important}
+  #purchases .purchase-actions-v1722{justify-content:flex-end!important}
+
+  /* Caixa: distribuir o movimento por duas linhas úteis, sem campos esmagados. */
+  #cash .cash-hero{align-items:flex-start!important;flex-wrap:wrap!important}
+  #cash .cash-tools{width:100%!important;min-width:0!important;grid-template-columns:minmax(0,1fr) 150px 165px!important}
+  #cash .cash-main-grid-v1723{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  #cash .cash-desc-v1723{grid-column:span 2!important}
+  #cash .cash-action-v1723{grid-column:1/-1!important}
+  #cash .cash-form-actions-v1723{max-width:420px;margin-left:auto!important}
+
+  /* Legal: formulários legíveis e documentos sem cartões demasiado estreitos. */
+  #legal .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #legal .span2{grid-column:1/-1!important}
+  #legal .legal-section-head-v1286{align-items:flex-start!important;flex-wrap:wrap!important}
+
+  /* Email: pesquisa ganha linha própria; ações continuam acessíveis por toque. */
+  #email .email177-toolbar{align-items:flex-start!important}
+  #email .email177-search{flex:1 0 100%!important;min-width:0!important;order:-1!important}
+  #email .email177-tabs{max-width:100%!important}
+  #email .email178-actions{justify-content:flex-start!important}
+  #email .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+
+  /* Cabeçalhos de cartões e barras de ações devem poder quebrar linha. */
+  .card>.section-title,.card>[class*="-head"]{min-width:0}
+  .btnrow{flex-wrap:wrap!important;gap:8px!important}
+  .tablewrap table{width:100%}
+  .tablewrap th,.tablewrap td{padding-top:10px;padding-bottom:10px}
+  .smallbtn,.btn{min-height:38px}
+}
+
+@media (pointer:coarse) and (min-width:651px) and (max-width:1000px){
+  .topbar{grid-template-columns:1fr!important;grid-template-areas:"search" "actions" "heading"!important}
+  .top-actions{justify-content:flex-start!important;overflow:visible!important}
+  .top-actions #today{display:none!important}
+
+  #purchases .purchase-tools,#cash .cash-tools{grid-template-columns:1fr!important}
+  #purchases .purchase-main-grid-v1722,#cash .cash-main-grid-v1723,#legal .form-grid,#email .form-grid{grid-template-columns:1fr!important}
+  #purchases .purchase-preview-v1722{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #purchases .purchase-secondary-row-v1722{grid-template-columns:1fr!important}
+  #purchases .purchase-actions-v1722{justify-content:flex-start!important}
+  #cash .cash-desc-v1723,#cash .cash-action-v1723,#legal .span2{grid-column:span 1!important}
+  #cash .cash-form-actions-v1723{max-width:none;margin-left:0!important}
+  #legal .legal-doc-grid-v1286{grid-template-columns:1fr!important}
+}
+</style>
+
 </head>
 <body>
 <div id="lockScreen" class="lock">
@@ -4839,7 +4904,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.76';
+const APP_VERSION='1.7.77';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
