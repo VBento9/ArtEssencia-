@@ -4781,7 +4781,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.81';
+const APP_VERSION='1.7.82';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -12211,6 +12211,105 @@ function printOrderCompleteV12634(id){
 <\/script>
 
 
+
+<style id="artessencia-v1782-brand-layout-final">
+/* V1.7.82 — estabilização final da identidade e sidebar. 
+   Esta camada existe para neutralizar regras legadas com !important. */
+
+@media (min-width:651px){
+  .app{
+    grid-template-columns:205px minmax(0,1fr)!important;
+  }
+  .sidebar{
+    padding:14px 10px 16px!important;
+  }
+  .sidebar .brand{
+    margin:0 3px 16px!important;
+    padding:0 0 14px!important;
+    text-align:center!important;
+    border-bottom:1px solid rgba(255,255,255,.09)!important;
+  }
+  .sidebar .brand img{
+    display:block!important;
+    width:100%!important;
+    max-width:185px!important;
+    height:auto!important;
+    max-height:none!important;
+    aspect-ratio:auto!important;
+    object-fit:contain!important;
+    object-position:center!important;
+    margin:0 auto!important;
+    padding:0!important;
+    border-radius:8px!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    filter:none!important;
+  }
+  .sidebar .brand small{
+    display:block!important;
+    margin:8px 0 0!important;
+    text-align:center!important;
+    color:#d4c1aa!important;
+    font-size:8px!important;
+    line-height:1.3!important;
+    letter-spacing:.18em!important;
+    font-weight:800!important;
+  }
+}
+
+@media (pointer:coarse) and (min-width:651px) and (max-width:1400px){
+  .app{
+    grid-template-columns:188px minmax(0,1fr)!important;
+  }
+  .sidebar{
+    padding:12px 8px 14px!important;
+  }
+  .sidebar .brand img{
+    max-width:166px!important;
+  }
+  .sidebar .nav button{
+    min-height:42px!important;
+    padding:9px 8px!important;
+  }
+  .sidebar .nav-label{
+    font-size:12px!important;
+  }
+}
+
+/* Splash: mesma imagem oficial, sem corte nem deformação. */
+#brandSplashV1778{
+  background:#f7f1e6!important;
+}
+#brandSplashV1778 .brand-splash-card{
+  width:min(560px,72vw)!important;
+}
+#brandSplashV1778 img{
+  display:block!important;
+  width:100%!important;
+  height:auto!important;
+  max-height:360px!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  margin:0 auto!important;
+  filter:none!important;
+}
+
+/* O símbolo do ícone/PIN não é recortado por CSS. */
+#lockScreen .lockbox img{
+  object-fit:contain!important;
+  object-position:center!important;
+}
+
+@media(max-width:650px){
+  #brandSplashV1778 .brand-splash-card{
+    width:min(430px,86vw)!important;
+  }
+  #brandSplashV1778 img{
+    max-height:290px!important;
+  }
+}
+</style>
+
 </body></html>`);win.document.close();
 }
 
@@ -16614,6 +16713,105 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
   else window.addEventListener('load',hide,{once:true});
 })();
 </script>
+
+<style id="artessencia-v1782-brand-layout-final">
+/* V1.7.82 — estabilização final da identidade e sidebar. 
+   Esta camada existe para neutralizar regras legadas com !important. */
+
+@media (min-width:651px){
+  .app{
+    grid-template-columns:205px minmax(0,1fr)!important;
+  }
+  .sidebar{
+    padding:14px 10px 16px!important;
+  }
+  .sidebar .brand{
+    margin:0 3px 16px!important;
+    padding:0 0 14px!important;
+    text-align:center!important;
+    border-bottom:1px solid rgba(255,255,255,.09)!important;
+  }
+  .sidebar .brand img{
+    display:block!important;
+    width:100%!important;
+    max-width:185px!important;
+    height:auto!important;
+    max-height:none!important;
+    aspect-ratio:auto!important;
+    object-fit:contain!important;
+    object-position:center!important;
+    margin:0 auto!important;
+    padding:0!important;
+    border-radius:8px!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    filter:none!important;
+  }
+  .sidebar .brand small{
+    display:block!important;
+    margin:8px 0 0!important;
+    text-align:center!important;
+    color:#d4c1aa!important;
+    font-size:8px!important;
+    line-height:1.3!important;
+    letter-spacing:.18em!important;
+    font-weight:800!important;
+  }
+}
+
+@media (pointer:coarse) and (min-width:651px) and (max-width:1400px){
+  .app{
+    grid-template-columns:188px minmax(0,1fr)!important;
+  }
+  .sidebar{
+    padding:12px 8px 14px!important;
+  }
+  .sidebar .brand img{
+    max-width:166px!important;
+  }
+  .sidebar .nav button{
+    min-height:42px!important;
+    padding:9px 8px!important;
+  }
+  .sidebar .nav-label{
+    font-size:12px!important;
+  }
+}
+
+/* Splash: mesma imagem oficial, sem corte nem deformação. */
+#brandSplashV1778{
+  background:#f7f1e6!important;
+}
+#brandSplashV1778 .brand-splash-card{
+  width:min(560px,72vw)!important;
+}
+#brandSplashV1778 img{
+  display:block!important;
+  width:100%!important;
+  height:auto!important;
+  max-height:360px!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  margin:0 auto!important;
+  filter:none!important;
+}
+
+/* O símbolo do ícone/PIN não é recortado por CSS. */
+#lockScreen .lockbox img{
+  object-fit:contain!important;
+  object-position:center!important;
+}
+
+@media(max-width:650px){
+  #brandSplashV1778 .brand-splash-card{
+    width:min(430px,86vw)!important;
+  }
+  #brandSplashV1778 img{
+    max-height:290px!important;
+  }
+}
+</style>
+
 </body></html>
 
 <style id="artessencia-v1-overrides">
