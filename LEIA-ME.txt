@@ -1,4 +1,4 @@
-ARTESSENCIA BACKOFFICE V1.7.11 — EMAIL · ASSOCIAÇÕES E PESQUISA
+ARTESSENCIA BACKOFFICE V1.7.84 — BASE ESTÁVEL AUDITADA
 Base: V1.6.1 validada.
 Alterações finais: Centro Catálogo Digital preservado; Homepage pública clarificada; categorias em destaque passam a usar categorias reais e lista dinâmica, mantendo compatibilidade legacy Classic/Special/Premium nos dados; nomenclatura separa Catálogo Digital da futura Loja.
 Não foram alterados os motores operacionais validados de encomendas, produção, stock, compras, caixa, clientes, orçamentos, custos, relatórios, backup ou Cloud Sync.
@@ -71,3 +71,16 @@ V1.7.11 — ASSOCIAÇÕES E PESQUISA DE EMAIL
 - Uma associação manual aplicada numa conversa é guardada nas mensagens desse fio.
 - Pesquisa final por assunto, remetente/destinatário, conteúdo, cliente, encomenda e orçamento, tolerando acentos.
 - Sincronização automática V1.7.10, Responder e Conversas preservados.
+
+
+V1.7.84 — BASE ESTÁVEL / AUDITORIA TRANSVERSAL 25/09/2026
+- Backoffice mantém-se como fonte de verdade operacional.
+- Catálogo usa PVP de venda direta (data.price / price_direct).
+- Loja usa PVP online (price_online).
+- Coleções públicas sincronizadas e Halloween validado com 8 produtos.
+- Contacto do Catálogo usa WhatsApp vindo dinamicamente das definições do Backoffice.
+- Produtos de teste desativados na camada pública.
+- Políticas RLS otimizadas sem alterar permissões funcionais.
+- Índices adicionados às FKs artessencia_v1_sales.user_id e store_order_items.product_id.
+- Validação server-side de personalizações adicionada às linhas de encomenda.
+- Fotos e descrições em falta são conteúdo pendente, não erro técnico.
