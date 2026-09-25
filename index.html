@@ -4820,7 +4820,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.87';
+const APP_VERSION='1.7.88';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -6112,12 +6112,15 @@ function renderDashboardDaily(){
 function escapeAttr(v){return escapeHtml(String(v??'')).replace(/`/g,'&#96;')}
 function calcOrder(o){
  const items=Array.isArray(o?.items)?o.items:[];
- const total=items.reduce((sum,line)=>sum+(Number(line?.qty)||0)*(Number(line?.price)||0),0);
+ const itemsTotal=items.reduce((sum,line)=>sum+(Number(line?.qty)||0)*(Number(line?.price)||0),0);
+ const serverTotal=Number(o?.total);
+ const useServerTotal=String(o?.source||'')==='online_store'&&Number.isFinite(serverTotal)&&serverTotal>=0;
+ const total=useServerTotal?serverTotal:itemsTotal;
  const itemCost=items.reduce((sum,line)=>sum+(['quote_discount','quote_adjustment'].includes(line?.type)?0:(Number(line?.qty)||0)*(Number(line?.cost)||0)),0);
  const boxes=Math.max(0,Number(o?.boxes)||0),boxCost=Math.max(0,Number(o?.boxCostSnapshot)||0)*boxes;
  const cost=itemCost+boxCost,profit=total-cost;
  const qty=items.reduce((sum,line)=>sum+(['quote_discount','quote_adjustment'].includes(line?.type)?0:Math.max(0,Number(line?.qty)||0)),0);
- return {qty,total,cost,profit,margin:total?profit/total:0,itemCost,boxCost};
+ return {qty,total,cost,profit,margin:total?profit/total:0,itemCost,boxCost,itemsTotal,discountTotal:Math.max(0,Number(o?.discountTotal)||0),fulfillmentFee:Math.max(0,Number(o?.fulfillmentFee)||0)};
 }
 function saleProductFilterOptionsV1754(){
  const products=(db.products||[]).filter(p=>p&&p.active!==false),types=new Set(),tags=new Set(),collections=new Set();
