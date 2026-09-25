@@ -3614,6 +3614,15 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       <div><div class="dashboard-kicker">CATÁLOGO PÚBLICO</div><h2>Catálogo Digital</h2><p>Centro único para preparar o que o cliente vê: produtos publicados, homepage, coleções sazonais, tema ativo e pré-visualização.</p></div>
       <div class="catalog-center-actions"><button class="btn" onclick="loadCatalogDigitalCenterV160(true)">Atualizar</button><button class="btn primary" onclick="go('specialEditions');clearSpecialEditionForm();setTimeout(()=>document.getElementById('specialEditionName')?.focus(),80)">Nova ocasião</button></div>
     </div>
+    <section class="card" style="margin:12px 0">
+      <div class="section-title" style="margin:0 0 8px">Estado público do Catálogo</div>
+      <p class="muted" style="margin:0 0 10px">Independente da Loja Online. O Catálogo usa o PVP de venda direta.</p>
+      <div class="form-grid">
+        <div class="field"><label>Estado</label><select id="catalogPublicModeV1785"><option value="open">Aberto</option><option value="updating">Em atualização</option><option value="closed">Fechado temporariamente</option></select></div>
+        <div class="field span2"><label>Mensagem pública</label><input id="catalogPublicMessageV1785" maxlength="220" placeholder="Mensagem opcional apresentada no Catálogo"></div>
+      </div>
+      <div class="btnrow" style="margin-top:10px"><button class="btn primary" onclick="savePublicChannelStatusV1785('catalog')">Guardar estado do Catálogo</button></div>
+    </section>
     <div id="catalogCenterKpisV160" class="catalog-center-kpis"></div>
     <div class="catalog-center-stack-v1733">
       <section class="card catalog-center-management-v1733">
@@ -12815,7 +12824,18 @@ function renderShopDeliverySettings(){
    </span>
   </div>
 
-  <div class="delivery-v33-two">
+  <section class="delivery-v33-card delivery-v33-wide">
+   <div class="delivery-v33-cardhead">
+    <div><strong>🌐 Estado público da Loja</strong><small>Independente do Catálogo Digital. Em atualização ou fechada, a Loja fica apenas para consulta.</small></div>
+   </div>
+   <div class="delivery-v33-fields two">
+    <div class="field"><label>Estado</label><select id="storePublicModeV1785"><option value="open">Aberta — aceitar encomendas</option><option value="updating">Em atualização — só consulta</option><option value="closed">Fechada — só consulta</option></select></div>
+    <div class="field"><label>Mensagem pública</label><input id="storePublicMessageV1785" maxlength="220" placeholder="Mensagem apresentada na Loja"></div>
+   </div>
+   <div class="btnrow" style="margin-top:10px"><button type="button" class="btn primary" onclick="savePublicChannelStatusV1785('store')">Guardar estado da Loja</button></div>
+  </section>
+
+    <div class="delivery-v33-two">
    <section class="delivery-v33-card">
     <div class="delivery-v33-cardhead">
      <div><strong>🏪 Levantamento</strong><small>O cliente recolhe a encomenda contigo.</small></div>
@@ -12893,6 +12913,7 @@ function renderShopDeliverySettings(){
    <small>As alterações ficam guardadas na Cloud e são usadas pela loja online.</small>
   </div>
  </div>`;
+ setTimeout(()=>loadPublicChannelStatusV1785('store'),0);
 }
 
 
@@ -14648,7 +14669,37 @@ function renderCatalogDigitalCenterV160(){
  el.innerHTML=[[pubs.length,'Produtos publicados','Fichas marcadas para publicação'],[eds.filter(x=>x.data?.catalogEnabled!==false).length,'Coleções públicas','Preparadas para o catálogo'],[liveCount,'Ocasiões válidas agora','Dentro das respetivas datas'],[live?Number(live.data?.catalogPriority)||0:'—','Prioridade ativa',live?.name||'Tema ArtEssencia']].map(([v,l,n])=>`<div class="card catalog-center-kpi"><small>${escapeHtml(l)}</small><b>${escapeHtml(v)}</b><span>${escapeHtml(n)}</span></div>`).join('');
  const p=$('catalogCenterPreviewV160');if(!p)return;const d=live?.data||{},theme=d.catalogTheme||'artessencia',pres={artessencia:['#5b3d2b','#c9a78e','✦',['🕯️','✦','❦']],outono:['#704025','#bd7446','🍂',['🍂','🍁','🌿']],halloween:['#211512','#c9672f','🎃',['🎃','🦇','🕯️']],natal:['#274735','#a67b39','🎄',['🎄','✦','❄']],namorados:['#772b42','#d193a4','♡',['♡','♥','✦']],pascoa:['#7e6b94','#d8afc2','🐣',['✿','🐣','❀']],primavera:['#50734e','#c7a9bb','❀',['❀','🌿','✿']],personalizado:['#5b3d2b','#c9a78e','✦',['✦','❦','🕯️']]},x=pres[theme]||pres.artessencia;p.style.setProperty('--cc1',d.themePrimary||x[0]);p.style.setProperty('--cc2',d.themeSecondary||x[1]);p.dataset.decor=x[2];p.querySelector('.ey').textContent=d.badge||'ARTESSENCIA';p.querySelector('h3').textContent=d.heroTitle||live?.name||'Identidade ArtEssencia';p.querySelector('p').textContent=d.subtitle||(live?'Ocasião ativa no Catálogo Digital.':'Nenhuma ocasião sazonal ativa neste momento.');const scene=$('catalogPreviewSceneV161');if(scene)scene.innerHTML=(x[3]||[]).map(v=>`<span>${escapeHtml(v)}</span>`).join('');const st=$('catalogCenterStatusV161');if(st)st.innerHTML=`<span class=\"catalog-status-pill\">Tema: <b>${escapeHtml(theme)}</b></span><span class=\"catalog-status-pill\">Ocasião: <b>${escapeHtml(live?.name||'Nenhuma')}</b></span><span class=\"catalog-status-pill\">Produtos públicos: <b>${pubs.length}</b></span>`;
 }
-async function loadCatalogDigitalCenterV160(showToast=false){try{await loadSpecialEditionsAdmin(false);renderCatalogDigitalCenterV160();if(showToast)toast('Catálogo Digital atualizado')}catch(e){renderCatalogDigitalCenterV160();if(showToast)toast('Não foi possível atualizar o Catálogo Digital')}}
+let publicChannelStatusV1785={store:{mode:'updating',public_message:''},catalog:{mode:'open',public_message:''}};
+async function loadPublicChannelStatusV1785(channel){
+ const c=initCloudClient();if(!c)return null;
+ const u=cloudUser||await ensureCloudSession();if(!u)return null;
+ try{
+  const {data,error}=await c.rpc('artessencia_public_channel_status_admin_v1',{p_channel:channel});
+  if(error)throw error;
+  const v=data&&typeof data==='object'?data:{};
+  publicChannelStatusV1785[channel]=v;
+  const prefix=channel==='store'?'store':'catalog';
+  const mode=document.getElementById(prefix+'PublicModeV1785'),msg=document.getElementById(prefix+'PublicMessageV1785');
+  if(mode)mode.value=['open','updating','closed'].includes(v.mode)?v.mode:(channel==='store'?'updating':'open');
+  if(msg)msg.value=String(v.public_message||'');
+  return v;
+ }catch(e){console.error(e);cloudLogMsg('Erro a carregar estado público '+channel+': '+cloudErrText(e));return null}
+}
+async function savePublicChannelStatusV1785(channel){
+ const c=initCloudClient();if(!c)return toast('Liga primeiro a Cloud');
+ const u=cloudUser||await ensureCloudSession();if(!u)return toast('Inicia sessão na Cloud');
+ const prefix=channel==='store'?'store':'catalog';
+ const mode=document.getElementById(prefix+'PublicModeV1785')?.value||'open';
+ const message=(document.getElementById(prefix+'PublicMessageV1785')?.value||'').trim();
+ try{
+  const {data,error}=await c.rpc('artessencia_save_public_channel_status_admin_v1',{p_channel:channel,p_mode:mode,p_message:message});
+  if(error)throw error;
+  publicChannelStatusV1785[channel]=data||{mode,public_message:message};
+  toast(channel==='store'?'Estado da Loja atualizado':'Estado do Catálogo atualizado');
+  cloudLogMsg('Estado público '+channel+' atualizado para '+mode);
+ }catch(e){console.error(e);cloudLogMsg('Falha ao guardar estado público '+channel+': '+cloudErrText(e));toast('Não foi possível guardar o estado público')}
+}
+async function loadCatalogDigitalCenterV160(showToast=false){try{await Promise.all([loadSpecialEditionsAdmin(false),loadPublicChannelStatusV1785('catalog')]);renderCatalogDigitalCenterV160();if(showToast)toast('Catálogo Digital atualizado')}catch(e){renderCatalogDigitalCenterV160();if(showToast)toast('Não foi possível atualizar o Catálogo Digital')}}
 
 function renderSpecialEditionsAdmin(){
  const grid=document.getElementById('specialEditionsGrid');if(!grid)return;
