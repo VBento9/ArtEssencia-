@@ -4820,7 +4820,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.88';
+const APP_VERSION='1.7.89';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -6113,14 +6113,20 @@ function escapeAttr(v){return escapeHtml(String(v??'')).replace(/`/g,'&#96;')}
 function calcOrder(o){
  const items=Array.isArray(o?.items)?o.items:[];
  const itemsTotal=items.reduce((sum,line)=>sum+(Number(line?.qty)||0)*(Number(line?.price)||0),0);
- const serverTotal=Number(o?.total);
- const useServerTotal=String(o?.source||'')==='online_store'&&Number.isFinite(serverTotal)&&serverTotal>=0;
- const total=useServerTotal?serverTotal:itemsTotal;
+ const isOnline=String(o?.source||'')==='online_store';
+ const serverSubtotal=Number(o?.subtotal),serverTotal=Number(o?.total);
+ const subtotal=isOnline&&Number.isFinite(serverSubtotal)&&serverSubtotal>=0?serverSubtotal:itemsTotal;
+ const fulfillmentFee=Math.max(0,Number(o?.fulfillmentFee??o?.deliveryFee)||0);
+ const thematicExtra=Math.max(0,Number(o?.thematicExtra)||0);
+ const discountTotal=Math.max(0,Number(o?.discountTotal)||0);
+ const useServerTotal=isOnline&&Number.isFinite(serverTotal)&&serverTotal>=0;
+ const calculatedOnlineTotal=Math.max(0,subtotal+thematicExtra+fulfillmentFee-discountTotal);
+ const total=useServerTotal?serverTotal:(isOnline?calculatedOnlineTotal:itemsTotal);
  const itemCost=items.reduce((sum,line)=>sum+(['quote_discount','quote_adjustment'].includes(line?.type)?0:(Number(line?.qty)||0)*(Number(line?.cost)||0)),0);
  const boxes=Math.max(0,Number(o?.boxes)||0),boxCost=Math.max(0,Number(o?.boxCostSnapshot)||0)*boxes;
  const cost=itemCost+boxCost,profit=total-cost;
  const qty=items.reduce((sum,line)=>sum+(['quote_discount','quote_adjustment'].includes(line?.type)?0:Math.max(0,Number(line?.qty)||0)),0);
- return {qty,total,cost,profit,margin:total?profit/total:0,itemCost,boxCost,itemsTotal,discountTotal:Math.max(0,Number(o?.discountTotal)||0),fulfillmentFee:Math.max(0,Number(o?.fulfillmentFee)||0)};
+ return {qty,total,cost,profit,margin:total?profit/total:0,itemCost,boxCost,itemsTotal,productsTotal:subtotal,subtotal,thematicExtra,discountTotal,fulfillmentFee,deliveryFee:fulfillmentFee};
 }
 function saleProductFilterOptionsV1754(){
  const products=(db.products||[]).filter(p=>p&&p.active!==false),types=new Set(),tags=new Set(),collections=new Set();
@@ -12388,7 +12394,14 @@ function showOrder(id){
    const pers=[p.name?`Nome: ${escapeHtml(p.name)}`:'',p.date?`Data: ${escapeHtml(p.date)}`:'',p.message?`Mensagem no conjunto: ${escapeHtml(p.message)}`:'',p.ribbon?(p.ribbonText?`Fita: ${escapeHtml(p.ribbonText)}`:'Fita'):'',p.label?'Etiqueta':'',p.card?(p.cardMessage?`Cartão: ${escapeHtml(p.cardMessage)}`:'Cartão'):'',...dynamicPersonalizationLabelsV12658(p).map(escapeHtml)].filter(Boolean).join(' · ')||'Sem extras';
    return `<strong>Caixa ${idx+1}:</strong> ${Number(b.qty)||1}× ${escapeHtml(b.box||'—')} · ${escapeHtml(b.occasion||'—')} · ${escapeHtml(b.style||'—')} · ${escapeHtml(b.color||'—')}<br><strong>Unidades:</strong> ${unidades||'—'}<br><strong>Personalização:</strong> ${pers}<br><strong>Acréscimo temático:</strong> ${euro(b.thematicExtra||0)}`;
  }).join('<hr style="border:0;border-top:1px solid #eaded8;margin:10px 0">')}</div>`:''}
- ${isOnline&&(Number(o.thematicExtra)>0||Number(o.deliveryFee)>0)?`<div class="soft-note" style="margin-top:8px;line-height:1.65"><strong>Composição do total:</strong> Produtos ${euro(c.productsTotal)}${c.thematicExtra>0?' + Personalização '+euro(c.thematicExtra):''}${c.deliveryFee>0?' + Entrega '+euro(c.deliveryFee):''} = <strong>${euro(c.total)}</strong></div>`:''}
+ ${isOnline?`<div class="section-title">Resumo financeiro da Loja</div>
+ <div class="soft-note" style="line-height:1.75">
+ <strong>Subtotal dos produtos:</strong> ${euro(c.subtotal)}<br>
+ ${c.thematicExtra>0?`<strong>Personalização / extras:</strong> +${euro(c.thematicExtra)}<br>`:''}
+ ${c.discountTotal>0?`<strong>Código promocional:</strong> ${escapeHtml(o.promoCode||'—')}<br><strong>Desconto:</strong> −${euro(c.discountTotal)}<br>`:''}
+ <strong>Entrega / levantamento:</strong> ${c.fulfillmentFee>0?'+'+euro(c.fulfillmentFee):'Sem custo'}<br>
+ <strong>Total final:</strong> ${euro(c.total)}
+ </div>`:''}
  ${isOnline?`<div class="section-title">Pagamento Online</div>
  <div class="soft-note" style="line-height:1.65">
  <strong>Preferência do cliente:</strong> ${o.paymentRequested==='mbway_manual'?'MB Way':o.paymentRequested==='multibanco'?'Multibanco':o.paymentRequested==='bank_transfer'?'Transferência':o.paymentRequested==='pay_later'?'Pagar no levantamento/entrega':'Por definir'}<br>
