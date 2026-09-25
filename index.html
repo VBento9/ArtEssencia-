@@ -3623,7 +3623,37 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       </div>
       <div class="btnrow" style="margin-top:10px"><button class="btn primary" onclick="savePublicChannelStatusV1785('catalog')">Guardar estado do Catálogo</button></div>
     </section>
-    <div id="catalogCenterKpisV160" class="catalog-center-kpis"></div>
+    <section class="card" id="promoCodesCardV1786" style="margin:12px 0">
+  <div class="catalog-center-section-head-v1733">
+    <div>
+      <div class="section-title" style="margin:0">Códigos promocionais</div>
+      <p class="muted">Gera códigos para campanhas, clientes específicos ou primeira compra. Aplicam-se apenas na Loja Online e não alteram o PVP do Catálogo.</p>
+    </div>
+    <button class="btn" onclick="loadPromoCodesV1786(true)">Atualizar</button>
+  </div>
+  <div class="form-grid" style="margin-top:10px">
+    <div class="field span2"><label>Código</label><div style="display:flex;gap:7px"><input id="promoCodeV1786" maxlength="32" placeholder="PRIMEIRACOMPRA"><button type="button" class="btn" onclick="generatePromoCodeV1786()">Gerar</button></div></div>
+    <div class="field span2"><label>Descrição</label><input id="promoLabelV1786" maxlength="80" placeholder="Ex.: 10% na primeira compra"></div>
+    <div class="field"><label>Tipo</label><select id="promoTypeV1786"><option value="PERCENT">Percentagem</option><option value="FIXED">Valor fixo</option></select></div>
+    <div class="field"><label>Desconto</label><input id="promoValueV1786" type="number" min="0.01" step="0.01" value="10"></div>
+    <div class="field"><label>Desconto máximo (€)</label><input id="promoMaxV1786" type="number" min="0" step="0.01" placeholder="Opcional"></div>
+    <div class="field"><label>Encomenda mínima (€)</label><input id="promoMinV1786" type="number" min="0" step="0.01" value="0"></div>
+    <div class="field"><label>Limite total</label><input id="promoUsageV1786" type="number" min="1" step="1" placeholder="Sem limite"></div>
+    <div class="field"><label>Por cliente</label><input id="promoPerCustomerV1786" type="number" min="1" step="1" value="1"></div>
+    <div class="field"><label>Válido desde</label><input id="promoStartV1786" type="datetime-local"></div>
+    <div class="field"><label>Válido até</label><input id="promoEndV1786" type="datetime-local"></div>
+    <div class="field"><label>Primeira compra</label><select id="promoFirstV1786"><option value="0">Não</option><option value="1">Sim — apenas primeira compra</option></select></div>
+    <div class="field"><label>Estado</label><select id="promoActiveV1786"><option value="1">Ativo</option><option value="0">Inativo</option></select></div>
+  </div>
+  <input id="promoIdV1786" type="hidden">
+  <div class="btnrow" style="margin-top:10px">
+    <button class="btn" onclick="prepareFirstPurchasePromoV1786()">Modelo primeira compra</button>
+    <button class="btn primary" onclick="savePromoCodeV1786()">Guardar código</button>
+    <button class="btn" onclick="clearPromoFormV1786()">Limpar</button>
+  </div>
+  <div id="promoCodesListV1786" style="display:grid;gap:8px;margin-top:12px"></div>
+</section>
+<div id="catalogCenterKpisV160" class="catalog-center-kpis"></div>
     <div class="catalog-center-stack-v1733">
       <section class="card catalog-center-management-v1733">
         <div class="catalog-center-section-head-v1733">
@@ -14669,6 +14699,69 @@ function renderCatalogDigitalCenterV160(){
  el.innerHTML=[[pubs.length,'Produtos publicados','Fichas marcadas para publicação'],[eds.filter(x=>x.data?.catalogEnabled!==false).length,'Coleções públicas','Preparadas para o catálogo'],[liveCount,'Ocasiões válidas agora','Dentro das respetivas datas'],[live?Number(live.data?.catalogPriority)||0:'—','Prioridade ativa',live?.name||'Tema ArtEssencia']].map(([v,l,n])=>`<div class="card catalog-center-kpi"><small>${escapeHtml(l)}</small><b>${escapeHtml(v)}</b><span>${escapeHtml(n)}</span></div>`).join('');
  const p=$('catalogCenterPreviewV160');if(!p)return;const d=live?.data||{},theme=d.catalogTheme||'artessencia',pres={artessencia:['#5b3d2b','#c9a78e','✦',['🕯️','✦','❦']],outono:['#704025','#bd7446','🍂',['🍂','🍁','🌿']],halloween:['#211512','#c9672f','🎃',['🎃','🦇','🕯️']],natal:['#274735','#a67b39','🎄',['🎄','✦','❄']],namorados:['#772b42','#d193a4','♡',['♡','♥','✦']],pascoa:['#7e6b94','#d8afc2','🐣',['✿','🐣','❀']],primavera:['#50734e','#c7a9bb','❀',['❀','🌿','✿']],personalizado:['#5b3d2b','#c9a78e','✦',['✦','❦','🕯️']]},x=pres[theme]||pres.artessencia;p.style.setProperty('--cc1',d.themePrimary||x[0]);p.style.setProperty('--cc2',d.themeSecondary||x[1]);p.dataset.decor=x[2];p.querySelector('.ey').textContent=d.badge||'ARTESSENCIA';p.querySelector('h3').textContent=d.heroTitle||live?.name||'Identidade ArtEssencia';p.querySelector('p').textContent=d.subtitle||(live?'Ocasião ativa no Catálogo Digital.':'Nenhuma ocasião sazonal ativa neste momento.');const scene=$('catalogPreviewSceneV161');if(scene)scene.innerHTML=(x[3]||[]).map(v=>`<span>${escapeHtml(v)}</span>`).join('');const st=$('catalogCenterStatusV161');if(st)st.innerHTML=`<span class=\"catalog-status-pill\">Tema: <b>${escapeHtml(theme)}</b></span><span class=\"catalog-status-pill\">Ocasião: <b>${escapeHtml(live?.name||'Nenhuma')}</b></span><span class=\"catalog-status-pill\">Produtos públicos: <b>${pubs.length}</b></span>`;
 }
+let promoCodesV1786=[];
+function promoMoneyV1786(v){return new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR'}).format(Number(v||0))}
+function promoLocalDateV1786(v){if(!v)return '';const d=new Date(v);if(Number.isNaN(d.getTime()))return '';const z=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+'T'+z(d.getHours())+':'+z(d.getMinutes())}
+function generatePromoCodeV1786(){
+ const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let x='AE-';
+ for(let i=0;i<8;i++)x+=chars[Math.floor(Math.random()*chars.length)];
+ const e=document.getElementById('promoCodeV1786');if(e)e.value=x
+}
+function prepareFirstPurchasePromoV1786(){
+ clearPromoFormV1786();
+ const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v};
+ set('promoCodeV1786','PRIMEIRACOMPRA');set('promoLabelV1786','Desconto na primeira compra');set('promoTypeV1786','PERCENT');set('promoValueV1786','10');set('promoFirstV1786','1');set('promoPerCustomerV1786','1')
+}
+function clearPromoFormV1786(){
+ ['promoIdV1786','promoCodeV1786','promoLabelV1786','promoMaxV1786','promoUsageV1786','promoStartV1786','promoEndV1786'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});
+ const values={promoTypeV1786:'PERCENT',promoValueV1786:'10',promoMinV1786:'0',promoPerCustomerV1786:'1',promoFirstV1786:'0',promoActiveV1786:'1'};
+ Object.entries(values).forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.value=v})
+}
+function renderPromoCodesV1786(){
+ const box=document.getElementById('promoCodesListV1786');if(!box)return;
+ box.innerHTML=promoCodesV1786.length?promoCodesV1786.map(p=>{
+  const used=Number(p.usage_count||0),limit=p.usage_limit==null?'∞':String(p.usage_limit);
+  const discount=p.discount_type==='PERCENT'?Number(p.discount_value||0).toLocaleString('pt-PT')+'%':promoMoneyV1786(p.discount_value);
+  const end=p.ends_at?new Date(p.ends_at).toLocaleDateString('pt-PT'):'Sem data final';
+  return '<div class="card" style="padding:12px"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start"><div><b>'+escapeHtml(p.code||'')+'</b><div class="muted">'+escapeHtml(p.label||'Sem descrição')+' · '+escapeHtml(discount)+' · '+(p.first_purchase_only?'Primeira compra · ':'')+used+'/'+limit+' utilizações · até '+escapeHtml(end)+'</div></div><span class="badge '+(p.active?'ok':'warn')+'">'+(p.active?'ATIVO':'INATIVO')+'</span></div><div class="btnrow" style="margin-top:8px"><button class="btn" onclick="editPromoCodeV1786(\''+p.id+'\')">Editar</button><button class="btn danger" onclick="deletePromoCodeV1786(\''+p.id+'\')">'+(used?'Desativar':'Eliminar')+'</button></div></div>'
+ }).join(''):'<div class="empty">Ainda não existem códigos promocionais.</div>'
+}
+async function loadPromoCodesV1786(showToast=false){
+ const c=initCloudClient();if(!c){promoCodesV1786=[];renderPromoCodesV1786();return}
+ const u=cloudUser||await ensureCloudSession();if(!u){promoCodesV1786=[];renderPromoCodesV1786();return}
+ try{
+  const {data,error}=await c.rpc('artessencia_list_promo_codes_admin_v1');if(error)throw error;
+  promoCodesV1786=Array.isArray(data)?data:[];renderPromoCodesV1786();if(showToast)toast('Códigos promocionais atualizados')
+ }catch(e){console.error(e);if(showToast)toast('Não foi possível carregar os códigos promocionais')}
+}
+function editPromoCodeV1786(id){
+ const p=promoCodesV1786.find(x=>String(x.id)===String(id));if(!p)return;
+ const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v??''};
+ set('promoIdV1786',p.id);set('promoCodeV1786',p.code);set('promoLabelV1786',p.label||'');set('promoTypeV1786',p.discount_type||'PERCENT');set('promoValueV1786',p.discount_value);set('promoMaxV1786',p.max_discount??'');set('promoMinV1786',p.min_order??0);set('promoUsageV1786',p.usage_limit??'');set('promoPerCustomerV1786',p.per_customer_limit??1);set('promoStartV1786',promoLocalDateV1786(p.starts_at));set('promoEndV1786',promoLocalDateV1786(p.ends_at));set('promoFirstV1786',p.first_purchase_only?'1':'0');set('promoActiveV1786',p.active?'1':'0')
+}
+async function savePromoCodeV1786(){
+ const c=initCloudClient();if(!c)return toast('Liga primeiro a Cloud');
+ const u=cloudUser||await ensureCloudSession();if(!u)return toast('Inicia sessão na Cloud');
+ const val=id=>document.getElementById(id)?.value||'';
+ const code=val('promoCodeV1786').trim().toUpperCase().replace(/[^A-Z0-9_-]/g,'');
+ if(code.length<4)return toast('O código deve ter pelo menos 4 caracteres');
+ const type=val('promoTypeV1786'),discount=Number(val('promoValueV1786'));
+ if(!(discount>0))return toast('Indica um desconto válido');
+ if(type==='PERCENT'&&discount>100)return toast('A percentagem não pode ser superior a 100%');
+ const start=val('promoStartV1786'),end=val('promoEndV1786');
+ if(start&&end&&new Date(end)<=new Date(start))return toast('A data final tem de ser posterior à inicial');
+ try{
+  const args={p_id:val('promoIdV1786')||null,p_code:code,p_label:val('promoLabelV1786').trim()||null,p_discount_type:type,p_discount_value:discount,p_max_discount:val('promoMaxV1786')?Number(val('promoMaxV1786')):null,p_min_order:Number(val('promoMinV1786')||0),p_first_purchase_only:val('promoFirstV1786')==='1',p_usage_limit:val('promoUsageV1786')?Number(val('promoUsageV1786')):null,p_per_customer_limit:Math.max(1,Number(val('promoPerCustomerV1786')||1)),p_starts_at:start?new Date(start).toISOString():null,p_ends_at:end?new Date(end).toISOString():null,p_active:val('promoActiveV1786')!=='0'};
+  const {error}=await c.rpc('artessencia_save_promo_code_admin_v1',args);if(error)throw error;
+  toast('Código promocional guardado');clearPromoFormV1786();await loadPromoCodesV1786(false)
+ }catch(e){console.error(e);toast(String(e?.message||'').includes('unique')?'Já existe um código com esse nome.':'Não foi possível guardar o código promocional')}
+}
+async function deletePromoCodeV1786(id){
+ if(!confirm('Eliminar ou desativar este código promocional?'))return;
+ const c=initCloudClient();if(!c)return toast('Liga primeiro a Cloud');
+ try{const {error}=await c.rpc('artessencia_delete_promo_code_admin_v1',{p_id:id});if(error)throw error;toast('Código atualizado');await loadPromoCodesV1786(false)}catch(e){console.error(e);toast('Não foi possível atualizar o código')}
+}
+
 let publicChannelStatusV1785={store:{mode:'updating',public_message:''},catalog:{mode:'open',public_message:''}};
 async function loadPublicChannelStatusV1785(channel){
  const c=initCloudClient();if(!c)return null;
@@ -14699,7 +14792,7 @@ async function savePublicChannelStatusV1785(channel){
   cloudLogMsg('Estado público '+channel+' atualizado para '+mode);
  }catch(e){console.error(e);cloudLogMsg('Falha ao guardar estado público '+channel+': '+cloudErrText(e));toast('Não foi possível guardar o estado público')}
 }
-async function loadCatalogDigitalCenterV160(showToast=false){try{await Promise.all([loadSpecialEditionsAdmin(false),loadPublicChannelStatusV1785('catalog')]);renderCatalogDigitalCenterV160();if(showToast)toast('Catálogo Digital atualizado')}catch(e){renderCatalogDigitalCenterV160();if(showToast)toast('Não foi possível atualizar o Catálogo Digital')}}
+async function loadCatalogDigitalCenterV160(showToast=false){try{await Promise.all([loadSpecialEditionsAdmin(false),loadPublicChannelStatusV1785('catalog'),loadPromoCodesV1786(false)]);renderCatalogDigitalCenterV160();if(showToast)toast('Catálogo Digital atualizado')}catch(e){renderCatalogDigitalCenterV160();if(showToast)toast('Não foi possível atualizar o Catálogo Digital')}}
 
 function renderSpecialEditionsAdmin(){
  const grid=document.getElementById('specialEditionsGrid');if(!grid)return;
