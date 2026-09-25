@@ -4118,14 +4118,14 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       <div class="settings-card-head">
         <div>
           <div class="section-title" style="margin:0">Negócio e mensagens ao cliente</div>
-          <small>Dados usados nos contactos e documentos gerados pela ArtEssencia.</small>
+          <small>Dados usados nos contactos públicos da Loja e do Catálogo e nos documentos gerados pela ArtEssencia.</small>
         </div>
       </div>
       <div class="form-grid settings-form-grid-v1732">
         <div class="field span2"><label>Nome comercial</label><input id="businessNameInput" placeholder="ArtEssencia"></div>
         <div class="field span2"><label>Nome legal / titular</label><input id="businessLegalNameV140" placeholder="Nome completo ou denominação legal"></div>
         <div class="field"><label>NIF / NIPC</label><input id="businessTaxIdV140" inputmode="numeric" maxlength="9" placeholder="123456789"></div>
-        <div class="field"><label>Telemóvel / MB Way</label><input id="businessPhone" placeholder="9xxxxxxxx"></div>
+        <div class="field"><label>WhatsApp / Telemóvel público</label><input id="businessPhone" inputmode="tel" maxlength="9" placeholder="9xxxxxxxx"><small class="muted">Usado nos contactos da Loja e do Catálogo e também como número MB Way, quando aplicável.</small></div>
         <div class="field span2"><label>Email comercial</label><input id="businessEmailV140" type="email" placeholder="geral@exemplo.pt"></div>
         <div class="field span2"><label>Morada</label><input id="businessAddressV140" placeholder="Rua, número e localidade"></div>
         <div class="field"><label>Código postal</label><input id="businessPostalCodeV140" placeholder="0000-000"></div>
@@ -4820,7 +4820,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.86';
+const APP_VERSION='1.7.87';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
