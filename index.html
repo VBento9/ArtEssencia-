@@ -2728,7 +2728,24 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 .personalization-option-v1791 button{border:0;background:transparent;color:inherit;font-weight:900;cursor:pointer;padding:0 0 0 3px}
 .personalization-tools-v1791{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
 .personalization-search-v1791{width:100%;border:1px solid #dfd1c5;border-radius:999px;background:#fff;padding:9px 12px;margin-top:8px}
+/* V1.7.93 — linhas completas apenas na biblioteca de Configuração. */
+.personalization-picker-v1791.personalization-master-list-v1793{display:grid;grid-template-columns:1fr;gap:8px;width:100%}
+.personalization-master-row-v1793{width:100%;display:grid;align-items:center;gap:10px;border:1px solid #e4d8ce;background:#fff;border-radius:12px;padding:9px 10px;font-size:12px;cursor:default;min-width:0}
+.personalization-master-row-v1793.fragrance{grid-template-columns:minmax(0,1fr) minmax(180px,240px) 38px}
+.personalization-master-row-v1793.color{grid-template-columns:26px minmax(0,1fr) minmax(180px,240px) 38px}
+.personalization-master-row-v1793 .personalization-master-name-v1793{min-width:0;font-weight:700;overflow-wrap:anywhere}
+.personalization-master-row-v1793 .personalization-master-swatch-v1793{width:22px;height:22px;border-radius:50%;border:1px solid rgba(0,0,0,.16);display:block}
+.personalization-master-row-v1793 select{width:100%;min-width:0;border:1px solid #d9c9bd;border-radius:10px;background:#fff;padding:8px 9px;font:inherit;color:inherit}
+.personalization-master-row-v1793 .personalization-master-remove-v1793{width:34px;height:34px;display:grid;place-items:center;border:1px solid #ead7cd;border-radius:10px;background:#fff7f4;color:#9a3f2f;font-weight:900;cursor:pointer;padding:0}
+.personalization-master-row-v1793 .personalization-master-remove-v1793:hover{background:#fbe9e4}
+@media(max-width:1180px){.personalization-library-v1791{grid-template-columns:1fr}}
 @media(max-width:760px){.personalization-library-v1791{grid-template-columns:1fr}.personalization-add-v1791,.personalization-color-add-v1791{grid-template-columns:1fr}.personalization-color-add-v1791 input[type=color]{width:100%}}
+@media(max-width:620px){
+ .personalization-master-row-v1793.fragrance{grid-template-columns:minmax(0,1fr) 38px}
+ .personalization-master-row-v1793.color{grid-template-columns:26px minmax(0,1fr) 38px}
+ .personalization-master-row-v1793 select{grid-column:1 / -1}
+ .personalization-master-row-v1793.color select{grid-column:1 / -1}
+}
 </style>
 </head>
 <body>
@@ -4887,7 +4904,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.92';
+const APP_VERSION='1.7.93';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -13706,16 +13723,31 @@ function deletePersonalizationCategoryV1792(type,index){
  cats.splice(index,1);const map=type==='color'?lib.colorCategoryMap:lib.fragranceCategoryMap;Object.keys(map).forEach(k=>{if(map[k]===old)delete map[k]});
  save();renderPersonalizationLibraryV1791()
 }
+function savePersonalizationCategoryV1793(){
+ if(!cloudApplying)relDetectChangedOrders();
+ localStorage.setItem(KEY,JSON.stringify(db));
+ if(!cloudApplying){
+  localStorage.setItem(REL_DIRTY,'1');
+  setCloudMeta({dirty:true,verified:false,conflict:false,localChangedAt:new Date().toISOString()});
+  clearTimeout(cloudPushTimer);
+  if(cloudStartupDone)cloudPushTimer=setTimeout(async()=>{
+   await syncPendingOrdersOnly(false);
+   await cloudPushNow(false)
+  },650)
+ }
+}
 function setMasterItemCategoryV1792(type,key,category){
  key=decodeURIComponent(String(key||''));const lib=personalizationLibraryV1791(),map=type==='color'?lib.colorCategoryMap:lib.fragranceCategoryMap;
  if(category)map[key]=category;else delete map[key];
- save();renderPersonalizationLibraryV1791()
+ // V1.7.93: persistir e sincronizar sem renderAll(), para manter o <select> ativo no DOM.
+ savePersonalizationCategoryV1793();
+ if(type==='color')renderProductMasterColorsV1791();else renderProductMasterFragrancesV1791()
 }
 function renderPersonalizationLibraryV1791(){
  const lib=personalizationLibraryV1791(),fb=document.getElementById('masterFragranceListV1791'),cb=document.getElementById('masterColorListV1791');
  renderPersonalizationCategoryControlsV1792();
- if(fb)fb.innerHTML=lib.fragrances.length?lib.fragrances.map((x,i)=>{const k=personalizationKeyV1792(x),cat=lib.fragranceCategoryMap[k]||'';return `<span class="personalization-option-v1791"><span>${escapeHtml(x)}</span><select onchange="setMasterItemCategoryV1792('fragrance','${encodeURIComponent(k)}',this.value)" onclick="event.stopPropagation()"><option value="">Sem categoria</option>${lib.fragranceCategories.map(c=>`<option value="${escapeAttr(c)}" ${c===cat?'selected':''}>${escapeHtml(c)}</option>`).join('')}</select><button type="button" title="Remover" onclick="removeMasterFragranceV1791(${i})">×</button></span>`}).join(''):'<span class="muted">Ainda não existem fragrâncias na biblioteca.</span>';
- if(cb)cb.innerHTML=lib.colors.length?lib.colors.map((x,i)=>{const k=normalizeColorNameV1775(x.name),cat=lib.colorCategoryMap[k]||'';return `<span class="personalization-option-v1791"><i style="background:${escapeAttr(x.hex)}"></i><span>${escapeHtml(x.name)}</span><select onchange="setMasterItemCategoryV1792('color','${encodeURIComponent(k)}',this.value)" onclick="event.stopPropagation()"><option value="">Sem categoria</option>${lib.colorCategories.map(c=>`<option value="${escapeAttr(c)}" ${c===cat?'selected':''}>${escapeHtml(c)}</option>`).join('')}</select><button type="button" title="Remover" onclick="removeMasterColorV1791(${i})">×</button></span>`}).join(''):'<span class="muted">Ainda não existem cores na biblioteca.</span>';
+ if(fb){fb.classList.add('personalization-master-list-v1793');fb.innerHTML=lib.fragrances.length?lib.fragrances.map((x,i)=>{const k=personalizationKeyV1792(x),cat=lib.fragranceCategoryMap[k]||'';return `<div class="personalization-master-row-v1793 fragrance"><span class="personalization-master-name-v1793">${escapeHtml(x)}</span><select aria-label="Categoria de ${escapeAttr(x)}" onchange="setMasterItemCategoryV1792('fragrance','${encodeURIComponent(k)}',this.value)"><option value="">Sem categoria</option>${lib.fragranceCategories.map(c=>`<option value="${escapeAttr(c)}" ${c===cat?'selected':''}>${escapeHtml(c)}</option>`).join('')}</select><button class="personalization-master-remove-v1793" type="button" title="Remover" aria-label="Remover ${escapeAttr(x)}" onclick="removeMasterFragranceV1791(${i})">×</button></div>`}).join(''):'<span class="muted">Ainda não existem fragrâncias na biblioteca.</span>'}
+ if(cb){cb.classList.add('personalization-master-list-v1793');cb.innerHTML=lib.colors.length?lib.colors.map((x,i)=>{const k=normalizeColorNameV1775(x.name),cat=lib.colorCategoryMap[k]||'';return `<div class="personalization-master-row-v1793 color"><i class="personalization-master-swatch-v1793" style="background:${escapeAttr(x.hex)}" aria-hidden="true"></i><span class="personalization-master-name-v1793">${escapeHtml(x.name)}</span><select aria-label="Categoria de ${escapeAttr(x.name)}" onchange="setMasterItemCategoryV1792('color','${encodeURIComponent(k)}',this.value)"><option value="">Sem categoria</option>${lib.colorCategories.map(c=>`<option value="${escapeAttr(c)}" ${c===cat?'selected':''}>${escapeHtml(c)}</option>`).join('')}</select><button class="personalization-master-remove-v1793" type="button" title="Remover" aria-label="Remover ${escapeAttr(x.name)}" onclick="removeMasterColorV1791(${i})">×</button></div>`}).join(''):'<span class="muted">Ainda não existem cores na biblioteca.</span>'}
  renderProductMasterFragrancesV1791();renderProductMasterColorsV1791()
 }
 function addMasterFragranceV1791(){
