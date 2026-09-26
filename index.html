@@ -4904,7 +4904,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.93';
+const APP_VERSION='1.7.94';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -13746,8 +13746,8 @@ function setMasterItemCategoryV1792(type,key,category){
 function renderPersonalizationLibraryV1791(){
  const lib=personalizationLibraryV1791(),fb=document.getElementById('masterFragranceListV1791'),cb=document.getElementById('masterColorListV1791');
  renderPersonalizationCategoryControlsV1792();
- if(fb){fb.classList.add('personalization-master-list-v1793');fb.innerHTML=lib.fragrances.length?lib.fragrances.map((x,i)=>{const k=personalizationKeyV1792(x),cat=lib.fragranceCategoryMap[k]||'';return `<div class="personalization-master-row-v1793 fragrance"><span class="personalization-master-name-v1793">${escapeHtml(x)}</span><select aria-label="Categoria de ${escapeAttr(x)}" onchange="setMasterItemCategoryV1792('fragrance','${encodeURIComponent(k)}',this.value)"><option value="">Sem categoria</option>${lib.fragranceCategories.map(c=>`<option value="${escapeAttr(c)}" ${c===cat?'selected':''}>${escapeHtml(c)}</option>`).join('')}</select><button class="personalization-master-remove-v1793" type="button" title="Remover" aria-label="Remover ${escapeAttr(x)}" onclick="removeMasterFragranceV1791(${i})">×</button></div>`}).join(''):'<span class="muted">Ainda não existem fragrâncias na biblioteca.</span>'}
- if(cb){cb.classList.add('personalization-master-list-v1793');cb.innerHTML=lib.colors.length?lib.colors.map((x,i)=>{const k=normalizeColorNameV1775(x.name),cat=lib.colorCategoryMap[k]||'';return `<div class="personalization-master-row-v1793 color"><i class="personalization-master-swatch-v1793" style="background:${escapeAttr(x.hex)}" aria-hidden="true"></i><span class="personalization-master-name-v1793">${escapeHtml(x.name)}</span><select aria-label="Categoria de ${escapeAttr(x.name)}" onchange="setMasterItemCategoryV1792('color','${encodeURIComponent(k)}',this.value)"><option value="">Sem categoria</option>${lib.colorCategories.map(c=>`<option value="${escapeAttr(c)}" ${c===cat?'selected':''}>${escapeHtml(c)}</option>`).join('')}</select><button class="personalization-master-remove-v1793" type="button" title="Remover" aria-label="Remover ${escapeAttr(x.name)}" onclick="removeMasterColorV1791(${i})">×</button></div>`}).join(''):'<span class="muted">Ainda não existem cores na biblioteca.</span>'}
+ if(fb){fb.classList.add('personalization-master-list-v1793');fb.innerHTML=lib.fragrances.length?lib.fragrances.map((x,i)=>{const k=personalizationKeyV1792(x),cat=lib.fragranceCategoryMap[k]||'';return `<div class="personalization-master-row-v1793 fragrance"><span class="personalization-master-name-v1793">${escapeHtml(x)}</span><select class="personalization-master-category-select-v1794" aria-label="Categoria de ${escapeAttr(x)}" onchange="setMasterItemCategoryV1792('fragrance','${encodeURIComponent(k)}',this.value)"><option value="">Sem categoria</option>${lib.fragranceCategories.map(c=>`<option value="${escapeAttr(c)}" ${c===cat?'selected':''}>${escapeHtml(c)}</option>`).join('')}</select><button class="personalization-master-remove-v1793" type="button" title="Remover" aria-label="Remover ${escapeAttr(x)}" onclick="removeMasterFragranceV1791(${i})">×</button></div>`}).join(''):'<span class="muted">Ainda não existem fragrâncias na biblioteca.</span>'}
+ if(cb){cb.classList.add('personalization-master-list-v1793');cb.innerHTML=lib.colors.length?lib.colors.map((x,i)=>{const k=normalizeColorNameV1775(x.name),cat=lib.colorCategoryMap[k]||'';return `<div class="personalization-master-row-v1793 color"><i class="personalization-master-swatch-v1793" style="background:${escapeAttr(x.hex)}" aria-hidden="true"></i><span class="personalization-master-name-v1793">${escapeHtml(x.name)}</span><select class="personalization-master-category-select-v1794" aria-label="Categoria de ${escapeAttr(x.name)}" onchange="setMasterItemCategoryV1792('color','${encodeURIComponent(k)}',this.value)"><option value="">Sem categoria</option>${lib.colorCategories.map(c=>`<option value="${escapeAttr(c)}" ${c===cat?'selected':''}>${escapeHtml(c)}</option>`).join('')}</select><button class="personalization-master-remove-v1793" type="button" title="Remover" aria-label="Remover ${escapeAttr(x.name)}" onclick="removeMasterColorV1791(${i})">×</button></div>`}).join(''):'<span class="muted">Ainda não existem cores na biblioteca.</span>'}
  renderProductMasterFragrancesV1791();renderProductMasterColorsV1791()
 }
 function addMasterFragranceV1791(){
@@ -16928,9 +16928,26 @@ window.addEventListener('artessencia:datachanged',()=>{
  // Evento interno disponível para módulos que passem a necessitar de reação específica.
 });
 window.addEventListener('pageshow',e=>{if(e.persisted)setTimeout(()=>renderAll(),0)});
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(()=>renderAll(),0)});
+// V1.7.94 — proteger o seletor nativo de categoria contra re-renders globais
+// enquanto está aberto (iOS/iPadOS/Android podem disparar visibilitychange).
+let personalizationCategorySelectOpenV1794=false;
+function isPersonalizationCategorySelectV1794(el){return !!el?.classList?.contains('personalization-master-category-select-v1794')}
+document.addEventListener('pointerdown',e=>{
+ if(isPersonalizationCategorySelectV1794(e.target))personalizationCategorySelectOpenV1794=true;
+},{capture:true,passive:true});
+document.addEventListener('focusin',e=>{
+ if(isPersonalizationCategorySelectV1794(e.target))personalizationCategorySelectOpenV1794=true;
+},true);
+document.addEventListener('focusout',e=>{
+ if(!isPersonalizationCategorySelectV1794(e.target))return;
+ setTimeout(()=>{if(!isPersonalizationCategorySelectV1794(document.activeElement))personalizationCategorySelectOpenV1794=false},180);
+},true);
+document.addEventListener('visibilitychange',()=>{
+ if(document.visibilityState!=='visible')return;
+ setTimeout(()=>{if(!personalizationCategorySelectOpenV1794)renderAll()},0)
+});
 
-function renderAll(){ensureQuotePaymentModel();ensureCostModel();syncPackagingSelect();renderClientSuggestions();renderDashboard();renderPicker();renderCart();renderOrders();renderProduction();renderCosts();renderStock();renderPurchases();renderCash();renderClients();renderQuotes();renderQuoteCart();renderProducts();renderCatalogs();renderSpecialEditionsAdmin();renderCatalogDigitalCenterV160();renderSettings();renderAprecoImportV1753();renderBusinessSettings();renderPersonalizationLibraryV1791();renderReports();renderQuantityPricingV1750();renderLegalSummaryV1286();renderCloudUI();renderBackupInfo();renderOrderNotificationsV12624();renderPushStatusV12625();const s=sec();if(document.getElementById('lockMinutes'))document.getElementById('lockMinutes').value=String(s.lockMinutes??15)}
+function renderAll(){ensureQuotePaymentModel();ensureCostModel();syncPackagingSelect();renderClientSuggestions();renderDashboard();renderPicker();renderCart();renderOrders();renderProduction();renderCosts();renderStock();renderPurchases();renderCash();renderClients();renderQuotes();renderQuoteCart();renderProducts();renderCatalogs();renderSpecialEditionsAdmin();renderCatalogDigitalCenterV160();renderSettings();renderAprecoImportV1753();renderBusinessSettings();if(!personalizationCategorySelectOpenV1794)renderPersonalizationLibraryV1791();renderReports();renderQuantityPricingV1750();renderLegalSummaryV1286();renderCloudUI();renderBackupInfo();renderOrderNotificationsV12624();renderPushStatusV12625();const s=sec();if(document.getElementById('lockMinutes'))document.getElementById('lockMinutes').value=String(s.lockMinutes??15)}
 document.addEventListener('input',e=>{if(e.target&&['costPackQty','costPackPrice'].includes(e.target.id))updateCostPreview()});
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;installBtn.classList.remove('hidden');installBanner.classList.remove('hidden')});
 async function installApp(){if(!deferredPrompt)return toast('No Chrome: menu ⋮ → Adicionar ao ecrã principal / Instalar app');deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;installBtn.classList.add('hidden');installBanner.classList.add('hidden')}
