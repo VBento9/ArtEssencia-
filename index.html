@@ -4820,7 +4820,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.89';
+const APP_VERSION='1.7.90';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -15831,24 +15831,50 @@ async function fetchCloudRowAuthoritative(user){
  if(best)cloudLogMsg('Leitura autoritativa cloud · revisão '+Number(best.revision||0));
  return best
 }
-async function saveCloudStateSimple(user,localData){
- const remote=await fetchCloudRowAuthoritative(user);
- const currentRev=Number(remote?.revision||0);
+async function saveCloudStateSimple(user,localData,{force=false}={}){
+ const meta=cloudMeta();
+ let expectedRev=Number(meta.baseRevision||0);
+ let remote=null;
+ if(force||!expectedRev){
+   remote=await fetchCloudRowAuthoritative(user);
+   expectedRev=Number(remote?.revision||0);
+ }
  const payload={
    data:localData,
    app_version:APP_VERSION,
    device_id:getDeviceId(),
    updated_at:new Date().toISOString(),
-   revision:currentRev+1
+   revision:expectedRev+1
  };
- if(remote){
+ if(expectedRev>0){
    const {data,error}=await cloudStateQuery()
      .update(payload)
      .eq('user_id',user.id)
+     .eq('revision',expectedRev)
      .select('user_id,data,updated_at,app_version,device_id,revision')
      .maybeSingle();
-   if(error)throw error;
-   return data||null
+   if(error){
+     if(error.code==='40001'||String(error.message||'').includes('cloud_revision_conflict')){
+       const latest=await fetchCloudRowAuthoritative(user);
+       const latestRev=Number(latest?.revision||0);
+       cloudConflict={type:'revision',baseRevision:expectedRev,remoteRevision:latestRev};
+       setCloudMeta({dirty:true,conflict:true,verified:false,remoteRevision:latestRev});
+       cloudLogMsg(`Conflito Cloud detetado · base ${expectedRev} · Cloud ${latestRev}`);
+     }
+     throw error;
+   }
+   if(!data){
+     const latest=await fetchCloudRowAuthoritative(user);
+     const latestRev=Number(latest?.revision||0);
+     cloudConflict={type:'revision',baseRevision:expectedRev,remoteRevision:latestRev};
+     setCloudMeta({dirty:true,conflict:true,verified:false,remoteRevision:latestRev});
+     cloudLogMsg(`Conflito Cloud detetado · base ${expectedRev} · Cloud ${latestRev}`);
+     throw new Error('cloud_revision_conflict');
+   }
+   const writtenRev=Number(data.revision||expectedRev+1);
+   setCloudMeta({baseRevision:writtenRev,remoteRevision:writtenRev,lastCloudAt:data.updated_at||new Date().toISOString(),conflict:false,verified:true});
+   cloudConflict=null;
+   return data
  }
  const {data,error}=await cloudStateQuery()
    .insert({user_id:user.id,...payload})
@@ -15857,16 +15883,16 @@ async function saveCloudStateSimple(user,localData){
  if(error){
    if(error.code==='23505'){
      const latest=await fetchCloudRowAuthoritative(user);
-     const retryPayload={...payload,revision:Number(latest?.revision||0)+1,updated_at:new Date().toISOString()};
-     const {data:retry,error:retryError}=await cloudStateQuery()
-       .update(retryPayload)
-       .eq('user_id',user.id)
-       .select('user_id,data,updated_at,app_version,device_id,revision')
-       .maybeSingle();
-     if(retryError)throw retryError;
-     return retry||null
+     const latestRev=Number(latest?.revision||0);
+     cloudConflict={type:'revision',baseRevision:0,remoteRevision:latestRev};
+     setCloudMeta({dirty:true,conflict:true,verified:false,remoteRevision:latestRev});
+     cloudLogMsg(`Conflito Cloud detetado na criação · Cloud ${latestRev}`);
    }
    throw error
+ }
+ if(data){
+   const writtenRev=Number(data.revision||1);
+   setCloudMeta({baseRevision:writtenRev,remoteRevision:writtenRev,lastCloudAt:data.updated_at||new Date().toISOString(),conflict:false,verified:true});
  }
  return data||null
 }
@@ -15891,9 +15917,9 @@ function mergeOperationalCloudSnapshotV139(remoteData){
  }
  return changed
 }
-async function pushOperationalCloudStateV139(user){
+async function pushOperationalCloudStateV139(user,{force=false}={}){
  const payload={...operationalCloudSnapshotV139(),_meta:{appVersion:APP_VERSION,schema:7,updatedAt:new Date().toISOString()}};
- return await saveCloudStateSimple(user,payload)
+ return await saveCloudStateSimple(user,payload,{force})
 }
 async function pullOperationalCloudStateV139(user){
  const row=await fetchCloudRowAuthoritative(user);
@@ -15981,9 +16007,15 @@ async function cloudPushNow(showToast=true){
        cloudLogMsg('Dados operacionais enviados · stock, compras, caixa, produção e configuração');
      }catch(e){
        localStorage.setItem(REL_DIRTY,'1');
-       setCloudMeta({dirty:true,verified:false});
-       cloudLogMsg('Falha ao enviar dados operacionais: '+cloudErrText(e));
-       if(showToast)toast('Dados principais sincronizados, mas faltou sincronizar Stock/Configuração');
+       const isConflict=String(e?.message||'').includes('cloud_revision_conflict')||e?.code==='40001';
+       setCloudMeta({dirty:true,verified:false,conflict:isConflict||cloudMeta().conflict});
+       if(isConflict){
+         cloudLogMsg('Conflito multi-dispositivo: alterações locais preservadas, envio suspenso');
+         if(showToast)toast('Conflito Cloud — escolhe “Manter dados deste dispositivo” ou “Usar dados da Cloud”');
+       }else{
+         cloudLogMsg('Falha ao enviar dados operacionais: '+cloudErrText(e));
+         if(showToast)toast('Dados principais sincronizados, mas faltou sincronizar Stock/Configuração');
+       }
        return false
      }
    }
@@ -16041,10 +16073,37 @@ async function cloudResolveConflict(choice){
    if(!confirm('Manter o backup restaurado como base deste dispositivo e enviá-lo para a Cloud? Registos Cloud mais recentes que não colidam podem ser preservados.'))return false;
    clearRestorePendingV12645();
  }
- setCloudMeta({conflict:false});
- cloudConflict=null;
- if(choice==='remote')return relationalHydrateCore(true);
- if(choice==='local'){localStorage.setItem(REL_DIRTY,'1');setCloudMeta({dirty:true,verified:false});return relationalSyncCore(true)}
+ if(choice==='remote'){
+   setCloudMeta({conflict:false});
+   cloudConflict=null;
+   const u=cloudUser||await ensureCloudSession();
+   if(u){try{await pullOperationalCloudStateV139(u)}catch(e){cloudLogMsg('Falha ao aplicar dados operacionais da Cloud: '+cloudErrText(e));return false}}
+   return relationalHydrateCore(true)
+ }
+ if(choice==='local'){
+   localStorage.setItem(REL_DIRTY,'1');
+   setCloudMeta({dirty:true,verified:false,conflict:false});
+   cloudConflict=null;
+   const ok=await relationalSyncCore(true);
+   if(!ok)return false;
+   const u=cloudUser||await ensureCloudSession();
+   if(!u)return false;
+   try{
+     await pushOperationalCloudStateV139(u,{force:true});
+     finalizeCloudCleanV1739(Date.now(),false);
+     cloudLogMsg('Conflito resolvido manualmente · dados deste dispositivo mantidos');
+     toast('Dados deste dispositivo enviados para a Cloud');
+     return true
+   }catch(e){
+     localStorage.setItem(REL_DIRTY,'1');
+     setCloudMeta({dirty:true,verified:false,conflict:true});
+     cloudConflict={type:'revision'};
+     cloudLogMsg('Falha ao resolver conflito: '+cloudErrText(e));
+     toast('Não foi possível concluir a resolução do conflito');
+     return false
+   }
+ }
+ return false
 }
 function getDeviceId(){let id=localStorage.getItem(DEVICE_KEY);if(!id){id='DEV-'+Math.random().toString(36).slice(2,8)+'-'+Date.now().toString(36);localStorage.setItem(DEVICE_KEY,id)}return id}
 window.addEventListener('online',()=>{renderCloudUI();if(!hasRestorePendingV12645()&&cloudMeta().dirty&&cloudStartupDone)setTimeout(()=>cloudPushNow(false),700)});window.addEventListener('offline',renderCloudUI);
