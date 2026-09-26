@@ -3916,11 +3916,13 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div class="section-title">Criar campanha</div>
         <div class="form-grid">
           <div class="field span2"><label>Título</label><input id="campaignTitleV12626" maxlength="60" placeholder="Ex.: 🎄 Natal ArtEssencia chegou"></div>
-          <div class="field span2"><label>Mensagem</label><textarea id="campaignBodyV12626" maxlength="180" rows="4" placeholder="Ex.: Descobre a nossa edição especial e garante a tua caixa."></textarea></div>
-          <div class="field"><label>Abrir ao tocar</label><select id="campaignDestinationV12626"><option value="home">Início da loja</option><option value="creator">Criador de Caixas</option><option value="special">Edições Especiais</option><option value="catalog">Catálogo</option></select></div>
+          <div class="field span2"><label>Mensagem</label><textarea id="campaignBodyV12626" maxlength="180" rows="4" placeholder="Ex.: Descobre a nossa nova coleção ArtEssencia."></textarea></div>
+          <div class="field"><label>Tipo</label><select id="campaignKindV1796"><option value="news">Novidade</option><option value="collection">Nova coleção</option><option value="flash">Coleção relâmpago</option><option value="promo">Promoção</option><option value="last_days">Últimos dias</option><option value="custom" selected>Personalizada</option></select></div>
+          <div class="field"><label>Público</label><select id="campaignAudienceV1796"><option value="shop">Loja</option><option value="catalog">Catálogo</option><option value="both" selected>Loja + Catálogo</option></select></div>
+          <div class="field"><label>Abrir ao tocar</label><select id="campaignDestinationV12626"><option value="home">Início</option><option value="special">Coleções / Edições Especiais</option><option value="product">Produto</option><option value="catalog">Catálogo</option><option value="shop">Loja</option></select></div>
           <div class="field"><label>Etiqueta interna</label><input id="campaignLabelV12626" maxlength="40" placeholder="Ex.: Natal 2026"></div>
         </div>
-        <div class="campaign-note">Marketing e gestão ficam separados: clientes recebem apenas campanhas; os avisos de novas encomendas continuam exclusivos dos dispositivos ArtEssencia de administração.</div>
+        <div class="campaign-note"><b>Marketing e gestão ficam separados.</b> Clientes recebem apenas campanhas que autorizarem; novas encomendas continuam exclusivas dos dispositivos ArtEssencia de administração. O envio Push aos clientes só fica ativo depois de configuradas as chaves VAPID seguras no Supabase.</div>
         <div class="btnrow" style="margin-top:12px"><button class="btn" onclick="sendCampaignTestV12626()">🔔 Testar só nos dispositivos de gestão</button><button class="btn primary" onclick="sendCampaignV12626()">📣 Enviar aos clientes</button></div>
       </div>
       <div class="card campaign-card">
@@ -4965,7 +4967,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.95';
+const APP_VERSION='1.7.96';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -5492,7 +5494,7 @@ window.addEventListener('pageshow',()=>setTimeout(renderPushStatusV12625,350));
 
 // ArtEssencia V12.6.26 — Campanhas Push Marketing (separadas do Push de Administração).
 let campaignBusyV12626=false;
-function campaignFormV12626(){return {title:($('campaignTitleV12626')?.value||'').trim(),body:($('campaignBodyV12626')?.value||'').trim(),destination:$('campaignDestinationV12626')?.value||'home',label:($('campaignLabelV12626')?.value||'').trim()}}
+function campaignFormV12626(){return {title:($('campaignTitleV12626')?.value||'').trim(),body:($('campaignBodyV12626')?.value||'').trim(),kind:$('campaignKindV1796')?.value||'custom',audience:$('campaignAudienceV1796')?.value||'both',destination:$('campaignDestinationV12626')?.value||'home',label:($('campaignLabelV12626')?.value||'').trim()}}
 
 // V12.6.37 — gestão central da Homepage ArtEssencia
 const HOME_CATEGORY_DEFAULTS_V170=['Velas em molde','Velas em recipiente','Wax melts'];
@@ -5603,7 +5605,7 @@ document.getElementById('legal')?.addEventListener('input',()=>{legalAdminV1286.
 ['homeEyebrowV12637','homeTitleV12637','homeSubtitleV12637','homeCta1V12637','homeCta2V12637','homeB1IconV12637','homeB1TextV12637','homeB2IconV12637','homeB2TextV12637','homeB3IconV12637','homeB3TextV12637'].forEach(id=>setTimeout(()=>$ (id)?.addEventListener('input',updateHomepagePreviewV12637),0));
 
 function updateCampaignPreviewV12626(){const x=campaignFormV12626();const t=$('campaignPreviewTitleV12626'),b=$('campaignPreviewBodyV12626');if(t)t.textContent=x.title||'🕯️ ArtEssencia';if(b)b.textContent=x.body||'Escreve uma mensagem para visualizar a notificação.'}
-['campaignTitleV12626','campaignBodyV12626','campaignDestinationV12626'].forEach(id=>setTimeout(()=>$ (id)?.addEventListener('input',updateCampaignPreviewV12626),0));
+['campaignTitleV12626','campaignBodyV12626','campaignDestinationV12626','campaignKindV1796','campaignAudienceV1796'].forEach(id=>setTimeout(()=>$ (id)?.addEventListener('input',updateCampaignPreviewV12626),0));
 async function campaignInvokeV12626(action,payload={}){const u=cloudUser||await ensureCloudSession();if(!u||!cloudClient)throw new Error('Liga primeiro a ArtEssencia Cloud');const {data,error}=await cloudClient.functions.invoke('artessencia-push-campaign-admin',{body:{action,...payload}});if(error)throw error;if(!data?.ok)throw new Error(data?.error||'Falha na campanha');return data}
 async function loadCampaignDashboardV12626(showToast=false){try{const d=await campaignInvokeV12626('dashboard');const k=$('campaignKpisV12626');if(k)k.innerHTML=`<div class="campaign-kpi"><small>Clientes com Push</small><b>${Number(d.marketingActive||0)}</b></div><div class="campaign-kpi"><small>Dispositivos gestão</small><b>${Number(d.adminActive||0)}</b></div><div class="campaign-kpi"><small>Campanhas enviadas</small><b>${Number(d.sentCount||0)}</b></div>`;const h=$('campaignHistoryV12626'),rows=Array.isArray(d.campaigns)?d.campaigns:[];if(h)h.innerHTML=rows.length?rows.map(x=>`<div class="campaign-row"><div class="row"><b>${escapeHtml(x.title||'Campanha')}</b><span class="campaign-status ${x.status==='sent'?'sent':x.status==='failed'?'failed':''}">${escapeHtml(x.status||'')}</span></div><small>${escapeHtml(x.body||'')}</small><small>${new Date(x.created_at).toLocaleString('pt-PT')} · enviados ${Number(x.sent||0)} · falhas ${Number(x.failed||0)}</small></div>`).join(''):'<div class="muted">Ainda não existem campanhas.</div>';if(showToast)toast('Campanhas atualizadas')}catch(e){if(showToast)toast('Campanhas: '+String(e?.message||e))}}
 async function sendCampaignTestV12626(){if(campaignBusyV12626)return;const x=campaignFormV12626();if(!x.title||!x.body)return toast('Preenche título e mensagem');campaignBusyV12626=true;try{const d=await campaignInvokeV12626('test_admin',{campaign:x});toast(`🔔 Teste enviado · ${Number(d.sent||0)} dispositivo(s)`)}catch(e){toast('Teste: '+String(e?.message||e))}finally{campaignBusyV12626=false}}
