@@ -4322,6 +4322,67 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
     </div>
   </section>
 
+  <section id="digitalStats" class="screen">
+    <div class="reports-hero card">
+      <div>
+        <div class="section-title" style="margin:0">Estatísticas Digitais</div>
+        <small>Visitas e interações da Loja e do Catálogo, sempre apresentadas separadamente.</small>
+      </div>
+      <div class="reports-actions">
+        <button class="btn" id="digitalStatsShopBtnV1795" onclick="setDigitalStatsSourceV1795('shop')">Loja</button>
+        <button class="btn" id="digitalStatsCatalogBtnV1795" onclick="setDigitalStatsSourceV1795('catalog')">Catálogo</button>
+        <button class="btn primary" onclick="loadDigitalStatsV1795(true)">Atualizar</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:10px">
+      <div class="grid3">
+        <div class="field">
+          <label>Período</label>
+          <select id="digitalStatsPeriodV1795" onchange="digitalStatsPeriodChangedV1795()">
+            <option value="today">Hoje</option>
+            <option value="7">Últimos 7 dias</option>
+            <option value="30" selected>Últimos 30 dias</option>
+            <option value="month">Mês atual</option>
+            <option value="custom">Personalizado</option>
+          </select>
+        </div>
+        <div class="field" id="digitalStatsFromWrapV1795" style="display:none">
+          <label>De</label><input type="date" id="digitalStatsFromV1795">
+        </div>
+        <div class="field" id="digitalStatsToWrapV1795" style="display:none">
+          <label>Até</label><input type="date" id="digitalStatsToV1795">
+        </div>
+      </div>
+      <div id="digitalStatsStatusV1795" class="muted" style="margin-top:8px">A aguardar dados.</div>
+    </div>
+
+    <div id="digitalStatsKpisV1795" class="reports-kpis" style="margin-top:14px"></div>
+
+    <div class="reports-stack-v1725" style="margin-top:14px">
+      <section class="card reports-section-v1725">
+        <div class="reports-section-head-v1725">
+          <div class="section-title" style="margin:0">Produtos mais vistos</div>
+          <small>Visualizações e interações registadas no período selecionado.</small>
+        </div>
+        <div id="digitalStatsProductsV1795"></div>
+      </section>
+
+      <section class="card reports-section-v1725">
+        <div class="reports-section-head-v1725">
+          <div class="section-title" style="margin:0">Evolução diária</div>
+          <small>Visitas, visualizações de produto e encomendas por dia.</small>
+        </div>
+        <div id="digitalStatsDailyV1795"></div>
+      </section>
+    </div>
+
+    <div class="card reports-note" style="margin-top:10px">
+      <strong>Privacidade</strong>
+      <span>As estatísticas não guardam nome, email, telefone, morada ou IP do visitante.</span>
+    </div>
+  </section>
+
   <section id="reports" class="screen">
     <div class="reports-hero card">
       <div>
@@ -4904,7 +4965,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.94';
+const APP_VERSION='1.7.95';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -5305,10 +5366,10 @@ function installNavKeyboard(){
 
 setTimeout(installNavKeyboard,0);
 
-const pages=[['dashboard','Dashboard'],['sale','Vendas'],['orders','Encomendas'],['quotes','Orçamentos'],['production','Produção'],['costs','Custos'],['stock','Stock'],['purchases','Compras'],['cash','Caixa'],['clients','Clientes'],['email','Comunicações · Email'],['reports','Relatórios'],['quantityPricing','Precificação em quantidade'],['products','Produtos'],['catalogDigital','Catálogo Digital'],['catalogs','Catálogos'],['specialEditions','Edições Especiais'],['homepage','Homepage pública'],['campaigns','Campanhas'],['delivery','Entregas · futura Loja'],['legal','Informação Legal pública'],['settings','Configuração'],['cloud','Cloud Sync'],['backup','Backup']];
+const pages=[['dashboard','Dashboard'],['sale','Vendas'],['orders','Encomendas'],['quotes','Orçamentos'],['production','Produção'],['costs','Custos'],['stock','Stock'],['purchases','Compras'],['cash','Caixa'],['clients','Clientes'],['email','Comunicações · Email'],['digitalStats','Estatísticas Digitais'],['reports','Relatórios'],['quantityPricing','Precificação em quantidade'],['products','Produtos'],['catalogDigital','Catálogo Digital'],['catalogs','Catálogos'],['specialEditions','Edições Especiais'],['homepage','Homepage pública'],['campaigns','Campanhas'],['delivery','Entregas · futura Loja'],['legal','Informação Legal pública'],['settings','Configuração'],['cloud','Cloud Sync'],['backup','Backup']];
 const pageIcons={
  dashboard:'🏠',sale:'➕',orders:'🧾',quotes:'📄',production:'🛠️',costs:'🧮',stock:'📦',purchases:'🛒',cash:'💶',
- clients:'👥',email:'✉️',reports:'📊',quantityPricing:'🧮',products:'🕯️',catalogs:'🗂️',specialEditions:'🎉',homepage:'🖼️',campaigns:'📣',delivery:'🚚',legal:'⚖️',settings:'⚙️',cloud:'☁️',backup:'💾'
+ clients:'👥',email:'✉️',digitalStats:'📈',reports:'📊',quantityPricing:'🧮',products:'🕯️',catalogs:'🗂️',specialEditions:'🎉',homepage:'🖼️',campaigns:'📣',delivery:'🚚',legal:'⚖️',settings:'⚙️',cloud:'☁️',backup:'💾'
 };
 document.getElementById('nav').innerHTML=pages.map(([id,l])=>`<button data-page="${id}" onclick="go('${id}')"><span class="nav-icon">${pageIcons[id]||'•'}</span><span class="nav-label">${l}</span>${id==='orders'?'<span id="navOrderBadgeV12624" class="nav-order-badge-v12624 hidden">0</span>':''}${id==='email'?'<span id="navEmailBadgeV1716" class="nav-order-badge-v12624 hidden">0</span>':''}<span class="nav-active-dot"></span></button>`).join('');
 document.getElementById('today').textContent=new Date().toLocaleDateString('pt-PT',{weekday:'short',day:'2-digit',month:'short'});
@@ -5951,9 +6012,9 @@ function go(id){
  requestAnimationFrame(()=>target.classList.add('screen-enter'));
  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
  document.getElementById('pageTitle').textContent=pages.find(x=>x[0]===id)?.[1]||'';
- const contextMap={dashboard:'VISÃO GERAL',sale:'ENCOMENDAS',orders:'ENCOMENDAS',quotes:'ORÇAMENTOS',production:'PRODUÇÃO',costs:'GESTÃO',stock:'GESTÃO',purchases:'GESTÃO',cash:'FINANCEIRO',clients:'CLIENTES',email:'COMUNICAÇÕES',reports:'RELATÓRIOS',quantityPricing:'PRECIFICAÇÃO',products:'CATÁLOGO DIGITAL',catalogDigital:'CATÁLOGO DIGITAL',catalogs:'CATÁLOGO DIGITAL',specialEditions:'LOJA ONLINE',homepage:'LOJA ONLINE',campaigns:'MARKETING',delivery:'LOJA ONLINE',legal:'CONFORMIDADE',settings:'SISTEMA',cloud:'SISTEMA',backup:'SISTEMA'};
+ const contextMap={dashboard:'VISÃO GERAL',sale:'ENCOMENDAS',orders:'ENCOMENDAS',quotes:'ORÇAMENTOS',production:'PRODUÇÃO',costs:'GESTÃO',stock:'GESTÃO',purchases:'GESTÃO',cash:'FINANCEIRO',clients:'CLIENTES',email:'COMUNICAÇÕES',digitalStats:'ESTATÍSTICAS DIGITAIS',reports:'RELATÓRIOS',quantityPricing:'PRECIFICAÇÃO',products:'CATÁLOGO DIGITAL',catalogDigital:'CATÁLOGO DIGITAL',catalogs:'CATÁLOGO DIGITAL',specialEditions:'LOJA ONLINE',homepage:'LOJA ONLINE',campaigns:'MARKETING',delivery:'LOJA ONLINE',legal:'CONFORMIDADE',settings:'SISTEMA',cloud:'SISTEMA',backup:'SISTEMA'};
  const pc=document.getElementById('pageContext');if(pc)pc.textContent=contextMap[id]||'GESTÃO ArtEssencia';
- renderAll();if(id==='email')setTimeout(()=>loadEmailModuleV177(false),30);if(id==='campaigns')setTimeout(()=>loadCampaignDashboardV12626(false),50);
+ renderAll();if(id==='email')setTimeout(()=>loadEmailModuleV177(false),30);if(id==='digitalStats')setTimeout(()=>loadDigitalStatsV1795(false),30);if(id==='campaigns')setTimeout(()=>loadCampaignDashboardV12626(false),50);
  if(id==='delivery'){renderShopDeliverySettings();renderShopCapacityAgenda();}
  if(id==='quantityPricing')setTimeout(()=>renderQuantityPricingV1750(),20);
  if(id==='catalogDigital')loadCatalogDigitalCenterV160(false); if(id==='specialEditions'){renderSpecialEditionProductPicker([]);loadSpecialEditionsAdmin(false);} if(id==='homepage')loadHomepageAdminV12637(false);if(id==='legal')loadLegalAdminV1286(false);
@@ -15652,6 +15713,112 @@ async function deleteQuote(id){
 }
 function quoteConversion(){const qs=db.quotes||[],decided=qs.filter(q=>q.orderId||['Aceite','Convertido','Recusado'].includes(q.status)),accepted=decided.filter(q=>q.orderId||['Aceite','Convertido'].includes(q.status)).length;return{total:qs.length,accepted,refused:decided.filter(q=>q.status==='Recusado').length,rate:decided.length?accepted/decided.length:0}}
 
+let digitalStatsStateV1795={source:'shop',data:null,loading:false,error:''};
+
+function digitalStatsIsoV1795(d){
+ const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
+ return y+'-'+m+'-'+day
+}
+function digitalStatsRangeV1795(){
+ const period=document.getElementById('digitalStatsPeriodV1795')?.value||'30',now=new Date(),to=new Date(now.getFullYear(),now.getMonth(),now.getDate()),from=new Date(to);
+ if(period==='today'){}
+ else if(period==='7')from.setDate(from.getDate()-6);
+ else if(period==='30')from.setDate(from.getDate()-29);
+ else if(period==='month')from.setDate(1);
+ else if(period==='custom'){
+  const f=document.getElementById('digitalStatsFromV1795')?.value||'',t=document.getElementById('digitalStatsToV1795')?.value||'';
+  return {from:f,to:t}
+ }
+ return {from:digitalStatsIsoV1795(from),to:digitalStatsIsoV1795(to)}
+}
+function digitalStatsPeriodChangedV1795(){
+ const custom=document.getElementById('digitalStatsPeriodV1795')?.value==='custom';
+ const fw=document.getElementById('digitalStatsFromWrapV1795'),tw=document.getElementById('digitalStatsToWrapV1795');
+ if(fw)fw.style.display=custom?'block':'none';
+ if(tw)tw.style.display=custom?'block':'none';
+ if(!custom)loadDigitalStatsV1795(false)
+}
+function setDigitalStatsSourceV1795(source){
+ digitalStatsStateV1795.source=source==='catalog'?'catalog':'shop';
+ renderDigitalStatsV1795();
+ loadDigitalStatsV1795(false)
+}
+function renderDigitalStatsV1795(){
+ const st=digitalStatsStateV1795,shop=st.source==='shop';
+ const sb=document.getElementById('digitalStatsShopBtnV1795'),cb=document.getElementById('digitalStatsCatalogBtnV1795');
+ if(sb)sb.className='btn '+(shop?'primary':'');
+ if(cb)cb.className='btn '+(!shop?'primary':'');
+ const status=document.getElementById('digitalStatsStatusV1795');
+ if(status)status.textContent=st.loading?'A carregar estatísticas…':st.error?st.error:(st.data?(shop?'Dados da Loja':'Dados do Catálogo'):'A aguardar dados.');
+ const k=document.getElementById('digitalStatsKpisV1795'),p=document.getElementById('digitalStatsProductsV1795'),d=document.getElementById('digitalStatsDailyV1795');
+ if(!k||!p||!d)return;
+ if(!st.data){
+  k.innerHTML='';
+  p.innerHTML='<div class="empty">'+(st.loading?'A carregar…':st.error?'Não foi possível carregar os dados.':'Sem dados carregados.')+'</div>';
+  d.innerHTML='<div class="empty">'+(st.loading?'A carregar…':'Sem dados carregados.')+'</div>';
+  return
+ }
+ const t=st.data.totals||{},sessions=Number(t.sessions)||0,orders=Number(t.order_submitted)||0,contacts=Number(t.contact_clicks)||0,shares=Number(t.share_clicks)||0;
+ const rate=shop?(sessions?orders/sessions:0):(sessions?(contacts+shares)/sessions:0);
+ const rows=shop?[
+  ['Visitas',Number(t.visits)||0,'Aberturas registadas'],
+  ['Sessões',sessions,'Sessões anónimas distintas'],
+  ['Produtos vistos',Number(t.product_views)||0,'Aberturas de detalhe'],
+  ['Cliques em coleções',Number(t.campaign_clicks)||0,'Interações com campanhas'],
+  ['Adições ao carrinho',Number(t.add_to_cart)||0,'Produtos adicionados'],
+  ['Checkouts iniciados',Number(t.checkout_started)||0,'Inícios de finalização'],
+  ['Encomendas enviadas',orders,'Pedidos registados com sucesso'],
+  ['Conversão',pct(rate),'Encomendas ÷ sessões']
+ ]:[
+  ['Visitas',Number(t.visits)||0,'Aberturas registadas'],
+  ['Sessões',sessions,'Sessões anónimas distintas'],
+  ['Produtos vistos',Number(t.product_views)||0,'Aberturas de detalhe'],
+  ['Cliques em coleções',Number(t.campaign_clicks)||0,'Interações com campanhas'],
+  ['Contactos',contacts,'Pedidos de informação'],
+  ['Partilhas',shares,'Partilhas/cópias de produto'],
+  ['Taxa de interesse',pct(rate),'Contactos + partilhas ÷ sessões']
+ ];
+ k.innerHTML=rows.map(([label,value,note])=>'<div class="card report-kpi"><span>'+escapeHtml(label)+'</span><strong>'+escapeHtml(String(value))+'</strong><small>'+escapeHtml(note)+'</small></div>').join('');
+ const products=Array.isArray(st.data.top_products)?st.data.top_products:[];
+ p.innerHTML=products.length?products.map((x,i)=>'<div class="report-product"><span class="report-rank">'+(i+1)+'</span><div><strong>'+escapeHtml(x.name||x.product_id||'Produto')+'</strong><small>'+Number(x.views||0)+' visualizações'+(shop?' · '+Number(x.cart_adds||0)+' carrinho':' · '+Number(x.contacts||0)+' contactos')+'</small></div><strong>'+Number(x.views||0)+'</strong></div>').join(''):'<div class="empty">Sem visualizações de produtos neste período</div>';
+ const daily=Array.isArray(st.data.daily)?st.data.daily:[];
+ d.innerHTML=daily.length?daily.map(x=>'<div class="report-line"><span>'+escapeHtml(String(x.day||''))+'</span><strong>'+Number(x.visits||0)+' visitas · '+Number(x.product_views||0)+' produtos'+(shop?' · '+Number(x.orders||0)+' encomendas':'')+'</strong></div>').join(''):'<div class="empty">Sem atividade neste período</div>'
+}
+async function loadDigitalStatsV1795(showToast=false){
+ const range=digitalStatsRangeV1795();
+ if(!range.from||!range.to){
+  digitalStatsStateV1795.error='Seleciona as datas inicial e final.';
+  digitalStatsStateV1795.data=null;
+  renderDigitalStatsV1795();
+  return
+ }
+ if(range.from>range.to){
+  digitalStatsStateV1795.error='A data inicial não pode ser posterior à data final.';
+  digitalStatsStateV1795.data=null;
+  renderDigitalStatsV1795();
+  return
+ }
+ digitalStatsStateV1795.loading=true;digitalStatsStateV1795.error='';renderDigitalStatsV1795();
+ try{
+  const u=cloudUser||await ensureCloudSession();
+  if(!u||!cloudClient)throw new Error('Liga primeiro o Backoffice à Cloud para consultar as estatísticas.');
+  const {data,error}=await cloudClient.rpc('artessencia_analytics_summary_v1',{
+   p_source:digitalStatsStateV1795.source,
+   p_from:range.from,
+   p_to:range.to
+  });
+  if(error)throw new Error(supabaseDetailedError(error));
+  digitalStatsStateV1795.data=data||{};
+  if(showToast)toast('Estatísticas atualizadas')
+ }catch(e){
+  digitalStatsStateV1795.data=null;
+  digitalStatsStateV1795.error='Não foi possível carregar as estatísticas: '+String(e?.message||e)
+ }finally{
+  digitalStatsStateV1795.loading=false;
+  renderDigitalStatsV1795()
+ }
+}
+
 function renderReports(){
  const r=reportPeriodData();
  const d=r.d;
@@ -16947,7 +17114,7 @@ document.addEventListener('visibilitychange',()=>{
  setTimeout(()=>{if(!personalizationCategorySelectOpenV1794)renderAll()},0)
 });
 
-function renderAll(){ensureQuotePaymentModel();ensureCostModel();syncPackagingSelect();renderClientSuggestions();renderDashboard();renderPicker();renderCart();renderOrders();renderProduction();renderCosts();renderStock();renderPurchases();renderCash();renderClients();renderQuotes();renderQuoteCart();renderProducts();renderCatalogs();renderSpecialEditionsAdmin();renderCatalogDigitalCenterV160();renderSettings();renderAprecoImportV1753();renderBusinessSettings();if(!personalizationCategorySelectOpenV1794)renderPersonalizationLibraryV1791();renderReports();renderQuantityPricingV1750();renderLegalSummaryV1286();renderCloudUI();renderBackupInfo();renderOrderNotificationsV12624();renderPushStatusV12625();const s=sec();if(document.getElementById('lockMinutes'))document.getElementById('lockMinutes').value=String(s.lockMinutes??15)}
+function renderAll(){ensureQuotePaymentModel();ensureCostModel();syncPackagingSelect();renderClientSuggestions();renderDashboard();renderPicker();renderCart();renderOrders();renderProduction();renderCosts();renderStock();renderPurchases();renderCash();renderClients();renderQuotes();renderQuoteCart();renderProducts();renderCatalogs();renderSpecialEditionsAdmin();renderCatalogDigitalCenterV160();renderSettings();renderAprecoImportV1753();renderBusinessSettings();if(!personalizationCategorySelectOpenV1794)renderPersonalizationLibraryV1791();renderReports();renderDigitalStatsV1795();renderQuantityPricingV1750();renderLegalSummaryV1286();renderCloudUI();renderBackupInfo();renderOrderNotificationsV12624();renderPushStatusV12625();const s=sec();if(document.getElementById('lockMinutes'))document.getElementById('lockMinutes').value=String(s.lockMinutes??15)}
 document.addEventListener('input',e=>{if(e.target&&['costPackQty','costPackPrice'].includes(e.target.id))updateCostPreview()});
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;installBtn.classList.remove('hidden');installBanner.classList.remove('hidden')});
 async function installApp(){if(!deferredPrompt)return toast('No Chrome: menu ⋮ → Adicionar ao ecrã principal / Instalar app');deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;installBtn.classList.add('hidden');installBanner.classList.add('hidden')}
