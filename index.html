@@ -2716,6 +2716,20 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
   #brandSplashV1778{transition:none}
 }
 </style>
+<style id="artessencia-v1791-personalization-library">
+.personalization-library-v1791{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.personalization-library-box-v1791{border:1px solid #eadfd8;border-radius:14px;padding:12px;background:#fffaf7}
+.personalization-add-v1791{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end}
+.personalization-color-add-v1791{grid-template-columns:minmax(0,1fr) 52px auto}
+.personalization-picker-v1791{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+.personalization-option-v1791{border:1px solid #dfd1c5;background:#fff;border-radius:999px;padding:7px 10px;display:inline-flex;align-items:center;gap:7px;cursor:pointer;font-size:11px}
+.personalization-option-v1791.selected{background:#5b3d2b;color:#fff;border-color:#5b3d2b}
+.personalization-option-v1791 i{width:16px;height:16px;border-radius:50%;border:1px solid rgba(0,0,0,.16);display:inline-block}
+.personalization-option-v1791 button{border:0;background:transparent;color:inherit;font-weight:900;cursor:pointer;padding:0 0 0 3px}
+.personalization-tools-v1791{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.personalization-search-v1791{width:100%;border:1px solid #dfd1c5;border-radius:999px;background:#fff;padding:9px 12px;margin-top:8px}
+@media(max-width:760px){.personalization-library-v1791{grid-template-columns:1fr}.personalization-add-v1791,.personalization-color-add-v1791{grid-template-columns:1fr}.personalization-color-add-v1791 input[type=color]{width:100%}}
+</style>
 </head>
 <body>
 <div id="brandSplashV1778" aria-hidden="true"><div class="brand-splash-card"><img src="brand-artessencia.png" alt=""></div></div>
@@ -4114,6 +4128,36 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       </div>
     </div>
 
+    <div class="card settings-card" style="margin-top:10px" id="personalizationLibraryCardV1791">
+      <div class="settings-card-head">
+        <div>
+          <div class="section-title" style="margin:0">Cores e fragrâncias disponíveis</div>
+          <small>Biblioteca central reutilizável nas fichas dos produtos. Configura cada opção uma única vez.</small>
+        </div>
+        <button class="btn" type="button" onclick="importPersonalizationLibraryV1791()">Importar opções existentes</button>
+      </div>
+      <div class="personalization-library-v1791" style="margin-top:10px">
+        <div class="personalization-library-box-v1791">
+          <strong>Fragrâncias</strong>
+          <div class="personalization-add-v1791" style="margin-top:8px">
+            <div class="field"><label>Nova fragrância</label><input id="masterFragranceV1791" placeholder="Ex.: Pumpkin Spice" onkeydown="if(event.key==='Enter'){event.preventDefault();addMasterFragranceV1791()}"></div>
+            <button class="btn primary" type="button" onclick="addMasterFragranceV1791()">Adicionar</button>
+          </div>
+          <div id="masterFragranceListV1791" class="personalization-picker-v1791"></div>
+        </div>
+        <div class="personalization-library-box-v1791">
+          <strong>Cores</strong>
+          <div class="personalization-add-v1791 personalization-color-add-v1791" style="margin-top:8px">
+            <div class="field"><label>Nova cor</label><input id="masterColorNameV1791" placeholder="Ex.: Terracota" oninput="syncMasterColorGuessV1791()" onkeydown="if(event.key==='Enter'){event.preventDefault();addMasterColorV1791()}"></div>
+            <input id="masterColorHexV1791" type="color" value="#d8c8be" title="Tom da cor">
+            <button class="btn primary" type="button" onclick="addMasterColorV1791()">Adicionar</button>
+          </div>
+          <div id="masterColorListV1791" class="personalization-picker-v1791"></div>
+        </div>
+      </div>
+      <div class="security-note">Remover uma opção desta biblioteca não altera produtos já guardados; apenas deixa de a apresentar para novas seleções.</div>
+    </div>
+
     <div class="card settings-card" style="margin-top:10px">
       <div class="settings-card-head">
         <div>
@@ -4590,8 +4634,19 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
             <div class="field" id="prodColorLabel1WrapV1773"><label>Nome da Cor 1</label><input id="prodColorLabel1V1773" placeholder="Ex.: Gnomo"></div>
             <div class="field" id="prodColorLabel2WrapV1773"><label>Nome da Cor 2</label><input id="prodColorLabel2V1773" placeholder="Ex.: Abóbora"></div>
             <div class="field" id="prodColorLabel3WrapV1773"><label>Nome da Cor 3</label><input id="prodColorLabel3V1773" placeholder="Ex.: Peça 3"></div>
-            <div class="field span2" id="prodColorsWrapV1773"><label>Paleta de cores disponíveis</label><div class="color-editor-v1775"><div class="color-name-row-v1775"><span id="prodColorLiveV1775" class="color-live-v1775" aria-hidden="true"></span><input id="prodColorNameV1775" type="text" placeholder="Escreve a cor, ex.: Roxo" oninput="suggestProductColorV1775()" onkeydown="if(event.key==='Enter'){event.preventDefault();addProductColorV1775()}"><input id="prodColorPickerV1775" class="color-picker-v1775" type="color" value="#73508f" title="Ajustar tom" oninput="this.dataset.manuallyChanged='1';syncProductColorPickerV1775()"><button type="button" class="btn" onclick="addProductColorV1775()">Adicionar cor</button></div><small>Escreve apenas o nome. A app reconhece as cores mais comuns e mostra a amostra; se quiseres outro tom, ajusta no seletor de cor.</small></div><textarea id="prodColorsV1773" hidden aria-hidden="true"></textarea><div id="prodColorsPreviewV1773" class="color-preview-v1773"></div></div>
-            <div class="field span2" id="prodFragrancesWrapV1773"><label>Fragrâncias disponíveis</label><textarea id="prodFragrancesV1773" rows="2" placeholder="Pumpkin Spice, Laranja e especiarias, Bosque encantado"></textarea><label class="personalization-switch-v1773" style="margin-top:7px"><input id="prodFragranceRequiredV1773" type="checkbox"> Escolha obrigatória</label></div>
+            <div class="field span2" id="prodColorsWrapV1773"><label>Paleta de cores disponíveis</label>
+<div class="personalization-tools-v1791"><button class="btn" type="button" onclick="selectAllProductColorsV1791()">Selecionar todas</button><button class="btn" type="button" onclick="clearProductColorsV1791()">Limpar</button></div>
+<input id="productColorSearchV1791" class="personalization-search-v1791" placeholder="Pesquisar cor…" oninput="renderProductMasterColorsV1791()">
+<div id="productMasterColorsV1791" class="personalization-picker-v1791"></div>
+<small>Seleciona diretamente as cores da biblioteca. O editor abaixo continua disponível para um tom específico deste produto.</small>
+<div class="color-editor-v1775"><div class="color-name-row-v1775"><span id="prodColorLiveV1775" class="color-live-v1775" aria-hidden="true"></span><input id="prodColorNameV1775" type="text" placeholder="Escreve a cor, ex.: Roxo" oninput="suggestProductColorV1775()" onkeydown="if(event.key==='Enter'){event.preventDefault();addProductColorV1775()}"><input id="prodColorPickerV1775" class="color-picker-v1775" type="color" value="#73508f" title="Ajustar tom" oninput="this.dataset.manuallyChanged='1';syncProductColorPickerV1775()"><button type="button" class="btn" onclick="addProductColorV1775()">Adicionar cor</button></div><small>Escreve apenas o nome. A app reconhece as cores mais comuns e mostra a amostra; se quiseres outro tom, ajusta no seletor de cor.</small></div><textarea id="prodColorsV1773" hidden aria-hidden="true"></textarea><div id="prodColorsPreviewV1773" class="color-preview-v1773"></div></div>
+            <div class="field span2" id="prodFragrancesWrapV1773"><label>Fragrâncias disponíveis</label>
+<textarea id="prodFragrancesV1773" hidden aria-hidden="true"></textarea>
+<div class="personalization-tools-v1791"><button class="btn" type="button" onclick="selectAllProductFragrancesV1791()">Selecionar todas</button><button class="btn" type="button" onclick="clearProductFragrancesV1791()">Limpar</button></div>
+<input id="productFragranceSearchV1791" class="personalization-search-v1791" placeholder="Pesquisar fragrância…" oninput="renderProductMasterFragrancesV1791()">
+<div id="productMasterFragrancesV1791" class="personalization-picker-v1791"></div>
+<small>Seleciona as fragrâncias da biblioteca central definida em Configuração.</small>
+<label class="personalization-switch-v1773" style="margin-top:7px"><input id="prodFragranceRequiredV1773" type="checkbox"> Escolha obrigatória</label></div>
             <div class="span2 personalization-note-v1773"><b>Comportamento na Loja:</b> se o produto admitir 2 cores, o cliente escolhe “Uma cor” ou “Duas cores”. Com 3 cores, pode escolher 1, 2 ou 3. O Backoffice define o máximo e a paleta permitida.</div>
           </div>
         </div>
@@ -4820,7 +4875,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.7.90';
+const APP_VERSION='1.7.91';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -13588,7 +13643,47 @@ function editProductColorV1775(index){const arr=parseProductColorsV1773(document
 function removeProductColorV1775(index){const arr=parseProductColorsV1773(document.getElementById('prodColorsV1773')?.value);arr.splice(index,1);serializeProductColorsV1775(arr);renderProductColorPreviewV1773()}
 function addProductColorV1775(){const nameEl=document.getElementById('prodColorNameV1775'),picker=document.getElementById('prodColorPickerV1775'),name=String(nameEl?.value||'').trim();if(!name)return toast('Escreve o nome da cor');const suggested=guessProductColorHexV1775(name),hex=picker?.value||suggested||'#d8c8be',arr=parseProductColorsV1773(document.getElementById('prodColorsV1773')?.value),idx=arr.findIndex(x=>normalizeColorNameV1775(x.name)===normalizeColorNameV1775(name));const item={name,hex:suggested&&picker?.dataset?.manuallyChanged!=='1'?suggested:hex};if(idx>=0)arr[idx]=item;else arr.push(item);serializeProductColorsV1775(arr.slice(0,30));renderProductColorPreviewV1773();if(nameEl)nameEl.value='';if(picker){picker.value='#73508f';picker.dataset.manuallyChanged=''}syncProductColorPickerV1775()}
 function renderProductColorPreviewV1773(){const box=document.getElementById('prodColorsPreviewV1773');if(!box)return;const arr=parseProductColorsV1773(document.getElementById('prodColorsV1773')?.value);box.innerHTML=arr.length?arr.map((x,i)=>`<span class="color-chip-v1773" title="Tocar para editar" onclick="editProductColorV1775(${i})"><i style="background:${escapeAttr(x.hex)}"></i><span>${escapeHtml(x.name)}</span><button type="button" aria-label="Remover ${escapeAttr(x.name)}" title="Remover" onclick="event.stopPropagation();removeProductColorV1775(${i})">×</button></span>`).join(''):'<span class="color-empty-v1775">Sem cores configuradas. Escreve o nome de uma cor acima para começar.</span>'}
-function syncProductPersonalizationUIV1773(){const n=Math.max(0,Math.min(3,Number(document.getElementById('prodColorMaxV1773')?.value)||0)),fr=!!document.getElementById('prodFragranceEnabledV1773')?.checked;for(let i=1;i<=3;i++){const w=document.getElementById('prodColorLabel'+i+'WrapV1773');if(w)w.hidden=i>n}const cw=document.getElementById('prodColorsWrapV1773');if(cw)cw.hidden=n===0;const fw=document.getElementById('prodFragrancesWrapV1773');if(fw)fw.hidden=!fr;renderProductColorPreviewV1773()}
+
+// V1.7.91 — biblioteca central de cores e fragrâncias reutilizáveis.
+function personalizationLibraryV1791(){
+ db.settings=db.settings||{};
+ const raw=db.settings.personalizationLibraryV1791&&typeof db.settings.personalizationLibraryV1791==='object'?db.settings.personalizationLibraryV1791:{};
+ const fragrances=Array.isArray(raw.fragrances)?raw.fragrances.map(x=>String(x||'').trim()).filter(Boolean):[];
+ const colors=Array.isArray(raw.colors)?raw.colors.map(x=>typeof x==='string'?{name:x,hex:guessProductColorHexV1775(x)||'#d8c8be'}:{name:String(x?.name||'').trim(),hex:/^#[0-9a-f]{6}$/i.test(String(x?.hex||''))?String(x.hex).toLowerCase():(guessProductColorHexV1775(x?.name)||'#d8c8be')}).filter(x=>x.name):[];
+ const uf=[],sf=new Set();fragrances.forEach(x=>{const k=x.toLocaleLowerCase('pt-PT');if(!sf.has(k)){sf.add(k);uf.push(x)}});
+ const uc=[],sc=new Set();colors.forEach(x=>{const k=normalizeColorNameV1775(x.name);if(!sc.has(k)){sc.add(k);uc.push(x)}});
+ db.settings.personalizationLibraryV1791={fragrances:uf,colors:uc};return db.settings.personalizationLibraryV1791
+}
+function renderPersonalizationLibraryV1791(){
+ const lib=personalizationLibraryV1791(),fb=document.getElementById('masterFragranceListV1791'),cb=document.getElementById('masterColorListV1791');
+ if(fb)fb.innerHTML=lib.fragrances.length?lib.fragrances.map((x,i)=>`<span class="personalization-option-v1791"><span>${escapeHtml(x)}</span><button type="button" title="Remover" onclick="removeMasterFragranceV1791(${i})">×</button></span>`).join(''):'<span class="muted">Ainda não existem fragrâncias na biblioteca.</span>';
+ if(cb)cb.innerHTML=lib.colors.length?lib.colors.map((x,i)=>`<span class="personalization-option-v1791"><i style="background:${escapeAttr(x.hex)}"></i><span>${escapeHtml(x.name)}</span><button type="button" title="Remover" onclick="removeMasterColorV1791(${i})">×</button></span>`).join(''):'<span class="muted">Ainda não existem cores na biblioteca.</span>';
+ renderProductMasterFragrancesV1791();renderProductMasterColorsV1791()
+}
+function addMasterFragranceV1791(){const el=document.getElementById('masterFragranceV1791'),name=String(el?.value||'').trim();if(!name)return toast('Escreve o nome da fragrância');const lib=personalizationLibraryV1791();if(!lib.fragrances.some(x=>x.toLocaleLowerCase('pt-PT')===name.toLocaleLowerCase('pt-PT')))lib.fragrances.push(name);lib.fragrances.sort((a,b)=>a.localeCompare(b,'pt'));if(el)el.value='';save();renderPersonalizationLibraryV1791();toast('Fragrância adicionada')}
+function removeMasterFragranceV1791(i){const lib=personalizationLibraryV1791();lib.fragrances.splice(i,1);save();renderPersonalizationLibraryV1791()}
+function syncMasterColorGuessV1791(){const n=document.getElementById('masterColorNameV1791')?.value||'',h=guessProductColorHexV1775(n),p=document.getElementById('masterColorHexV1791');if(h&&p)p.value=h}
+function addMasterColorV1791(){const ne=document.getElementById('masterColorNameV1791'),he=document.getElementById('masterColorHexV1791'),name=String(ne?.value||'').trim();if(!name)return toast('Escreve o nome da cor');const hex=/^#[0-9a-f]{6}$/i.test(String(he?.value||''))?String(he.value).toLowerCase():(guessProductColorHexV1775(name)||'#d8c8be'),lib=personalizationLibraryV1791(),k=normalizeColorNameV1775(name),idx=lib.colors.findIndex(x=>normalizeColorNameV1775(x.name)===k);if(idx>=0)lib.colors[idx]={name,hex};else lib.colors.push({name,hex});lib.colors.sort((a,b)=>a.name.localeCompare(b.name,'pt'));if(ne)ne.value='';if(he)he.value='#d8c8be';save();renderPersonalizationLibraryV1791();toast('Cor adicionada')}
+function removeMasterColorV1791(i){const lib=personalizationLibraryV1791();lib.colors.splice(i,1);save();renderPersonalizationLibraryV1791()}
+function importPersonalizationLibraryV1791(){
+ const lib=personalizationLibraryV1791(),sf=new Set(lib.fragrances.map(x=>x.toLocaleLowerCase('pt-PT'))),sc=new Set(lib.colors.map(x=>normalizeColorNameV1775(x.name)));let nf=0,nc=0;
+ (db.products||[]).forEach(p=>{const x=p?.personalizationV1773||p?.personalization||{},fr=x.fragrance||{},co=x.colors||{};(Array.isArray(fr.options)?fr.options:[]).forEach(v=>{const n=String(v||'').trim(),k=n.toLocaleLowerCase('pt-PT');if(n&&!sf.has(k)){sf.add(k);lib.fragrances.push(n);nf++}});(Array.isArray(co.palette)?co.palette:[]).forEach(v=>{const n=String(v?.name||'').trim(),k=normalizeColorNameV1775(n);if(n&&!sc.has(k)){sc.add(k);lib.colors.push({name:n,hex:/^#[0-9a-f]{6}$/i.test(String(v?.hex||''))?String(v.hex).toLowerCase():(guessProductColorHexV1775(n)||'#d8c8be')});nc++}})});
+ (db.stock||[]).forEach(x=>{const raw=String(x?.name||'').trim();if(!/fragr[aâ]ncia/i.test(raw))return;const n=raw.replace(/^.*?fragr[aâ]ncia\s*[-:–—]?\s*/i,'').trim(),name=n?n.charAt(0).toLocaleUpperCase('pt-PT')+n.slice(1):'',k=name.toLocaleLowerCase('pt-PT');if(name&&!sf.has(k)){sf.add(k);lib.fragrances.push(name);nf++}});
+ lib.fragrances.sort((a,b)=>a.localeCompare(b,'pt'));lib.colors.sort((a,b)=>a.name.localeCompare(b.name,'pt'));save();renderPersonalizationLibraryV1791();toast(`Importadas ${nf} fragrância(s) e ${nc} cor(es)`)
+}
+function selectedProductFragrancesV1791(){return parseProductFragrancesV1773(document.getElementById('prodFragrancesV1773')?.value)}
+function setSelectedProductFragrancesV1791(arr){const el=document.getElementById('prodFragrancesV1773');if(el)el.value=(arr||[]).join(', ');renderProductMasterFragrancesV1791()}
+function toggleProductFragranceV1791(encoded){const name=decodeURIComponent(encoded),arr=selectedProductFragrancesV1791(),k=name.toLocaleLowerCase('pt-PT'),i=arr.findIndex(x=>String(x).toLocaleLowerCase('pt-PT')===k);if(i>=0)arr.splice(i,1);else arr.push(name);setSelectedProductFragrancesV1791(arr)}
+function renderProductMasterFragrancesV1791(){const box=document.getElementById('productMasterFragrancesV1791');if(!box)return;const q=String(document.getElementById('productFragranceSearchV1791')?.value||'').trim().toLocaleLowerCase('pt-PT'),sel=new Set(selectedProductFragrancesV1791().map(x=>String(x).toLocaleLowerCase('pt-PT'))),arr=personalizationLibraryV1791().fragrances.filter(x=>!q||x.toLocaleLowerCase('pt-PT').includes(q));box.innerHTML=arr.length?arr.map(x=>`<button type="button" class="personalization-option-v1791 ${sel.has(x.toLocaleLowerCase('pt-PT'))?'selected':''}" onclick="toggleProductFragranceV1791('${encodeURIComponent(x)}')">${escapeHtml(x)}</button>`).join(''):'<span class="muted">Nenhuma fragrância encontrada.</span>'}
+function selectAllProductFragrancesV1791(){setSelectedProductFragrancesV1791(personalizationLibraryV1791().fragrances.slice())}
+function clearProductFragrancesV1791(){setSelectedProductFragrancesV1791([])}
+function selectedProductColorsV1791(){return parseProductColorsV1773(document.getElementById('prodColorsV1773')?.value)}
+function toggleProductColorV1791(index){const master=personalizationLibraryV1791().colors[index];if(!master)return;const arr=selectedProductColorsV1791(),k=normalizeColorNameV1775(master.name),i=arr.findIndex(x=>normalizeColorNameV1775(x.name)===k);if(i>=0)arr.splice(i,1);else arr.push({...master});serializeProductColorsV1775(arr);renderProductColorPreviewV1773();renderProductMasterColorsV1791()}
+function renderProductMasterColorsV1791(){const box=document.getElementById('productMasterColorsV1791');if(!box)return;const q=normalizeColorNameV1775(document.getElementById('productColorSearchV1791')?.value||''),sel=new Set(selectedProductColorsV1791().map(x=>normalizeColorNameV1775(x.name))),all=personalizationLibraryV1791().colors,rows=all.map((x,i)=>({x,i})).filter(o=>!q||normalizeColorNameV1775(o.x.name).includes(q));box.innerHTML=rows.length?rows.map(o=>`<button type="button" class="personalization-option-v1791 ${sel.has(normalizeColorNameV1775(o.x.name))?'selected':''}" onclick="toggleProductColorV1791(${o.i})"><i style="background:${escapeAttr(o.x.hex)}"></i>${escapeHtml(o.x.name)}</button>`).join(''):'<span class="muted">Nenhuma cor encontrada.</span>'}
+function selectAllProductColorsV1791(){serializeProductColorsV1775(personalizationLibraryV1791().colors.slice());renderProductColorPreviewV1773();renderProductMasterColorsV1791()}
+function clearProductColorsV1791(){serializeProductColorsV1775([]);renderProductColorPreviewV1773();renderProductMasterColorsV1791()}
+
+function syncProductPersonalizationUIV1773(){const n=Math.max(0,Math.min(3,Number(document.getElementById('prodColorMaxV1773')?.value)||0)),fr=!!document.getElementById('prodFragranceEnabledV1773')?.checked;for(let i=1;i<=3;i++){const w=document.getElementById('prodColorLabel'+i+'WrapV1773');if(w)w.hidden=i>n}const cw=document.getElementById('prodColorsWrapV1773');if(cw)cw.hidden=n===0;const fw=document.getElementById('prodFragrancesWrapV1773');if(fw)fw.hidden=!fr;renderProductColorPreviewV1773();renderProductMasterColorsV1791();renderProductMasterFragrancesV1791()}
 function productPersonalizationFromFormV1773(){const max=Math.max(0,Math.min(3,Number(document.getElementById('prodColorMaxV1773')?.value)||0)),palette=parseProductColorsV1773(document.getElementById('prodColorsV1773')?.value),frEnabled=!!document.getElementById('prodFragranceEnabledV1773')?.checked,fragrances=parseProductFragrancesV1773(document.getElementById('prodFragrancesV1773')?.value),labels=[1,2,3].slice(0,max).map((i,idx)=>String(document.getElementById('prodColorLabel'+i+'V1773')?.value||('Cor '+(idx+1))).trim()||('Cor '+(idx+1)));return {version:1,colors:{max,allowFewer:true,labels,palette},fragrance:{enabled:frEnabled,required:frEnabled&&!!document.getElementById('prodFragranceRequiredV1773')?.checked,options:frEnabled?fragrances:[]}}}
 function fillProductPersonalizationV1773(p){const x=p?.personalizationV1773||p?.personalization||{},c=x.colors||{},f=x.fragrance||{};const max=Math.max(0,Math.min(3,Number(c.max)||0));const m=document.getElementById('prodColorMaxV1773');if(m)m.value=String(max);for(let i=1;i<=3;i++){const el=document.getElementById('prodColorLabel'+i+'V1773');if(el)el.value=String((c.labels||[])[i-1]||'')}const colors=document.getElementById('prodColorsV1773');if(colors)colors.value=(Array.isArray(c.palette)?c.palette:[]).map(v=>`${v.name||''}|${v.hex||'#d8c8be'}`).join(', ');const fe=document.getElementById('prodFragranceEnabledV1773');if(fe)fe.checked=!!f.enabled;const fr=document.getElementById('prodFragrancesV1773');if(fr)fr.value=(Array.isArray(f.options)?f.options:[]).join(', ');const req=document.getElementById('prodFragranceRequiredV1773');if(req)req.checked=!!f.required;syncProductPersonalizationUIV1773()}
 function resetProductPersonalizationV1773(){const m=document.getElementById('prodColorMaxV1773');if(m)m.value='0';for(let i=1;i<=3;i++){const e=document.getElementById('prodColorLabel'+i+'V1773');if(e)e.value=''}const c=document.getElementById('prodColorsV1773');if(c)c.value='';const fe=document.getElementById('prodFragranceEnabledV1773');if(fe)fe.checked=false;const fr=document.getElementById('prodFragrancesV1773');if(fr)fr.value='';const req=document.getElementById('prodFragranceRequiredV1773');if(req)req.checked=false;syncProductPersonalizationUIV1773()}
@@ -16728,7 +16823,7 @@ window.addEventListener('artessencia:datachanged',()=>{
 window.addEventListener('pageshow',e=>{if(e.persisted)setTimeout(()=>renderAll(),0)});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(()=>renderAll(),0)});
 
-function renderAll(){ensureQuotePaymentModel();ensureCostModel();syncPackagingSelect();renderClientSuggestions();renderDashboard();renderPicker();renderCart();renderOrders();renderProduction();renderCosts();renderStock();renderPurchases();renderCash();renderClients();renderQuotes();renderQuoteCart();renderProducts();renderCatalogs();renderSpecialEditionsAdmin();renderCatalogDigitalCenterV160();renderSettings();renderAprecoImportV1753();renderBusinessSettings();renderReports();renderQuantityPricingV1750();renderLegalSummaryV1286();renderCloudUI();renderBackupInfo();renderOrderNotificationsV12624();renderPushStatusV12625();const s=sec();if(document.getElementById('lockMinutes'))document.getElementById('lockMinutes').value=String(s.lockMinutes??15)}
+function renderAll(){ensureQuotePaymentModel();ensureCostModel();syncPackagingSelect();renderClientSuggestions();renderDashboard();renderPicker();renderCart();renderOrders();renderProduction();renderCosts();renderStock();renderPurchases();renderCash();renderClients();renderQuotes();renderQuoteCart();renderProducts();renderCatalogs();renderSpecialEditionsAdmin();renderCatalogDigitalCenterV160();renderSettings();renderAprecoImportV1753();renderBusinessSettings();renderPersonalizationLibraryV1791();renderReports();renderQuantityPricingV1750();renderLegalSummaryV1286();renderCloudUI();renderBackupInfo();renderOrderNotificationsV12624();renderPushStatusV12625();const s=sec();if(document.getElementById('lockMinutes'))document.getElementById('lockMinutes').value=String(s.lockMinutes??15)}
 document.addEventListener('input',e=>{if(e.target&&['costPackQty','costPackPrice'].includes(e.target.id))updateCostPreview()});
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;installBtn.classList.remove('hidden');installBanner.classList.remove('hidden')});
 async function installApp(){if(!deferredPrompt)return toast('No Chrome: menu ⋮ → Adicionar ao ecrã principal / Instalar app');deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;installBtn.classList.add('hidden');installBanner.classList.add('hidden')}
