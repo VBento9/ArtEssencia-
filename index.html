@@ -4677,7 +4677,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
             </div>
             <div class="pricing-component-v1747 has-input">
               <div class="pricing-component-head-v1747"><span class="pricing-step-badge-v1747">2</span><div><strong>Mão de obra</strong><small>Tempo efetivo</small></div><b id="prodLaborCostV1745">0,00 €</b></div>
-              <div class="pricing-inline-input-v1747"><label for="prodLaborMinutesV110">Minutos / unidade</label><div class="cost-input-suffix-v110"><input id="prodLaborMinutesV110" type="number" min="0" step="1" oninput="refreshProductChannelPricingV12620()"><span>min</span></div></div>
+              <div class="pricing-inline-input-v1747"><label for="prodLaborMinutesV110">Minutos / unidade</label><div class="cost-input-suffix-v110"><input id="prodLaborMinutesV110" type="number" min="0" step="1" oninput="scheduleProductPricingRefreshV1801()"><span>min</span></div></div>
             </div>
             <div class="pricing-component-v1747">
               <div class="pricing-component-head-v1747"><span class="pricing-step-badge-v1747">3</span><div><strong>Custos gerais</strong><small>Rateio automático</small></div><b id="prodFixedCostV1745">0,00 €</b></div>
@@ -4685,7 +4685,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
             </div>
             <div class="pricing-component-v1747 has-input">
               <div class="pricing-component-head-v1747"><span class="pricing-step-badge-v1747">4</span><div><strong>Outros custos</strong><small>Opcional</small></div></div>
-              <div class="pricing-inline-input-v1747"><label for="prodOtherCostV110">Valor / unidade</label><div class="cost-input-suffix-v110"><input id="prodOtherCostV110" type="number" min="0" step="0.01" oninput="refreshProductChannelPricingV12620()"><span>€</span></div></div>
+              <div class="pricing-inline-input-v1747"><label for="prodOtherCostV110">Valor / unidade</label><div class="cost-input-suffix-v110"><input id="prodOtherCostV110" type="number" min="0" step="0.01" oninput="scheduleProductPricingRefreshV1801()"><span>€</span></div></div>
             </div>
           </div>
 
@@ -4701,7 +4701,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           <div class="apreco-price-result-v1744 apreco-price-result-v1745">
             <div><span>Custo total real</span><strong id="prodBasePriceV1744">0,00 €</strong><small>Materiais + mão de obra + custos gerais + outros.</small></div>
             <div class="recommended"><span>PVP recomendado</span><strong id="prodDirectRecommendedV12620">0,00 €</strong><small id="prodProfitExplainV1744">Com a margem definida.</small></div>
-            <div><span>PVP definido</span><div class="cost-input-suffix-v110 price-edit-v1744"><input id="prodPrice" type="number" min="0" step="0.01" oninput="refreshProductChannelPricingV12620()"><span>€</span></div><small>Preço comercial efetivamente usado.</small></div>
+            <div><span>PVP definido</span><div class="cost-input-suffix-v110 price-edit-v1744"><input id="prodPrice" type="number" min="0" step="0.01" oninput="scheduleProductPricingRefreshV1801()"><span>€</span></div><small>Preço comercial efetivamente usado.</small></div>
             <div><span>Lucro real</span><strong id="prodDirectProfitRealV1744">—</strong><small id="prodDirectMarginRealV1744">Margem real: —</small></div>
           </div>
 
@@ -13460,7 +13460,15 @@ function applyMarginGuideV1772(value,scope){
 
 function productDraftV110(){const code=document.getElementById('prodCode')?.value||'',saved=(db.products||[]).find(x=>x.code===code)||{};const margin=readProductCostFieldV110('prodProfitPctV1744');return {...saved,code,laborMinutes:readProductCostFieldV110('prodLaborMinutesV110'),otherCost:readProductCostFieldV110('prodOtherCostV110')??saved.otherCost??0,marginPct:margin,profitPct:margin}}
 function pricingActualMarginV1742(price,cost){price=Number(price)||0;cost=Number(cost)||0;return price>0?(price-cost)/price:null}
-function pricingQuickChangedV1762(kind,value){const map={minutes:'prodLaborMinutesV110',margin:'prodProfitPctV1744',direct:'prodPrice',online:'prodOnlinePriceV12620'},el=document.getElementById(map[kind]||'');if(el)el.value=value;refreshProductChannelPricingV12620()}
+let pricingRefreshFrameV1801=0;
+function scheduleProductPricingRefreshV1801(){
+ if(pricingRefreshFrameV1801)return;
+ pricingRefreshFrameV1801=requestAnimationFrame(()=>{
+   pricingRefreshFrameV1801=0;
+   refreshProductChannelPricingV12620();
+ });
+}
+function pricingQuickChangedV1762(kind,value){const map={minutes:'prodLaborMinutesV110',margin:'prodProfitPctV1744',direct:'prodPrice',online:'prodOnlinePriceV12620'},el=document.getElementById(map[kind]||'');if(el)el.value=value;scheduleProductPricingRefreshV1801()}
 function syncPricingQuickFromBaseV1762(){const map=[['prodLaborMinutesQuickV1762','prodLaborMinutesV110'],['prodMarginQuickV1762','prodProfitPctV1744'],['prodPriceQuickV1762','prodPrice'],['prodOnlinePriceQuickV1762','prodOnlinePriceV12620']];for(const[a,b]of map){const q=document.getElementById(a),src=document.getElementById(b);if(q&&src&&document.activeElement!==q)q.value=src.value||''}}
 function copyDirectPriceToOnlineV1762(){const d=document.getElementById('prodPrice'),o=document.getElementById('prodOnlinePriceV12620');if(o&&d)o.value=d.value||'';refreshProductChannelPricingV12620();syncPricingQuickFromBaseV1762()}
 function refreshProductChannelPricingV12620(){
