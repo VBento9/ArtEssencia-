@@ -13478,7 +13478,7 @@ function productEnergyCostV133(p){const watts=Math.max(0,Number(p?.equipmentPowe
 function productAutoIndirectCostV133(p){const hours=productEquipmentMinutesV133(p)/60,wear=Math.max(0,Number(db.settings.equipmentWearRate)||0)*hours,consumables=Math.max(0,Number(db.settings.consumablesHourlyRate)||0)*hours,energy=productEnergyCostV133(p);return {energy,wear,consumables,total:energy+wear+consumables}}
 function productOperatingAverageV1740(p){const avg=productNullableNumberV110(p?.operatingAverageCost);if(avg!==null)return Math.max(0,avg);const def=Math.max(0,Number(db.settings.defaultOperatingCostPerUnit)||0);if(def>0)return def;const auto=productAutoIndirectCostV133(p),manual=Math.max(0,Number(p?.indirectCost)||0);return auto.total+manual}
 
-function productCostBreakdownV110(product){const materials=pricingMaterialCostV1744(product),waste=pricingWasteCostV1802(product),labor=pricingLaborCostV1745(product),seasonalLabor=pricingSeasonalLaborCostV1802(product),electricity=pricingElectricityCostV1802(product),fixed=pricingFixedCostV1745(product),other=pricingOtherCostV1745(product),total=materials+waste+labor+seasonalLabor+electricity+fixed+other;return {materials,labor,fixed,editionLabor:seasonalLabor,mold:0,packaging:0,indirect:fixed,manualIndirect:0,energy:electricity,equipmentWear:0,generalConsumables:0,other,subtotal:total,wasteRate:pricingGlobalWastePctV1802()/100,waste,total}}
+function productCostBreakdownV110(product){const materials=pricingMaterialCostV1744(product),wasteRate=pricingGlobalWastePctV1802()/100,waste=materials*wasteRate,labor=pricingLaborCostV1745(product),seasonalLabor=normalizeProductAvailabilityV1244(product)==='edition'?labor*pricingSeasonalLaborPctV1802()/100:0,electricity=pricingElectricityCostV1802(product),fixed=pricingFixedCostV1745(product),other=pricingOtherCostV1745(product),total=materials+waste+labor+seasonalLabor+electricity+fixed+other;return {materials,labor,fixed,editionLabor:seasonalLabor,mold:0,packaging:0,indirect:fixed,manualIndirect:0,energy:electricity,equipmentWear:0,generalConsumables:0,other,subtotal:total,wasteRate,waste,total}}
 function calculatedProductCost(product){return productCostBreakdownV110(product).total}
 function effectiveProduct(product){return {...product,cost:calculatedProductCost(product)}}
 function productCostSnapshotV134(product,source='catalog'){
@@ -14275,7 +14275,36 @@ function recipeQuickScoreV180(product,item){
 }
 function recipeQuickConsumablesV180(product){
  const stock=(db.stock||[]).filter(x=>x&&x.name&&normalizeBaseUnitV120(x.unit||'un')==='un');
- return stock.map(x=>({name:x.name,score:recipeQuickScoreV180(product,x.name)}))
+ if(!stock.length)return [];
+ // V1.8.04 — índice calculado uma única vez por seleção de produto.
+ // Mantém exatamente a mesma lógica de pontuação, evitando percorrer todas as
+ // fichas técnicas para cada consumível individual.
+ const pCat=normalizeRecipeMaterialSearchV1758(product?.category||'');
+ const productByCode=new Map((db.products||[]).map(p=>[String(p?.code||''),p]));
+ const stats=new Map();
+ Object.entries(db.productRecipes||{}).forEach(([code,rows])=>{
+   const other=productByCode.get(String(code));
+   const same=!!(other&&pCat&&normalizeRecipeMaterialSearchV1758(other.category||'')===pCat);
+   const seen=new Set();
+   for(const r of (rows||[])){
+     const item=String(r?.item||'');if(!item||seen.has(item))continue;seen.add(item);
+     const s=stats.get(item)||{used:0,sameCategory:0};
+     s.used++;if(same)s.sameCategory++;stats.set(item,s)
+   }
+ });
+ const scoreFor=name=>{
+   const key=normalizeRecipeMaterialSearchV1758(name),s=stats.get(String(name))||{used:0,sameCategory:0};
+   let score=s.used*12+s.sameCategory*25;
+   if(/cartao.*visita|cartao de visita/.test(key))score+=160;
+   if(/saco/.test(key))score+=145;
+   if(/autocolante/.test(key))score+=135;
+   if(/etiqueta/.test(key))score+=100;
+   if(/caixa/.test(key))score+=55;
+   if(/fita|laco|laço/.test(key))score+=40;
+   if(/papel|enchimento|palha/.test(key))score+=25;
+   return score
+ };
+ return stock.map(x=>({name:x.name,score:scoreFor(x.name)}))
    .filter(x=>Number.isFinite(x.score)&&x.score>0)
    .sort((a,b)=>b.score-a.score||String(a.name).localeCompare(String(b.name),'pt'))
    .slice(0,6).map(x=>x.name)
