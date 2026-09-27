@@ -13251,6 +13251,7 @@ function renderShopCapacityAgenda(){
 // V1.7.47 — reorganização visual da precificação do produto; cálculos e persistência preservados.
 // V1.7.45 — helpers operacionais recuperados pela auditoria de integridade.
 let editingProductCodeV147=null;
+let productEditSessionV1798=0;
 function productCodeKeyV147(v){return String(v||'').trim().toUpperCase()}
 function findProductByCodeV147(code){const k=productCodeKeyV147(code);return (db.products||[]).find(p=>productCodeKeyV147(p?.code)===k)||null}
 function nextProductCodeV147(){let max=0;for(const p of (db.products||[])){const m=String(p?.code||'').match(/(\d+)$/);if(m)max=Math.max(max,Number(m[1])||0)}let n=max+1,code;do{code='AE-'+String(n++).padStart(4,'0')}while(findProductByCodeV147(code));return code}
@@ -13684,6 +13685,7 @@ function setProductSaveStateV145(type,title,detail){
  el.innerHTML=`<span>${type==='saved'?'✓':type==='error'?'!':'●'}</span><div><strong>${escapeHtml(title)}</strong><small>${escapeHtml(detail||'')}</small></div>`;
 }
 function cancelProductEditV145(){
+ ++productEditSessionV1798; // invalida carregamentos assíncronos do produto anterior
  prodName.value=prodCode.value=prodPrice.value=prodShopDescription.value='';const tagsEl=document.getElementById('prodTagsV1753');if(tagsEl)tagsEl.value='';const seasonEl=document.getElementById('prodSeasonTagsV1761');if(seasonEl)seasonEl.value='';renderAprecoSourceV1753(null);
  const op=document.getElementById('prodOnlinePriceV12620');if(op)op.value='';
  prodShopVisible.checked=false;resetProductPersonalizationV1773();
@@ -13707,6 +13709,7 @@ function cancelProductEditV145(){
  refreshProductChannelPricingV12620();setProductEditorModeV145(null);refreshProductTechSheetBridgeV1250();toast('Edição cancelada')
 }
 function resetProductEditorAfterSaveV1749(){
+ ++productEditSessionV1798; // impede que um carregamento antigo volte a preencher o editor limpo
  // Um novo produto deve começar num estado realmente vazio. Esta rotina limpa apenas o editor;
  // não altera o produto/ficha técnica já guardados no modelo de dados.
  prodName.value='';prodCode.value='';prodPrice.value='';prodShopDescription.value='';const tagsEl=document.getElementById('prodTagsV1753');if(tagsEl)tagsEl.value='';const seasonEl=document.getElementById('prodSeasonTagsV1761');if(seasonEl)seasonEl.value='';renderAprecoSourceV1753(null);
@@ -13927,9 +13930,19 @@ function saveProduct(){
 }
 function editProduct(code){
  const p=findProductByCodeV147(code);if(!p)return;
- prodCode.value=p.code;prodName.value=p.name;prodCat.value=p.category;const tagsEl=document.getElementById('prodTagsV1753');if(tagsEl)tagsEl.value=(Array.isArray(p.tagsV1753)?p.tagsV1753:[]).join(', ');const seasonEl=document.getElementById('prodSeasonTagsV1761');if(seasonEl)seasonEl.value=(Array.isArray(p.seasonalTagsV1761)?p.seasonalTagsV1761:[]).join(', ');renderAprecoSourceV1753(p);prodCost.value=calculatedProductCost(p).toFixed(4);prodPrice.value=p.price;prodShopVisible.checked=!!p.shopVisible;prodShopDescription.value=p.shopDescription||'';fillProductPersonalizationV1773(p);
+ // Cada mudança de produto cria uma nova sessão de edição.
+ // Assim, respostas assíncronas de coleções do produto anterior nunca voltam a preencher o editor atual.
+ const editSession=++productEditSessionV1798;
+ setProductEditorModeV145(p);
+
+ prodCode.value=p.code;prodName.value=p.name;prodCat.value=p.category;
+ const tagsEl=document.getElementById('prodTagsV1753');if(tagsEl)tagsEl.value=(Array.isArray(p.tagsV1753)?p.tagsV1753:[]).join(', ');
+ const seasonEl=document.getElementById('prodSeasonTagsV1761');if(seasonEl)seasonEl.value=(Array.isArray(p.seasonalTagsV1761)?p.seasonalTagsV1761:[]).join(', ');
+ renderAprecoSourceV1753(p);prodCost.value=calculatedProductCost(p).toFixed(4);prodPrice.value=p.price;prodShopVisible.checked=!!p.shopVisible;prodShopDescription.value=p.shopDescription||'';fillProductPersonalizationV1773(p);
  const op=document.getElementById('prodOnlinePriceV12620');if(op)op.value=Number(p.onlinePrice??p.price)||0;
- const costFields={prodLaborMinutesV110:p.laborMinutes,prodProfitPctV1744:p.marginPct??p.profitPct,prodWastePctV110:p.wastePct,prodMoldAverageV1740:p.moldAverageCost??productMoldCostV110(p),prodOperatingAverageV1740:p.operatingAverageCost??productOperatingAverageV1740(p),prodMoldCostV110:p.moldCost,prodMoldUsesV110:p.moldUses,prodMoldCavitiesV110:p.moldCavities??1,prodMoldOverrideV110:p.moldUnitOverride,prodPackagingCostV110:p.packagingCost,prodEquipmentPowerWV133:p.equipmentPowerW,prodEquipmentMinutesV133:p.equipmentMinutes,prodIndirectCostV110:p.indirectCost,prodOtherCostV110:p.otherCost,prodTargetMarginV110:p.targetMarginPct,prodOnlineTargetMarginV110:p.onlineTargetMarginPct};for(const [id,v] of Object.entries(costFields)){const el=document.getElementById(id);if(el)el.value=v==null?'':v}fillProductProductionFieldsV130(p);refreshProductChannelPricingV12620();
+ const costFields={prodLaborMinutesV110:p.laborMinutes,prodProfitPctV1744:p.marginPct??p.profitPct,prodWastePctV110:p.wastePct,prodMoldAverageV1740:p.moldAverageCost??productMoldCostV110(p),prodOperatingAverageV1740:p.operatingAverageCost??productOperatingAverageV1740(p),prodMoldCostV110:p.moldCost,prodMoldUsesV110:p.moldUses,prodMoldCavitiesV110:p.moldCavities??1,prodMoldOverrideV110:p.moldUnitOverride,prodPackagingCostV110:p.packagingCost,prodEquipmentPowerWV133:p.equipmentPowerW,prodEquipmentMinutesV133:p.equipmentMinutes,prodIndirectCostV110:p.indirectCost,prodOtherCostV110:p.otherCost,prodTargetMarginV110:p.targetMarginPct,prodOnlineTargetMarginV110:p.onlineTargetMarginPct};
+ for(const [id,v] of Object.entries(costFields)){const el=document.getElementById(id);if(el)el.value=v==null?'':v}
+ fillProductProductionFieldsV130(p);refreshProductChannelPricingV12620();
  const mv=document.getElementById('prodMixVisible');if(mv)mv.checked=!!p.mixVisible;
  const mm=document.getElementById('prodMixMaxQty');if(mm)mm.value=Number(p.mixMaxQty)||0;
  const mb=document.getElementById('prodMixBoxCaps');if(mb)mb.value=formatMixBoxCaps(p.mixBoxCapacities);
@@ -13939,10 +13952,18 @@ function editProduct(code){
  const productEditionIds=productEditionMembershipIdsV138(p);
  fillProductEditionOptionsV1244(productEditionIds);
  updateProductAvailabilityUI();
- loadProductEditionsV1245(false).then(()=>fillProductEditionOptionsV1244(productEditionIds));
+
+ loadProductEditionsV1245(false).then(()=>{
+   if(editSession!==productEditSessionV1798)return;
+   if(productCodeKeyV147(editingProductCodeV147)!==productCodeKeyV147(p.code))return;
+   fillProductEditionOptionsV1244(productEditionIds);
+ }).catch(e=>console.warn('Coleções do produto não atualizadas',e));
+
  refreshProductTechSheetBridgeV1250();
  fillProductTechnicalFormV1287(p);
- setProductShopImagePreview(p.shopImageUrl||'');const f=document.getElementById('prodShopImageFile');if(f)f.value='';setProductEditorModeV145(p);syncPricingQuickFromBaseV1762();restoreProductPanelV1762();window.scrollTo({top:0,behavior:'smooth'})
+ setProductShopImagePreview(p.shopImageUrl||'');
+ const f=document.getElementById('prodShopImageFile');if(f)f.value='';
+ syncPricingQuickFromBaseV1762();restoreProductPanelV1762();window.scrollTo({top:0,behavior:'smooth'})
 }
 function updateProductCollectionFilterV1752(){
  const sel=document.getElementById('productCollectionFilterV1752');if(!sel)return;
