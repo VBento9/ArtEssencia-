@@ -13397,9 +13397,84 @@ function artessenciaPriceHealthV1251(p){const cost=calculatedProductCost(p),pric
 function editionRecommendedPriceV1249(p){return artessenciaRecommendedPriceV1251(p)}
 function ensureOnlineOrderCostSnapshotV12644(order,sourceDb=db){if(!order||!Array.isArray(order.items))return order;for(const line of order.items){if(!line||['quote_discount','quote_adjustment'].includes(line.type)||Number.isFinite(Number(line.cost)))continue;const code=String(line.code||''),name=normText(line.name||'');const p=(sourceDb.products||[]).find(x=>(code&&String(x.code||'')===code)||(name&&normText(x.name||'')===name));line.cost=p?calculatedProductCost(p):0;line.costSnapshotAt=order.created||new Date().toISOString();line.costSnapshotSource='online_order'}return order}
 function setProductShopImagePreview(url=''){const img=document.getElementById('prodShopImagePreview'),hidden=document.getElementById('prodShopImageUrl');if(hidden)hidden.value=String(url||'');if(img){if(url){img.src=url;img.style.display='block'}else{img.removeAttribute('src');img.style.display='none'}}}
-function previewShopImageFile(){const file=document.getElementById('prodShopImageFile')?.files?.[0];if(!file)return;if(!/^image\/(jpeg|png|webp)$/i.test(file.type))return toast('Formato de imagem não suportado');if(file.size>8*1024*1024)return toast('A imagem é demasiado grande (máx. 8 MB)');const r=new FileReader();r.onload=()=>{const img=document.getElementById('prodShopImagePreview');if(img){img.src=r.result;img.style.display='block'}};r.readAsDataURL(file)}
-async function uploadProductShopImage(){const file=document.getElementById('prodShopImageFile')?.files?.[0];if(!file)return toast('Escolhe primeiro uma fotografia');if(!/^image\/(jpeg|png|webp)$/i.test(file.type))return toast('Formato de imagem não suportado');if(file.size>8*1024*1024)return toast('A imagem é demasiado grande (máx. 8 MB)');const c=initCloudClient();if(!c)return toast('Liga primeiro a Cloud');const user=cloudUser||await ensureCloudSession();if(!user)return toast('Inicia sessão na Cloud');const code=String(document.getElementById('prodCode')?.value||editingProductCodeV147||'produto').trim()||'produto',ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg',path=`${user.id}/products/${encodeURIComponent(code)}/cover-${Date.now()}.${ext}`;try{const {error}=await c.storage.from('artessencia-shop').upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type});if(error)throw error;const {data}=c.storage.from('artessencia-shop').getPublicUrl(path),url=data?.publicUrl||'';if(!url)throw new Error('URL pública indisponível');setProductShopImagePreview(url);toast('Fotografia carregada — guarda o produto')}catch(e){cloudLogMsg('Erro fotografia produto: '+cloudErrText(e));toast('Não foi possível carregar a fotografia')}}
-async function removeProductShopImage(){const url=String(document.getElementById('prodShopImageUrl')?.value||'');if(url&&!confirm('Remover a fotografia deste produto?'))return;try{const c=initCloudClient(),user=cloudUser||await ensureCloudSession();if(c&&user&&url){const marker='/storage/v1/object/public/artessencia-shop/',i=url.indexOf(marker);if(i>=0){const path=decodeURIComponent(url.slice(i+marker.length));if(path.startsWith(user.id+'/'))await c.storage.from('artessencia-shop').remove([path])}}}catch(e){cloudLogMsg('Aviso ao remover fotografia produto: '+cloudErrText(e))}setProductShopImagePreview('');const f=document.getElementById('prodShopImageFile');if(f)f.value='';toast('Fotografia removida — guarda o produto')}
+function previewShopImageFile(){const file=document.getElementById('prodShopImageFile')?.files?.[0];if(!file)return;if(!/^image\/(jpeg|png|webp)$/i.test(file.type))return toast('Formato de imagem não suportado');if(file.size>12*1024*1024)return toast('A imagem é demasiado grande (máx. 12 MB antes da otimização)');const r=new FileReader();r.onload=()=>{const img=document.getElementById('prodShopImagePreview');if(img){img.src=r.result;img.style.display='block'}};r.readAsDataURL(file)}
+async function optimizeProductImageV1806(file){
+ if(!file||!/^image\/(jpeg|png|webp)$/i.test(file.type))return file;
+ // Qualidade primeiro: ficheiros até 1 MB e PNG ficam intactos.
+ if(file.type==='image/png'||file.size<=1024*1024)return file;
+ try{
+   const bitmap=await createImageBitmap(file),maxSide=2000,longSide=Math.max(bitmap.width,bitmap.height);
+   const scale=Math.min(1,maxSide/longSide),w=Math.max(1,Math.round(bitmap.width*scale)),h=Math.max(1,Math.round(bitmap.height*scale));
+   const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+   const ctx=canvas.getContext('2d');ctx.drawImage(bitmap,0,0,w,h);bitmap.close?.();
+   const mime=file.type==='image/webp'?'image/webp':'image/jpeg';
+   const blob=await new Promise((resolve,reject)=>canvas.toBlob(v=>v?resolve(v):reject(new Error('Falha ao otimizar fotografia')),mime,0.92));
+   // Nunca trocar o original se o ganho não for real (mínimo ~10%).
+   if(blob.size>=file.size*0.90)return file;
+   const ext=mime==='image/webp'?'webp':'jpg',base=(file.name||'foto').replace(/\.[^.]+$/,'');
+   return new File([blob],base+'.'+ext,{type:mime,lastModified:Date.now()})
+ }catch(e){
+   // Se o dispositivo não conseguir otimizar, envia o original sem perda.
+   return file
+ }
+}
+function storagePathFromPublicUrlV1806(url,userId){
+ const marker='/storage/v1/object/public/artessencia-shop/',i=String(url||'').indexOf(marker);if(i<0)return '';
+ const path=decodeURIComponent(String(url).slice(i+marker.length));return path.startsWith(String(userId||'')+'/')?path:''
+}
+function productStoragePathFromPublicUrlV1807(url,userId,code){
+ const path=storagePathFromPublicUrlV1806(url,userId),prefix=String(userId||'')+'/products/'+encodeURIComponent(String(code||'').trim())+'/';
+ return path&&path.startsWith(prefix)?path:''
+}
+let pendingProductImageV1806=null;
+async function finalizePendingProductImageV1806(commit){
+ const pending=pendingProductImageV1806;pendingProductImageV1806=null;if(!pending)return;
+ try{
+   const c=initCloudClient(),user=cloudUser||await ensureCloudSession();if(!c||!user)return;
+   // Guardar produto: conservar a nova fotografia e remover a antiga.
+   // Cancelar/trocar de produto: conservar a antiga e remover apenas a nova temporária.
+   const path=commit?pending.oldPath:pending.newPath;
+   const keep=commit?pending.newPath:pending.oldPath;
+   if(path&&path!==keep)await c.storage.from('artessencia-shop').remove([path]);
+ }catch(e){cloudLogMsg('Aviso limpeza fotografia pendente: '+cloudErrText(e))}
+}
+async function uploadProductShopImage(){
+ const file=document.getElementById('prodShopImageFile')?.files?.[0];if(!file)return toast('Escolhe primeiro uma fotografia');
+ if(!/^image\/(jpeg|png|webp)$/i.test(file.type))return toast('Formato de imagem não suportado');
+ if(file.size>12*1024*1024)return toast('A imagem é demasiado grande (máx. 12 MB antes da otimização)');
+ const c=initCloudClient();if(!c)return toast('Liga primeiro a Cloud');const user=cloudUser||await ensureCloudSession();if(!user)return toast('Inicia sessão na Cloud');
+ const requestedCode=String(document.getElementById('prodCode')?.value||editingProductCodeV147||'').trim();
+ const code=requestedCode||nextProductCodeV147(),oldUrl=String(document.getElementById('prodShopImageUrl')?.value||'');
+ if(!requestedCode&&!editingProductCodeV147){const codeEl=document.getElementById('prodCode');if(codeEl)codeEl.value=code;newProductRecipeDraftV1805.code=code;refreshProductTechSheetBridgeV1250()}
+ let uploadedPath='';
+ try{
+   toast('A preparar fotografia…');
+   const optimized=await optimizeProductImageV1806(file),ext=(optimized.type==='image/webp'?'webp':optimized.type==='image/png'?'png':'jpg'),path=`${user.id}/products/${encodeURIComponent(code)}/cover-${Date.now()}.${ext}`;uploadedPath=path;
+   const {error}=await c.storage.from('artessencia-shop').upload(path,optimized,{cacheControl:'3600',upsert:false,contentType:optimized.type});if(error)throw error;
+   const {data}=c.storage.from('artessencia-shop').getPublicUrl(path),url=data?.publicUrl||'';if(!url)throw new Error('URL pública indisponível');
+   setProductShopImagePreview(url);
+   const oldPath=productStoragePathFromPublicUrlV1807(oldUrl,user.id,code);
+   if(pendingProductImageV1806?.newPath&&pendingProductImageV1806.newPath!==path){try{await c.storage.from('artessencia-shop').remove([pendingProductImageV1806.newPath])}catch(e){cloudLogMsg('Aviso ao limpar fotografia temporária anterior: '+cloudErrText(e))}}
+   pendingProductImageV1806={oldPath:pendingProductImageV1806?.oldPath||oldPath,newPath:path};
+   const beforeBytes=file.size,afterBytes=optimized.size,before=(beforeBytes/1024/1024).toFixed(1),after=(afterBytes/1024/1024).toFixed(1),savedPct=beforeBytes>0?Math.max(0,Math.round((1-afterBytes/beforeBytes)*100)):0;
+   toast(optimized===file?'Fotografia carregada sem compressão — guarda o produto':`Fotografia otimizada com qualidade alta · ${before} MB → ${after} MB · menos ${savedPct}%`)
+ }catch(e){
+   if(uploadedPath){try{await c.storage.from('artessencia-shop').remove([uploadedPath])}catch(cleanErr){cloudLogMsg('Aviso ao limpar upload falhado: '+cloudErrText(cleanErr))}}
+   cloudLogMsg('Erro fotografia produto: '+cloudErrText(e));toast('Não foi possível carregar a fotografia')
+ }
+}
+async function removeProductShopImage(){
+ const url=String(document.getElementById('prodShopImageUrl')?.value||'');if(url&&!confirm('Remover a fotografia deste produto?'))return;
+ try{
+   const c=initCloudClient(),user=cloudUser||await ensureCloudSession();if(!c||!user)return toast('Liga a Cloud para remover a fotografia');
+   const code=String(document.getElementById('prodCode')?.value||editingProductCodeV147||'').trim(),oldPath=productStoragePathFromPublicUrlV1807(url,user.id,code);
+   const currentPending=pendingProductImageV1806;
+   if(currentPending?.newPath){try{await c.storage.from('artessencia-shop').remove([currentPending.newPath])}catch(e){cloudLogMsg('Aviso ao limpar fotografia temporária: '+cloudErrText(e))}}
+   pendingProductImageV1806={oldPath:currentPending?.oldPath||oldPath,newPath:''};
+   setProductShopImagePreview('');const f=document.getElementById('prodShopImageFile');if(f)f.value='';
+   toast('Fotografia marcada para remoção — só será apagada ao guardar o produto')
+ }catch(e){cloudLogMsg('Aviso ao preparar remoção fotografia produto: '+cloudErrText(e));toast('Não foi possível preparar a remoção da fotografia')}
+}
 
 function ensureCostModel(){
   db.settings=db.settings||{};ensureBaseUnitsV120();
@@ -13678,7 +13753,7 @@ function refreshProductTechSheetBridgeV1250(){
  if(badge){badge.textContent=state.label;badge.className='badge '+(state.ok?'ok':'warn')}
  if(preview){
    let materialTotal=0;
-   const rows=lines.map(r=>{const st=stockByName(r.item),uc=Number(st?.unitCost)||0,q=Number(r.qty)||0,c=q*uc;materialTotal+=c;return `<div class="composition-row-v144"><span class="name">${escapeHtml(r.item)}</span><span class="qty">${q.toLocaleString('pt-PT')} ${escapeHtml(st?.unit||'')}</span><span class="cost">${euro(c)}</span>${isDraft?`<button type="button" class="btn danger" onclick="removeNewProductRecipeLineV1805(decodeURIComponent('${recipeArgV146(r.item)}'))">Remover</button>`:''}</div>`}).join('');
+   const rows=lines.map(r=>{const st=stockByName(r.item),uc=Number(st?.unitCost)||0,q=Number(r.qty)||0,c=q*uc;materialTotal+=c;return `<div class="composition-row-v144"><span class="name">${escapeHtml(r.item)}</span><span class="qty">${q.toLocaleString('pt-PT')} ${escapeHtml(st?.unit||'')}</span><span class="cost">${euro(c)}</span>${isDraft?`<button type="button" class="btn danger" onclick="removeNewProductRecipeLineV1805(decodeURIComponent(\'${recipeArgV146(r.item)}\'))">Remover</button>`:''}</div>`}).join('');
    if(isDraft){
      const opts=(db.stock||[]).map(x=>`<option value="${escapeAttr(x.name)}">${escapeHtml(x.name)} · ${escapeHtml(x.unit||'')}</option>`).join('');
      preview.innerHTML=`<div class="save-state-v143 dirty" style="margin-bottom:9px"><span>●</span><div><strong>Ficha Técnica em rascunho</strong><small>Produto e composição serão guardados juntos apenas no botão “Guardar produto”.</small></div></div><div class="form-grid"><div class="field span2"><label>Material / componente</label><select id="prodDraftRecipeMaterialV1805"><option value="">Selecionar…</option>${opts}</select></div><div class="field"><label>Quantidade / unidade</label><input id="prodDraftRecipeQtyV1805" type="number" min="0" step="any" placeholder="g/ml/cm/un"></div><div class="field"><label>&nbsp;</label><button type="button" class="btn primary" onclick="addNewProductRecipeLineV1805()">Adicionar à ficha</button></div></div><div style="margin-top:10px">${rows||'<div class="empty">Ainda sem materiais. Adiciona os componentes antes de guardar o produto.</div>'}</div><div class="composition-total-v144"><span>Custo dos materiais:</span><strong>${euro(materialTotal)}</strong></div>`;
@@ -13693,9 +13768,7 @@ function openProductTechSheetV1250(){
  go('costs');
  setTimeout(()=>{
    const sel=document.getElementById('costProduct');
-   if(!sel)return toast('Não foi possível abrir a Ficha Técnica');
-   sel.value=p.code;
-   renderProductRecipeEditor();
+   if(sel){sel.value=p.code;sel.dispatchEvent(new Event('change',{bubbles:true}))}
    setTimeout(()=>{const ed=document.getElementById('productRecipeEditor');if(ed)ed.scrollIntoView({behavior:'smooth',block:'start'})},80)
  },100)
 }
@@ -13809,6 +13882,7 @@ function setProductSaveStateV145(type,title,detail){
 }
 function cancelProductEditV145(){
  clearNewProductRecipeDraftV1805();
+ void finalizePendingProductImageV1806(false);
  ++productEditSessionV1798; // invalida carregamentos assíncronos do produto anterior
  prodName.value=prodCode.value=prodPrice.value=prodShopDescription.value='';const tagsEl=document.getElementById('prodTagsV1753');if(tagsEl)tagsEl.value='';const seasonEl=document.getElementById('prodSeasonTagsV1761');if(seasonEl)seasonEl.value='';renderAprecoSourceV1753(null);
  const op=document.getElementById('prodOnlinePriceV12620');if(op)op.value='';
@@ -14052,12 +14126,13 @@ function saveProduct(){
  const savedProduct=existing||db.products[db.products.length-1];
  if(!existing&&newProductRecipeDraftV1805.lines.length)db.productRecipes[code]=newProductRecipeDraftV1805.lines.map(x=>({item:x.item,qty:Number(x.qty)||0}));
  else if(!db.productRecipes[code])db.productRecipes[code]=[];
- save('products');setTimeout(()=>syncProductEditionAvailabilityV12618(savedProduct),0);
+ save('products');setTimeout(()=>syncProductEditionAvailabilityV12618(savedProduct),0);void finalizePendingProductImageV1806(true);
  clearNewProductRecipeDraftV1805();resetProductEditorAfterSaveV1749();
  setProductSaveStateV145('saved',wasEditing?'Alterações guardadas':'Produto guardado com sucesso',`${name} · produto guardado. O editor foi limpo para um novo registo.`);toast(wasEditing?'Alterações guardadas':'Produto guardado com sucesso')
 }
 function editProduct(code){
  clearNewProductRecipeDraftV1805();
+ void finalizePendingProductImageV1806(false);
  const p=findProductByCodeV147(code);if(!p)return;
  // Cada mudança de produto cria uma nova sessão de edição.
  // Assim, respostas assíncronas de coleções do produto anterior nunca voltam a preencher o editor atual.
