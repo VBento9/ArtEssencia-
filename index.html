@@ -13700,8 +13700,8 @@ async function syncProductEditionAvailabilityV12618(product){
    if(error)throw error;
    const editions=Array.isArray(data)?data:[];
    const productId=String(p._rid);
-   const targets=new Set(productEditionIdsV138(p));
-   const seasonalOnly=normalizeProductAvailabilityV1244(p)==='edition';
+   const targets=new Set(productArchivedV1803(p)?[]:productEditionIdsV138(p));
+   const seasonalOnly=!productArchivedV1803(p)&&normalizeProductAvailabilityV1244(p)==='edition';
    let changed=false;
    for(const ed of editions){
      const edKey=editionIdV1244(ed);
