@@ -2762,6 +2762,17 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 @media(max-width:520px){#costs .recipe-quick-actions-v180{grid-template-columns:1fr}}
 @media(min-width:1180px){#costs .recipe-quick-actions-v180{grid-template-columns:repeat(3,minmax(0,1fr))}}
 </style>
+
+<style id="artessencia-v181-quantidade-editavel">
+#costs .recipe-qty-edit-v181{display:inline-flex;align-items:center;gap:7px;min-width:118px;justify-content:flex-end}
+#costs .recipe-qty-input-v181{width:82px;min-height:44px;border:1px solid #d8cbc3;border-radius:11px;background:#fff;padding:8px 9px;font:inherit;font-weight:800;text-align:right;color:inherit;box-sizing:border-box}
+#costs .recipe-qty-input-v181:focus{outline:2px solid rgba(17,173,181,.24);border-color:#11adb5}
+#costs .recipe-qty-unit-v181{min-width:28px;font-weight:700;color:#6f625b}
+@media(max-width:620px){
+ #costs .recipe-qty-edit-v181{min-width:0;justify-content:flex-start}
+ #costs .recipe-qty-input-v181{width:76px}
+}
+</style>
 </head>
 <body>
 <div id="brandSplashV1778" aria-hidden="true"><div class="brand-splash-card"><img src="brand-artessencia.png" alt=""></div></div>
@@ -4982,7 +4993,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.8.0';
+const APP_VERSION='1.8.1';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -14207,6 +14218,24 @@ function removeRecipeLine(code,item){
  db.productRecipes[code]=(db.productRecipes[code]||[]).filter(x=>x.item!==item);
  save();restoreCostProductSelectionV12628(code);setRecipeSaveStateV143('saved','Material removido',`${item} deixou de fazer parte da ficha de ${p?.name||code}.`);toast('Material removido da ficha técnica')
 }
+function updateRecipeLineQtyV181(code,item,value){
+ const raw=String(value??'').trim().replace(',','.'),qty=Number(raw);
+ const rows=db.productRecipes[code]||[],line=rows.find(x=>String(x?.item||'')===String(item||''));
+ if(!line)return renderProductRecipeEditor();
+ if(!Number.isFinite(qty)||qty<=0){
+   setRecipeSaveStateV143('error','Quantidade não alterada','Introduza uma quantidade superior a zero.');
+   toast('A quantidade tem de ser superior a zero');
+   renderProductRecipeEditor();
+   return
+ }
+ const previous=Number(line.qty)||0;
+ if(Math.abs(previous-qty)<1e-12)return;
+ line.qty=qty;
+ save();restoreCostProductSelectionV12628(code);
+ const p=(db.products||[]).find(x=>String(x?.code||'')===String(code||'')),st=stockByName(item);
+ setRecipeSaveStateV143('saved','Quantidade atualizada',`${p?.name||code} · ${item} · ${qty.toLocaleString('pt-PT')} ${st?.unit||''}.`);
+ toast('Quantidade atualizada na ficha técnica')
+}
 function renderProductRecipeEditor(){
  if(!document.getElementById('productRecipeEditor'))return;
  const code=costProduct.value,p=db.products.find(x=>x.code===code);
@@ -14216,7 +14245,7 @@ function renderProductRecipeEditor(){
  const editionConfigured=state.ok,editionRec=editionRecommendedPriceV1249(p);
  productRecipeEditor.innerHTML=`<div class="totalbox cost-totalbox-v1248"><div class="mini"><span>Materiais</span><strong>${euro(top)}</strong></div><div class="mini"><span>Mão de obra</span><strong>${euro(lab)}</strong></div><div class="mini"><span>Custos gerais</span><strong>${euro(fixed)}</strong></div><div class="mini"><span>Outros custos</span><strong>${euro(other)}</strong></div><div class="mini"><span>Custo total real</span><strong>${euro(total)}</strong></div><div class="mini"><span>PVP recomendado</span><strong>${euro(editionRec)}</strong></div></div>
  ${renderRecipeQuickConsumablesV180(p,lines)}
- <div style="margin-top:10px"${lines.length?lines.map(l=>{const st=stockByName(l.item),invalid=!st||!(Number(l.qty)>0);return `<div class="cart-row recipe-line-v146 ${invalid?'invalid':''}"><span>${escapeHtml(l.item)}${!st?'<small class="recipe-warning-v146">Componente inexistente no Stock</small>':''}</span><strong>${Number(l.qty).toLocaleString('pt-PT')} ${escapeHtml(st?.unit||'—')}</strong><strong>${st?euro((Number(l.qty)||0)*materialUnitCost(l.item)):'—'}</strong><button class="btn danger" onclick="removeRecipeLine(decodeURIComponent('${recipeArgV146(code)}'),decodeURIComponent('${recipeArgV146(l.item)}'))">Remover</button></div>`}).join(''):'<div class="empty">Sem materiais configurados</div>'}</div>`
+ <div style="margin-top:10px">${lines.length?lines.map(l=>{const st=stockByName(l.item),invalid=!st||!(Number(l.qty)>0),codeArg=recipeArgV146(code),itemArg=recipeArgV146(l.item),qty=Number(l.qty)||0;return `<div class="cart-row recipe-line-v146 ${invalid?'invalid':''}"><span>${escapeHtml(l.item)}${!st?'<small class="recipe-warning-v146">Componente inexistente no Stock</small>':''}</span><span class="recipe-qty-edit-v181"><input class="recipe-qty-input-v181" type="number" inputmode="decimal" min="0.000001" step="any" value="${escapeAttr(String(qty))}" aria-label="Quantidade de ${escapeAttr(l.item)}" onchange="updateRecipeLineQtyV181(decodeURIComponent('${codeArg}'),decodeURIComponent('${itemArg}'),this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"><span class="recipe-qty-unit-v181">${escapeHtml(st?.unit||'—')}</span></span><strong>${st?euro(qty*materialUnitCost(l.item)):'—'}</strong><button class="btn danger" onclick="removeRecipeLine(decodeURIComponent('${codeArg}'),decodeURIComponent('${itemArg}'))">Remover</button></div>`}).join(''):'<div class="empty">Sem materiais configurados</div>'}</div>`
 }
 function renderCosts(){
  ensureCostModel();if(!document.getElementById('costKpis'))return;
