@@ -5291,7 +5291,21 @@ function load(){
  {name:'Embalagem',qty:0,unit:'un',min:20,unitCost:0}
 ],cash:[],purchases:[],stockMoves:[],productionRuns:[],themedBoxes:[],packaging:[{name:'Caixa pequena',capacity:2,cost:0},{name:'Caixa média',capacity:4,cost:0},{name:'Caixa presente',capacity:6,cost:0},{name:'Saco kraft',capacity:3,cost:0}]})
 }
-function save(){
+function renderAfterSaveV1800(scope='all'){
+ if(scope!=='products'){renderAll();return}
+ // Otimização conservadora V1.8.00:
+ // ao guardar um produto, atualizar apenas os módulos que dependem diretamente do catálogo.
+ // Os restantes módulos continuam com o comportamento global anterior.
+ renderProducts();
+ renderPicker();
+ renderCosts();
+ renderCatalogs();
+ renderSpecialEditionsAdmin();
+ renderQuantityPricingV1750();
+ renderCloudUI();
+ renderBackupInfo();
+}
+function save(scope='all'){
  if(!cloudApplying)relDetectChangedOrders();
  localStorage.setItem(KEY,JSON.stringify(db));
  if(!cloudApplying){
@@ -5303,7 +5317,7 @@ function save(){
      await cloudPushNow(false)
    },650)
  }
- renderAll()
+ renderAfterSaveV1800(scope)
 }
 function saveFromCloud(){localStorage.setItem(KEY,JSON.stringify(db));renderAll()}
 function saveConfirmedShadow(row){
@@ -13924,7 +13938,7 @@ function saveProduct(){
  existing?Object.assign(existing,obj):db.products.push(obj);
  const savedProduct=existing||db.products[db.products.length-1];
  if(!db.productRecipes[code])db.productRecipes[code]=[];
- save();setTimeout(()=>syncProductEditionAvailabilityV12618(savedProduct),0);
+ save('products');setTimeout(()=>syncProductEditionAvailabilityV12618(savedProduct),0);
  resetProductEditorAfterSaveV1749();
  setProductSaveStateV145('saved',wasEditing?'Alterações guardadas':'Produto guardado com sucesso',`${name} · produto guardado. O editor foi limpo para um novo registo.`);toast(wasEditing?'Alterações guardadas':'Produto guardado com sucesso')
 }
