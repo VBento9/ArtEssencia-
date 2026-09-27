@@ -12699,18 +12699,37 @@ function deliverWithBalance(id){
 function registerOrderPayment(id){const o=db.orders.find(x=>x.id===id);if(!o)return;const total=calcOrder(o).total,current=Math.max(0,Number(o.paid)||0),remaining=Math.max(0,total-current),amount=Number(document.getElementById('detailNewPaid')?.value)||0,method=document.getElementById('detailPayMethod')?.value||o.payment||'Outro';if(amount<=0||amount>remaining+0.001)return toast('O pagamento deve ser superior a 0 € e não pode exceder '+euro(remaining));const payment={id:uid('PAY'),date:new Date().toISOString(),amount,method,type:'payment'};o.paid=current+amount;o.payment=method;o.paymentHistory=o.paymentHistory||[];o.paymentHistory.push(payment);addOrderPaymentCash(o,payment);save();queueOrderBusinessSyncV1757(o,'pagamento registado');showOrder(id);toast('Pagamento registado na encomenda e no Caixa: '+euro(amount))}
 function correctOrderPaid(id){const o=db.orders.find(x=>x.id===id);if(!o)return;const total=calcOrder(o).total,current=Math.max(0,Number(o.paid)||0),raw=prompt('Corrigir total recebido da encomenda '+id+' (0 a '+euro(total)+'):',String(current.toFixed(2)).replace('.',','));if(raw===null)return;const value=Number(String(raw).replace(',','.'));if(!Number.isFinite(value)||value<0||value>total+0.001)return toast('Valor inválido');const delta=value-current,payment={id:uid('PAY'),date:new Date().toISOString(),amount:delta,method:o.payment||'Outro',type:'correction',note:'Correção do total recebido'};o.paid=value;o.paymentHistory=o.paymentHistory||[];o.paymentHistory.push(payment);if(Math.abs(delta)>0.001){db.cash=db.cash||[];db.cash.push({id:uid('CASH'),date:todayISO(),type:delta>0?'Entrada':'Saída',desc:'Correção pagamento encomenda '+o.id,method:payment.method,value:Math.abs(delta),source:'order_payment_correction',orderId:o.id,paymentId:payment.id})}save();queueOrderBusinessSyncV1757(o,'correção de pagamento');showOrder(id);toast('Total recebido corrigido')}
 async function deleteProduct(code){
- if(!destructiveDeleteAllowedV1420('o produto'))return;
  const p=findProductByCodeV147(code);if(!p)return;
  const usedInOrders=db.orders.some(o=>(o.items||[]).some(i=>productCodeKeyV147(i.code)===productCodeKeyV147(p.code)));
  const usedInQuotes=(db.quotes||[]).some(q=>(q.items||[]).some(i=>i.type!=='free'&&productCodeKeyV147(i.code)===productCodeKeyV147(p.code)));
  const usedInDrafts=(Array.isArray(cart)&&cart.some(i=>productCodeKeyV147(i.code)===productCodeKeyV147(p.code)))||(Array.isArray(quoteCart)&&quoteCart.some(i=>i.type!=='free'&&productCodeKeyV147(i.code)===productCodeKeyV147(p.code)));
- if(usedInOrders)return toast('Este produto já existe no histórico de encomendas e não pode ser apagado. Pode alterá-lo ou deixá-lo oculto.');
- if(usedInQuotes)return toast('Este produto está associado a um orçamento e não pode ser apagado. Pode alterá-lo ou deixá-lo oculto.');
+ if(usedInOrders)return toast('Este produto já existe no histórico de encomendas e não pode ser apagado definitivamente.');
+ if(usedInQuotes)return toast('Este produto está associado a um orçamento e não pode ser apagado definitivamente.');
  if(usedInDrafts)return toast('Este produto está numa venda ou orçamento ainda em preparação. Retire primeiro essa linha.');
- if(!confirm('Apagar este produto e a respetiva ficha técnica definitivamente?'))return;
+
+ const business=isBusinessModeV1420();
+ const warning=business
+   ?'APAGAR DEFINITIVAMENTE este produto? Esta exceção é permitida em Negócio real apenas porque o produto não tem histórico de encomendas/orçamentos. A Ficha Técnica também será eliminada.'
+   :'Apagar DEFINITIVAMENTE este produto e a respetiva Ficha Técnica?';
+ if(!confirm(warning))return;
+ const typed=prompt('Para confirmar, escreva exatamente o código do produto: '+p.code,'');
+ if(typed===null)return;
+ if(productCodeKeyV147(typed)!==productCodeKeyV147(p.code))return toast('Código de confirmação incorreto. Nada foi apagado.');
+
+ let u=null;
  if(p._rid){
-   const u=cloudUser||await ensureCloudSession();
+   u=cloudUser||await ensureCloudSession();
    if(!u||!cloudClient)return toast('Sem sessão Cloud. Nada foi apagado.');
+
+   const memberships=productEditionIdsV138(p);
+   if(memberships.length){
+     const unlinked=await syncProductEditionAvailabilityV12618({...p,editionIds:[],editionId:''});
+     if(!unlinked){
+       toast('Não foi possível retirar o produto das coleções sazonais. Nada foi apagado.');
+       return;
+     }
+   }
+
    try{
      const {error}=await cloudClient.from(REL_TABLES.products).delete().eq('user_id',u.id).eq('id',p._rid);
      if(error)throw error;
@@ -12723,17 +12742,25 @@ async function deleteProduct(code){
      return;
    }
  }
+
  db.products=db.products.filter(x=>x!==p);
  if(db.productRecipes)delete db.productRecipes[p.code];
+ if(productCodeKeyV147(editingProductCodeV147)===productCodeKeyV147(p.code))resetProductEditorAfterSaveV1749();
+
  cloudApplying=true;
  try{localStorage.setItem(KEY,JSON.stringify(db));renderAll()}finally{cloudApplying=false}
  localStorage.setItem(REL_DIRTY,'1');setCloudMeta({dirty:true,verified:false,localChangedAt:new Date().toISOString()});
+
+ try{
+   u=u||cloudUser||await ensureCloudSession();
+   if(u&&cloudClient)await syncStoreCatalogV1421(u);
+ }catch(e){cloudLogMsg('Aviso ao retirar produto do catálogo público '+code+': '+cloudErrText(e))}
+
  if(cloudStartupDone)await cloudPushNow(false);
- cloudLogMsg('Produto eliminado definitivamente: '+code);
+ cloudLogMsg('Produto eliminado definitivamente: '+code+(business?' · autorizado em Negócio real sem histórico':''));
  await publishPublicTechnicalProfilesV12815(false);
  toast('Produto eliminado definitivamente');
 }
-
 
 function purchaseStatusV135(rec){return rec?.status==='ordered'?'ordered':'received'}
 function purchaseIsTestVoidedV1770(rec){return !!rec?.testVoidedV1770}
@@ -14105,7 +14132,7 @@ function renderProducts(){
        </div>
        <div class="product-card-foot">
          <span>${marginOk?'Margem dentro do objetivo':'Margem abaixo do mínimo'}</span>
-         <div class="product-card-actions"><button class="btn" onclick="editProduct(decodeURIComponent('${productArgV147(p.code)}'))">Editar</button><button class="btn danger" onclick="deleteProduct(decodeURIComponent('${productArgV147(p.code)}'))">Apagar</button></div>
+         <div class="product-card-actions"><button class="btn" onclick="editProduct(decodeURIComponent('${productArgV147(p.code)}'))">Editar</button><button class="btn danger" title="Elimina definitivamente apenas se não existir em encomendas ou orçamentos" onclick="deleteProduct(decodeURIComponent('${productArgV147(p.code)}'))">Apagar definitivamente</button></div>
        </div>
      </div>
    </div>`;
