@@ -13331,8 +13331,23 @@ async function reactivateProductV1803(code){
 }
 function nextProductCodeV147(){let max=0;for(const p of (db.products||[])){const m=String(p?.code||'').match(/(\d+)$/);if(m)max=Math.max(max,Number(m[1])||0)}let n=max+1,code;do{code='AE-'+String(n++).padStart(4,'0')}while(findProductByCodeV147(code));return code}
 function productArgV147(v){return encodeURIComponent(String(v??''))}
-function productTechSheetProductV1250(){const code=String(document.getElementById('prodCode')?.value||editingProductCodeV147||'').trim();return code?findProductByCodeV147(code):null}
-function productTechSheetStateV146(p){if(!p)return{ok:false,key:'missing',label:'Sem produto',detail:'Selecione um produto.'};if(!productManufacturedV130(p))return{ok:true,key:'external',label:'Não produzido',detail:'Produto sem consumo de matérias-primas do ateliê.'};const lines=Array.isArray(db.productRecipes?.[p.code])?db.productRecipes[p.code]:[];if(!lines.length)return{ok:false,key:'empty',label:'Sem materiais',detail:'Adicione os materiais consumidos na Ficha Técnica.'};const invalid=lines.filter(l=>!stockByName(l.item)||!(Number(l.qty)>0));if(invalid.length)return{ok:false,key:'draft',label:'Por rever',detail:`${invalid.length} linha(s) sem material válido ou quantidade.`};return{ok:true,key:'ok',label:'Válida',detail:`${lines.length} material(is) configurado(s).`}}
+let newProductRecipeDraftV1805={code:'__NEW_PRODUCT_DRAFT__',lines:[]};
+function clearNewProductRecipeDraftV1805(){newProductRecipeDraftV1805={code:'__NEW_PRODUCT_DRAFT__',lines:[]}}
+function recipeLinesForCodeV1805(code){
+ const key=String(code||'');
+ if(!editingProductCodeV147&&(key===newProductRecipeDraftV1805.code||(!key&&newProductRecipeDraftV1805.lines.length)))return newProductRecipeDraftV1805.lines;
+ return Array.isArray(db.productRecipes?.[key])?db.productRecipes[key]:[]
+}
+function newProductTechDraftV1805(){
+ if(editingProductCodeV147)return null;
+ const name=String(document.getElementById('prodName')?.value||'').trim();if(!name)return null;
+ const requested=String(document.getElementById('prodCode')?.value||'').trim();
+ newProductRecipeDraftV1805.code=requested||'__NEW_PRODUCT_DRAFT__';
+ const p=productDraftV110();
+ return {...p,code:newProductRecipeDraftV1805.code,name,category:document.getElementById('prodCat')?.value||'',productionType:document.getElementById('prodProductionTypeV130')?.value||'other',manufactured:!!document.getElementById('prodManufacturedV130')?.checked,availabilityType:document.getElementById('prodAvailability')?.value==='edition'?'edition':'regular'}
+}
+function productTechSheetProductV1250(){const code=String(document.getElementById('prodCode')?.value||editingProductCodeV147||'').trim();return (code?findProductByCodeV147(code):null)||newProductTechDraftV1805()}
+function productTechSheetStateV146(p){if(!p)return{ok:false,key:'missing',label:'Sem produto',detail:'Selecione um produto.'};if(!productManufacturedV130(p))return{ok:true,key:'external',label:'Não produzido',detail:'Produto sem consumo de matérias-primas do ateliê.'};const lines=recipeLinesForCodeV1805(p.code);if(!lines.length)return{ok:false,key:'empty',label:'Sem materiais',detail:'Adicione os materiais consumidos na Ficha Técnica.'};const invalid=lines.filter(l=>!stockByName(l.item)||!(Number(l.qty)>0));if(invalid.length)return{ok:false,key:'draft',label:'Por rever',detail:`${invalid.length} linha(s) sem material válido ou quantidade.`};return{ok:true,key:'ok',label:'Válida',detail:`${lines.length} material(is) configurado(s).`}}
 function editionIdV1244(ed){return String(ed?.id||ed?.slug||ed?.name||'')}
 let productEditionDraftIdsV1758=new Set();
 function setProductEditionDraftIdsV1758(ids=[]){productEditionDraftIdsV1758=new Set((ids||[]).map(String).filter(Boolean))}
@@ -13434,7 +13449,7 @@ function syncPurchaseUnitV120(preferred=''){const x=stockByName(document.getElem
 function syncCostUnitV120(preferred=''){const x=stockByName(document.getElementById('costMaterial')?.value||'');fillPurchaseUnitSelectV120(document.getElementById('costPackUnitV120'),x?.unit||'un',preferred)}
 function materialUnitCost(name){const x=stockByName(name);return x?Number(x.unitCost)||0:0}
 function toppingUnitCost(code){
-  const lines=(db.productRecipes&&db.productRecipes[code])||[];
+  const lines=recipeLinesForCodeV1805(code);
   return lines.reduce((sum,l)=>sum+(Number(l.qty)||0)*materialUnitCost(l.item),0)
 }
 function productEditionExtraLaborCost(product){
@@ -13525,7 +13540,7 @@ function applyMarginGuideV1772(value,scope){
  if(base)base.value=String(v);if(quick)quick.value=String(v);refreshProductChannelPricingV12620();
 }
 
-function productDraftV110(){const code=document.getElementById('prodCode')?.value||'',saved=(db.products||[]).find(x=>x.code===code)||{};const margin=readProductCostFieldV110('prodProfitPctV1744');return {...saved,code,laborMinutes:readProductCostFieldV110('prodLaborMinutesV110'),otherCost:readProductCostFieldV110('prodOtherCostV110')??saved.otherCost??0,marginPct:margin,profitPct:margin}}
+function productDraftV110(){const code=document.getElementById('prodCode')?.value||(!editingProductCodeV147?newProductRecipeDraftV1805.code:'')||'',saved=(db.products||[]).find(x=>x.code===code)||{};const margin=readProductCostFieldV110('prodProfitPctV1744');return {...saved,code,laborMinutes:readProductCostFieldV110('prodLaborMinutesV110'),otherCost:readProductCostFieldV110('prodOtherCostV110')??saved.otherCost??0,marginPct:margin,profitPct:margin}}
 function pricingActualMarginV1742(price,cost){price=Number(price)||0;cost=Number(cost)||0;return price>0?(price-cost)/price:null}
 let pricingRefreshFrameV1801=0;
 function scheduleProductPricingRefreshV1801(){
@@ -13647,25 +13662,34 @@ function refreshBatchPricingV1744(){
 function refreshBatchPricingV1743(){refreshBatchPricingV1744()}
 function refreshProductTechSheetBridgeV1250(){
  const box=document.getElementById('prodTechSheetBridge');if(!box)return;
- const p=productTechSheetProductV1250();box.style.display=p?'':'none';
+ const p=productTechSheetProductV1250();box.style.display='';
  const preview=document.getElementById('prodCompositionPreviewV144'),badge=document.getElementById('prodCompositionBadgeV144');
- if(!p){if(preview)preview.innerHTML='<div class="empty">Guarda ou seleciona um produto para ver a composição.</div>';if(badge){badge.textContent='—';badge.className='badge'}return}
- const lines=Array.isArray(db.productRecipes[p.code])?db.productRecipes[p.code]:[],state=productTechSheetStateV146(p),configured=state.ok;
+ if(!p){
+   if(preview)preview.innerHTML='<div class="empty">Indica o nome do novo produto. Depois podes criar aqui a Ficha Técnica antes do primeiro Guardar.</div>';
+   if(badge){badge.textContent='Novo';badge.className='badge warn'}
+   prodTechSheetStatus.textContent='Ficha Técnica disponível antes do primeiro Guardar';prodTechSheetIngredientCount.textContent='0';prodTechSheetCost.textContent=euro(0);prodTechSheetRecommended.textContent='—';prodTechSheetBtn.textContent='Criar Ficha Técnica';
+   return
+ }
+ const isDraft=!findProductByCodeV147(p.code),lines=recipeLinesForCodeV1805(p.code),state=productTechSheetStateV146(p),configured=state.ok;
  prodTechSheetStatus.textContent=`${state.label} · ${state.detail}`;
  prodTechSheetIngredientCount.textContent=String(lines.length);prodTechSheetCost.textContent=euro(calculatedProductCost(p));
  prodTechSheetRecommended.textContent=configured?euro(artessenciaRecommendedPriceV1251(p)):'Configura a ficha';
  prodTechSheetBtn.textContent=configured?'Editar Ficha Técnica':'Criar Ficha Técnica';
  if(badge){badge.textContent=state.label;badge.className='badge '+(state.ok?'ok':'warn')}
  if(preview){
-   if(!configured){preview.innerHTML='<div class="empty">Este produto ainda não tem materiais na Ficha Técnica. Carregue em “Criar Ficha Técnica” para definir a composição.</div>'}
-   else{
-     let materialTotal=0;
-     preview.innerHTML=lines.map(r=>{const st=stockByName(r.item),uc=Number(st?.unitCost)||0,q=Number(r.qty)||0,c=q*uc;materialTotal+=c;return `<div class="composition-row-v144"><span class="name">${escapeHtml(r.item)}</span><span class="qty">${q.toLocaleString('pt-PT')} ${escapeHtml(st?.unit||'')}</span><span class="cost">${euro(c)}</span></div>`}).join('')+`<div class="composition-total-v144"><span>Custo dos materiais:</span><strong>${euro(materialTotal)}</strong></div>`;
-   }
+   let materialTotal=0;
+   const rows=lines.map(r=>{const st=stockByName(r.item),uc=Number(st?.unitCost)||0,q=Number(r.qty)||0,c=q*uc;materialTotal+=c;return `<div class="composition-row-v144"><span class="name">${escapeHtml(r.item)}</span><span class="qty">${q.toLocaleString('pt-PT')} ${escapeHtml(st?.unit||'')}</span><span class="cost">${euro(c)}</span>${isDraft?`<button type="button" class="btn danger" onclick="removeNewProductRecipeLineV1805(decodeURIComponent('${recipeArgV146(r.item)}'))">Remover</button>`:''}</div>`}).join('');
+   if(isDraft){
+     const opts=(db.stock||[]).map(x=>`<option value="${escapeAttr(x.name)}">${escapeHtml(x.name)} · ${escapeHtml(x.unit||'')}</option>`).join('');
+     preview.innerHTML=`<div class="save-state-v143 dirty" style="margin-bottom:9px"><span>●</span><div><strong>Ficha Técnica em rascunho</strong><small>Produto e composição serão guardados juntos apenas no botão “Guardar produto”.</small></div></div><div class="form-grid"><div class="field span2"><label>Material / componente</label><select id="prodDraftRecipeMaterialV1805"><option value="">Selecionar…</option>${opts}</select></div><div class="field"><label>Quantidade / unidade</label><input id="prodDraftRecipeQtyV1805" type="number" min="0" step="any" placeholder="g/ml/cm/un"></div><div class="field"><label>&nbsp;</label><button type="button" class="btn primary" onclick="addNewProductRecipeLineV1805()">Adicionar à ficha</button></div></div><div style="margin-top:10px">${rows||'<div class="empty">Ainda sem materiais. Adiciona os componentes antes de guardar o produto.</div>'}</div><div class="composition-total-v144"><span>Custo dos materiais:</span><strong>${euro(materialTotal)}</strong></div>`;
+   }else if(!configured){preview.innerHTML='<div class="empty">Este produto ainda não tem materiais na Ficha Técnica. Carregue em “Criar Ficha Técnica” para definir a composição.</div>'}
+   else preview.innerHTML=rows+`<div class="composition-total-v144"><span>Custo dos materiais:</span><strong>${euro(materialTotal)}</strong></div>`;
  }
 }
 function openProductTechSheetV1250(){
- const p=productTechSheetProductV1250();if(!p)return toast('Guarda primeiro o produto');
+ const p=productTechSheetProductV1250();if(!p)return toast('Indica primeiro o nome do novo produto');
+ const saved=findProductByCodeV147(p.code);
+ if(!saved){refreshProductTechSheetBridgeV1250();setTimeout(()=>{document.getElementById('prodDraftRecipeMaterialV1805')?.focus();document.getElementById('prodCompositionPreviewV144')?.scrollIntoView({behavior:'smooth',block:'center'})},50);return}
  go('costs');
  setTimeout(()=>{
    const sel=document.getElementById('costProduct');
@@ -13674,6 +13698,15 @@ function openProductTechSheetV1250(){
    renderProductRecipeEditor();
    setTimeout(()=>{const ed=document.getElementById('productRecipeEditor');if(ed)ed.scrollIntoView({behavior:'smooth',block:'start'})},80)
  },100)
+}
+function addNewProductRecipeLineV1805(){
+ const item=String(document.getElementById('prodDraftRecipeMaterialV1805')?.value||''),qty=Number(document.getElementById('prodDraftRecipeQtyV1805')?.value)||0;
+ if(!item||qty<=0)return toast('Seleciona o material e indica uma quantidade superior a zero');
+ const ex=newProductRecipeDraftV1805.lines.find(x=>String(x.item)===item);if(ex)ex.qty=qty;else newProductRecipeDraftV1805.lines.push({item,qty});
+ refreshProductTechSheetBridgeV1250();refreshProductChannelPricingV12620();toast(ex?'Quantidade atualizada na ficha':'Material adicionado à ficha técnica')
+}
+function removeNewProductRecipeLineV1805(item){
+ newProductRecipeDraftV1805.lines=newProductRecipeDraftV1805.lines.filter(x=>String(x.item)!==String(item));refreshProductTechSheetBridgeV1250();refreshProductChannelPricingV12620();toast('Material removido da ficha técnica')
 }
 function updateProductAvailabilityUI(){
  const mode=document.getElementById('prodAvailability')?.value||'regular';
@@ -13775,6 +13808,7 @@ function setProductSaveStateV145(type,title,detail){
  el.innerHTML=`<span>${type==='saved'?'✓':type==='error'?'!':'●'}</span><div><strong>${escapeHtml(title)}</strong><small>${escapeHtml(detail||'')}</small></div>`;
 }
 function cancelProductEditV145(){
+ clearNewProductRecipeDraftV1805();
  ++productEditSessionV1798; // invalida carregamentos assíncronos do produto anterior
  prodName.value=prodCode.value=prodPrice.value=prodShopDescription.value='';const tagsEl=document.getElementById('prodTagsV1753');if(tagsEl)tagsEl.value='';const seasonEl=document.getElementById('prodSeasonTagsV1761');if(seasonEl)seasonEl.value='';renderAprecoSourceV1753(null);
  const op=document.getElementById('prodOnlinePriceV12620');if(op)op.value='';
@@ -13799,6 +13833,7 @@ function cancelProductEditV145(){
  refreshProductChannelPricingV12620();setProductEditorModeV145(null);refreshProductTechSheetBridgeV1250();toast('Edição cancelada')
 }
 function resetProductEditorAfterSaveV1749(){
+ clearNewProductRecipeDraftV1805();
  ++productEditSessionV1798; // impede que um carregamento antigo volte a preencher o editor limpo
  // Um novo produto deve começar num estado realmente vazio. Esta rotina limpa apenas o editor;
  // não altera o produto/ficha técnica já guardados no modelo de dados.
@@ -14015,12 +14050,14 @@ function saveProduct(){
  obj.ingredientsText=productFinalIngredientsV12811(obj);obj.safetysContains=productFinalContainsV12811(obj);obj.safetysMayContain=productFinalMayContainV12811(obj);
  existing?Object.assign(existing,obj):db.products.push(obj);
  const savedProduct=existing||db.products[db.products.length-1];
- if(!db.productRecipes[code])db.productRecipes[code]=[];
+ if(!existing&&newProductRecipeDraftV1805.lines.length)db.productRecipes[code]=newProductRecipeDraftV1805.lines.map(x=>({item:x.item,qty:Number(x.qty)||0}));
+ else if(!db.productRecipes[code])db.productRecipes[code]=[];
  save('products');setTimeout(()=>syncProductEditionAvailabilityV12618(savedProduct),0);
- resetProductEditorAfterSaveV1749();
+ clearNewProductRecipeDraftV1805();resetProductEditorAfterSaveV1749();
  setProductSaveStateV145('saved',wasEditing?'Alterações guardadas':'Produto guardado com sucesso',`${name} · produto guardado. O editor foi limpo para um novo registo.`);toast(wasEditing?'Alterações guardadas':'Produto guardado com sucesso')
 }
 function editProduct(code){
+ clearNewProductRecipeDraftV1805();
  const p=findProductByCodeV147(code);if(!p)return;
  // Cada mudança de produto cria uma nova sessão de edição.
  // Assim, respostas assíncronas de coleções do produto anterior nunca voltam a preencher o editor atual.
@@ -17352,7 +17389,7 @@ async function relationalHydrateCore(initial=false){
    renderCloudUI()
  }
 }
-document.addEventListener('input',e=>{if(['prodCode','prodPrice','prodOnlinePriceV12620','prodLaborMinutesV110','prodWastePctV110','prodMoldAverageV1740','prodOperatingAverageV1740','prodOtherCostV110','prodTargetMarginV110','prodOnlineTargetMarginV110','prodEditionExtraLaborMinutes','prodEditionExtraWastePct'].includes(e.target?.id))refreshProductChannelPricingV12620()});
+document.addEventListener('input',e=>{if(['prodCode','prodPrice','prodOnlinePriceV12620','prodLaborMinutesV110','prodWastePctV110','prodMoldAverageV1740','prodOperatingAverageV1740','prodOtherCostV110','prodTargetMarginV110','prodOnlineTargetMarginV110','prodEditionExtraLaborMinutes','prodEditionExtraWastePct'].includes(e.target?.id))refreshProductChannelPricingV12620();if(['prodName','prodCode','prodCat'].includes(e.target?.id))refreshProductTechSheetBridgeV1250()});
 function refreshOperationalViewsV1413(reason='local_change'){
  // Mantém os módulos operacionais coerentes no mesmo ciclo de interface, sem recarregar a página.
  try{
