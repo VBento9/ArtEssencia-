@@ -13400,22 +13400,21 @@ function setProductShopImagePreview(url=''){const img=document.getElementById('p
 function previewShopImageFile(){const file=document.getElementById('prodShopImageFile')?.files?.[0];if(!file)return;if(!/^image\/(jpeg|png|webp)$/i.test(file.type))return toast('Formato de imagem não suportado');if(file.size>12*1024*1024)return toast('A imagem é demasiado grande (máx. 12 MB antes da otimização)');const r=new FileReader();r.onload=()=>{const img=document.getElementById('prodShopImagePreview');if(img){img.src=r.result;img.style.display='block'}};r.readAsDataURL(file)}
 async function optimizeProductImageV1806(file){
  if(!file||!/^image\/(jpeg|png|webp)$/i.test(file.type))return file;
- // Perfil conservador: PNG fica intacto para preservar transparência e detalhe sem perdas.
- if(file.type==='image/png'||file.size<=1536*1024)return file;
+ // Qualidade primeiro: ficheiros até 1 MB e PNG ficam intactos.
+ if(file.type==='image/png'||file.size<=1024*1024)return file;
  try{
-   const bitmap=await createImageBitmap(file),maxSide=2560,longSide=Math.max(bitmap.width,bitmap.height);
-   if(longSide<=maxSide&&file.size<=2*1024*1024){bitmap.close?.();return file}
+   const bitmap=await createImageBitmap(file),maxSide=2000,longSide=Math.max(bitmap.width,bitmap.height);
    const scale=Math.min(1,maxSide/longSide),w=Math.max(1,Math.round(bitmap.width*scale)),h=Math.max(1,Math.round(bitmap.height*scale));
    const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
    const ctx=canvas.getContext('2d');ctx.drawImage(bitmap,0,0,w,h);bitmap.close?.();
    const mime=file.type==='image/webp'?'image/webp':'image/jpeg';
-   const blob=await new Promise((resolve,reject)=>canvas.toBlob(v=>v?resolve(v):reject(new Error('Falha ao otimizar fotografia')),mime,0.95));
-   // Só substituir o original quando a redução compensa realmente a recodificação.
+   const blob=await new Promise((resolve,reject)=>canvas.toBlob(v=>v?resolve(v):reject(new Error('Falha ao otimizar fotografia')),mime,0.92));
+   // Nunca trocar o original se o ganho não for real (mínimo ~10%).
    if(blob.size>=file.size*0.90)return file;
    const ext=mime==='image/webp'?'webp':'jpg',base=(file.name||'foto').replace(/\.[^.]+$/,'');
    return new File([blob],base+'.'+ext,{type:mime,lastModified:Date.now()})
  }catch(e){
-   // Compatibilidade: se o dispositivo não conseguir otimizar, envia o original sem perda.
+   // Se o dispositivo não conseguir otimizar, envia o original sem perda.
    return file
  }
 }
@@ -13444,7 +13443,9 @@ async function uploadProductShopImage(){
  if(!/^image\/(jpeg|png|webp)$/i.test(file.type))return toast('Formato de imagem não suportado');
  if(file.size>12*1024*1024)return toast('A imagem é demasiado grande (máx. 12 MB antes da otimização)');
  const c=initCloudClient();if(!c)return toast('Liga primeiro a Cloud');const user=cloudUser||await ensureCloudSession();if(!user)return toast('Inicia sessão na Cloud');
- const code=String(document.getElementById('prodCode')?.value||editingProductCodeV147||'produto').trim()||'produto',oldUrl=String(document.getElementById('prodShopImageUrl')?.value||'');
+ const requestedCode=String(document.getElementById('prodCode')?.value||editingProductCodeV147||'').trim();
+ const code=requestedCode||nextProductCodeV147(),oldUrl=String(document.getElementById('prodShopImageUrl')?.value||'');
+ if(!requestedCode&&!editingProductCodeV147){const codeEl=document.getElementById('prodCode');if(codeEl)codeEl.value=code;newProductRecipeDraftV1805.code=code;refreshProductTechSheetBridgeV1250()}
  let uploadedPath='';
  try{
    toast('A preparar fotografia…');
