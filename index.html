@@ -13306,6 +13306,7 @@ function productCodeKeyV147(v){return String(v||'').trim().toUpperCase()}
 function findProductByCodeV147(code){const k=productCodeKeyV147(code);return (db.products||[]).find(p=>productCodeKeyV147(p?.code)===k)||null}
 function productArchivedV1803(p){return !!p?.archivedV1803}
 function productUsableV1803(p){return !!p&&!productArchivedV1803(p)&&p.active!==false}
+function productArchivedDateLabelV1803(p){const raw=String(p?.archivedAtV1803||'').trim();if(!raw)return '';const d=new Date(raw);return Number.isNaN(d.getTime())?'':d.toLocaleDateString('pt-PT')}
 async function archiveProductV1803(code){
  const p=findProductByCodeV147(code);if(!p||productArchivedV1803(p))return;
  if(!confirm('Arquivar “'+(p.name||p.code)+'”?\n\nDeixa de aparecer em novas encomendas, conjuntos e canais públicos. A Ficha Técnica, custos, fotografia, coleções e histórico ficam preservados.'))return;
@@ -13324,7 +13325,7 @@ async function reactivateProductV1803(code){
  if(!confirm('Reativar “'+(p.name||p.code)+'”?\n\nO produto volta às listas internas. A publicação pública permanece desligada até a ativares manualmente.'))return;
  p.archivedV1803=false;p.reactivatedAtV1803=new Date().toISOString();p.shopVisible=false;p.mixVisible=false;
  save('products');
- if(p._rid&&productEditionIdsV138(p).length)await syncProductEditionAvailabilityV12618(p);
+ // Reativar é apenas interno: não restaurar publicação nem associações públicas automaticamente.
  if(cloudStartupDone)await cloudPushNow(false);
  toast('Produto reativado. Publicação pública continua desligada.')
 }
@@ -14007,7 +14008,8 @@ function saveProduct(){
  
  const additionalSafetysContains=productSafetySelectionV1287('contains'),additionalSafetysMayContain=productSafetySelectionV1287('mayContain').filter(code=>!additionalSafetysContains.includes(code));
  const personalizationV1773=productPersonalizationFromFormV1773();
- const obj={code,name,category:prodCat.value,tagsV1753:productTagsV1753,seasonalTagsV1761,seasonalTagsManualV1761:true,archivedV1803:existing?.archivedV1803===true,archivedAtV1803:existing?.archivedAtV1803||null,cost:0,price:directPrice,onlinePrice,shopVisible:!!prodShopVisible.checked,shopDescription:prodShopDescription.value.trim(),shopImageUrl:String(document.getElementById('prodShopImageUrl')?.value||'').trim(),personalizationV1773,customizable:(Number(personalizationV1773.colors?.max)||0)>0||!!personalizationV1773.fragrance?.enabled,mixVisible,mixMaxQty,mixBoxCapacities,availabilityType,editionExclusive:availabilityType==='edition',editionId,editionIds,editionExtraLaborMinutes,editionExtraWastePct,laborMinutes,profitPct,marginPct,wastePct,moldAverageCost,operatingAverageCost,moldCost,moldUses,moldCavities,moldUnitOverride,packagingCost,equipmentPowerW,equipmentMinutes,indirectCost,otherCost,targetMarginPct,onlineTargetMarginPct,productionType,manufactured,cureHours,prepTemp,mixTemp,pourTemp,productionNotes,qualityNotes,materialsText:additionalIngredientsText,careInstructions:storageInstructions,safetyInstructions:consumptionGuidance,additionalIngredientsText,additionalSafetysContains:[],additionalSafetysMayContain:[],storageInstructions,consumptionGuidance,technicalInfoVerified:false,technicalInfoReviewedAt:''};
+ const archivedNow=existing?.archivedV1803===true;
+ const obj={code,name,category:prodCat.value,tagsV1753:productTagsV1753,seasonalTagsV1761,seasonalTagsManualV1761:true,archivedV1803:archivedNow,archivedAtV1803:existing?.archivedAtV1803||null,cost:0,price:directPrice,onlinePrice,shopVisible:archivedNow?false:!!prodShopVisible.checked,shopDescription:prodShopDescription.value.trim(),shopImageUrl:String(document.getElementById('prodShopImageUrl')?.value||'').trim(),personalizationV1773,customizable:(Number(personalizationV1773.colors?.max)||0)>0||!!personalizationV1773.fragrance?.enabled,mixVisible:archivedNow?false:mixVisible,mixMaxQty,mixBoxCapacities,availabilityType,editionExclusive:availabilityType==='edition',editionId,editionIds,editionExtraLaborMinutes,editionExtraWastePct,laborMinutes,profitPct,marginPct,wastePct,moldAverageCost,operatingAverageCost,moldCost,moldUses,moldCavities,moldUnitOverride,packagingCost,equipmentPowerW,equipmentMinutes,indirectCost,otherCost,targetMarginPct,onlineTargetMarginPct,productionType,manufactured,cureHours,prepTemp,mixTemp,pourTemp,productionNotes,qualityNotes,materialsText:additionalIngredientsText,careInstructions:storageInstructions,safetyInstructions:consumptionGuidance,additionalIngredientsText,additionalSafetysContains:[],additionalSafetysMayContain:[],storageInstructions,consumptionGuidance,technicalInfoVerified:false,technicalInfoReviewedAt:''};
  obj.ingredientsText=productFinalIngredientsV12811(obj);obj.safetysContains=productFinalContainsV12811(obj);obj.safetysMayContain=productFinalMayContainV12811(obj);
  existing?Object.assign(existing,obj):db.products.push(obj);
  const savedProduct=existing||db.products[db.products.length-1];
@@ -14139,7 +14141,7 @@ function renderProducts(){
        <div class="product-card-top">
          <div><span class="badge">${normalizeProductAvailabilityV1244(p)==='edition'?'✨ Edição Especial':escapeHtml(p.category==='Velas em molde'?'Velas decorativas / em molde':(p.category||'—'))}</span><h3>${escapeHtml(p.name||'Sem nome')}</h3><small>${escapeHtml(p.code||'—')}</small></div>
          <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end">
-           ${productArchivedV1803(p)?'<span class="badge warn">Arquivado</span>':`<span class="badge ${p.shopVisible?'ok':'warn'}">${p.shopVisible?'Publicado':'Oculto'}</span>`}
+           ${productArchivedV1803(p)?`<span class="badge warn">Arquivado${productArchivedDateLabelV1803(p)?' · '+escapeHtml(productArchivedDateLabelV1803(p)):''}</span>`:`<span class="badge ${p.shopVisible?'ok':'warn'}">${p.shopVisible?'Publicado':'Oculto'}</span>`}
            <span class="badge product-mix-badge ${p.mixVisible?'':'off'}">${p.mixVisible?'Conjuntos ✓':'Fora dos conjuntos'}</span>
            <span class="badge ${productTechSheetStateV146(p).ok?'ok':'warn'}">Ficha técnica · ${escapeHtml(productTechSheetStateV146(p).label)}</span>
            ${productEditionMembershipIdsV138(p).length?`<span class="badge edition-product-badge">${escapeHtml(productEditionNamesV138(p).join(' · ')||productEditionMembershipIdsV138(p).length+' coleção(ões)')}</span>`:''}
@@ -14164,7 +14166,7 @@ function renderProducts(){
        </div>
        <div class="product-card-foot">
          <span>${marginOk?'Margem dentro do objetivo':'Margem abaixo do mínimo'}</span>
-         <div class="product-card-actions"><button class="btn" onclick="editProduct(decodeURIComponent('${productArgV147(p.code)}'))">Editar</button>${productArchivedV1803(p)?`<button class="btn primary" onclick="reactivateProductV1803(decodeURIComponent('${productArgV147(p.code)}'))">Reativar</button>`:`<button class="btn" onclick="archiveProductV1803(decodeURIComponent('${productArgV147(p.code)}'))">Arquivar</button>`}<button class="btn danger" title="Elimina definitivamente apenas se não existir em encomendas ou orçamentos" onclick="deleteProduct(decodeURIComponent('${productArgV147(p.code)}'))">Apagar definitivamente</button></div>
+         <div class="product-card-actions"><button class="btn" onclick="editProduct(decodeURIComponent('${productArgV147(p.code)}'))">${productArchivedV1803(p)?'Ver/Editar':'Editar'}</button>${productArchivedV1803(p)?`<button class="btn primary" onclick="reactivateProductV1803(decodeURIComponent('${productArgV147(p.code)}'))">Reativar</button>`:`<button class="btn" onclick="archiveProductV1803(decodeURIComponent('${productArgV147(p.code)}'))">Arquivar</button><button class="btn danger" title="Elimina definitivamente apenas se não existir em encomendas ou orçamentos" onclick="deleteProduct(decodeURIComponent('${productArgV147(p.code)}'))">Apagar definitivamente</button>`}</div>
        </div>
      </div>
    </div>`;
@@ -15121,7 +15123,7 @@ function renderSpecialEditionProductPicker(selected=[]){
    if(typeof x==='string')return [String(x),{id:String(x),exclusive:false}];
    return [String(x?.id||''),x||{}];
  }).filter(x=>x[0]));
- const rows=(db.products||[]).filter(p=>p.shopVisible&&p._rid);
+ const rows=(db.products||[]).filter(p=>p.shopVisible&&p._rid&&!productArchivedV1803(p));
  if(!rows.length){
    box.innerHTML='<div class="special-products-empty">Não existem produtos publicados com identificação Cloud. Sincroniza a Cloud e publica primeiro os produtos que queres usar.</div>';
    return;
@@ -15157,6 +15159,7 @@ function reconcileProductEditionMembershipV138(){
  let changed=false;
  for(const p of db.products||[]){
   if(!p?._rid)continue;
+  if(productArchivedV1803(p))continue;
   const ids=editions.filter(ed=>(ed?.data?.products||[]).some(x=>String(typeof x==='string'?x:(x?.id||''))===String(p._rid))).map(editionIdV1244);
   const prev=productEditionIdsV138(p).sort(),next=[...new Set(ids)].sort();
   if(JSON.stringify(prev)!==JSON.stringify(next)){p.editionIds=next;p.editionId=next[0]||'';changed=true}
@@ -15196,7 +15199,7 @@ function catalogLiveEditionV160(){
    .sort((a,b)=>(Number(b.data?.catalogPriority)||0)-(Number(a.data?.catalogPriority)||0)||(Number(!!b.data?.featured)-Number(!!a.data?.featured))||(Number(a.sort_order)||0)-(Number(b.sort_order)||0))[0]||null
 }
 function renderCatalogDigitalCenterV160(){
- const el=$('catalogCenterKpisV160');if(!el)return;const pubs=(db.products||[]).filter(p=>p.shopVisible!==false&&p.active!==false);const eds=Array.isArray(specialEditionsAdmin)?specialEditionsAdmin:[],live=catalogLiveEditionV160();const liveCount=eds.filter(ed=>specialEditionIsLiveV1759(ed,{requireCatalog:true})).length;
+ const el=$('catalogCenterKpisV160');if(!el)return;const pubs=(db.products||[]).filter(p=>p.shopVisible!==false&&p.active!==false&&!productArchivedV1803(p));const eds=Array.isArray(specialEditionsAdmin)?specialEditionsAdmin:[],live=catalogLiveEditionV160();const liveCount=eds.filter(ed=>specialEditionIsLiveV1759(ed,{requireCatalog:true})).length;
  el.innerHTML=[[pubs.length,'Produtos publicados','Fichas marcadas para publicação'],[eds.filter(x=>x.data?.catalogEnabled!==false).length,'Coleções públicas','Preparadas para o catálogo'],[liveCount,'Ocasiões válidas agora','Dentro das respetivas datas'],[live?Number(live.data?.catalogPriority)||0:'—','Prioridade ativa',live?.name||'Tema ArtEssencia']].map(([v,l,n])=>`<div class="card catalog-center-kpi"><small>${escapeHtml(l)}</small><b>${escapeHtml(v)}</b><span>${escapeHtml(n)}</span></div>`).join('');
  const p=$('catalogCenterPreviewV160');if(!p)return;const d=live?.data||{},theme=d.catalogTheme||'artessencia',pres={artessencia:['#5b3d2b','#c9a78e','✦',['🕯️','✦','❦']],outono:['#704025','#bd7446','🍂',['🍂','🍁','🌿']],halloween:['#211512','#c9672f','🎃',['🎃','🦇','🕯️']],natal:['#274735','#a67b39','🎄',['🎄','✦','❄']],namorados:['#772b42','#d193a4','♡',['♡','♥','✦']],pascoa:['#7e6b94','#d8afc2','🐣',['✿','🐣','❀']],primavera:['#50734e','#c7a9bb','❀',['❀','🌿','✿']],personalizado:['#5b3d2b','#c9a78e','✦',['✦','❦','🕯️']]},x=pres[theme]||pres.artessencia;p.style.setProperty('--cc1',d.themePrimary||x[0]);p.style.setProperty('--cc2',d.themeSecondary||x[1]);p.dataset.decor=x[2];p.querySelector('.ey').textContent=d.badge||'ARTESSENCIA';p.querySelector('h3').textContent=d.heroTitle||live?.name||'Identidade ArtEssencia';p.querySelector('p').textContent=d.subtitle||(live?'Ocasião ativa no Catálogo Digital.':'Nenhuma ocasião sazonal ativa neste momento.');const scene=$('catalogPreviewSceneV161');if(scene)scene.innerHTML=(x[3]||[]).map(v=>`<span>${escapeHtml(v)}</span>`).join('');const st=$('catalogCenterStatusV161');if(st)st.innerHTML=`<span class=\"catalog-status-pill\">Tema: <b>${escapeHtml(theme)}</b></span><span class=\"catalog-status-pill\">Ocasião: <b>${escapeHtml(live?.name||'Nenhuma')}</b></span><span class=\"catalog-status-pill\">Produtos públicos: <b>${pubs.length}</b></span>`;
 }
@@ -15466,8 +15469,9 @@ function renderCatalogs(){
  syncThemedPackagingSelect();renderBoxCreatorSettings();
  const arr=db.themedBoxes||[];
  const visible=arr.filter(b=>b.active!==false).length;
- const products=(db.products||[]).length;
- const published=(db.products||[]).filter(p=>p.shopVisible).length;
+ const activeProducts=(db.products||[]).filter(p=>!productArchivedV1803(p));
+ const products=activeProducts.length;
+ const published=activeProducts.filter(p=>p.shopVisible).length;
  const creator=db.settings?.boxCreator||{};
  const creatorOn=creator.enabled!==false;
 
@@ -17202,7 +17206,7 @@ async function relationalHydrateCore(initial=false){
          const base=kind==='client'
            ? {...d,_rid:r.id,id:d.id||r.id,name:d.name||r.name||'',phone:d.phone||r.phone||'',email:d.email||r.email||'',notes:d.notes||r.notes||'',created:d.created||(r.created_at||'').slice(0,10)||todayISO()}
            : kind==='product'
-             ? {...d,_rid:r.id,code:d.code||('P-'+r.id.slice(0,8)),name:d.name||r.name||'',category:d.category||r.category||'Velas em molde',price:Number(d.price??r.price)||0,cost:Number(d.cost??r.cost)||0,shopVisible:!!d.shopVisible,shopDescription:d.shopDescription||'',shopImageUrl:d.shopImageUrl||''}
+             ? {...d,_rid:r.id,code:d.code||('P-'+r.id.slice(0,8)),name:d.name||r.name||'',category:d.category||r.category||'Velas em molde',price:Number(d.price??r.price)||0,cost:Number(d.cost??r.cost)||0,archivedV1803:d.archivedV1803===true||(d.archivedV1803==null&&r.active===false),shopVisible:(d.archivedV1803===true||(d.archivedV1803==null&&r.active===false))?false:!!d.shopVisible,mixVisible:(d.archivedV1803===true||(d.archivedV1803==null&&r.active===false))?false:!!d.mixVisible,shopDescription:d.shopDescription||'',shopImageUrl:d.shopImageUrl||''}
              : kind==='order'
                ? {...d,_rid:r.id,id:d.id||('ORD-'+r.id.slice(0,8)),status:d.status||r.status||'Pedido',created:d.created||(r.order_date||todayISO())}
                : {...d,_rid:r.id,id:d.id||('ORC-'+r.id.slice(0,8)),status:d.status||r.status||'Rascunho',created:d.created||(r.quote_date||todayISO())};
