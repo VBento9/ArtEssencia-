@@ -5722,7 +5722,7 @@ async function sendEmailReplyPayloadV179({to,subject,message,client_id=null,orde
  const c=initCloudClient(),u=await ensureCloudSession();if(!c||!u)throw new Error('Liga primeiro a ArtEssencia Cloud');
  const {data:sessionData,error:sessionError}=await c.auth.getSession();const token=sessionData?.session?.access_token;if(sessionError||!token)throw new Error('Sessão Cloud expirada');
  const cfg=cloudCfg(),endpoint=String(cfg.url||'').replace(/\/$/,'')+'/functions/v1/artessencia-send-email';
- const r=await fetch(endpoint,{method:'POST',headers:{Authorization:`Bearer ${token}`,apikey:cfg.key,'Content-Type':'application/json'},body:JSON.stringify({to,subject,message,client_id,order_id,quote_id,template_kind:'reply',in_reply_to})});
+ const r=await fetch(endpoint,{method:'POST',headers:{Authorization:`Bearer ${token}`,apikey:cfg.key,'Content-Type':'application/json'},body:JSON.stringify({to,subject,message,client_id,order_id,quote_id,template_kind:'reply',in_reply_to_provider_id:in_reply_to})});
  const data=await r.json().catch(()=>({}));if(!r.ok||data?.ok===false)throw new Error(data?.error||data?.detail||`HTTP ${r.status}`);return data
 }
 async function sendEmailReplyV178(id){
@@ -5743,7 +5743,7 @@ async function sendEmailThreadReplyV179(index){
  emailThreadsV179=buildEmailThreadsV179();const t=emailThreadsV179[Number(index)];if(!t)return toast('Conversa não encontrada');
  const message=String(document.getElementById('emailThreadReplyV179')?.value||'').trim();if(!message)return toast('Escreve a resposta');
  const to=String(t.contact||'').trim();if(!validCustomerEmail(to))return toast('Email do destinatário inválido');
- const parent=t.last||t.latestInbound||null,btn=document.getElementById('emailThreadReplyBtnV179');if(btn){btn.disabled=true;btn.textContent='A enviar…'}
+ const parent=t.latestInbound||null,btn=document.getElementById('emailThreadReplyBtnV179');if(btn){btn.disabled=true;btn.textContent='A enviar…'}
  try{
   await sendEmailReplyPayloadV179({to,subject:emailReplySubjectV178(t.subject),message,client_id:t.clientId||null,order_id:t.orderId||null,quote_id:t.quoteId||null,in_reply_to:parent?.provider_message_id||null});
   await loadEmailModuleV177(false);emailFolderV177='threads';renderEmailModuleV177();const updated=buildEmailThreadsV179().findIndex(x=>x.contact===t.contact&&emailSubjectBaseV179(x.subject)===emailSubjectBaseV179(t.subject));if(updated>=0)openEmailThreadV179(updated);toast('Resposta enviada na conversa')
