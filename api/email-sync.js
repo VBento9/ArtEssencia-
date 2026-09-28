@@ -765,7 +765,118 @@ async function ingest(message) {
   return data;
 }
 
-async function syncImap() {
+function bearerToken(req) {
+  return String(
+    req.headers.authorization ||
+    ''
+  )
+    .replace(
+      /^Bearer\s+/i,
+      ''
+    )
+    .trim();
+}
+
+async function existingImapUids(token) {
+  const known = new Set();
+  const pageSize = 1000;
+
+  for (let offset = 0; offset < 10000; offset += pageSize) {
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/artessencia_email_log?select=metadata&provider=eq.imap&direction=eq.inbound&limit=${pageSize}&offset=${offset}`,
+      {
+        headers: {
+          apikey:
+            SUPABASE_KEY,
+
+          Authorization:
+            `Bearer ${token}`
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `EMAIL_UID_STATE_${response.status}`
+      );
+    }
+
+    const rows = await response
+      .json()
+      .catch(() => []);
+
+    for (const row of rows || []) {
+      const uid = Number(
+        row?.metadata?.imap_uid
+      );
+
+      if (
+        Number.isInteger(uid) &&
+        uid > 0
+      ) {
+        known.add(
+          String(uid)
+        );
+      }
+    }
+
+    if (
+      !Array.isArray(rows) ||
+      rows.length < pageSize
+    ) {
+      break;
+    }
+  }
+
+  return known;
+}
+
+function selectMissingUids(
+  allUids,
+  knownUids,
+  batchSize = 20
+) {
+  const missing = (allUids || [])
+    .filter(
+      uid =>
+        uid &&
+        !knownUids.has(
+          String(uid)
+        )
+    );
+
+  if (
+    missing.length <= batchSize
+  ) {
+    return missing;
+  }
+
+  const recentCount =
+    Math.min(
+      10,
+      batchSize
+    );
+
+  const oldestCount =
+    batchSize -
+    recentCount;
+
+  return [
+    ...missing.slice(
+      0,
+      oldestCount
+    ),
+
+    ...missing.slice(
+      -recentCount
+    )
+  ].filter(
+    (uid, index, rows) =>
+      rows.indexOf(uid) === index
+  );
+}
+
+async function syncImap(token) {
   const host =
     env(
       'ARTESSENCIA_IMAP_HOST',
@@ -925,12 +1036,31 @@ async function syncImap() {
       /\* SEARCH([^\r\n]*)/i
     )?.[1] || '';
 
-  const uids =
+  const allUids =
     line
       .trim()
       .split(/\s+/)
-      .filter(Boolean)
-      .slice(-20);
+      .filter(Boolean);
+
+  const knownUids =
+    await existingImapUids(
+      token
+    );
+
+  const missingCount =
+    allUids.filter(
+      uid =>
+        !knownUids.has(
+          String(uid)
+        )
+    ).length;
+
+  const uids =
+    selectMissingUids(
+      allUids,
+      knownUids,
+      20
+    );
 
   let processed = 0;
   let linked = 0;
@@ -1000,6 +1130,12 @@ async function syncImap() {
     linked,
     checked:
       uids.length,
+    pending:
+      Math.max(
+        0,
+        missingCount -
+        uids.length
+      ),
     errors
   };
 }
@@ -1039,7 +1175,9 @@ export default async function handler(
     }
 
     const result =
-      await syncImap();
+      await syncImap(
+        bearerToken(req)
+      );
 
     console.log(
       '[ARTESSENCIA EMAIL SYNC]',
