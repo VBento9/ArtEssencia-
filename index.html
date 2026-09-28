@@ -13028,7 +13028,7 @@ function renderShopDeliverySettings(){
     <div><strong>🌐 Estado público da Loja</strong><small>Independente do Catálogo Digital. Em atualização ou fechada, a Loja fica apenas para consulta.</small></div>
    </div>
    <div class="delivery-v33-fields two">
-    <div class="field"><label>Estado</label><select id="storePublicModeV1785"><option value="open">Aberta — aceitar encomendas</option><option value="updating">Em atualização — só consulta</option><option value="closed">Fechada — só consulta</option></select></div>
+    <div class="field"><label>Estado</label><select id="storePublicModeV1785" onchange="syncPublicChannelMessageV1802('store')"><option value="open">Aberta — aceitar encomendas</option><option value="updating">Em atualização — só consulta</option><option value="closed">Fechada — só consulta</option></select></div>
     <div class="field"><label>Mensagem pública</label><input id="storePublicMessageV1785" maxlength="220" placeholder="Mensagem apresentada na Loja"></div>
    </div>
    <div class="btnrow" style="margin-top:10px"><button type="button" class="btn primary" onclick="savePublicChannelStatusV1785('store')">Guardar estado da Loja</button></div>
@@ -15341,6 +15341,31 @@ async function deletePromoCodeV1786(id){
 }
 
 let publicChannelStatusV1785={store:{mode:'updating',public_message:''},catalog:{mode:'open',public_message:''}};
+const PUBLIC_CHANNEL_DEFAULT_MESSAGES_V1802={
+ store:{
+  updating:'Estamos a atualizar a Loja ArtEssencia. Podes consultar os produtos e coleções disponíveis, mas as encomendas online ainda não estão abertas.',
+  closed:'A Loja ArtEssencia está temporariamente fechada. Podes consultar os produtos e coleções disponíveis, mas não estamos a aceitar encomendas online neste momento.'
+ },
+ catalog:{
+  updating:'Estamos a atualizar o Catálogo ArtEssencia. Podes continuar a consultar os produtos enquanto concluímos a atualização.',
+  closed:'Catálogo temporariamente fechado. A informação apresentada pode estar indisponível ou em revisão.'
+ }
+};
+function syncPublicChannelMessageV1802(channel){
+ const prefix=channel==='store'?'store':'catalog';
+ const mode=String(document.getElementById(prefix+'PublicModeV1785')?.value||'open');
+ const msg=document.getElementById(prefix+'PublicMessageV1785');if(!msg)return;
+ const current=String(msg.value||'').trim();
+ const defaults=PUBLIC_CHANNEL_DEFAULT_MESSAGES_V1802[channel]||{};
+ const previous=publicChannelStatusV1785[channel]||{};
+ const previousDefault=defaults[String(previous.mode||'')]||'';
+ const knownDefault=Object.values(defaults).includes(current);
+ if(mode==='open'){
+  if(knownDefault||current===previousDefault)msg.value='';
+ }else if(!current||knownDefault||current===previousDefault){
+  msg.value=defaults[mode]||'';
+ }
+}
 async function loadPublicChannelStatusV1785(channel){
  const c=initCloudClient();if(!c)return null;
  const u=cloudUser||await ensureCloudSession();if(!u)return null;
@@ -15353,6 +15378,7 @@ async function loadPublicChannelStatusV1785(channel){
   const mode=document.getElementById(prefix+'PublicModeV1785'),msg=document.getElementById(prefix+'PublicMessageV1785');
   if(mode)mode.value=['open','updating','closed'].includes(v.mode)?v.mode:(channel==='store'?'updating':'open');
   if(msg)msg.value=String(v.public_message||'');
+  syncPublicChannelMessageV1802(channel);
   return v;
  }catch(e){console.error(e);cloudLogMsg('Erro a carregar estado público '+channel+': '+cloudErrText(e));return null}
 }
@@ -15361,6 +15387,7 @@ async function savePublicChannelStatusV1785(channel){
  const u=cloudUser||await ensureCloudSession();if(!u)return toast('Inicia sessão na Cloud');
  const prefix=channel==='store'?'store':'catalog';
  const mode=document.getElementById(prefix+'PublicModeV1785')?.value||'open';
+ syncPublicChannelMessageV1802(channel);
  const message=(document.getElementById(prefix+'PublicMessageV1785')?.value||'').trim();
  try{
   const {data,error}=await c.rpc('artessencia_save_public_channel_status_admin_v1',{p_channel:channel,p_mode:mode,p_message:message});
