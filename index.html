@@ -17176,7 +17176,9 @@ async function syncStoreCatalogV1421(user){
    const online=!!p.shopVisible&&!productArchivedV1803(p)&&p?.publicReleasePendingV1803!==true;if(online)visibleCodes.add(code.toLowerCase());
    const category=String(p.category||'Outros produtos artesanais').trim();
    const price=Number(p.onlinePrice)>0?Number(p.onlinePrice):(Number(p.price)||0);
-   const row={backoffice_product_id:p._rid||code,code,name:String(p.name||code),slug:storeSlugV1421(code+'-'+(p.name||'')),description:productPublicDescriptionV1762(p),category_id:categoryMap.get(category)||null,price_online:Math.max(0,price),image_url:p.shopImageUrl||null,active:online,available:online,customizable:productIsCustomizableV1773(p),personalization:(p.personalizationV1773||p.personalization||{}),updated_at:new Date().toISOString()};
+   const publicInfoV1809={materials:String(p.materialsText||p.additionalIngredientsText||p.ingredientsText||'').trim(),care:String(p.careInstructions||p.storageInstructions||'').trim(),safety:String(p.safetyInstructions||p.consumptionGuidance||'').trim()};
+   const personalizationV1809={...(p.personalizationV1773||p.personalization||{}),public_info:publicInfoV1809};
+   const row={backoffice_product_id:p._rid||code,code,name:String(p.name||code),slug:storeSlugV1421(code+'-'+(p.name||'')),description:productPublicDescriptionV1762(p),category_id:categoryMap.get(category)||null,price_online:Math.max(0,price),image_url:p.shopImageUrl||null,active:online,available:online,customizable:productIsCustomizableV1773(p),personalization:personalizationV1809,updated_at:new Date().toISOString()};
    const {error}=await cloudClient.from('store_products').upsert(row,{onConflict:'code'});if(error)throw error;
  }
  const {data:remote,error:readErr}=await cloudClient.from('store_products').select('id,code,active');if(readErr)throw readErr;
