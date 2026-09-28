@@ -5674,28 +5674,7 @@ function emailSubjectBaseV179(v=''){
  return (s||'(sem assunto)').toLowerCase()
 }
 function emailContactV179(x){return String(x?.direction==='inbound'?(x.from_email||''):(x.to_email||'')).trim().toLowerCase()}
-function buildEmailThreadsV179(rows=emailRowsV177){
- const a=(rows||[]).slice(),n=a.length,parent=Array.from({length:n},(_,i)=>i),byProvider=new Map();
- const find=i=>{while(parent[i]!==i){parent[i]=parent[parent[i]];i=parent[i]}return i};
- const union=(i,j)=>{i=find(i);j=find(j);if(i!==j)parent[j]=i};
- a.forEach((x,i)=>{const id=String(x?.provider_message_id||'').trim();if(id)byProvider.set(id,i)});
- a.forEach((x,i)=>{const p=String(x?.in_reply_to_provider_id||'').trim();if(p&&byProvider.has(p))union(i,byProvider.get(p))});
- const fallback=new Map();
- a.forEach((x,i)=>{
-   const key=emailSubjectBaseV179(x?.subject)+'|'+emailContactV179(x);if(!key.endsWith('|')){if(fallback.has(key))union(i,fallback.get(key));else fallback.set(key,i)}
- });
- const groups=new Map();
- a.forEach((x,i)=>{const r=find(i);if(!groups.has(r))groups.set(r,[]);groups.get(r).push(x)});
- const threads=[...groups.values()].map(messages=>{
-   messages.sort((a,b)=>new Date(emailWhenV179(a)||0)-new Date(emailWhenV179(b)||0));
-   const last=messages[messages.length-1]||{},first=messages[0]||{},inbound=messages.filter(x=>x.direction==='inbound');
-   const contact=emailContactV179(last)||emailContactV179(first)||'';
-   const subject=String(first.subject||last.subject||'(sem assunto)').replace(/^\s*((re|fw|fwd)\s*:\s*)+/i,'').trim()||'(sem assunto)';
-   const clientId=(messages.find(x=>x.client_id)||{}).client_id||null,orderId=(messages.find(x=>x.order_id)||{}).order_id||null,quoteId=(messages.find(x=>x.quote_id)||{}).quote_id||null;
-   return {messages,last,contact,subject,clientId,orderId,quoteId,latestInbound:inbound[inbound.length-1]||null,lastAt:emailWhenV179(last)}
- });
- threads.sort((a,b)=>new Date(b.lastAt||0)-new Date(a.lastAt||0));return threads
-}
+/* implementação legada buildEmailThreadsV179 removida na estabilização */
 
 /* implementação legada emailCountsV177 removida na estabilização */
 
