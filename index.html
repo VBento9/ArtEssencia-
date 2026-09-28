@@ -5955,6 +5955,14 @@ function startEmailNotificationPollingV1710(){
 }
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){checkNewEmailsV1710(true);scheduleNextEmailSyncV1710()}});
 window.addEventListener('focus',()=>{checkNewEmailsV1710(true);scheduleNextEmailSyncV1710()});
+function openEmailFromHashV1800(){
+ if(String(location.hash||'').toLowerCase()!=='#email')return false;
+ go('email');
+ try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
+ return true
+}
+window.addEventListener('hashchange',openEmailFromHashV1800);
+setTimeout(openEmailFromHashV1800,0);
 
 function uid(prefix){return prefix+'-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7)}
 function ensureRecordIds(){
