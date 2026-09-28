@@ -5694,7 +5694,7 @@ async function syncEmailInboxV177(){
   const c=initCloudClient(),u=await ensureCloudSession();if(!c||!u)throw new Error('Liga primeiro a ArtEssencia Cloud');
   const {data:sessionData}=await c.auth.getSession();const token=sessionData?.session?.access_token;if(!token)throw new Error('Sessão Cloud expirada');
   const r=await fetch('/api/email-sync',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'}});const d=await r.json().catch(()=>({}));if(!r.ok||!d?.ok)throw new Error(d?.detail||d?.error||`HTTP ${r.status}`);
-  await loadEmailModuleV177(false);toast(`Email atualizado · ${Number(d.processed||0)} processado(s)`)
+  await loadEmailModuleV177(false);const pending=Number(d.pending||0),processed=Number(d.processed||0);toast(pending>0?`Email atualizado · ${processed} processado(s) · ${pending} ainda pendente(s)`:`Email atualizado · ${processed} processado(s)`)
  }catch(e){toast('Atualizar email: '+String(e?.message||e));const st=document.getElementById('emailStatusV177');if(st)st.textContent='Falha na sincronização · '+String(e?.message||e)}finally{emailBusyV177=false;if(btn)btn.disabled=false;renderEmailModuleV177()}
 }
 function emailClientNameV178(clientId){
