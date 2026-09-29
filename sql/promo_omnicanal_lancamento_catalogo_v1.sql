@@ -73,6 +73,10 @@ create table if not exists public.artessencia_catalog_launch_challenges(
 alter table public.artessencia_catalog_launch_challenges enable row level security;
 revoke all on public.artessencia_catalog_launch_challenges from anon,authenticated;
 
+create unique index if not exists artessencia_catalog_launch_customer_claim_unique
+  on public.artessencia_catalog_launch_challenges(owner_id,customer_key)
+  where customer_key is not null and claimed_at is not null;
+
 alter table public.artessencia_promo_redemptions
   add constraint artessencia_promo_redemptions_challenge_id_fkey
   foreign key (challenge_id) references public.artessencia_catalog_launch_challenges(id) on delete set null
@@ -240,6 +244,15 @@ begin
   if length(v_digits)<9 or length(v_digits)>15 then raise exception 'invalid phone'; end if;
   if length(v_digits)=9 then v_digits:='351'||v_digits; end if;
   v_key:='p:'||v_digits;
+
+  perform pg_advisory_xact_lock(hashtext('artessencia-launch-phone-'||v_owner::text||'-'||v_key));
+  if exists(
+    select 1 from public.artessencia_catalog_launch_challenges c
+    where c.owner_id=v_owner and c.customer_key=v_key
+      and c.claimed_at is not null and c.id<>v_ch.id
+  ) then
+    raise exception 'reward already claimed';
+  end if;
 
   if v_ch.promo_id is not null then
     return jsonb_build_object('ok',true,'code',(select code from public.artessencia_promo_codes where id=v_ch.promo_id),'already_claimed',true);
