@@ -6314,13 +6314,32 @@ function smartAlertsDataV1810(){
  const products=(db.products||[]),stock=(db.stock||[]),orders=(db.orders||[]);
  const activeProducts=products.filter(p=>p&&p.active!==false&&!productArchivedV1803(p));
  const stockLow=stock.filter(x=>(Number(x?.min)||0)>0&&(Number(x?.qty)||0)<=(Number(x?.min)||0));
- const publicNoPhoto=activeProducts.filter(p=>!!p.shopVisible&&!String(p.shopImageUrl||'').trim());
+ const publicNoPhoto=activeProducts.filter(p=>!!p.shopVisible&&p?.publicReleasePendingV1803!==true&&!String(p.shopImageUrl||'').trim());
  const techIncomplete=activeProducts.filter(p=>{try{return !productTechSheetStateV146(p).ok}catch(e){return false}});
- const marginLow=activeProducts.filter(p=>{try{return ['warn','loss'].includes(artessenciaPriceHealthV1251(p).key)}catch(e){return false}});
+ const noPvp=activeProducts.filter(p=>!(Number(p?.price)>0));
+ const marginLow=activeProducts.filter(p=>Number(p?.price)>0).filter(p=>{try{return ['warn','loss'].includes(artessenciaPriceHealthV1251(p).key)}catch(e){return false}});
  const archivedPublic=products.filter(p=>productArchivedV1803(p)&&(!!p.shopVisible||!!p.mixVisible||productEditionIdsV138(p).length>0));
  const today=todayISO(),tomorrow=new Date(Date.now()+86400000).toISOString().slice(0,10);
  const productionDue=orders.filter(o=>o&&o.status!=='Cancelado'&&o.status!=='Entregue'&&o.status!=='Pronta'&&o.delivery&&String(o.delivery)>=today&&String(o.delivery)<=tomorrow);
- return {stockLow,publicNoPhoto,techIncomplete,marginLow,archivedPublic,productionDue};
+ return {stockLow,publicNoPhoto,techIncomplete,noPvp,marginLow,archivedPublic,productionDue};
+}
+function smartAlertProductsFilterV1811(mode){
+ go('products');
+ setTimeout(()=>{
+  const archive=document.getElementById('productArchiveFilterV1803');
+  const fill=document.getElementById('productCompletenessFilterV1762');
+  if(archive)archive.value='active';
+  if(fill)fill.value=mode||'all';
+  renderProducts();
+ },120);
+}
+function smartAlertArchivedPublicV1811(){
+ go('products');
+ setTimeout(()=>{
+  const archive=document.getElementById('productArchiveFilterV1803');
+  if(archive)archive.value='archived';
+  renderProducts();
+ },120);
 }
 function renderSmartAlertsV1810(){
  const kpis=document.getElementById('kpis');if(!kpis)return;
@@ -6329,10 +6348,11 @@ function renderSmartAlertsV1810(){
  const a=smartAlertsDataV1810();
  const items=[
   {n:a.stockLow.length,icon:'📦',title:'Stock abaixo do mínimo',note:'Matérias-primas que atingiram ou passaram o limite mínimo.',cls:a.stockLow.length?'bad':'good',action:"go('stock')"},
-  {n:a.publicNoPhoto.length,icon:'🖼️',title:'Publicado sem fotografia',note:'Produtos visíveis ao público sem imagem configurada.',cls:a.publicNoPhoto.length?'warn':'good',action:"go('products')"},
-  {n:a.techIncomplete.length,icon:'🧪',title:'Ficha técnica incompleta',note:'Produtos ativos com materiais ou quantidades por rever.',cls:a.techIncomplete.length?'warn':'good',action:"go('products')"},
-  {n:a.marginLow.length,icon:'📉',title:'Margem abaixo do objetivo',note:'Produtos abaixo da margem alvo ou do custo calculado.',cls:a.marginLow.length?'info':'good',action:"go('costs')"},
-  {n:a.archivedPublic.length,icon:'🗄️',title:'Arquivado mas ainda público',note:'Inconsistência de publicação que requer revisão manual.',cls:a.archivedPublic.length?'bad':'good',action:"go('products')"},
+  {n:a.publicNoPhoto.length,icon:'🖼️',title:'Publicado sem fotografia',note:'Produtos efetivamente publicados e sem imagem configurada.',cls:a.publicNoPhoto.length?'warn':'good',action:"smartAlertProductsFilterV1811('photo')"},
+  {n:a.techIncomplete.length,icon:'🧪',title:'Ficha técnica incompleta',note:'Produtos ativos com materiais ou quantidades por rever.',cls:a.techIncomplete.length?'warn':'good',action:"smartAlertProductsFilterV1811('tech')"},
+  {n:a.noPvp.length,icon:'💶',title:'Produto sem PVP',note:'Produtos ativos sem preço de venda definido.',cls:a.noPvp.length?'warn':'good',action:"smartAlertProductsFilterV1811('price')"},
+  {n:a.marginLow.length,icon:'📉',title:'Margem abaixo do objetivo',note:'Produtos com PVP definido mas abaixo da margem alvo ou do custo calculado.',cls:a.marginLow.length?'info':'good',action:"go('costs')"},
+  {n:a.archivedPublic.length,icon:'🗄️',title:'Arquivado mas ainda público',note:'Inconsistência de publicação que requer revisão manual.',cls:a.archivedPublic.length?'bad':'good',action:"smartAlertArchivedPublicV1811()"},
   {n:a.productionDue.length,icon:'🕯️',title:'Entrega próxima sem produção concluída',note:'Encomendas para hoje ou amanhã que ainda não estão prontas.',cls:a.productionDue.length?'warn':'good',action:"go('production')"}
  ];
  const issues=items.reduce((s,x)=>s+x.n,0);
