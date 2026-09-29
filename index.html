@@ -5170,6 +5170,44 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 
     <div id="productsSummary" class="products-summary"></div>
 
+    <div class="card" id="productBulkPersonalizationV1821" style="margin-top:10px">
+      <div class="products-form-head">
+        <div>
+          <div class="section-title" style="margin:0">Recuperação em massa · cores e fragrâncias</div>
+          <small>Copia opções de um produto-modelo para vários produtos atualmente sem personalização. Produtos já configurados ficam protegidos.</small>
+        </div>
+        <span id="bulkPersonalizationStatusV1821" class="badge">A preparar…</span>
+      </div>
+      <div class="form-grid" style="margin-top:10px">
+        <div class="field span2">
+          <label>Produto-modelo</label>
+          <select id="bulkPersonalizationSourceV1821" onchange="renderBulkPersonalizationV1821()">
+            <option value="">Selecionar produto com opções corretas…</option>
+          </select>
+          <small class="mix-help">Só aparecem produtos que ainda têm cores e/ou fragrâncias configuradas.</small>
+        </div>
+        <div class="field">
+          <label>Copiar</label>
+          <label style="display:flex;align-items:center;gap:7px;margin-top:6px"><input id="bulkCopyColorsV1821" type="checkbox" checked onchange="renderBulkPersonalizationV1821()"> Cores</label>
+          <label style="display:flex;align-items:center;gap:7px;margin-top:6px"><input id="bulkCopyFragrancesV1821" type="checkbox" checked onchange="renderBulkPersonalizationV1821()"> Fragrâncias</label>
+        </div>
+        <div class="field">
+          <label>Pesquisar destinos</label>
+          <input id="bulkPersonalizationSearchV1821" placeholder="Nome, código ou categoria…" oninput="renderBulkPersonalizationV1821()">
+          <small class="mix-help">A lista inclui apenas produtos atualmente sem opções configuradas.</small>
+        </div>
+      </div>
+      <div class="btnrow" style="margin-top:8px">
+        <button class="btn" type="button" onclick="selectAllBulkPersonalizationV1821(true)">Selecionar visíveis</button>
+        <button class="btn ghost" type="button" onclick="selectAllBulkPersonalizationV1821(false)">Limpar seleção</button>
+      </div>
+      <div id="bulkPersonalizationTargetsV1821" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:7px;margin-top:10px;max-height:320px;overflow:auto"></div>
+      <div class="btnrow" style="margin-top:10px">
+        <button class="btn primary" type="button" onclick="applyBulkPersonalizationV1821()">Aplicar aos produtos selecionados</button>
+      </div>
+      <div class="soft-note" style="margin-top:8px">Esta operação altera apenas <strong>cores/fragrâncias</strong>. Não altera preços, stock, fichas técnicas, características públicas, clientes, encomendas, produção, compras ou caixa.</div>
+    </div>
+
     <div class="card products-form-card" style="margin-top:10px">
       <div class="products-form-head">
         <div>
@@ -14765,6 +14803,76 @@ function productCompletenessV1762(p){const photo=!!String(p?.shopImageUrl||'').t
 function renderProductCompletenessEditorV1762(p=null){const el=document.getElementById('productCompletenessEditorV1762');if(!el)return;if(!p){el.innerHTML='<span>Seleciona ou cria um produto para acompanhar o preenchimento.</span>';return}const c=productCompletenessV1762(p);el.innerHTML=[[c.photo,'Fotografia'],[c.tech,'Ficha Técnica'],[c.description,'Descrição'],[c.price,'PVP'],[!c.review,'Revisão']].map(([ok,l])=>`<span class="${ok?'ok':'warn'}">${ok?'✓':'•'} ${l}</span>`).join('')+`<span class="${c.ready?'ok':'warn'}">${c.ready?'✓ Pronto para publicar':'Ainda incompleto'}</span>`}
 function showProductPanelV1762(name='identity'){document.querySelectorAll('#products [data-product-panel]').forEach(x=>x.classList.toggle('active',x.dataset.productPanel===name));document.querySelectorAll('#products [data-product-panel-btn]').forEach(x=>x.classList.toggle('active',x.dataset.productPanelBtn===name));try{localStorage.setItem('artessencia_product_panel_v1762',name)}catch(_){}}
 function restoreProductPanelV1762(){let n='identity';try{n=localStorage.getItem('artessencia_product_panel_v1762')||'identity'}catch(_){};if(!['identity','pricing','production','public'].includes(n))n='identity';showProductPanelV1762(n)}
+let bulkPersonalizationSelectedV1821=new Set();
+function personalizationConfiguredPartsV1821(p){
+ const x=p?.personalizationV1773||p?.personalization||{},c=x.colors||{},f=x.fragrance||{};
+ const colors=Number(c.max)>0&&Array.isArray(c.palette)&&c.palette.length>0;
+ const fragrances=!!f.enabled&&Array.isArray(f.options)&&f.options.length>0;
+ return {x,c,f,colors,fragrances,any:colors||fragrances}
+}
+function bulkPersonalizationSourceProductsV1821(){
+ return (db.products||[]).filter(p=>!productArchivedV1803(p)&&personalizationConfiguredPartsV1821(p).any)
+   .slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'pt'));
+}
+function bulkPersonalizationTargetProductsV1821(){
+ return (db.products||[]).filter(p=>!productArchivedV1803(p)&&!personalizationConfiguredPartsV1821(p).any)
+}
+function renderBulkPersonalizationV1821(){
+ const sourceSel=document.getElementById('bulkPersonalizationSourceV1821'),box=document.getElementById('bulkPersonalizationTargetsV1821'),status=document.getElementById('bulkPersonalizationStatusV1821');
+ if(!sourceSel||!box)return;
+ const old=sourceSel.value;
+ const sources=bulkPersonalizationSourceProductsV1821();
+ sourceSel.innerHTML='<option value="">Selecionar produto com opções corretas…</option>'+sources.map(p=>`<option value="${escapeAttr(p.code)}">${escapeHtml(p.name||p.code)} · ${escapeHtml(p.code)}</option>`).join('');
+ if(sources.some(p=>String(p.code)===old))sourceSel.value=old;
+ const q=String(document.getElementById('bulkPersonalizationSearchV1821')?.value||'').trim().toLowerCase();
+ const targets=bulkPersonalizationTargetProductsV1821().filter(p=>!q||[p.name,p.code,p.category].some(v=>String(v||'').toLowerCase().includes(q)));
+ const validCodes=new Set(bulkPersonalizationTargetProductsV1821().map(p=>String(p.code)));
+ bulkPersonalizationSelectedV1821=new Set([...bulkPersonalizationSelectedV1821].filter(code=>validCodes.has(code)));
+ box.innerHTML=targets.length?targets.map(p=>`<label style="display:flex;gap:8px;align-items:flex-start;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer"><input type="checkbox" data-bulk-personalization-target-v1821 value="${escapeAttr(p.code)}" ${bulkPersonalizationSelectedV1821.has(String(p.code))?'checked':''} onchange="toggleBulkPersonalizationV1821(this.value,this.checked)"><span><strong style="display:block">${escapeHtml(p.name||p.code)}</strong><small>${escapeHtml(p.code)} · ${escapeHtml(p.category||'—')}</small></span></label>`).join(''):'<div class="empty" style="grid-column:1/-1">Não existem produtos sem personalização para este filtro.</div>';
+ if(status){status.textContent=bulkPersonalizationTargetProductsV1821().length+' sem opções · '+bulkPersonalizationSelectedV1821.size+' selecionado(s)';status.className='badge '+(bulkPersonalizationTargetProductsV1821().length?'warn':'ok')}
+}
+function toggleBulkPersonalizationV1821(code,checked){
+ code=String(code||'');if(!code)return;
+ if(checked)bulkPersonalizationSelectedV1821.add(code);else bulkPersonalizationSelectedV1821.delete(code);
+ const s=document.getElementById('bulkPersonalizationStatusV1821');if(s)s.textContent=bulkPersonalizationTargetProductsV1821().length+' sem opções · '+bulkPersonalizationSelectedV1821.size+' selecionado(s)'
+}
+function selectAllBulkPersonalizationV1821(checked){
+ const nodes=[...document.querySelectorAll('[data-bulk-personalization-target-v1821]')];
+ nodes.forEach(el=>{el.checked=!!checked;toggleBulkPersonalizationV1821(el.value,!!checked)});
+ renderBulkPersonalizationV1821()
+}
+function applyBulkPersonalizationV1821(){
+ const sourceCode=String(document.getElementById('bulkPersonalizationSourceV1821')?.value||'');
+ const source=findProductByCodeV147(sourceCode);if(!source)return toast('Seleciona primeiro o produto-modelo');
+ const src=personalizationConfiguredPartsV1821(source);if(!src.any)return toast('O produto-modelo não tem opções configuradas');
+ const copyColors=!!document.getElementById('bulkCopyColorsV1821')?.checked,copyFragrances=!!document.getElementById('bulkCopyFragrancesV1821')?.checked;
+ if(!copyColors&&!copyFragrances)return toast('Seleciona cores e/ou fragrâncias para copiar');
+ const targets=(db.products||[]).filter(p=>bulkPersonalizationSelectedV1821.has(String(p.code)));
+ if(!targets.length)return toast('Seleciona pelo menos um produto de destino');
+ const protectedTargets=targets.filter(p=>personalizationConfiguredPartsV1821(p).any);
+ if(protectedTargets.length)return alert('Operação cancelada. '+protectedTargets.length+' produto(s) já têm personalização e foram protegidos.');
+ const details=[];
+ if(copyColors)details.push('cores');
+ if(copyFragrances)details.push('fragrâncias');
+ const msg='Aplicar '+details.join(' e ')+' de “'+(source.name||source.code)+'” a '+targets.length+' produto(s)?\n\nSó serão alteradas as opções públicas de personalização. Produtos já configurados não podem ser sobrescritos por esta ferramenta.';
+ if(!confirm(msg))return;
+ try{
+  localStorage.setItem('artessencia_v1821_pre_bulk_personalization',JSON.stringify({at:new Date().toISOString(),products:targets.map(p=>({code:p.code,personalizationV1773:p.personalizationV1773,personalization:p.personalization,customizable:p.customizable}))}))
+ }catch(_){}
+ for(const p of targets){
+  const current=p?.personalizationV1773&&typeof p.personalizationV1773==='object'?JSON.parse(JSON.stringify(p.personalizationV1773)):{version:1,colors:{max:0,allowFewer:true,labels:[],palette:[]},fragrance:{enabled:false,required:false,options:[]}};
+  current.version=1;
+  if(copyColors&&src.colors)current.colors=JSON.parse(JSON.stringify(src.c));
+  if(copyFragrances&&src.fragrances)current.fragrance=JSON.parse(JSON.stringify(src.f));
+  p.personalizationV1773=current;
+  p.customizable=(Number(current.colors?.max)||0)>0||!!current.fragrance?.enabled;
+ }
+ bulkPersonalizationSelectedV1821.clear();
+ save('products');
+ cloudLogMsg('Personalização em massa · '+targets.length+' produto(s) · modelo '+source.code+' · '+details.join(' + '));
+ renderBulkPersonalizationV1821();
+ toast(targets.length+' produto(s) atualizados')
+}
 function renderProducts(){
  ensureProductSafetyEditorV1287();if(!document.getElementById('prodCode')?.value){renderProductBaseSummaryV12811(false);setProductEditorModeV145(null);}updateProductTechnicalStatusV1287();
  loadProductEditionsV1245(false).then(()=>{fillProductEditionOptionsV1244(selectedProductEditionIdsV138());updateProductCollectionFilterV1752();});updateProductAvailabilityUI();
@@ -14791,6 +14899,7 @@ function renderProducts(){
  ].map(([label,value,note])=>`<div class="card products-kpi ${(label==='Margem baixa'&&lowMargin)||(label==='Sem ficha técnica'&&technicalPending)?'products-kpi-warn':''}">
    <span>${label}</span><strong>${value}</strong><small>${note}</small>
  </div>`).join('');
+ renderBulkPersonalizationV1821();
 
  const q=(document.getElementById('productSearch')?.value||'').trim().toLowerCase();
  const cat=document.getElementById('productCategoryFilter')?.value||'all';
