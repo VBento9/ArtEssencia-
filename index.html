@@ -2919,7 +2919,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div class="field"><label>Pagamento</label><select id="salePayment"><option>Dinheiro</option><option>MB Way</option><option>Transferência</option><option>Outro</option></select></div>
         <div class="field"><label>Embalagem</label><select id="saleBox"></select></div>
         <div class="field"><label>N.º caixas</label><input id="saleBoxes" type="number" min="1" value="1"></div>
-        <div class="field"><label>Valor pago</label><input id="salePaid" type="number" step="0.01" value="0"></div>
+        <div class="field"><label>Valor pago</label><input id="salePaid" type="number" step="0.01" value="0"></div><div class="field span2"><label>Código promocional / voucher</label><div style="display:flex;gap:7px"><input id="salePromoCodeV1813" maxlength="32" placeholder="AE-LANC-XXXXXXX" oninput="clearSalePromoV1813(false)"><button type="button" class="btn" onclick="validateSalePromoV1813()">Validar</button></div><small id="salePromoStatusV1813" class="muted">Opcional · válido em campanhas ArtEssencia.</small></div>
         <div class="field sale-notes-v1727"><label>Notas / personalização da encomenda</label><textarea id="saleNotes" rows="3" placeholder="Ex.: nome a colocar, cor pretendida, fita, mensagem, acabamento ou outras instruções para produção"></textarea><small class="muted">Estas instruções seguem para a Produção e para a ordem de produção.</small></div>
       </div>
     </section>
@@ -2949,7 +2949,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           <div id="cart"></div>
         </section>
 
-        <div class="totalbox sale-totalbox-v1727"><div class="mini"><span>Unidades</span><strong id="cartQty">0</strong></div><div class="mini"><span>Total</span><strong id="cartTotal">0,00 €</strong></div><div class="mini"><span>Lucro estimado</span><strong id="cartProfit">0,00 €</strong></div><div class="mini"><span>Margem</span><strong id="cartMargin">0,0%</strong></div></div>
+        <div class="totalbox sale-totalbox-v1727"><div class="mini"><span>Unidades</span><strong id="cartQty">0</strong></div><div class="mini"><span>Subtotal</span><strong id="cartTotal">0,00 €</strong></div><div class="mini"><span>Desconto</span><strong id="salePromoDiscountV1813">0,00 €</strong></div><div class="mini"><span>Total final</span><strong id="saleFinalTotalV1813">0,00 €</strong></div><div class="mini"><span>Lucro estimado</span><strong id="cartProfit">0,00 €</strong></div><div class="mini"><span>Margem</span><strong id="cartMargin">0,0%</strong></div></div>
 
         <div class="sale-actions-v1727"><button class="btn" onclick="clearSale()">Limpar</button><button class="btn primary" onclick="saveOrder()">Guardar encomenda</button></div>
       </aside>
@@ -3727,7 +3727,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
   </section>
   <section class="card publication-table-v1812">
    <div class="catalog-center-section-head-v1733"><div><div class="section-title" style="margin:0">Produtos e publicação</div><small id="publicationCountV1812">0 produtos</small></div></div>
-   <div class="tablewrap" style="margin-top:10px"><table><thead><tr><th>Produto</th><th>Interno</th><th>Público atual</th><th>Loja atual</th><th>Fotografia</th><th>PVP</th><th>Ficha</th><th>Coleções</th><th>Sincronização</th><th>Ações</th></tr></thead><tbody id="publicationBodyV1812"></tbody></table></div>
+   <div class="tablewrap" style="margin-top:10px"><table><thead><tr><th>Produto</th><th>Interno</th><th>Preparado</th><th>Catálogo hoje</th><th>Fotografia</th><th>PVP</th><th>Ficha</th><th>Coleções</th><th>Sincronização</th><th>Ações</th></tr></thead><tbody id="publicationBodyV1812"></tbody></table></div>
   </section>
  </div>
 </section> <section id="catalogDigital" class="screen">
@@ -3748,7 +3748,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
   <div class="catalog-center-section-head-v1733">
     <div>
       <div class="section-title" style="margin:0">Códigos promocionais</div>
-      <p class="muted">Gera códigos para campanhas, clientes específicos ou primeira compra. Aplicam-se apenas na Loja Online e não alteram o PVP do Catálogo.</p>
+      <p class="muted">Gera códigos ArtEssencia para campanhas, clientes específicos ou primeira compra. Podem ser utilizados numa venda direta ou, quando disponível, na Loja Online.</p>
     </div>
     <button class="btn" onclick="loadPromoCodesV1786(true)">Atualizar</button>
   </div>
@@ -6312,7 +6312,7 @@ function calcOrder(o){
  const discountTotal=Math.max(0,Number(o?.discountTotal)||0);
  const useServerTotal=isOnline&&Number.isFinite(serverTotal)&&serverTotal>=0;
  const calculatedOnlineTotal=Math.max(0,subtotal+thematicExtra+fulfillmentFee-discountTotal);
- const total=useServerTotal?serverTotal:(isOnline?calculatedOnlineTotal:itemsTotal);
+ const directTotal=Math.max(0,itemsTotal-discountTotal);const total=useServerTotal?serverTotal:(isOnline?calculatedOnlineTotal:directTotal);
  const itemCost=items.reduce((sum,line)=>sum+(['quote_discount','quote_adjustment'].includes(line?.type)?0:(Number(line?.qty)||0)*(Number(line?.cost)||0)),0);
  const boxes=Math.max(0,Number(o?.boxes)||0),boxCost=Math.max(0,Number(o?.boxCostSnapshot)||0)*boxes;
  const cost=itemCost+boxCost,profit=total-cost;
@@ -6424,8 +6424,8 @@ function renderDashboard(){
  renderDashboardProfitabilityV1769(d.profitability);
  document.getElementById('pendingOrders').innerHTML=rows.length?rows.map(o=>{const c=calcOrder(o);return`<tr><td>${o.id}${o.source==='online_store'?'<br><span class="badge ok">ONLINE</span>':''}</td><td>${o.client||'—'}</td><td>${o.delivery||'—'}</td><td>${euro(c.total)}</td><td>${euro(o.paid)}</td><td><span class="badge warn">${o.status}</span></td></tr>`}).join(''):`<tr><td colspan="6" class="empty">Sem encomendas pendentes</td></tr>`;renderDashboardDaily();renderReceivables();renderQuotePipeline();renderTrend()
 }
-function renderCart(){const el=document.getElementById('cart');if(!el)return;el.innerHTML=cart.length?cart.map((x,i)=>`<div class="cart-row sale-cart-row-v1754"><div class="sale-cart-product-v1754"><strong>${escapeHtml(x.name||'Produto')}</strong><small>${escapeHtml(x.category||'')}</small></div><label class="sale-cart-mini-field-v1754"><span>Qtd.</span><input type="number" min="1" step="1" value="${Number(x.qty)||1}" onchange="cart[${i}].qty=Math.max(1,+this.value||1);renderCart();renderPicker()"></label><label class="sale-cart-mini-field-v1754"><span>Preço/un.</span><input type="number" min="0" step="0.01" value="${Number(x.price)||0}" onchange="cart[${i}].price=Math.max(0,+this.value||0);renderCart();renderPicker()"></label><strong class="sale-cart-line-total-v1754">${euro((Number(x.qty)||0)*(Number(x.price)||0))}</strong><button type="button" class="btn danger sale-cart-remove-v1754" aria-label="Remover ${escapeAttr(x.name||'produto')}" onclick="cart.splice(${i},1);renderCart();renderPicker()">×</button></div>`).join(''):'<div class="empty">Escolhe um produto à esquerda. O carrinho fica sempre visível nesta área.</div>';const q=cart.reduce((s,x)=>s+(Number(x.qty)||0),0),t=cart.reduce((s,x)=>s+(Number(x.qty)||0)*(Number(x.price)||0),0),c=cart.reduce((s,x)=>s+(Number(x.qty)||0)*(Number(x.cost)||0),0),p=t-c;$('cartQty').textContent=q;$('cartTotal').textContent=euro(t);$('cartProfit').textContent=euro(p);$('cartMargin').textContent=pct(t?p/t:0)}
-function clearSale(){cart=[];$('saleClient').value='';$('saleContact').value='';if($('saleEmail'))$('saleEmail').value='';$('salePaid').value=0;if($('saleNotes'))$('saleNotes').value='';const st=document.getElementById('saleSelectionStatusV1754');if(st)st.textContent='Nenhum produto selecionado';renderCart();renderPicker()}
+function renderCart(){const el=document.getElementById('cart');if(!el)return;el.innerHTML=cart.length?cart.map((x,i)=>`<div class="cart-row sale-cart-row-v1754"><div class="sale-cart-product-v1754"><strong>${escapeHtml(x.name||'Produto')}</strong><small>${escapeHtml(x.category||'')}</small></div><label class="sale-cart-mini-field-v1754"><span>Qtd.</span><input type="number" min="1" step="1" value="${Number(x.qty)||1}" onchange="cart[${i}].qty=Math.max(1,+this.value||1);renderCart();renderPicker()"></label><label class="sale-cart-mini-field-v1754"><span>Preço/un.</span><input type="number" min="0" step="0.01" value="${Number(x.price)||0}" onchange="cart[${i}].price=Math.max(0,+this.value||0);renderCart();renderPicker()"></label><strong class="sale-cart-line-total-v1754">${euro((Number(x.qty)||0)*(Number(x.price)||0))}</strong><button type="button" class="btn danger sale-cart-remove-v1754" aria-label="Remover ${escapeAttr(x.name||'produto')}" onclick="cart.splice(${i},1);renderCart();renderPicker()">×</button></div>`).join(''):'<div class="empty">Escolhe um produto à esquerda. O carrinho fica sempre visível nesta área.</div>';const q=cart.reduce((s,x)=>s+(Number(x.qty)||0),0),t=cart.reduce((s,x)=>s+(Number(x.qty)||0)*(Number(x.price)||0),0),c=cart.reduce((s,x)=>s+(Number(x.qty)||0)*(Number(x.cost)||0),0),p=t-c;$('cartQty').textContent=q;$('cartTotal').textContent=euro(t);$('cartProfit').textContent=euro(p);$('cartMargin').textContent=pct(t?p/t:0);renderSalePromoV1813()}
+function clearSale(){cart=[];$('saleClient').value='';$('saleContact').value='';if($('saleEmail'))$('saleEmail').value='';$('salePaid').value=0;if($('saleNotes'))$('saleNotes').value='';clearSalePromoV1813();const st=document.getElementById('saleSelectionStatusV1754');if(st)st.textContent='Nenhum produto selecionado';renderCart();renderPicker()}
 async function saveOrder(){
  if(!$('saleClient').value.trim())return toast('Indique o cliente');
  if(!$('saleContact').value.trim())return toast('Indique o contacto do cliente');
@@ -6453,7 +6453,7 @@ async function saveOrder(){
    id,created:todayISO(),client:clientName,contact:clientContact,email:clientEmail,clientId,
    delivery:$('saleDate').value,payment:payMethod,box:boxName,
    boxCostSnapshot:pk?+pk.cost||0:0,boxes:+$('saleBoxes').value||1,
-   paid,status:'Pedido',notes:String($('saleNotes')?.value||'').trim(),items:cart.map(x=>({...ensureLineDetailedCostSnapshotV1769(ensureLineCostSnapshotV134(x,'sale_save_v134'),'sale_save_v1769')})),paymentHistory
+   paid,status:'Pedido',notes:String($('saleNotes')?.value||'').trim(),promoCode:salePromoV1813?.code||'',discountTotal:Number(salePromoV1813?.discount_total)||0,total,items:cart.map(x=>({...ensureLineDetailedCostSnapshotV1769(ensureLineCostSnapshotV134(x,'sale_save_v134'),'sale_save_v1769')})),paymentHistory
  };
 
  // 1. Guardar SEMPRE primeiro no dispositivo.
@@ -15391,6 +15391,44 @@ function renderCatalogDigitalCenterV160(){
  el.innerHTML=[[pubs.length,'Produtos publicados','Fichas marcadas para publicação'],[ready,'Prontos no catálogo','Com foto, descrição e preço'],[missingPhoto+missingDescription+missingPrice,'Pontos a rever','Soma de falhas de foto, descrição e preço'],[eds.filter(x=>x.data?.catalogEnabled!==false).length,'Coleções públicas','Preparadas para o catálogo'],[liveCount,'Ocasiões válidas agora','Dentro das respetivas datas'],[live?Number(live.data?.catalogPriority)||0:'—','Prioridade ativa',live?.name||'Tema ArtEssencia']].map(([v,l,n])=>`<div class="card catalog-center-kpi"><small>${escapeHtml(l)}</small><b>${escapeHtml(v)}</b><span>${escapeHtml(n)}</span></div>`).join('');
  const p=$('catalogCenterPreviewV160');if(!p)return;const d=live?.data||{},theme=d.catalogTheme||'artessencia',pres={artessencia:['#5b3d2b','#c9a78e','✦',['🕯️','✦','❦']],outono:['#704025','#bd7446','🍂',['🍂','🍁','🌿']],halloween:['#211512','#c9672f','🎃',['🎃','🦇','🕯️']],natal:['#274735','#a67b39','🎄',['🎄','✦','❄']],namorados:['#772b42','#d193a4','♡',['♡','♥','✦']],pascoa:['#7e6b94','#d8afc2','🐣',['✿','🐣','❀']],primavera:['#50734e','#c7a9bb','❀',['❀','🌿','✿']],personalizado:['#5b3d2b','#c9a78e','✦',['✦','❦','🕯️']]},x=pres[theme]||pres.artessencia;p.style.setProperty('--cc1',d.themePrimary||x[0]);p.style.setProperty('--cc2',d.themeSecondary||x[1]);p.dataset.decor=x[2];p.querySelector('.ey').textContent=d.badge||'ARTESSENCIA';p.querySelector('h3').textContent=d.heroTitle||live?.name||'Identidade ArtEssencia';p.querySelector('p').textContent=d.subtitle||(live?'Ocasião ativa no Catálogo Digital.':'Nenhuma ocasião sazonal ativa neste momento.');const scene=$('catalogPreviewSceneV161');if(scene)scene.innerHTML=(x[3]||[]).map(v=>`<span>${escapeHtml(v)}</span>`).join('');const st=$('catalogCenterStatusV161');if(st)st.innerHTML=`<span class=\"catalog-status-pill\">Tema: <b>${escapeHtml(theme)}</b></span><span class=\"catalog-status-pill\">Ocasião: <b>${escapeHtml(live?.name||'Nenhuma')}</b></span><span class=\"catalog-status-pill\">Produtos públicos: <b>${pubs.length}</b></span><span class=\"catalog-status-pill\">Prontos: <b>${ready}</b></span><span class=\"catalog-status-pill\">Sem foto: <b>${missingPhoto}</b></span><span class=\"catalog-status-pill\">Sem descrição: <b>${missingDescription}</b></span><span class=\"catalog-status-pill\">Sem preço: <b>${missingPrice}</b></span>`;
 }
+
+let salePromoV1813=null,launchStatsV1813=null;
+function saleSubtotalV1813(){return cart.reduce((s,x)=>s+(Number(x.qty)||0)*(Number(x.price)||0),0)}
+function saleFinalTotalV1813(){return Math.max(0,saleSubtotalV1813()-Math.max(0,Number(salePromoV1813?.discount_total)||0))}
+function renderSalePromoV1813(){
+ const d=document.getElementById('salePromoDiscountV1813'),t=document.getElementById('saleFinalTotalV1813'),s=document.getElementById('salePromoStatusV1813');
+ if(d)d.textContent=euro(Number(salePromoV1813?.discount_total)||0);if(t)t.textContent=euro(saleFinalTotalV1813());
+ if(s&&salePromoV1813)s.textContent='✓ '+(salePromoV1813.label||salePromoV1813.code)+' · desconto '+euro(salePromoV1813.discount_total||0);
+}
+function clearSalePromoV1813(clearInput=true){salePromoV1813=null;if(clearInput&&document.getElementById('salePromoCodeV1813'))document.getElementById('salePromoCodeV1813').value='';const s=document.getElementById('salePromoStatusV1813');if(s)s.textContent='Opcional · válido em campanhas ArtEssencia.';renderSalePromoV1813()}
+async function validateSalePromoV1813(){
+ const code=String(document.getElementById('salePromoCodeV1813')?.value||'').trim().toUpperCase();if(!code){clearSalePromoV1813();return null}
+ const c=initCloudClient(),u=cloudUser||await ensureCloudSession();if(!c||!u||!navigator.onLine){toast('É necessária ligação à Cloud para validar o voucher');return null}
+ const {data,error}=await c.rpc('store_validate_promo_code_v1',{p_code:code,p_subtotal:saleSubtotalV1813(),p_phone:String(document.getElementById('saleContact')?.value||''),p_email:String(document.getElementById('saleEmail')?.value||'')});
+ if(error||!data?.ok){clearSalePromoV1813(false);const s=document.getElementById('salePromoStatusV1813');if(s)s.textContent='Código inválido, já utilizado ou sem condições para esta compra.';toast('Código promocional não elegível');return null}
+ salePromoV1813=data;renderSalePromoV1813();return data;
+}
+async function loadLaunchConfigV1813(showToast=false){
+ const c=initCloudClient(),u=cloudUser||await ensureCloudSession();if(!c||!u)return;
+ const {data,error}=await c.rpc('artessencia_catalog_launch_config_admin_v1',{p_save:false});if(error){if(showToast)toast('Não foi possível carregar a campanha');return}
+ const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v??''};set('launchEnabledV1813',data?.enabled?'1':'0');set('launchTypeV1813',data?.discount_type||'FIXED');set('launchValueV1813',data?.discount_value??3);set('launchMinV1813',data?.min_order??25);set('launchDaysV1813',data?.validity_days??60);set('launchFavsV1813',data?.required_favorites??3);if(showToast)toast('Campanha atualizada');
+}
+async function saveLaunchConfigV1813(){
+ const c=initCloudClient(),u=cloudUser||await ensureCloudSession();if(!c||!u)return toast('Liga primeiro a Cloud');
+ const v=id=>document.getElementById(id)?.value||'';const {error}=await c.rpc('artessencia_catalog_launch_config_admin_v1',{p_enabled:v('launchEnabledV1813')==='1',p_discount_type:v('launchTypeV1813'),p_discount_value:Number(v('launchValueV1813')||0),p_min_order:Number(v('launchMinV1813')||0),p_validity_days:Number(v('launchDaysV1813')||60),p_required_favorites:Number(v('launchFavsV1813')||3),p_save:true});
+ if(error)return toast('Não foi possível guardar a campanha');toast('Campanha de lançamento guardada');await loadLaunchConfigV1813(false);
+}
+function renderLaunchStatsV1813(){
+ const k=document.getElementById('launchStatsKpisV1813'),h=document.getElementById('launchStatsTableV1813');if(!k||!h)return;
+ const x=launchStatsV1813||{},a=Array.isArray(x.participants)?x.participants:[];
+ k.innerHTML=[['Iniciaram',x.started||0],['Concluíram',x.completed||0],['Códigos gerados',x.claimed||0],['Utilizados',x.used||0]].map(([l,v])=>'<div class="card report-kpi"><span>'+l+'</span><strong>'+v+'</strong></div>').join('');
+ h.innerHTML=a.length?'<div class="tablewrap"><table><thead><tr><th>Contacto</th><th>Código</th><th>Passos</th><th>Estado</th><th>Canal</th></tr></thead><tbody>'+a.map(r=>'<tr><td>'+escapeHtml(r.phone||'—')+'</td><td><b>'+escapeHtml(r.code||'Por reclamar')+'</b></td><td>Instalar '+(r.installed?'✓':'○')+' · Partilhar '+(r.shared?'✓':'○')+' · Favoritos '+Number(r.favorites_count||0)+' · Notificações '+(r.notifications?'✓':'○')+'</td><td><span class="badge '+(r.used_at?'ok':r.code?'warn':'')+'">'+(r.used_at?'Utilizado':r.code?'Ativo':'Concluído')+'</span></td><td>'+escapeHtml(r.channel==='DIRECT'?'Venda direta':r.channel==='ONLINE'?'Loja Online':'—')+'</td></tr>').join('')+'</tbody></table></div>':'<div class="empty">Ainda não existem desafios concluídos.</div>';
+}
+async function loadLaunchStatsV1813(showToast=false){
+ const c=initCloudClient(),u=cloudUser||await ensureCloudSession();if(!c||!u)return;
+ const {data,error}=await c.rpc('artessencia_catalog_launch_stats_admin_v1');if(error){if(showToast)toast('Não foi possível carregar o lançamento');return}
+ launchStatsV1813=data||{};renderLaunchStatsV1813();if(showToast)toast('Lançamento atualizado');
+}
 let promoCodesV1786=[];
 function promoMoneyV1786(v){return new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR'}).format(Number(v||0))}
 function promoLocalDateV1786(v){if(!v)return '';const d=new Date(v);if(Number.isNaN(d.getTime()))return '';const z=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+'T'+z(d.getHours())+':'+z(d.getMinutes())}
@@ -17577,7 +17615,7 @@ document.addEventListener('visibilitychange',()=>{
  setTimeout(()=>{if(!personalizationCategorySelectOpenV1794)renderAll()},0)
 });
 
-let publicationRemoteRowsV1812=[],publicationRemoteLoadedAtV1812='',publicationRemoteErrorV1812='';
+let publicationRemoteRowsV1812=[],publicationCatalogVisibleV1813=new Set(),publicationRemoteLoadedAtV1812='',publicationRemoteErrorV1812='';
 function publicationExpectedPublicV1812(p){return !!p?.shopVisible&&!productArchivedV1803(p)&&p?.publicReleasePendingV1803!==true}
 function publicationIssueV1812(p){
  const pc=productCompletenessV1762(p),price=Number(p?.price)>0,archivedPublic=productArchivedV1803(p)&&(!!p.shopVisible||!!p.mixVisible||productEditionIdsV138(p).length>0);
@@ -17624,7 +17662,7 @@ function renderPublicationCenterV1812(){
  const kpis=document.getElementById('publicationKpisV1812');
  if(kpis)kpis.innerHTML=[
   ['Produtos ativos',active.length,'Uso interno'],
-  ['Públicos',expected.length,'Estado atual comum'],
+  ['Preparados',expected.length,'Camada pública'],
   ['Sem fotografia',publishedNoPhoto.length,'Publicados'],
   ['Sem PVP',noPvp.length,'Venda direta'],
   ['Ficha incompleta',techIncomplete.length,'Materiais / quantidades'],
@@ -17633,7 +17671,7 @@ function renderPublicationCenterV1812(){
  const syncTitle=document.getElementById('publicationSyncTitleV1812'),syncDetail=document.getElementById('publicationSyncDetailV1812'),syncBadge=document.getElementById('publicationSyncBadgeV1812');
  if(publicationRemoteErrorV1812){if(syncTitle)syncTitle.textContent='⚠ Não foi possível verificar a camada pública';if(syncDetail)syncDetail.textContent=publicationRemoteErrorV1812;if(syncBadge){syncBadge.className='badge warn';syncBadge.textContent='Não verificado'}}
  else if(!publicationRemoteLoadedAtV1812){if(syncTitle)syncTitle.textContent='A verificar sincronização…';if(syncDetail)syncDetail.textContent='Comparação entre o Backoffice e a camada pública.';if(syncBadge){syncBadge.className='badge warn';syncBadge.textContent='A verificar'}}
- else{const remotePublic=(publicationRemoteRowsV1812||[]).filter(r=>r.active&&r.available).length;if(syncTitle)syncTitle.textContent=inconsistent.length?'⚠ '+inconsistent.length+' divergência(s) de publicação':'✓ Publicação sincronizada';if(syncDetail)syncDetail.textContent='Backoffice esperado: '+expected.length+' · Camada pública: '+remotePublic+' · Verificado '+new Date(publicationRemoteLoadedAtV1812).toLocaleString('pt-PT');if(syncBadge){syncBadge.className='badge '+(inconsistent.length?'bad':'ok');syncBadge.textContent=inconsistent.length?'Rever':'Sincronizado'}}
+ else{const remotePublic=(publicationRemoteRowsV1812||[]).filter(r=>r.active&&r.available).length,visibleToday=publicationCatalogVisibleV1813.size?new Set((publicationRemoteRowsV1812||[]).filter(r=>r.active&&r.available&&(publicationCatalogVisibleV1813.has(String(r.backoffice_product_id||''))||publicationCatalogVisibleV1813.has(String(r.code||'').toUpperCase()))).map(r=>r.code)).size:0,seasonalHidden=Math.max(0,remotePublic-visibleToday);if(syncTitle)syncTitle.textContent=inconsistent.length?'⚠ '+inconsistent.length+' divergência(s) de publicação':'✓ Publicação sincronizada';if(syncDetail)syncDetail.textContent='Backoffice esperado: '+expected.length+' · Preparados: '+remotePublic+' · Visíveis hoje: '+visibleToday+' · Ocultos por regra sazonal: '+seasonalHidden+' · Verificado '+new Date(publicationRemoteLoadedAtV1812).toLocaleString('pt-PT');if(syncBadge){syncBadge.className='badge '+(inconsistent.length?'bad':'ok');syncBadge.textContent=inconsistent.length?'Rever':'Sincronizado'}}
  const q=String(document.getElementById('publicationSearchV1812')?.value||'').trim().toLocaleLowerCase('pt-PT'),filter=document.getElementById('publicationFilterV1812')?.value||'all',collection=document.getElementById('publicationCollectionV1812')?.value||'all';
  const rows=all.filter(p=>{
   const pc=productCompletenessV1762(p),pub=publicationExpectedPublicV1812(p),archPub=productArchivedV1803(p)&&(!!p.shopVisible||!!p.mixVisible||productEditionIdsV138(p).length>0),ed=productEditionIdsV138(p);
@@ -17649,7 +17687,7 @@ function renderPublicationCenterV1812(){
    '<td class="publication-product-v1812"><b>'+escapeHtml(p.name||'Sem nome')+'</b><small>'+escapeHtml(p.code||'—')+' · '+escapeHtml(p.category||'—')+'</small></td>'+
    '<td><span class="badge '+(productArchivedV1803(p)?'warn':'ok')+'">'+(productArchivedV1803(p)?'Arquivado':'Ativo')+'</span></td>'+
    '<td><span class="badge '+(pub?'ok':'warn')+'">'+(pub?'Publicado':'Oculto')+'</span>'+(p?.publicReleasePendingV1803===true?'<br><small>Publicação pendente</small>':'')+'</td>'+
-   '<td><span class="badge '+(pub?'ok':'warn')+'">'+(pub?'Disponível':'Indisponível')+'</span><br><small>estado atual partilhado</small></td>'+
+   '<td><span class="badge '+((publicationCatalogVisibleV1813.has(String(p._rid||''))||publicationCatalogVisibleV1813.has(String(p.code||'').toUpperCase()))?'ok':'warn')+'">'+((publicationCatalogVisibleV1813.has(String(p._rid||''))||publicationCatalogVisibleV1813.has(String(p.code||'').toUpperCase()))?'Visível':'Oculto agora')+'</span><br><small>'+(pub?'pode estar sujeito a datas sazonais':'não preparado')+'</small></td>'+
    '<td><span class="badge '+(pc.photo?'ok':'warn')+'">'+(pc.photo?'✓':'Sem foto')+'</span></td>'+
    '<td><span class="badge '+(Number(p.price)>0?'ok':'warn')+'">'+(Number(p.price)>0?euro(p.price):'Sem PVP')+'</span></td>'+
    '<td><span class="badge '+(pc.tech?'ok':'warn')+'">'+escapeHtml(productTechSheetStateV146(p).label)+'</span></td>'+
@@ -17658,7 +17696,7 @@ function renderPublicationCenterV1812(){
    '<td><div class="publication-actions-v1812"><button class="btn" type="button" onclick="publicationOpenProductV1812(\''+String(p.code||'').replaceAll("'","\\'")+'\')">Editar</button><button class="btn" type="button" onclick="publicationOpenCostsV1812(\''+String(p.code||'').replaceAll("'","\\'")+'\')">Custos / ficha</button></div></td></tr>';
  }).join(''):'<tr><td colspan="10" class="empty">Nenhum produto corresponde aos filtros.</td></tr>';
 }
- function renderAll(){ensureQuotePaymentModel();ensureCostModel();syncPackagingSelect();renderClientSuggestions();renderDashboard();renderPicker();renderCart();renderOrders();renderProduction();renderCosts();renderStock();renderPurchases();renderCash();renderClients();renderQuotes();renderQuoteCart();renderProducts();renderPublicationCenterV1812();renderCatalogs();renderSpecialEditionsAdmin();renderCatalogDigitalCenterV160();renderSettings();renderAprecoImportV1753();renderBusinessSettings();if(!personalizationCategorySelectOpenV1794)renderPersonalizationLibraryV1791();renderReports();renderDigitalStatsV1795();renderQuantityPricingV1750();renderLegalSummaryV1286();renderCloudUI();renderBackupInfo();renderOrderNotificationsV12624();renderPushStatusV12625();const s=sec();if(document.getElementById('lockMinutes'))document.getElementById('lockMinutes').value=String(s.lockMinutes??15)}
+ function renderAll(){ensureQuotePaymentModel();ensureCostModel();syncPackagingSelect();renderClientSuggestions();renderDashboard();renderPicker();renderCart();renderOrders();renderProduction();renderCosts();renderStock();renderPurchases();renderCash();renderClients();renderQuotes();renderQuoteCart();renderProducts();renderPublicationCenterV1812();renderCatalogs();renderSpecialEditionsAdmin();renderCatalogDigitalCenterV160();renderSettings();renderAprecoImportV1753();renderBusinessSettings();if(!personalizationCategorySelectOpenV1794)renderPersonalizationLibraryV1791();renderReports();renderDigitalStatsV1795();renderLaunchStatsV1813();renderQuantityPricingV1750();renderLegalSummaryV1286();renderCloudUI();renderBackupInfo();renderOrderNotificationsV12624();renderPushStatusV12625();const s=sec();if(document.getElementById('lockMinutes'))document.getElementById('lockMinutes').value=String(s.lockMinutes??15)}
 document.addEventListener('input',e=>{if(e.target&&['costPackQty','costPackPrice'].includes(e.target.id))updateCostPreview()});
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;installBtn.classList.remove('hidden');installBanner.classList.remove('hidden')});
 async function installApp(){if(!deferredPrompt)return toast('No Chrome: menu ⋮ → Adicionar ao ecrã principal / Instalar app');deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;installBtn.classList.add('hidden');installBanner.classList.add('hidden')}
