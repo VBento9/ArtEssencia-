@@ -23,6 +23,6 @@ export async function put(name,obj,opts={}){const s=await store(name,'readwrite'
 export async function del(name,id){const s=await store(name,'readwrite');return new Promise((res,rej)=>{const r=s.delete(id);r.onsuccess=()=>res(true);r.onerror=()=>rej(r.error)})}
 export async function clear(name){const s=await store(name,'readwrite');return new Promise((res,rej)=>{const r=s.clear();r.onsuccess=()=>res(true);r.onerror=()=>rej(r.error)})}
 export async function exportAll(){const data={};for(const s of stores)data[s]=await all(s);return {meta:{app:'ArtEssencia Atelier Pro',version:'2.0.0',exportedAt:new Date().toISOString()},data}}
-export async function importAll(payload){if(!payload?.data)throw new Error('Backup inválido');for(const s of stores){await clear(s);for(const row of payload.data[s]||[])await put(s,row)}}
+export async function importAll(payload){if(!payload?.data)throw new Error('Backup inválido');for(const s of stores){await clear(s);for(const row of payload.data[s]||[])await put(s,row,{silent:true})}}
 export async function getSetting(key,fallback=null){return (await get('settings',key))?.value ?? fallback}
 export async function setSetting(key,value){return put('settings',{id:key,value,updatedAt:new Date().toISOString()})}
