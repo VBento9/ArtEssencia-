@@ -2816,7 +2816,47 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 .publication-muted-v1812{opacity:.65}
 @media(max-width:1050px){.publication-kpis-v1812{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:700px){.publication-hero-v1812{align-items:stretch;flex-direction:column}.publication-kpis-v1812{grid-template-columns:1fr 1fr}.publication-tools-v1812{display:grid;grid-template-columns:1fr}.publication-tools-v1812 .field{min-width:0}}
-</style></head>
+</style>
+<style id="artessencia-top-actions-clean-v1814">
+/* Topbar limpa: sino, sincronização e data sem cápsulas, fundos ou contornos. */
+#orderAlertButtonV12624,
+#cloudStatus,
+#today{
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  border-radius:0!important;
+  outline:0!important;
+}
+#orderAlertButtonV12624{
+  min-width:auto!important;
+  width:auto!important;
+  height:auto!important;
+  padding:6px 4px!important;
+  color:#604a39!important;
+}
+#cloudStatus{
+  padding:6px 4px!important;
+  min-height:auto!important;
+  color:#604a39!important;
+}
+#today{
+  padding:6px 4px!important;
+  min-height:auto!important;
+  color:#604a39!important;
+}
+#orderAlertButtonV12624:hover,
+#cloudStatus:hover{
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+#cloudStatus .cloud-dot{flex:none}
+@media(max-width:650px){
+  #orderAlertButtonV12624,#cloudStatus,#today{padding:5px 3px!important}
+}
+</style>
+</head>
 <body>
 <div id="brandSplashV1778" aria-hidden="true"><div class="brand-splash-card"><img src="brand-artessencia.png" alt=""></div></div>
 <div id="lockScreen" class="lock">
