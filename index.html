@@ -3151,6 +3151,137 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
   #specialEditions .special-cover-panel .btnrow{grid-template-columns:1fr!important}
 }
 </style>
+
+<style id="artessencia-global-ui-consistency-v1817">
+/* Auditoria visual transversal: apresentação apenas. */
+
+/* Estrutura */
+.screen>.card,.screen>.grid2,.screen>.grid4,.screen>.tablewrap{margin-bottom:14px}
+.screen .section-title{
+  background:transparent!important;color:#49362f!important;padding:0!important;border-radius:0!important;
+  margin:16px 0 9px!important;font-size:15px!important;line-height:1.2!important;font-weight:900!important
+}
+.screen .section-title:first-child{margin-top:0!important}
+.screen .card{
+  border:1px solid #eadfd9!important;border-radius:16px!important;
+  box-shadow:0 4px 16px rgba(68,45,38,.045)!important;background:#fff!important
+}
+.screen .card .card{box-shadow:none!important}
+
+/* Campos */
+.screen .field{gap:5px}
+.screen .field label{color:#675149!important;font-size:10px!important;line-height:1.25!important;letter-spacing:.02em}
+.screen .field input,.screen .field select,.screen .field textarea{
+  background:#fff!important;border:1px solid #e2d6d0!important;border-radius:10px!important;
+  min-height:42px!important;padding:10px 11px!important;color:#3f312c!important;font-weight:700!important;box-shadow:none!important
+}
+.screen .field textarea{min-height:78px!important}
+.screen .field input:focus,.screen .field select:focus,.screen .field textarea:focus{
+  outline:none!important;border-color:#b88779!important;box-shadow:0 0 0 3px rgba(184,135,121,.12)!important
+}
+
+/* Botões padrão */
+.screen .btn{
+  min-height:38px;border:1px solid #dfd2cc!important;border-radius:10px!important;padding:9px 13px!important;
+  background:#fff!important;color:#5c433a!important;font-size:10px!important;line-height:1.15!important;
+  font-weight:850!important;box-shadow:none!important;cursor:pointer;
+  transition:background .15s ease,border-color .15s ease,transform .1s ease
+}
+.screen .btn:hover{background:#faf5f2!important;border-color:#cdb9b0!important}
+.screen .btn:active{transform:translateY(1px)}
+.screen .btn.primary{background:#5b3f37!important;border-color:#5b3f37!important;color:#fff!important}
+.screen .btn.primary:hover{background:#49332d!important;border-color:#49332d!important}
+.screen .btn.danger{background:#fff6f5!important;border-color:#e4c3bf!important;color:#a0443d!important}
+.screen .btn.danger:hover{background:#fbeae8!important}
+.screen .btn.ghost{
+  background:transparent!important;border-color:transparent!important;color:#6d5147!important;
+  padding-left:7px!important;padding-right:7px!important
+}
+.screen .btn.ghost:hover{background:#f8f2ef!important}
+.screen .btn[disabled],.screen .btn:disabled{opacity:.48!important;cursor:not-allowed!important;transform:none!important}
+
+/* Ações auxiliares que historicamente não usam .btn */
+.smallbtn,
+.screen .dashboard-mini-btn,
+.screen .creator-add-occasion-v1267,
+.screen .creator-add-color-v1261,
+.screen .creator-add-theme-v1266,
+.screen .creator-add-theme-v1258{
+  border:1px solid #dfd2cc!important;background:#fff!important;color:#5c433a!important;
+  border-radius:9px!important;box-shadow:none!important;font-weight:850!important;cursor:pointer
+}
+.smallbtn:hover,
+.screen .dashboard-mini-btn:hover,
+.screen .creator-add-occasion-v1267:hover,
+.screen .creator-add-color-v1261:hover,
+.screen .creator-add-theme-v1266:hover,
+.screen .creator-add-theme-v1258:hover{
+  background:#faf5f2!important;border-color:#cdb9b0!important
+}
+.screen .dashboard-mini-btn.primary{
+  background:#5b3f37!important;border-color:#5b3f37!important;color:#fff!important
+}
+.screen .capacity-nav-arrow{
+  border-radius:9px!important;box-shadow:none!important
+}
+
+/* Ações rápidas: manter formato de cartão, mas uniformizar estrutura */
+.screen .catalog-quick-action{
+  border:1px solid #e1d5cf!important;background:#fff!important;border-radius:12px!important;
+  box-shadow:none!important;transition:border-color .15s ease,background .15s ease,transform .1s ease
+}
+.screen .catalog-quick-action:hover{
+  border-color:#cbb7ae!important;background:#fffaf8!important;transform:translateY(-1px)
+}
+
+/* Grupos */
+.screen .btnrow{gap:8px!important;margin-top:11px!important;align-items:center}
+.screen .btnrow>.btn{flex:0 0 auto}
+.screen .btnrow>.btn.primary:first-child:last-child{min-width:150px}
+
+/* Tabelas */
+.screen .tablewrap{border:1px solid #eadfd9!important;border-radius:14px!important;box-shadow:none!important}
+.screen table th{
+  background:#f4eeea!important;color:#5b433b!important;font-size:10px!important;
+  text-transform:uppercase;letter-spacing:.035em
+}
+.screen table td{border-top:1px solid #eee5e0!important}
+.screen table tr:hover td{background:#fffcfa}
+
+/* Estados */
+.screen .badge{border-radius:999px!important;padding:4px 7px!important;font-size:9px!important;box-shadow:none!important}
+.screen .mini{background:#fbf8f6!important;border:1px solid #eadfd9!important;border-radius:12px!important}
+.screen .empty{border:1px dashed #e0d4cf;border-radius:12px;background:#fdfaf8}
+
+/* Pickers */
+.screen .product-btn{
+  border:1px solid #e4d8d2!important;border-radius:12px!important;background:#fff!important;
+  box-shadow:none!important;transition:border-color .15s ease,background .15s ease
+}
+.screen .product-btn:hover{border-color:#cdb7ad!important;background:#fffaf8!important}
+
+/* Não desfigurar controlos específicos que funcionam como switches/cards */
+.screen .orders-view-switch button,
+.screen .orders-flow-step,
+.screen .orders-flow-clear,
+.screen .dashboard-action,
+.screen .dashboard-daily-card,
+.screen .capacity-day,
+.screen .delivery-day span{
+  box-shadow:none
+}
+
+/* Tablet / mobile */
+@media(max-width:900px){
+  .screen .btnrow{gap:7px!important}
+  .screen .btn{min-height:40px}
+}
+@media(max-width:650px){
+  .screen .btnrow{align-items:stretch!important}
+  .screen .btnrow>.btn{flex:1 1 auto}
+  .screen .field input,.screen .field select,.screen .field textarea{min-height:44px!important}
+}
+</style>
 </head>
 <body>
 <div id="brandSplashV1778" aria-hidden="true"><div class="brand-splash-card"><img src="brand-artessencia.png" alt=""></div></div>
