@@ -56,4 +56,16 @@ export async function pullAll(){
  }
  await db.setSetting('cloud.lastPull',new Date().toISOString());return {applied,skipped,total:rows.length}
 }
-export async function status(){const c=await cfg();const s=session();return {configured:!!(c.url&&c.key),loggedIn:!!s,email:s?.user?.email||'',lastPush:await db.getSetting('cloud.lastPush',''),lastPull:await db.getSetting('cloud.lastPull','')}}
+let reconcilePromise=null;
+export async function reconcile(){
+ if(reconcilePromise)return reconcilePromise;
+ reconcilePromise=(async()=>{
+  const s=session();if(!s)return {skipped:true,reason:'NO_SESSION'};
+  const pulled=await pullAll();
+  const pushed=await pushAll();
+  const at=new Date().toISOString();await db.setSetting('cloud.lastReconcile',at);
+  return {pulled,pushed,at}
+ })();
+ try{return await reconcilePromise}finally{reconcilePromise=null}
+}
+export async function status(){const c=await cfg();const s=session();return {configured:!!(c.url&&c.key),loggedIn:!!s,email:s?.user?.email||'',lastPush:await db.getSetting('cloud.lastPush',''),lastPull:await db.getSetting('cloud.lastPull',''),lastReconcile:await db.getSetting('cloud.lastReconcile','')}}
