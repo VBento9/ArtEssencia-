@@ -4603,7 +4603,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <select id="productArchiveFilterV1803" onchange="renderProducts()" aria-label="Filtrar por estado do produto">
           <option value="active">Estado: ativos</option>
           <option value="archived">Estado: arquivados</option>
-          <option value="all">Estado: todos</option>
+          <option value="archived-public">Arquivados com inconsistência pública</option> <option value="all">Estado: todos</option>
         </select>
         <select id="productShopFilter" onchange="renderProducts()">
           <option value="all">Publicação: todos</option>
@@ -6337,7 +6337,7 @@ function smartAlertArchivedPublicV1811(){
  go('products');
  setTimeout(()=>{
   const archive=document.getElementById('productArchiveFilterV1803');
-  if(archive)archive.value='archived';
+  if(archive)archive.value='archived-public';
   renderProducts();
  },120);
 }
@@ -14224,7 +14224,7 @@ function renderProducts(){
  const completeness=document.getElementById('productCompletenessFilterV1762')?.value||'all';
 
  const rows=all.filter(p=>{
-   const ma=archive==='all'||(archive==='active'&&!productArchivedV1803(p))||(archive==='archived'&&productArchivedV1803(p));
+   const ma=archive==='all'||(archive==='active'&&!productArchivedV1803(p))||(archive==='archived'&&productArchivedV1803(p))||(archive==='archived-public'&&productArchivedV1803(p)&&(!!p.shopVisible||!!p.mixVisible||productEditionIdsV138(p).length>0));
    const mq=!q||productSearchTextV1752(p).includes(q);
    const mc=cat==='all'||p.category===cat;
    const mt=tag==='all'||(Array.isArray(p.tagsV1753)&&p.tagsV1753.includes(tag));
