@@ -27,6 +27,13 @@ export async function saveProductPublicCharacteristics(code,characteristics={}){
 }
 const SYNC_STORES=['settings','clients','suppliers','materials','products','productMaterials','molds','orders','orderItems','payments','purchases','expenses','investments','cashMovements','productionBatches','stockMovements','collections','kitItems','catalogs','homepage','campaigns','deliverySettings','recurringExpenses','transfers','themes','occasions','colors','personalizations','creatorPricing','unavailableDates','notifications','quoteHistory'];
 function syncableRow(store,row){if(store!=='settings')return true;return !String(row?.id||'').startsWith('cloud.')}
+export async function pushRecord(store,row){
+ if(!SYNC_STORES.includes(store)||!row?.id||!syncableRow(store,row))return {applied:false,skipped:true};
+ const s=session();if(!s||!navigator.onLine)return {applied:false,skipped:true};
+ const live=await ensureSession(),dev=await deviceId();
+ const updated=row.updatedAt||row.updated_at||row.createdAt||new Date().toISOString();
+ return request('/rest/v1/rpc/artessencia_cloud_upsert_record_v1',{method:'POST',token:live.access_token,body:{p_entity:store,p_record_id:String(row.id),p_data:{...row,updatedAt:updated},p_client_updated_at:updated,p_device_id:dev}})
+}
 export async function pushAll(){
  const s=await ensureSession(),dev=await deviceId();let n=0,skipped=0;
  for(const store of SYNC_STORES){
@@ -52,7 +59,7 @@ export async function pullAll(){
   const local=await db.get(r.entity,r.data.id);
   const lt=new Date(local?.updatedAt||local?.updated_at||local?.createdAt||0).getTime();
   const rt=new Date(r.client_updated_at||r.server_updated_at||0).getTime();
-  if(!local||rt>=lt){await db.put(r.entity,{...r.data,updatedAt:r.client_updated_at||r.server_updated_at});applied++}else skipped++
+  if(!local||rt>=lt){await db.put(r.entity,{...r.data,updatedAt:r.client_updated_at||r.server_updated_at},{silent:true});applied++}else skipped++
  }
  await db.setSetting('cloud.lastPull',new Date().toISOString());return {applied,skipped,total:rows.length}
 }

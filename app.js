@@ -47,5 +47,6 @@ async function globalSearch(){
   };q.oninput=search;modal('Pesquisa rápida',box,{wide:true});setTimeout(()=>q.focus(),50)
 }
 async function reconcileCloudSafe(){try{const st=await cloud.status();if(st.loggedIn&&navigator.onLine)await cloud.reconcile()}catch(e){console.warn('Reconciliação Cloud adiada:',e)}}
+window.addEventListener('ae:local-change',e=>{const d=e.detail||{};cloud.pushRecord(d.store,d.row).catch(err=>console.warn('Espelho Cloud adiado:',err))});
 window.addEventListener('online',()=>reconcileCloudSafe());
 (async()=>{try{await db.openDB();await loadVersion();const h=location.hash.slice(1);if(views[h])state.view=h;await render();reconcileCloudSafe();if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(console.warn)}catch(e){console.error('Falha de arranque ArtEssencia:',e);const view=qs('#view');if(view)view.innerHTML=`<div class="card"><h3>Falha ao iniciar a aplicação</h3><p>${String(e?.message||e)}</p><p class="small muted">Atualiza a página. Se persistir, envia esta mensagem de erro.</p></div>`}})();
