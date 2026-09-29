@@ -3169,14 +3169,14 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 .screen .card .card{box-shadow:none!important}
 
 /* Campos */
-.screen .field{gap:5px}
-.screen .field label{color:#675149!important;font-size:10px!important;line-height:1.25!important;letter-spacing:.02em}
-.screen .field input,.screen .field select,.screen .field textarea{
-  background:#fff!important;border:1px solid #e2d6d0!important;border-radius:10px!important;
-  min-height:42px!important;padding:10px 11px!important;color:#3f312c!important;font-weight:700!important;box-shadow:none!important
+:where(.screen) .field{gap:5px}
+:where(.screen) .field label{color:#675149;font-size:10px;line-height:1.25;letter-spacing:.02em}
+:where(.screen) .field input,:where(.screen) .field select,:where(.screen) .field textarea{
+  background:#fff;border:1px solid #e2d6d0;border-radius:10px;
+  min-height:42px;padding:10px 11px;color:#3f312c;font-weight:700;box-shadow:none
 }
-.screen .field textarea{min-height:78px!important}
-.screen .field input:focus,.screen .field select:focus,.screen .field textarea:focus{
+:where(.screen) .field textarea{min-height:78px}
+:where(.screen) .field input:focus,:where(.screen) .field select:focus,:where(.screen) .field textarea:focus{
   outline:none!important;border-color:#b88779!important;box-shadow:0 0 0 3px rgba(184,135,121,.12)!important
 }
 
