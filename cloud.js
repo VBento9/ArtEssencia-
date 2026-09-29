@@ -13,14 +13,47 @@ async function request(path,{method='GET',body,token,headers={}}={}){
 }
 export async function login(email,password){const data=await request('/auth/v1/token?grant_type=password',{method:'POST',body:{email,password}});const s={access_token:data.access_token,refresh_token:data.refresh_token,user:data.user,expires_at:Date.now()+Number(data.expires_in||3600)*1000};sessionStorage.setItem(SESSION_KEY,JSON.stringify(s));return s}
 export async function ensureSession(){let s=session();if(!s)throw new Error('Sessão Cloud não iniciada.');if(s.expires_at-Date.now()>60000)return s;const data=await request('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:{refresh_token:s.refresh_token}});s={access_token:data.access_token,refresh_token:data.refresh_token||s.refresh_token,user:data.user||s.user,expires_at:Date.now()+Number(data.expires_in||3600)*1000};sessionStorage.setItem(SESSION_KEY,JSON.stringify(s));return s}
-export async function schemaVersion(){const s=await ensureSession();const rows=await request('/rest/v1/ae_schema_migrations?select=version,applied_at&order=applied_at.desc&limit=1',{token:s.access_token});return rows?.[0]?.version||'—'}
-export async function testConnection(){const s=await ensureSession();await request('/rest/v1/ae_sync_records?select=id&limit=1',{token:s.access_token});return {email:s.user?.email||'',schema:await schemaVersion()}}
+async function deviceId(){
+ let id=await db.getSetting('cloud.deviceId','');
+ if(!id){id='DEV-'+Math.random().toString(36).slice(2,8)+'-'+Date.now().toString(36);await db.setSetting('cloud.deviceId',id)}
+ return id
+}
+export async function schemaVersion(){return 'cloud-records-v1'}
+export async function testConnection(){const s=await ensureSession();await request('/rest/v1/artessencia_cloud_records?select=id&limit=1',{token:s.access_token});return {email:s.user?.email||'',schema:await schemaVersion()}}
 export async function saveProductPublicCharacteristics(code,characteristics={}){
  const sku=String(code||'').trim();if(!sku)return {updated:false};
  const s=await ensureSession();
  return request('/rest/v1/rpc/artessencia_save_product_public_characteristics_v1',{method:'POST',token:s.access_token,body:{p_code:sku,p_characteristics:characteristics&&typeof characteristics==='object'?characteristics:{}}});
 }
 const SYNC_STORES=['settings','clients','suppliers','materials','products','productMaterials','molds','orders','orderItems','payments','purchases','expenses','investments','cashMovements','productionBatches','stockMovements','collections','kitItems','catalogs','homepage','campaigns','deliverySettings','recurringExpenses','transfers','themes','occasions','colors','personalizations','creatorPricing','unavailableDates','notifications','quoteHistory'];
-export async function pushAll(){const s=await ensureSession();let n=0;for(const store of SYNC_STORES){const rows=await db.all(store);for(const row of rows){const updated=row.updatedAt||row.updated_at||row.createdAt||new Date().toISOString();const payload={entity:store,record_id:String(row.id),data:{...row,updatedAt:updated},client_updated_at:updated};await request('/rest/v1/ae_sync_records?on_conflict=owner_id,entity,record_id',{method:'POST',token:s.access_token,body:payload,headers:{Prefer:'resolution=merge-duplicates,return=minimal'}});n++}}await db.setSetting('cloud.lastPush',new Date().toISOString());return n}
-export async function pullAll(){const s=await ensureSession();const rows=await request('/rest/v1/ae_sync_records?select=entity,record_id,data,client_updated_at,updated_at&deleted_at=is.null',{token:s.access_token});let applied=0,skipped=0;for(const r of rows||[]){if(!SYNC_STORES.includes(r.entity)||!r.data?.id)continue;const local=await db.get(r.entity,r.data.id);const lt=new Date(local?.updatedAt||local?.updated_at||local?.createdAt||0).getTime();const rt=new Date(r.client_updated_at||r.updated_at||0).getTime();if(!local||rt>=lt){await db.put(r.entity,{...r.data,updatedAt:r.client_updated_at||r.updated_at});applied++}else skipped++}await db.setSetting('cloud.lastPull',new Date().toISOString());return {applied,skipped,total:(rows||[]).length}}
+function syncableRow(store,row){if(store!=='settings')return true;return !String(row?.id||'').startsWith('cloud.')}
+export async function pushAll(){
+ const s=await ensureSession(),dev=await deviceId();let n=0,skipped=0;
+ for(const store of SYNC_STORES){
+  const rows=await db.all(store);
+  for(const row of rows){
+   if(!syncableRow(store,row)){skipped++;continue}
+   const updated=row.updatedAt||row.updated_at||row.createdAt||new Date().toISOString();
+   const result=await request('/rest/v1/rpc/artessencia_cloud_upsert_record_v1',{method:'POST',token:s.access_token,body:{p_entity:store,p_record_id:String(row.id),p_data:{...row,updatedAt:updated},p_client_updated_at:updated,p_device_id:dev}});
+   if(result?.applied)n++;else skipped++
+  }
+ }
+ await db.setSetting('cloud.lastPush',new Date().toISOString());return {applied:n,skipped}
+}
+export async function pullAll(){
+ const s=await ensureSession();let rows=[],offset=0,page=[];
+ do{
+  page=await request('/rest/v1/artessencia_cloud_records?select=entity,record_id,data,client_updated_at,server_updated_at&deleted_at=is.null&order=server_updated_at.asc&limit=1000&offset='+offset,{token:s.access_token});
+  rows.push(...(page||[]));offset+=1000
+ }while((page||[]).length===1000);
+ let applied=0,skipped=0;
+ for(const r of rows){
+  if(!SYNC_STORES.includes(r.entity)||!r.data?.id){skipped++;continue}
+  const local=await db.get(r.entity,r.data.id);
+  const lt=new Date(local?.updatedAt||local?.updated_at||local?.createdAt||0).getTime();
+  const rt=new Date(r.client_updated_at||r.server_updated_at||0).getTime();
+  if(!local||rt>=lt){await db.put(r.entity,{...r.data,updatedAt:r.client_updated_at||r.server_updated_at});applied++}else skipped++
+ }
+ await db.setSetting('cloud.lastPull',new Date().toISOString());return {applied,skipped,total:rows.length}
+}
 export async function status(){const c=await cfg();const s=session();return {configured:!!(c.url&&c.key),loggedIn:!!s,email:s?.user?.email||'',lastPush:await db.getSetting('cloud.lastPush',''),lastPull:await db.getSetting('cloud.lastPull','')}}
