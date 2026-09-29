@@ -3157,11 +3157,11 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 
 /* Estrutura */
 .screen>.card,.screen>.grid2,.screen>.grid4,.screen>.tablewrap{margin-bottom:14px}
-.screen .section-title{
-  background:transparent!important;color:#49362f!important;padding:0!important;border-radius:0!important;
-  margin:16px 0 9px!important;font-size:15px!important;line-height:1.2!important;font-weight:900!important
+:where(.screen) .section-title{
+  background:transparent!important;color:#49362f;padding:0!important;border-radius:0!important;
+  margin:16px 0 9px;font-size:15px;line-height:1.2;font-weight:900
 }
-.screen .section-title:first-child{margin-top:0!important}
+:where(.screen) .section-title:first-child{margin-top:0}
 .screen .card{
   border:1px solid #eadfd9!important;border-radius:16px!important;
   box-shadow:0 4px 16px rgba(68,45,38,.045)!important;background:#fff
