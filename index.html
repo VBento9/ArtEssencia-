@@ -3181,9 +3181,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 }
 
 /* Botões padrão */
-.screen .btn{
-  min-height:38px;border:1px solid #dfd2cc!important;border-radius:10px!important;padding:9px 13px!important;
-  background:#fff!important;color:#5c433a!important;font-size:12px!important;line-height:1.15!important;
+:where(.screen) .btn{
+  min-height:38px;border:1px solid #dfd2cc!important;border-radius:10px!important;padding:9px 13px;
+  background:#fff!important;color:#5c433a!important;font-size:12px;line-height:1.15;
   font-weight:850!important;box-shadow:none!important;cursor:pointer;
   transition:background .15s ease,border-color .15s ease,transform .1s ease
 }
@@ -3249,7 +3249,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 .screen table tr:hover td{background:#fffcfa}
 
 /* Estados */
-.screen .badge{border-radius:999px!important;padding:4px 7px!important;font-size:10px!important;box-shadow:none!important}
+:where(.screen) .badge{border-radius:999px!important;padding:4px 7px;font-size:10px;box-shadow:none!important}
 .screen .mini{background:#fbf8f6!important;border:1px solid #eadfd9!important;border-radius:12px!important}
 .screen .empty{border:1px dashed #e0d4cf;border-radius:12px;background:#fdfaf8}
 
