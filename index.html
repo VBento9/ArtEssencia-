@@ -6424,7 +6424,7 @@ function renderDashboard(){
  renderDashboardProfitabilityV1769(d.profitability);
  document.getElementById('pendingOrders').innerHTML=rows.length?rows.map(o=>{const c=calcOrder(o);return`<tr><td>${o.id}${o.source==='online_store'?'<br><span class="badge ok">ONLINE</span>':''}</td><td>${o.client||'—'}</td><td>${o.delivery||'—'}</td><td>${euro(c.total)}</td><td>${euro(o.paid)}</td><td><span class="badge warn">${o.status}</span></td></tr>`}).join(''):`<tr><td colspan="6" class="empty">Sem encomendas pendentes</td></tr>`;renderDashboardDaily();renderReceivables();renderQuotePipeline();renderTrend()
 }
-function renderCart(){const el=document.getElementById('cart');if(!el)return;el.innerHTML=cart.length?cart.map((x,i)=>`<div class="cart-row sale-cart-row-v1754"><div class="sale-cart-product-v1754"><strong>${escapeHtml(x.name||'Produto')}</strong><small>${escapeHtml(x.category||'')}</small></div><label class="sale-cart-mini-field-v1754"><span>Qtd.</span><input type="number" min="1" step="1" value="${Number(x.qty)||1}" onchange="cart[${i}].qty=Math.max(1,+this.value||1);renderCart();renderPicker()"></label><label class="sale-cart-mini-field-v1754"><span>Preço/un.</span><input type="number" min="0" step="0.01" value="${Number(x.price)||0}" onchange="cart[${i}].price=Math.max(0,+this.value||0);renderCart();renderPicker()"></label><strong class="sale-cart-line-total-v1754">${euro((Number(x.qty)||0)*(Number(x.price)||0))}</strong><button type="button" class="btn danger sale-cart-remove-v1754" aria-label="Remover ${escapeAttr(x.name||'produto')}" onclick="cart.splice(${i},1);renderCart();renderPicker()">×</button></div>`).join(''):'<div class="empty">Escolhe um produto à esquerda. O carrinho fica sempre visível nesta área.</div>';const q=cart.reduce((s,x)=>s+(Number(x.qty)||0),0),t=cart.reduce((s,x)=>s+(Number(x.qty)||0)*(Number(x.price)||0),0),c=cart.reduce((s,x)=>s+(Number(x.qty)||0)*(Number(x.cost)||0),0),p=t-c;$('cartQty').textContent=q;$('cartTotal').textContent=euro(t);$('cartProfit').textContent=euro(p);$('cartMargin').textContent=pct(t?p/t:0);renderSalePromoV1813()}
+function renderCart(){const el=document.getElementById('cart');if(!el)return;el.innerHTML=cart.length?cart.map((x,i)=>`<div class="cart-row sale-cart-row-v1754"><div class="sale-cart-product-v1754"><strong>${escapeHtml(x.name||'Produto')}</strong><small>${escapeHtml(x.category||'')}</small></div><label class="sale-cart-mini-field-v1754"><span>Qtd.</span><input type="number" min="1" step="1" value="${Number(x.qty)||1}" onchange="cart[${i}].qty=Math.max(1,+this.value||1);renderCart();renderPicker()"></label><label class="sale-cart-mini-field-v1754"><span>Preço/un.</span><input type="number" min="0" step="0.01" value="${Number(x.price)||0}" onchange="cart[${i}].price=Math.max(0,+this.value||0);renderCart();renderPicker()"></label><strong class="sale-cart-line-total-v1754">${euro((Number(x.qty)||0)*(Number(x.price)||0))}</strong><button type="button" class="btn danger sale-cart-remove-v1754" aria-label="Remover ${escapeAttr(x.name||'produto')}" onclick="cart.splice(${i},1);renderCart();renderPicker()">×</button></div>`).join(''):'<div class="empty">Escolhe um produto à esquerda. O carrinho fica sempre visível nesta área.</div>';const q=cart.reduce((s,x)=>s+(Number(x.qty)||0),0),t=cart.reduce((s,x)=>s+(Number(x.qty)||0)*(Number(x.price)||0),0),final=saleFinalTotalV1813(),c=cart.reduce((s,x)=>s+(Number(x.qty)||0)*(Number(x.cost)||0),0),p=final-c;$('cartQty').textContent=q;$('cartTotal').textContent=euro(t);$('cartProfit').textContent=euro(p);$('cartMargin').textContent=pct(final?p/final:0);renderSalePromoV1813()}
 function clearSale(){cart=[];$('saleClient').value='';$('saleContact').value='';if($('saleEmail'))$('saleEmail').value='';$('salePaid').value=0;if($('saleNotes'))$('saleNotes').value='';clearSalePromoV1813();const st=document.getElementById('saleSelectionStatusV1754');if(st)st.textContent='Nenhum produto selecionado';renderCart();renderPicker()}
 async function saveOrder(){
  if(!$('saleClient').value.trim())return toast('Indique o cliente');
@@ -6434,55 +6434,69 @@ async function saveOrder(){
  if(saleEmail&&!validCustomerEmail(saleEmail))return toast('Confirma o endereço de email do cliente');
  if(!cart.length)return toast('Adicione pelo menos um produto');
  if(!$('saleDate').value)return toast('Indique a data de entrega para integrar a encomenda no planeamento de produção');
- const total=cart.reduce((s,x)=>s+(Number(x.qty)||0)*(Number(x.price)||0),0),
-       paid=Number($('salePaid').value)||0;
- if(paid<0||paid>total)return toast('O valor pago deve estar entre 0 € e o total da encomenda');
 
+ const promoInput=String(document.getElementById('salePromoCodeV1813')?.value||'').trim().toUpperCase();
+ if(promoInput&&!(await validateSalePromoV1813()))return;
+
+ const subtotal=saleSubtotalV1813(),total=saleFinalTotalV1813(),paid=Number($('salePaid').value)||0;
+ if(paid<0||paid>total)return toast('O valor pago deve estar entre 0 € e o total final da encomenda');
  if(!(db.packaging||[]).length||!$('saleBox').value)return toast('Configura pelo menos uma embalagem antes de guardar a encomenda');
- const id=await nextManualOrderId(),
-       boxName=$('saleBox').value,
-       pk=db.packaging.find(p=>p.name===boxName),
-       clientName=$('saleClient').value.trim(),
-       clientContact=$('saleContact').value.trim(),
-       clientEmail=saleEmail,
-       clientId=upsertClientFromOrder(clientName,clientContact,clientEmail),
-       payMethod=$('salePayment').value,
-       paymentHistory=paid>0?[{id:uid('PAY'),date:new Date().toISOString(),amount:paid,method:payMethod,type:'payment',source:'order_creation'}]:[];
+
+ const id=await nextManualOrderId(),boxName=$('saleBox').value,pk=db.packaging.find(p=>p.name===boxName),
+ clientName=$('saleClient').value.trim(),clientContact=$('saleContact').value.trim(),clientEmail=saleEmail,
+ clientId=upsertClientFromOrder(clientName,clientContact,clientEmail),payMethod=$('salePayment').value,
+ paymentHistory=paid>0?[{id:uid('PAY'),date:new Date().toISOString(),amount:paid,method:payMethod,type:'payment',source:'order_creation'}]:[];
 
  const order={
-   id,created:todayISO(),client:clientName,contact:clientContact,email:clientEmail,clientId,
-   delivery:$('saleDate').value,payment:payMethod,box:boxName,
-   boxCostSnapshot:pk?+pk.cost||0:0,boxes:+$('saleBoxes').value||1,
-   paid,status:'Pedido',notes:String($('saleNotes')?.value||'').trim(),promoCode:salePromoV1813?.code||'',discountTotal:Number(salePromoV1813?.discount_total)||0,total,items:cart.map(x=>({...ensureLineDetailedCostSnapshotV1769(ensureLineCostSnapshotV134(x,'sale_save_v134'),'sale_save_v1769')})),paymentHistory
+  id,created:todayISO(),client:clientName,contact:clientContact,email:clientEmail,clientId,
+  delivery:$('saleDate').value,payment:payMethod,box:boxName,
+  boxCostSnapshot:pk?+pk.cost||0:0,boxes:+$('saleBoxes').value||1,
+  paid,status:'Pedido',notes:String($('saleNotes')?.value||'').trim(),
+  promoCode:salePromoV1813?.code||'',discountTotal:Number(salePromoV1813?.discount_total)||0,subtotal,total,
+  items:cart.map(x=>({...ensureLineDetailedCostSnapshotV1769(ensureLineCostSnapshotV134(x,'sale_save_v134'),'sale_save_v1769')})),paymentHistory
  };
 
- // 1. Guardar SEMPRE primeiro no dispositivo.
- relUuid(order);
- relMarkOrderPending(order);
- db.orders.push(order);
+ relUuid(order);relMarkOrderPending(order);db.orders.push(order);
  if(paymentHistory.length)addOrderPaymentCash(order,paymentHistory[0]);
- localStorage.setItem(KEY,JSON.stringify(db));
- localStorage.setItem(REL_DIRTY,'1');
+ localStorage.setItem(KEY,JSON.stringify(db));localStorage.setItem(REL_DIRTY,'1');
  setCloudMeta({dirty:true,verified:false,conflict:false,localChangedAt:new Date().toISOString()});
- // Atualização reativa local: a encomenda acabada de guardar tem de surgir sem refresh manual.
- refreshOperationalViewsV1413('order_saved');
- clearSale();
- go('orders');
+ refreshOperationalViewsV1413('order_saved');clearSale();go('orders');
  requestAnimationFrame(()=>refreshOperationalViewsV1413('order_saved_after_navigation'));
  setTimeout(()=>refreshOperationalViewsV1413('order_saved_settled'),80);
  toast('Encomenda '+id+' guardada');
 
- // 2. Depois tentar sincronizar APENAS esta encomenda.
  try{
-   const synced=await syncOrderBusinessStateV1757(order,'criação da encomenda');
-   if(synced)cloudLogMsg('Encomenda e estado operacional confirmados na Cloud: '+id);
-   renderCloudUI();
+  const synced=await syncOrderBusinessStateV1757(order,'criação da encomenda');
+  if(synced&&order.promoCode){
+   try{
+    const {data:redeem,error:redeemError}=await cloudClient.rpc('artessencia_redeem_promo_direct_v1',{
+     p_code:order.promoCode,p_backoffice_order_id:order._rid,p_subtotal:subtotal,p_phone:clientContact,p_email:clientEmail||null
+    });
+    if(redeemError)throw redeemError;
+    order.discountTotal=Number(redeem?.discount_total)||order.discountTotal;
+    order.total=Number(redeem?.total)||Math.max(0,subtotal-order.discountTotal);
+    localStorage.setItem(KEY,JSON.stringify(db));
+    await syncSingleOrderToCloud(order);
+    cloudLogMsg('Voucher '+order.promoCode+' consumido na venda direta '+id);
+   }catch(promoErr){
+    order.promoCode='';order.discountTotal=0;order.total=subtotal;
+    localStorage.setItem(KEY,JSON.stringify(db));
+    await syncSingleOrderToCloud(order).catch(()=>{});
+    toast('A encomenda foi guardada, mas o voucher não foi aplicado. O código continua disponível.');
+    cloudLogMsg('Voucher não consumido '+id+' · '+cloudErrText(promoErr));
+   }
+  }
+  if(synced)cloudLogMsg('Encomenda e estado operacional confirmados na Cloud: '+id);
+  renderCloudUI();
  }catch(e){
-   localStorage.setItem(REL_DIRTY,'1');
-   setCloudMeta({dirty:true,verified:false,conflict:false});
-   cloudLogMsg('Encomenda '+id+' segura localmente · Cloud pendente: '+cloudErrText(e));
-   renderCloudUI();
-   scheduleRelationalSync();
+  if(order.promoCode){
+   order.promoCode='';order.discountTotal=0;order.total=subtotal;
+   localStorage.setItem(KEY,JSON.stringify(db));
+   toast('A encomenda ficou guardada sem desconto porque não foi possível consumir o voucher na Cloud. O código continua disponível.');
+  }
+  localStorage.setItem(REL_DIRTY,'1');setCloudMeta({dirty:true,verified:false,conflict:false});
+  cloudLogMsg('Encomenda '+id+' segura localmente · Cloud pendente: '+cloudErrText(e));
+  renderCloudUI();scheduleRelationalSync();
  }
 }
 function canDeleteOrder(o){return !!o&&(+o.paid||0)===0&&!isOrderProduced(o.id)&&['Pedido','Cancelado'].includes(o.status)}
@@ -15394,7 +15408,7 @@ function renderCatalogDigitalCenterV160(){
 
 let salePromoV1813=null,launchStatsV1813=null;
 function saleSubtotalV1813(){return cart.reduce((s,x)=>s+(Number(x.qty)||0)*(Number(x.price)||0),0)}
-function saleFinalTotalV1813(){return Math.max(0,saleSubtotalV1813()-Math.max(0,Number(salePromoV1813?.discount_total)||0))}
+function saleFinalTotalV1813(){const s=saleSubtotalV1813(),valid=salePromoV1813&&Math.abs(Number(salePromoV1813._subtotal)-s)<.009,d=valid?Math.max(0,Number(salePromoV1813.discount_total)||0):0;return Math.max(0,s-d)}
 function renderSalePromoV1813(){
  const d=document.getElementById('salePromoDiscountV1813'),t=document.getElementById('saleFinalTotalV1813'),s=document.getElementById('salePromoStatusV1813');
  if(d)d.textContent=euro(Number(salePromoV1813?.discount_total)||0);if(t)t.textContent=euro(saleFinalTotalV1813());
@@ -15406,7 +15420,7 @@ async function validateSalePromoV1813(){
  const c=initCloudClient(),u=cloudUser||await ensureCloudSession();if(!c||!u||!navigator.onLine){toast('É necessária ligação à Cloud para validar o voucher');return null}
  const {data,error}=await c.rpc('store_validate_promo_code_v1',{p_code:code,p_subtotal:saleSubtotalV1813(),p_phone:String(document.getElementById('saleContact')?.value||''),p_email:String(document.getElementById('saleEmail')?.value||'')});
  if(error||!data?.ok){clearSalePromoV1813(false);const s=document.getElementById('salePromoStatusV1813');if(s)s.textContent='Código inválido, já utilizado ou sem condições para esta compra.';toast('Código promocional não elegível');return null}
- salePromoV1813=data;renderSalePromoV1813();return data;
+ salePromoV1813={...data,_subtotal:saleSubtotalV1813()};renderSalePromoV1813();return salePromoV1813;
 }
 async function loadLaunchConfigV1813(showToast=false){
  const c=initCloudClient(),u=cloudUser||await ensureCloudSession();if(!c||!u)return;
@@ -17642,8 +17656,15 @@ async function loadPublicationRemoteV1812(force=false){
  publicationRemoteErrorV1812='';
  try{
   const cl=initCloudClient();if(!cl)throw new Error('Cloud indisponível');
-  const {data,error}=await cl.from('store_products').select('backoffice_product_id,code,active,available,image_url,price_online,updated_at');
-  if(error)throw error;publicationRemoteRowsV1812=Array.isArray(data)?data:[];publicationRemoteLoadedAtV1812=new Date().toISOString();
+  const [rowsRes,catalogRes]=await Promise.all([
+   cl.from('store_products').select('backoffice_product_id,code,active,available,image_url,price_online,updated_at'),
+   cl.rpc('store_public_catalog_v1')
+  ]);
+  if(rowsRes.error)throw rowsRes.error;if(catalogRes.error)throw catalogRes.error;
+  publicationRemoteRowsV1812=Array.isArray(rowsRes.data)?rowsRes.data:[];
+  const vp=Array.isArray(catalogRes.data?.products)?catalogRes.data.products:[];
+  publicationCatalogVisibleV1813=new Set(vp.flatMap(p=>[p?.backoffice_product_id,p?.code].map(x=>String(x||'').trim().toUpperCase())).filter(Boolean));
+  publicationRemoteLoadedAtV1812=new Date().toISOString();
  }catch(e){publicationRemoteErrorV1812=String(e?.message||e||'Erro de sincronização')}
  renderPublicationCenterV1812();
 }
