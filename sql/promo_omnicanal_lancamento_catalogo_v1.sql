@@ -119,10 +119,11 @@ begin
   if not public.artessencia_is_owner_v1() then raise exception 'not authorized'; end if;
   insert into public.artessencia_catalog_launch_config(owner_id)
   values(v_owner) on conflict(owner_id) do nothing;
+  select * into v from public.artessencia_catalog_launch_config where owner_id=v_owner;
   if p_save then
-    if upper(coalesce(p_discount_type,discount_type)) not in ('FIXED','PERCENT') then raise exception 'invalid discount type'; end if;
-    if coalesce(p_discount_value,discount_value,0)<=0 then raise exception 'invalid discount value'; end if;
-    if upper(coalesce(p_discount_type,discount_type))='PERCENT' and coalesce(p_discount_value,discount_value,0)>100 then raise exception 'invalid percent'; end if;
+    if upper(coalesce(p_discount_type,v.discount_type)) not in ('FIXED','PERCENT') then raise exception 'invalid discount type'; end if;
+    if coalesce(p_discount_value,v.discount_value,0)<=0 then raise exception 'invalid discount value'; end if;
+    if upper(coalesce(p_discount_type,v.discount_type))='PERCENT' and coalesce(p_discount_value,v.discount_value,0)>100 then raise exception 'invalid percent'; end if;
     if p_max_discount is not null and p_max_discount<0 then raise exception 'invalid max discount'; end if;
     if p_starts_at is not null and p_ends_at is not null and p_ends_at<=p_starts_at then raise exception 'invalid campaign dates'; end if;
     update public.artessencia_catalog_launch_config set
