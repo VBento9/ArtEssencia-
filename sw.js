@@ -22,7 +22,8 @@ self.addEventListener('push',event=>{
   self.clients.matchAll({type:'window',includeUncontrolled:true}).then(cs=>cs.forEach(c=>c.postMessage({type:msgType,id})))
  ]));
 });
+function safePushUrl(value){try{const u=new URL(String(value||'./'),self.location.origin);return u.origin===self.location.origin?u.href:self.location.origin+'/'}catch{return self.location.origin+'/'}}
 self.addEventListener('notificationclick',event=>{
- event.notification.close();const url=event.notification?.data?.url||'./';
+ event.notification.close();const url=safePushUrl(event.notification?.data?.url);
  event.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(async cs=>{for(const c of cs){if('focus'in c){await c.focus();if('navigate'in c)await c.navigate(url);return}}if(self.clients.openWindow)return self.clients.openWindow(url)}));
 });
