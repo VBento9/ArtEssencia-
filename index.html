@@ -2773,7 +2773,25 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
  #costs .recipe-qty-input-v181{width:76px}
 }
 </style>
-</head>
+<style id="smartAlertsV1810Styles">
+.smart-alerts-v1810{margin:14px 0;display:flex;flex-direction:column;gap:10px}
+.smart-alerts-v1810-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.smart-alerts-v1810-head h3{margin:0;font-size:15px;color:#513933}
+.smart-alerts-v1810-head small{color:#88756e;font-size:9px}
+.smart-alerts-v1810-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.smart-alert-v1810{border:1px solid var(--line);border-radius:14px;background:#fff;padding:11px 12px;display:flex;gap:10px;align-items:flex-start;text-align:left;cursor:pointer}
+.smart-alert-v1810:hover{transform:translateY(-1px)}
+.smart-alert-v1810 .icon{font-size:18px;line-height:1}
+.smart-alert-v1810 b{display:block;font-size:10px;color:#543b35}
+.smart-alert-v1810 small{display:block;font-size:8px;color:#88756e;margin-top:3px;line-height:1.35}
+.smart-alert-v1810 strong{margin-left:auto;font-size:16px}
+.smart-alert-v1810.bad{background:#fff5f3;border-color:#e8b9b0}
+.smart-alert-v1810.warn{background:#fffaf0;border-color:#ead3a1}
+.smart-alert-v1810.info{background:#f7f8ff;border-color:#cfd5ea}
+.smart-alert-v1810.good{background:#f3fbf6;border-color:#bedbc7}
+@media(max-width:900px){.smart-alerts-v1810-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:620px){.smart-alerts-v1810-grid{grid-template-columns:1fr}}
+</style></head>
 <body>
 <div id="brandSplashV1778" aria-hidden="true"><div class="brand-splash-card"><img src="brand-artessencia.png" alt=""></div></div>
 <div id="lockScreen" class="lock">
@@ -6292,6 +6310,35 @@ function renderQuotePipeline(){
 }
 function parseMixBoxCaps(v){return [...new Set(String(v||'').split(/[;,\s]+/).map(x=>parseInt(x,10)).filter(x=>Number.isFinite(x)&&x>0))].sort((a,b)=>a-b)}
 function formatMixBoxCaps(v){return (Array.isArray(v)?v:parseMixBoxCaps(v)).join(', ')}
+function smartAlertsDataV1810(){
+ const products=(db.products||[]),stock=(db.stock||[]),orders=(db.orders||[]);
+ const activeProducts=products.filter(p=>p&&p.active!==false&&!productArchivedV1803(p));
+ const stockLow=stock.filter(x=>(Number(x?.min)||0)>0&&(Number(x?.qty)||0)<=(Number(x?.min)||0));
+ const publicNoPhoto=activeProducts.filter(p=>!!p.shopVisible&&!String(p.shopImageUrl||'').trim());
+ const techIncomplete=activeProducts.filter(p=>{try{return !productTechSheetStateV146(p).ok}catch(e){return false}});
+ const marginLow=activeProducts.filter(p=>{try{return ['warn','loss'].includes(artessenciaPriceHealthV1251(p).key)}catch(e){return false}});
+ const archivedPublic=products.filter(p=>productArchivedV1803(p)&&(!!p.shopVisible||!!p.mixVisible||productEditionIdsV138(p).length>0));
+ const today=todayISO(),tomorrow=new Date(Date.now()+86400000).toISOString().slice(0,10);
+ const productionDue=orders.filter(o=>o&&o.status!=='Cancelado'&&o.status!=='Entregue'&&o.status!=='Pronta'&&o.delivery&&String(o.delivery)>=today&&String(o.delivery)<=tomorrow);
+ return {stockLow,publicNoPhoto,techIncomplete,marginLow,archivedPublic,productionDue};
+}
+function renderSmartAlertsV1810(){
+ const kpis=document.getElementById('kpis');if(!kpis)return;
+ let host=document.getElementById('smartAlertsV1810');
+ if(!host){host=document.createElement('section');host.id='smartAlertsV1810';host.className='smart-alerts-v1810';kpis.insertAdjacentElement('afterend',host)}
+ const a=smartAlertsDataV1810();
+ const items=[
+  {n:a.stockLow.length,icon:'📦',title:'Stock abaixo do mínimo',note:'Matérias-primas que atingiram ou passaram o limite mínimo.',cls:a.stockLow.length?'bad':'good',action:"go('stock')"},
+  {n:a.publicNoPhoto.length,icon:'🖼️',title:'Publicado sem fotografia',note:'Produtos visíveis ao público sem imagem configurada.',cls:a.publicNoPhoto.length?'warn':'good',action:"go('products')"},
+  {n:a.techIncomplete.length,icon:'🧪',title:'Ficha técnica incompleta',note:'Produtos ativos com materiais ou quantidades por rever.',cls:a.techIncomplete.length?'warn':'good',action:"go('products')"},
+  {n:a.marginLow.length,icon:'📉',title:'Margem abaixo do objetivo',note:'Produtos abaixo da margem alvo ou do custo calculado.',cls:a.marginLow.length?'info':'good',action:"go('costs')"},
+  {n:a.archivedPublic.length,icon:'🗄️',title:'Arquivado mas ainda público',note:'Inconsistência de publicação que requer revisão manual.',cls:a.archivedPublic.length?'bad':'good',action:"go('products')"},
+  {n:a.productionDue.length,icon:'🕯️',title:'Entrega próxima sem produção concluída',note:'Encomendas para hoje ou amanhã que ainda não estão prontas.',cls:a.productionDue.length?'warn':'good',action:"go('production')"}
+ ];
+ const issues=items.reduce((s,x)=>s+x.n,0);
+ host.innerHTML='<div class="smart-alerts-v1810-head"><div><h3>Alertas inteligentes</h3><small>Deteção apenas informativa · nenhum dado é corrigido automaticamente</small></div><span class="badge '+(issues?'warn':'ok')+'">'+issues+' ocorrência(s)</span></div>'+
+ '<div class="smart-alerts-v1810-grid">'+items.map(x=>'<button type="button" class="smart-alert-v1810 '+x.cls+'" onclick="'+x.action+'"><span class="icon">'+x.icon+'</span><span><b>'+x.title+'</b><small>'+x.note+'</small></span><strong>'+x.n+'</strong></button>').join('')+'</div>';
+}
 function renderDashboard(){
  const lb=localStorage.getItem(LAST);const notice=document.getElementById('setupNotice');
  if(notice&&lb){notice.querySelectorAll('.backupwarn').forEach(x=>x.remove());const days=(Date.now()-new Date(lb).getTime())/86400000;if(days>7)notice.insertAdjacentHTML('beforeend','<div class="badge bad backupwarn" style="margin-top:8px">Backup com mais de 7 dias</div>')}
@@ -6306,7 +6353,7 @@ function renderDashboard(){
   ['⚠️','Pendentes',d.pending,d.pending>0?'warn':'good'],
   ['📦','Stock baixo',d.stockLow,d.stockLow>0?'bad':'good']
  ];
- document.getElementById('kpis').innerHTML=kpiData.map(([icon,l,v,state])=>`<button class="card kpi dashboard-kpi-card ${state}" type="button" onclick="dashboardKpiGo('${l}')"><div class="dashboard-kpi-icon">${icon}</div><div><div class="label">${l}</div><div class="value">${v}</div></div><span class="dashboard-kpi-arrow">›</span></button>`).join('');
+ document.getElementById('kpis').innerHTML=kpiData.map(([icon,l,v,state])=>`<button class="card kpi dashboard-kpi-card ${state}" type="button" onclick="dashboardKpiGo('${l}')"><div class="dashboard-kpi-icon">${icon}</div><div><div class="label">${l}</div><div class="value">${v}</div></div><span class="dashboard-kpi-arrow">›</span></button>`).join('');renderSmartAlertsV1810();
  const rows=filteredOrders().filter(o=>o.status!=='Entregue').slice(-8).reverse();
  renderDashboardProfitabilityV1769(d.profitability);
  document.getElementById('pendingOrders').innerHTML=rows.length?rows.map(o=>{const c=calcOrder(o);return`<tr><td>${o.id}${o.source==='online_store'?'<br><span class="badge ok">ONLINE</span>':''}</td><td>${o.client||'—'}</td><td>${o.delivery||'—'}</td><td>${euro(c.total)}</td><td>${euro(o.paid)}</td><td><span class="badge warn">${o.status}</span></td></tr>`}).join(''):`<tr><td colspan="6" class="empty">Sem encomendas pendentes</td></tr>`;renderDashboardDaily();renderReceivables();renderQuotePipeline();renderTrend()
