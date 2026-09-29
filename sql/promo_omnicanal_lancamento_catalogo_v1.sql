@@ -77,10 +77,26 @@ create unique index if not exists artessencia_catalog_launch_customer_claim_uniq
   on public.artessencia_catalog_launch_challenges(owner_id,customer_key)
   where customer_key is not null and claimed_at is not null;
 
-alter table public.artessencia_promo_redemptions
-  add constraint artessencia_promo_redemptions_challenge_id_fkey
-  foreign key (challenge_id) references public.artessencia_catalog_launch_challenges(id) on delete set null
-  not valid;
+create index if not exists artessencia_catalog_launch_owner_completed_idx
+  on public.artessencia_catalog_launch_challenges(owner_id,completed_at);
+
+create index if not exists artessencia_promo_redemptions_direct_order_idx
+  on public.artessencia_promo_redemptions(backoffice_order_id)
+  where backoffice_order_id is not null;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname='artessencia_promo_redemptions_challenge_id_fkey'
+      and conrelid='public.artessencia_promo_redemptions'::regclass
+  ) then
+    alter table public.artessencia_promo_redemptions
+      add constraint artessencia_promo_redemptions_challenge_id_fkey
+      foreign key (challenge_id) references public.artessencia_catalog_launch_challenges(id) on delete set null
+      not valid;
+  end if;
+end $$;
 alter table public.artessencia_promo_redemptions validate constraint artessencia_promo_redemptions_challenge_id_fkey;
 
 create or replace function public.artessencia_catalog_launch_config_admin_v1(
@@ -104,11 +120,16 @@ begin
   insert into public.artessencia_catalog_launch_config(owner_id)
   values(v_owner) on conflict(owner_id) do nothing;
   if p_save then
+    if upper(coalesce(p_discount_type,discount_type)) not in ('FIXED','PERCENT') then raise exception 'invalid discount type'; end if;
+    if coalesce(p_discount_value,discount_value,0)<=0 then raise exception 'invalid discount value'; end if;
+    if upper(coalesce(p_discount_type,discount_type))='PERCENT' and coalesce(p_discount_value,discount_value,0)>100 then raise exception 'invalid percent'; end if;
+    if p_max_discount is not null and p_max_discount<0 then raise exception 'invalid max discount'; end if;
+    if p_starts_at is not null and p_ends_at is not null and p_ends_at<=p_starts_at then raise exception 'invalid campaign dates'; end if;
     update public.artessencia_catalog_launch_config set
       enabled=coalesce(p_enabled,enabled),
       label=coalesce(nullif(trim(p_label),''),label),
-      discount_type=case when upper(coalesce(p_discount_type,discount_type)) in ('FIXED','PERCENT') then upper(coalesce(p_discount_type,discount_type)) else discount_type end,
-      discount_value=greatest(.01,coalesce(p_discount_value,discount_value)),
+      discount_type=upper(coalesce(p_discount_type,discount_type)),
+      discount_value=coalesce(p_discount_value,discount_value),
       max_discount=p_max_discount,
       min_order=greatest(0,coalesce(p_min_order,min_order)),
       validity_days=greatest(1,least(365,coalesce(p_validity_days,validity_days))),
@@ -286,8 +307,9 @@ end $$;
 revoke execute on function public.artessencia_catalog_launch_claim_v1(uuid,text) from public,authenticated;
 grant execute on function public.artessencia_catalog_launch_claim_v1(uuid,text) to anon;
 
-create or replace function public.store_validate_promo_code_v1(p_code text,p_subtotal numeric,p_phone text default null,p_email text default null)
-returns jsonb
+create or replace function public.artessencia_validate_promo_code_internal_v1(
+  p_code text,p_subtotal numeric,p_phone text default null,p_email text default null,p_exclude_backoffice_order_id uuid default null
+) returns jsonb
 language plpgsql stable security definer set search_path='public'
 as $$
 declare
@@ -298,35 +320,27 @@ declare
 begin
   select user_id into v_owner from public.store_owner where active=true order by created_at limit 1;
   if v_owner is null then return jsonb_build_object('ok',false,'error','promo not eligible'); end if;
-  select * into v_promo from public.artessencia_promo_codes
-  where owner_id=v_owner and code=regexp_replace(upper(trim(coalesce(p_code,''))),'[^A-Z0-9_-]','','g') and active=true limit 1;
+  select * into v_promo from public.artessencia_promo_codes where owner_id=v_owner and code=regexp_replace(upper(trim(coalesce(p_code,''))),'[^A-Z0-9_-]','','g') and active=true limit 1;
   if not found then return jsonb_build_object('ok',false,'error','promo not eligible'); end if;
   if v_promo.starts_at is not null and now()<v_promo.starts_at then return jsonb_build_object('ok',false,'error','promo not eligible'); end if;
   if v_promo.ends_at is not null and now()>v_promo.ends_at then return jsonb_build_object('ok',false,'error','promo not eligible'); end if;
   if coalesce(p_subtotal,0)<v_promo.min_order then return jsonb_build_object('ok',false,'error','minimum order not met','min_order',v_promo.min_order); end if;
-
   if length(v_phone_key)=9 then v_phone_key:='351'||v_phone_key; end if;
   v_customer_key:=case when length(v_phone_key)>=9 then 'p:'||v_phone_key when v_email_key<>'' then 'e:'||v_email_key else null end;
-  if v_promo.assigned_customer_key is not null and v_customer_key is distinct from v_promo.assigned_customer_key then
-    return jsonb_build_object('ok',false,'error','promo assigned to another customer');
-  end if;
+  if v_promo.assigned_customer_key is not null and v_customer_key is distinct from v_promo.assigned_customer_key then return jsonb_build_object('ok',false,'error','promo assigned to another customer'); end if;
 
-  select count(*) into v_usage
-  from public.artessencia_promo_redemptions r
-  where r.promo_id=v_promo.id and (
+  select count(*) into v_usage from public.artessencia_promo_redemptions r where r.promo_id=v_promo.id and (
     (coalesce(r.channel,'ONLINE')='ONLINE' and exists(select 1 from public.store_orders o where o.id=r.order_id and upper(coalesce(o.status,'')) not in ('CANCELADA','CANCELADO','CANCELLED')))
     or
-    (r.channel='DIRECT' and exists(select 1 from public.artessencia_v1_orders o where o.id=r.backoffice_order_id and upper(coalesce(o.status,'')) not in ('CANCELADA','CANCELADO','CANCELLED')))
+    (r.channel='DIRECT' and exists(select 1 from public.artessencia_v1_orders o where o.id=r.backoffice_order_id and (p_exclude_backoffice_order_id is null or o.id<>p_exclude_backoffice_order_id) and upper(coalesce(o.status,'')) not in ('CANCELADA','CANCELADO','CANCELLED')))
   );
   if v_promo.usage_limit is not null and v_usage>=v_promo.usage_limit then return jsonb_build_object('ok',false,'error','promo not eligible'); end if;
 
   if v_customer_key is not null then
-    select count(*) into v_customer_usage
-    from public.artessencia_promo_redemptions r
-    where r.promo_id=v_promo.id and r.customer_key=v_customer_key and (
+    select count(*) into v_customer_usage from public.artessencia_promo_redemptions r where r.promo_id=v_promo.id and r.customer_key=v_customer_key and (
       (coalesce(r.channel,'ONLINE')='ONLINE' and exists(select 1 from public.store_orders o where o.id=r.order_id and upper(coalesce(o.status,'')) not in ('CANCELADA','CANCELADO','CANCELLED')))
       or
-      (r.channel='DIRECT' and exists(select 1 from public.artessencia_v1_orders o where o.id=r.backoffice_order_id and upper(coalesce(o.status,'')) not in ('CANCELADA','CANCELADO','CANCELLED')))
+      (r.channel='DIRECT' and exists(select 1 from public.artessencia_v1_orders o where o.id=r.backoffice_order_id and (p_exclude_backoffice_order_id is null or o.id<>p_exclude_backoffice_order_id) and upper(coalesce(o.status,'')) not in ('CANCELADA','CANCELADO','CANCELLED')))
     );
     if v_customer_usage>=v_promo.per_customer_limit then return jsonb_build_object('ok',false,'error','promo not eligible'); end if;
   end if;
@@ -334,33 +348,34 @@ begin
   if v_promo.first_purchase_only then
     if v_customer_key is null then return jsonb_build_object('ok',false,'error','customer identification required'); end if;
     select
-      (select count(*) from public.store_orders o join public.store_customers c on c.id=o.customer_id
-       where upper(coalesce(o.status,'')) not in ('CANCELADA','CANCELADO','CANCELLED')
-         and ((length(v_phone_key)>=9 and regexp_replace(coalesce(c.phone,''),'[^0-9]','','g') in (v_phone_key,right(v_phone_key,9)))
-           or (v_email_key<>'' and lower(trim(coalesce(c.email,'')))=v_email_key)))
+      (select count(*) from public.store_orders o join public.store_customers c on c.id=o.customer_id where upper(coalesce(o.status,'')) not in ('CANCELADA','CANCELADO','CANCELLED')
+       and ((length(v_phone_key)>=9 and regexp_replace(coalesce(c.phone,''),'[^0-9]','','g') in (v_phone_key,right(v_phone_key,9))) or (v_email_key<>'' and lower(trim(coalesce(c.email,'')))=v_email_key)))
       +
-      (select count(*) from public.artessencia_v1_orders o join public.artessencia_v1_clients c on c.id=o.client_id
-       where upper(coalesce(o.status,'')) not in ('CANCELADA','CANCELADO','CANCELLED')
-         and ((length(v_phone_key)>=9 and regexp_replace(coalesce(c.phone,''),'[^0-9]','','g') in (v_phone_key,right(v_phone_key,9)))
-           or (v_email_key<>'' and lower(trim(coalesce(c.email,'')))=v_email_key)))
+      (select count(*) from public.artessencia_v1_orders o join public.artessencia_v1_clients c on c.id=o.client_id where (p_exclude_backoffice_order_id is null or o.id<>p_exclude_backoffice_order_id)
+       and upper(coalesce(o.status,'')) not in ('CANCELADA','CANCELADO','CANCELLED')
+       and ((length(v_phone_key)>=9 and regexp_replace(coalesce(c.phone,''),'[^0-9]','','g') in (v_phone_key,right(v_phone_key,9))) or (v_email_key<>'' and lower(trim(coalesce(c.email,'')))=v_email_key)))
     into v_prior_orders;
     if v_prior_orders>0 then return jsonb_build_object('ok',false,'error','promo not eligible'); end if;
   end if;
 
-  if v_promo.discount_type='PERCENT' then
-    v_discount:=round(coalesce(p_subtotal,0)*(v_promo.discount_value/100.0),2);
-    if v_promo.max_discount is not null then v_discount:=least(v_discount,v_promo.max_discount); end if;
+  if v_promo.discount_type='PERCENT' then v_discount:=round(coalesce(p_subtotal,0)*(v_promo.discount_value/100.0),2); if v_promo.max_discount is not null then v_discount:=least(v_discount,v_promo.max_discount); end if;
   else v_discount:=least(coalesce(p_subtotal,0),v_promo.discount_value); end if;
-
-  return jsonb_build_object('ok',true,'promo_id',v_promo.id,'code',v_promo.code,'label',v_promo.label,
-    'discount_type',v_promo.discount_type,'discount_value',v_promo.discount_value,'discount_total',v_discount,
-    'min_order',v_promo.min_order,'first_purchase_only',v_promo.first_purchase_only);
+  return jsonb_build_object('ok',true,'promo_id',v_promo.id,'code',v_promo.code,'label',v_promo.label,'discount_type',v_promo.discount_type,'discount_value',v_promo.discount_value,'discount_total',v_discount,'min_order',v_promo.min_order,'first_purchase_only',v_promo.first_purchase_only);
 end $$;
+revoke execute on function public.artessencia_validate_promo_code_internal_v1(text,numeric,text,text,uuid) from public,anon,authenticated;
+
+create or replace function public.store_validate_promo_code_v1(p_code text,p_subtotal numeric,p_phone text default null,p_email text default null)
+returns jsonb language sql stable security definer set search_path='public'
+as $$
+  select public.artessencia_validate_promo_code_internal_v1(p_code,p_subtotal,p_phone,p_email,null);
+$$;
+revoke execute on function public.store_validate_promo_code_v1(text,numeric,text,text) from public;
+grant execute on function public.store_validate_promo_code_v1(text,numeric,text,text) to anon,authenticated;
 
 create or replace function public.artessencia_list_promo_codes_admin_v1()
 returns jsonb
 language plpgsql stable security definer set search_path='public'
-as $
+as $$
 begin
   if not public.artessencia_is_owner_v1() then raise exception 'not authorized'; end if;
   return (
@@ -381,7 +396,7 @@ begin
     ) order by p.created_at desc),'[]'::jsonb)
     from public.artessencia_promo_codes p where p.owner_id=auth.uid()
   );
-end $;
+end $$;
 
 revoke execute on function public.artessencia_list_promo_codes_admin_v1() from public,anon;
 grant execute on function public.artessencia_list_promo_codes_admin_v1() to authenticated;
@@ -399,7 +414,7 @@ begin
 
   v_code:=regexp_replace(upper(trim(coalesce(p_code,''))),'[^A-Z0-9_-]','','g');
   perform pg_advisory_xact_lock(hashtext('artessencia-promo-'||v_code));
-  v_promo:=public.store_validate_promo_code_v1(v_code,p_subtotal,p_phone,p_email);
+  v_promo:=public.artessencia_validate_promo_code_internal_v1(v_code,p_subtotal,p_phone,p_email,p_backoffice_order_id);
   if not coalesce((v_promo->>'ok')::boolean,false) then raise exception '%',coalesce(v_promo->>'error','promo not eligible'); end if;
   v_promo_id:=(v_promo->>'promo_id')::uuid; v_discount:=coalesce((v_promo->>'discount_total')::numeric,0);
 
@@ -440,10 +455,11 @@ begin
     'completed',(select count(*) from public.artessencia_catalog_launch_challenges where owner_id=v_owner and completed_at is not null),
     'claimed',(select count(*) from public.artessencia_catalog_launch_challenges where owner_id=v_owner and claimed_at is not null),
     'used',(select count(*) from public.artessencia_catalog_launch_challenges c where c.owner_id=v_owner and exists(select 1 from public.artessencia_promo_redemptions r where r.promo_id=c.promo_id)),
+    'required_favorites',coalesce((select required_favorites from public.artessencia_catalog_launch_config where owner_id=v_owner),3),
     'participants',coalesce((
       select jsonb_agg(jsonb_build_object(
         'id',c.id,'phone',c.customer_phone,'installed',c.installed,'shared',c.shared,'favorites_count',c.favorites_count,'notifications',c.notifications,
-        'completed_at',c.completed_at,'claimed_at',c.claimed_at,'code',p.code,'promo_active',p.active,
+        'completed_at',c.completed_at,'claimed_at',c.claimed_at,'code',p.code,'promo_active',p.active,'promo_ends_at',p.ends_at,
         'used_at',r.created_at,'channel',r.channel,'discount_total',r.discount_total
       ) order by c.completed_at desc)
       from public.artessencia_catalog_launch_challenges c
