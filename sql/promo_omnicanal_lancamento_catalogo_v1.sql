@@ -122,61 +122,104 @@ revoke execute on function public.artessencia_catalog_launch_config_admin_v1(boo
 grant execute on function public.artessencia_catalog_launch_config_admin_v1(boolean,text,text,numeric,numeric,numeric,integer,integer,timestamptz,timestamptz,boolean) to authenticated;
 
 create or replace function public.artessencia_catalog_launch_progress_v1(
-  p_visitor_id uuid,
-  p_action text default null,
-  p_value integer default null
+ p_visitor_id uuid,
+ p_action text default null,
+ p_value integer default null
 ) returns jsonb
-language plpgsql security definer set search_path='public'
+language plpgsql security definer
+set search_path='public'
 as $$
-declare v_owner uuid; v_cfg public.artessencia_catalog_launch_config%rowtype; v_ch public.artessencia_catalog_launch_challenges%rowtype; v_notifications boolean:=false; v_ready boolean:=false;
+declare
+ v_owner uuid;
+ v_cfg public.artessencia_catalog_launch_config%rowtype;
+ v_ch public.artessencia_catalog_launch_challenges%rowtype;
+ v_action text:=lower(trim(coalesce(p_action,'')));
+ v_push_active boolean:=false;
+ v_ready boolean:=false;
 begin
-  select user_id into v_owner from public.store_owner where active=true order by created_at limit 1;
-  if v_owner is null or p_visitor_id is null then return jsonb_build_object('enabled',false); end if;
-  select * into v_cfg from public.artessencia_catalog_launch_config where owner_id=v_owner;
-  if not found or not v_cfg.enabled or (v_cfg.starts_at is not null and now()<v_cfg.starts_at) or (v_cfg.ends_at is not null and now()>v_cfg.ends_at) then
-    return jsonb_build_object('enabled',false);
-  end if;
-  insert into public.artessencia_catalog_launch_challenges(owner_id,visitor_id)
-  values(v_owner,p_visitor_id) on conflict(owner_id,visitor_id) do nothing;
+ select user_id into v_owner from public.store_owner where active=true order by created_at limit 1;
+ if v_owner is null or p_visitor_id is null then return jsonb_build_object('enabled',false); end if;
 
-  select exists(
-    select 1 from public.artessencia_marketing_push_subscriptions s
-    where s.visitor_id=p_visitor_id and s.source='catalog' and s.active=true
-  ) into v_notifications;
+ select * into v_cfg from public.artessencia_catalog_launch_config where owner_id=v_owner;
+ if not found or not v_cfg.enabled
+    or (v_cfg.starts_at is not null and now()<v_cfg.starts_at)
+    or (v_cfg.ends_at is not null and now()>v_cfg.ends_at)
+ then return jsonb_build_object('enabled',false); end if;
 
-  update public.artessencia_catalog_launch_challenges set
-    installed=installed or lower(coalesce(p_action,''))='installed',
-    shared=shared or lower(coalesce(p_action,''))='shared',
-    favorites_count=greatest(favorites_count,case when lower(coalesce(p_action,''))='favorites' then greatest(0,coalesce(p_value,0)) else favorites_count end),
-    notifications=notifications or v_notifications,
-    updated_at=now()
-  where owner_id=v_owner and visitor_id=p_visitor_id
-  returning * into v_ch;
+ insert into public.artessencia_catalog_launch_challenges(owner_id,visitor_id)
+ values(v_owner,p_visitor_id)
+ on conflict(owner_id,visitor_id) do nothing;
 
-  v_ready:=(not v_cfg.require_install or v_ch.installed)
-    and (not v_cfg.require_share or v_ch.shared)
-    and v_ch.favorites_count>=v_cfg.required_favorites
-    and (not v_cfg.require_notifications or v_ch.notifications);
+ select * into v_ch
+ from public.artessencia_catalog_launch_challenges
+ where owner_id=v_owner and visitor_id=p_visitor_id
+ for update;
 
-  if v_ready and v_ch.completed_at is null then
-    update public.artessencia_catalog_launch_challenges set completed_at=now(),updated_at=now()
-    where id=v_ch.id returning * into v_ch;
-  end if;
+ if v_action='installed' then
+   update public.artessencia_catalog_launch_challenges
+   set installed=true,updated_at=now()
+   where id=v_ch.id
+   returning * into v_ch;
 
-  return jsonb_build_object(
-    'enabled',true,
-    'installed',v_ch.installed,
-    'shared',v_ch.shared,
-    'favorites_count',v_ch.favorites_count,
-    'required_favorites',v_cfg.required_favorites,
-    'notifications',v_ch.notifications,
-    'completed',v_ch.completed_at is not null,
-    'claimed',v_ch.claimed_at is not null,
-    'promo_code',(select p.code from public.artessencia_promo_codes p where p.id=v_ch.promo_id),
-    'label',v_cfg.label
-  );
-end $$;
+ elsif v_action='shared' then
+   if v_cfg.require_install and not v_ch.installed then
+     raise exception 'install required';
+   end if;
+   update public.artessencia_catalog_launch_challenges
+   set shared=true,updated_at=now()
+   where id=v_ch.id
+   returning * into v_ch;
 
+ elsif v_action='favorites' then
+   if v_cfg.require_share and not v_ch.shared then
+     raise exception 'share required';
+   end if;
+   update public.artessencia_catalog_launch_challenges
+   set favorites_count=greatest(favorites_count,greatest(0,coalesce(p_value,0))),updated_at=now()
+   where id=v_ch.id
+   returning * into v_ch;
+
+ elsif v_action='notifications' then
+   if v_ch.favorites_count<v_cfg.required_favorites then
+     raise exception 'favorites required';
+   end if;
+   select exists(
+     select 1 from public.artessencia_marketing_push_subscriptions s
+     where s.visitor_id=p_visitor_id and s.source='catalog' and s.active=true
+   ) into v_push_active;
+   if not v_push_active then raise exception 'active notification subscription required'; end if;
+   update public.artessencia_catalog_launch_challenges
+   set notifications=true,updated_at=now()
+   where id=v_ch.id
+   returning * into v_ch;
+ end if;
+
+ v_ready:=(not v_cfg.require_install or v_ch.installed)
+   and (not v_cfg.require_share or v_ch.shared)
+   and v_ch.favorites_count>=v_cfg.required_favorites
+   and (not v_cfg.require_notifications or v_ch.notifications);
+
+ if v_ready and v_ch.completed_at is null then
+   update public.artessencia_catalog_launch_challenges
+   set completed_at=now(),updated_at=now()
+   where id=v_ch.id
+   returning * into v_ch;
+ end if;
+
+ return jsonb_build_object(
+   'enabled',true,
+   'installed',v_ch.installed,
+   'shared',v_ch.shared,
+   'favorites_count',v_ch.favorites_count,
+   'required_favorites',v_cfg.required_favorites,
+   'notifications',v_ch.notifications,
+   'completed',v_ch.completed_at is not null,
+   'claimed',v_ch.claimed_at is not null,
+   'promo_code',(select p.code from public.artessencia_promo_codes p where p.id=v_ch.promo_id),
+   'label',v_cfg.label
+ );
+end
+$$;
 revoke execute on function public.artessencia_catalog_launch_progress_v1(uuid,text,integer) from public,authenticated;
 grant execute on function public.artessencia_catalog_launch_progress_v1(uuid,text,integer) to anon;
 
