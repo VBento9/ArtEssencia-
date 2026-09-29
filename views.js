@@ -198,7 +198,9 @@ async function productModal(ctx,products,materials,existing={}){
     const duplicate=products.some(p=>p.id!==existing.id&&String(p.sku||'').toUpperCase()===sku.value.trim().toUpperCase());if(duplicate){alert('Este SKU já existe.');return false}
     const nextPublicCharacteristics={waxType:waxType.value.trim(),approximateWeight:approximateWeight.value.trim(),dimensions:dimensions.value.trim(),burnTime:burnTime.value.trim(),materialContainer:materialContainer.value.trim()};
     const p={...existing,id:existing.id||uid('p'),family:family.value,sku:sku.value.trim(),name:name.value.trim(),subtype:subtype.value,price:Number(price.value||0),wholesalePrice:Number(wholesale.value||0),batchUnits:Number(batch.value||1),laborMinutes:Number(labor.value||0),laborRate:Number(rate.value||0),packagingCost:Number(pack.value||0),extrasPct:Number(extras.value||0),wastePct:Number(waste.value||0),targetMarginPct:Number(target.value||0),alertMarginPct:Number(alertMargin.value||0),paymentFeePct:Number(fee.value||0),moldName:moldName.value,moldCost:Number(moldCost.value||0),moldLife:Number(moldLife.value||0),equipmentMinutes:Number(equipMin.value||0),equipmentRate:Number(equipRate.value||0),published:published.value==='true',active:active.value==='true',onlineDescription:desc.value,publicCharacteristics:nextPublicCharacteristics,recipe:recipe.filter(x=>x.materialId&&Number(x.qty)>=0),updatedAt:new Date().toISOString(),createdAt:existing.createdAt||new Date().toISOString()};
-    const econ=calcProduct(p,materials,[],products);p.lastTrueCost=econ.trueCost;p.lastProductionCost=econ.production;await db.put('products',p);toast('Produto guardado.');ctx.refresh();return true
+    const econ=calcProduct(p,materials,[],products);p.lastTrueCost=econ.trueCost;p.lastProductionCost=econ.production;await db.put('products',p);
+    let publicSyncOk=true;try{await cloud.saveProductPublicCharacteristics(p.sku,p.publicCharacteristics)}catch(e){publicSyncOk=false;console.warn('Características públicas por sincronizar',e)}
+    toast(publicSyncOk?'Produto guardado.':'Produto guardado. Características públicas pendentes de sincronização Cloud.');ctx.refresh();return true
   }})
 }
 
