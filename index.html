@@ -2791,6 +2791,31 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 .smart-alert-v1810.good{background:#f3fbf6;border-color:#bedbc7}
 @media(max-width:900px){.smart-alerts-v1810-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:620px){.smart-alerts-v1810-grid{grid-template-columns:1fr}}
+</style><style id="publicationCenterV1812Styles">
+.publication-v1812{display:flex;flex-direction:column;gap:12px}
+.publication-hero-v1812{display:flex;justify-content:space-between;align-items:flex-end;gap:16px}
+.publication-hero-v1812 h2{margin:3px 0 4px}
+.publication-note-v1812{padding:11px 13px;border:1px solid #ead3a1;background:#fffaf0;border-radius:12px;font-size:10px;color:#6f5625}
+.publication-kpis-v1812{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.publication-kpi-v1812{padding:11px 12px}
+.publication-kpi-v1812 span{display:block;font-size:8px;text-transform:uppercase;font-weight:900;color:#8b746c}
+.publication-kpi-v1812 strong{display:block;font-size:20px;margin-top:3px;color:#503833}
+.publication-kpi-v1812 small{font-size:8px;color:#94837c}
+.publication-tools-v1812{display:flex;gap:8px;flex-wrap:wrap;align-items:end}
+.publication-tools-v1812 .field{min-width:170px;flex:1}
+.publication-tools-v1812 .field.search{min-width:240px;flex:2}
+.publication-sync-v1812{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.publication-sync-v1812 b{font-size:13px}
+.publication-sync-v1812 small{display:block;margin-top:3px;color:#806b62}
+.publication-table-v1812 table{min-width:1080px}
+.publication-table-v1812 td{vertical-align:middle}
+.publication-product-v1812 b{display:block}.publication-product-v1812 small{color:#88756e}
+.publication-actions-v1812{display:flex;gap:5px;flex-wrap:wrap}
+.publication-actions-v1812 .btn{padding:7px 9px;font-size:9px}
+.publication-state-v1812{display:flex;gap:4px;flex-wrap:wrap}
+.publication-muted-v1812{opacity:.65}
+@media(max-width:1050px){.publication-kpis-v1812{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:700px){.publication-hero-v1812{align-items:stretch;flex-direction:column}.publication-kpis-v1812{grid-template-columns:1fr 1fr}.publication-tools-v1812{display:grid;grid-template-columns:1fr}.publication-tools-v1812 .field{min-width:0}}
 </style></head>
 <body>
 <div id="brandSplashV1778" aria-hidden="true"><div class="brand-splash-card"><img src="brand-artessencia.png" alt=""></div></div>
@@ -3684,7 +3709,28 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 
 
 
-  <section id="catalogDigital" class="screen">
+  <section id="publication" class="screen">
+ <div class="publication-v1812">
+  <div class="publication-hero-v1812">
+   <div><div class="dashboard-kicker">CONTROLO PÚBLICO</div><h2>Centro de Publicação</h2><p class="muted" style="margin:0">Visão central do que está preparado, publicado e sincronizado, sem duplicar a gestão dos produtos.</p></div>
+   <div class="btnrow" style="margin:0"><button class="btn" type="button" onclick="loadPublicationRemoteV1812(true)">Atualizar sincronização</button><button class="btn primary" type="button" onclick="go('catalogDigital')">Abrir Catálogo Digital</button></div>
+  </div>
+  <div class="publication-note-v1812"><strong>Modo de leitura seguro.</strong> Nesta fase, Catálogo e Loja ainda reutilizam o mesmo estado público do produto. A separação individual dos dois canais só será ativada depois da alteração server-side e respetiva validação.</div>
+  <div id="publicationKpisV1812" class="publication-kpis-v1812"></div>
+  <section class="card publication-sync-v1812"><div><b id="publicationSyncTitleV1812">A verificar sincronização…</b><small id="publicationSyncDetailV1812">Comparação entre o Backoffice e a camada pública.</small></div><span id="publicationSyncBadgeV1812" class="badge warn">A verificar</span></section>
+  <section class="card">
+   <div class="publication-tools-v1812">
+    <div class="field search"><label>Pesquisar</label><input id="publicationSearchV1812" placeholder="Produto, código, categoria ou coleção…" oninput="renderPublicationCenterV1812()"></div>
+    <div class="field"><label>Estado</label><select id="publicationFilterV1812" onchange="renderPublicationCenterV1812()"><option value="all">Todos</option><option value="published">Publicados</option><option value="hidden">Ocultos</option><option value="issues">Com problemas</option><option value="photo">Sem fotografia</option><option value="price">Sem PVP</option><option value="tech">Ficha incompleta</option><option value="pending">Publicação pendente</option><option value="archived-public">Arquivados inconsistentes</option></select></div>
+    <div class="field"><label>Coleção</label><select id="publicationCollectionV1812" onchange="renderPublicationCenterV1812()"><option value="all">Todas</option><option value="none">Sem coleção</option></select></div>
+   </div>
+  </section>
+  <section class="card publication-table-v1812">
+   <div class="catalog-center-section-head-v1733"><div><div class="section-title" style="margin:0">Produtos e publicação</div><small id="publicationCountV1812">0 produtos</small></div></div>
+   <div class="tablewrap" style="margin-top:10px"><table><thead><tr><th>Produto</th><th>Interno</th><th>Público atual</th><th>Loja atual</th><th>Fotografia</th><th>PVP</th><th>Ficha</th><th>Coleções</th><th>Sincronização</th><th>Ações</th></tr></thead><tbody id="publicationBodyV1812"></tbody></table></div>
+  </section>
+ </div>
+</section> <section id="catalogDigital" class="screen">
     <div class="catalog-center-hero">
       <div><div class="dashboard-kicker">CATÁLOGO PÚBLICO</div><h2>Catálogo Digital</h2><p>Centro único para preparar o que o cliente vê: produtos publicados, homepage, coleções sazonais, tema ativo e pré-visualização.</p></div>
       <div class="catalog-center-actions"><button class="btn" onclick="loadCatalogDigitalCenterV160(true)">Atualizar</button><button class="btn primary" onclick="go('specialEditions');clearSpecialEditionForm();setTimeout(()=>document.getElementById('specialEditionName')?.focus(),80)">Nova ocasião</button></div>
@@ -5436,10 +5482,10 @@ function installNavKeyboard(){
 
 setTimeout(installNavKeyboard,0);
 
-const pages=[['dashboard','Dashboard'],['sale','Vendas'],['orders','Encomendas'],['quotes','Orçamentos'],['production','Produção'],['costs','Custos'],['stock','Stock'],['purchases','Compras'],['cash','Caixa'],['clients','Clientes'],['email','Comunicações · Email'],['digitalStats','Estatísticas Digitais'],['reports','Relatórios'],['quantityPricing','Precificação em quantidade'],['products','Produtos'],['catalogDigital','Catálogo Digital'],['catalogs','Catálogos'],['specialEditions','Edições Especiais'],['homepage','Homepage pública'],['campaigns','Campanhas'],['delivery','Entregas · futura Loja'],['legal','Informação Legal pública'],['settings','Configuração'],['cloud','Cloud Sync'],['backup','Backup']];
+const pages=[['dashboard','Dashboard'],['sale','Vendas'],['orders','Encomendas'],['quotes','Orçamentos'],['production','Produção'],['costs','Custos'],['stock','Stock'],['purchases','Compras'],['cash','Caixa'],['clients','Clientes'],['email','Comunicações · Email'],['digitalStats','Estatísticas Digitais'],['reports','Relatórios'],['quantityPricing','Precificação em quantidade'],['products','Produtos'],['publication','Publicação'],['catalogDigital','Catálogo Digital'],['catalogs','Catálogos'],['specialEditions','Edições Especiais'],['homepage','Homepage pública'],['campaigns','Campanhas'],['delivery','Entregas · futura Loja'],['legal','Informação Legal pública'],['settings','Configuração'],['cloud','Cloud Sync'],['backup','Backup']];
 const pageIcons={
  dashboard:'🏠',sale:'➕',orders:'🧾',quotes:'📄',production:'🛠️',costs:'🧮',stock:'📦',purchases:'🛒',cash:'💶',
- clients:'👥',email:'✉️',digitalStats:'📈',reports:'📊',quantityPricing:'🧮',products:'🕯️',catalogs:'🗂️',specialEditions:'🎉',homepage:'🖼️',campaigns:'📣',delivery:'🚚',legal:'⚖️',settings:'⚙️',cloud:'☁️',backup:'💾'
+ clients:'👥',email:'✉️',digitalStats:'📈',reports:'📊',quantityPricing:'🧮',products:'🕯️',publication:'🌐',catalogs:'🗂️',specialEditions:'🎉',homepage:'🖼️',campaigns:'📣',delivery:'🚚',legal:'⚖️',settings:'⚙️',cloud:'☁️',backup:'💾'
 };
 document.getElementById('nav').innerHTML=pages.map(([id,l])=>`<button data-page="${id}" onclick="go('${id}')"><span class="nav-icon">${pageIcons[id]||'•'}</span><span class="nav-label">${l}</span>${id==='orders'?'<span id="navOrderBadgeV12624" class="nav-order-badge-v12624 hidden">0</span>':''}${id==='email'?'<span id="navEmailBadgeV1716" class="nav-order-badge-v12624 hidden">0</span>':''}<span class="nav-active-dot"></span></button>`).join('');
 document.getElementById('today').textContent=new Date().toLocaleDateString('pt-PT',{weekday:'short',day:'2-digit',month:'short'});
@@ -6012,12 +6058,12 @@ function go(id){
  requestAnimationFrame(()=>target.classList.add('screen-enter'));
  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
  document.getElementById('pageTitle').textContent=pages.find(x=>x[0]===id)?.[1]||'';
- const contextMap={dashboard:'VISÃO GERAL',sale:'ENCOMENDAS',orders:'ENCOMENDAS',quotes:'ORÇAMENTOS',production:'PRODUÇÃO',costs:'GESTÃO',stock:'GESTÃO',purchases:'GESTÃO',cash:'FINANCEIRO',clients:'CLIENTES',email:'COMUNICAÇÕES',digitalStats:'ESTATÍSTICAS DIGITAIS',reports:'RELATÓRIOS',quantityPricing:'PRECIFICAÇÃO',products:'CATÁLOGO DIGITAL',catalogDigital:'CATÁLOGO DIGITAL',catalogs:'CATÁLOGO DIGITAL',specialEditions:'LOJA ONLINE',homepage:'LOJA ONLINE',campaigns:'MARKETING',delivery:'LOJA ONLINE',legal:'CONFORMIDADE',settings:'SISTEMA',cloud:'SISTEMA',backup:'SISTEMA'};
+ const contextMap={dashboard:'VISÃO GERAL',sale:'ENCOMENDAS',orders:'ENCOMENDAS',quotes:'ORÇAMENTOS',production:'PRODUÇÃO',costs:'GESTÃO',stock:'GESTÃO',purchases:'GESTÃO',cash:'FINANCEIRO',clients:'CLIENTES',email:'COMUNICAÇÕES',digitalStats:'ESTATÍSTICAS DIGITAIS',reports:'RELATÓRIOS',quantityPricing:'PRECIFICAÇÃO',products:'CATÁLOGO DIGITAL',publication:'PUBLICAÇÃO',catalogDigital:'CATÁLOGO DIGITAL',catalogs:'CATÁLOGO DIGITAL',specialEditions:'LOJA ONLINE',homepage:'LOJA ONLINE',campaigns:'MARKETING',delivery:'LOJA ONLINE',legal:'CONFORMIDADE',settings:'SISTEMA',cloud:'SISTEMA',backup:'SISTEMA'};
  const pc=document.getElementById('pageContext');if(pc)pc.textContent=contextMap[id]||'GESTÃO ArtEssencia';
  renderAll();if(id==='email')setTimeout(()=>loadEmailModuleV177(false),30);if(id==='digitalStats')setTimeout(()=>loadDigitalStatsV1795(false),30);if(id==='campaigns')setTimeout(()=>loadCampaignDashboardV12626(false),50);
  if(id==='delivery'){renderShopDeliverySettings();renderShopCapacityAgenda();}
  if(id==='quantityPricing')setTimeout(()=>renderQuantityPricingV1750(),20);
- if(id==='catalogDigital')loadCatalogDigitalCenterV160(false); if(id==='specialEditions'){renderSpecialEditionProductPicker([]);loadSpecialEditionsAdmin(false);} if(id==='homepage')loadHomepageAdminV12637(false);if(id==='legal')loadLegalAdminV1286(false);
+ if(id==='publication'){renderPublicationCenterV1812();loadPublicationRemoteV1812(false);} if(id==='catalogDigital')loadCatalogDigitalCenterV160(false); if(id==='specialEditions'){renderSpecialEditionProductPicker([]);loadSpecialEditionsAdmin(false);} if(id==='homepage')loadHomepageAdminV12637(false);if(id==='legal')loadLegalAdminV1286(false);
  const active=document.querySelector(`.nav button[data-page="${id}"]`);active?.scrollIntoView({block:'nearest',behavior:'smooth'});
  window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -17531,7 +17577,88 @@ document.addEventListener('visibilitychange',()=>{
  setTimeout(()=>{if(!personalizationCategorySelectOpenV1794)renderAll()},0)
 });
 
-function renderAll(){ensureQuotePaymentModel();ensureCostModel();syncPackagingSelect();renderClientSuggestions();renderDashboard();renderPicker();renderCart();renderOrders();renderProduction();renderCosts();renderStock();renderPurchases();renderCash();renderClients();renderQuotes();renderQuoteCart();renderProducts();renderCatalogs();renderSpecialEditionsAdmin();renderCatalogDigitalCenterV160();renderSettings();renderAprecoImportV1753();renderBusinessSettings();if(!personalizationCategorySelectOpenV1794)renderPersonalizationLibraryV1791();renderReports();renderDigitalStatsV1795();renderQuantityPricingV1750();renderLegalSummaryV1286();renderCloudUI();renderBackupInfo();renderOrderNotificationsV12624();renderPushStatusV12625();const s=sec();if(document.getElementById('lockMinutes'))document.getElementById('lockMinutes').value=String(s.lockMinutes??15)}
+let publicationRemoteRowsV1812=[],publicationRemoteLoadedAtV1812='',publicationRemoteErrorV1812='';
+function publicationExpectedPublicV1812(p){return !!p?.shopVisible&&!productArchivedV1803(p)&&p?.publicReleasePendingV1803!==true}
+function publicationIssueV1812(p){
+ const pc=productCompletenessV1762(p),price=Number(p?.price)>0,archivedPublic=productArchivedV1803(p)&&(!!p.shopVisible||!!p.mixVisible||productEditionIdsV138(p).length>0);
+ return archivedPublic||p?.publicReleasePendingV1803===true||(publicationExpectedPublicV1812(p)&&!pc.photo)||!price||!pc.tech;
+}
+function publicationRemoteMapV1812(){
+ const m=new Map();(publicationRemoteRowsV1812||[]).forEach(r=>{const k=String(r?.code||'').trim().toUpperCase();if(k)m.set(k,r)});return m;
+}
+function publicationSyncForV1812(p,map=publicationRemoteMapV1812()){
+ const expected=publicationExpectedPublicV1812(p),remote=map.get(String(p?.code||'').trim().toUpperCase()),actual=!!remote?.active&&!!remote?.available;
+ if(publicationRemoteErrorV1812)return{key:'unknown',label:'Não verificado'};
+ if(!publicationRemoteLoadedAtV1812)return{key:'unknown',label:'A verificar'};
+ return expected===actual?{key:'ok',label:'Sincronizado'}:{key:'bad',label:expected?'Em falta no público':'Ativo inesperado'};
+}
+function updatePublicationCollectionFilterV1812(){
+ const el=document.getElementById('publicationCollectionV1812');if(!el)return;const prev=el.value||'all';
+ const ids=[...new Set((db.products||[]).flatMap(p=>productEditionIdsV138(p)))];
+ const labels=new Map();(specialEditionsAdmin||[]).forEach(ed=>labels.set(String(editionIdV1244(ed)),String(ed.name||ed.slug||editionIdV1244(ed))));
+ el.innerHTML='<option value="all">Todas</option><option value="none">Sem coleção</option>'+ids.map(id=>'<option value="'+escapeAttr(id)+'">'+escapeHtml(labels.get(String(id))||id)+'</option>').join('');
+ el.value=[...el.options].some(o=>o.value===prev)?prev:'all';
+}
+async function loadPublicationRemoteV1812(force=false){
+ if(publicationRemoteLoadedAtV1812&&!force){renderPublicationCenterV1812();return}
+ publicationRemoteErrorV1812='';
+ try{
+  const cl=initCloudClient();if(!cl)throw new Error('Cloud indisponível');
+  const {data,error}=await cl.from('store_products').select('backoffice_product_id,code,active,available,image_url,price_online,updated_at');
+  if(error)throw error;publicationRemoteRowsV1812=Array.isArray(data)?data:[];publicationRemoteLoadedAtV1812=new Date().toISOString();
+ }catch(e){publicationRemoteErrorV1812=String(e?.message||e||'Erro de sincronização')}
+ renderPublicationCenterV1812();
+}
+function publicationOpenProductV1812(code){
+ go('products');setTimeout(()=>{editProduct(code);window.scrollTo({top:0,behavior:'smooth'})},120);
+}
+function publicationOpenCostsV1812(code){
+ go('costs');setTimeout(()=>{const s=document.getElementById('costProduct');if(s){s.value=code;try{renderProductRecipeEditor()}catch(e){}}},120);
+}
+function renderPublicationCenterV1812(){
+ const body=document.getElementById('publicationBodyV1812');if(!body)return;
+ updatePublicationCollectionFilterV1812();
+ const all=Array.isArray(db.products)?db.products:[],active=all.filter(p=>!productArchivedV1803(p)&&p.active!==false),remoteMap=publicationRemoteMapV1812();
+ const expected=active.filter(publicationExpectedPublicV1812),publishedNoPhoto=expected.filter(p=>!String(p.shopImageUrl||'').trim()),noPvp=active.filter(p=>!(Number(p.price)>0)),techIncomplete=active.filter(p=>!productTechSheetStateV146(p).ok);
+ const inconsistent=all.filter(p=>publicationSyncForV1812(p,remoteMap).key==='bad'),issues=all.filter(publicationIssueV1812);
+ const kpis=document.getElementById('publicationKpisV1812');
+ if(kpis)kpis.innerHTML=[
+  ['Produtos ativos',active.length,'Uso interno'],
+  ['Públicos',expected.length,'Estado atual comum'],
+  ['Sem fotografia',publishedNoPhoto.length,'Publicados'],
+  ['Sem PVP',noPvp.length,'Venda direta'],
+  ['Ficha incompleta',techIncomplete.length,'Materiais / quantidades'],
+  ['Divergências',inconsistent.length,'Backoffice ↔ público']
+ ].map(([l,v,n])=>'<div class="card publication-kpi-v1812"><span>'+l+'</span><strong>'+v+'</strong><small>'+n+'</small></div>').join('');
+ const syncTitle=document.getElementById('publicationSyncTitleV1812'),syncDetail=document.getElementById('publicationSyncDetailV1812'),syncBadge=document.getElementById('publicationSyncBadgeV1812');
+ if(publicationRemoteErrorV1812){if(syncTitle)syncTitle.textContent='⚠ Não foi possível verificar a camada pública';if(syncDetail)syncDetail.textContent=publicationRemoteErrorV1812;if(syncBadge){syncBadge.className='badge warn';syncBadge.textContent='Não verificado'}}
+ else if(!publicationRemoteLoadedAtV1812){if(syncTitle)syncTitle.textContent='A verificar sincronização…';if(syncDetail)syncDetail.textContent='Comparação entre o Backoffice e a camada pública.';if(syncBadge){syncBadge.className='badge warn';syncBadge.textContent='A verificar'}}
+ else{const remotePublic=(publicationRemoteRowsV1812||[]).filter(r=>r.active&&r.available).length;if(syncTitle)syncTitle.textContent=inconsistent.length?'⚠ '+inconsistent.length+' divergência(s) de publicação':'✓ Publicação sincronizada';if(syncDetail)syncDetail.textContent='Backoffice esperado: '+expected.length+' · Camada pública: '+remotePublic+' · Verificado '+new Date(publicationRemoteLoadedAtV1812).toLocaleString('pt-PT');if(syncBadge){syncBadge.className='badge '+(inconsistent.length?'bad':'ok');syncBadge.textContent=inconsistent.length?'Rever':'Sincronizado'}}
+ const q=String(document.getElementById('publicationSearchV1812')?.value||'').trim().toLocaleLowerCase('pt-PT'),filter=document.getElementById('publicationFilterV1812')?.value||'all',collection=document.getElementById('publicationCollectionV1812')?.value||'all';
+ const rows=all.filter(p=>{
+  const pc=productCompletenessV1762(p),pub=publicationExpectedPublicV1812(p),archPub=productArchivedV1803(p)&&(!!p.shopVisible||!!p.mixVisible||productEditionIdsV138(p).length>0),ed=productEditionIdsV138(p);
+  const text=[p.name,p.code,p.category,productEditionNamesV138(p).join(' ')].join(' ').toLocaleLowerCase('pt-PT');
+  const mq=!q||text.includes(q),mc=collection==='all'||(collection==='none'&&!ed.length)||ed.includes(collection);
+  const mf=filter==='all'||(filter==='published'&&pub)||(filter==='hidden'&&!pub&&!productArchivedV1803(p))||(filter==='issues'&&publicationIssueV1812(p))||(filter==='photo'&&pub&&!pc.photo)||(filter==='price'&&!(Number(p.price)>0))||(filter==='tech'&&!pc.tech)||(filter==='pending'&&p?.publicReleasePendingV1803===true)||(filter==='archived-public'&&archPub);
+  return mq&&mc&&mf;
+ });
+ const count=document.getElementById('publicationCountV1812');if(count)count.textContent=rows.length+(rows.length===1?' produto':' produtos');
+ body.innerHTML=rows.length?rows.map(p=>{
+  const pc=productCompletenessV1762(p),pub=publicationExpectedPublicV1812(p),sync=publicationSyncForV1812(p,remoteMap),eds=productEditionNamesV138(p);
+  return '<tr class="'+(productArchivedV1803(p)?'publication-muted-v1812':'')+'">'+
+   '<td class="publication-product-v1812"><b>'+escapeHtml(p.name||'Sem nome')+'</b><small>'+escapeHtml(p.code||'—')+' · '+escapeHtml(p.category||'—')+'</small></td>'+
+   '<td><span class="badge '+(productArchivedV1803(p)?'warn':'ok')+'">'+(productArchivedV1803(p)?'Arquivado':'Ativo')+'</span></td>'+
+   '<td><span class="badge '+(pub?'ok':'warn')+'">'+(pub?'Publicado':'Oculto')+'</span>'+(p?.publicReleasePendingV1803===true?'<br><small>Publicação pendente</small>':'')+'</td>'+
+   '<td><span class="badge '+(pub?'ok':'warn')+'">'+(pub?'Disponível':'Indisponível')+'</span><br><small>estado atual partilhado</small></td>'+
+   '<td><span class="badge '+(pc.photo?'ok':'warn')+'">'+(pc.photo?'✓':'Sem foto')+'</span></td>'+
+   '<td><span class="badge '+(Number(p.price)>0?'ok':'warn')+'">'+(Number(p.price)>0?euro(p.price):'Sem PVP')+'</span></td>'+
+   '<td><span class="badge '+(pc.tech?'ok':'warn')+'">'+escapeHtml(productTechSheetStateV146(p).label)+'</span></td>'+
+   '<td>'+(eds.length?eds.map(x=>'<span class="badge">'+escapeHtml(x)+'</span>').join(' '):'<span class="muted">—</span>')+'</td>'+
+   '<td><span class="badge '+(sync.key==='ok'?'ok':sync.key==='bad'?'bad':'warn')+'">'+escapeHtml(sync.label)+'</span></td>'+
+   '<td><div class="publication-actions-v1812"><button class="btn" type="button" onclick="publicationOpenProductV1812(\''+String(p.code||'').replaceAll("'","\\'")+'\')">Editar</button><button class="btn" type="button" onclick="publicationOpenCostsV1812(\''+String(p.code||'').replaceAll("'","\\'")+'\')">Custos / ficha</button></div></td></tr>';
+ }).join(''):'<tr><td colspan="10" class="empty">Nenhum produto corresponde aos filtros.</td></tr>';
+}
+ function renderAll(){ensureQuotePaymentModel();ensureCostModel();syncPackagingSelect();renderClientSuggestions();renderDashboard();renderPicker();renderCart();renderOrders();renderProduction();renderCosts();renderStock();renderPurchases();renderCash();renderClients();renderQuotes();renderQuoteCart();renderProducts();renderPublicationCenterV1812();renderCatalogs();renderSpecialEditionsAdmin();renderCatalogDigitalCenterV160();renderSettings();renderAprecoImportV1753();renderBusinessSettings();if(!personalizationCategorySelectOpenV1794)renderPersonalizationLibraryV1791();renderReports();renderDigitalStatsV1795();renderQuantityPricingV1750();renderLegalSummaryV1286();renderCloudUI();renderBackupInfo();renderOrderNotificationsV12624();renderPushStatusV12625();const s=sec();if(document.getElementById('lockMinutes'))document.getElementById('lockMinutes').value=String(s.lockMinutes??15)}
 document.addEventListener('input',e=>{if(e.target&&['costPackQty','costPackPrice'].includes(e.target.id))updateCostPreview()});
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;installBtn.classList.remove('hidden');installBanner.classList.remove('hidden')});
 async function installApp(){if(!deferredPrompt)return toast('No Chrome: menu ⋮ → Adicionar ao ecrã principal / Instalar app');deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;installBtn.classList.add('hidden');installBanner.classList.add('hidden')}
@@ -17563,7 +17690,7 @@ function globalSearchKeyV142(ev){
   if(!q)return;
   const hit=(pages||[]).find(([id,label])=>String(label).toLocaleLowerCase('pt-PT').includes(q)||String(id).toLocaleLowerCase('pt-PT').includes(q));
   if(hit){go(hit[0]);ev.currentTarget.value='';return;}
-  const aliases={venda:'sale',vendas:'sale',encomenda:'orders',encomendas:'orders',orçamento:'quotes',orcamento:'quotes',orçamentos:'quotes',producao:'production','produção':'production',materia:'stock','matéria':'stock',fornecedor:'purchases',cliente:'clients',relatorio:'reports','relatório':'reports',precificacao:'quantityPricing','precificação':'quantityPricing',quantidade:'quantityPricing',lote:'quantityPricing',produto:'products',catalogo:'catalogs','catálogo':'catalogs',colecao:'specialEditions','coleção':'specialEditions',entrega:'delivery',legal:'legal',configuracao:'settings','configuração':'settings'};
+  const aliases={venda:'sale',vendas:'sale',encomenda:'orders',encomendas:'orders',orçamento:'quotes',orcamento:'quotes',orçamentos:'quotes',producao:'production','produção':'production',materia:'stock','matéria':'stock',fornecedor:'purchases',cliente:'clients',relatorio:'reports','relatório':'reports',precificacao:'quantityPricing','precificação':'quantityPricing',quantidade:'quantityPricing',lote:'quantityPricing',produto:'products',publicacao:'publication','publicação':'publication',catalogo:'catalogs','catálogo':'catalogs',colecao:'specialEditions','coleção':'specialEditions',entrega:'delivery',legal:'legal',configuracao:'settings','configuração':'settings'};
   const key=Object.keys(aliases).find(k=>k.includes(q)||q.includes(k));
   if(key){go(aliases[key]);ev.currentTarget.value='';return;}
   toast('Não encontrei esse módulo');
