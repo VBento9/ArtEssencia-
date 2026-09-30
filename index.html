@@ -17226,8 +17226,8 @@ async function subscribeCloud(){
      const eventType=payload?.eventType||'UPDATE';
      const row=eventType==='DELETE'?payload?.old:payload?.new;
      const rid=row?.id||'';
-     if(k==='products'&&(cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1')){
-       cloudLogMsg('Atualização remota de produto adiada enquanto existem alterações locais pendentes'+(rid?' · '+rid.slice(0,8):''));
+     if(cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'){
+       cloudLogMsg('Atualização relacional remota adiada enquanto existem alterações locais pendentes · '+k+(rid?' · '+rid.slice(0,8):''));
        return
      }
      const changed=mergeRemoteRelationalRow(k,row,eventType);
