@@ -17738,6 +17738,26 @@ function operationalCloudSnapshotV139(){
  CLOUD_OPERATIONAL_KEYS_V139.forEach(k=>{if(db[k]!==undefined)out[k]=relClone(db[k])});
  return out
 }
+function operationalCloudRowSnapshotV1858(row){
+ const data=row?.data&&typeof row.data==='object'?row.data:{},out={};
+ CLOUD_OPERATIONAL_KEYS_V139.forEach(k=>{if(data[k]!==undefined)out[k]=relClone(data[k])});
+ return out
+}
+async function operationalCloudPushStateV1858(user){
+ let remote=null;
+ try{remote=await fetchCloudRowAuthoritative(user)}catch(e){
+   cloudLogMsg('Não foi possível comparar o snapshot operacional: '+cloudErrText(e));
+   return await pushOperationalCloudStateV139(user)
+ }
+ if(remote?.data&&stableStringify(operationalCloudSnapshotV139())===stableStringify(operationalCloudRowSnapshotV1858(remote))){
+   const rev=Number(remote.revision||0);
+   setCloudMeta({baseRevision:rev,remoteRevision:rev,lastCloudAt:remote.updated_at||cloudMeta().lastCloudAt,conflict:false,verified:true});
+   if(cloudConflict?.type==='revision')cloudConflict=null;
+   cloudLogMsg('Dados operacionais sem alterações · revisão Cloud alinhada em '+rev);
+   return remote
+ }
+ return await pushOperationalCloudStateV139(user)
+}
 function mergeOperationalCloudSnapshotV139(remoteData){
  if(!remoteData||typeof remoteData!=='object')return false;
  let changed=false;
@@ -17836,7 +17856,7 @@ async function cloudPushNow(showToast=true){
    const u=cloudUser||await ensureCloudSession();
    if(u){
      try{
-       await pushOperationalCloudStateV139(u);
+       await operationalCloudPushStateV1858(u);
        if(db?.settings?.shopDelivery)await syncShopDeliveryCloudV182(db.settings.shopDelivery);
        cloudLogMsg('Dados operacionais enviados · stock, compras, caixa, produção, configuração e entregas');
      }catch(e){
