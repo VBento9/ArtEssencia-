@@ -6030,7 +6030,7 @@ function save(scope='all'){
  localStorage.setItem(KEY,JSON.stringify(db));
  if(!cloudApplying){
    localStorage.setItem(REL_DIRTY,'1');
-   setCloudMeta({dirty:true,verified:false,conflict:false,localChangedAt:new Date().toISOString()});
+   setCloudMeta({dirty:true,verified:false,localChangedAt:new Date().toISOString()});
    clearTimeout(cloudPushTimer);
    if(cloudStartupDone)cloudPushTimer=setTimeout(async()=>{
      await syncPendingOrdersOnly(false);
@@ -13653,9 +13653,21 @@ async function syncShopDeliveryCloudV182(s=shopDeliverySettings()){
  const c=initCloudClient();
  const u=cloudUser||await ensureCloudSession();
  if(!u||!c)throw new Error('Sem sessão cloud');
+ clearTimeout(cloudPushTimer);
  const {data,error}=await c.rpc('artessencia_save_shop_delivery_v1',{p_shop_delivery:s});
  if(error)throw error;
  if(data!==true)throw new Error('A Cloud não confirmou as definições de entrega');
+ try{
+   const row=await fetchCloudRowAuthoritative(u);
+   if(row){
+     const rev=Number(row.revision||0);
+     setCloudMeta({baseRevision:rev,remoteRevision:rev,lastCloudAt:row.updated_at||cloudMeta().lastCloudAt});
+     saveConfirmedShadow(row)
+   }
+ }catch(e){cloudLogMsg('Entregas guardadas; revisão Cloud por confirmar: '+cloudErrText(e))}
+ if(cloudStartupDone&&cloudMeta().dirty&&!cloudConflict&&!cloudMeta().conflict){
+   cloudPushTimer=setTimeout(()=>cloudPushNow(false),700)
+ }
  return true;
 }
 async function syncDeliveryClosuresOnly(){
@@ -17857,8 +17869,7 @@ async function cloudPushNow(showToast=true){
    if(u){
      try{
        await operationalCloudPushStateV1858(u);
-       if(db?.settings?.shopDelivery)await syncShopDeliveryCloudV182(db.settings.shopDelivery);
-       cloudLogMsg('Dados operacionais enviados · stock, compras, caixa, produção, configuração e entregas');
+       cloudLogMsg('Dados operacionais enviados · stock, compras, caixa, produção e configuração');
      }catch(e){
        localStorage.setItem(REL_DIRTY,'1');
        const isConflict=String(e?.message||'').includes('cloud_revision_conflict')||e?.code==='40001';
