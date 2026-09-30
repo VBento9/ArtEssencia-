@@ -5638,7 +5638,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.8.1';
+const APP_VERSION='1.8.2';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -5937,6 +5937,7 @@ function load(){
 ],cash:[],purchases:[],stockMoves:[],productionRuns:[],themedBoxes:[],packaging:[{name:'Caixa pequena',capacity:2,cost:0},{name:'Caixa média',capacity:4,cost:0},{name:'Caixa presente',capacity:6,cost:0},{name:'Saco kraft',capacity:3,cost:0}]})
 }
 function renderAfterSaveV1800(scope='all'){
+ if(scope==='none')return;
  if(scope!=='products'){renderAll();return}
  // Otimização conservadora V1.8.00:
  // ao guardar um produto, atualizar apenas os módulos que dependem diretamente do catálogo.
@@ -13559,11 +13560,19 @@ function renderDeliveryClosurePicker(){const box=document.getElementById('delive
 function changeDeliveryClosureMonth(delta){deliveryClosurePickerOffset+=Number(delta)||0;renderDeliveryClosurePicker()}
 function toggleDeliveryClosureDate(iso){if(deliveryClosureSelection.has(iso))deliveryClosureSelection.delete(iso);else deliveryClosureSelection.add(iso);renderDeliveryClosurePicker()}
 function clearDeliveryClosureSelection(){deliveryClosureSelection.clear();renderDeliveryClosurePicker()}
+async function syncShopDeliveryCloudV182(s=shopDeliverySettings()){
+ const c=initCloudClient();
+ const u=cloudUser||await ensureCloudSession();
+ if(!u||!c)throw new Error('Sem sessão cloud');
+ const {data,error}=await c.rpc('artessencia_save_shop_delivery_v1',{p_shop_delivery:s});
+ if(error)throw error;
+ if(data!==true)throw new Error('A Cloud não confirmou as definições de entrega');
+ return true;
+}
 async function syncDeliveryClosuresOnly(){
  const s=shopDeliverySettings();
  try{
-   const u=cloudUser||await ensureCloudSession();if(!u||!cloudClient)throw new Error('Sem sessão cloud');
-   const {error}=await cloudClient.rpc('artessencia_save_shop_delivery_v1',{p_shop_delivery:s});if(error)throw error;
+   await syncShopDeliveryCloudV182(s);
    cloudLogMsg('Dias encerrados enviados para a loja');toast('Dias encerrados atualizados');
  }catch(e){cloudLogMsg('Falha ao enviar dias encerrados: '+cloudErrText(e));toast('Guardado localmente, mas falhou na cloud')}
 }
@@ -13668,10 +13677,7 @@ async function saveShopDeliverySettings(){
  if(s.orderApprovalMode==='production'&&!readiness.ok){s.orderApprovalMode='testing';const modeSel=document.getElementById('setOrderApprovalMode');if(modeSel)modeSel.value='testing';toast('Modo Produção não ativado: '+readiness.issues[0]);}
  save();renderShopDeliverySettings();renderShopCapacityAgenda();
  try{
-   const u=cloudUser||await ensureCloudSession();
-   if(!u||!cloudClient)throw new Error('Sem sessão cloud');
-   const {error}=await cloudClient.rpc('artessencia_save_shop_delivery_v1',{p_shop_delivery:s});
-   if(error)throw error;
+   await syncShopDeliveryCloudV182(s);
    cloudLogMsg('Definições de entrega da loja enviadas');
    toast('Entregas da loja atualizadas')
  }catch(e){
@@ -16552,16 +16558,16 @@ function downloadThemedBoxesPDF(){return downloadPdfBlob(buildThemedBoxesPdfBlob
 function shareThemedBoxesPDF(){return sharePdfBlob(buildThemedBoxesPdfBlob,'ArtEssencia_Conjuntos_Tematicos.pdf','Conjuntos temáticos ArtEssencia','Olá! Segue o catálogo de conjuntos temáticos ArtEssencia em PDF. 🕯️')}
 
 function pricingFixedCostsV1744(){return Array.isArray(db.settings.pricingFixedCosts)?db.settings.pricingFixedCosts:[]}
-function renderPricingFixedCostsV1744(){
+function renderPricingFixedCostsV1744(renderList=true){
  const list=document.getElementById('pricingFixedCostsListV1744');
- if(list){const rows=pricingFixedCostsV1744();list.innerHTML=rows.length?`<div class="pricing-fixed-table-v1746"><div class="pricing-fixed-columns-v1746"><span>Descrição</span><span>Valor mensal</span><span></span></div>${rows.map((x,i)=>`<div class="pricing-fixed-row-v1744"><input value="${escapeAttr(x.name||'')}" placeholder="Descrição" aria-label="Descrição do custo fixo" onchange="updatePricingFixedCostV1744(${i},'name',this.value)"><div class="cost-input-suffix-v110"><input type="number" min="0" step="0.01" value="${Number(x.value)||0}" aria-label="Valor mensal do custo fixo" onchange="updatePricingFixedCostV1744(${i},'value',this.value)"><span>€/mês</span></div><button type="button" class="btn pricing-fixed-remove-v1746" title="Remover custo" aria-label="Remover ${escapeAttr(x.name||'custo fixo')}" onclick="removePricingFixedCostV1744(${i})">×</button></div>`).join('')}</div>`:'<div class="empty pricing-fixed-empty-v1746">Sem custos fixos mensais registados.</div>'}
+ if(list&&renderList){const rows=pricingFixedCostsV1744();list.innerHTML=rows.length?`<div class="pricing-fixed-table-v1746"><div class="pricing-fixed-columns-v1746"><span>Descrição</span><span>Valor mensal</span><span></span></div>${rows.map((x,i)=>`<div class="pricing-fixed-row-v1744"><input value="${escapeAttr(x.name||'')}" placeholder="Descrição" aria-label="Descrição do custo fixo" onchange="updatePricingFixedCostV1744(${i},'name',this.value)"><div class="cost-input-suffix-v110"><input type="number" min="0" step="0.01" value="${Number(x.value)||0}" aria-label="Valor mensal do custo fixo" onchange="updatePricingFixedCostV1744(${i},'value',this.value)"><span>€/mês</span></div><button type="button" class="btn pricing-fixed-remove-v1746" title="Remover custo" aria-label="Remover ${escapeAttr(x.name||'custo fixo')}" onclick="removePricingFixedCostV1744(${i})">×</button></div>`).join('')}</div>`:'<div class="empty pricing-fixed-empty-v1746">Sem custos fixos mensais registados.</div>'}
  const total=pricingFixedCostsTotalV1744(),labor=pricingLaborHourlyRateV1745(),fixed=pricingFixedHourlyRateV1745();
  const a=document.getElementById('pricingFixedTotalV1744'),b=document.getElementById('pricingLaborHourlyV1745'),c=document.getElementById('pricingFixedHourlyV1745');if(a)a.textContent=euro(total);if(b)b.textContent=euro(labor)+'/h';if(c)c.textContent=euro(fixed)+'/h';
 }
 function renderPricingLaborModeV1745(){const mode=document.getElementById('cfgPricingLaborModeV1745')?.value||'hourly',h=document.getElementById('cfgPricingHourlyFieldV1745'),s=document.getElementById('cfgPricingSalaryFieldV1745');if(h)h.style.display=mode==='hourly'?'':'none';if(s)s.style.display=mode==='salary'?'':'none'}
-function addPricingFixedCostV1744(){db.settings.pricingFixedCosts=pricingFixedCostsV1744();db.settings.pricingFixedCosts.push({name:'',value:0});save();renderPricingFixedCostsV1744()}
-function updatePricingFixedCostV1744(i,key,val){const rows=pricingFixedCostsV1744();if(!rows[i])return;rows[i][key]=key==='value'?Math.max(0,Number(val)||0):String(val||'');db.settings.pricingFixedCosts=rows;save();renderPricingFixedCostsV1744();refreshProductChannelPricingV12620()}
-function removePricingFixedCostV1744(i){const rows=pricingFixedCostsV1744();if(!rows[i])return;const label=String(rows[i].name||'este custo').trim()||'este custo';if(!confirm(`Remover ${label}?`))return;rows.splice(i,1);db.settings.pricingFixedCosts=rows;save();renderPricingFixedCostsV1744();refreshProductChannelPricingV12620()}
+function addPricingFixedCostV1744(){db.settings.pricingFixedCosts=pricingFixedCostsV1744();db.settings.pricingFixedCosts.push({name:'',value:0});save('none');renderPricingFixedCostsV1744()}
+function updatePricingFixedCostV1744(i,key,val){const rows=pricingFixedCostsV1744();if(!rows[i])return;rows[i][key]=key==='value'?Math.max(0,Number(val)||0):String(val||'');db.settings.pricingFixedCosts=rows;save('none');renderPricingFixedCostsV1744(false);refreshProductChannelPricingV12620()}
+function removePricingFixedCostV1744(i){const rows=pricingFixedCostsV1744();if(!rows[i])return;const label=String(rows[i].name||'este custo').trim()||'este custo';if(!confirm(`Remover ${label}?`))return;rows.splice(i,1);db.settings.pricingFixedCosts=rows;save('none');renderPricingFixedCostsV1744();refreshProductChannelPricingV12620()}
 
 function renderSettings(){renderOperatingModeV1420();
  const mode=document.getElementById('cfgPricingLaborModeV1745'),ps=document.getElementById('cfgPricingSalaryV1744'),hr=document.getElementById('cfgPricingHourlyRateV1745'),hm=document.getElementById('cfgPricingHoursMonthV1745'),pm=document.getElementById('cfgPricingMarginPctV1745');
@@ -17679,7 +17685,8 @@ async function cloudPushNow(showToast=true){
    if(u){
      try{
        await pushOperationalCloudStateV139(u);
-       cloudLogMsg('Dados operacionais enviados · stock, compras, caixa, produção e configuração');
+       if(db?.settings?.shopDelivery)await syncShopDeliveryCloudV182(db.settings.shopDelivery);
+       cloudLogMsg('Dados operacionais enviados · stock, compras, caixa, produção, configuração e entregas');
      }catch(e){
        localStorage.setItem(REL_DIRTY,'1');
        const isConflict=String(e?.message||'').includes('cloud_revision_conflict')||e?.code==='40001';
