@@ -4203,6 +4203,25 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       </div>
       <div class="btnrow" style="margin-top:10px"><button class="btn primary" onclick="savePublicChannelStatusV1785('catalog')">Guardar estado do Catálogo</button></div>
     </section>
+    <section class="card" id="catalogFamiliesCardV1823" style="margin:12px 0">
+      <div class="catalog-center-section-head-v1733">
+        <div>
+          <div class="section-title" style="margin:0">Famílias do Catálogo</div>
+          <p class="muted" style="margin:4px 0 0">Controla como Velas e Resina orgânica aparecem no Catálogo público. As categorias técnicas dos produtos não são alteradas.</p>
+        </div>
+        <span id="catalogFamiliesStatusV1823" class="badge">Cloud</span>
+      </div>
+      <div class="form-grid" style="margin-top:10px">
+        <div class="field span2"><label>Velas · nome público</label><input id="catalogFamilyCandlesLabelV1823" maxlength="40" value="Velas"></div>
+        <div class="field"><label>Visível</label><select id="catalogFamilyCandlesEnabledV1823"><option value="1">Sim</option><option value="0">Não</option></select></div>
+        <div class="field"><label>Ordem</label><input id="catalogFamilyCandlesOrderV1823" type="number" min="0" max="100" step="1" value="10"></div>
+        <div class="field span2"><label>Resina · nome público</label><input id="catalogFamilyResinLabelV1823" maxlength="40" value="Resina orgânica"></div>
+        <div class="field"><label>Visível</label><select id="catalogFamilyResinEnabledV1823"><option value="1">Sim</option><option value="0">Não</option></select></div>
+        <div class="field"><label>Ordem</label><input id="catalogFamilyResinOrderV1823" type="number" min="0" max="100" step="1" value="20"></div>
+      </div>
+      <div class="soft-note" style="margin-top:10px">Mapeamento técnico protegido: <strong>Velas</strong> = Velas em molde + Velas em recipiente + Wax melts; <strong>Resina orgânica</strong> = Resina e Jesmonite. As coleções podem continuar a combinar ambas.</div>
+      <div class="btnrow" style="margin-top:10px"><button class="btn primary" type="button" onclick="saveCatalogFamiliesV1823()">Guardar famílias</button></div>
+    </section>
     <section class="card" id="promoCodesCardV1786" style="margin:12px 0">
   <div class="catalog-center-section-head-v1733">
     <div>
@@ -16241,7 +16260,45 @@ async function savePublicChannelStatusV1785(channel){
   cloudLogMsg('Estado público '+channel+' atualizado para '+mode);
  }catch(e){console.error(e);cloudLogMsg('Falha ao guardar estado público '+channel+': '+cloudErrText(e));toast('Não foi possível guardar o estado público')}
 }
-async function loadCatalogDigitalCenterV160(showToast=false){try{await Promise.all([loadSpecialEditionsAdmin(false),loadPublicChannelStatusV1785('catalog'),loadPromoCodesV1786(false)]);renderCatalogDigitalCenterV160();if(showToast)toast('Catálogo Digital atualizado')}catch(e){renderCatalogDigitalCenterV160();if(showToast)toast('Não foi possível atualizar o Catálogo Digital')}}
+let catalogFamiliesAdminV1823=[];
+function defaultCatalogFamiliesV1823(){return[
+ {id:'candles',label:'Velas',enabled:true,sort_order:10,categories:['Velas em molde','Velas em recipiente','Wax melts']},
+ {id:'resin',label:'Resina orgânica',enabled:true,sort_order:20,categories:['Resina e Jesmonite']}
+]}
+function renderCatalogFamiliesV1823(){
+ const rows=Array.isArray(catalogFamiliesAdminV1823)&&catalogFamiliesAdminV1823.length?catalogFamiliesAdminV1823:defaultCatalogFamiliesV1823();
+ const get=id=>rows.find(x=>x?.id===id)||defaultCatalogFamiliesV1823().find(x=>x.id===id);
+ const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=String(v??'')};
+ const c=get('candles'),r=get('resin');
+ set('catalogFamilyCandlesLabelV1823',c.label);set('catalogFamilyCandlesEnabledV1823',c.enabled===false?'0':'1');set('catalogFamilyCandlesOrderV1823',Number(c.sort_order)||0);
+ set('catalogFamilyResinLabelV1823',r.label);set('catalogFamilyResinEnabledV1823',r.enabled===false?'0':'1');set('catalogFamilyResinOrderV1823',Number(r.sort_order)||0);
+ const st=document.getElementById('catalogFamiliesStatusV1823');if(st){st.textContent='Configurado';st.className='badge ok'}
+}
+async function loadCatalogFamiliesV1823(){
+ const c=initCloudClient();if(!c)return null;
+ const u=cloudUser||await ensureCloudSession();if(!u)return null;
+ try{
+  const {data,error}=await c.rpc('artessencia_catalog_families_admin_v1');if(error)throw error;
+  catalogFamiliesAdminV1823=Array.isArray(data)?data:defaultCatalogFamiliesV1823();
+  renderCatalogFamiliesV1823();return catalogFamiliesAdminV1823
+ }catch(e){console.error(e);catalogFamiliesAdminV1823=defaultCatalogFamiliesV1823();renderCatalogFamiliesV1823();cloudLogMsg('Erro a carregar famílias do catálogo: '+cloudErrText(e));return null}
+}
+async function saveCatalogFamiliesV1823(){
+ const c=initCloudClient();if(!c)return toast('Liga primeiro a Cloud');
+ const u=cloudUser||await ensureCloudSession();if(!u)return toast('Inicia sessão na Cloud');
+ const labelC=String(document.getElementById('catalogFamilyCandlesLabelV1823')?.value||'').trim();
+ const labelR=String(document.getElementById('catalogFamilyResinLabelV1823')?.value||'').trim();
+ if(!labelC||!labelR)return toast('As duas famílias precisam de nome público');
+ const payload=[
+  {id:'candles',label:labelC,enabled:document.getElementById('catalogFamilyCandlesEnabledV1823')?.value!=='0',sort_order:Math.max(0,Math.min(100,Number(document.getElementById('catalogFamilyCandlesOrderV1823')?.value)||0))},
+  {id:'resin',label:labelR,enabled:document.getElementById('catalogFamilyResinEnabledV1823')?.value!=='0',sort_order:Math.max(0,Math.min(100,Number(document.getElementById('catalogFamilyResinOrderV1823')?.value)||0))}
+ ];
+ try{
+  const {data,error}=await c.rpc('artessencia_save_catalog_families_admin_v1',{p_families:payload});if(error)throw error;
+  catalogFamiliesAdminV1823=Array.isArray(data)?data:payload;renderCatalogFamiliesV1823();toast('Famílias do Catálogo atualizadas');cloudLogMsg('Famílias públicas do catálogo atualizadas')
+ }catch(e){console.error(e);cloudLogMsg('Falha ao guardar famílias do catálogo: '+cloudErrText(e));toast('Não foi possível guardar as famílias')}
+}
+async function loadCatalogDigitalCenterV160(showToast=false){try{await Promise.all([loadSpecialEditionsAdmin(false),loadPublicChannelStatusV1785('catalog'),loadCatalogFamiliesV1823(),loadPromoCodesV1786(false)]);renderCatalogDigitalCenterV160();if(showToast)toast('Catálogo Digital atualizado')}catch(e){renderCatalogDigitalCenterV160();if(showToast)toast('Não foi possível atualizar o Catálogo Digital')}}
 
 function renderSpecialEditionsAdmin(){
  const grid=document.getElementById('specialEditionsGrid');if(!grid)return;
