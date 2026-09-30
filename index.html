@@ -4502,6 +4502,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
     <div class="campaign-grid">
       <div class="card campaign-card">
         <div class="section-title">Criar campanha</div>
+        <div class="form-grid" style="margin-top:10px"><div class="field span2"><label>Modelo predefinido</label><div style="display:flex;gap:8px;flex-wrap:wrap"><select id="campaignPresetV183" style="flex:1;min-width:220px"><option value="">Escolher modelo…</option><option value="catalog_launch">Lançamento do Catálogo</option><option value="new_collection">Nova coleção</option><option value="flash_collection">Coleção relâmpago</option><option value="promo">Promoção</option><option value="last_days">Últimos dias</option></select><button class="btn" type="button" onclick="applyCampaignPresetV183()">Aplicar modelo</button></div><small class="muted">Preenche o formulário atual. Podes ajustar o texto antes de testar ou enviar.</small></div></div>
         <div class="form-grid">
           <div class="field span2"><label>Título</label><input id="campaignTitleV12626" maxlength="60" placeholder="Ex.: 🎄 Natal ArtEssencia chegou"></div>
           <div class="field span2"><label>Mensagem</label><textarea id="campaignBodyV12626" maxlength="180" rows="4" placeholder="Ex.: Descobre a nossa nova coleção ArtEssencia."></textarea></div>
@@ -5638,7 +5639,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.8.2';
+const APP_VERSION='1.8.3';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -6180,6 +6181,19 @@ window.addEventListener('pageshow',()=>setTimeout(renderPushStatusV12625,350));
 
 // ArtEssencia V12.6.26 — Campanhas Push Marketing (separadas do Push de Administração).
 let campaignBusyV12626=false;
+const CAMPAIGN_PRESETS_V183={
+ catalog_launch:{title:'📲 O Catálogo ArtEssencia já está disponível',body:'Instala a app, guarda os teus favoritos e ativa notificações para acompanhares todas as novidades.',kind:'news',audience:'catalog',destination:'catalog',label:'Lançamento do Catálogo'},
+ new_collection:{title:'✨ Nova coleção ArtEssencia',body:'Já podes descobrir a nova coleção ArtEssencia e os artigos disponíveis nesta edição especial.',kind:'collection',audience:'both',destination:'collection',label:'Nova coleção'},
+ flash_collection:{title:'⚡ Coleção relâmpago ArtEssencia',body:'Uma edição especial por tempo limitado acaba de chegar. Descobre os artigos enquanto estão disponíveis.',kind:'flash',audience:'both',destination:'collection',label:'Coleção relâmpago'},
+ promo:{title:'🎁 Promoção ArtEssencia',body:'Temos uma condição especial disponível por tempo limitado. Consulta as novidades e aproveita enquanto está ativa.',kind:'promo',audience:'both',destination:'home',label:'Promoção'},
+ last_days:{title:'⏳ Últimos dias desta edição',body:'Esta edição ArtEssencia está quase a terminar. Consulta os artigos disponíveis antes de encerrarem.',kind:'last_days',audience:'both',destination:'collection',label:'Últimos dias'}
+};
+function applyCampaignPresetV183(){
+ const key=$('campaignPresetV183')?.value||'',p=CAMPAIGN_PRESETS_V183[key];if(!p)return toast('Escolhe primeiro um modelo predefinido');
+ [['campaignTitleV12626',p.title],['campaignBodyV12626',p.body],['campaignKindV1796',p.kind],['campaignAudienceV1796',p.audience],['campaignDestinationV12626',p.destination],['campaignLabelV12626',p.label]].forEach(([id,v])=>{const el=$(id);if(el)el.value=v||''});
+ updateCampaignPreviewV12626();
+ toast('Modelo aplicado · revê antes de enviar');
+}
 function campaignFormV12626(){return {title:($('campaignTitleV12626')?.value||'').trim(),body:($('campaignBodyV12626')?.value||'').trim(),kind:$('campaignKindV1796')?.value||'custom',audience:$('campaignAudienceV1796')?.value||'both',destination:$('campaignDestinationV12626')?.value||'home',label:($('campaignLabelV12626')?.value||'').trim()}}
 
 // V12.6.37 — gestão central da Homepage ArtEssencia
