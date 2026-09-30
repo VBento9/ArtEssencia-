@@ -5415,6 +5415,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
             <div class="field"><label>Medidas</label><input id="prodPublicDimensionsV1820" type="text" placeholder="Ex.: 8 × 6 cm"></div>
             <div class="field"><label>Tempo de queima</label><input id="prodPublicBurnTimeV1820" type="text" placeholder="Ex.: aprox. 20 h"></div>
             <div class="field span2"><label>Material / recipiente</label><input id="prodPublicMaterialContainerV1820" type="text" placeholder="Ex.: vidro, gesso, molde decorativo"></div>
+            <div class="field"><label>Estado público</label><select id="prodPublicStatusV1841"><option value="">Não mostrar</option><option value="available">Disponível</option><option value="made_to_order">Produzido por encomenda</option><option value="last_units">Últimas unidades</option><option value="temporarily_sold_out">Esgotado temporariamente</option><option value="prelaunch">Pré-lançamento</option></select><small class="mix-help">Informativo: não altera stock, publicação nem disponibilidade técnica.</small></div>
+            <div class="field"><label>Prazo indicativo</label><input id="prodPublicLeadTimeV1841" type="text" maxlength="80" placeholder="Ex.: 3–5 dias úteis"><small class="mix-help">Opcional. Usa apenas quando conseguires manter o prazo atualizado.</small></div>
           </div>
         </div>
         <div class="field span2 product-personalization-v1773">
@@ -14742,7 +14744,9 @@ function productPublicCharacteristicsFromFormV1820(){
   approximateWeight:String(document.getElementById('prodPublicWeightV1820')?.value||'').trim(),
   dimensions:String(document.getElementById('prodPublicDimensionsV1820')?.value||'').trim(),
   burnTime:String(document.getElementById('prodPublicBurnTimeV1820')?.value||'').trim(),
-  materialContainer:String(document.getElementById('prodPublicMaterialContainerV1820')?.value||'').trim()
+  materialContainer:String(document.getElementById('prodPublicMaterialContainerV1820')?.value||'').trim(),
+  publicStatus:String(document.getElementById('prodPublicStatusV1841')?.value||'').trim(),
+  leadTime:String(document.getElementById('prodPublicLeadTimeV1841')?.value||'').trim()
  }
 }
 function fillProductPublicCharacteristicsV1820(p){
@@ -14752,7 +14756,9 @@ function fillProductPublicCharacteristicsV1820(p){
   prodPublicWeightV1820:x.approximateWeight||'',
   prodPublicDimensionsV1820:x.dimensions||'',
   prodPublicBurnTimeV1820:x.burnTime||'',
-  prodPublicMaterialContainerV1820:x.materialContainer||''
+  prodPublicMaterialContainerV1820:x.materialContainer||'',
+  prodPublicStatusV1841:x.publicStatus||'',
+  prodPublicLeadTimeV1841:x.leadTime||''
  };
  for(const [id,value] of Object.entries(values)){const el=document.getElementById(id);if(el)el.value=value}
 }
