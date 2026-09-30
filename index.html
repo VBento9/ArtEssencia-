@@ -14742,7 +14742,7 @@ function saveProduct(){
  const savedProduct=existing||db.products[db.products.length-1];
  if(!existing&&newProductRecipeDraftV1805.lines.length)db.productRecipes[code]=newProductRecipeDraftV1805.lines.map(x=>({item:x.item,qty:Number(x.qty)||0}));
  else if(!db.productRecipes[code])db.productRecipes[code]=[];
- save('products');setTimeout(()=>syncProductEditionAvailabilityV12618(savedProduct),0);void syncProductPublicCharacteristicsV1820(savedProduct);void finalizePendingProductImageV1806(true);
+ save('products');setTimeout(()=>syncProductEditionAvailabilityV12618(savedProduct),0);void finalizePendingProductImageV1806(true);
  clearNewProductRecipeDraftV1805();resetProductEditorAfterSaveV1749();
  setProductSaveStateV145('saved',wasEditing?'Alterações guardadas':'Produto guardado com sucesso',`${name} · produto guardado. O editor foi limpo para um novo registo.`);toast(wasEditing?'Alterações guardadas':'Produto guardado com sucesso')
 }
@@ -17225,6 +17225,10 @@ async function subscribeCloud(){
      const eventType=payload?.eventType||'UPDATE';
      const row=eventType==='DELETE'?payload?.old:payload?.new;
      const rid=row?.id||'';
+     if(k==='products'&&(cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1')){
+       cloudLogMsg('Atualização remota de produto adiada enquanto existem alterações locais pendentes'+(rid?' · '+rid.slice(0,8):''));
+       return
+     }
      const changed=mergeRemoteRelationalRow(k,row,eventType);
      cloudLogMsg((changed?'Alteração recebida':'Alteração confirmada')+' em '+k+(rid?' · '+rid.slice(0,8):''));
      setCloudMeta({verified:true,lastSync:new Date().toISOString(),conflict:false});
