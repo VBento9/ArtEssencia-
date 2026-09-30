@@ -17152,6 +17152,10 @@ async function ensureCloudSession(){const c=initCloudClient();if(!c)return null;
 
 function mergeRemoteRelationalRow(kind,row,eventType='UPDATE'){
  if(!row)return false;
+ if((cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1')&&!cloudApplying){
+   cloudLogMsg('Alteração relacional remota adiada enquanto existem alterações locais pendentes · '+kind);
+   return false
+ }
  const map={
    clients:{key:'clients',table:'client'},
    products:{key:'products',table:'product'},
