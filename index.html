@@ -5749,7 +5749,7 @@ const REL_DIRTY='artessencia_v10_rel_dirty',
       REL_ORDER_SHADOW='artessencia_v12_order_shadow',
       REL_TABLES={clients:'artessencia_v1_clients',products:'artessencia_v1_products',orders:'artessencia_v1_orders',quotes:'artessencia_v1_quotes',sales:'artessencia_v1_sales'};
 let db=load(), cart=[], quoteCart=[], unlocked=true, deferredPrompt=null, idleTimer=null, editingPurchaseId=null, editingCashId=null, editingStockIndex=null;
-let cloudClient=null, cloudUser=null, cloudChannel=null, cloudPushTimer=null, cloudApplying=false, cloudBusy=false, cloudConflict=null, cloudStartupDone=false, cloudHydrating=false;
+let cloudClient=null, cloudUser=null, cloudChannel=null, cloudPushTimer=null, cloudApplying=false, cloudBusy=false, cloudPushRunning=false, cloudPushPending=false, cloudConflict=null, cloudStartupDone=false, cloudHydrating=false;
 
 function stableStringify(v){
  if(v===null||typeof v!=='object')return JSON.stringify(v);
@@ -6031,11 +6031,7 @@ function save(scope='all'){
  if(!cloudApplying){
    localStorage.setItem(REL_DIRTY,'1');
    setCloudMeta({dirty:true,verified:false,localChangedAt:new Date().toISOString()});
-   clearTimeout(cloudPushTimer);
-   if(cloudStartupDone)cloudPushTimer=setTimeout(async()=>{
-     await syncPendingOrdersOnly(false);
-     await cloudPushNow(false)
-   },650)
+   scheduleCloudPushV1860(650)
  }
  renderAfterSaveV1800(scope)
 }
@@ -7230,7 +7226,9 @@ async function deleteTestOrder(id){
  cloudApplying=true;
  try{localStorage.setItem(KEY,JSON.stringify(db));renderAll()}
  finally{cloudApplying=false}
- if(!relOrderPendingSet().size)localStorage.removeItem(REL_DIRTY);
+ localStorage.setItem(REL_DIRTY,'1');
+ setCloudMeta({dirty:true,verified:false,conflict:false,localChangedAt:new Date().toISOString()});
+ scheduleCloudPushV1860(250);
 
  try{orderDialog?.close()}catch(_){}
  cloudLogMsg('Teste eliminado persistentemente da Loja/Cloud: '+id);
@@ -7426,8 +7424,9 @@ async function deleteOrderPermanent(id){
      cloudApplying=false
    }
 
-   if(!relOrderPendingSet().size)localStorage.removeItem(REL_DIRTY);
-   setCloudMeta({dirty:relOrderPendingSet().size>0,verified:true,conflict:false,lastSync:new Date().toISOString()});
+   localStorage.setItem(REL_DIRTY,'1');
+   setCloudMeta({dirty:true,verified:false,conflict:false,localChangedAt:new Date().toISOString()});
+   scheduleCloudPushV1860(250);
    cloudLogMsg('Encomenda eliminada definitivamente: '+id);
    try{orderDialog?.close()}catch(_){}
    toast('Encomenda eliminada definitivamente')
@@ -7511,8 +7510,9 @@ async function deleteOrder(id){
      cloudApplying=false
    }
 
-   if(!relOrderPendingSet().size)localStorage.removeItem(REL_DIRTY);
-   setCloudMeta({dirty:relOrderPendingSet().size>0,verified:true,conflict:false,lastSync:new Date().toISOString()});
+   localStorage.setItem(REL_DIRTY,'1');
+   setCloudMeta({dirty:true,verified:false,conflict:false,localChangedAt:new Date().toISOString()});
+   scheduleCloudPushV1860(250);
    cloudLogMsg('Encomenda eliminada persistentemente: '+id);
    toast('Encomenda eliminada da Cloud e do dispositivo')
  }catch(e){
@@ -13653,7 +13653,6 @@ async function syncShopDeliveryCloudV182(s=shopDeliverySettings()){
  const c=initCloudClient();
  const u=cloudUser||await ensureCloudSession();
  if(!u||!c)throw new Error('Sem sessão cloud');
- clearTimeout(cloudPushTimer);
  const {data,error}=await c.rpc('artessencia_save_shop_delivery_v1',{p_shop_delivery:s});
  if(error)throw error;
  if(data!==true)throw new Error('A Cloud não confirmou as definições de entrega');
@@ -13666,7 +13665,7 @@ async function syncShopDeliveryCloudV182(s=shopDeliverySettings()){
    }
  }catch(e){cloudLogMsg('Entregas guardadas; revisão Cloud por confirmar: '+cloudErrText(e))}
  if(cloudStartupDone&&cloudMeta().dirty&&!cloudConflict&&!cloudMeta().conflict){
-   cloudPushTimer=setTimeout(()=>cloudPushNow(false),700)
+   scheduleCloudPushV1860(700)
  }
  return true;
 }
@@ -14733,11 +14732,7 @@ function savePersonalizationCategoryV1793(){
  if(!cloudApplying){
   localStorage.setItem(REL_DIRTY,'1');
   setCloudMeta({dirty:true,verified:false,conflict:false,localChangedAt:new Date().toISOString()});
-  clearTimeout(cloudPushTimer);
-  if(cloudStartupDone)cloudPushTimer=setTimeout(async()=>{
-   await syncPendingOrdersOnly(false);
-   await cloudPushNow(false)
-  },650)
+  scheduleCloudPushV1860(650)
  }
 }
 function setMasterItemCategoryV1792(type,key,category){
@@ -15771,11 +15766,7 @@ function saveCreatorWithoutRenderV12614(){
  if(!cloudApplying){
    localStorage.setItem(REL_DIRTY,'1');
    setCloudMeta({dirty:true,verified:false,conflict:false,localChangedAt:new Date().toISOString()});
-   clearTimeout(cloudPushTimer);
-   if(cloudStartupDone)cloudPushTimer=setTimeout(async()=>{
-     await syncPendingOrdersOnly(false);
-     await cloudPushNow(false)
-   },650)
+   scheduleCloudPushV1860(650)
  }
 }
 function commitCreatorThemesV12612(debounceCloud=true){
@@ -17126,7 +17117,9 @@ async function deleteQuote(id){
  db.quotes=(db.quotes||[]).filter(x=>x.id!==id);
  localStorage.setItem(KEY,JSON.stringify(db));
  if(cleanedQuoteCashV1783&&u){try{await pushOperationalCloudStateV139(u)}catch(e){localStorage.setItem(REL_DIRTY,'1');setCloudMeta({dirty:true,verified:false,conflict:false});cloudLogMsg('Orçamento eliminado, mas limpeza do Caixa ficou pendente de Cloud: '+cloudErrText(e));renderQuotes();renderCloudUI();toast('Orçamento eliminado; sincronização da limpeza do Caixa ficou pendente');return}}
- setCloudMeta({dirty:false,verified:true,conflict:false,lastSync:new Date().toISOString()});
+ localStorage.setItem(REL_DIRTY,'1');
+ setCloudMeta({dirty:true,verified:false,conflict:false,localChangedAt:new Date().toISOString()});
+ scheduleCloudPushV1860(250);
  cloudLogMsg('Orçamento eliminado definitivamente: '+id);
  renderQuotes();renderCloudUI();
  toast('Orçamento eliminado definitivamente')
@@ -17336,7 +17329,7 @@ function renderCloudUICore(){
 function renderCloudUI(){
  relPruneOrphanPendingOrdersV1741();
  let meta=cloudMeta();
- const realPending=localStorage.getItem(REL_DIRTY)==='1'||relOrderPendingSet().size>0;
+ const realPending=localStorage.getItem(REL_DIRTY)==='1'||relOrderPendingSet().size>0||cloudPushPending||cloudPushRunning;
  if(meta.dirty&&!realPending&&!cloudBusy&&!cloudHydrating){
    meta={...meta,dirty:false,verified:true};
    localStorage.setItem(CLOUD_META,JSON.stringify(meta));
@@ -17345,7 +17338,7 @@ function renderCloudUI(){
  meta=cloudMeta();
  const cfg=cloudCfg(),online=navigator.onLine!==false;
  const connected=!!cloudUser;
- const dirty=!!meta.dirty;
+ const dirty=!!meta.dirty||realPending;
  const hero=document.getElementById('cloudHeroStatus');
  if(hero){
    hero.textContent=!online?'SEM INTERNET':connected?(dirty?'POR SINCRONIZAR':'SINCRONIZADA'):(cfg.url?'DESLIGADA':'NÃO CONFIGURADA');
@@ -17361,7 +17354,7 @@ function renderCloudUI(){
 }
 
 function saveCloudConfig(){const url=(document.getElementById('cloudUrl')?.value||'').trim().replace(/\/$/,'');const key=(document.getElementById('cloudKey')?.value||'').trim();const email=(document.getElementById('cloudEmail')?.value||'').trim();if(url&&!/^https:\/\/[^\s]+$/i.test(url)){toast('URL Supabase inválido');return false}if((url&&!key)||(!url&&key)){toast('Preenche URL e chave');return false}const prev=cloudCfg();localStorage.setItem(CLOUD_CFG,JSON.stringify({url,key,email}));if(prev.url!==url||prev.key!==key){cloudClient=null;cloudUser=null;cloudChannel=null;setCloudMeta({verified:false})}cloudLogMsg('Configuração cloud guardada');toast('Configuração cloud guardada');renderCloudUI();return true}
-function initCloudClient(){const cfg=cloudCfg();if(!cfg.url||!cfg.key)return null;if(!window.supabase||!window.supabase.createClient){cloudLogMsg('Biblioteca Supabase indisponível');return null}if(cloudClient)return cloudClient;cloudClient=window.supabase.createClient(cfg.url,cfg.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},db:{schema:'public'}});cloudClient.auth.onAuthStateChange((event,session)=>{cloudUser=session?.user||null;renderCloudUI();if(cloudUser&&cloudStartupDone&&!cloudHydrating&&(event==='SIGNED_IN'||event==='TOKEN_REFRESHED')&&!cloudChannel)subscribeCloud()});return cloudClient}
+function initCloudClient(){const cfg=cloudCfg();if(!cfg.url||!cfg.key)return null;if(!window.supabase||!window.supabase.createClient){cloudLogMsg('Biblioteca Supabase indisponível');return null}if(cloudClient)return cloudClient;cloudClient=window.supabase.createClient(cfg.url,cfg.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},db:{schema:'public'}});cloudClient.auth.onAuthStateChange((event,session)=>{cloudUser=session?.user||null;renderCloudUI();if(cloudUser&&cloudStartupDone&&!cloudHydrating&&(event==='SIGNED_IN'||event==='TOKEN_REFRESHED')){if(!cloudChannel)subscribeCloud();if((cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending)&&!cloudMeta().conflict&&!hasRestorePendingV12645())scheduleCloudPushV1860(300)}});return cloudClient}
 function cloudStateQuery(){return cloudClient.schema('public').from(CLOUD_TABLE)}
 function cloudErrText(e){if(!e)return 'Erro desconhecido';const parts=[];if(e.message)parts.push(e.message);if(e.code)parts.push('code='+e.code);if(e.details)parts.push('details='+e.details);if(e.hint)parts.push('hint='+e.hint);if(e.status)parts.push('status='+e.status);return parts.join(' | ')}
 async function cloudApiDiagnostic(showToast=false){
@@ -17402,7 +17395,11 @@ async function cloudConnect(){
    cloudHydrating=false;cloudStartupDone=true;
    cloudLogMsg('Erro V10: '+cloudErrText(e));
    toast('Erro ao ligar V10: '+(e.message||'verifica os dados'))
- }finally{cloudBusy=false;renderCloudUI()}
+ }finally{
+   cloudBusy=false;
+   renderCloudUI();
+   if(cloudPushPending&&cloudStartupDone&&!cloudHydrating&&!cloudMeta().conflict&&!hasRestorePendingV12645()&&navigator.onLine!==false) scheduleCloudPushV1860(250)
+ }
 }
 async function cloudDisconnect(){try{if(cloudChannel&&cloudClient)await cloudClient.removeChannel(cloudChannel);cloudChannel=null;if(cloudClient)await cloudClient.auth.signOut()}catch(e){}cloudUser=null;cloudConflict=null;cloudStartupDone=true;setCloudMeta({conflict:false,verified:false});cloudLogMsg('Sessão cloud terminada');renderCloudUI()}
 async function ensureCloudSession(){const c=initCloudClient();if(!c)return null;try{const {data}=await c.auth.getSession();cloudUser=data?.session?.user||null;return cloudUser}catch(e){return null}}
@@ -17639,9 +17636,8 @@ function restoreCloudSafetySnapshot(){const raw=localStorage.getItem(CLOUD_SAFET
 function markCloudDirty(){
  if(cloudApplying)return;
  localStorage.setItem(REL_DIRTY,'1');
- setCloudMeta({dirty:true,verified:false,conflict:false});
- clearTimeout(cloudPushTimer);
- if(cloudStartupDone&&!cloudHydrating)cloudPushTimer=setTimeout(()=>cloudPushNow(false),500);
+ setCloudMeta({dirty:true,verified:false,conflict:false,localChangedAt:new Date().toISOString()});
+ scheduleCloudPushV1860(500);
  renderCloudUI()
 }
 function cloudSleep(ms){return new Promise(r=>setTimeout(r,ms))}
@@ -17755,6 +17751,33 @@ function operationalCloudRowSnapshotV1858(row){
  CLOUD_OPERATIONAL_KEYS_V139.forEach(k=>{if(data[k]!==undefined)out[k]=relClone(data[k])});
  return out
 }
+async function validateCloudRevisionBeforePushV1860(user){
+ if(!user||!cloudClient)return false;
+ const remote=await fetchCloudRowAuthoritative(user);
+ if(!remote)return true;
+ const meta=cloudMeta(),remoteRev=Number(remote.revision||0),baseRev=Number(meta.baseRevision||0);
+ if(remoteRev<=0)return true;
+ if(baseRev<=0){
+   if(remote.device_id&&remote.device_id===getDeviceId()){
+     setCloudMeta({baseRevision:remoteRev,remoteRevision:remoteRev,lastCloudAt:remote.updated_at||meta.lastCloudAt});
+     return true
+   }
+   cloudConflict={type:'revision',baseRevision:baseRev,remoteRevision:remoteRev};
+   setCloudMeta({dirty:true,conflict:true,verified:false,remoteRevision:remoteRev});
+   cloudLogMsg('Conflito Cloud preventivo · revisão local desconhecida · Cloud '+remoteRev);
+   return false
+ }
+ if(remoteRev>baseRev&&remote.device_id!==getDeviceId()){
+   cloudConflict={type:'revision',baseRevision:baseRev,remoteRevision:remoteRev};
+   setCloudMeta({dirty:true,conflict:true,verified:false,remoteRevision:remoteRev});
+   cloudLogMsg('Conflito Cloud preventivo · base '+baseRev+' · Cloud '+remoteRev+' · nenhum dado relacional foi enviado');
+   return false
+ }
+ if(remoteRev>baseRev&&remote.device_id===getDeviceId()){
+   setCloudMeta({baseRevision:remoteRev,remoteRevision:remoteRev,lastCloudAt:remote.updated_at||meta.lastCloudAt})
+ }
+ return true
+}
 async function operationalCloudPushStateV1858(user){
  let remote=null;
  try{remote=await fetchCloudRowAuthoritative(user)}catch(e){
@@ -17857,16 +17880,52 @@ async function cloudPushNow(showToast=true){
    if(showToast)toast('Restauro pendente — escolhe primeiro manter este dispositivo ou usar a Cloud');
    return false;
  }
- if(cloudBusy)return false;
+ if(cloudBusy||cloudPushRunning){
+   cloudPushPending=true;
+   scheduleCloudPushV1860(500);
+   return false
+ }
  if(!cloudStartupDone||cloudHydrating){
+   cloudPushPending=true;
    localStorage.setItem(REL_DIRTY,'1');
    setCloudMeta({dirty:true,verified:false,conflict:false});
    return false
  }
+ cloudPushRunning=true;
+ try{
+ const u0=cloudUser||await ensureCloudSession();
+ if(!u0){
+   cloudPushPending=true;
+   localStorage.setItem(REL_DIRTY,'1');
+   setCloudMeta({dirty:true,verified:false,conflict:false});
+   cloudLogMsg('Sincronização pendente · sessão Cloud temporariamente indisponível');
+   return false
+ }
+ try{
+   const revisionOk=await validateCloudRevisionBeforePushV1860(u0);
+   if(!revisionOk){
+     if(showToast)toast('Conflito Cloud — existem alterações noutro dispositivo');
+     return false
+   }
+ }catch(e){
+   localStorage.setItem(REL_DIRTY,'1');
+   setCloudMeta({dirty:true,verified:false});
+   cloudLogMsg('Pré-validação Cloud falhou · nenhum dado enviado: '+cloudErrText(e));
+   if(showToast)toast('Não foi possível validar a revisão Cloud');
+   return false
+ }
+ await syncPendingOrdersOnly(false);
  const ok=await relationalSyncCore(false);
  if(ok){
    const u=cloudUser||await ensureCloudSession();
-   if(u){
+   if(!u){
+     cloudPushPending=true;
+     localStorage.setItem(REL_DIRTY,'1');
+     setCloudMeta({dirty:true,verified:false,conflict:false});
+     cloudLogMsg('Sincronização pendente · sessão Cloud temporariamente indisponível');
+     return false
+   }
+   {
      try{
        await operationalCloudPushStateV1858(u);
        cloudLogMsg('Dados operacionais enviados · stock, compras, caixa, produção e configuração');
@@ -17902,6 +17961,13 @@ async function cloudPushNow(showToast=true){
    renderCloudUI();
  }
  return ok
+ }finally{
+   cloudPushRunning=false;
+   renderCloudUI();
+   if(cloudPushPending&&cloudStartupDone&&!cloudHydrating&&!cloudBusy&&!cloudMeta().conflict&&!hasRestorePendingV12645()&&navigator.onLine!==false){
+     scheduleCloudPushV1860(250)
+   }
+ }
 }
 function hasMeaningfulLocalData(){return meaningfulState(db)}
 async function cloudPullNow(force=false){
@@ -17971,9 +18037,10 @@ async function cloudResolveConflict(choice){
  return false
 }
 function getDeviceId(){let id=localStorage.getItem(DEVICE_KEY);if(!id){id='DEV-'+Math.random().toString(36).slice(2,8)+'-'+Date.now().toString(36);localStorage.setItem(DEVICE_KEY,id)}return id}
-window.addEventListener('online',()=>{renderCloudUI();if(!hasRestorePendingV12645()&&cloudMeta().dirty&&cloudStartupDone)setTimeout(()=>cloudPushNow(false),700)});window.addEventListener('offline',renderCloudUI);
+window.addEventListener('online',()=>{renderCloudUI();if(!hasRestorePendingV12645()&&cloudStartupDone&&(cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending))scheduleCloudPushV1860(700)});window.addEventListener('offline',renderCloudUI);
 function flushCloudIfDirty(){try{clearTimeout(cloudPushTimer);/* pagehide não espera fetch; a alteração já está segura no localStorage e dirty=true */}catch(e){}}
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&cloudStartupDone&&!cloudBusy&&!cloudMeta().dirty){setTimeout(()=>cloudPullNow(false),150);setTimeout(()=>checkNewOnlineOrdersV12624(),900)}});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&cloudStartupDone){const pending=cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending;if(pending&&!cloudMeta().conflict&&!hasRestorePendingV12645())scheduleCloudPushV1860(250);else if(!cloudBusy&&!cloudPushRunning)setTimeout(()=>cloudPullNow(false),150);setTimeout(()=>checkNewOnlineOrdersV12624(),900)}});
+window.addEventListener('pageshow',()=>{if(cloudStartupDone&&(cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending)&&!cloudMeta().conflict&&!hasRestorePendingV12645())scheduleCloudPushV1860(300)});
 async function cloudHydrateStartup(){
  return relationalHydrateCore(true)
 }
@@ -17982,13 +18049,21 @@ async function cloudStartup(){
  const u=await ensureCloudSession();
  if(!u){cloudStartupDone=true;renderCloudUI();renderOrderNotificationsV12624();startOrderNotificationPollingV12624();startEmailNotificationPollingV1710();try{if(db?.aprecoImportV1753?.completedAt&&!db?.aprecoOrganizationV1761?.completedAt)organizeAprecoProductsV1761(false);else renderAprecoOrganizationV1761()}catch(e){console.error('organização Apreço V1.7.61',e)}return}
  cloudLogMsg('Sessão V10 recuperada');
+ const localPendingAtStartup=cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1';
  cloudHydrating=true;cloudStartupDone=false;
  try{
    await cloudApiDiagnostic(false);
-   await hydrateOperationalCloudStartupV1755(u,'arranque');
-   await relationalHydrateCore(true);
-   await pullOnlineOrders(false);
-   if(relOrderPendingSet().size)await syncPendingOrdersOnly(false)
+   if(localPendingAtStartup){
+     // Não hidratar por cima de alterações locais ainda não enviadas.
+     // O ciclo automático abaixo envia primeiro e mantém a deteção de conflito operacional.
+     cloudLogMsg('Arranque Cloud · alterações locais pendentes preservadas para envio automático');
+     cloudPushPending=true
+   }else{
+     await hydrateOperationalCloudStartupV1755(u,'arranque');
+     await relationalHydrateCore(true);
+     await pullOnlineOrders(false);
+     if(relOrderPendingSet().size)await syncPendingOrdersOnly(false)
+   }
  }finally{
    cloudHydrating=false;cloudStartupDone=true;renderCloudUI()
  }
@@ -17996,7 +18071,8 @@ async function cloudStartup(){
  await subscribeCloud();
  await publishPublicTechnicalProfilesV12815(false);
  startOrderNotificationPollingV12624();startEmailNotificationPollingV1710();
- renderOrderNotificationsV12624()
+ renderOrderNotificationsV12624();
+ if((cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending)&&!cloudMeta().conflict&&!hasRestorePendingV12645())scheduleCloudPushV1860(400)
 }
 
 
@@ -18131,9 +18207,11 @@ async function syncSingleOrderToCloud(order){
 
  relShadowRememberOrder(order);
  relClearOrderPending(order);
- if(!relOrderPendingSet().size)localStorage.removeItem(REL_DIRTY);
+ // Esta função confirma apenas a encomenda atual. O dirty global é limpo
+ // exclusivamente pelo ciclo Cloud completo, para não apagar Produtos/Stock pendentes.
  localStorage.setItem(KEY,JSON.stringify(db));
- setCloudMeta({dirty:relOrderPendingSet().size>0,verified:true,conflict:false,lastSync:new Date().toISOString()});
+ const globalDirty=localStorage.getItem(REL_DIRTY)==='1'||cloudMeta().dirty||relOrderPendingSet().size>0;
+ setCloudMeta({dirty:globalDirty,verified:true,conflict:false,lastSync:new Date().toISOString()});
  return true
 }
 
@@ -18192,8 +18270,8 @@ async function syncPendingOrdersOnly(showToast=false){
  const pending=relOrderPendingSet();
  const rows=(db.orders||[]).filter(o=>relIsOrderPending(o,pending));
  if(!rows.length){
-   localStorage.removeItem(REL_DIRTY);
-   setCloudMeta({dirty:false,verified:true,conflict:false,lastSync:new Date().toISOString()});
+   // Esta rotina trata apenas encomendas. Não pode limpar o dirty global,
+   // porque podem existir Produtos/Stock/Configuração ainda por enviar.
    renderCloudUI();
    return true
  }
@@ -18213,10 +18291,23 @@ async function syncPendingOrdersOnly(showToast=false){
  return ok===rows.length
 }
 
-function scheduleRelationalSync(){
+function scheduleCloudPushV1860(delay=650){
+ cloudPushPending=true;
  clearTimeout(cloudPushTimer);
  if(!cloudStartupDone||cloudHydrating)return;
- cloudPushTimer=setTimeout(()=>syncPendingOrdersOnly(false),650)
+ cloudPushTimer=setTimeout(async()=>{
+   if(cloudBusy||cloudPushRunning){
+     // A operação em curso acorda a fila no respetivo finally.
+     // Não fazer polling periódico enquanto cloudBusy estiver ativo.
+     cloudPushPending=true;
+     return
+   }
+   cloudPushPending=false;
+   await cloudPushNow(false)
+ },Math.max(250,Number(delay)||650))
+}
+function scheduleRelationalSync(){
+ scheduleCloudPushV1860(650)
 }
 async function pullOnlineOrders(showToast=false){
  const u=cloudUser||await ensureCloudSession();
@@ -18347,7 +18438,11 @@ async function syncStoreCatalogV1421(user){
 }
 
 async function relationalSyncCore(showToast=false){
- if(cloudBusy)return false;
+ if(cloudBusy){
+   cloudPushPending=true;
+   return false
+ }
+ const relationalSyncStartedMs=Date.now();
  relPruneOrphanPendingOrdersV1741();
  const u=cloudUser||await ensureCloudSession();
  if(!u){if(showToast)toast('Cloud sem sessão');return false}
@@ -18417,8 +18512,13 @@ async function relationalSyncCore(showToast=false){
 
 
    localStorage.setItem(REL_MIGRATED,'1');
-   if(!relOrderPendingSet().size)localStorage.removeItem(REL_DIRTY);
-   setCloudMeta({dirty:relOrderPendingSet().size>0,conflict:false,verified:true,lastSync:new Date().toISOString()});
+   const pendingOrdersAfterSync=relOrderPendingSet().size>0;
+   const changedDuringSync=cloudLocalChangedMsV1739()>relationalSyncStartedMs;
+   // A fase relacional não limpa o dirty global: ainda falta a fase operacional.
+   // Apenas finalizeCloudCleanV1739(), no fim do ciclo completo, pode declarar sincronizado.
+   localStorage.setItem(REL_DIRTY,'1');
+   setCloudMeta({dirty:true,conflict:false,verified:!changedDuringSync,lastSync:new Date().toISOString()});
+   if(pendingOrdersAfterSync||changedDuringSync)cloudPushPending=true;
    cloudConflict=null;
    cloudLogMsg(`V10 sincronizada · ${clientRows.length} clientes · ${productRows.length} produtos · ${orderRows.length} encomendas · ${quoteRows.length} orçamentos`);
    if(showToast)toast('Dados V10 sincronizados');
@@ -18429,7 +18529,13 @@ async function relationalSyncCore(showToast=false){
    cloudLogMsg('Falha V10 ao guardar: '+cloudErrText(e));
    if(showToast)toast('Falha V10 — dados mantidos no dispositivo');
    return false
- }finally{cloudBusy=false;renderCloudUI()}
+ }finally{
+   cloudBusy=false;
+   renderCloudUI();
+   if(cloudPushPending&&!cloudPushRunning&&cloudStartupDone&&!cloudHydrating&&!cloudMeta().conflict&&!hasRestorePendingV12645()&&navigator.onLine!==false){
+     scheduleCloudPushV1860(250)
+   }
+ }
 }
 async function relationalHydrateCore(initial=false){
  const u=cloudUser||await ensureCloudSession();
@@ -18580,7 +18686,10 @@ async function relationalHydrateCore(initial=false){
    return false
  }finally{
    if(ownBusy)cloudBusy=false;
-   renderCloudUI()
+   renderCloudUI();
+   if(ownBusy&&cloudPushPending&&!cloudPushRunning&&cloudStartupDone&&!cloudHydrating&&!cloudMeta().conflict&&!hasRestorePendingV12645()&&navigator.onLine!==false){
+     scheduleCloudPushV1860(250)
+   }
  }
 }
 document.addEventListener('input',e=>{if(['prodCode','prodPrice','prodOnlinePriceV12620','prodLaborMinutesV110','prodWastePctV110','prodMoldAverageV1740','prodOperatingAverageV1740','prodOtherCostV110','prodTargetMarginV110','prodOnlineTargetMarginV110','prodEditionExtraLaborMinutes','prodEditionExtraWastePct'].includes(e.target?.id))refreshProductChannelPricingV12620();if(['prodName','prodCode','prodCat'].includes(e.target?.id))refreshProductTechSheetBridgeV1250()});
