@@ -5526,7 +5526,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
             <div class="field"><label>Tempo de queima</label><input id="prodPublicBurnTimeV1820" type="text" placeholder="Ex.: aprox. 20 h"></div>
             <div class="field span2"><label>Material / recipiente</label><input id="prodPublicMaterialContainerV1820" type="text" placeholder="Ex.: vidro, gesso, molde decorativo"></div>
             <div class="field"><label>Estado público</label><select id="prodPublicStatusV1841"><option value="">Não mostrar</option><option value="available">Disponível</option><option value="made_to_order">Produzido por encomenda</option><option value="last_units">Últimas unidades</option><option value="temporarily_sold_out">Esgotado temporariamente</option><option value="prelaunch">Pré-lançamento</option></select><small class="mix-help">Informativo: não altera stock, publicação nem disponibilidade técnica.</small></div>
-            <div class="field"><label>Prazo indicativo</label><input id="prodPublicLeadTimeV1841" type="text" maxlength="80" placeholder="Ex.: 3–5 dias úteis"><small class="mix-help">Opcional. Usa apenas quando conseguires manter o prazo atualizado.</small></div>
+            <div class="field"><label>Prazo indicativo</label><input id="prodPublicLeadTimeV1841" type="text" maxlength="80" placeholder="Ex.: 3–5 dias úteis"><small class="mix-help">Opcional. Usa apenas quando conseguires manter o prazo atualizado.</small></div><div class="field span2"><label>Apresentação / embalagem</label><label class="personalization-switch-v1773"><input id="prodPackagingIncludedV1853" type="checkbox"> Saco e embalagem incluídos</label><small class="mix-help">Quando assinalado, o cliente vê esta informação na ficha pública do produto.</small></div>
           </div>
         </div>
         <div class="field span2 product-personalization-v1773">
@@ -14690,8 +14690,15 @@ async function publishPublicTechnicalProfilesV12815(){return true}
 function updateProductTechnicalStatusV1287(){}
 function invalidateProductTechnicalReviewV1288(){}
 function renderProductBaseSummaryV12811(){}
-function clearProductTechnicalFormV1287(){for(const id of ['prodIngredientsV1287','prodStorageV1287','prodConsumptionV1287']){const el=document.getElementById(id);if(el)el.value=''}}
-function fillProductTechnicalFormV1287(p){const a=document.getElementById('prodIngredientsV1287'),c=document.getElementById('prodStorageV1287'),u=document.getElementById('prodConsumptionV1287');if(a)a.value=p?.materialsText||p?.additionalIngredientsText||p?.ingredientsText||'';if(c)c.value=p?.careInstructions||p?.storageInstructions||'';if(u)u.value=p?.safetyInstructions||p?.consumptionGuidance||''}
+const CANDLE_CARE_DEFAULT_V1853='Conservar em local fresco e seco, protegido da luz solar direta e de fontes de calor. Manter o pavio aparado e a superfície da vela limpa antes de cada utilização.';
+const CANDLE_SAFETY_DEFAULT_V1853='Colocar sobre uma superfície estável e resistente ao calor. Nunca deixar a vela acesa sem vigilância. Manter afastada de crianças, animais, correntes de ar e materiais inflamáveis.';
+function isCandleProductV1853(p){return /vela/i.test(String(p?.category||''))}
+function candleCareTextV1853(p){const current=String(p?.careInstructions||p?.storageInstructions||'').trim();return current||(isCandleProductV1853(p)?CANDLE_CARE_DEFAULT_V1853:'')}
+function candleSafetyTextV1853(p){const current=String(p?.safetyInstructions||p?.consumptionGuidance||'').trim();return current||(isCandleProductV1853(p)?CANDLE_SAFETY_DEFAULT_V1853:'')}
+function applyCandleSafetyDefaultsV1853(){const p={category:document.getElementById('prodCat')?.value||''},care=document.getElementById('prodStorageV1287'),safety=document.getElementById('prodConsumptionV1287');if(!isCandleProductV1853(p))return;if(care&&!String(care.value||'').trim())care.value=CANDLE_CARE_DEFAULT_V1853;if(safety&&!String(safety.value||'').trim())safety.value=CANDLE_SAFETY_DEFAULT_V1853}
+function clearProductTechnicalFormV1287(){for(const id of ['prodIngredientsV1287','prodStorageV1287','prodConsumptionV1287']){const el=document.getElementById(id);if(el)el.value=''};setTimeout(applyCandleSafetyDefaultsV1853,0)}
+function fillProductTechnicalFormV1287(p){const a=document.getElementById('prodIngredientsV1287'),c=document.getElementById('prodStorageV1287'),u=document.getElementById('prodConsumptionV1287');if(a)a.value=p?.materialsText||p?.additionalIngredientsText||p?.ingredientsText||'';if(c)c.value=candleCareTextV1853(p);if(u)u.value=candleSafetyTextV1853(p)}
+setTimeout(()=>{const cat=document.getElementById('prodCat');if(cat&&!cat.dataset.candleDefaultsV1853){cat.dataset.candleDefaultsV1853='1';cat.addEventListener('change',applyCandleSafetyDefaultsV1853)}},0);
 function setProductEditorModeV145(p){
  const editing=!!p;
  editingProductCodeV147=editing?String(p.code||''):null;
@@ -14951,7 +14958,8 @@ function productPublicCharacteristicsFromFormV1820(){
   burnTime:String(document.getElementById('prodPublicBurnTimeV1820')?.value||'').trim(),
   materialContainer:String(document.getElementById('prodPublicMaterialContainerV1820')?.value||'').trim(),
   publicStatus:String(document.getElementById('prodPublicStatusV1841')?.value||'').trim(),
-  leadTime:String(document.getElementById('prodPublicLeadTimeV1841')?.value||'').trim()
+  leadTime:String(document.getElementById('prodPublicLeadTimeV1841')?.value||'').trim(),
+  packagingIncluded:!!document.getElementById('prodPackagingIncludedV1853')?.checked
  }
 }
 function fillProductPublicCharacteristicsV1820(p){
@@ -14967,6 +14975,7 @@ function fillProductPublicCharacteristicsV1820(p){
   prodPublicLeadTimeV1841:x.leadTime||''
  };
  for(const [id,value] of Object.entries(values)){const el=document.getElementById(id);if(el)el.value=value}
+ const packaging=document.getElementById('prodPackagingIncludedV1853');if(packaging)packaging.checked=x.packagingIncluded===true||x.packaging_included===true
 }
 function resetProductPublicCharacteristicsV1820(){fillProductPublicCharacteristicsV1820({publicCharacteristics:{}})}
 async function syncProductPublicCharacteristicsV1820(p){
@@ -18632,7 +18641,7 @@ async function syncStoreCatalogV1421(user){
    const online=!!p.shopVisible&&!productArchivedV1803(p)&&p?.publicReleasePendingV1803!==true;if(online)visibleCodes.add(code.toLowerCase());
    const category=String(p.category||'Outros produtos artesanais').trim();
    const price=Number(p.onlinePrice)>0?Number(p.onlinePrice):(Number(p.price)||0);
-   const publicInfoV1809={materials:String(p.materialsText||p.additionalIngredientsText||p.ingredientsText||'').trim(),care:String(p.careInstructions||p.storageInstructions||'').trim(),safety:String(p.safetyInstructions||p.consumptionGuidance||'').trim()};
+   const publicInfoV1809={materials:String(p.materialsText||p.additionalIngredientsText||p.ingredientsText||'').trim(),care:candleCareTextV1853(p),safety:candleSafetyTextV1853(p)};
    const hasCurrentPersonalizationV1820=Object.prototype.hasOwnProperty.call(p||{},'personalizationV1773');
    const legacyPersonalizationV1820=p?.personalization&&typeof p.personalization==='object'?p.personalization:{};
    const hasLegacyPersonalizationV1820=!hasCurrentPersonalizationV1820&&Object.keys(legacyPersonalizationV1820).some(k=>k!=='public_info');
