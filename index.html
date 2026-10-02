@@ -16388,13 +16388,21 @@ function clearPromoFormV1786(){
  const values={promoTypeV1786:'PERCENT',promoValueV1786:'10',promoMinV1786:'0',promoPerCustomerV1786:'1',promoFirstV1786:'0',promoActiveV1786:'1'};
  Object.entries(values).forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.value=v})
 }
+function promoAssignedContactV1851(value){
+ let x=String(value||'').trim();
+ if(!x)return '';
+ if(x.startsWith('p:'))x=x.slice(2);
+ if(/^351\d{9}$/.test(x))x=x.slice(3);
+ return x
+}
 function renderPromoCodesV1786(){
  const box=document.getElementById('promoCodesListV1786');if(!box)return;
  box.innerHTML=promoCodesV1786.length?promoCodesV1786.map(p=>{
   const used=Number(p.usage_count||0),limit=p.usage_limit==null?'∞':String(p.usage_limit);
   const discount=p.discount_type==='PERCENT'?Number(p.discount_value||0).toLocaleString('pt-PT')+'%':promoMoneyV1786(p.discount_value);
   const end=p.ends_at?new Date(p.ends_at).toLocaleDateString('pt-PT'):'Sem data final';
-  return '<div class="card" style="padding:12px"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start"><div><b>'+escapeHtml(p.code||'')+'</b><div class="muted">'+escapeHtml(p.label||'Sem descrição')+' · '+escapeHtml(discount)+' · '+(p.first_purchase_only?'Primeira compra · ':'')+used+'/'+limit+' utilizações · até '+escapeHtml(end)+'</div></div><span class="badge '+(p.active?'ok':'warn')+'">'+(p.active?'ATIVO':'INATIVO')+'</span></div><div class="btnrow" style="margin-top:8px"><button class="btn" onclick="editPromoCodeV1786(\''+p.id+'\')">Editar</button><button class="btn danger" onclick="deletePromoCodeV1786(\''+p.id+'\')">'+(used?'Desativar':'Eliminar')+'</button></div></div>'
+  const assigned=promoAssignedContactV1851(p.assigned_customer_key);
+  return '<div class="card" style="padding:12px"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start"><div><b>'+escapeHtml(p.code||'')+'</b><div class="muted">'+escapeHtml(p.label||'Sem descrição')+' · '+escapeHtml(discount)+' · '+(p.first_purchase_only?'Primeira compra · ':'')+used+'/'+limit+' utilizações · até '+escapeHtml(end)+'</div>'+(assigned?'<div class="muted" style="margin-top:4px"><b>Contacto associado:</b> '+escapeHtml(assigned)+'</div>':'')+'</div><span class="badge '+(p.active?'ok':'warn')+'">'+(p.active?'ATIVO':'INATIVO')+'</span></div><div class="btnrow" style="margin-top:8px"><button class="btn" onclick="editPromoCodeV1786(\''+p.id+'\')">Editar</button><button class="btn danger" onclick="deletePromoCodeV1786(\''+p.id+'\')">'+(used?'Desativar':'Eliminar')+'</button></div></div>'
  }).join(''):'<div class="empty">Ainda não existem códigos promocionais.</div>'
 }
 async function loadPromoCodesV1786(showToast=false){
