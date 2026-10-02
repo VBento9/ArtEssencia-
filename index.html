@@ -5504,7 +5504,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           <div class="form-grid">
             <div class="field"><label>Tipo de cera</label><input id="prodPublicWaxTypeV1820" type="text" placeholder="Ex.: soja, colza, coco"></div>
             <div class="field"><label>Peso aproximado</label><input id="prodPublicWeightV1820" type="text" placeholder="Ex.: 90 g"></div>
-            <div class="field"><label>Medidas</label><input id="prodPublicDimensionsV1820" type="text" placeholder="Ex.: 8 × 6 cm"></div>
+            <div class="field"><label>Tamanho</label><select id="prodPublicSizeV1850"><option value="">Não mostrar</option><option value="small">Pequeno · até 8 cm</option><option value="medium">Médio · &gt; 8 até 15 cm</option><option value="large">Grande · &gt; 15 cm</option></select><small class="mix-help">Usa a maior dimensão da peça como referência. Pequeno: até 8 cm · Médio: mais de 8 até 15 cm · Grande: mais de 15 cm.</small><input id="prodPublicDimensionsV1820" type="hidden"></div>
             <div class="field"><label>Tempo de queima</label><input id="prodPublicBurnTimeV1820" type="text" placeholder="Ex.: aprox. 20 h"></div>
             <div class="field span2"><label>Material / recipiente</label><input id="prodPublicMaterialContainerV1820" type="text" placeholder="Ex.: vidro, gesso, molde decorativo"></div>
             <div class="field"><label>Estado público</label><select id="prodPublicStatusV1841"><option value="">Não mostrar</option><option value="available">Disponível</option><option value="made_to_order">Produzido por encomenda</option><option value="last_units">Últimas unidades</option><option value="temporarily_sold_out">Esgotado temporariamente</option><option value="prelaunch">Pré-lançamento</option></select><small class="mix-help">Informativo: não altera stock, publicação nem disponibilidade técnica.</small></div>
@@ -14889,10 +14889,15 @@ function renderProductMasterColorsV1791(){
 function selectAllProductColorsV1791(){const lib=personalizationLibraryV1791(),cat=document.getElementById('productColorCategoryV1792')?.value||'',arr=lib.colors.filter(x=>!cat||lib.colorCategoryMap[normalizeColorNameV1775(x.name)]===cat);serializeProductColorsV1775(arr);renderProductColorPreviewV1773();renderProductMasterColorsV1791()}
 function clearProductColorsV1791(){serializeProductColorsV1775([]);renderProductColorPreviewV1773();renderProductMasterColorsV1791()}
 
+function productSizeCategoryFromLegacyDimensionsV1850(value){
+ const nums=String(value||'').match(/\d+(?:[.,]\d+)?/g)?.map(v=>Number(v.replace(',','.'))).filter(Number.isFinite)||[];
+ if(!nums.length)return '';const max=Math.max(...nums);return max<=8?'small':max<=15?'medium':'large'
+}
 function productPublicCharacteristicsFromFormV1820(){
  return {
   waxType:String(document.getElementById('prodPublicWaxTypeV1820')?.value||'').trim(),
   approximateWeight:String(document.getElementById('prodPublicWeightV1820')?.value||'').trim(),
+  sizeCategory:String(document.getElementById('prodPublicSizeV1850')?.value||'').trim(),
   dimensions:String(document.getElementById('prodPublicDimensionsV1820')?.value||'').trim(),
   burnTime:String(document.getElementById('prodPublicBurnTimeV1820')?.value||'').trim(),
   materialContainer:String(document.getElementById('prodPublicMaterialContainerV1820')?.value||'').trim(),
@@ -14905,6 +14910,7 @@ function fillProductPublicCharacteristicsV1820(p){
  const values={
   prodPublicWaxTypeV1820:x.waxType||'',
   prodPublicWeightV1820:x.approximateWeight||'',
+  prodPublicSizeV1850:x.sizeCategory||x.size_category||productSizeCategoryFromLegacyDimensionsV1850(x.dimensions||''),
   prodPublicDimensionsV1820:x.dimensions||'',
   prodPublicBurnTimeV1820:x.burnTime||'',
   prodPublicMaterialContainerV1820:x.materialContainer||'',
