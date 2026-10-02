@@ -15,6 +15,71 @@ const META={
  today:['ATELIER','Hoje','O que precisa da tua atenção no atelier.'],sale:['COMERCIAL','Nova venda','Regista rapidamente uma encomenda presencial ou direta.'],atelier:['PRODUÇÃO','Atelier','Produção artesanal organizada por etapas.'],orders:['COMERCIAL','Encomendas','Pedidos, pagamentos, personalizações e entregas.'],quotes:['COMERCIAL','Orçamentos','Cria, acompanha e converte propostas em encomendas.'],products:['CATÁLOGO','Produtos','Produtos, fichas técnicas, publicação e preços.'],costs:['RENTABILIDADE','Custos & preços','Motor de custos e margem real por produto.'],stock:['STOCK','Stock','Níveis, movimentos, alertas e histórico.'],purchases:['STOCK','Compras','Entradas de matéria e atualização automática do custo médio.'],clients:['CLIENTES','Clientes','Histórico comercial e contactos.'],cash:['FINANÇAS','Caixa & pagamentos','Entradas, pagamentos, despesas, investimentos e transferências.'],reports:['ANÁLISE','Relatórios','Vendas, contribuição, meios de pagamento e valor em stock.'],catalogs:['LOJA','Catálogos & Criador','Temas, ocasiões, cores, personalizações e preços do criador.'],specialEditions:['LOJA','Edições Especiais','Coleções sazonais com datas, produtos e destaque.'],homepage:['LOJA','Homepage','Conteúdo e pré-visualização da futura loja.'],campaigns:['LOJA','Campanhas','Marketing e notificações preparadas para a Cloud.'],delivery:['LOJA','Entregas Loja','Métodos, capacidade, antecedência e dias indisponíveis.'],settings:['SISTEMA','Configuração','Parâmetros editáveis do atelier e da operação.'],cloud:['SISTEMA','Cloud Sync','Sincronização ArtEssencia entre dispositivos.'],backup:['SISTEMA','Backup','Exportação, importação e segurança dos dados.'],audit:['SISTEMA','Auditoria 360º','Verificação completa da integridade da aplicação.']
 }
 let state={view:'today',opts:{},version:{app:'2.0.0',schema:'1.0.0'}};
+let authReady=false;
+let authGate=null;
+function setAppLocked(locked){document.documentElement.classList.toggle('auth-locked',!!locked)}
+function authMessage(text=''){const e=authGate?.querySelector('[data-auth-message]');if(e)e.textContent=text}
+function showLogin(message=''){
+  setAppLocked(true);
+  if(authGate)authGate.remove();
+  authGate=el('div',{class:'auth-gate'},
+    el('div',{class:'auth-card'},
+      el('img',{class:'auth-logo',src:'./logo-artessencia.svg',alt:'ArtEssencia'}),
+      el('div',{class:'eyebrow'},'BACKOFFICE'),
+      el('h1',{},'Iniciar sessão'),
+      el('p',{class:'auth-copy'},'Autentica-te para aceder ao Backoffice ArtEssencia.'),
+      el('form',{class:'auth-form'},
+        field('Email',input('authEmail','','email',{autocomplete:'username',required:true}),true),
+        field('Palavra-passe',input('authPassword','','password',{autocomplete:'current-password',required:true}),true),
+        el('div',{class:'auth-message','data-auth-message':''},message),
+        el('button',{class:'btn primary auth-submit',type:'submit'},'Entrar')
+      )
+    )
+  );
+  document.body.append(authGate);
+  const form=authGate.querySelector('form'),email=authGate.querySelector('#authEmail'),password=authGate.querySelector('#authPassword'),submit=authGate.querySelector('.auth-submit');
+  form.onsubmit=async ev=>{
+    ev.preventDefault();authMessage('');submit.disabled=true;submit.textContent='A autenticar…';
+    try{
+      await cloud.login(email.value.trim(),password.value);
+      await cloud.ensureSession();
+      authReady=true;authGate.remove();authGate=null;setAppLocked(false);
+      installLogoutAction();await render();reconcileCloudSafe();
+    }catch(e){
+      cloud.logout();authMessage(String(e?.message||e||'Não foi possível iniciar sessão.'));
+    }finally{
+      submit.disabled=false;submit.textContent='Entrar';
+    }
+  };
+  setTimeout(()=>email.focus(),50);
+}
+function forceLogin(message='Sessão terminada. Inicia sessão novamente.'){
+  cloud.logout();authReady=false;
+  const view=qs('#view');if(view)view.innerHTML='';
+  showLogin(message);
+}
+async function requireAuth(){
+  const s=cloud.session();
+  if(!s){showLogin();return false}
+  if(!navigator.onLine){
+    if(Number(s.expires_at||0)>Date.now()){authReady=true;setAppLocked(false);installLogoutAction();return true}
+    showLogin('É necessária ligação à internet para renovar a sessão.');return false
+  }
+  try{await cloud.ensureSession();authReady=true;setAppLocked(false);installLogoutAction();return true}
+  catch(e){cloud.logout();showLogin('A sessão expirou ou deixou de ser válida. Inicia sessão novamente.');return false}
+}
+async function validateAuthSession(){
+  if(!authReady)return false;
+  const s=cloud.session();
+  if(!s){forceLogin();return false}
+  if(!navigator.onLine)return true;
+  try{await cloud.ensureSession();return true}catch{forceLogin('A sessão expirou ou deixou de ser válida. Inicia sessão novamente.');return false}
+}
+function installLogoutAction(){
+  if(qs('#authLogout'))return;
+  const host=qs('.top-actions');if(!host)return;
+  host.append(el('button',{id:'authLogout',class:'btn ghost small auth-logout',type:'button',onclick:()=>forceLogin('Sessão terminada.')},'Terminar sessão'));
+}
 
 async function loadVersion(){try{state.version=await fetch(`version.json?t=${Date.now()}`,{cache:'no-store'}).then(r=>r.json())}catch{}qs('#appVersion').textContent=`v${state.version.app}`}
 function buildNav(){
@@ -24,16 +89,17 @@ function buildNav(){
 }
 async function updateCloudPill(){try{const s=await cloud.status();const b=qs('#cloudMini');if(!b)return;b.querySelector('span:last-child').textContent=s.loggedIn?'Cloud ligada':s.configured?'Cloud pronta':'Base local';}catch{}}
 async function render(){
+  if(!authReady)return;
   buildNav();const [context,title,sub]=META[state.view]||META.today;qs('#pageContext').textContent=context;qs('#pageTitle').textContent=title;qs('#pageSubtitle').textContent=sub;
   updateCloudPill();
   const view=qs('#view');view.innerHTML='<div class="empty">A carregar…</div>';try{view.innerHTML='';view.append(await views[state.view]({go,refresh:render,version:state.version},state.opts||{}));state.opts={}}catch(e){console.error(e);view.innerHTML=`<div class="card"><h3>Erro ao abrir módulo</h3><p>${String(e.message||e)}</p></div>`}
 }
-export function go(view,opts={}){if(!views[view])return;state.view=view;state.opts=opts;history.replaceState(null,'',`#${view}`);render()}
-window.addEventListener('hashchange',()=>{const v=location.hash.slice(1);if(views[v]){state.view=v;render()}});
+export function go(view,opts={}){if(!authReady||!views[view])return;state.view=view;state.opts=opts;history.replaceState(null,'',`#${view}`);render()}
+window.addEventListener('hashchange',()=>{if(!authReady)return;const v=location.hash.slice(1);if(views[v]){state.view=v;render()}});
 qs('#quickAdd').onclick=()=>go(state.view==='products'?'products':state.view==='materials'?'purchases':'orders',{create:true});
 qs('#auditTop').onclick=()=>go('audit');
 qs('#cloudMini').onclick=()=>go('cloud');
-qs('#searchBtn').onclick=async()=>globalSearch();
+qs('#searchBtn').onclick=async()=>{if(authReady)globalSearch()};
 
 async function globalSearch(){
   const box=el('div',{class:'grid'}),q=input('q','','search',{placeholder:'Produto, cliente, encomenda, matéria…'}),results=el('div',{class:'grid'});box.append(field('Pesquisa',q,true),results);
@@ -46,7 +112,8 @@ async function globalSearch(){
     if(!found.length)results.append(el('div',{class:'empty'},'Sem resultados.'));for(const [v,t,s]of found.slice(0,20))results.append(el('button',{class:'quick-card',type:'button',onclick:()=>{document.querySelector('#modalRoot').innerHTML='';go(v)}},el('strong',{},t),el('small',{},s)));
   };q.oninput=search;modal('Pesquisa rápida',box,{wide:true});setTimeout(()=>q.focus(),50)
 }
-async function reconcileCloudSafe(){try{const st=await cloud.status();if(st.loggedIn&&navigator.onLine)await cloud.reconcile()}catch(e){console.warn('Reconciliação Cloud adiada:',e)}}
+async function reconcileCloudSafe(){try{if(!authReady)return;const valid=await validateAuthSession();if(!valid)return;const st=await cloud.status();if(st.loggedIn&&navigator.onLine)await cloud.reconcile()}catch(e){console.warn('Reconciliação Cloud adiada:',e)}}
 window.addEventListener('ae:local-change',e=>{const d=e.detail||{};cloud.pushRecord(d.store,d.row).catch(err=>console.warn('Espelho Cloud adiado:',err))});
 window.addEventListener('online',()=>reconcileCloudSafe());
-(async()=>{try{await db.openDB();await loadVersion();const h=location.hash.slice(1);if(views[h])state.view=h;await render();reconcileCloudSafe();if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(console.warn)}catch(e){console.error('Falha de arranque ArtEssencia:',e);const view=qs('#view');if(view)view.innerHTML=`<div class="card"><h3>Falha ao iniciar a aplicação</h3><p>${String(e?.message||e)}</p><p class="small muted">Atualiza a página. Se persistir, envia esta mensagem de erro.</p></div>`}})();
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&authReady)validateAuthSession()});
+(async()=>{try{await db.openDB();await loadVersion();const h=location.hash.slice(1);if(views[h])state.view=h;if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(console.warn);const allowed=await requireAuth();if(!allowed)return;await render();reconcileCloudSafe()}catch(e){console.error('Falha de arranque ArtEssencia:',e);const view=qs('#view');if(view)view.innerHTML=`<div class="card"><h3>Falha ao iniciar a aplicação</h3><p>${String(e?.message||e)}</p><p class="small muted">Atualiza a página. Se persistir, envia esta mensagem de erro.</p></div>`}})();
