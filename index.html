@@ -2315,7 +2315,7 @@
 .color-preview-v1773{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}.color-chip-v1773{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border:1px solid #e2d6cf;border-radius:999px;background:#fff;font-size:10px}.color-chip-v1773 i{width:18px;height:18px;border-radius:50%;border:1px solid rgba(0,0,0,.12);display:block}
 .personalization-note-v1773{font-size:9px;line-height:1.45;color:#78665d;background:#f8f1ec;border-radius:10px;padding:9px 10px}
 @media(max-width:760px){.product-personalization-grid-v1773{grid-template-columns:1fr}.product-personalization-grid-v1773 .span2{grid-column:auto}}
-</style>
+.description-assistant-v1852{margin:8px 0 12px;padding:16px;border:1px solid color-mix(in srgb,var(--line) 82%,transparent);border-radius:20px;background:linear-gradient(145deg,color-mix(in srgb,var(--card) 96%,var(--s) 4%),color-mix(in srgb,var(--card) 98%,transparent));box-shadow:0 8px 22px rgba(55,34,24,.045)}.description-assistant-head-v1852{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}.description-assistant-head-v1852 strong{display:block;font-size:15px}.description-assistant-head-v1852 small{display:block;margin-top:3px;color:var(--muted);line-height:1.4}.description-assistant-pill-v1852{flex:none;padding:5px 9px;border-radius:999px;background:color-mix(in srgb,var(--s) 18%,transparent);color:var(--p);font-size:10px;font-weight:900;letter-spacing:.04em}.description-template-grid-v1852{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.description-template-card-v1852{min-height:76px;padding:11px 12px;border:1px solid var(--line);border-radius:15px;background:var(--card);color:var(--ink);text-align:left;cursor:pointer;transition:.16s ease;box-shadow:0 4px 12px rgba(55,34,24,.03)}.description-template-card-v1852:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--p) 35%,var(--line))}.description-template-card-v1852.active{border-color:var(--p);box-shadow:0 0 0 2px color-mix(in srgb,var(--p) 12%,transparent)}.description-template-card-v1852 b{display:block;font-size:12px;margin-bottom:4px}.description-template-card-v1852 span{display:block;font-size:10px;line-height:1.35;color:var(--muted)}.description-preview-v1852{margin-top:10px;padding:12px 14px;border-radius:15px;background:color-mix(in srgb,var(--paper) 88%,var(--card));border:1px solid color-mix(in srgb,var(--line) 75%,transparent)}.description-preview-v1852 small{display:block;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:9px}.description-preview-v1852 p{margin:6px 0 0;font-size:12px;line-height:1.55}.description-actions-v1852{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.description-actions-v1852 .btn{font-size:11px;padding:9px 13px}.description-actions-v1852 .btn:disabled{opacity:.45;cursor:not-allowed}@media(max-width:900px){.description-template-grid-v1852{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:580px){.description-assistant-v1852{padding:13px;border-radius:17px}.description-template-grid-v1852{grid-template-columns:1fr}.description-template-card-v1852{min-height:auto}.description-actions-v1852{display:grid;grid-template-columns:1fr}.description-actions-v1852 .btn{width:100%}}</style>
 
 <style id="artessencia-v142-redesign">
 :root{
@@ -5497,7 +5497,25 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         </div>
         <div class="product-editor-panel-v1762" data-product-panel="public">
         <div class="product-section-divider-v1748"><span>4</span><div><strong>Informação pública do produto</strong><small>Dados que o cliente vê no Catálogo e na Loja: descrição, personalização, segurança, fotografia e publicação.</small></div></div>
-        <div class="field span2 product-shop-desc-v1726"><label>Descrição para o catálogo / loja</label><textarea id="prodShopDescription" rows="3" placeholder="Descrição curta que o cliente verá na loja"></textarea></div>
+        <div class="field span2 product-shop-desc-v1726">
+          <label>Descrição para o catálogo / loja</label>
+          <div class="description-assistant-v1852">
+            <div class="description-assistant-head-v1852">
+              <div><strong>Assistente de descrição</strong><small>Escolhe uma base neutra e adapta apenas o que for necessário.</small></div>
+              <span class="description-assistant-pill-v1852">Opcional</span>
+            </div>
+            <div id="descriptionTemplateGridV1852" class="description-template-grid-v1852"></div>
+            <div id="descriptionPreviewV1852" class="description-preview-v1852">
+              <small>Pré-visualização</small>
+              <p>Seleciona um modelo para veres o texto antes de o aplicares.</p>
+            </div>
+            <div class="description-actions-v1852">
+              <button id="descriptionReplaceBtnV1852" class="btn primary" type="button" onclick="applyDescriptionTemplateV1852('replace')" disabled>Substituir descrição</button>
+              <button id="descriptionAppendBtnV1852" class="btn" type="button" onclick="applyDescriptionTemplateV1852('append')" disabled>Acrescentar à descrição</button>
+            </div>
+          </div>
+          <textarea id="prodShopDescription" rows="4" placeholder="Descrição curta que o cliente verá no Catálogo e na Loja"></textarea>
+        </div>
         <div class="field span2 product-public-characteristics-v1820">
           <label>Características públicas</label>
           <small class="mix-help" style="display:block;margin-bottom:8px">Campos opcionais. O Catálogo e a Loja só apresentam os dados que estiverem preenchidos. Cor e fragrância continuam nas opções de personalização.</small>
@@ -14893,6 +14911,37 @@ function productSizeCategoryFromLegacyDimensionsV1850(value){
  const nums=String(value||'').match(/\d+(?:[.,]\d+)?/g)?.map(v=>Number(v.replace(',','.'))).filter(Number.isFinite)||[];
  if(!nums.length)return '';const max=Math.max(...nums);return max<=8?'small':max<=15?'medium':'large'
 }
+const DESCRIPTION_TEMPLATES_V1852=[
+ {id:'versatile',title:'Decorativo versátil',note:'Neutro e adaptável a várias coleções',text:'Uma peça artesanal de carácter decorativo, criada para dar personalidade e detalhe ao espaço. O seu design versátil permite integrá-la em diferentes ambientes e coleções ao longo do ano.'},
+ {id:'nature',title:'Natureza / Bosque',note:'Orgânico, acolhedor e natural',text:'Uma criação artesanal inspirada nas formas e elementos da natureza, com um visual orgânico e acolhedor. Ideal para composições decorativas, ambientes naturais e diferentes coleções sazonais.'},
+ {id:'mystic',title:'Místico / Misterioso',note:'Mais marcante e envolvente',text:'Uma peça de carácter marcante e atmosfera envolvente, com um design pensado para criar composições expressivas e cheias de personalidade.'},
+ {id:'minimal',title:'Elegante / Minimalista',note:'Linhas simples e intemporais',text:'Uma criação de linhas equilibradas e acabamento delicado, pensada para complementar diferentes estilos de decoração com simplicidade e elegância.'},
+ {id:'romantic',title:'Romântico / Delicado',note:'Suave, acolhedor e especial',text:'Uma peça artesanal de linhas suaves e carácter delicado, pensada para criar ambientes acolhedores e tornar pequenos momentos ainda mais especiais.'},
+ {id:'playful',title:'Divertido / Expressivo',note:'Original e descontraído',text:'Uma criação artesanal de carácter descontraído e expressivo, pensada para acrescentar um apontamento original e divertido à decoração.'},
+ {id:'gift',title:'Oferta / Presente',note:'Adequado a diferentes ocasiões',text:'Uma peça artesanal pensada para oferecer ou para criar um detalhe especial em casa. O seu carácter versátil torna-a adequada para diferentes ocasiões ao longo do ano.'},
+ {id:'aromatic',title:'Vela aromática / Ambiente',note:'Decoração e experiência aromática',text:'Uma vela artesanal criada para conjugar presença decorativa e experiência aromática, proporcionando um ambiente acolhedor e personalizado através das fragrâncias disponíveis.'},
+ {id:'seasonal',title:'Sazonal neutra',note:'Funciona em várias edições especiais',text:'Uma criação artesanal especialmente adequada a composições sazonais, mantendo um design suficientemente versátil para integrar diferentes coleções e ambientes ao longo do ano.'},
+ {id:'short',title:'Descrição curta',note:'Direta e simples',text:'Peça artesanal de carácter decorativo, criada com atenção ao detalhe e pensada para diferentes ambientes e ocasiões.'}
+];
+let selectedDescriptionTemplateV1852='';
+function renderDescriptionTemplatesV1852(){
+ const box=document.getElementById('descriptionTemplateGridV1852');if(!box)return;
+ box.innerHTML=DESCRIPTION_TEMPLATES_V1852.map(t=>'<button type="button" class="description-template-card-v1852'+(selectedDescriptionTemplateV1852===t.id?' active':'')+'" onclick="selectDescriptionTemplateV1852(\''+t.id+'\')"><b>'+escapeHtml(t.title)+'</b><span>'+escapeHtml(t.note)+'</span></button>').join('')
+}
+function selectDescriptionTemplateV1852(id){
+ const t=DESCRIPTION_TEMPLATES_V1852.find(x=>x.id===id);if(!t)return;
+ selectedDescriptionTemplateV1852=id;renderDescriptionTemplatesV1852();
+ const p=document.querySelector('#descriptionPreviewV1852 p');if(p)p.textContent=t.text;
+ ['descriptionReplaceBtnV1852','descriptionAppendBtnV1852'].forEach(x=>{const e=document.getElementById(x);if(e)e.disabled=false})
+}
+function applyDescriptionTemplateV1852(mode){
+ const t=DESCRIPTION_TEMPLATES_V1852.find(x=>x.id===selectedDescriptionTemplateV1852),el=document.getElementById('prodShopDescription');if(!t||!el)return;
+ if(mode==='append'){const cur=String(el.value||'').trim();el.value=cur?cur+'\n\n'+t.text:t.text}
+ else el.value=t.text;
+ el.dispatchEvent(new Event('input',{bubbles:true}));el.focus()
+}
+setTimeout(renderDescriptionTemplatesV1852,0);
+
 function productPublicCharacteristicsFromFormV1820(){
  return {
   waxType:String(document.getElementById('prodPublicWaxTypeV1820')?.value||'').trim(),
