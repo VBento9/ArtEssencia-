@@ -3328,8 +3328,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
     <img src="icon-192.png" alt="ArtEssencia">
     <h1>Iniciar sessão</h1>
     <p>Autentica-te com a conta ArtEssencia para aceder ao Backoffice.</p>
-    <div class="field"><label>Email</label><input id="authGateEmailV1880" type="email" autocomplete="username" placeholder="email@exemplo.pt"></div>
-    <div class="field"><label>Palavra-passe</label><input id="authGatePasswordV1880" type="password" autocomplete="current-password" placeholder="Palavra-passe"></div>
+    <div class="field"><label>Email</label><input id="authGateEmailV1880" type="email" autocomplete="username" onkeydown="authGateKeyV1881(event)" placeholder="email@exemplo.pt"></div>
+    <div class="field"><label>Palavra-passe</label><input id="authGatePasswordV1880" type="password" autocomplete="current-password" onkeydown="authGateKeyV1881(event)" placeholder="Palavra-passe"></div>
     <div id="authGateMessageV1880" class="auth-message-v1880"></div>
     <button id="authGateButtonV1880" class="btn primary" type="button" onclick="authGateLoginV1880()">Entrar</button>
   </div>
@@ -17437,6 +17437,7 @@ function authGateShowV1880(message=''){
  setTimeout(()=>{(email?.value?password:email)?.focus()},80)
 }
 function authGateHideV1880(){document.getElementById('authGateV1880')?.classList.add('hidden');authGateMessageV1880('')}
+function authGateKeyV1881(event){if(event.key==='Enter'){event.preventDefault();authGateLoginV1880()}}
 async function authGateLoginV1880(){
  const email=String(document.getElementById('authGateEmailV1880')?.value||'').trim();
  const password=String(document.getElementById('authGatePasswordV1880')?.value||'');
@@ -17462,15 +17463,13 @@ async function authGateStartupV1880(){
  try{
    const {data,error}=await c.auth.getSession();if(error)throw error;
    const session=data?.session||null,expiresAt=Number(session?.expires_at||0)*1000;
-   if(!session?.user){authGateShowV1880();return}
    if(navigator.onLine===false){
-     if(expiresAt&&expiresAt<=Date.now()){authGateShowV1880('A sessão expirou. Liga-te à internet para iniciar sessão novamente.');return}
+     if(!session?.user||!expiresAt||expiresAt<=Date.now()){authGateShowV1880('É necessária ligação à internet para iniciar sessão.');return}
      cloudUser=session.user;authGateHideV1880();cloudStartupDone=true;renderCloudUI();return
    }
-   const verified=await c.auth.getUser();
-   if(verified.error||!verified.data?.user){await c.auth.signOut().catch(()=>{});cloudUser=null;authGateShowV1880('A sessão expirou. Inicia sessão novamente.');return}
-   cloudUser=verified.data.user;authGateHideV1880();await cloudStartup()
- }catch(e){cloudUser=null;authGateShowV1880('Não foi possível validar a sessão. Tenta novamente.')}
+   cloudUser=null;
+   authGateShowV1880();
+ }catch(e){cloudUser=null;authGateShowV1880('Não foi possível validar a sessão guardada. Inicia sessão novamente.')}
 }
 
 function mergeRemoteRelationalRow(kind,row,eventType='UPDATE'){
