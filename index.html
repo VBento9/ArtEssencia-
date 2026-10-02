@@ -5074,6 +5074,28 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div class="field"><label>Início</label><input id="launchStartV1813" type="datetime-local"></div>
         <div class="field"><label>Fim</label><input id="launchEndV1813" type="datetime-local"></div>
       </div>
+      <div class="card" style="margin-top:12px;padding:14px">
+        <div class="section-title" style="margin:0 0 4px">Texto apresentado ao cliente</div>
+        <small>Estes textos aparecem no bloco do desafio no Catálogo. Podes usar <b>{count}</b> para o número de favoritos e <b>{value}</b> para o desconto.</small>
+        <div class="form-grid" style="margin-top:10px">
+          <div class="field span2"><label>Etiqueta</label><input id="launchContentEyebrowV1813" maxlength="80"></div>
+          <div class="field span2"><label>Título</label><input id="launchContentTitleV1813" maxlength="140"></div>
+          <div class="field span2"><label>Explicação</label><textarea id="launchContentIntroV1813" rows="3" maxlength="700"></textarea></div>
+          <div class="field"><label>Passo 1 · título</label><input id="launchContentInstallTitleV1813" maxlength="100"></div>
+          <div class="field"><label>Passo 1 · explicação</label><textarea id="launchContentInstallTextV1813" rows="2" maxlength="350"></textarea></div>
+          <div class="field"><label>Passo 2 · título</label><input id="launchContentShareTitleV1813" maxlength="100"></div>
+          <div class="field"><label>Passo 2 · explicação</label><textarea id="launchContentShareTextV1813" rows="2" maxlength="350"></textarea></div>
+          <div class="field"><label>Passo 3 · título</label><input id="launchContentFavoritesTitleV1813" maxlength="100"></div>
+          <div class="field"><label>Passo 3 · explicação</label><textarea id="launchContentFavoritesTextV1813" rows="2" maxlength="350"></textarea></div>
+          <div class="field"><label>Passo 4 · título</label><input id="launchContentNotificationsTitleV1813" maxlength="100"></div>
+          <div class="field"><label>Passo 4 · explicação</label><textarea id="launchContentNotificationsTextV1813" rows="2" maxlength="350"></textarea></div>
+          <div class="field span2"><label>Condições resumidas</label><textarea id="launchContentConditionsV1813" rows="3" maxlength="700"></textarea></div>
+          <div class="field"><label>Título após concluir</label><input id="launchContentCompletedTitleV1813" maxlength="100"></div>
+          <div class="field"><label>Botão para reclamar</label><input id="launchContentClaimButtonV1813" maxlength="80"></div>
+          <div class="field span2"><label>Mensagem após concluir</label><textarea id="launchContentCompletedTextV1813" rows="2" maxlength="350"></textarea></div>
+          <div class="field span2"><label>Mensagem junto ao código</label><textarea id="launchContentCodeTextV1813" rows="2" maxlength="500"></textarea></div>
+        </div>
+      </div>
       <div class="btnrow"><button class="btn primary" type="button" onclick="saveLaunchConfigV1813()">Guardar campanha</button></div>
       <div id="launchStatsKpisV1813" class="reports-kpis" style="margin-top:14px"></div><div id="launchStatsTableV1813" style="margin-top:10px"></div>
     </section>
@@ -16311,18 +16333,24 @@ async function validateSalePromoV1813(){
  salePromoV1813={...data,_context:salePromoContextV1813()};renderSalePromoV1813();return salePromoV1813
 }
 function launchLocalDateV1813(v){if(!v)return '';const d=new Date(v);if(Number.isNaN(d.getTime()))return '';const z=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+'T'+z(d.getHours())+':'+z(d.getMinutes())}
+const LAUNCH_CONTENT_DEFAULTS_V1814={eyebrow:'DESAFIO DE LANÇAMENTO ARTESSENCIA',title:'Completa os 4 passos e recebe o teu código',intro:'Completa o desafio de lançamento e recebe um código individual ArtEssencia para utilizares numa compra elegível.',installTitle:'Instalar a app',installText:'Adiciona o Catálogo ArtEssencia ao ecrã principal e abre-o a partir daí.',shareTitle:'Partilhar o Catálogo',shareText:'Partilha o Catálogo ArtEssencia através do botão de partilha.',favoritesTitle:'Guardar {count} favoritos',favoritesText:'Escolhe e guarda {count} artigos de que gostas.',notificationsTitle:'Ativar notificações',notificationsText:'Ativa as notificações para receberes novidades e lançamentos ArtEssencia.',conditions:'O código é individual, só pode ser reclamado uma vez e fica sujeito às condições da campanha.',completedTitle:'Desafio concluído',completedText:'Indica o teu telemóvel para receberes o teu código individual ArtEssencia.',claimButton:'Reclamar o meu código',codeText:'Guarda este código. Podes utilizá-lo numa compra direta ArtEssencia ou, quando disponível, na Loja Online.'};
+const LAUNCH_CONTENT_FIELDS_V1814={eyebrow:'launchContentEyebrowV1813',title:'launchContentTitleV1813',intro:'launchContentIntroV1813',installTitle:'launchContentInstallTitleV1813',installText:'launchContentInstallTextV1813',shareTitle:'launchContentShareTitleV1813',shareText:'launchContentShareTextV1813',favoritesTitle:'launchContentFavoritesTitleV1813',favoritesText:'launchContentFavoritesTextV1813',notificationsTitle:'launchContentNotificationsTitleV1813',notificationsText:'launchContentNotificationsTextV1813',conditions:'launchContentConditionsV1813',completedTitle:'launchContentCompletedTitleV1813',completedText:'launchContentCompletedTextV1813',claimButton:'launchContentClaimButtonV1813',codeText:'launchContentCodeTextV1813'};
+function fillLaunchContentV1814(data){const x={...LAUNCH_CONTENT_DEFAULTS_V1814,...(data||{})};Object.entries(LAUNCH_CONTENT_FIELDS_V1814).forEach(([k,id])=>{const e=document.getElementById(id);if(e)e.value=x[k]??''})}
+function launchContentFormV1814(){const out={};Object.entries(LAUNCH_CONTENT_FIELDS_V1814).forEach(([k,id])=>{out[k]=String(document.getElementById(id)?.value||'').trim()||LAUNCH_CONTENT_DEFAULTS_V1814[k]});return out}
 async function loadLaunchConfigV1813(showToast=false){
  const cl=initCloudClient(),u=cloudUser||await ensureCloudSession();if(!cl||!u)return;
- const {data,error}=await cl.rpc('artessencia_catalog_launch_config_admin_v1',{p_save:false});if(error){if(showToast)toast('Não foi possível carregar a campanha');return}
+ const [{data,error},{data:content,error:contentError}]=await Promise.all([cl.rpc('artessencia_catalog_launch_config_admin_v1',{p_save:false}),cl.rpc('artessencia_catalog_launch_content_admin_v1',{p_save:false})]);if(error||contentError){if(showToast)toast('Não foi possível carregar a campanha');return}
  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v??''};
- set('launchEnabledV1813',data?.enabled?'1':'0');set('launchTypeV1813',data?.discount_type||'FIXED');set('launchValueV1813',data?.discount_value??3);set('launchMaxV1813',data?.max_discount??'');set('launchMinV1813',data?.min_order??25);set('launchDaysV1813',data?.validity_days??60);set('launchFavsV1813',data?.required_favorites??3);set('launchStartV1813',launchLocalDateV1813(data?.starts_at));set('launchEndV1813',launchLocalDateV1813(data?.ends_at));if(showToast)toast('Campanha atualizada')
+ set('launchEnabledV1813',data?.enabled?'1':'0');set('launchTypeV1813',data?.discount_type||'FIXED');set('launchValueV1813',data?.discount_value??3);set('launchMaxV1813',data?.max_discount??'');set('launchMinV1813',data?.min_order??25);set('launchDaysV1813',data?.validity_days??60);set('launchFavsV1813',data?.required_favorites??3);set('launchStartV1813',launchLocalDateV1813(data?.starts_at));set('launchEndV1813',launchLocalDateV1813(data?.ends_at));fillLaunchContentV1814(content);if(showToast)toast('Campanha atualizada')
 }
 async function saveLaunchConfigV1813(){
  const cl=initCloudClient(),u=cloudUser||await ensureCloudSession();if(!cl||!u)return toast('Liga primeiro a Cloud');
  const v=id=>document.getElementById(id)?.value||'',type=v('launchTypeV1813'),value=Number(v('launchValueV1813')||0),maxRaw=v('launchMaxV1813'),start=v('launchStartV1813'),end=v('launchEndV1813');
  if(!(value>0))return toast('Indica um desconto válido');if(type==='PERCENT'&&value>100)return toast('A percentagem não pode ser superior a 100%');if(maxRaw&&Number(maxRaw)<0)return toast('O desconto máximo não pode ser negativo');if(start&&end&&new Date(end)<=new Date(start))return toast('A data final tem de ser posterior à inicial');
  const args={p_enabled:v('launchEnabledV1813')==='1',p_discount_type:type,p_discount_value:value,p_max_discount:maxRaw?Number(maxRaw):null,p_min_order:Number(v('launchMinV1813')||0),p_validity_days:Number(v('launchDaysV1813')||60),p_required_favorites:Number(v('launchFavsV1813')||3),p_starts_at:start?new Date(start).toISOString():null,p_ends_at:end?new Date(end).toISOString():null,p_save:true};
- const {error}=await cl.rpc('artessencia_catalog_launch_config_admin_v1',args);if(error)return toast('Não foi possível guardar a campanha');toast('Campanha de lançamento guardada');await Promise.all([loadLaunchConfigV1813(false),loadLaunchStatsV1813(false)])
+ const {error}=await cl.rpc('artessencia_catalog_launch_config_admin_v1',args);if(error)return toast('Não foi possível guardar a campanha');
+ const {error:contentError}=await cl.rpc('artessencia_catalog_launch_content_admin_v1',{p_content:launchContentFormV1814(),p_save:true});if(contentError)return toast('Campanha guardada, mas falhou o texto público');
+ toast('Campanha de lançamento guardada');await Promise.all([loadLaunchConfigV1813(false),loadLaunchStatsV1813(false)])
 }
 function renderLaunchStatsV1813(){
  const k=document.getElementById('launchStatsKpisV1813'),h=document.getElementById('launchStatsTableV1813');if(!k||!h)return;
