@@ -3479,9 +3479,15 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <h2>Encomendas</h2>
         <p>Acompanha cada pedido desde a entrada até à entrega.</p>
       </div>
+      <div class="orders-mode-tabs-v1882" role="tablist" aria-label="Separação de encomendas">
+        <button id="ordersActiveTabV1882" class="active" type="button" onclick="setOrdersModeV1882('active')">Ativas <span id="ordersActiveCountV1882">0</span></button>
+        <button id="ordersHistoryTabV1882" type="button" onclick="setOrdersModeV1882('history')">Histórico <span id="ordersHistoryCountV1882">0</span></button>
+      </div>
       <div class="orders-toolbar-controls orders-toolbar-controls-v1728">
-        <div class="field orders-search"><label>Pesquisar</label><input id="orderSearch" placeholder="N.º ou cliente" oninput="renderOrders()"></div>
+        <div class="field orders-search"><label>Pesquisar</label><input id="orderSearch" placeholder="N.º, cliente ou telefone" oninput="renderOrders()"></div>
         <div class="field"><label>Estado</label><select id="orderFilter" onchange="renderOrders()"><option value="">Todos</option><option>Pedido</option><option>Confirmada</option><option>Em produção</option><option>Pronta</option><option>Entregue</option><option>Cancelado</option></select></div>
+        <div class="field orders-period-v1882"><label>De</label><input id="orderDateFromV1882" type="date" onchange="renderOrders()"></div>
+        <div class="field orders-period-v1882"><label>Até</label><input id="orderDateToV1882" type="date" onchange="renderOrders()"></div>
         <div class="field"><label>Vista</label><div class="orders-view-switch"><button id="ordersCardsBtn" class="active" onclick="setOrdersView('cards')">▦ Cartões</button><button id="ordersTableBtn" onclick="setOrdersView('table')">☷ Tabela</button></div></div>
         <div class="orders-new-wrap-v1728"><button class="btn primary orders-new" onclick="go('sale')">＋ Nova encomenda</button></div>
       </div>
@@ -3490,8 +3496,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
     <section class="card orders-flow-card-v1728">
       <div class="orders-section-head-v1728">
         <div>
-          <div class="section-title" style="margin:0">Fluxo das encomendas</div>
-          <small>Resumo por estado para leitura rápida da operação.</small>
+          <div id="ordersFlowTitleV1882" class="section-title" style="margin:0">Fluxo das encomendas ativas</div>
+          <small id="ordersFlowSubV1882">Resumo do trabalho que ainda necessita de ação.</small>
         </div>
       </div>
       <div id="ordersFlow" class="orders-flow"></div>
@@ -3500,8 +3506,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
     <section class="card orders-list-card-v1728">
       <div class="orders-section-head-v1728">
         <div>
-          <div class="section-title" style="margin:0">Lista de encomendas</div>
-          <small>Consulta, edita e acompanha os pedidos registados.</small>
+          <div id="ordersListTitleV1882" class="section-title" style="margin:0">Encomendas ativas</div>
+          <small id="ordersListSubV1882">Consulta, edita e acompanha os pedidos ainda operacionais.</small>
         </div>
       </div>
       <div id="ordersCards" class="orders-cards"></div>
@@ -7258,6 +7264,14 @@ async function deleteTestOrder(id){
  toast('Teste eliminado definitivamente'+(exclusiveRuns.length?' · stock reposto':'')+(sharedRuns.length?' · produção partilhada preservada':'')+' · não reaparece ao atualizar');
 }
 let ordersView='cards';
+let ordersModeV1882='active';
+const ORDER_TERMINAL_STATUSES_V1882=new Set(['Entregue','Cancelado']);
+function isOrderHistoryV1882(o){return ORDER_TERMINAL_STATUSES_V1882.has(String(o?.status||''))}
+function setOrdersModeV1882(mode){
+ ordersModeV1882=mode==='history'?'history':'active';
+ const f=document.getElementById('orderFilter');if(f)f.value='';
+ renderOrders();
+}
 function setOrdersView(view){
  ordersView=view==='table'?'table':'cards';
  const cards=document.getElementById('ordersCards'),table=document.getElementById('ordersTableWrap');
@@ -7269,13 +7283,41 @@ function setOrdersView(view){
 function orderStatusClass(status){
  return status==='Entregue'?'done':status==='Cancelado'?'cancel':status==='Pronta'?'ready':status==='Em produção'?'production':status==='Confirmada'?'confirmed':'request';
 }
+function orderFilterDateV1882(o){return String(o?.created||o?.orderDate||o?.delivery||'').slice(0,10)}
 function renderOrders(){
- const q=(orderSearch?.value||'').toLowerCase(),f=orderFilter?.value||'';
- const rows=db.orders.filter(o=>(!q||(o.id+' '+o.client).toLowerCase().includes(q))&&(!f||o.status===f)).slice().reverse();
- const statuses=['Pedido','Confirmada','Em produção','Pronta','Entregue'];
+ const q=(document.getElementById('orderSearch')?.value||'').trim().toLowerCase(),f=document.getElementById('orderFilter')?.value||'';
+ const from=document.getElementById('orderDateFromV1882')?.value||'',to=document.getElementById('orderDateToV1882')?.value||'';
+ const activeAll=(db.orders||[]).filter(o=>!isOrderHistoryV1882(o));
+ const historyAll=(db.orders||[]).filter(isOrderHistoryV1882);
+ const base=ordersModeV1882==='history'?historyAll:activeAll;
+ const rows=base.filter(o=>{
+   const hay=[o.id,o.client,o.contact,o.phone,o.email].map(v=>String(v||'')).join(' ').toLowerCase();
+   const d=orderFilterDateV1882(o);
+   return (!q||hay.includes(q))&&(!f||o.status===f)&&(!from||d>=from)&&(!to||d<=to)
+ }).slice().reverse();
+
+ const activeCount=document.getElementById('ordersActiveCountV1882'),historyCount=document.getElementById('ordersHistoryCountV1882');
+ if(activeCount)activeCount.textContent=String(activeAll.length);
+ if(historyCount)historyCount.textContent=String(historyAll.length);
+ document.getElementById('ordersActiveTabV1882')?.classList.toggle('active',ordersModeV1882==='active');
+ document.getElementById('ordersHistoryTabV1882')?.classList.toggle('active',ordersModeV1882==='history');
+
+ const filter=document.getElementById('orderFilter');
+ if(filter){
+   const allowed=ordersModeV1882==='history'?['Entregue','Cancelado']:['Pedido','Confirmada','Em produção','Pronta'];
+   [...filter.options].forEach(opt=>{if(!opt.value){opt.hidden=false;opt.disabled=false;return}const show=allowed.includes(opt.value);opt.hidden=!show;opt.disabled=!show});
+   if(filter.value&&!allowed.includes(filter.value))filter.value='';
+ }
+ const ft=document.getElementById('ordersFlowTitleV1882'),fs=document.getElementById('ordersFlowSubV1882'),lt=document.getElementById('ordersListTitleV1882'),ls=document.getElementById('ordersListSubV1882');
+ if(ft)ft.textContent=ordersModeV1882==='history'?'Resumo do histórico':'Fluxo das encomendas ativas';
+ if(fs)fs.textContent=ordersModeV1882==='history'?'Encomendas em estados terminais, sem poluir a operação diária.':'Resumo do trabalho que ainda necessita de ação.';
+ if(lt)lt.textContent=ordersModeV1882==='history'?'Histórico de encomendas':'Encomendas ativas';
+ if(ls)ls.textContent=ordersModeV1882==='history'?'Pesquisa por número, cliente ou telefone e filtra por período/estado.':'Consulta, edita e acompanha os pedidos ainda operacionais.';
+
+ const statuses=ordersModeV1882==='history'?['Entregue','Cancelado']:['Pedido','Confirmada','Em produção','Pronta'];
  const flow=document.getElementById('ordersFlow');
  if(flow){
-   const counts=Object.fromEntries(statuses.map(s=>[s,db.orders.filter(o=>o.status===s&&!o.voidedAt).length]));
+   const counts=Object.fromEntries(statuses.map(s=>[s,(db.orders||[]).filter(o=>o.status===s).length]));
    flow.innerHTML=statuses.map((s,i)=>`<button class="orders-flow-step ${orderStatusClass(s)} ${f===s?'selected':''}" onclick="orderFilter.value='${s}';renderOrders()"><span>${i+1}</span><div><b>${s}</b><small>${counts[s]} encomenda${counts[s]===1?'':'s'}</small></div></button>`).join('')+`<button class="orders-flow-clear ${!f?'selected':''}" onclick="orderFilter.value='';renderOrders()">Todas</button>`;
  }
  const cards=document.getElementById('ordersCards');
@@ -7302,13 +7344,13 @@ function renderOrders(){
         <button class="btn" onclick="showOrder('${escapeHtml(o.id)}')">Ver detalhe</button>
         <select aria-label="Alterar estado" onchange="setStatus('${escapeHtml(o.id)}',this.value)">${['Pedido','Confirmada','Em produção','Pronta','Entregue','Cancelado'].map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}</select>
         <button class="btn" onclick="sendWhatsApp('${escapeHtml(o.id)}')">WhatsApp</button>
-        
         <button class="btn danger" onclick="${canDeleteTestOrder(o)?'deleteTestOrder':'deleteOrder'}('${escapeHtml(o.id)}')">${canDeleteTestOrder(o)?'Limpar teste':(canDeleteOrder(o)?'Eliminar':'Eliminar definitivamente')}</button>
        </div>
      </article>`;
-   }).join(''):`<div class="orders-empty"><span>🧾</span><b>Sem encomendas</b><small>Não existem encomendas para os filtros selecionados.</small><button class="btn primary" onclick="go('sale')">＋ Nova encomenda</button></div>`;
+   }).join(''):`<div class="orders-empty"><span>🧾</span><b>${ordersModeV1882==='history'?'Sem histórico':'Sem encomendas ativas'}</b><small>Não existem encomendas para os filtros selecionados.</small>${ordersModeV1882==='active'?'<button class="btn primary" onclick="go(\'sale\')">＋ Nova encomenda</button>':''}</div>`;
  }
- ordersBody.innerHTML=rows.length?rows.map(o=>{const c=calcOrder(o),del=canDeleteOrder(o)?` <button class="btn danger" style="padding:8px 10px" onclick="deleteOrder('${o.id}')">Eliminar</button>`:'',testDel=canDeleteTestOrder(o)?` <button class="btn danger" style="padding:8px 10px" onclick="deleteTestOrder('${o.id}')">Limpar teste</button>`:'';return`<tr><td>${escapeHtml(o.id)}${o.source==='online_store'?'<br><span class="badge ok">ONLINE</span>':''}</td><td>${escapeHtml(o.client||'—')}</td><td>${escapeHtml(o.delivery||'—')}</td><td>${c.qty}</td><td>${euro(c.total)}</td><td>${euro(o.paid)}${o.source==='online_store'?`<br><span class="badge ${(+o.paid||0)>=c.total&&c.total>0?'ok':'warn'}">${(+o.paid||0)>=c.total&&c.total>0?'PAGO':'PENDENTE'}</span>`:''}</td><td><span class="badge ${o.status==='Entregue'?'ok':o.status==='Cancelado'?'bad':'warn'}">${escapeHtml(o.status)}</span></td><td><select onchange="setStatus('${o.id}',this.value)">${['Pedido','Confirmada','Em produção','Pronta','Entregue','Cancelado'].map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}</select><button class="btn" style="margin-left:6px;padding:8px 10px" onclick="showOrder('${o.id}')">Ver</button> <button class="btn" style="padding:8px 10px" onclick="sendWhatsApp('${o.id}')">WhatsApp</button>${del}${testDel}</td></tr>`}).join(''):`<tr><td colspan="8" class="empty">Sem encomendas</td></tr>`;
+ const body=document.getElementById('ordersBody');
+ if(body)body.innerHTML=rows.length?rows.map(o=>{const c=calcOrder(o),del=canDeleteOrder(o)?` <button class="btn danger" style="padding:8px 10px" onclick="deleteOrder('${o.id}')">Eliminar</button>`:'',testDel=canDeleteTestOrder(o)?` <button class="btn danger" style="padding:8px 10px" onclick="deleteTestOrder('${o.id}')">Limpar teste</button>`:'';return`<tr><td>${escapeHtml(o.id)}${o.source==='online_store'?'<br><span class="badge ok">ONLINE</span>':''}</td><td>${escapeHtml(o.client||'—')}</td><td>${escapeHtml(o.delivery||'—')}</td><td>${c.qty}</td><td>${euro(c.total)}</td><td>${euro(o.paid)}${o.source==='online_store'?`<br><span class="badge ${(+o.paid||0)>=c.total&&c.total>0?'ok':'warn'}">${(+o.paid||0)>=c.total&&c.total>0?'PAGO':'PENDENTE'}</span>`:''}</td><td><span class="badge ${o.status==='Entregue'?'ok':o.status==='Cancelado'?'bad':'warn'}">${escapeHtml(o.status)}</span></td><td><select onchange="setStatus('${o.id}',this.value)">${['Pedido','Confirmada','Em produção','Pronta','Entregue','Cancelado'].map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}</select><button class="btn" style="margin-left:6px;padding:8px 10px" onclick="showOrder('${o.id}')">Ver</button> <button class="btn" style="padding:8px 10px" onclick="sendWhatsApp('${o.id}')">WhatsApp</button>${del}${testDel}</td></tr>`}).join(''):`<tr><td colspan="8" class="empty">Sem encomendas</td></tr>`;
  setOrdersView(ordersView);
 }
 function setStatus(id,s){const o=db.orders.find(x=>x.id===id);if(!o)return;if(s==='Cancelado'&&o.status!=='Cancelado')return voidOrder(id);if(typeof setOrderStatus==='function')return setOrderStatus(id,s);o.status=s;save();toast('Estado atualizado')}
@@ -11033,9 +11075,18 @@ function printOrderCompleteV12634(id){
   line-height:1.4;
   color:#8a7770;
 }
+#orders .orders-mode-tabs-v1882{
+  display:flex;gap:7px;margin:14px 0 10px;padding:4px;border:1px solid #e4d8d2;border-radius:13px;background:#f9f5f2;width:max-content;max-width:100%;
+}
+#orders .orders-mode-tabs-v1882 button{
+  border:0;background:transparent;color:#745f57;border-radius:9px;padding:9px 13px;font-weight:900;cursor:pointer;
+}
+#orders .orders-mode-tabs-v1882 button.active{background:#5A240B;color:#fff}
+#orders .orders-mode-tabs-v1882 span{display:inline-flex;min-width:22px;justify-content:center;margin-left:5px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.72);color:#5A240B;font-size:10px}
+#orders .orders-mode-tabs-v1882 button.active span{background:rgba(255,255,255,.18);color:#fff}
 #orders .orders-toolbar-controls-v1728{
   display:grid;
-  grid-template-columns:minmax(220px,1.25fr) minmax(150px,.75fr) minmax(200px,.85fr) auto;
+  grid-template-columns:minmax(210px,1.2fr) minmax(130px,.7fr) minmax(125px,.55fr) minmax(125px,.55fr) minmax(180px,.8fr) auto;
   gap:10px;
   align-items:end;
 }
@@ -11105,7 +11156,7 @@ function printOrderCompleteV12634(id){
 }
 #orders .orders-flow{
   display:grid;
-  grid-template-columns:repeat(6,minmax(0,1fr));
+  grid-template-columns:repeat(5,minmax(0,1fr));
   gap:9px;
 }
 #orders .orders-flow>div{
@@ -11163,7 +11214,7 @@ function printOrderCompleteV12634(id){
     flex-direction:column;
   }
   #orders .orders-toolbar-controls-v1728{
-    grid-template-columns:1.1fr .75fr .85fr auto;
+    grid-template-columns:1.1fr .75fr .6fr .6fr .85fr auto;
     width:100%;
   }
   #orders .orders-flow{
@@ -11176,6 +11227,9 @@ function printOrderCompleteV12634(id){
   #orders .orders-toolbar-controls-v1728{
     grid-template-columns:1fr 1fr;
   }
+  #orders .orders-mode-tabs-v1882{width:100%}
+  #orders .orders-mode-tabs-v1882 button{flex:1}
+
   #orders .orders-new-wrap-v1728{
     grid-column:1/-1;
   }
