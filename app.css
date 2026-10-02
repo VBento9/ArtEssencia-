@@ -53,17 +53,3 @@ input,select,textarea{width:100%;border:1px solid var(--line);background:white;c
 .creator-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}.creator-item{border:1px solid var(--line);background:#fff;border-radius:14px;padding:12px}.creator-item-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.swatch{width:34px;height:34px;border-radius:10px;border:1px solid var(--line);display:inline-block}.toggle-line{display:flex;align-items:center;justify-content:space-between;gap:12px}.toggle-line input{width:auto}.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}.calendar-head{font-size:9px;text-transform:uppercase;font-weight:900;text-align:center;color:var(--muted);padding:4px}.calendar-day{min-height:58px;border:1px solid var(--line);background:#fff;border-radius:10px;padding:7px;cursor:pointer;text-align:left;font-weight:800;color:var(--text)}.calendar-day.closed{background:var(--danger-soft);border-color:#e6b8b4;color:var(--danger)}.calendar-day.empty{visibility:hidden}.calendar-day small{display:block;font-size:8px;margin-top:4px}.quote-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.preview-panel{background:linear-gradient(135deg,#533629,#8b6551);color:#fff;border-radius:18px;padding:22px;min-height:230px;display:flex;flex-direction:column;justify-content:center}.preview-panel small{letter-spacing:.15em;font-weight:900;opacity:.8}.preview-panel h2{font-family:Georgia,serif;font-size:31px;margin:8px 0}.chip-row{display:flex;gap:6px;flex-wrap:wrap}.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 9px;font-size:11px;font-weight:800}.financial-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}.danger-zone{border-color:#ecc6c2;background:#fffafa}
 @media(max-width:900px){.creator-grid{grid-template-columns:1fr 1fr}.quote-summary{grid-template-columns:1fr 1fr}.financial-grid{grid-template-columns:1fr}}
 @media(max-width:600px){.creator-grid{grid-template-columns:1fr}.calendar-day{min-height:45px;padding:5px}.quote-summary{grid-template-columns:1fr 1fr}}
-
-
-/* Autenticação global — reutiliza a sessão Cloud existente */
-.auth-locked .shell{visibility:hidden}
-.auth-gate{position:fixed;inset:0;z-index:500;display:grid;place-items:center;padding:20px;background:radial-gradient(circle at top,#f7eee6 0,#f5f0e9 44%,#eadfd4 100%)}
-.auth-card{width:min(430px,100%);background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:28px;box-shadow:0 28px 90px rgba(61,42,31,.16)}
-.auth-logo{display:block;width:72px;height:72px;object-fit:contain;margin:0 0 18px}
-.auth-card h1{margin:5px 0 6px;font-size:30px}
-.auth-copy{margin:0 0 22px;color:var(--muted);font-size:13px}
-.auth-form{display:grid;gap:14px}
-.auth-form .btn{width:100%;margin-top:2px}
-.auth-message{min-height:18px;color:var(--danger);font-size:12px;font-weight:700}
-.auth-logout{white-space:nowrap}
-@media(max-width:760px){.auth-gate{padding:14px}.auth-card{padding:22px;border-radius:20px}.auth-card h1{font-size:25px}.auth-logo{width:60px;height:60px}.auth-logout{padding:8px 9px;font-size:0}.auth-logout::after{content:'Sair';font-size:12px}}
