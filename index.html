@@ -829,6 +829,16 @@
 #products .section-title{font-size:14px}
 .product-photo-editor{display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:center}
 .product-photo-editor img{width:105px;height:105px;object-fit:cover;border-radius:12px;border:1px solid var(--line);background:#fff8e4;display:none}
+.product-photo-gallery-v1860{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.product-photo-slot-v1860{min-width:0;padding:10px;border:1px solid #eadfdb;border-radius:12px;background:#fcfaf8}
+.product-photo-slot-v1860>strong{display:block;margin-bottom:7px;font-size:9px;color:#59453d}
+.product-photo-slot-v1860>strong small{font-weight:600;color:var(--muted)}
+.product-photo-gallery-v1860 .product-photo-editor{grid-template-columns:1fr;align-items:start}
+.product-photo-gallery-v1860 .product-photo-editor img{width:100%;height:auto;aspect-ratio:1/1;max-width:150px}
+.product-photo-gallery-v1860 input[type="file"]{width:100%;font-size:8px}
+@media(max-width:900px){.product-photo-gallery-v1860{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.product-photo-gallery-v1860{grid-template-columns:1fr}}
+
 .product-shop-toggle{display:flex;align-items:center;gap:8px;font-weight:800}
 .product-shop-toggle input{width:auto!important}
 .products-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
@@ -5558,19 +5568,52 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         </div>
         <div class="field span2 art-tech-info"><div class="product-technical-head-v1287"><div><strong>🧾 Informação técnica e segurança</strong><small>Dados apresentados ao cliente na ficha do produto.</small></div></div><div class="field"><label>Composição e materiais</label><textarea id="prodIngredientsV1287" rows="4" placeholder="Ex.: cera de soja, fragrância, pavio de algodão, recipiente de vidro..."></textarea></div><div class="form-grid" style="margin-top:10px"><div class="field span2"><label>Conservação e cuidados</label><input id="prodStorageV1287" placeholder="Ex.: conservar em local seco e protegido do calor"></div><div class="field span2"><label>Instruções de utilização e segurança</label><input id="prodConsumptionV1287" placeholder="Ex.: não deixar a vela acesa sem vigilância"></div></div><input id="prodTechnicalVerifiedV1287" type="checkbox" hidden><div id="prodBaseTechnicalSummaryV12811" hidden></div><div id="prodSafetysContainsV1287" hidden></div><div id="prodSafetysMayContainV1287" hidden></div></div>
         <div class="field span2 product-photo-section-v1726">
-          <label>Fotografia principal da loja</label>
-          <div class="product-photo-editor">
-            <img id="prodShopImagePreview" alt="Pré-visualização">
-            <div>
-              <input id="prodShopImageFile" type="file" accept="image/jpeg,image/png,image/webp" onchange="previewShopImageFile()">
-              <div class="btnrow" style="margin-top:8px">
-                <button type="button" class="btn" onclick="uploadProductShopImage()">Carregar fotografia</button>
-                <button type="button" class="btn danger" onclick="removeProductShopImage()">Remover</button>
+          <label>Fotografias públicas do produto</label>
+          <small class="mix-help" style="display:block;margin-bottom:9px">A foto principal é usada nos cartões. As fotos 2 e 3 são opcionais e só aparecem na galeria de “Ver detalhes”.</small>
+          <div class="product-photo-gallery-v1860">
+            <div class="product-photo-slot-v1860">
+              <strong>Foto principal</strong>
+              <div class="product-photo-editor">
+                <img id="prodShopImagePreview" alt="Pré-visualização da foto principal">
+                <div>
+                  <input id="prodShopImageFile" type="file" accept="image/jpeg,image/png,image/webp" onchange="previewShopImageFile()">
+                  <div class="btnrow" style="margin-top:8px">
+                    <button type="button" class="btn" onclick="uploadProductShopImage()">Carregar</button>
+                    <button type="button" class="btn danger" onclick="removeProductShopImage()">Remover</button>
+                  </div>
+                </div>
               </div>
-              <small>JPG, PNG ou WebP. A fotografia fica disponível na loja pública.</small>
+              <input id="prodShopImageUrl" type="hidden">
+            </div>
+            <div class="product-photo-slot-v1860">
+              <strong>Foto 2 <small>opcional</small></strong>
+              <div class="product-photo-editor">
+                <img id="prodShopImagePreview2" alt="Pré-visualização da foto 2">
+                <div>
+                  <input id="prodShopImageFile2" type="file" accept="image/jpeg,image/png,image/webp" onchange="previewProductGalleryImageV1860(2)">
+                  <div class="btnrow" style="margin-top:8px">
+                    <button type="button" class="btn" onclick="uploadProductGalleryImageV1860(2)">Carregar</button>
+                    <button type="button" class="btn danger" onclick="removeProductGalleryImageV1860(2)">Remover</button>
+                  </div>
+                </div>
+              </div>
+              <input id="prodShopImageUrl2" type="hidden">
+            </div>
+            <div class="product-photo-slot-v1860">
+              <strong>Foto 3 <small>opcional</small></strong>
+              <div class="product-photo-editor">
+                <img id="prodShopImagePreview3" alt="Pré-visualização da foto 3">
+                <div>
+                  <input id="prodShopImageFile3" type="file" accept="image/jpeg,image/png,image/webp" onchange="previewProductGalleryImageV1860(3)">
+                  <div class="btnrow" style="margin-top:8px">
+                    <button type="button" class="btn" onclick="uploadProductGalleryImageV1860(3)">Carregar</button>
+                    <button type="button" class="btn danger" onclick="removeProductGalleryImageV1860(3)">Remover</button>
+                  </div>
+                </div>
+              </div>
+              <input id="prodShopImageUrl3" type="hidden">
             </div>
           </div>
-          <input id="prodShopImageUrl" type="hidden">
         </div>
         <div class="field product-publication-v1726"><label>Publicação pública</label><label class="product-shop-toggle"><input id="prodShopVisible" type="checkbox"> Mostrar este produto no Catálogo Digital</label><small class="mix-help">Publica o produto no Catálogo Digital. A futura Loja poderá reutilizar este estado sem duplicar a ficha.</small></div>
         <div class="field product-mix-v1726"><label>Compor conjunto</label><label class="product-shop-toggle mix-toggle"><input id="prodMixVisible" type="checkbox"> Disponível para conjuntos</label><small class="mix-help">Pode ser de qualquer categoria ou de uma Edição Especial.</small></div>
@@ -14225,6 +14268,42 @@ function artessenciaPriceHealthV1251(p){const cost=calculatedProductCost(p),pric
 function editionRecommendedPriceV1249(p){return artessenciaRecommendedPriceV1251(p)}
 function ensureOnlineOrderCostSnapshotV12644(order,sourceDb=db){if(!order||!Array.isArray(order.items))return order;for(const line of order.items){if(!line||['quote_discount','quote_adjustment'].includes(line.type)||Number.isFinite(Number(line.cost)))continue;const code=String(line.code||''),name=normText(line.name||'');const p=(sourceDb.products||[]).find(x=>(code&&String(x.code||'')===code)||(name&&normText(x.name||'')===name));line.cost=p?calculatedProductCost(p):0;line.costSnapshotAt=order.created||new Date().toISOString();line.costSnapshotSource='online_order'}return order}
 function setProductShopImagePreview(url=''){const img=document.getElementById('prodShopImagePreview'),hidden=document.getElementById('prodShopImageUrl');if(hidden)hidden.value=String(url||'');if(img){if(url){img.src=url;img.style.display='block'}else{img.removeAttribute('src');img.style.display='none'}}}
+function setProductGalleryImagePreviewV1860(slot,url=''){const img=document.getElementById('prodShopImagePreview'+slot),hidden=document.getElementById('prodShopImageUrl'+slot);if(hidden)hidden.value=String(url||'');if(img){if(url){img.src=url;img.style.display='block'}else{img.removeAttribute('src');img.style.display='none'}}}
+function previewProductGalleryImageV1860(slot){const file=document.getElementById('prodShopImageFile'+slot)?.files?.[0];if(!file)return;if(!/^image\/(jpeg|png|webp)$/i.test(file.type))return toast('Formato de imagem não suportado');if(file.size>12*1024*1024)return toast('A imagem é demasiado grande (máx. 12 MB antes da otimização)');const r=new FileReader();r.onload=()=>{const img=document.getElementById('prodShopImagePreview'+slot);if(img){img.src=r.result;img.style.display='block'}};r.readAsDataURL(file)}
+let pendingProductGalleryImagesV1860={2:null,3:null};
+async function finalizePendingProductGalleryImagesV1860(commit){const pending={...pendingProductGalleryImagesV1860};pendingProductGalleryImagesV1860={2:null,3:null};if(commit)return;try{const c=initCloudClient(),user=cloudUser||await ensureCloudSession();if(!c||!user)return;const paths=Object.values(pending).map(x=>x?.newPath).filter(Boolean);if(paths.length)await c.storage.from('artessencia-shop').remove(paths)}catch(e){cloudLogMsg('Aviso limpeza galeria pendente: '+cloudErrText(e))}}
+async function uploadProductGalleryImageV1860(slot){
+ if(![2,3].includes(Number(slot)))return;
+ const file=document.getElementById('prodShopImageFile'+slot)?.files?.[0];if(!file)return toast('Escolhe primeiro uma fotografia');
+ if(!/^image\/(jpeg|png|webp)$/i.test(file.type))return toast('Formato de imagem não suportado');
+ if(file.size>12*1024*1024)return toast('A imagem é demasiado grande (máx. 12 MB antes da otimização)');
+ const c=initCloudClient();if(!c)return toast('Liga primeiro a Cloud');const user=cloudUser||await ensureCloudSession();if(!user)return toast('Inicia sessão na Cloud');
+ const requestedCode=String(document.getElementById('prodCode')?.value||editingProductCodeV147||'').trim(),code=requestedCode||nextProductCodeV147(),oldUrl=String(document.getElementById('prodShopImageUrl'+slot)?.value||'');
+ if(!requestedCode&&!editingProductCodeV147){const codeEl=document.getElementById('prodCode');if(codeEl)codeEl.value=code;newProductRecipeDraftV1805.code=code;refreshProductTechSheetBridgeV1250()}
+ let uploadedPath='';
+ try{
+   toast('A preparar fotografia '+slot+'…');
+   const optimized=await optimizeProductImageV1806(file),ext=(optimized.type==='image/webp'?'webp':optimized.type==='image/png'?'png':'jpg'),path=`${user.id}/products/${encodeURIComponent(code)}/gallery-${slot}-${Date.now()}.${ext}`;uploadedPath=path;
+   const {error}=await c.storage.from('artessencia-shop').upload(path,optimized,{cacheControl:'3600',upsert:false,contentType:optimized.type});if(error)throw error;
+   const {data}=c.storage.from('artessencia-shop').getPublicUrl(path),url=data?.publicUrl||'';if(!url)throw new Error('URL pública indisponível');
+   setProductGalleryImagePreviewV1860(slot,url);
+   const previous=pendingProductGalleryImagesV1860[slot];if(previous?.newPath&&previous.newPath!==path){try{await c.storage.from('artessencia-shop').remove([previous.newPath])}catch(e){}}
+   pendingProductGalleryImagesV1860[slot]={oldPath:previous?.oldPath||productStoragePathFromPublicUrlV1807(oldUrl,user.id,code),newPath:path};
+   toast('Fotografia '+slot+' carregada — guarda o produto')
+ }catch(e){if(uploadedPath){try{await c.storage.from('artessencia-shop').remove([uploadedPath])}catch(_){}}cloudLogMsg('Erro fotografia '+slot+': '+cloudErrText(e));toast('Não foi possível carregar a fotografia '+slot)}
+}
+async function removeProductGalleryImageV1860(slot){
+ if(![2,3].includes(Number(slot)))return;
+ const url=String(document.getElementById('prodShopImageUrl'+slot)?.value||'');if(url&&!confirm('Remover a fotografia '+slot+' deste produto?'))return;
+ try{
+  const c=initCloudClient(),user=cloudUser||await ensureCloudSession();if(!c||!user)return toast('Liga a Cloud para remover a fotografia');
+  const code=String(document.getElementById('prodCode')?.value||editingProductCodeV147||'').trim(),current=pendingProductGalleryImagesV1860[slot];
+  if(current?.newPath){try{await c.storage.from('artessencia-shop').remove([current.newPath])}catch(_){}}
+  pendingProductGalleryImagesV1860[slot]={oldPath:current?.oldPath||productStoragePathFromPublicUrlV1807(url,user.id,code),newPath:''};
+  setProductGalleryImagePreviewV1860(slot,'');const fi=document.getElementById('prodShopImageFile'+slot);if(fi)fi.value='';
+  toast('Fotografia '+slot+' removida da galeria — guarda o produto')
+ }catch(e){cloudLogMsg('Aviso remoção fotografia '+slot+': '+cloudErrText(e));toast('Não foi possível preparar a remoção')}
+}
 function previewShopImageFile(){const file=document.getElementById('prodShopImageFile')?.files?.[0];if(!file)return;if(!/^image\/(jpeg|png|webp)$/i.test(file.type))return toast('Formato de imagem não suportado');if(file.size>12*1024*1024)return toast('A imagem é demasiado grande (máx. 12 MB antes da otimização)');const r=new FileReader();r.onload=()=>{const img=document.getElementById('prodShopImagePreview');if(img){img.src=r.result;img.style.display='block'}};r.readAsDataURL(file)}
 async function optimizeProductImageV1806(file){
  if(!file||!/^image\/(jpeg|png|webp)$/i.test(file.type))return file;
@@ -14719,7 +14798,7 @@ function setProductSaveStateV145(type,title,detail){
 }
 function cancelProductEditV145(){
  clearNewProductRecipeDraftV1805();
- void finalizePendingProductImageV1806(false);
+ void finalizePendingProductImageV1806(false);void finalizePendingProductGalleryImagesV1860(false);
  ++productEditSessionV1798; // invalida carregamentos assíncronos do produto anterior
  prodName.value=prodCode.value=prodPrice.value=prodShopDescription.value='';const tagsEl=document.getElementById('prodTagsV1753');if(tagsEl)tagsEl.value='';const seasonEl=document.getElementById('prodSeasonTagsV1761');if(seasonEl)seasonEl.value='';renderAprecoSourceV1753(null);
  const op=document.getElementById('prodOnlinePriceV12620');if(op)op.value='';
@@ -14732,8 +14811,8 @@ function cancelProductEditV145(){
  for(const id of ['prodEditionExtraLaborMinutes','prodEditionExtraWastePct']){const el=document.getElementById(id);if(el)el.value='0'}
  for(const id of ['prodLaborMinutesV110','prodProfitPctV1744','prodWastePctV110','prodMoldAverageV1740','prodOperatingAverageV1740','prodMoldCostV110','prodMoldUsesV110','prodMoldOverrideV110','prodPackagingCostV110','prodEquipmentPowerWV133','prodEquipmentMinutesV133','prodIndirectCostV110','prodOtherCostV110','prodTargetMarginV110','prodOnlineTargetMarginV110']){const el=document.getElementById(id);if(el)el.value=''}
  const cavities=document.getElementById('prodMoldCavitiesV110');if(cavities)cavities.value='1';
- clearProductProductionFieldsV130();clearProductTechnicalFormV1287();setProductShopImagePreview('');
- const f=document.getElementById('prodShopImageFile');if(f)f.value='';
+ clearProductProductionFieldsV130();clearProductTechnicalFormV1287();setProductShopImagePreview('');setProductGalleryImagePreviewV1860(2,'');setProductGalleryImagePreviewV1860(3,'');
+ for(const id of ['prodShopImageFile','prodShopImageFile2','prodShopImageFile3']){const f=document.getElementById(id);if(f)f.value=''};
  updateProductAvailabilityUI();
  const bq=document.getElementById('batchQtyV1743');if(bq)bq.value='50';
  const be=document.getElementById('batchEfficiencyV1745');if(be)be.value='0';
@@ -15036,19 +15115,19 @@ function saveProduct(){
  const publicCharacteristics=productPublicCharacteristicsFromFormV1820();
  const archivedNow=existing?.archivedV1803===true;
  const publicReleasePendingV1803=archivedNow?true:(existing?.publicReleasePendingV1803===true&&!prodShopVisible.checked);
- const obj={code,name,category:prodCat.value,tagsV1753:productTagsV1753,seasonalTagsV1761,seasonalTagsManualV1761:true,archivedV1803:archivedNow,archivedAtV1803:existing?.archivedAtV1803||null,publicReleasePendingV1803,cost:0,price:directPrice,onlinePrice,shopVisible:archivedNow?false:!!prodShopVisible.checked,shopDescription:prodShopDescription.value.trim(),shopImageUrl:String(document.getElementById('prodShopImageUrl')?.value||'').trim(),personalizationV1773,publicCharacteristics,customizable:(Number(personalizationV1773.colors?.max)||0)>0||!!personalizationV1773.fragrance?.enabled,mixVisible:archivedNow?false:mixVisible,mixMaxQty,mixBoxCapacities,availabilityType,editionExclusive:availabilityType==='edition',editionId,editionIds,editionExtraLaborMinutes,editionExtraWastePct,laborMinutes,profitPct,marginPct,wastePct,moldAverageCost,operatingAverageCost,moldCost,moldUses,moldCavities,moldUnitOverride,packagingCost,equipmentPowerW,equipmentMinutes,indirectCost,otherCost,targetMarginPct,onlineTargetMarginPct,productionType,manufactured,cureHours,prepTemp,mixTemp,pourTemp,productionNotes,qualityNotes,materialsText:additionalIngredientsText,careInstructions:storageInstructions,safetyInstructions:consumptionGuidance,additionalIngredientsText,additionalSafetysContains:[],additionalSafetysMayContain:[],storageInstructions,consumptionGuidance,technicalInfoVerified:false,technicalInfoReviewedAt:''};
+ const obj={code,name,category:prodCat.value,tagsV1753:productTagsV1753,seasonalTagsV1761,seasonalTagsManualV1761:true,archivedV1803:archivedNow,archivedAtV1803:existing?.archivedAtV1803||null,publicReleasePendingV1803,cost:0,price:directPrice,onlinePrice,shopVisible:archivedNow?false:!!prodShopVisible.checked,shopDescription:prodShopDescription.value.trim(),shopImageUrl:String(document.getElementById('prodShopImageUrl')?.value||'').trim(),shopImageUrl2:String(document.getElementById('prodShopImageUrl2')?.value||'').trim(),shopImageUrl3:String(document.getElementById('prodShopImageUrl3')?.value||'').trim(),personalizationV1773,publicCharacteristics,customizable:(Number(personalizationV1773.colors?.max)||0)>0||!!personalizationV1773.fragrance?.enabled,mixVisible:archivedNow?false:mixVisible,mixMaxQty,mixBoxCapacities,availabilityType,editionExclusive:availabilityType==='edition',editionId,editionIds,editionExtraLaborMinutes,editionExtraWastePct,laborMinutes,profitPct,marginPct,wastePct,moldAverageCost,operatingAverageCost,moldCost,moldUses,moldCavities,moldUnitOverride,packagingCost,equipmentPowerW,equipmentMinutes,indirectCost,otherCost,targetMarginPct,onlineTargetMarginPct,productionType,manufactured,cureHours,prepTemp,mixTemp,pourTemp,productionNotes,qualityNotes,materialsText:additionalIngredientsText,careInstructions:storageInstructions,safetyInstructions:consumptionGuidance,additionalIngredientsText,additionalSafetysContains:[],additionalSafetysMayContain:[],storageInstructions,consumptionGuidance,technicalInfoVerified:false,technicalInfoReviewedAt:''};
  obj.ingredientsText=productFinalIngredientsV12811(obj);obj.safetysContains=productFinalContainsV12811(obj);obj.safetysMayContain=productFinalMayContainV12811(obj);
  existing?Object.assign(existing,obj):db.products.push(obj);
  const savedProduct=existing||db.products[db.products.length-1];
  if(!existing&&newProductRecipeDraftV1805.lines.length)db.productRecipes[code]=newProductRecipeDraftV1805.lines.map(x=>({item:x.item,qty:Number(x.qty)||0}));
  else if(!db.productRecipes[code])db.productRecipes[code]=[];
- save('products');setTimeout(()=>syncProductEditionAvailabilityV12618(savedProduct),0);void finalizePendingProductImageV1806(true);
+ save('products');setTimeout(()=>syncProductEditionAvailabilityV12618(savedProduct),0);void finalizePendingProductImageV1806(true);void finalizePendingProductGalleryImagesV1860(true);
  clearNewProductRecipeDraftV1805();resetProductEditorAfterSaveV1749();
  setProductSaveStateV145('saved',wasEditing?'Alterações guardadas':'Produto guardado com sucesso',`${name} · produto guardado. O editor foi limpo para um novo registo.`);toast(wasEditing?'Alterações guardadas':'Produto guardado com sucesso')
 }
 function editProduct(code){
  clearNewProductRecipeDraftV1805();
- void finalizePendingProductImageV1806(false);
+ void finalizePendingProductImageV1806(false);void finalizePendingProductGalleryImagesV1860(false);
  const p=findProductByCodeV147(code);if(!p)return;
  // Cada mudança de produto cria uma nova sessão de edição.
  // Assim, respostas assíncronas de coleções do produto anterior nunca voltam a preencher o editor atual.
@@ -15081,8 +15160,8 @@ function editProduct(code){
 
  refreshProductTechSheetBridgeV1250();
  fillProductTechnicalFormV1287(p);
- setProductShopImagePreview(p.shopImageUrl||'');
- const f=document.getElementById('prodShopImageFile');if(f)f.value='';
+ setProductShopImagePreview(p.shopImageUrl||'');setProductGalleryImagePreviewV1860(2,p.shopImageUrl2||'');setProductGalleryImagePreviewV1860(3,p.shopImageUrl3||'');
+ for(const id of ['prodShopImageFile','prodShopImageFile2','prodShopImageFile3']){const f=document.getElementById(id);if(f)f.value=''};
  syncPricingQuickFromBaseV1762();restoreProductPanelV1762();window.scrollTo({top:0,behavior:'smooth'})
 }
 function updateProductCollectionFilterV1752(){
@@ -18641,7 +18720,7 @@ async function syncStoreCatalogV1421(user){
    const online=!!p.shopVisible&&!productArchivedV1803(p)&&p?.publicReleasePendingV1803!==true;if(online)visibleCodes.add(code.toLowerCase());
    const category=String(p.category||'Outros produtos artesanais').trim();
    const price=Number(p.onlinePrice)>0?Number(p.onlinePrice):(Number(p.price)||0);
-   const publicInfoV1809={materials:String(p.materialsText||p.additionalIngredientsText||p.ingredientsText||'').trim(),care:candleCareTextV1853(p),safety:candleSafetyTextV1853(p)};
+   const publicInfoV1809={materials:String(p.materialsText||p.additionalIngredientsText||p.ingredientsText||'').trim(),care:candleCareTextV1853(p),safety:candleSafetyTextV1853(p),gallery:[p.shopImageUrl2,p.shopImageUrl3].map(x=>String(x||'').trim()).filter(Boolean)};
    const hasCurrentPersonalizationV1820=Object.prototype.hasOwnProperty.call(p||{},'personalizationV1773');
    const legacyPersonalizationV1820=p?.personalization&&typeof p.personalization==='object'?p.personalization:{};
    const hasLegacyPersonalizationV1820=!hasCurrentPersonalizationV1820&&Object.keys(legacyPersonalizationV1820).some(k=>k!=='public_info');
