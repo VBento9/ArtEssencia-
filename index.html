@@ -5530,7 +5530,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           <label>Características públicas</label>
           <small class="mix-help" style="display:block;margin-bottom:8px">Campos opcionais. O Catálogo e a Loja só apresentam os dados que estiverem preenchidos. Cor e fragrância continuam nas opções de personalização.</small>
           <div class="form-grid">
-            <div class="field"><label>Tipo de cera</label><input id="prodPublicWaxTypeV1820" type="text" placeholder="Ex.: soja, colza, coco"></div>
+            <div class="field"><label>Tipo de cera</label><input id="prodPublicWaxTypeV1820" type="text" placeholder="Ex.: soja, colza, coco"><small class="mix-help">Usar apenas em produtos de cera.</small></div>
+            <div class="field"><label>Material / composição</label><input id="prodPublicMaterialTypeV1861" type="text" placeholder="Ex.: resina acrílica à base de água"><small class="mix-help">Para resina, gesso ou outros materiais que não sejam cera.</small></div>
             <div class="field"><label>Peso aproximado</label><input id="prodPublicWeightV1820" type="text" placeholder="Ex.: 90 g"></div>
             <div class="field"><label>Tamanho</label><select id="prodPublicSizeV1850"><option value="">Não mostrar</option><option value="small">Pequeno · até 8 cm</option><option value="medium">Médio · &gt; 8 até 15 cm</option><option value="large">Grande · &gt; 15 cm</option></select><small class="mix-help">Usa a maior dimensão da peça como referência. Pequeno: até 8 cm · Médio: mais de 8 até 15 cm · Grande: mais de 15 cm.</small><input id="prodPublicDimensionsV1820" type="hidden"></div>
             <div class="field"><label>Tempo de queima</label><input id="prodPublicBurnTimeV1820" type="text" placeholder="Ex.: aprox. 20 h"></div>
@@ -14840,7 +14841,8 @@ function resetProductEditorAfterSaveV1749(){
  for(const id of ['prodLaborMinutesV110','prodProfitPctV1744','prodWastePctV110','prodMoldAverageV1740','prodOperatingAverageV1740','prodMoldCostV110','prodMoldUsesV110','prodMoldOverrideV110','prodPackagingCostV110','prodEquipmentPowerWV133','prodEquipmentMinutesV133','prodIndirectCostV110','prodOtherCostV110','prodTargetMarginV110','prodOnlineTargetMarginV110']){const el=document.getElementById(id);if(el)el.value=''}
  const cavities=document.getElementById('prodMoldCavitiesV110');if(cavities)cavities.value='1';
  clearProductProductionFieldsV130();clearProductTechnicalFormV1287();
- setProductShopImagePreview('');const f=document.getElementById('prodShopImageFile');if(f)f.value='';
+ setProductShopImagePreview('');setProductGalleryImagePreviewV1860(2,'');setProductGalleryImagePreviewV1860(3,'');
+ for(const id of ['prodShopImageFile','prodShopImageFile2','prodShopImageFile3']){const f=document.getElementById(id);if(f)f.value=''};
  updateProductAvailabilityUI();
  const bq=document.getElementById('batchQtyV1743');if(bq)bq.value='50';
  const be=document.getElementById('batchEfficiencyV1745');if(be)be.value='0';
@@ -15031,6 +15033,7 @@ setTimeout(renderDescriptionTemplatesV1852,0);
 function productPublicCharacteristicsFromFormV1820(){
  return {
   waxType:String(document.getElementById('prodPublicWaxTypeV1820')?.value||'').trim(),
+  materialType:String(document.getElementById('prodPublicMaterialTypeV1861')?.value||'').trim(),
   approximateWeight:String(document.getElementById('prodPublicWeightV1820')?.value||'').trim(),
   sizeCategory:String(document.getElementById('prodPublicSizeV1850')?.value||'').trim(),
   dimensions:String(document.getElementById('prodPublicDimensionsV1820')?.value||'').trim(),
@@ -15045,6 +15048,7 @@ function fillProductPublicCharacteristicsV1820(p){
  const x=p?.publicCharacteristics&&typeof p.publicCharacteristics==='object'?p.publicCharacteristics:{};
  const values={
   prodPublicWaxTypeV1820:x.waxType||'',
+  prodPublicMaterialTypeV1861:x.materialType||x.material_type||'',
   prodPublicWeightV1820:x.approximateWeight||'',
   prodPublicSizeV1850:x.sizeCategory||x.size_category||productSizeCategoryFromLegacyDimensionsV1850(x.dimensions||''),
   prodPublicDimensionsV1820:x.dimensions||'',
