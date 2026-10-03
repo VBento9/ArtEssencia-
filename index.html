@@ -18736,9 +18736,8 @@ async function syncStoreCatalogV1421(user){
    const row={backoffice_product_id:p._rid||code,code,name:String(p.name||code),slug:storeSlugV1421(code+'-'+(p.name||'')),description:productPublicDescriptionV1762(p),category_id:categoryMap.get(category)||null,price_online:Math.max(0,price),image_url:p.shopImageUrl||null,active:online,available:online,customizable:effectiveCustomizableV1820,personalization:personalizationV1809,updated_at:new Date().toISOString()};
    const {error}=await cloudClient.from('store_products').upsert(row,{onConflict:'code'});if(error)throw error;
  }
- const {data:remote,error:readErr}=await cloudClient.from('store_products').select('id,code,active');if(readErr)throw readErr;
- const stale=(remote||[]).filter(r=>r.active&&!visibleCodes.has(String(r.code||'').toLowerCase())).map(r=>r.id);
- if(stale.length){const {error}=await cloudClient.from('store_products').update({active:false,available:false,updated_at:new Date().toISOString()}).in('id',stale);if(error)throw error}
+ // Segurança multi-dispositivo: este Backoffice publica/oculta apenas produtos presentes no seu snapshot local.
+ // Nunca desativar registos remotos desconhecidos só por estarem ausentes deste dispositivo.
  cloudLogMsg('Catálogo Loja ArtEssencia sincronizado · '+visibleCodes.size+' produto(s) público(s)');
  return true
 }
