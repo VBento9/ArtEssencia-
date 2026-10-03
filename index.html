@@ -18779,6 +18779,13 @@ async function relationalSyncCore(showToast=false){
      const {error}=await cloudClient.from(REL_TABLES.products).upsert(productRows,{onConflict:'id'});
      if(error)throw error
    }
+   // O Backoffice principal só conclui a sincronização depois de confirmar
+   // as características públicas de todos os produtos na Cloud.
+   for(const p of (db.products||[])){
+     if(!p?.code)continue;
+     const publicOk=await syncProductPublicCharacteristicsV1820(p);
+     if(!publicOk)throw new Error('public_characteristics_sync_failed:'+String(p.code||''))
+   }
    await syncStoreCatalogV1421(u);
 
    const pendingOrders=relOrderPendingSet();
