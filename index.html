@@ -16738,12 +16738,13 @@ async function renameTechnicalCategoryV1863(index){
  const affected=(db.products||[]).filter(p=>String(p?.category||'')===oldName).length;
  if(newName!==oldName&&!confirm('Renomear “'+oldName+'” para “'+newName+'”?\n\nSerão atualizados '+affected+' produto(s), Famílias públicas e destaques da Homepage. Preços, stock, fichas técnicas, fotos e IDs não serão alterados.'))return;
  const c=initCloudClient(),u=cloudUser||await ensureCloudSession();if(!c||!u)return toast('Liga primeiro a Cloud para renomear categorias em segurança');
- const newFamilies=(catalogFamiliesAdminV1823||[]).map(f=>({...f,categories:[...new Set((f.categories||[]).map(v=>v===oldName?newName:v))]}));
- let homepageBackup=null;
+ const originalFamilies=(catalogFamiliesAdminV1823||[]).map(f=>({...f,categories:[...(f.categories||[])]}));
+ const newFamilies=originalFamilies.map(f=>({...f,categories:[...new Set((f.categories||[]).map(v=>v===oldName?newName:v))]}));
+ let familiesChanged=false;
  try{
-  if(newName!==oldName)homepageBackup=await renameHomepageCategoryRefsV1863(oldName,newName);
   const familyPayload=newFamilies.map(x=>({id:String(x.id||'').trim(),label:String(x.label||'').trim(),enabled:x.enabled!==false,sort_order:Math.max(0,Math.min(1000,Number(x.sort_order)||0)),categories:[...new Set((x.categories||[]).map(v=>String(v||'').trim()).filter(Boolean))]}));
-  if(familyPayload.length){const fr=await c.rpc('artessencia_save_catalog_families_admin_v1',{p_families:familyPayload});if(fr.error)throw fr.error}
+  if(newName!==oldName&&familyPayload.length){const fr=await c.rpc('artessencia_save_catalog_families_admin_v1',{p_families:familyPayload});if(fr.error)throw fr.error;familiesChanged=true}
+  if(newName!==oldName)await renameHomepageCategoryRefsV1863(oldName,newName);
   if(newName!==oldName)(db.products||[]).forEach(p=>{if(String(p?.category||'')===oldName)p.category=newName});
   const stored=technicalCategoriesV1863().map(x=>x.name===oldName?{...x,name:newName,type:newType,aliases:[...new Set([...(x.aliases||[]),oldName,newName])]}:x);
   db.settings=db.settings||{};db.settings.technicalCategoriesV1863=stored;
@@ -16752,7 +16753,14 @@ async function renameTechnicalCategoryV1863(index){
   if(newName===oldName){const target=db.settings.technicalCategoriesV1863.find(x=>x.name===oldName);if(target)target.type=newType}
   save('products');renderTechnicalCategoriesV1863();renderCatalogFamiliesV1823();renderHomepageFeaturedCategoriesV170();toast(newName===oldName?'Tipo de produção atualizado':'Categoria renomeada com segurança')
  }catch(e){
-  console.error(e);toast('Não foi possível concluir a alteração. Nenhum produto local foi renomeado.');
+  console.error(e);
+  if(familiesChanged){
+    try{
+      const rollback=originalFamilies.map(x=>({id:String(x.id||'').trim(),label:String(x.label||'').trim(),enabled:x.enabled!==false,sort_order:Math.max(0,Math.min(1000,Number(x.sort_order)||0)),categories:[...new Set((x.categories||[]).map(v=>String(v||'').trim()).filter(Boolean))]}));
+      if(rollback.length)await c.rpc('artessencia_save_catalog_families_admin_v1',{p_families:rollback})
+    }catch(re){console.error('Falha ao repor famílias após erro de renomeação',re)}
+  }
+  toast('Não foi possível concluir a alteração. Nenhum produto local foi renomeado.');
  }
 }
 
@@ -18849,6 +18857,18 @@ async function syncStoreCatalogV1421(user){
    const row={backoffice_product_id:p._rid||code,code,name:String(p.name||code),slug:storeSlugV1421(code+'-'+(p.name||'')),description:productPublicDescriptionV1762(p),category_id:categoryMap.get(category)||null,price_online:Math.max(0,price),image_url:p.shopImageUrl||null,active:online,available:online,customizable:effectiveCustomizableV1820,personalization:personalizationV1809,updated_at:new Date().toISOString()};
    const {error}=await cloudClient.from('store_products').upsert(row,{onConflict:'code'});if(error)throw error;
  }
+ // Limpar apenas categorias públicas sem qualquer produto público ativo associado.
+ // Não elimina categorias nem produtos e não depende do snapshot local para decidir sobre produtos remotos.
+ try{
+   const [{data:allCats,error:catsErr},{data:activeProducts,error:activeErr}]=await Promise.all([
+     cloudClient.from('store_categories').select('id,name,active'),
+     cloudClient.from('store_products').select('category_id').eq('active',true).eq('available',true)
+   ]);
+   if(catsErr)throw catsErr;if(activeErr)throw activeErr;
+   const used=new Set((activeProducts||[]).map(x=>String(x.category_id||'')).filter(Boolean));
+   const orphanIds=(allCats||[]).filter(x=>x.active!==false&&!used.has(String(x.id||''))).map(x=>x.id).filter(Boolean);
+   if(orphanIds.length){const {error:offErr}=await cloudClient.from('store_categories').update({active:false,updated_at:new Date().toISOString()}).in('id',orphanIds);if(offErr)throw offErr}
+ }catch(e){cloudLogMsg('Aviso ao limpar categorias públicas sem produtos: '+cloudErrText(e))}
  // Segurança multi-dispositivo: este Backoffice publica/oculta apenas produtos presentes no seu snapshot local.
  // Nunca desativar registos remotos desconhecidos só por estarem ausentes deste dispositivo.
  cloudLogMsg('Catálogo Loja ArtEssencia sincronizado · '+visibleCodes.size+' produto(s) público(s)');
