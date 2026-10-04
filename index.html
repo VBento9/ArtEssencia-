@@ -16858,19 +16858,34 @@ function renderCatalogFamiliesV1823(){
  host.innerHTML=catalogFamiliesAdminV1823.slice().sort((a,b)=>(Number(a.sort_order)||0)-(Number(b.sort_order)||0)).map(f=>{
   const id=escapeAttr(String(f.id||'')),protectedBase=['candles','resin'].includes(String(f.id));
   const selected=new Set(Array.isArray(f.categories)?f.categories:[]);
-  return '<div class="card" style="padding:12px;margin:8px 0;background:#fff">'+
+  return '<div class="card" data-catalog-family-id-v242="'+id+'" style="padding:12px;margin:8px 0;background:#fff">'+
    '<div class="form-grid">'+
-    '<div class="field span2"><label>Nome público</label><input maxlength="40" value="'+escapeAttr(f.label||'')+'" onchange="updateCatalogFamilyV1843(\''+id+'\',\'label\',this.value)"></div>'+
-    '<div class="field"><label>Visível</label><select onchange="updateCatalogFamilyV1843(\''+id+'\',\'enabled\',this.value)"><option value="1" '+(f.enabled===false?'':'selected')+'>Sim</option><option value="0" '+(f.enabled===false?'selected':'')+'>Não</option></select></div>'+
-    '<div class="field"><label>Ordem</label><input type="number" min="0" max="1000" step="1" value="'+(Number(f.sort_order)||0)+'" onchange="updateCatalogFamilyV1843(\''+id+'\',\'sort_order\',this.value)"></div>'+
+    '<div class="field span2"><label>Nome público</label><input data-family-field-v242="label" maxlength="40" value="'+escapeAttr(f.label||'')+'" onchange="updateCatalogFamilyV1843(\''+id+'\',\'label\',this.value)"></div>'+
+    '<div class="field"><label>Visível</label><select data-family-field-v242="enabled" onchange="updateCatalogFamilyV1843(\''+id+'\',\'enabled\',this.value)"><option value="1" '+(f.enabled===false?'':'selected')+'>Sim</option><option value="0" '+(f.enabled===false?'selected':'')+'>Não</option></select></div>'+
+    '<div class="field"><label>Ordem</label><input data-family-field-v242="sort_order" type="number" min="0" max="1000" step="1" value="'+(Number(f.sort_order)||0)+'" onchange="updateCatalogFamilyV1843(\''+id+'\',\'sort_order\',this.value)"></div>'+
    '</div>'+
    '<div style="margin-top:8px"><b style="font-size:13px">Categorias incluídas</b><div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:7px">'+
-    cats.map(cat=>'<label class="chip" style="cursor:pointer"><input type="checkbox" '+(selected.has(cat)?'checked':'')+' onchange="toggleCatalogFamilyCategoryV1843(\''+id+'\','+JSON.stringify(cat)+',this.checked)"> '+escapeHtml(cat)+'</label>').join('')+
+    cats.map(cat=>'<label class="chip" style="cursor:pointer"><input type="checkbox" data-family-category-v242="'+escapeAttr(cat)+'" '+(selected.has(cat)?'checked':'')+' onchange="toggleCatalogFamilyCategoryV1843(\''+id+'\','+JSON.stringify(cat)+',this.checked)"> '+escapeHtml(cat)+'</label>').join('')+
    '</div></div>'+
    '<div class="btnrow" style="margin-top:10px"><span class="muted">ID: '+escapeHtml(String(f.id||''))+'</span>'+(protectedBase?'':'<button class="btn danger" type="button" onclick="removeCatalogFamilyV1843(\''+id+'\')">Apagar família</button>')+'</div>'+
   '</div>'
  }).join('');
  const st=document.getElementById('catalogFamiliesStatusV1823');if(st){st.textContent=catalogFamiliesAdminV1823.length+' família(s)';st.className='badge ok'}
+}
+function syncCatalogFamiliesFromDomV242(){
+ const host=document.getElementById('catalogFamiliesListV1843');if(!host)return;
+ host.querySelectorAll('[data-catalog-family-id-v242]').forEach(card=>{
+  const id=String(card.dataset.catalogFamilyIdV242||'');
+  const row=(catalogFamiliesAdminV1823||[]).find(x=>String(x?.id)===id);if(!row)return;
+  const label=card.querySelector('[data-family-field-v242="label"]');
+  const enabled=card.querySelector('[data-family-field-v242="enabled"]');
+  const order=card.querySelector('[data-family-field-v242="sort_order"]');
+  if(label)row.label=String(label.value||'').slice(0,40);
+  if(enabled)row.enabled=String(enabled.value)!=='0';
+  if(order)row.sort_order=Math.max(0,Math.min(1000,Number(order.value)||0));
+  row.categories=[...card.querySelectorAll('input[data-family-category-v242]:checked')]
+   .map(el=>String(el.dataset.familyCategoryV242||'').trim()).filter(Boolean);
+ });
 }
 async function loadCatalogFamiliesV1823(){
  const c=initCloudClient();if(!c)return null;
@@ -16884,6 +16899,7 @@ async function loadCatalogFamiliesV1823(){
 async function saveCatalogFamiliesV1823(){
  const c=initCloudClient();if(!c)return toast('Liga primeiro a Cloud');
  const u=cloudUser||await ensureCloudSession();if(!u)return toast('Inicia sessão na Cloud');
+ syncCatalogFamiliesFromDomV242();
  const payload=(catalogFamiliesAdminV1823||[]).map(x=>({id:String(x.id||'').trim(),label:String(x.label||'').trim(),enabled:x.enabled!==false,sort_order:Math.max(0,Math.min(1000,Number(x.sort_order)||0)),categories:[...new Set((Array.isArray(x.categories)?x.categories:[]).map(v=>String(v||'').trim()).filter(Boolean))]}));
  if(!payload.length)return toast('Adiciona pelo menos uma família');
  if(payload.some(x=>!x.label))return toast('Todas as famílias precisam de nome público');
