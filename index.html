@@ -4287,6 +4287,28 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       </div>
       <div class="btnrow" style="margin-top:10px"><button class="btn primary" onclick="savePublicChannelStatusV1785('catalog')">Guardar estado do Catálogo</button></div>
     </section>
+    <section class="card" id="catalogAppearanceCardV1864" style="margin:12px 0">
+      <div class="catalog-center-section-head-v1733">
+        <div>
+          <div class="section-title" style="margin:0">Aparência do Catálogo</div>
+          <p class="muted" style="margin:4px 0 0">Personaliza o fundo geral do Catálogo. É independente do Hero e das Edições Especiais.</p>
+        </div>
+        <span id="catalogAppearanceStatusV1864" class="badge">Cloud</span>
+      </div>
+      <div class="form-grid" style="margin-top:10px">
+        <div class="field span2"><label>Imagem de fundo</label><input id="catalogBackgroundImageV1864" readonly placeholder="Sem imagem personalizada"></div>
+        <div class="field"><label>Posição</label><select id="catalogBackgroundPositionV1864" onchange="previewCatalogBackgroundV1864()"><option value="center">Centro</option><option value="center top">Topo</option><option value="center bottom">Fundo</option><option value="left center">Esquerda</option><option value="right center">Direita</option></select></div>
+        <div class="field"><label>Intensidade</label><input id="catalogBackgroundStrengthV1864" type="range" min="5" max="55" step="5" value="20" oninput="previewCatalogBackgroundV1864()"><small id="catalogBackgroundStrengthLabelV1864" class="muted">20%</small></div>
+      </div>
+      <input id="catalogBackgroundFileV1864" type="file" accept="image/jpeg,image/png,image/webp" hidden onchange="if(this.files?.[0])uploadCatalogBackgroundV1864()">
+      <div class="btnrow" style="margin-top:10px">
+        <button class="btn" type="button" onclick="document.getElementById('catalogBackgroundFileV1864').click()">Escolher imagem</button>
+        <button class="btn danger" type="button" onclick="removeCatalogBackgroundV1864()">Remover imagem</button>
+        <button class="btn primary" type="button" onclick="saveCatalogAppearanceV1864()">Guardar aparência</button>
+      </div>
+      <div id="catalogBackgroundPreviewV1864" style="margin-top:12px;min-height:150px;border:1px solid #e2d5c6;border-radius:16px;background:#fffaf5 center/cover;display:grid;place-items:center;overflow:hidden"><span class="badge">PRÉ-VISUALIZAÇÃO DO FUNDO</span></div>
+      <div class="soft-note" style="margin-top:10px">A intensidade controla quanto da fotografia fica visível por baixo do fundo claro. O Hero mantém a sua própria imagem.</div>
+    </section>
     <section class="card" id="technicalCategoriesCardV1863" style="margin:12px 0">
       <div class="catalog-center-section-head-v1733">
         <div>
@@ -16676,6 +16698,36 @@ async function savePublicChannelStatusV1785(channel){
   cloudLogMsg('Estado público '+channel+' atualizado para '+mode);
  }catch(e){console.error(e);cloudLogMsg('Falha ao guardar estado público '+channel+': '+cloudErrText(e));toast('Não foi possível guardar o estado público')}
 }
+let catalogAppearanceV1864={backgroundImage:'',backgroundPosition:'center',backgroundStrength:20};
+function fillCatalogAppearanceV1864(x={}){
+ catalogAppearanceV1864={backgroundImage:String(x.catalogBackgroundImage||''),backgroundPosition:String(x.catalogBackgroundPosition||'center'),backgroundStrength:Math.max(5,Math.min(55,Number(x.catalogBackgroundStrength)||20))};
+ const img=document.getElementById('catalogBackgroundImageV1864'),pos=document.getElementById('catalogBackgroundPositionV1864'),str=document.getElementById('catalogBackgroundStrengthV1864');
+ if(img)img.value=catalogAppearanceV1864.backgroundImage;if(pos)pos.value=catalogAppearanceV1864.backgroundPosition;if(str)str.value=String(catalogAppearanceV1864.backgroundStrength);previewCatalogBackgroundV1864()
+}
+function catalogAppearanceFormV1864(){return{
+ catalogBackgroundImage:String(document.getElementById('catalogBackgroundImageV1864')?.value||'').trim(),
+ catalogBackgroundPosition:String(document.getElementById('catalogBackgroundPositionV1864')?.value||'center'),
+ catalogBackgroundStrength:Math.max(5,Math.min(55,Number(document.getElementById('catalogBackgroundStrengthV1864')?.value)||20))
+}}
+function previewCatalogBackgroundV1864(){
+ const x=catalogAppearanceFormV1864(),box=document.getElementById('catalogBackgroundPreviewV1864'),label=document.getElementById('catalogBackgroundStrengthLabelV1864');if(label)label.textContent=x.catalogBackgroundStrength+'%';if(!box)return;
+ const alpha=Math.max(.45,Math.min(.95,1-x.catalogBackgroundStrength/100));
+ box.style.backgroundImage=x.catalogBackgroundImage?'linear-gradient(rgba(255,250,245,'+alpha+'),rgba(255,250,245,'+alpha+')),url('+JSON.stringify(x.catalogBackgroundImage)+')':'none';
+ box.style.backgroundPosition=x.catalogBackgroundPosition;box.style.backgroundSize='cover'
+}
+async function loadCatalogAppearanceV1864(){
+ try{const c=initCloudClient(),u=cloudUser||await ensureCloudSession();if(!c||!u)throw new Error('Cloud desligada');const q=await c.from('artessencia_shop_settings').select('data').eq('user_id',u.id).maybeSingle();if(q.error)throw q.error;fillCatalogAppearanceV1864(q.data?.data?.homepage||{});const st=document.getElementById('catalogAppearanceStatusV1864');if(st){st.textContent='Atualizado';st.className='badge ok'};return true}catch(e){const st=document.getElementById('catalogAppearanceStatusV1864');if(st){st.textContent='Por carregar';st.className='badge warn'};return false}
+}
+async function persistCatalogAppearanceV1864(patch){
+ const c=initCloudClient(),u=cloudUser||await ensureCloudSession();if(!c||!u)throw new Error('Liga primeiro a Cloud');const q=await c.from('artessencia_shop_settings').select('data').eq('user_id',u.id).maybeSingle();if(q.error)throw q.error;const old=q.data?.data||{},homepage={...(old.homepage||{}),...patch};const {error}=await c.from('artessencia_shop_settings').upsert({user_id:u.id,data:{...old,homepage},updated_at:new Date().toISOString()},{onConflict:'user_id'});if(error)throw error;return homepage
+}
+async function saveCatalogAppearanceV1864(){try{const x=catalogAppearanceFormV1864();await persistCatalogAppearanceV1864(x);catalogAppearanceV1864=x;const st=document.getElementById('catalogAppearanceStatusV1864');if(st){st.textContent='Guardado';st.className='badge ok'};toast('Aparência do Catálogo guardada')}catch(e){toast('Erro ao guardar aparência: '+cloudErrText(e))}}
+async function uploadCatalogBackgroundV1864(){
+ const file=document.getElementById('catalogBackgroundFileV1864')?.files?.[0];if(!file)return toast('Escolhe primeiro uma imagem');if(file.size>8*1024*1024)return toast('Imagem demasiado grande (máx. 8 MB)');
+ try{const c=initCloudClient(),u=cloudUser||await ensureCloudSession();if(!c||!u)throw new Error('Liga primeiro a Cloud');const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg',path=`${u.id}/catalog/background-${Date.now()}.${ext}`;toast('A carregar fundo do Catálogo…');const up=await c.storage.from('artessencia-shop').upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type});if(up.error)throw up.error;const {data}=c.storage.from('artessencia-shop').getPublicUrl(path),url=data?.publicUrl||'';if(!url)throw new Error('URL pública indisponível');document.getElementById('catalogBackgroundImageV1864').value=url;document.getElementById('catalogBackgroundFileV1864').value='';previewCatalogBackgroundV1864();await persistCatalogAppearanceV1864(catalogAppearanceFormV1864());toast('Fundo do Catálogo carregado e publicado')}catch(e){toast('Erro no fundo do Catálogo: '+cloudErrText(e))}
+}
+async function removeCatalogBackgroundV1864(){const el=document.getElementById('catalogBackgroundImageV1864');if(el)el.value='';previewCatalogBackgroundV1864();try{await persistCatalogAppearanceV1864(catalogAppearanceFormV1864());toast('Fundo personalizado removido')}catch(e){toast('Erro ao remover fundo: '+cloudErrText(e))}}
+
 const TECHNICAL_CATEGORY_BASE_V1863=[
  {name:'Velas em molde',type:'wax_mold',aliases:['Velas em molde']},
  {name:'Velas em recipiente',type:'wax_container',aliases:['Velas em recipiente']},
@@ -16842,7 +16894,7 @@ async function saveCatalogFamiliesV1823(){
   catalogFamiliesAdminV1823=Array.isArray(data)?data:payload;renderCatalogFamiliesV1823();toast('Famílias do Catálogo atualizadas');cloudLogMsg('Famílias públicas do catálogo atualizadas')
  }catch(e){console.error(e);cloudLogMsg('Falha ao guardar famílias do catálogo: '+cloudErrText(e));toast('Não foi possível guardar as famílias')}
 }
-async function loadCatalogDigitalCenterV160(showToast=false){try{await Promise.all([loadSpecialEditionsAdmin(false),loadPublicChannelStatusV1785('catalog'),loadCatalogFamiliesV1823(),loadPromoCodesV1786(false)]);renderCatalogDigitalCenterV160();if(showToast)toast('Catálogo Digital atualizado')}catch(e){renderCatalogDigitalCenterV160();if(showToast)toast('Não foi possível atualizar o Catálogo Digital')}}
+async function loadCatalogDigitalCenterV160(showToast=false){try{await Promise.all([loadSpecialEditionsAdmin(false),loadPublicChannelStatusV1785('catalog'),loadCatalogFamiliesV1823(),loadPromoCodesV1786(false),loadCatalogAppearanceV1864()]);renderCatalogDigitalCenterV160();if(showToast)toast('Catálogo Digital atualizado')}catch(e){renderCatalogDigitalCenterV160();if(showToast)toast('Não foi possível atualizar o Catálogo Digital')}}
 
 function renderSpecialEditionsAdmin(){
  const grid=document.getElementById('specialEditionsGrid');if(!grid)return;
