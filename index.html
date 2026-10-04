@@ -17636,10 +17636,11 @@ function renderDigitalStatsV1795(){
   d.innerHTML='<div class="empty">'+(st.loading?'A carregar…':'Sem dados carregados.')+'</div>';
   return
  }
- const t=st.data.totals||{},sessions=Number(t.sessions)||0,orders=Number(t.order_submitted)||0,contacts=Number(t.contact_clicks)||0,shares=Number(t.share_clicks)||0;
- const rate=shop?(sessions?orders/sessions:0):(sessions?(contacts+shares)/sessions:0);
+ const t=st.data.totals||{},sessions=Number(t.sessions)||0,visitors=Number(t.visitors)||0,orders=Number(t.order_submitted)||0,contacts=Number(t.contact_clicks)||0,shares=Number(t.share_clicks)||0,favorites=Number(t.favorite_adds)||0,campaignClicks=Number(t.campaign_clicks)||0,productViews=Number(t.product_views)||0;
+ const interestActions=campaignClicks+productViews+favorites+shares+contacts;
+ const rate=shop?(sessions?orders/sessions:0):(sessions?Math.min(sessions,interestActions)/sessions:0);
  const rows=shop?[
-  ['Visitas',Number(t.visits)||0,'Aberturas registadas'],
+  ['Visitas',Number(t.visits)||0,'Sessões únicas registadas'],
   ['Sessões',sessions,'Sessões anónimas distintas'],
   ['Produtos vistos',Number(t.product_views)||0,'Aberturas de detalhe'],
   ['Cliques em coleções',Number(t.campaign_clicks)||0,'Interações com campanhas'],
@@ -17648,19 +17649,20 @@ function renderDigitalStatsV1795(){
   ['Encomendas enviadas',orders,'Pedidos registados com sucesso'],
   ['Conversão',pct(rate),'Encomendas ÷ sessões']
  ]:[
-  ['Visitas',Number(t.visits)||0,'Aberturas registadas'],
-  ['Sessões',sessions,'Sessões anónimas distintas'],
-  ['Produtos vistos',Number(t.product_views)||0,'Aberturas de detalhe'],
-  ['Cliques em coleções',Number(t.campaign_clicks)||0,'Interações com campanhas'],
-  ['Contactos',contacts,'Pedidos de informação'],
-  ['Partilhas',shares,'Partilhas/cópias de produto'],
-  ['Taxa de interesse',pct(rate),'Contactos + partilhas ÷ sessões']
+  ['Visitantes',visitors,'Dispositivos/visitantes anónimos distintos'],
+  ['Sessões',sessions,'Sessões reais distintas'],
+  ['Coleções abertas',campaignClicks,'Cliques em edições e coleções'],
+  ['Produtos abertos',productViews,'Aberturas do detalhe de produto'],
+  ['Favoritos',favorites,'Produtos guardados nos favoritos'],
+  ['Partilhas',shares,'Partilhas/cópias registadas'],
+  ['Pedidos de informação',contacts,'Contactos iniciados pelo Catálogo'],
+  ['Interações',interestActions,'Ações úteis, excluindo simples entradas']
  ];
  k.innerHTML=rows.map(([label,value,note])=>'<div class="card report-kpi"><span>'+escapeHtml(label)+'</span><strong>'+escapeHtml(String(value))+'</strong><small>'+escapeHtml(note)+'</small></div>').join('');
  const products=Array.isArray(st.data.top_products)?st.data.top_products:[];
  p.innerHTML=products.length?products.map((x,i)=>'<div class="report-product"><span class="report-rank">'+(i+1)+'</span><div><strong>'+escapeHtml(x.name||x.product_id||'Produto')+'</strong><small>'+Number(x.views||0)+' visualizações'+(shop?' · '+Number(x.cart_adds||0)+' carrinho':' · '+Number(x.contacts||0)+' contactos')+'</small></div><strong>'+Number(x.views||0)+'</strong></div>').join(''):'<div class="empty">Sem visualizações de produtos neste período</div>';
  const daily=Array.isArray(st.data.daily)?st.data.daily:[];
- d.innerHTML=daily.length?daily.map(x=>'<div class="report-line"><span>'+escapeHtml(String(x.day||''))+'</span><strong>'+Number(x.visits||0)+' visitas · '+Number(x.product_views||0)+' produtos'+(shop?' · '+Number(x.orders||0)+' encomendas':'')+'</strong></div>').join(''):'<div class="empty">Sem atividade neste período</div>'
+ d.innerHTML=daily.length?daily.map(x=>'<div class="report-line"><span>'+escapeHtml(String(x.day||''))+'</span><strong>'+Number(x.visitors||x.visits||0)+' visitantes · '+Number(x.visits||0)+' sessões · '+Number(x.product_views||0)+' produtos'+(shop?' · '+Number(x.orders||0)+' encomendas':' · '+Number(x.campaign_clicks||0)+' coleções · '+Number(x.favorites||0)+' favoritos')+'</strong></div>').join(''):'<div class="empty">Sem atividade neste período</div>'
 }
 async function loadDigitalStatsV1795(showToast=false){
  const range=digitalStatsRangeV1795();
