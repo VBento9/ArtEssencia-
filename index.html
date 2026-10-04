@@ -4327,7 +4327,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           <option value="resin">Resina / Jesmonite</option>
           <option value="assembly">Montagem / personalização</option>
           <option value="laser">Gravação a laser</option>
-          <option value="other" selected>Outro processo</option>
+          <option value="other" selected>Mesmo nome da categoria</option>
         </select></div>
         <div class="field"><label>&nbsp;</label><button class="btn" type="button" onclick="addTechnicalCategoryV1863()">+ Criar categoria</button></div>
       </div>
@@ -16764,8 +16764,8 @@ function renderTechnicalCategoriesV1863(){
  const host=document.getElementById('technicalCategoriesListV1863');if(!host)return;
  if(document.activeElement&&host.contains(document.activeElement))return;
  const arr=technicalCategoriesV1863(),counts=new Map();(db.products||[]).forEach(p=>{const n=String(p?.category||'').trim();counts.set(n,(counts.get(n)||0)+1)});
- const typeLabels={wax_mold:'Vela em molde',wax_container:'Vela em recipiente',wax_melt:'Wax melt',soap:'Sabonete',resin:'Resina / Jesmonite',assembly:'Montagem / personalização',laser:'Gravação a laser',other:'Outro processo'};
- host.innerHTML=arr.map((x,i)=>'<div class="card" style="padding:12px;margin:8px 0;background:#fff"><div class="form-grid"><div class="field span2"><label>Nome da categoria</label><input id="technicalCategoryNameV1863_'+i+'" maxlength="45" value="'+escapeAttr(x.name)+'"></div><div class="field"><label>Tipo de produção</label><select id="technicalCategoryTypeV1863_'+i+'">'+Object.entries(typeLabels).map(([v,l])=>'<option value="'+v+'" '+(x.type===v?'selected':'')+'>'+l+'</option>').join('')+'</select></div><div class="field"><label>Produtos</label><div style="padding:10px 0"><b>'+(counts.get(x.name)||0)+'</b> produto(s)</div></div></div><div class="btnrow"><button class="btn primary" type="button" onclick="renameTechnicalCategoryV1863('+i+')">Guardar alterações</button></div></div>').join('');
+ const baseTypeLabels={wax_mold:'Vela em molde',wax_container:'Vela em recipiente',wax_melt:'Wax melt',soap:'Sabonete',resin:'Resina / Jesmonite',assembly:'Montagem / personalização',laser:'Gravação a laser'};
+ host.innerHTML=arr.map((x,i)=>{const typeLabels={...baseTypeLabels,other:String(x.name||'Outro processo')};return '<div class="card" style="padding:12px;margin:8px 0;background:#fff"><div class="form-grid"><div class="field span2"><label>Nome da categoria</label><input id="technicalCategoryNameV1863_'+i+'" maxlength="45" value="'+escapeAttr(x.name)+'"></div><div class="field"><label>Tipo de produção</label><select id="technicalCategoryTypeV1863_'+i+'">'+Object.entries(typeLabels).map(([v,l])=>'<option value="'+v+'" '+(x.type===v?'selected':'')+'>'+escapeHtml(l)+'</option>').join('')+'</select></div><div class="field"><label>Produtos</label><div style="padding:10px 0"><b>'+(counts.get(x.name)||0)+'</b> produto(s)</div></div></div><div class="btnrow"><button class="btn primary" type="button" onclick="renameTechnicalCategoryV1863('+i+')">Guardar alterações</button></div></div>'}).join('');
  const st=document.getElementById('technicalCategoriesStatusV1863');if(st){st.textContent=arr.length+' categoria(s)';st.className='badge ok'}
  refreshTechnicalCategorySelectsV1863()
 }
