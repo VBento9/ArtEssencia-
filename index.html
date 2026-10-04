@@ -4287,6 +4287,31 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       </div>
       <div class="btnrow" style="margin-top:10px"><button class="btn primary" onclick="savePublicChannelStatusV1785('catalog')">Guardar estado do Catálogo</button></div>
     </section>
+    <section class="card" id="technicalCategoriesCardV1863" style="margin:12px 0">
+      <div class="catalog-center-section-head-v1733">
+        <div>
+          <div class="section-title" style="margin:0">Categorias técnicas</div>
+          <p class="muted" style="margin:4px 0 0">Tipos reais usados nos produtos. Podes criar e renomear categorias sem alterar preços, stock, fichas técnicas ou IDs.</p>
+        </div>
+        <span id="technicalCategoriesStatusV1863" class="badge">Local + Cloud</span>
+      </div>
+      <div class="form-grid" style="margin-top:10px">
+        <div class="field span2"><label>Nova categoria</label><input id="newTechnicalCategoryV1863" maxlength="45" placeholder="Ex.: Composições com velas"></div>
+        <div class="field"><label>Tipo de produção</label><select id="newTechnicalCategoryTypeV1863">
+          <option value="wax_mold">Vela em molde</option>
+          <option value="wax_container">Vela em recipiente</option>
+          <option value="wax_melt">Wax melt</option>
+          <option value="soap">Sabonete</option>
+          <option value="resin">Resina / Jesmonite</option>
+          <option value="assembly">Montagem / personalização</option>
+          <option value="laser">Gravação a laser</option>
+          <option value="other" selected>Outro processo</option>
+        </select></div>
+        <div class="field"><label>&nbsp;</label><button class="btn" type="button" onclick="addTechnicalCategoryV1863()">+ Criar categoria</button></div>
+      </div>
+      <div id="technicalCategoriesListV1863" style="margin-top:10px"></div>
+      <div class="soft-note" style="margin-top:10px"><b>Proteção:</b> renomear atualiza produtos, Famílias do Catálogo e destaques da Homepage. Apagar categorias não está disponível para evitar produtos órfãos.</div>
+    </section>
     <section class="card" id="catalogFamiliesCardV1823" style="margin:12px 0">
       <div class="catalog-center-section-head-v1733">
         <div>
@@ -6391,7 +6416,7 @@ function campaignFormV12626(){return {title:($('campaignTitleV12626')?.value||''
 const HOME_CATEGORY_DEFAULTS_V170=['Velas em molde','Velas em recipiente','Wax melts'];
 const HOME_DEFAULTS_V12637={eyebrow:'AROMAS E PEÇAS COM ALMA',title:'Feito à mão para dar alma aos teus espaços',subtitle:'Velas, aromas, sabonetes e peças decorativas feitas artesanalmente.',cta1:'ENCOMENDAR AGORA',cta2:'CRIAR UM CONJUNTO',heroImage:'',benefits:[{icon:'✦',text:'Produção artesanal'},{icon:'🚚',text:'Levantamento ou entrega'},{icon:'♡',text:'Feitos por encomenda'}],featuredCategories:HOME_CATEGORY_DEFAULTS_V170.map(name=>({name,text:'',image:''})),categories:{Classic:{text:'Velas em molde',image:''},Special:{text:'Velas em recipiente',image:''},Premium:{text:'Wax melts',image:''}},publicEditorial:{enabled:false,aboutTitle:'Sobre a ArtEssencia',aboutText:'',orderingTitle:'Como encomendar',orderingIntro:'',orderingSteps:['','','','',''],customizationTitle:'Feito ao teu gosto',customizationText:'',faqTitle:'Perguntas frequentes',faq:[{q:'',a:''},{q:'',a:''},{q:'',a:''},{q:'',a:''},{q:'',a:''}],footerText:''}};
 let homepageAdminV12637=structuredClone(HOME_DEFAULTS_V12637),homepageFeaturedCategoriesV170=[];
-function homepageAvailableCategoriesV170(){const set=new Set(['Velas em molde','Velas em recipiente','Wax melts','Sabonetes','Resina e Jesmonite','Personalizados','Outros produtos artesanais']);(db.products||[]).forEach(p=>{const c=String(p.category||p.cat||'').trim();if(c)set.add(c)});return [...set]}
+function homepageAvailableCategoriesV170(){return technicalCategoryNamesV1863()}
 function normalizeHomepageFeaturedV170(x){if(Array.isArray(x?.featuredCategories))return x.featuredCategories.filter(Boolean).map(v=>({name:String(v.name||'').trim(),text:String(v.text||'').trim(),image:String(v.image||'').trim()})).filter(v=>v.name);const legacy=x?.categories||{};return [['Classic','Velas em molde'],['Special','Velas em recipiente'],['Premium','Wax melts']].map(([k,n])=>({name:String(legacy[k]?.name||legacy[k]?.text||n),text:String(legacy[k]?.subtitle||''),image:String(legacy[k]?.image||'')}))}
 function renderHomepageFeaturedCategoriesV170(){const host=$('homeFeaturedCategoriesV170');if(!host)return;const opts=homepageAvailableCategoriesV170();host.innerHTML=homepageFeaturedCategoriesV170.map((c,i)=>`<div class="homepage-category-card"><div class="homepage-category-title-v12649"><b>${escapeHtml(c.name||'Categoria')}</b><span>Destaque ${i+1}</span></div><img src="${escapeHtml(c.image||'logo-artessencia.svg')}" alt="${escapeHtml(c.name||'Categoria')}"><div class="field"><label>Categoria real</label><select onchange="homepageFeaturedCategoriesV170[${i}].name=this.value;renderHomepageFeaturedCategoriesV170()">${opts.map(o=>`<option ${o===c.name?'selected':''}>${escapeHtml(o)}</option>`).join('')}</select></div><div class="field"><label>Texto opcional</label><input maxlength="55" value="${escapeHtml(c.text||'')}" oninput="homepageFeaturedCategoriesV170[${i}].text=this.value" placeholder="Descrição curta"></div><div class="field"><label>Imagem</label><input value="${escapeHtml(c.image||'')}" readonly placeholder="Sem imagem personalizada"></div><input id="homeFeaturedFileV170_${i}" type="file" accept="image/jpeg,image/png,image/webp" hidden onchange="if(this.files?.[0])uploadHomepageFeaturedImageV170(${i})"><div class="homepage-category-actions-v12649"><button class="btn" type="button" onclick="$('homeFeaturedFileV170_${i}').click()">Escolher imagem</button><button class="btn primary" type="button" onclick="uploadHomepageFeaturedImageV170(${i})">Aplicar</button><button class="btn danger" type="button" onclick="removeHomepageFeaturedCategoryV170(${i})">Retirar</button></div></div>`).join('')||'<div class="homepage-note">Sem categorias em destaque. Usa “Adicionar categoria”.</div>'}
 function addHomepageFeaturedCategoryV170(){const used=new Set(homepageFeaturedCategoriesV170.map(x=>x.name)),name=homepageAvailableCategoriesV170().find(x=>!used.has(x))||homepageAvailableCategoriesV170()[0];if(!name)return toast('Cria primeiro uma categoria num produto');homepageFeaturedCategoriesV170.push({name,text:'',image:''});renderHomepageFeaturedCategoriesV170()}
@@ -14428,7 +14453,7 @@ function stockByName(name){return db.stock.find(x=>x.name===name)}
 function normalizeBaseUnitV120(unit){const u=String(unit||'').trim().toLowerCase();return ({kg:'g',g:'g',l:'ml',lt:'ml',litro:'ml',litros:'ml',ml:'ml',m:'cm',metro:'cm',metros:'cm',cm:'cm',un:'un',uni:'un',unidade:'un',unidades:'un'})[u]||u}
 function ensureBaseUnitsV120(){let changed=false;for(const x of (db.stock||[])){const old=String(x.unit||'').trim().toLowerCase(),base=normalizeBaseUnitV120(old),factor=old==='kg'||['l','lt','litro','litros'].includes(old)?1000:old==='m'||old==='metro'||old==='metros'?100:1;if(!base)continue;if(base!==old||x.unit!==base){if(factor>1){const name=x.name;x.qty=(Number(x.qty)||0)*factor;x.min=(Number(x.min)||0)*factor;if(x.target!=null)x.target=(Number(x.target)||0)*factor;x.unitCost=(Number(x.unitCost)||0)/factor;(db.purchases||[]).filter(p=>p.item===name).forEach(p=>{if(p.purchaseQtyEntered==null)p.purchaseQtyEntered=Number(p.qty)||0;if(!p.purchaseUnit)p.purchaseUnit=old;p.qty=(Number(p.qty)||0)*factor;p.baseUnit=base;p.unitCost=p.qty?(Number(p.total)||0)/p.qty:0});(db.stockMoves||[]).filter(m=>m.item===name).forEach(m=>m.qty=(Number(m.qty)||0)*factor);for(const lines of Object.values(db.productRecipes||{}))for(const line of (lines||[]))if(line.item===name)line.qty=(Number(line.qty)||0)*factor;const meta=db.costMeta?.[name];if(meta){if(meta.purchaseQty==null)meta.purchaseQty=Number(meta.packQty)||0;if(!meta.purchaseUnit)meta.purchaseUnit=old;meta.packQty=(Number(meta.packQty)||0)*factor}}x.unit=base;changed=true}}if(changed)try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}return changed}
 function readOptionalNumberV130(id){const el=document.getElementById(id),raw=String(el?.value??'').trim();if(!raw)return null;const n=Number(raw);return Number.isFinite(n)?n:null}
-function inferredProductionTypeV130(p){const c=String(p?.category||'').toLowerCase();if(c.includes('recipiente'))return 'wax_container';if(c.includes('wax'))return 'wax_melt';if(c.includes('sabon'))return 'soap';if(c.includes('resina')||c.includes('jesmonite'))return 'resin';if(c.includes('molde'))return 'wax_mold';if(c.includes('personal'))return 'assembly';return 'other'}
+function inferredProductionTypeV130(p){const managed=technicalProductionTypeV1863(String(p?.category||''));return managed!=='other'?managed:inferredProductionTypeV130LegacyV1863(p)}
 function productionTypeLabelV130(v){return ({wax_mold:'Vela em molde',wax_container:'Vela em recipiente',wax_melt:'Wax melt',soap:'Sabonete',resin:'Resina / Jesmonite',laser:'Gravação a laser',assembly:'Montagem / personalização',other:'Outro processo'})[v]||'Outro processo'}
 function productProductionTypeV130(p){return p?.productionType||inferredProductionTypeV130(p)}
 function productManufacturedV130(p){return p?.manufactured!==false}
@@ -15150,7 +15175,7 @@ function editProduct(code){
  const editSession=++productEditSessionV1798;
  setProductEditorModeV145(p);
 
- prodCode.value=p.code;prodName.value=p.name;prodCat.value=p.category;
+ prodCode.value=p.code;prodName.value=p.name;refreshTechnicalCategorySelectsV1863(p.category);prodCat.value=p.category;
  const tagsEl=document.getElementById('prodTagsV1753');if(tagsEl)tagsEl.value=(Array.isArray(p.tagsV1753)?p.tagsV1753:[]).join(', ');
  const seasonEl=document.getElementById('prodSeasonTagsV1761');if(seasonEl)seasonEl.value=(Array.isArray(p.seasonalTagsV1761)?p.seasonalTagsV1761:[]).join(', ');
  renderAprecoSourceV1753(p);prodCost.value=calculatedProductCost(p).toFixed(4);prodPrice.value=p.price;prodShopVisible.checked=!!p.shopVisible;prodShopDescription.value=p.shopDescription||'';fillProductPersonalizationV1773(p);fillProductPublicCharacteristicsV1820(p);
@@ -15295,7 +15320,7 @@ function resetProductFiltersV1853(){
  renderProducts();
 }
 function renderProducts(){
- ensureProductSafetyEditorV1287();if(!document.getElementById('prodCode')?.value){renderProductBaseSummaryV12811(false);setProductEditorModeV145(null);}updateProductTechnicalStatusV1287();
+ refreshTechnicalCategorySelectsV1863();renderTechnicalCategoriesV1863();ensureProductSafetyEditorV1287();if(!document.getElementById('prodCode')?.value){renderProductBaseSummaryV12811(false);setProductEditorModeV145(null);}updateProductTechnicalStatusV1287();
  loadProductEditionsV1245(false).then(()=>{fillProductEditionOptionsV1244(selectedProductEditionIdsV138());updateProductCollectionFilterV1752();});updateProductAvailabilityUI();
  updateProductCollectionFilterV1752();
  const all=Array.isArray(db.products)?db.products:[],activeProducts=all.filter(p=>!productArchivedV1803(p)),archivedCount=all.length-activeProducts.length;updateProductTagFilterV1753(all);updateProductSeasonFilterV1761(all);
@@ -16651,16 +16676,92 @@ async function savePublicChannelStatusV1785(channel){
   cloudLogMsg('Estado público '+channel+' atualizado para '+mode);
  }catch(e){console.error(e);cloudLogMsg('Falha ao guardar estado público '+channel+': '+cloudErrText(e));toast('Não foi possível guardar o estado público')}
 }
+const TECHNICAL_CATEGORY_BASE_V1863=[
+ {name:'Velas em molde',type:'wax_mold',aliases:['Velas em molde']},
+ {name:'Velas em recipiente',type:'wax_container',aliases:['Velas em recipiente']},
+ {name:'Wax melts',type:'wax_melt',aliases:['Wax melts']},
+ {name:'Sabonetes',type:'soap',aliases:['Sabonetes']},
+ {name:'Resina e Jesmonite',type:'resin',aliases:['Resina e Jesmonite']},
+ {name:'Personalizados',type:'assembly',aliases:['Personalizados']},
+ {name:'Outros produtos artesanais',type:'other',aliases:['Outros produtos artesanais']}
+];
+function technicalCategoryKeyV1863(v){return String(v||'').trim().toLocaleLowerCase('pt-PT')}
+function technicalCategoriesV1863(){
+ db.settings=db.settings||{};
+ let arr=Array.isArray(db.settings.technicalCategoriesV1863)?db.settings.technicalCategoriesV1863:[];
+ const map=new Map();
+ const add=x=>{const name=String(x?.name||'').trim();if(!name)return;const key=technicalCategoryKeyV1863(name),old=map.get(key),aliases=[...new Set([...(old?.aliases||[]),...(Array.isArray(x?.aliases)?x.aliases:[]),name].map(v=>String(v||'').trim()).filter(Boolean))];map.set(key,{name,type:String(x?.type||old?.type||'other'),aliases})};
+ TECHNICAL_CATEGORY_BASE_V1863.forEach(add);arr.forEach(add);
+ (db.products||[]).forEach(p=>add({name:p?.category,type:p?.productionType||inferredProductionTypeV130LegacyV1863(p)}));
+ (catalogFamiliesAdminV1823||[]).forEach(f=>(f.categories||[]).forEach(name=>add({name,type:'other'})));
+ const out=[...map.values()].sort((a,b)=>a.name.localeCompare(b.name,'pt'));
+ db.settings.technicalCategoriesV1863=out;return out
+}
+function inferredProductionTypeV130LegacyV1863(p){const c=String(p?.category||'').toLowerCase();if(c.includes('recipiente'))return 'wax_container';if(c.includes('wax'))return 'wax_melt';if(c.includes('sabon'))return 'soap';if(c.includes('resina')||c.includes('jesmonite'))return 'resin';if(c.includes('molde'))return 'wax_mold';if(c.includes('personal'))return 'assembly';return 'other'}
+function technicalProductionTypeV1863(name){
+ const key=technicalCategoryKeyV1863(name),hit=technicalCategoriesV1863().find(x=>technicalCategoryKeyV1863(x.name)===key||(x.aliases||[]).some(a=>technicalCategoryKeyV1863(a)===key));
+ return hit?.type||'other'
+}
+function technicalCategoryNamesV1863(){return technicalCategoriesV1863().map(x=>x.name)}
+function refreshTechnicalCategorySelectsV1863(preferred=''){
+ const names=technicalCategoryNamesV1863(),prod=document.getElementById('prodCat'),filter=document.getElementById('productCategoryFilter');
+ if(prod){const current=preferred||prod.value||'';prod.innerHTML=names.map(n=>'<option value="'+escapeAttr(n)+'">'+escapeHtml(n)+'</option>').join('');if(current&&names.includes(current))prod.value=current}
+ if(filter){const current=filter.value||'all';filter.innerHTML='<option value="all">Todos os tipos</option>'+names.map(n=>'<option value="'+escapeAttr(n)+'">'+escapeHtml(n)+'</option>').join('');filter.value=(current==='all'||names.includes(current))?current:'all'}
+}
+function renderTechnicalCategoriesV1863(){
+ const host=document.getElementById('technicalCategoriesListV1863');if(!host)return;
+ const arr=technicalCategoriesV1863(),counts=new Map();(db.products||[]).forEach(p=>{const n=String(p?.category||'').trim();counts.set(n,(counts.get(n)||0)+1)});
+ const typeLabels={wax_mold:'Vela em molde',wax_container:'Vela em recipiente',wax_melt:'Wax melt',soap:'Sabonete',resin:'Resina / Jesmonite',assembly:'Montagem / personalização',laser:'Gravação a laser',other:'Outro processo'};
+ host.innerHTML=arr.map((x,i)=>'<div class="card" style="padding:12px;margin:8px 0;background:#fff"><div class="form-grid"><div class="field span2"><label>Nome da categoria</label><input id="technicalCategoryNameV1863_'+i+'" maxlength="45" value="'+escapeAttr(x.name)+'"></div><div class="field"><label>Tipo de produção</label><select id="technicalCategoryTypeV1863_'+i+'">'+Object.entries(typeLabels).map(([v,l])=>'<option value="'+v+'" '+(x.type===v?'selected':'')+'>'+l+'</option>').join('')+'</select></div><div class="field"><label>Produtos</label><div style="padding:10px 0"><b>'+(counts.get(x.name)||0)+'</b> produto(s)</div></div></div><div class="btnrow"><button class="btn primary" type="button" onclick="renameTechnicalCategoryV1863('+i+')">Guardar alterações</button></div></div>').join('');
+ const st=document.getElementById('technicalCategoriesStatusV1863');if(st){st.textContent=arr.length+' categoria(s)';st.className='badge ok'}
+ refreshTechnicalCategorySelectsV1863()
+}
+function addTechnicalCategoryV1863(){
+ const input=document.getElementById('newTechnicalCategoryV1863'),name=String(input?.value||'').trim(),type=document.getElementById('newTechnicalCategoryTypeV1863')?.value||'other';
+ if(!name)return toast('Indica o nome da categoria');
+ if(technicalCategoriesV1863().some(x=>technicalCategoryKeyV1863(x.name)===technicalCategoryKeyV1863(name)))return toast('Essa categoria já existe');
+ db.settings=db.settings||{};db.settings.technicalCategoriesV1863=[...technicalCategoriesV1863(),{name,type,aliases:[name]}];save('none');if(input)input.value='';renderTechnicalCategoriesV1863();renderCatalogFamiliesV1823();toast('Categoria criada')
+}
+async function renameHomepageCategoryRefsV1863(oldName,newName){
+ const c=initCloudClient(),u=cloudUser||await ensureCloudSession();if(!c||!u)throw new Error('Cloud desligada');
+ const q=await c.from('artessencia_shop_settings').select('data').eq('user_id',u.id).maybeSingle();if(q.error)throw q.error;
+ const old=q.data?.data||{},homepage={...(old.homepage||{})};
+ if(Array.isArray(homepage.featuredCategories))homepage.featuredCategories=homepage.featuredCategories.map(x=>String(x?.name||'')===oldName?{...x,name:newName}:x);
+ if(homepage.categories&&typeof homepage.categories==='object'){homepage.categories=Object.fromEntries(Object.entries(homepage.categories).map(([k,v])=>[k,{...(v||{}),name:String(v?.name||'')===oldName?newName:v?.name,text:String(v?.text||'')===oldName?newName:v?.text}]))}
+ const {error}=await c.from('artessencia_shop_settings').upsert({user_id:u.id,data:{...old,homepage},updated_at:new Date().toISOString()},{onConflict:'user_id'});if(error)throw error;return old
+}
+async function renameTechnicalCategoryV1863(index){
+ const arr=technicalCategoriesV1863(),row=arr[index];if(!row)return;
+ const oldName=row.name,newName=String(document.getElementById('technicalCategoryNameV1863_'+index)?.value||'').trim(),newType=document.getElementById('technicalCategoryTypeV1863_'+index)?.value||row.type||'other';
+ if(!newName)return toast('O nome não pode ficar vazio');
+ if(newName!==oldName&&arr.some((x,i)=>i!==index&&technicalCategoryKeyV1863(x.name)===technicalCategoryKeyV1863(newName)))return toast('Já existe uma categoria com esse nome');
+ const affected=(db.products||[]).filter(p=>String(p?.category||'')===oldName).length;
+ if(newName!==oldName&&!confirm('Renomear “'+oldName+'” para “'+newName+'”?\n\nSerão atualizados '+affected+' produto(s), Famílias públicas e destaques da Homepage. Preços, stock, fichas técnicas, fotos e IDs não serão alterados.'))return;
+ const c=initCloudClient(),u=cloudUser||await ensureCloudSession();if(!c||!u)return toast('Liga primeiro a Cloud para renomear categorias em segurança');
+ const newFamilies=(catalogFamiliesAdminV1823||[]).map(f=>({...f,categories:[...new Set((f.categories||[]).map(v=>v===oldName?newName:v))]}));
+ let homepageBackup=null;
+ try{
+  if(newName!==oldName)homepageBackup=await renameHomepageCategoryRefsV1863(oldName,newName);
+  const familyPayload=newFamilies.map(x=>({id:String(x.id||'').trim(),label:String(x.label||'').trim(),enabled:x.enabled!==false,sort_order:Math.max(0,Math.min(1000,Number(x.sort_order)||0)),categories:[...new Set((x.categories||[]).map(v=>String(v||'').trim()).filter(Boolean))]}));
+  if(familyPayload.length){const fr=await c.rpc('artessencia_save_catalog_families_admin_v1',{p_families:familyPayload});if(fr.error)throw fr.error}
+  if(newName!==oldName)(db.products||[]).forEach(p=>{if(String(p?.category||'')===oldName)p.category=newName});
+  const stored=technicalCategoriesV1863().map(x=>x.name===oldName?{...x,name:newName,type:newType,aliases:[...new Set([...(x.aliases||[]),oldName,newName])]}:x);
+  db.settings=db.settings||{};db.settings.technicalCategoriesV1863=stored;
+  catalogFamiliesAdminV1823=newFamilies;
+  homepageFeaturedCategoriesV170=(homepageFeaturedCategoriesV170||[]).map(x=>x.name===oldName?{...x,name:newName}:x);
+  if(newName===oldName){const target=db.settings.technicalCategoriesV1863.find(x=>x.name===oldName);if(target)target.type=newType}
+  save('products');renderTechnicalCategoriesV1863();renderCatalogFamiliesV1823();renderHomepageFeaturedCategoriesV170();toast(newName===oldName?'Tipo de produção atualizado':'Categoria renomeada com segurança')
+ }catch(e){
+  console.error(e);toast('Não foi possível concluir a alteração. Nenhum produto local foi renomeado.');
+ }
+}
+
 let catalogFamiliesAdminV1823=[];
 function defaultCatalogFamiliesV1823(){return[
  {id:'candles',label:'Velas',enabled:true,sort_order:10,categories:['Velas em molde','Velas em recipiente','Wax melts']},
  {id:'resin',label:'Resina orgânica',enabled:true,sort_order:20,categories:['Resina e Jesmonite']}
 ]}
-function catalogFamilyCategoryOptionsV1843(){
- const fixed=['Velas em molde','Velas em recipiente','Wax melts','Sabonetes','Resina e Jesmonite','Personalizados','Outros produtos artesanais'];
- const real=(db.products||[]).map(p=>String(p?.category||'').trim()).filter(Boolean);
- return [...new Set([...fixed,...real])].sort((a,b)=>a.localeCompare(b,'pt'))
-}
+function catalogFamilyCategoryOptionsV1843(){return technicalCategoryNamesV1863()}
 function catalogFamilySlugV1843(label){
  let s=String(label||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,32);
  if(!s)s='familia';
@@ -19168,7 +19269,7 @@ function renderPublicationCenterV1812(){
    '<td><div class="publication-actions-v1812"><button class="btn" type="button" onclick="publicationOpenProductV1812(\''+String(p.code||'').replaceAll("'","\\'")+'\')">Editar</button><button class="btn" type="button" onclick="publicationOpenCostsV1812(\''+String(p.code||'').replaceAll("'","\\'")+'\')">Custos / ficha</button></div></td></tr>';
  }).join(''):'<tr><td colspan="10" class="empty">Nenhum produto corresponde aos filtros.</td></tr>';
 }
- function renderAll(){ensureQuotePaymentModel();ensureCostModel();syncPackagingSelect();renderClientSuggestions();renderDashboard();renderPicker();renderCart();renderOrders();renderProduction();renderCosts();renderStock();renderPurchases();renderCash();renderClients();renderQuotes();renderQuoteCart();renderProducts();renderProductWorkflowV1851(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null);renderProductPublicStatusV1850(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null);renderCommercialCalendarV1850();renderPublicationCenterV1812();renderCatalogs();renderSpecialEditionsAdmin();renderCatalogDigitalCenterV160();renderSettings();renderAprecoImportV1753();renderBusinessSettings();if(!personalizationCategorySelectOpenV1794)renderPersonalizationLibraryV1791();renderReports();renderDigitalStatsV1795();renderLaunchStatsV1813();renderQuantityPricingV1750();renderLegalSummaryV1286();renderCloudUI();renderBackupInfo();renderOrderNotificationsV12624();renderPushStatusV12625();const s=sec();if(document.getElementById('lockMinutes'))document.getElementById('lockMinutes').value=String(s.lockMinutes??15)}
+ function renderAll(){ensureQuotePaymentModel();ensureCostModel();syncPackagingSelect();renderTechnicalCategoriesV1863();renderClientSuggestions();renderDashboard();renderPicker();renderCart();renderOrders();renderProduction();renderCosts();renderStock();renderPurchases();renderCash();renderClients();renderQuotes();renderQuoteCart();renderProducts();renderProductWorkflowV1851(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null);renderProductPublicStatusV1850(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null);renderCommercialCalendarV1850();renderPublicationCenterV1812();renderCatalogs();renderSpecialEditionsAdmin();renderCatalogDigitalCenterV160();renderSettings();renderAprecoImportV1753();renderBusinessSettings();if(!personalizationCategorySelectOpenV1794)renderPersonalizationLibraryV1791();renderReports();renderDigitalStatsV1795();renderLaunchStatsV1813();renderQuantityPricingV1750();renderLegalSummaryV1286();renderCloudUI();renderBackupInfo();renderOrderNotificationsV12624();renderPushStatusV12625();const s=sec();if(document.getElementById('lockMinutes'))document.getElementById('lockMinutes').value=String(s.lockMinutes??15)}
 document.addEventListener('input',e=>{if(e.target&&['costPackQty','costPackPrice'].includes(e.target.id))updateCostPreview()});
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;installBtn.classList.remove('hidden');installBanner.classList.remove('hidden')});
 async function installApp(){if(!deferredPrompt)return toast('No Chrome: menu ⋮ → Adicionar ao ecrã principal / Instalar app');deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;installBtn.classList.add('hidden');installBanner.classList.add('hidden')}
