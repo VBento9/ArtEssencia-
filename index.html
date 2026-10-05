@@ -4695,15 +4695,22 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       <div class="form-grid">
         <div class="field"><label>Rede social</label><select id="socialNetworkV2"><option>Instagram</option><option>Facebook</option><option>Instagram + Facebook</option></select></div>
         <div class="field"><label>Formato</label><select id="socialFormatV2"><option>Publicação</option><option>Story</option><option>Reel</option></select></div>
-        <div class="field span2"><label>Objetivo</label><select id="socialGoalV2"><option>Apresentar produto</option><option>Levar ao catálogo</option><option>Gerar interação</option><option>Promover coleção</option></select></div>
+        <div class="field"><label>Objetivo</label><select id="socialGoalV2"><option>Apresentar produto</option><option>Levar ao catálogo</option><option>Gerar interação</option><option>Promover coleção</option></select></div>
+        <div class="field"><label>Tom</label><select id="socialToneV4"><option>Natural</option><option>Comercial</option><option>Inspirador</option></select></div>
       </div>
       <div class="btnrow" style="margin-top:12px"><button type="button" class="btn primary" onclick="generateSocialProposalV3()">Gerar proposta</button></div>
       <div id="socialProposalV3" class="hidden" style="margin-top:12px">
         <div class="field"><label>Texto sugerido</label><textarea id="socialCopyV3" rows="7" readonly></textarea></div>
         <div class="field" style="margin-top:10px"><label>Hashtags</label><textarea id="socialTagsV3" rows="3" readonly></textarea></div>
-        <div class="btnrow"><button type="button" class="btn" onclick="copySocialProposalV3()">Copiar conteúdo</button></div>
+        <div id="socialReviewStatusV5" class="notice" style="margin-top:10px">Proposta por rever — nenhuma ação será publicada automaticamente.</div>
+        <div class="btnrow">
+          <button type="button" class="btn" onclick="copySocialProposalV3()">Copiar conteúdo</button>
+          <button type="button" class="btn primary" onclick="reviewSocialProposalV5('approved')">Aprovar proposta</button>
+          <button type="button" class="btn" onclick="generateSocialProposalV3()">Gerar outra</button>
+          <button type="button" class="btn danger" onclick="reviewSocialProposalV5('rejected')">Rejeitar</button>
+        </div>
       </div>
-      <p class="muted" style="margin-top:10px">Preparação local. Ainda não publica nem grava alterações.</p>
+      <p class="muted" style="margin-top:10px">Revisão local. Aprovar ou rejeitar não publica nem grava alterações fora desta sessão.</p>
     </div>
   </section>
 
@@ -6953,22 +6960,30 @@ function renderSocialSuggestionsV1(){
 function generateSocialProposalV3(){
  const all=Array.isArray(db&&db.products)?db.products:[];
  const p=all.find(x=>socialProductKeyV2(x)===socialSelectedProductKeyV3);if(!p)return toast('Seleciona primeiro um produto');
- const name=String(p.name||p.code||'Produto'),network=document.getElementById('socialNetworkV2')?.value||'Instagram',format=document.getElementById('socialFormatV2')?.value||'Publicação',goal=document.getElementById('socialGoalV2')?.value||'Apresentar produto';
+ const name=String(p.name||p.code||'Produto'),network=document.getElementById('socialNetworkV2')?.value||'Instagram',format=document.getElementById('socialFormatV2')?.value||'Publicação',goal=document.getElementById('socialGoalV2')?.value||'Apresentar produto',tone=document.getElementById('socialToneV4')?.value||'Natural';
  const description=String(p.shopDescription||'').trim().replace(/\s+/g,' '),category=String(p.category||'').trim(),price=Number(p.onlinePrice||p.price||0);
- const intro=goal==='Levar ao catálogo'?'Descobre '+name+' no catálogo digital ArtEssencia.':goal==='Gerar interação'?'O que achas de '+name+'? Conta-nos nos comentários.':goal==='Promover coleção'?'Conhece '+name+', uma peça da seleção ArtEssencia.':'Apresentamos '+name+', criado artesanalmente pela ArtEssencia.';
+ const baseIntro=goal==='Levar ao catálogo'?'Descobre '+name+' no catálogo digital ArtEssencia.':goal==='Gerar interação'?'O que achas de '+name+'? Conta-nos nos comentários.':goal==='Promover coleção'?'Conhece '+name+', uma peça da seleção ArtEssencia.':'Apresentamos '+name+', criado artesanalmente pela ArtEssencia.';
+ const intro=tone==='Comercial'?'Em destaque: '+baseIntro:tone==='Inspirador'?'Um detalhe especial pode transformar um espaço. '+baseIntro:baseIntro;
  const detail=description?description.slice(0,220)+(description.length>220?'…':''):(category?'Uma criação da categoria '+category+'.':'Uma peça criada com o cuidado artesanal ArtEssencia.');
  const priceLine=price>0?'Disponível a partir de '+price.toLocaleString('pt-PT',{style:'currency',currency:'EUR'})+'.':'';
  const formatLine=format==='Story'?'Vê os detalhes e acompanha as novidades no nosso catálogo.':format==='Reel'?'Descobre os detalhes desta peça e acompanha o universo criativo ArtEssencia.':'Descobre mais detalhes e opções no nosso catálogo digital.';
- const networkLine=network==='Facebook'?'Segue a ArtEssencia para acompanhares as próximas novidades.':'Guarda esta publicação e acompanha a ArtEssencia para não perderes as próximas novidades.';
+ const baseNetworkLine=network==='Facebook'?'Segue a ArtEssencia para acompanhares as próximas novidades.':'Guarda esta publicação e acompanha a ArtEssencia para não perderes as próximas novidades.';
+ const networkLine=tone==='Comercial'?baseNetworkLine+' Consulta o catálogo e escolhe a tua opção.':tone==='Inspirador'?baseNetworkLine+' Encontra inspiração para tornar cada espaço mais teu.':baseNetworkLine;
  const copy=[intro,detail,priceLine,formatLine,networkLine].filter(Boolean).join('\n\n');
  const categoryTag=category?' #'+category.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]/g,''):'';
  const tags='#ArtEssencia #FeitoAMao #Artesanato #Decoracao'+categoryTag;
  const copyEl=document.getElementById('socialCopyV3'),tagsEl=document.getElementById('socialTagsV3');if(copyEl)copyEl.value=copy;if(tagsEl)tagsEl.value=tags;
+ const review=document.getElementById('socialReviewStatusV5');if(review){review.textContent='Proposta por rever — nenhuma ação será publicada automaticamente.';review.dataset.state='pending'}
  document.getElementById('socialProposalV3')?.classList.remove('hidden');
 }
 async function copySocialProposalV3(){
  const copy=document.getElementById('socialCopyV3')?.value||'',tags=document.getElementById('socialTagsV3')?.value||'',text=[copy,tags].filter(Boolean).join('\n\n');if(!text)return toast('Gera primeiro uma proposta');
  try{await navigator.clipboard.writeText(text);toast('Conteúdo copiado')}catch(e){toast('Não foi possível copiar automaticamente')}
+}
+function reviewSocialProposalV5(state){
+ const box=document.getElementById('socialReviewStatusV5');if(!box)return;
+ if(state==='approved'){box.textContent='Proposta aprovada nesta sessão — pronta para utilização manual.';box.dataset.state='approved';toast('Proposta aprovada')}
+ else{box.textContent='Proposta rejeitada — podes gerar outra versão.';box.dataset.state='rejected';toast('Proposta rejeitada')}
 }
 
 function go(id){
