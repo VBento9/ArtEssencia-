@@ -69,7 +69,7 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: process.env.OPENAI_SOCIAL_MODEL || 'gpt-5.6',
+        model: process.env.OPENAI_SOCIAL_MODEL || 'gpt-5.5',
         instructions: instruction,
         input: [{ role: 'user', content: userContent }],
         max_output_tokens: 900
