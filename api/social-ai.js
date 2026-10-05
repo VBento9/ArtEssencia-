@@ -52,9 +52,9 @@ export default async function handler(req, res) {
     'Não inventes características, materiais, fragrâncias, preços, coleções ou promoções que não estejam nos dados ou claramente visíveis.',
     'Na comunicação pública nunca uses as expressões "vela em molde" ou "velas em molde"; prefere "vela artesanal", "peça artesanal" ou uma designação pública fornecida nos dados.',
     'Mantém um tom natural, cuidado e artesanal, evitando linguagem genérica, exagerada ou demasiado comercial quando não for pedida.',
-    'Se a fotografia sugerir uma ocasião ou ambiente sazonal, podes adaptar o texto ao contexto visual, mas não afirmes que pertence a uma coleção específica sem esse dado.'
+    'Se a fotografia sugerir uma ocasião ou ambiente sazonal, podes adaptar o texto ao contexto visual, mas não afirmes que pertence a uma coleção específica sem esse dado.',
     'Aplica exatamente as mesmas regras factuais às hashtags: não acrescentes materiais, fragrâncias, técnicas, coleções ou características que não constem explicitamente dos dados do produto.',
-    'Uma aparência visual nunca é prova suficiente do material; só menciones um material quando estiver explicitamente indicado nos dados fornecidos.'
+    'Uma aparência visual nunca é prova suficiente do material; só menciones um material quando estiver explicitamente indicado nos dados fornecidos.',
     'A proposta será sempre revista por uma pessoa antes de qualquer publicação.',
     'Responde APENAS JSON válido com as chaves copy, hashtags, visualContext e rationale.',
     'hashtags deve ser um array de strings. rationale deve ser curto.'
