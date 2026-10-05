@@ -103,6 +103,40 @@ async function readEditorialContext(){
   return {eligible,withImage,activeCollections,opportunities,analytics,analyticsError};
 }
 
+function startOfWeek(date=new Date()){
+ const d=new Date(date);d.setHours(0,0,0,0);
+ const day=d.getDay()||7;d.setDate(d.getDate()-day+1);return d;
+}
+function weekLabel(offset=0){
+ const start=startOfWeek();start.setDate(start.getDate()+offset*7);
+ const end=new Date(start);end.setDate(end.getDate()+6);
+ const fmt=d=>d.toLocaleDateString('pt-PT',{day:'2-digit',month:'short'});
+ return {start,end,label:`${fmt(start)} – ${fmt(end)}`};
+}
+function calendarPanel(editorial,offset=0){
+ const w=weekLabel(offset),plan=weeklyPlan(editorial.opportunities);
+ return el('div',{class:'grid'},
+   el('div',{class:'card'},
+     section('Calendário editorial',`Semana ${w.label}`),
+     el('div',{class:'notice'},'Plano sugerido em modo de pré-visualização. Ainda não é guardado, não chama IA e não publica nas redes sociais.')
+   ),
+   el('div',{class:'card'},
+     table(['Dia','Data','Formato','Objetivo','Produto / tema','Estado'],plan.map((x,i)=>{
+       const d=new Date(w.start);d.setDate(d.getDate()+i);
+       return [
+         x.day,
+         d.toLocaleDateString('pt-PT',{day:'2-digit',month:'2-digit'}),
+         badge(x.format,x.format==='Post'?'info':x.format==='Reel'?'warn':'neutral'),
+         esc(x.objective),
+         esc(x.item?.product?.name||x.note),
+         badge('Sugestão','neutral')
+       ];
+     })),
+     el('p',{class:'small muted',style:'margin-top:10px'},'A aprovação e edição manual entram na próxima fase, depois de validarmos que a distribuição automática está correta.')
+   )
+ );
+}
+
 function opportunityPanel(items){
   const card=el('div',{class:'card'},
     section('Oportunidades editoriais','Ranking local baseado apenas em dados já existentes no Backoffice.')
@@ -151,7 +185,8 @@ export async function socialView(ctx,opts={}){
       )
     );
   }else if(active==='calendar'){
-    root.append(placeholder('Calendário editorial','Planeamento semanal de Posts, Stories e Reels.'));
+    const editorial=await readEditorialContext();
+    root.append(calendarPanel(editorial,Number(opts.week||0)));
   }else if(active==='create'){
     root.append(placeholder('Criar com IA','Geração assistida de conteúdo a partir dos dados públicos dos produtos.'));
   }else if(active==='publications'){
