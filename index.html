@@ -6920,7 +6920,7 @@ function renderSocialSuggestionsV1(){
  const usable=all.filter(p=>p&&p.active!==false&&!p.archivedV1803);
  const scored=usable.map(p=>{const photo=!!String(p.shopImageUrl||'').trim(),visible=!!p.shopVisible,price=Number(p.onlinePrice||p.price||0)>0;return{p,score:(visible?3:0)+(photo?2:0)+(price?1:0),photo,visible}}).sort((a,b)=>b.score-a.score||String(a.p.name||'').localeCompare(String(b.p.name||''),'pt-PT')).slice(0,6);
  if(!scored.length){host.innerHTML='<div class="notice">Ainda não existem produtos disponíveis para sugestões editoriais.</div>';return}
- host.innerHTML='<div class="grid3">'+scored.map(x=>'<div class="card"><div class="section-title">'+esc(String(x.p.name||x.p.code||'Produto'))+'</div><p class="muted">'+(x.visible?'Publicado no catálogo':'Disponível no Backoffice')+(x.photo?' · com fotografia':' · falta fotografia')+'</p><span class="badge">'+(x.visible?'Conteúdo / conversão':'Descoberta')+'</span></div>').join('')+'</div>';
+ host.innerHTML='<div class="grid3">'+scored.map(x=>'<div class="card"><div class="section-title">'+escapeHtml(String(x.p.name||x.p.code||'Produto'))+'</div><p class="muted">'+(x.visible?'Publicado no catálogo':'Disponível no Backoffice')+(x.photo?' · com fotografia':' · falta fotografia')+'</p><span class="badge">'+(x.visible?'Conteúdo / conversão':'Descoberta')+'</span></div>').join('')+'</div>';
 }
 
 function go(id){
