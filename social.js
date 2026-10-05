@@ -115,26 +115,50 @@ function weekLabel(offset=0){
 }
 function calendarPanel(editorial,offset=0){
  const w=weekLabel(offset),plan=weeklyPlan(editorial.opportunities);
- return el('div',{class:'grid'},
-   el('div',{class:'card'},
-     section('Calendário editorial',`Semana ${w.label}`),
-     el('div',{class:'notice'},'Plano sugerido em modo de pré-visualização. Ainda não é guardado, não chama IA e não publica nas redes sociais.')
-   ),
-   el('div',{class:'card'},
-     table(['Dia','Data','Formato','Objetivo','Produto / tema','Estado'],plan.map((x,i)=>{
-       const d=new Date(w.start);d.setDate(d.getDate()+i);
-       return [
-         x.day,
-         d.toLocaleDateString('pt-PT',{day:'2-digit',month:'2-digit'}),
-         badge(x.format,x.format==='Post'?'info':x.format==='Reel'?'warn':'neutral'),
-         esc(x.objective),
-         esc(x.item?.product?.name||x.note),
-         badge('Sugestão','neutral')
-       ];
-     })),
-     el('p',{class:'small muted',style:'margin-top:10px'},'A aprovação e edição manual entram na próxima fase, depois de validarmos que a distribuição automática está correta.')
+ const root=el('div',{class:'grid'});
+ const head=el('div',{class:'card'},
+   section('Calendário editorial',`Semana ${w.label}`),
+   el('div',{class:'notice'},'Pré-visualização editável. As alterações desta página ainda não são guardadas nem publicadas.')
+ );
+ const grid=el('div',{class:'grid'});
+ const formats=['Post','Story','Reel'],objectives=['Conversão','Descoberta','Campanha','Marca'];
+ plan.forEach((x,i)=>{
+   const d=new Date(w.start);d.setDate(d.getDate()+i);
+   const card=el('div',{class:'card'});
+   const format=el('select',{},...formats.map(v=>el('option',{value:v,selected:v===x.format},v)));
+   const objective=el('select',{},...objectives.map(v=>el('option',{value:v,selected:v===x.objective},v)));
+   const candidates=editorial.opportunities.filter(o=>Boolean(productImage(o.product)));
+   const product=el('select',{},
+     el('option',{value:''},'Tema / sem produto'),
+     ...candidates.map(o=>el('option',{value:o.product.id,selected:o.product.id===x.item?.product?.id},o.product.name||o.product.sku||'Produto'))
+   );
+   const state=el('span',{},badge('Sugestão','neutral'));
+   const remove=el('button',{class:'btn secondary',type:'button'},'Excluir deste plano');
+   remove.onclick=()=>{card.remove()};
+   const updateState=()=>{state.replaceChildren(badge('Alterado','warn'))};
+   format.onchange=updateState;objective.onchange=updateState;product.onchange=updateState;
+   card.append(
+     el('div',{class:'row',style:'justify-content:space-between;align-items:center'},
+       el('div',{},el('strong',{},x.day),el('div',{class:'small muted'},d.toLocaleDateString('pt-PT',{day:'2-digit',month:'2-digit'}))),
+       state
+     ),
+     el('div',{class:'grid cols-3',style:'margin-top:12px'},
+       el('label',{},'Formato',format),
+       el('label',{},'Objetivo',objective),
+       el('label',{},'Produto / tema',product)
+     ),
+     el('div',{class:'small muted',style:'margin-top:8px'},x.item?.reasons?.slice(-1)[0]||x.note||'Conteúdo editorial'),
+     el('div',{style:'margin-top:10px'},remove)
+   );
+   grid.append(card);
+ });
+ const actions=el('div',{class:'card'},
+   el('div',{class:'row',style:'justify-content:space-between;align-items:center'},
+     el('div',{},el('strong',{},'Aprovação da semana'),el('div',{class:'small muted'},'A persistência será ligada antes de permitir aprovação definitiva.')),
+     el('button',{class:'btn primary',type:'button',disabled:true,title:'Aguardando armazenamento seguro do histórico social'},'Aprovar semana')
    )
  );
+ root.append(head,grid,actions);return root;
 }
 
 function opportunityPanel(items){
