@@ -4689,6 +4689,16 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       <div class="btnrow" style="margin-top:10px"><button class="btn primary" onclick="renderSocialSuggestionsV1()">Atualizar sugestões</button><button class="btn" onclick="go('products')">Ver produtos</button></div>
       <div id="socialSuggestionsV1" style="margin-top:12px"><p class="muted">Carrega em “Atualizar sugestões” para analisar os produtos disponíveis.</p></div>
     </div>
+    <div id="socialCreateV2" class="card hidden" style="margin-top:14px">
+      <div class="section-title">Criar conteúdo</div>
+      <p id="socialSelectedProductV2" class="muted"></p>
+      <div class="form-grid">
+        <div class="field"><label>Rede social</label><select id="socialNetworkV2"><option>Instagram</option><option>Facebook</option><option>Instagram + Facebook</option></select></div>
+        <div class="field"><label>Formato</label><select id="socialFormatV2"><option>Publicação</option><option>Story</option><option>Reel</option></select></div>
+        <div class="field span2"><label>Objetivo</label><select id="socialGoalV2"><option>Apresentar produto</option><option>Levar ao catálogo</option><option>Gerar interação</option><option>Promover coleção</option></select></div>
+      </div>
+      <p class="muted" style="margin-top:10px">Preparação local. Ainda não publica nem grava alterações.</p>
+    </div>
   </section>
 
   <section id="campaigns" class="screen">
@@ -6914,13 +6924,22 @@ function ensureRecordIds(){
 }
 function isOrderProduced(id){return (db.productionRuns||[]).some(r=>(r.orders||[]).includes(id))}
 function orderAlreadyProducedIds(){return new Set((db.productionRuns||[]).flatMap(r=>r.orders||[]))}
+function socialProductKeyV2(p){return String(p?.id||p?.code||p?.sku||p?.name||'')}
+function selectSocialProductV2(key){
+ const all=Array.isArray(db&&db.products)?db.products:[];
+ const p=all.find(x=>socialProductKeyV2(x)===String(key));if(!p)return toast('Produto não encontrado');
+ const box=document.getElementById('socialCreateV2'),label=document.getElementById('socialSelectedProductV2');if(!box||!label)return;
+ label.textContent='Produto selecionado: '+String(p.name||p.code||'Produto');
+ box.classList.remove('hidden');box.scrollIntoView({behavior:'smooth',block:'start'});
+}
 function renderSocialSuggestionsV1(){
  const host=document.getElementById('socialSuggestionsV1');if(!host)return;
  const all=Array.isArray(db&&db.products)?db.products:[];
  const usable=all.filter(p=>p&&p.active!==false&&!p.archivedV1803);
  const scored=usable.map(p=>{const photo=!!String(p.shopImageUrl||'').trim(),visible=!!p.shopVisible,price=Number(p.onlinePrice||p.price||0)>0;return{p,score:(visible?3:0)+(photo?2:0)+(price?1:0),photo,visible}}).sort((a,b)=>b.score-a.score||String(a.p.name||'').localeCompare(String(b.p.name||''),'pt-PT')).slice(0,6);
  if(!scored.length){host.innerHTML='<div class="notice">Ainda não existem produtos disponíveis para sugestões editoriais.</div>';return}
- host.innerHTML='<div class="grid3">'+scored.map(x=>'<div class="card"><div class="section-title">'+escapeHtml(String(x.p.name||x.p.code||'Produto'))+'</div><p class="muted">'+(x.visible?'Publicado no catálogo':'Disponível no Backoffice')+(x.photo?' · com fotografia':' · falta fotografia')+'</p><span class="badge">'+(x.visible?'Conteúdo / conversão':'Descoberta')+'</span></div>').join('')+'</div>';
+ host.innerHTML='<div class="grid3">'+scored.map(x=>'<div class="card"><div class="section-title">'+escapeHtml(String(x.p.name||x.p.code||'Produto'))+'</div><p class="muted">'+(x.visible?'Publicado no catálogo':'Disponível no Backoffice')+(x.photo?' · com fotografia':' · falta fotografia')+'</p><span class="badge">'+(x.visible?'Conteúdo / conversão':'Descoberta')+'</span><div class="btnrow"><button type="button" class="btn primary" data-social-product="'+escapeHtml(socialProductKeyV2(x.p))+'">Selecionar</button></div></div>').join('')+'</div>';
+ host.querySelectorAll('[data-social-product]').forEach(btn=>btn.addEventListener('click',()=>selectSocialProductV2(btn.dataset.socialProduct)));
 }
 
 function go(id){
