@@ -4680,21 +4680,14 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 
   <section id="socialAI" class="screen">
     <div class="reports-hero card">
-      <div>
-        <div class="section-title" style="margin:0">Redes Sociais / IA</div>
-        <small>Planeamento editorial para Instagram e Facebook dentro do Backoffice ArtEssencia.</small>
-      </div>
-      <span class="badge">Assistente editorial</span>
+      <div><div class="section-title" style="margin:0">Redes Sociais / IA</div><small>Sugestões editoriais a partir dos produtos já existentes no Backoffice.</small></div>
+      <span class="badge">Leitura local</span>
     </div>
-    <div class="grid3" style="margin-top:14px">
-      <div class="card"><div class="section-title">Hoje</div><p class="muted">Sugestões de conteúdo a partir dos produtos, coleções e atividade do Catálogo.</p></div>
-      <div class="card"><div class="section-title">Calendário</div><p class="muted">Planeamento semanal de Post, Story e ideias de Reel, sempre sujeito a aprovação.</p></div>
-      <div class="card"><div class="section-title">Criar com IA</div><p class="muted">Legendas, CTA e hashtags sem alterar os dados dos produtos.</p></div>
-    </div>
-    <div class="card" style="margin-top:10px">
-      <div class="section-title">Gestão editorial</div>
-      <p class="muted">Módulo independente das Campanhas Push. Nesta fase não publica automaticamente e não altera Produtos, Catálogo, Loja ou Cloud Sync.</p>
-      <div class="btnrow" style="margin-top:10px"><button class="btn" onclick="go('products')">Ver produtos</button><button class="btn" onclick="go('digitalStats')">Ver estatísticas digitais</button><button class="btn" onclick="go('campaigns')">Campanhas Push</button></div>
+    <div class="card" style="margin-top:14px">
+      <div class="section-title">Sugestões de conteúdo</div>
+      <p class="muted">Esta área apenas lê os produtos. Não altera produtos, publicação, Catálogo, Loja ou Cloud Sync.</p>
+      <div class="btnrow" style="margin-top:10px"><button class="btn primary" onclick="renderSocialSuggestionsV1()">Atualizar sugestões</button><button class="btn" onclick="go('products')">Ver produtos</button></div>
+      <div id="socialSuggestionsV1" style="margin-top:12px"><p class="muted">Carrega em “Atualizar sugestões” para analisar os produtos disponíveis.</p></div>
     </div>
   </section>
 
@@ -6921,6 +6914,15 @@ function ensureRecordIds(){
 }
 function isOrderProduced(id){return (db.productionRuns||[]).some(r=>(r.orders||[]).includes(id))}
 function orderAlreadyProducedIds(){return new Set((db.productionRuns||[]).flatMap(r=>r.orders||[]))}
+function renderSocialSuggestionsV1(){
+ const host=document.getElementById('socialSuggestionsV1');if(!host)return;
+ const all=Array.isArray(db&&db.products)?db.products:[];
+ const usable=all.filter(p=>p&&p.active!==false&&!p.archivedV1803);
+ const scored=usable.map(p=>{const photo=!!String(p.shopImageUrl||'').trim(),visible=!!p.shopVisible,price=Number(p.onlinePrice||p.price||0)>0;return{p,score:(visible?3:0)+(photo?2:0)+(price?1:0),photo,visible}}).sort((a,b)=>b.score-a.score||String(a.p.name||'').localeCompare(String(b.p.name||''),'pt-PT')).slice(0,6);
+ if(!scored.length){host.innerHTML='<div class="notice">Ainda não existem produtos disponíveis para sugestões editoriais.</div>';return}
+ host.innerHTML='<div class="grid3">'+scored.map(x=>'<div class="card"><div class="section-title">'+esc(String(x.p.name||x.p.code||'Produto'))+'</div><p class="muted">'+(x.visible?'Publicado no catálogo':'Disponível no Backoffice')+(x.photo?' · com fotografia':' · falta fotografia')+'</p><span class="badge">'+(x.visible?'Conteúdo / conversão':'Descoberta')+'</span></div>').join('')+'</div>';
+}
+
 function go(id){
  document.querySelectorAll('dialog[open]').forEach(d=>{try{d.close()}catch(e){}});
  document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active','screen-enter'));
