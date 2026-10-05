@@ -3,6 +3,7 @@ import {families,materialCategories,orderStatuses,paymentMethods,deliveryMethods
 import {el,button,badge,table,modal,field,input,select,textarea,kpi,section,toast,download,esc} from './ui.js';
 import {runAudit} from './audit.js';
 import * as cloud from './cloud.js';
+import {socialView} from './social.js';
 
 const fmt=v=>v?new Intl.DateTimeFormat('pt-PT').format(new Date(v)):'—';
 const familyOptions=()=>Object.entries(families).map(([k,v])=>[k,`${v.icon} ${v.label}`]);
@@ -443,5 +444,5 @@ export const views={
  today:todayView,sale:saleView,atelier:atelierView,orders:ordersView,quotes:quotesView,products:productsView,costs:costsView,
  stock:stockView,materials:stockView,purchases:purchasesView,clients:clientsView,cash:cashAdvancedView,reports:reportsView,
  catalogs:catalogsView,specialEditions:specialEditionsView,homepage:homepageView,campaigns:campaignsView,delivery:deliveryView,
- shop:shopView,settings:settingsView,cloud:cloudView,backup:backupView,audit:auditView
+ shop:shopView,social:socialView,settings:settingsView,cloud:cloudView,backup:backupView,audit:auditView
 };
