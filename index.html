@@ -4697,6 +4697,12 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div class="field"><label>Formato</label><select id="socialFormatV2"><option>Publicação</option><option>Story</option><option>Reel</option></select></div>
         <div class="field span2"><label>Objetivo</label><select id="socialGoalV2"><option>Apresentar produto</option><option>Levar ao catálogo</option><option>Gerar interação</option><option>Promover coleção</option></select></div>
       </div>
+      <div class="btnrow" style="margin-top:12px"><button type="button" class="btn primary" onclick="generateSocialProposalV3()">Gerar proposta</button></div>
+      <div id="socialProposalV3" class="hidden" style="margin-top:12px">
+        <div class="field"><label>Texto sugerido</label><textarea id="socialCopyV3" rows="7" readonly></textarea></div>
+        <div class="field" style="margin-top:10px"><label>Hashtags</label><textarea id="socialTagsV3" rows="3" readonly></textarea></div>
+        <div class="btnrow"><button type="button" class="btn" onclick="copySocialProposalV3()">Copiar conteúdo</button></div>
+      </div>
       <p class="muted" style="margin-top:10px">Preparação local. Ainda não publica nem grava alterações.</p>
     </div>
   </section>
@@ -6924,12 +6930,15 @@ function ensureRecordIds(){
 }
 function isOrderProduced(id){return (db.productionRuns||[]).some(r=>(r.orders||[]).includes(id))}
 function orderAlreadyProducedIds(){return new Set((db.productionRuns||[]).flatMap(r=>r.orders||[]))}
+let socialSelectedProductKeyV3='';
 function socialProductKeyV2(p){return String(p?.id||p?.code||p?.sku||p?.name||'')}
 function selectSocialProductV2(key){
  const all=Array.isArray(db&&db.products)?db.products:[];
  const p=all.find(x=>socialProductKeyV2(x)===String(key));if(!p)return toast('Produto não encontrado');
  const box=document.getElementById('socialCreateV2'),label=document.getElementById('socialSelectedProductV2');if(!box||!label)return;
+ socialSelectedProductKeyV3=socialProductKeyV2(p);
  label.textContent='Produto selecionado: '+String(p.name||p.code||'Produto');
+ document.getElementById('socialProposalV3')?.classList.add('hidden');
  box.classList.remove('hidden');box.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function renderSocialSuggestionsV1(){
@@ -6940,6 +6949,22 @@ function renderSocialSuggestionsV1(){
  if(!scored.length){host.innerHTML='<div class="notice">Ainda não existem produtos disponíveis para sugestões editoriais.</div>';return}
  host.innerHTML='<div class="grid3">'+scored.map(x=>'<div class="card"><div class="section-title">'+escapeHtml(String(x.p.name||x.p.code||'Produto'))+'</div><p class="muted">'+(x.visible?'Publicado no catálogo':'Disponível no Backoffice')+(x.photo?' · com fotografia':' · falta fotografia')+'</p><span class="badge">'+(x.visible?'Conteúdo / conversão':'Descoberta')+'</span><div class="btnrow"><button type="button" class="btn primary" data-social-product="'+escapeHtml(socialProductKeyV2(x.p))+'">Selecionar</button></div></div>').join('')+'</div>';
  host.querySelectorAll('[data-social-product]').forEach(btn=>btn.addEventListener('click',()=>selectSocialProductV2(btn.dataset.socialProduct)));
+}
+function generateSocialProposalV3(){
+ const all=Array.isArray(db&&db.products)?db.products:[];
+ const p=all.find(x=>socialProductKeyV2(x)===socialSelectedProductKeyV3);if(!p)return toast('Seleciona primeiro um produto');
+ const name=String(p.name||p.code||'Produto'),network=document.getElementById('socialNetworkV2')?.value||'Instagram',format=document.getElementById('socialFormatV2')?.value||'Publicação',goal=document.getElementById('socialGoalV2')?.value||'Apresentar produto';
+ const intro=goal==='Levar ao catálogo'?'Descobre '+name+' no catálogo digital ArtEssencia.':goal==='Gerar interação'?'O que achas de '+name+'? Conta-nos nos comentários.':goal==='Promover coleção'?'Conhece '+name+', uma peça da seleção ArtEssencia.':'Apresentamos '+name+', criado artesanalmente pela ArtEssencia.';
+ const formatLine=format==='Story'?'Vê os detalhes e acompanha as novidades no nosso catálogo.':format==='Reel'?'Descobre os detalhes desta peça e acompanha o processo criativo ArtEssencia.':'Descobre mais detalhes e opções no nosso catálogo digital.';
+ const networkLine=network==='Facebook'?'Segue a ArtEssencia para acompanhares as próximas novidades.':'Guarda esta publicação e acompanha a ArtEssencia para não perderes as próximas novidades.';
+ const copy=[intro,formatLine,networkLine].join('\n\n');
+ const tags='#ArtEssencia #FeitoAMao #Artesanato #Decoracao #VelasArtesanais';
+ const copyEl=document.getElementById('socialCopyV3'),tagsEl=document.getElementById('socialTagsV3');if(copyEl)copyEl.value=copy;if(tagsEl)tagsEl.value=tags;
+ document.getElementById('socialProposalV3')?.classList.remove('hidden');
+}
+async function copySocialProposalV3(){
+ const copy=document.getElementById('socialCopyV3')?.value||'',tags=document.getElementById('socialTagsV3')?.value||'',text=[copy,tags].filter(Boolean).join('\n\n');if(!text)return toast('Gera primeiro uma proposta');
+ try{await navigator.clipboard.writeText(text);toast('Conteúdo copiado')}catch(e){toast('Não foi possível copiar automaticamente')}
 }
 
 function go(id){
