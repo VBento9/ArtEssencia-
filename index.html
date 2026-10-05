@@ -3905,6 +3905,26 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
     </div>
   </section>
 
+  <section id="socialAI" class="screen">
+    <div class="reports-hero card">
+      <div>
+        <div class="section-title" style="margin:0">Redes Sociais / IA</div>
+        <small>Planeamento editorial para Instagram e Facebook, integrado no Backoffice ArtEssencia.</small>
+      </div>
+      <span class="badge">V1 · Assistente editorial</span>
+    </div>
+    <div class="grid3" style="margin-top:14px">
+      <div class="card"><div class="section-title">Hoje</div><p class="muted">Sugestões de conteúdo com base nos produtos, coleções e atividade do Catálogo.</p></div>
+      <div class="card"><div class="section-title">Calendário</div><p class="muted">Planeamento semanal de Post, Story e ideias de Reel, com aprovação antes de publicar.</p></div>
+      <div class="card"><div class="section-title">Criar com IA</div><p class="muted">Preparação de legendas, CTA e hashtags sem alterar os dados dos produtos.</p></div>
+    </div>
+    <div class="card" style="margin-top:10px">
+      <div class="section-title">Gestão editorial</div>
+      <p class="muted">Este módulo é independente das Campanhas Push. Nesta primeira integração não publica automaticamente nem altera Produtos, Catálogo, Loja ou Cloud Sync.</p>
+      <div class="btnrow" style="margin-top:10px"><button class="btn" onclick="go('products')">Ver produtos</button><button class="btn" onclick="go('digitalStats')">Ver estatísticas digitais</button><button class="btn" onclick="go('campaigns')">Campanhas Push</button></div>
+    </div>
+  </section>
+
   <section id="campaigns" class="screen">
     <div class="campaign-hero card">
       <div><div class="section-title" style="margin:0">Notificações & Campanhas</div><p class="muted" style="margin:4px 0 0">Envia promoções, novidades e edições especiais aos clientes que aceitaram receber notificações.</p></div>
@@ -5368,10 +5388,10 @@ function installNavKeyboard(){
 
 setTimeout(installNavKeyboard,0);
 
-const pages=[['dashboard','Dashboard'],['sale','Vendas'],['orders','Encomendas'],['quotes','Orçamentos'],['production','Produção'],['costs','Custos'],['stock','Stock'],['purchases','Compras'],['cash','Caixa'],['clients','Clientes'],['email','Comunicações · Email'],['digitalStats','Estatísticas Digitais'],['reports','Relatórios'],['quantityPricing','Precificação em quantidade'],['products','Produtos'],['catalogDigital','Catálogo Digital'],['catalogs','Catálogos'],['specialEditions','Edições Especiais'],['homepage','Homepage pública'],['campaigns','Campanhas'],['delivery','Entregas · futura Loja'],['legal','Informação Legal pública'],['settings','Configuração'],['cloud','Cloud Sync'],['backup','Backup']];
+const pages=[['dashboard','Dashboard'],['sale','Vendas'],['orders','Encomendas'],['quotes','Orçamentos'],['production','Produção'],['costs','Custos'],['stock','Stock'],['purchases','Compras'],['cash','Caixa'],['clients','Clientes'],['email','Comunicações · Email'],['digitalStats','Estatísticas Digitais'],['reports','Relatórios'],['quantityPricing','Precificação em quantidade'],['products','Produtos'],['catalogDigital','Catálogo Digital'],['catalogs','Catálogos'],['specialEditions','Edições Especiais'],['homepage','Homepage pública'],['socialAI','Redes Sociais / IA'],['campaigns','Campanhas'],['delivery','Entregas · futura Loja'],['legal','Informação Legal pública'],['settings','Configuração'],['cloud','Cloud Sync'],['backup','Backup']];
 const pageIcons={
  dashboard:'🏠',sale:'➕',orders:'🧾',quotes:'📄',production:'🛠️',costs:'🧮',stock:'📦',purchases:'🛒',cash:'💶',
- clients:'👥',email:'✉️',digitalStats:'📈',reports:'📊',quantityPricing:'🧮',products:'🕯️',catalogs:'🗂️',specialEditions:'🎉',homepage:'🖼️',campaigns:'📣',delivery:'🚚',legal:'⚖️',settings:'⚙️',cloud:'☁️',backup:'💾'
+ clients:'👥',email:'✉️',digitalStats:'📈',reports:'📊',quantityPricing:'🧮',products:'🕯️',catalogs:'🗂️',specialEditions:'🎉',homepage:'🖼️',socialAI:'✦',campaigns:'📣',delivery:'🚚',legal:'⚖️',settings:'⚙️',cloud:'☁️',backup:'💾'
 };
 document.getElementById('nav').innerHTML=pages.map(([id,l])=>`<button data-page="${id}" onclick="go('${id}')"><span class="nav-icon">${pageIcons[id]||'•'}</span><span class="nav-label">${l}</span>${id==='orders'?'<span id="navOrderBadgeV12624" class="nav-order-badge-v12624 hidden">0</span>':''}${id==='email'?'<span id="navEmailBadgeV1716" class="nav-order-badge-v12624 hidden">0</span>':''}<span class="nav-active-dot"></span></button>`).join('');
 document.getElementById('today').textContent=new Date().toLocaleDateString('pt-PT',{weekday:'short',day:'2-digit',month:'short'});
@@ -6014,7 +6034,7 @@ function go(id){
  requestAnimationFrame(()=>target.classList.add('screen-enter'));
  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
  document.getElementById('pageTitle').textContent=pages.find(x=>x[0]===id)?.[1]||'';
- const contextMap={dashboard:'VISÃO GERAL',sale:'ENCOMENDAS',orders:'ENCOMENDAS',quotes:'ORÇAMENTOS',production:'PRODUÇÃO',costs:'GESTÃO',stock:'GESTÃO',purchases:'GESTÃO',cash:'FINANCEIRO',clients:'CLIENTES',email:'COMUNICAÇÕES',digitalStats:'ESTATÍSTICAS DIGITAIS',reports:'RELATÓRIOS',quantityPricing:'PRECIFICAÇÃO',products:'CATÁLOGO DIGITAL',catalogDigital:'CATÁLOGO DIGITAL',catalogs:'CATÁLOGO DIGITAL',specialEditions:'LOJA ONLINE',homepage:'LOJA ONLINE',campaigns:'MARKETING',delivery:'LOJA ONLINE',legal:'CONFORMIDADE',settings:'SISTEMA',cloud:'SISTEMA',backup:'SISTEMA'};
+ const contextMap={dashboard:'VISÃO GERAL',sale:'ENCOMENDAS',orders:'ENCOMENDAS',quotes:'ORÇAMENTOS',production:'PRODUÇÃO',costs:'GESTÃO',stock:'GESTÃO',purchases:'GESTÃO',cash:'FINANCEIRO',clients:'CLIENTES',email:'COMUNICAÇÕES',digitalStats:'ESTATÍSTICAS DIGITAIS',reports:'RELATÓRIOS',quantityPricing:'PRECIFICAÇÃO',products:'CATÁLOGO DIGITAL',catalogDigital:'CATÁLOGO DIGITAL',catalogs:'CATÁLOGO DIGITAL',specialEditions:'LOJA ONLINE',homepage:'LOJA ONLINE',socialAI:'MARKETING',campaigns:'MARKETING',delivery:'LOJA ONLINE',legal:'CONFORMIDADE',settings:'SISTEMA',cloud:'SISTEMA',backup:'SISTEMA'};
  const pc=document.getElementById('pageContext');if(pc)pc.textContent=contextMap[id]||'GESTÃO ArtEssencia';
  renderAll();if(id==='email')setTimeout(()=>loadEmailModuleV177(false),30);if(id==='digitalStats')setTimeout(()=>loadDigitalStatsV1795(false),30);if(id==='campaigns')setTimeout(()=>loadCampaignDashboardV12626(false),50);
  if(id==='delivery'){renderShopDeliverySettings();renderShopCapacityAgenda();}
