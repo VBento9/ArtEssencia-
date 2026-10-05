@@ -25,12 +25,6 @@ export async function saveProductPublicCharacteristics(code,characteristics={}){
  const s=await ensureSession();
  return request('/rest/v1/rpc/artessencia_save_product_public_characteristics_v1',{method:'POST',token:s.access_token,body:{p_code:sku,p_characteristics:characteristics&&typeof characteristics==='object'?characteristics:{}}});
 }
-export async function analyticsSummary(source='catalog',from=null,to=null){
- const src=String(source||'catalog').toLowerCase();
- if(!['catalog','shop'].includes(src))throw new Error('Origem de analytics inválida.');
- const s=await ensureSession();
- return request('/rest/v1/rpc/artessencia_analytics_summary_v1',{method:'POST',token:s.access_token,body:{p_source:src,p_from:from||null,p_to:to||null}});
-}
 const SYNC_STORES=['settings','clients','suppliers','materials','products','productMaterials','molds','orders','orderItems','payments','purchases','expenses','investments','cashMovements','productionBatches','stockMovements','collections','kitItems','catalogs','homepage','campaigns','deliverySettings','recurringExpenses','transfers','themes','occasions','colors','personalizations','creatorPricing','unavailableDates','notifications','quoteHistory'];
 function syncableRow(store,row){if(store!=='settings')return true;return !String(row?.id||'').startsWith('cloud.')}
 export async function pushRecord(store,row){
