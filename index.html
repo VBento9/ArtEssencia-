@@ -17599,7 +17599,19 @@ async function deleteQuote(id){
 }
 function quoteConversion(){const qs=db.quotes||[],decided=qs.filter(q=>q.orderId||['Aceite','Convertido','Recusado'].includes(q.status)),accepted=decided.filter(q=>q.orderId||['Aceite','Convertido'].includes(q.status)).length;return{total:qs.length,accepted,refused:decided.filter(q=>q.status==='Recusado').length,rate:decided.length?accepted/decided.length:0}}
 
-let digitalStatsStateV1795={source:'shop',data:null,loading:false,error:''};
+let digitalStatsStateV1795={source:'shop',data:null,loading:false,error:'',updatedAt:null};
+let digitalStatsAutoRefreshV1907=null;
+function startDigitalStatsAutoRefreshV1907(){
+ if(digitalStatsAutoRefreshV1907)return;
+ digitalStatsAutoRefreshV1907=setInterval(()=>{
+  const screen=document.getElementById('digitalStats');
+  if(screen?.classList.contains('active')&&!digitalStatsStateV1795.loading)loadDigitalStatsV1795(false)
+ },60000)
+}
+startDigitalStatsAutoRefreshV1907();
+document.addEventListener('visibilitychange',()=>{
+ if(document.visibilityState==='visible'&&document.getElementById('digitalStats')?.classList.contains('active')&&!digitalStatsStateV1795.loading)loadDigitalStatsV1795(false)
+});
 
 function digitalStatsIsoV1795(d){
  const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
@@ -17635,7 +17647,7 @@ function renderDigitalStatsV1795(){
  if(sb)sb.className='btn '+(shop?'primary':'');
  if(cb)cb.className='btn '+(!shop?'primary':'');
  const status=document.getElementById('digitalStatsStatusV1795');
- if(status)status.textContent=st.loading?'A carregar estatísticas…':st.error?st.error:(st.data?(shop?'Dados da Loja':'Dados do Catálogo'):'A aguardar dados.');
+ if(status){const stamp=st.updatedAt?' · Atualizado às '+st.updatedAt.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'}):'';status.textContent=st.loading?'A carregar estatísticas…':st.error?st.error:(st.data?(shop?'Dados da Loja':'Dados do Catálogo')+stamp:'A aguardar dados.')}
  const k=document.getElementById('digitalStatsKpisV1795'),p=document.getElementById('digitalStatsProductsV1795'),d=document.getElementById('digitalStatsDailyV1795');
  if(!k||!p||!d)return;
  if(!st.data){
@@ -17697,6 +17709,7 @@ async function loadDigitalStatsV1795(showToast=false){
   });
   if(error)throw new Error(supabaseDetailedError(error));
   digitalStatsStateV1795.data=data||{};
+  digitalStatsStateV1795.updatedAt=new Date();
   if(showToast)toast('Estatísticas atualizadas')
  }catch(e){
   digitalStatsStateV1795.data=null;
