@@ -50,6 +50,9 @@ export default async function handler(req, res) {
     'Cria uma proposta de conteúdo em português de Portugal.',
     'Analisa a fotografia quando estiver disponível e adapta o conteúdo ao ambiente visual, produto e eventual contexto sazonal.',
     'Não inventes características, materiais, fragrâncias, preços, coleções ou promoções que não estejam nos dados ou claramente visíveis.',
+    'Na comunicação pública nunca uses as expressões "vela em molde" ou "velas em molde"; prefere "vela artesanal", "peça artesanal" ou uma designação pública fornecida nos dados.',
+    'Mantém um tom natural, cuidado e artesanal, evitando linguagem genérica, exagerada ou demasiado comercial quando não for pedida.',
+    'Se a fotografia sugerir uma ocasião ou ambiente sazonal, podes adaptar o texto ao contexto visual, mas não afirmes que pertence a uma coleção específica sem esse dado.'
     'A proposta será sempre revista por uma pessoa antes de qualquer publicação.',
     'Responde APENAS JSON válido com as chaves copy, hashtags, visualContext e rationale.',
     'hashtags deve ser um array de strings. rationale deve ser curto.'
