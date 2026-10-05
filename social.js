@@ -1,4 +1,5 @@
-import {el,button,kpi,section} from './ui.js';
+import * as db from './db.js';
+import {el,kpi,section} from './ui.js';
 
 const TABS=[
   ['today','Hoje'],
@@ -27,22 +28,44 @@ function placeholder(title,description){
   );
 }
 
+function isActiveCollection(c,now=new Date()){
+  if(c?.active===false)return false;
+  const start=c?.startDate||c?.start||null;
+  const end=c?.endDate||c?.end||null;
+  if(start&&new Date(start)>now)return false;
+  if(end&&new Date(end)<now)return false;
+  return true;
+}
+
+async function readEditorialContext(){
+  const [products,collections]=await Promise.all([
+    db.all('products'),
+    db.all('collections')
+  ]);
+  const eligible=products.filter(p=>p&&p.active!==false&&p.published===true);
+  const withImage=eligible.filter(p=>Boolean(p.image_url||p.imageUrl||p.image));
+  const activeCollections=collections.filter(c=>isActiveCollection(c));
+  return {eligible,withImage,activeCollections};
+}
+
 export async function socialView(ctx,opts={}){
   const active=opts.tab||'today';
   const root=el('div',{class:'grid'});
   root.append(tabs(ctx,active));
 
   if(active==='today'){
+    const editorial=await readEditorialContext();
     root.append(
       el('div',{class:'grid cols-4'},
-        kpi('A aguardar aprovação','0','Conteúdos preparados','✓'),
-        kpi('Planeados esta semana','0','Calendário editorial','📅'),
-        kpi('Publicados','0','Nesta versão','↗'),
-        kpi('Custo IA','€0,00','Limite ainda não configurado','✦')
+        kpi('Produtos elegíveis',editorial.eligible.length,'Publicados e ativos','✨'),
+        kpi('Com fotografia',editorial.withImage.length,'Prontos para conteúdo visual','📷'),
+        kpi('Coleções ativas',editorial.activeCollections.length,'Contexto sazonal disponível','✦'),
+        kpi('Custo IA','€0,00','IA ainda desligada','€')
       ),
       el('div',{class:'card'},
-        section('Assistente de Marketing','O módulo social fica isolado do funcionamento operacional da ArtEssencia.'),
-        el('p',{class:'muted'},'Na V1, o assistente irá analisar produtos, coleções e sinais do Catálogo apenas em leitura para propor conteúdos que continuam sujeitos a aprovação.')
+        section('Assistente de Marketing','Leitura editorial preparada sem alterar os dados existentes.'),
+        el('p',{class:'muted'},'O módulo consulta produtos e coleções apenas para identificar conteúdo elegível. Não grava produtos, não altera publicação e não participa no Cloud Sync.'),
+        el('div',{class:'notice'},'Próxima fase: combinar estes produtos com os sinais agregados do Catálogo para sugerir oportunidades. Ainda não existe geração automática nem publicação na Meta.')
       )
     );
   }else if(active==='calendar'){
