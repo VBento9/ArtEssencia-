@@ -4707,18 +4707,19 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       </div>
       <div class="btnrow" style="margin-top:12px"><button type="button" class="btn primary" onclick="generateSocialProposalV3()">Gerar proposta</button></div>
       <div id="socialProposalV3" class="hidden" style="margin-top:12px">
-        <div class="field"><label>Texto sugerido</label><textarea id="socialCopyV3" rows="7" readonly></textarea></div>
-        <div class="field" style="margin-top:10px"><label>Hashtags</label><textarea id="socialTagsV3" rows="3" readonly></textarea></div>
-        <div id="socialReviewStatusV5" class="notice" style="margin-top:10px">Proposta por rever — nenhuma ação será publicada automaticamente.</div>
+        <div class="field"><label>Texto sugerido</label><textarea id="socialCopyV3" rows="7"></textarea></div>
+        <div class="field" style="margin-top:10px"><label>Hashtags</label><textarea id="socialTagsV3" rows="3"></textarea></div>
+        <div class="form-grid" style="margin-top:10px"><div class="field span2"><label>Data prevista (opcional)</label><input id="socialScheduledForV7" type="datetime-local"></div></div><div id="socialReviewStatusV5" class="notice" style="margin-top:10px">Proposta por rever — nenhuma ação será publicada automaticamente.</div>
         <div class="btnrow">
-          <button type="button" class="btn" onclick="copySocialProposalV3()">Copiar conteúdo</button>
-          <button type="button" class="btn primary" onclick="reviewSocialProposalV5('approved')">Aprovar proposta</button>
+          <button type="button" class="btn" onclick="copySocialProposalV3()">Copiar conteúdo</button><button type="button" class="btn" onclick="saveSocialPublicationV7('draft')">Guardar rascunho</button>
+          <button type="button" class="btn primary" onclick="saveSocialPublicationV7('approved')">Aprovar e guardar</button>
           <button type="button" class="btn" onclick="generateSocialProposalV3()">Gerar outra</button>
-          <button type="button" class="btn danger" onclick="reviewSocialProposalV5('rejected')">Rejeitar</button>
+          <button type="button" class="btn danger" onclick="saveSocialPublicationV7('rejected')">Rejeitar e guardar</button>
         </div>
       </div>
-      <p class="muted" style="margin-top:10px">Revisão local. Aprovar ou rejeitar não publica nem grava alterações fora desta sessão.</p>
+      <p class="muted" style="margin-top:10px">As propostas guardadas ficam sincronizadas na Cloud. A publicação em Instagram/Facebook continua manual.</p>
     </div>
+    <div class="card" style="margin-top:14px"><div class="section-title">Planeamento e histórico</div><div class="btnrow"><button type="button" class="btn" onclick="loadSocialPublicationsV7(true)">Atualizar</button></div><div id="socialPublicationsV7" style="margin-top:12px"><p class="muted">A carregar publicações guardadas…</p></div></div>
   </section>
 
   <section id="campaigns" class="screen">
@@ -7011,6 +7012,11 @@ function reviewSocialProposalV5(state){
  else{box.textContent='Proposta rejeitada — podes gerar outra versão.';box.dataset.state='rejected';toast('Proposta rejeitada')}
 }
 
+function socialTagsArrayV7(v){return String(v||'').split(/\s+/).map(x=>x.trim()).filter(x=>x.startsWith('#')).slice(0,20)}
+async function socialCloudV7(){const c=initCloudClient();if(!c)throw new Error('Cloud indisponível');const x=await c.auth.getSession();if(!x?.data?.session?.access_token)throw new Error('Sessão Cloud expirada');return c}
+async function saveSocialPublicationV7(status='draft'){const p=(db.products||[]).find(x=>socialProductKeyV2(x)===socialSelectedProductKeyV3);if(!p)return toast('Seleciona primeiro um produto');const copy=String(document.getElementById('socialCopyV3')?.value||'').trim();if(!copy)return toast('Gera ou escreve primeiro o conteúdo');try{const c=await socialCloudV7(),raw=document.getElementById('socialScheduledForV7')?.value||'',row={product_id:socialProductKeyV2(p),product_name:String(p.name||p.code||'Produto'),image_url:String(p.shopImageUrl||''),network:document.getElementById('socialNetworkV2')?.value||'Instagram',format:document.getElementById('socialFormatV2')?.value||'Publicação',goal:document.getElementById('socialGoalV2')?.value||'Apresentar produto',tone:document.getElementById('socialToneV4')?.value||'Natural',copy,hashtags:socialTagsArrayV7(document.getElementById('socialTagsV3')?.value),status,scheduled_for:raw?new Date(raw).toISOString():null};const r=await c.from('artessencia_social_publications').insert(row);if(r.error)throw r.error;toast(status==='approved'?'Proposta aprovada e guardada':status==='rejected'?'Proposta rejeitada e guardada':'Rascunho guardado');await loadSocialPublicationsV7(false)}catch(e){console.error('social publication save',e);toast('Não foi possível guardar a proposta')}}
+async function loadSocialPublicationsV7(showToast=false){const h=document.getElementById('socialPublicationsV7');if(!h)return;try{const c=await socialCloudV7(),r=await c.from('artessencia_social_publications').select('product_name,network,format,status,scheduled_for,created_at').order('created_at',{ascending:false}).limit(50);if(r.error)throw r.error;const d=r.data||[],labels={draft:'Rascunho',approved:'Aprovada',published:'Publicada',rejected:'Rejeitada'};h.innerHTML=d.length?'<div class="tablewrap"><table><thead><tr><th>Produto</th><th>Rede / formato</th><th>Estado</th><th>Prevista</th><th>Criada</th></tr></thead><tbody>'+d.map(x=>'<tr><td>'+escapeHtml(x.product_name||'')+'</td><td>'+escapeHtml((x.network||'')+' · '+(x.format||''))+'</td><td>'+escapeHtml(labels[x.status]||x.status||'')+'</td><td>'+escapeHtml(x.scheduled_for?new Date(x.scheduled_for).toLocaleString('pt-PT'):'—')+'</td><td>'+escapeHtml(x.created_at?new Date(x.created_at).toLocaleString('pt-PT'):'—')+'</td></tr>').join('')+'</tbody></table></div>':'<p class="muted">Ainda não existem propostas guardadas.</p>';if(showToast)toast('Histórico atualizado')}catch(e){console.error('social publications load',e);h.innerHTML='<p class="muted">Não foi possível carregar o histórico.</p>'}}
+
 function go(id){
  document.querySelectorAll('dialog[open]').forEach(d=>{try{d.close()}catch(e){}});
  document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active','screen-enter'));
@@ -7021,7 +7027,7 @@ function go(id){
  document.getElementById('pageTitle').textContent=pages.find(x=>x[0]===id)?.[1]||'';
  const contextMap={dashboard:'VISÃO GERAL',sale:'ENCOMENDAS',orders:'ENCOMENDAS',quotes:'ORÇAMENTOS',production:'PRODUÇÃO',costs:'GESTÃO',stock:'GESTÃO',purchases:'GESTÃO',cash:'FINANCEIRO',clients:'CLIENTES',email:'COMUNICAÇÕES',digitalStats:'ESTATÍSTICAS DIGITAIS',reports:'RELATÓRIOS',quantityPricing:'PRECIFICAÇÃO',products:'CATÁLOGO DIGITAL',commercialCalendar:'PLANEAMENTO COMERCIAL',publication:'PUBLICAÇÃO',catalogDigital:'CATÁLOGO DIGITAL',catalogs:'CATÁLOGO DIGITAL',specialEditions:'CONTEÚDO SAZONAL',homepage:'CONTEÚDO PÚBLICO',socialAI:'MARKETING',campaigns:'MARKETING',delivery:'LOJA ONLINE',legal:'CONFORMIDADE',settings:'SISTEMA',cloud:'SISTEMA',backup:'SISTEMA'};
  const pc=document.getElementById('pageContext');if(pc)pc.textContent=contextMap[id]||'GESTÃO ArtEssencia';
- renderAll();if(id==='email')setTimeout(()=>loadEmailModuleV177(false),30);if(id==='digitalStats')setTimeout(()=>loadDigitalStatsV1795(false),30);if(id==='campaigns')setTimeout(()=>loadCampaignDashboardV12626(false),50);
+ renderAll();if(id==='socialAI')setTimeout(()=>loadSocialPublicationsV7(false),30);if(id==='email')setTimeout(()=>loadEmailModuleV177(false),30);if(id==='digitalStats')setTimeout(()=>loadDigitalStatsV1795(false),30);if(id==='campaigns')setTimeout(()=>loadCampaignDashboardV12626(false),50);
  if(id==='delivery'){renderShopDeliverySettings();renderShopCapacityAgenda();}
  if(id==='quantityPricing')setTimeout(()=>renderQuantityPricingV1750(),20);
  if(id==='commercialCalendar'){renderCommercialCalendarV1850();loadSpecialEditionsAdmin(false).then(()=>renderCommercialCalendarV1850());} if(id==='publication'){renderPublicationCenterV1812();loadPublicationRemoteV1812(false);} if(id==='catalogDigital')loadCatalogDigitalCenterV160(false); if(id==='specialEditions'){renderSpecialEditionProductPicker([]);loadSpecialEditionsAdmin(false);} if(id==='homepage')loadHomepageAdminV12637(false);if(id==='legal')loadLegalAdminV1286(false);
