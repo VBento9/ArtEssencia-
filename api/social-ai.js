@@ -19,6 +19,24 @@ function outputText(data) {
   return '';
 }
 
+function normalizeFact(value) {
+  return clean(value, 4000).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+function filterSupportedHashtags(hashtags, context) {
+  const facts = normalizeFact([context.name, context.description, context.category].filter(Boolean).join(' '));
+  const materialTerms = ['resina', 'jesmonite', 'ceramica', 'barro', 'cera', 'soja', 'parafina', 'gesso', 'acrilico', 'epoxi', 'epoxy'];
+  return (Array.isArray(hashtags) ? hashtags : [])
+    .map(x => clean(x, 80))
+    .filter(Boolean)
+    .filter(tag => {
+      const normalizedTag = normalizeFact(tag);
+      const mentioned = materialTerms.filter(term => normalizedTag.includes(term));
+      return mentioned.length === 0 || mentioned.every(term => facts.includes(term));
+    })
+    .slice(0, 20);
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
@@ -96,7 +114,7 @@ export default async function handler(req, res) {
       ok: true,
       proposal: {
         copy: clean(proposal.copy, 4000),
-        hashtags: Array.isArray(proposal.hashtags) ? proposal.hashtags.map(x => clean(x, 80)).filter(Boolean).slice(0, 20) : [],
+        hashtags: filterSupportedHashtags(proposal.hashtags, context),
         visualContext: clean(proposal.visualContext, 800),
         rationale: clean(proposal.rationale, 800)
       }
