@@ -24,7 +24,7 @@ function normalizeFact(value) {
 }
 
 function filterSupportedHashtags(hashtags, context) {
-  const facts = normalizeFact([context.name, context.description, context.category].filter(Boolean).join(' '));
+  const facts = normalizeFact([context.name, context.description].filter(Boolean).join(' '));
   const materialTerms = ['resina', 'jesmonite', 'ceramica', 'barro', 'cera', 'soja', 'parafina', 'gesso', 'acrilico', 'epoxi', 'epoxy'];
   return (Array.isArray(hashtags) ? hashtags : [])
     .map(x => clean(x, 80))
