@@ -125,7 +125,7 @@ export default async function handler(req, res) {
 
     const data = await response.json();
     if (!response.ok) {
-      console.error('social-ai upstream', response.status, data?.error?.type || 'error');
+      console.error('social-ai upstream', response.status, data?.error?.type || 'error', clean(data?.error?.code || '', 120), clean(data?.error?.message || '', 500));
       return json(res, 502, { ok: false, error: 'Não foi possível gerar a proposta de IA.' });
     }
 
