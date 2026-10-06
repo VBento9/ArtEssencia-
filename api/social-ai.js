@@ -31,8 +31,12 @@ function filterSupportedHashtags(hashtags, context) {
     .filter(Boolean)
     .filter(tag => {
       const normalizedTag = normalizeFact(tag);
-      const mentioned = materialTerms.filter(term => normalizedTag.includes(term));
-      return mentioned.length === 0 || mentioned.every(term => facts.includes(term));
+      const compactTag = normalizedTag.replace(/[^a-z0-9]/g, '');
+      const mentioned = materialTerms.filter(term => compactTag.includes(term));
+      return mentioned.length === 0 || mentioned.every(term => {
+        const literal = new RegExp('(^|[^a-z0-9])' + term + '([^a-z0-9]|$)');
+        return literal.test(facts);
+      });
     })
     .slice(0, 20);
 }
