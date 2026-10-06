@@ -148,11 +148,31 @@ async function publishFacebook(row, accessToken, pageId) {
   const caption = [clean(row.copy, 4000), ...(Array.isArray(row.hashtags) ? row.hashtags : [])]
     .filter(Boolean)
     .join('\n\n');
-  const result = await metaPost('/' + encodeURIComponent(pageId) + '/feed', {
+  const imageUrl = clean(row.image_url, 4000);
+
+  if (/^https:\/\//i.test(imageUrl)) {
+    const photo = await metaPost('/' + encodeURIComponent(pageId) + '/photos', {
+      url: imageUrl,
+      caption,
+      published: 'true',
+      access_token: accessToken
+    });
+    return {
+      network: 'Facebook',
+      externalId: clean(photo?.post_id || photo?.id, 300) || null,
+      mediaType: 'photo'
+    };
+  }
+
+  const post = await metaPost('/' + encodeURIComponent(pageId) + '/feed', {
     message: caption,
     access_token: accessToken
   });
-  return { network: 'Facebook', externalId: clean(result?.id, 300) || null };
+  return {
+    network: 'Facebook',
+    externalId: clean(post?.id, 300) || null,
+    mediaType: 'text'
+  };
 }
 
 async function publishInstagram(row, accessToken, instagramAccountId) {
