@@ -6967,7 +6967,7 @@ function renderLocalSocialProposalV6(p,network,format,goal,tone){
  const baseNetworkLine=network==='Facebook'?'Segue a ArtEssencia para acompanhares as próximas novidades.':'Guarda esta publicação e acompanha a ArtEssencia para não perderes as próximas novidades.';
  const networkLine=tone==='Comercial'?baseNetworkLine+' Consulta o catálogo e escolhe a tua opção.':tone==='Inspirador'?baseNetworkLine+' Encontra inspiração para tornar cada espaço mais teu.':baseNetworkLine;
  const categoryTag=category?' #'+category.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]/g,''):'';
- return{copy:[intro,detail,priceLine,formatLine,networkLine].filter(Boolean).join('\n\n'),tags:'#ArtEssencia #FeitoAMao #Artesanato #Decoracao'+categoryTag};
+ return{copy:[intro,detail,priceLine,formatLine,networkLine].filter(Boolean).join('\n\n'),tags:'#ArtEssencia #FeitoAMao #Artesanato #Decoracao'};
 }
 async function generateSocialProposalV3(){
  const all=Array.isArray(db&&db.products)?db.products:[];
