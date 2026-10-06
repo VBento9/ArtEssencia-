@@ -15816,12 +15816,14 @@ function renderCosts(){
    const designation=normalizeProductAvailabilityV1244(p)==='edition'?'Edição Especial':p.category;
    return `<tr><td>${p.name}</td><td>${designation}</td><td>${euro(x.materials)}</td><td>${euro(x.labor)}</td><td>${euro(x.fixed)}</td><td>${euro(x.other)}</td><td><strong>${euro(c)}</strong></td><td>${pricingProductMarginPctV1745(p).toLocaleString('pt-PT',{maximumFractionDigits:1})}%</td><td>${euro(p.price)}</td><td><strong>${euro(artessenciaRecommendedPriceV1251(p))}</strong></td><td>${euro(p.onlinePrice??p.price)}</td><td><strong>${euro(artessenciaRecommendedOnlinePriceV12620(p))}</strong></td><td><span class="price-health-v132"><span class="badge ${artessenciaPriceHealthV1251(p).key==='good'?'ok':artessenciaPriceHealthV1251(p).key==='loss'?'bad':'warn'}">${pct(m)}</span><small class="price-health-v1251 ${artessenciaPriceHealthV1251(p).key}">${artessenciaPriceHealthV1251(p).label}</small></span></td></tr>`
  }).join('');
- costLaborRate.value=db.settings.laborRate||0;costLaborMinutes.value=db.settings.laborMinutes||0;costWasteRate.value=(Number(db.settings.wasteRate)||0)*100;const cl=document.getElementById('costPricingLaborV1745'),cf=document.getElementById('costPricingFixedV1745'),cm=document.getElementById('costPricingMarginV1745');if(cl)cl.textContent=euro(pricingLaborHourlyRateV1745())+'/h';if(cf)cf.textContent=euro(pricingFixedHourlyRateV1745())+'/h';if(cm)cm.textContent=(Number(db.settings.pricingDefaultMarginPct)||0).toLocaleString('pt-PT',{maximumFractionDigits:1})+'%';
+ costLaborRate.value=pricingLaborHourlyRateV1745();costLaborMinutes.value=db.settings.laborMinutes||0;costWasteRate.value=pricingGlobalWastePctV1802();const cl=document.getElementById('costPricingLaborV1745'),cf=document.getElementById('costPricingFixedV1745'),cm=document.getElementById('costPricingMarginV1745');if(cl)cl.textContent=euro(pricingLaborHourlyRateV1745())+'/h';if(cf)cf.textContent=euro(pricingFixedHourlyRateV1745())+'/h';if(cm)cm.textContent=(Number(db.settings.pricingDefaultMarginPct)||0).toLocaleString('pt-PT',{maximumFractionDigits:1})+'%';
  costPackagingBody.innerHTML=(db.packaging||[]).map(x=>`<tr><td>${x.name}</td><td>${x.capacity} un.</td><td>${euro(x.cost)}</td><td>${euro(x.capacity?x.cost/x.capacity:0)}</td></tr>`).join('');
  renderProductRecipeEditor()
 }
 function saveCostSettings(){
- db.settings.laborRate=Math.max(0,Number(costLaborRate.value)||0);db.settings.laborMinutes=Math.max(0,Number(costLaborMinutes.value)||0);db.settings.wasteRate=Math.max(0,Number(costWasteRate.value)||0)/100;save();toast('Parâmetros de custos atualizados')
+ const labor=Math.max(0,Number(costLaborRate.value)||0),wastePct=Math.max(0,Math.min(100,Number(costWasteRate.value)||0));
+ db.settings.laborRate=labor;db.settings.pricingHourlyRate=labor;db.settings.laborMinutes=Math.max(0,Number(costLaborMinutes.value)||0);db.settings.wasteRate=wastePct/100;db.settings.pricingGlobalWastePctV1802=wastePct;
+ const repriced=repriceProductsFromGlobalCostsV1802();save();renderPricingFixedCostsV1744();refreshProductChannelPricingV12620();toast(db.settings.pricingAutoPriceFromCostsV1802?('Parâmetros de custos atualizados · '+repriced.updated+' produto(s) com PVP atualizado'):'Parâmetros de custos atualizados · PVP atuais preservados')
 }
 
 function renderProductionFlowV147(){
