@@ -53,9 +53,32 @@ async function loadPublication(token, id) {
   return Array.isArray(rows) ? rows[0] || null : null;
 }
 
-async function markPublished(token, id) {
+async function claimPublication(token, id) {
   const response = await fetch(
-    SUPABASE_URL + '/rest/v1/artessencia_social_publications?id=eq.' + encodeURIComponent(id),
+    SUPABASE_URL + '/rest/v1/artessencia_social_publications?id=eq.' + encodeURIComponent(id) +
+      '&status=eq.approved&published_at=is.null',
+    {
+      method: 'PATCH',
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: 'Bearer ' + token,
+        'Content-Type': 'application/json',
+        Prefer: 'return=representation'
+      },
+      body: JSON.stringify({ published_at: new Date().toISOString() })
+    }
+  );
+  if (!response.ok) throw new Error('Não foi possível reservar esta publicação.');
+  const rows = await response.json().catch(() => []);
+  if (!Array.isArray(rows) || rows.length !== 1) {
+    throw new Error('Esta publicação já foi processada ou está a ser processada.');
+  }
+}
+
+async function releasePublicationClaim(token, id) {
+  const response = await fetch(
+    SUPABASE_URL + '/rest/v1/artessencia_social_publications?id=eq.' + encodeURIComponent(id) +
+      '&status=eq.approved',
     {
       method: 'PATCH',
       headers: {
@@ -64,13 +87,32 @@ async function markPublished(token, id) {
         'Content-Type': 'application/json',
         Prefer: 'return=minimal'
       },
-      body: JSON.stringify({
-        status: 'published',
-        published_at: new Date().toISOString()
-      })
+      body: JSON.stringify({ published_at: null })
     }
   );
-  if (!response.ok) throw new Error('A publicação foi enviada, mas não foi possível atualizar o estado no Backoffice.');
+  if (!response.ok) {
+    console.error('social-meta-publish claim release failed', id);
+  }
+}
+
+async function markPublished(token, id) {
+  const response = await fetch(
+    SUPABASE_URL + '/rest/v1/artessencia_social_publications?id=eq.' + encodeURIComponent(id) +
+      '&status=eq.approved',
+    {
+      method: 'PATCH',
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: 'Bearer ' + token,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal'
+      },
+      body: JSON.stringify({ status: 'published' })
+    }
+  );
+  if (!response.ok) {
+    throw new Error('A publicação foi enviada, mas o estado final não pôde ser sincronizado. Não repitas a publicação; revê o histórico.');
+  }
 }
 
 function graphBase() {
@@ -190,23 +232,27 @@ export default async function handler(req, res) {
       });
     }
 
-    let result;
-    if (row.network === 'Instagram') {
-      if (!instagramAccountId) {
-        return json(res, 503, { ok: false, error: 'Instagram Meta ainda não configurado.' });
+    await claimPublication(token, id);
+    let externalPublished = false;
+    try {
+      let result;
+      if (row.network === 'Instagram') {
+        if (!instagramAccountId) throw new Error('Instagram Meta ainda não configurado.');
+        result = await publishInstagram(row, accessToken, instagramAccountId);
+      } else if (row.network === 'Facebook') {
+        if (!pageId) throw new Error('Página Facebook ainda não configurada.');
+        result = await publishFacebook(row, accessToken, pageId);
+      } else {
+        throw new Error('Rede social não suportada.');
       }
-      result = await publishInstagram(row, accessToken, instagramAccountId);
-    } else if (row.network === 'Facebook') {
-      if (!pageId) {
-        return json(res, 503, { ok: false, error: 'Página Facebook ainda não configurada.' });
-      }
-      result = await publishFacebook(row, accessToken, pageId);
-    } else {
-      return json(res, 409, { ok: false, error: 'Rede social não suportada.' });
-    }
 
-    await markPublished(token, id);
-    return json(res, 200, { ok: true, result });
+      externalPublished = true;
+      await markPublished(token, id);
+      return json(res, 200, { ok: true, result });
+    } catch (publishError) {
+      if (!externalPublished) await releasePublicationClaim(token, id);
+      throw publishError;
+    }
   } catch (error) {
     console.error('social-meta-publish', error?.message || error);
     return json(res, 502, {
