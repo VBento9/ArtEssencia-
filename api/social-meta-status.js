@@ -55,6 +55,6 @@ export default async function handler(req, res) {
       facebook: accessToken && pageId,
       instagram: accessToken && instagramAccountId
     },
-    publishingEnabled: false
+    publishingEnabled: String(process.env.SOCIAL_META_PUBLISH_ENABLED || '').toLowerCase() === 'true'
   });
 }
