@@ -6976,7 +6976,9 @@ async function generateSocialProposalV3(){
  const local=renderLocalSocialProposalV6(p,network,format,goal,tone),copyEl=document.getElementById('socialCopyV3'),tagsEl=document.getElementById('socialTagsV3'),review=document.getElementById('socialReviewStatusV5');
  if(review){review.textContent='A gerar proposta com IA…';review.dataset.state='loading'}
  try{
-  const response=await fetch('/api/social-ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product:{name:String(p.name||p.code||'Produto'),description:String(p.shopDescription||''),category:String(p.category||''),price:Number(p.onlinePrice||p.price||0),imageUrl:String(p.shopImageUrl||'')},network,format,goal,tone})});
+  const cloud=initCloudClient(),session=cloud?await cloud.auth.getSession():null,token=session?.data?.session?.access_token;
+  if(!token)throw new Error('Sessão Cloud expirada');
+  const response=await fetch('/api/social-ai',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({product:{name:String(p.name||p.code||'Produto'),description:String(p.shopDescription||''),category:String(p.category||''),price:Number(p.onlinePrice||p.price||0),imageUrl:String(p.shopImageUrl||'')},network,format,goal,tone})});
   const data=await response.json().catch(()=>({}));
   if(!response.ok||!data?.ok||!data?.proposal?.copy)throw new Error(data?.error||'IA indisponível');
   if(copyEl)copyEl.value=String(data.proposal.copy||'');
