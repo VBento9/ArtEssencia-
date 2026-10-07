@@ -5851,6 +5851,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           <button class="btn primary" onclick="cloudConnect()">Ligar / Entrar</button>
           <button class="btn" onclick="saveCloudConfig()">Guardar configuração</button>
           <button class="btn" onclick="cloudDisconnect()">Terminar sessão</button>
+          <button id="cloudPasskeyRegisterV20261008" class="btn hidden" type="button" onclick="registerCloudPasskeyV20261008()">Registar biometria neste dispositivo</button>
         </div>
         <p class="security-note">A palavra-passe não é guardada pela ArtEssencia. Nunca uses uma service_role key na aplicação.</p>
       </div>
@@ -18034,7 +18035,8 @@ function renderCloudUI(){
 }
 
 function saveCloudConfig(){const url=(document.getElementById('cloudUrl')?.value||'').trim().replace(/\/$/,'');const key=(document.getElementById('cloudKey')?.value||'').trim();const email=(document.getElementById('cloudEmail')?.value||'').trim();if(url&&!/^https:\/\/[^\s]+$/i.test(url)){toast('URL Supabase inválido');return false}if((url&&!key)||(!url&&key)){toast('Preenche URL e chave');return false}const prev=cloudCfg();localStorage.setItem(CLOUD_CFG,JSON.stringify({url,key,email}));if(prev.url!==url||prev.key!==key){cloudClient=null;cloudUser=null;cloudChannel=null;setCloudMeta({verified:false})}cloudLogMsg('Configuração cloud guardada');toast('Configuração cloud guardada');renderCloudUI();return true}
-const PASSKEY_PREVIEW_V20261008=false; // Aguardar validação da configuração Supabase e RP ID.
+const PASSKEY_PREVIEW_V20261008=false;
+// O botão de registo permanece oculto até à ativação explícita da experiência. // Aguardar validação da configuração Supabase e RP ID.
 function initCloudClient(){const cfg=cloudCfg();if(!cfg.url||!cfg.key)return null;if(!window.supabase||!window.supabase.createClient){cloudLogMsg('Biblioteca Supabase indisponível');return null}if(cloudClient)return cloudClient;cloudClient=window.supabase.createClient(cfg.url,cfg.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,...(PASSKEY_PREVIEW_V20261008?{experimental:{passkey:true}}:{})},db:{schema:'public'}});cloudClient.auth.onAuthStateChange((event,session)=>{cloudUser=session?.user||null;renderCloudUI();if(cloudUser&&cloudStartupDone&&!cloudHydrating&&(event==='SIGNED_IN'||event==='TOKEN_REFRESHED')){if(!cloudChannel)subscribeCloud();if((cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending)&&!cloudMeta().conflict&&!hasRestorePendingV12645())scheduleCloudPushV1860(300)}});return cloudClient}
 function cloudStateQuery(){return cloudClient.schema('public').from(CLOUD_TABLE)}
 function cloudErrText(e){if(!e)return 'Erro desconhecido';const parts=[];if(e.message)parts.push(e.message);if(e.code)parts.push('code='+e.code);if(e.details)parts.push('details='+e.details);if(e.hint)parts.push('hint='+e.hint);if(e.status)parts.push('status='+e.status);return parts.join(' | ')}
@@ -18097,6 +18099,23 @@ function authGateShowV1880(message=''){
 }
 function authGateHideV1880(){document.getElementById('authGateV1880')?.classList.add('hidden');authGateMessageV1880('')}
 function authGateKeyV1881(event){if(event.key==='Enter'){event.preventDefault();authGateLoginV1880()}}
+async function registerCloudPasskeyV20261008(){
+ if(!PASSKEY_PREVIEW_V20261008)return;
+ if(location.protocol!=='https:'||location.hostname!=='art-essencia.vercel.app'){toast('Registo de biometria apenas no domínio oficial da ArtEssencia');return}
+ const c=initCloudClient();
+ if(typeof c?.auth?.registerPasskey!=='function'){toast('SDK Supabase sem suporte para Passkeys');return}
+ const btn=document.getElementById('cloudPasskeyRegisterV20261008');if(btn)btn.disabled=true;
+ try{
+  const {data:sessionData,error:sessionError}=await c.auth.getSession();if(sessionError)throw sessionError;
+  if(!sessionData?.session?.access_token)throw new Error('Sessão expirada');
+  const {data:userData,error:userError}=await c.auth.getUser();if(userError)throw userError;
+  if(!userData?.user?.id||userData.user.id!==sessionData.session.user?.id)throw new Error('Conta não validada');
+  if(userData.user.is_anonymous||!userData.user.email_confirmed_at)throw new Error('Conta não elegível para Passkeys');
+  const {error}=await c.auth.registerPasskey();if(error)throw error;
+  toast('Passkey registada. Mantém a palavra-passe como alternativa.');
+ }catch(e){console.warn('[passkey] registo falhou:',e?.message||e);toast('Não foi possível registar a Passkey. A palavra-passe continua disponível.')}
+ finally{if(btn)btn.disabled=false}
+}
 async function authGatePasskeyLoginV20261008(){
  if(!PASSKEY_PREVIEW_V20261008)return;
  const c=initCloudClient();
