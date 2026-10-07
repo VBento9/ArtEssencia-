@@ -32,5 +32,15 @@ test('registo requer utilizador autenticado e confirmado',async()=>{
   registerPasskey:async()=>{invoked=true;return {data:{id:'p'}}},
   signInWithPasskey:async()=>({})
  }})});
- await assert.rejects(a.register(),/conta confirmada/);assert.equal(invoked,false);
+ await assert.rejects(a.register('existing-token'),/conta confirmada/);assert.equal(invoked,false);
+});
+
+test('registo sem token existente é bloqueado',async()=>{
+ let invoked=false;
+ const a=createPasskeyAdapter({...settings,enabled:true,createClient:()=>({auth:{
+  getUser:async()=>{invoked=true;return {data:{user:{id:'u'}}}},
+  registerPasskey:async()=>({}),signInWithPasskey:async()=>({})
+ }})});
+ await assert.rejects(a.register(),/Sessão atual obrigatória/);
+ assert.equal(invoked,false);
 });
