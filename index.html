@@ -3358,6 +3358,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
     <div class="field"><label>Palavra-passe</label><input id="authGatePasswordV1880" type="password" autocomplete="current-password" onkeydown="authGateKeyV1881(event)" placeholder="Palavra-passe"></div>
     <div id="authGateMessageV1880" class="auth-message-v1880"></div>
     <button id="authGateButtonV1880" class="btn primary" type="button" onclick="authGateLoginV1880()">Entrar</button>
+    <button id="authGatePasskeyV20261008" class="btn hidden" type="button" onclick="authGatePasskeyLoginV20261008()">Entrar com biometria</button>
   </div>
 </div>
 
@@ -18033,7 +18034,8 @@ function renderCloudUI(){
 }
 
 function saveCloudConfig(){const url=(document.getElementById('cloudUrl')?.value||'').trim().replace(/\/$/,'');const key=(document.getElementById('cloudKey')?.value||'').trim();const email=(document.getElementById('cloudEmail')?.value||'').trim();if(url&&!/^https:\/\/[^\s]+$/i.test(url)){toast('URL Supabase inválido');return false}if((url&&!key)||(!url&&key)){toast('Preenche URL e chave');return false}const prev=cloudCfg();localStorage.setItem(CLOUD_CFG,JSON.stringify({url,key,email}));if(prev.url!==url||prev.key!==key){cloudClient=null;cloudUser=null;cloudChannel=null;setCloudMeta({verified:false})}cloudLogMsg('Configuração cloud guardada');toast('Configuração cloud guardada');renderCloudUI();return true}
-function initCloudClient(){const cfg=cloudCfg();if(!cfg.url||!cfg.key)return null;if(!window.supabase||!window.supabase.createClient){cloudLogMsg('Biblioteca Supabase indisponível');return null}if(cloudClient)return cloudClient;cloudClient=window.supabase.createClient(cfg.url,cfg.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},db:{schema:'public'}});cloudClient.auth.onAuthStateChange((event,session)=>{cloudUser=session?.user||null;renderCloudUI();if(cloudUser&&cloudStartupDone&&!cloudHydrating&&(event==='SIGNED_IN'||event==='TOKEN_REFRESHED')){if(!cloudChannel)subscribeCloud();if((cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending)&&!cloudMeta().conflict&&!hasRestorePendingV12645())scheduleCloudPushV1860(300)}});return cloudClient}
+const PASSKEY_PREVIEW_V20261008=false; // Aguardar validação da configuração Supabase e RP ID.
+function initCloudClient(){const cfg=cloudCfg();if(!cfg.url||!cfg.key)return null;if(!window.supabase||!window.supabase.createClient){cloudLogMsg('Biblioteca Supabase indisponível');return null}if(cloudClient)return cloudClient;cloudClient=window.supabase.createClient(cfg.url,cfg.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,...(PASSKEY_PREVIEW_V20261008?{experimental:{passkey:true}}:{})},db:{schema:'public'}});cloudClient.auth.onAuthStateChange((event,session)=>{cloudUser=session?.user||null;renderCloudUI();if(cloudUser&&cloudStartupDone&&!cloudHydrating&&(event==='SIGNED_IN'||event==='TOKEN_REFRESHED')){if(!cloudChannel)subscribeCloud();if((cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending)&&!cloudMeta().conflict&&!hasRestorePendingV12645())scheduleCloudPushV1860(300)}});return cloudClient}
 function cloudStateQuery(){return cloudClient.schema('public').from(CLOUD_TABLE)}
 function cloudErrText(e){if(!e)return 'Erro desconhecido';const parts=[];if(e.message)parts.push(e.message);if(e.code)parts.push('code='+e.code);if(e.details)parts.push('details='+e.details);if(e.hint)parts.push('hint='+e.hint);if(e.status)parts.push('status='+e.status);return parts.join(' | ')}
 async function cloudApiDiagnostic(showToast=false){
@@ -18090,10 +18092,23 @@ function authGateShowV1880(message=''){
  if(email&&!email.value)email.value=cloudCfg().email||'';
  if(password)password.value='';
  authGateMessageV1880(message);gate.classList.remove('hidden');
+ document.getElementById('authGatePasskeyV20261008')?.classList.toggle('hidden',!PASSKEY_PREVIEW_V20261008);
  setTimeout(()=>{(email?.value?password:email)?.focus()},80)
 }
 function authGateHideV1880(){document.getElementById('authGateV1880')?.classList.add('hidden');authGateMessageV1880('')}
 function authGateKeyV1881(event){if(event.key==='Enter'){event.preventDefault();authGateLoginV1880()}}
+async function authGatePasskeyLoginV20261008(){
+ if(!PASSKEY_PREVIEW_V20261008)return;
+ const c=initCloudClient();
+ if(typeof c?.auth?.signInWithPasskey!=='function'){authGateMessageV1880('Passkeys indisponíveis. Utiliza a palavra-passe.');return}
+ const btn=document.getElementById('authGatePasskeyV20261008');if(btn)btn.disabled=true;
+ try{
+  const {data,error}=await c.auth.signInWithPasskey();if(error)throw error;
+  if(!data?.session?.access_token||!data?.user?.id)throw new Error('Sessão não validada');
+  cloudUser=data.user;authGateHideV1880();await cloudStartup();
+ }catch(e){authGateShowV1880('Não foi possível entrar com biometria. Usa a palavra-passe.')}
+ finally{if(btn)btn.disabled=false}
+}
 async function authGateLoginV1880(){
  const email=String(document.getElementById('authGateEmailV1880')?.value||'').trim();
  const password=String(document.getElementById('authGatePasswordV1880')?.value||'');
