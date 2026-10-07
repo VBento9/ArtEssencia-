@@ -442,10 +442,16 @@ function visualCatalogModal(ctx,products,existing={}){
     const thumb=imageUrl?el('img',{src:imageUrl,alt:'',loading:'lazy'}):el('div',{class:'visual-product-placeholder'},'✨');
     const detail=(p.sku||'')+(p.price!=null?' · '+euro(p.price):'');
     const label=el('label',{class:'visual-product-choice'+(cb.checked?' selected':'')},thumb,el('div',{},el('strong',{},p.name||'Produto'),el('small',{},detail)),cb);
-    cb.onchange=()=>{if(cb.checked){selected.add(p.id);if(!order.includes(p.id))order.push(p.id)}else{selected.delete(p.id);const i=order.indexOf(p.id);if(i>=0)order.splice(i,1)}renderPicks()};picks.append(label);
+    cb.onchange=()=>{if(cb.checked){selected.add(p.id);if(!order.includes(p.id))order.push(p.id)}else{selected.delete(p.id);const i=order.indexOf(p.id);if(i>=0)order.splice(i,1)}renderAll()};picks.append(label);
   }};
   renderPicks();
-  form.append(field('Título',title),field('Formato',format),field('Subtítulo / coleção',subtitle),field('Preços',showPrice),field('Selecionar produtos',picks,true,'A ordem visual será acrescentada na fase seguinte; nesta fase validamos criação, persistência e reabertura sem tocar nos restantes módulos.'));
+  const ordering=el('div',{class:'visual-catalog-order'});
+  const renderOrder=()=>{ordering.innerHTML='';const ids=order.filter(id=>selected.has(id));if(!ids.length){ordering.append(el('div',{class:'small muted'},'Seleciona produtos para definir a ordem.'));return}
+    ids.forEach((id,index)=>{const p=products.find(x=>x.id===id);if(!p)return;ordering.append(el('div',{class:'visual-order-row'},el('span',{class:'visual-order-index'},String(index+1)),el('strong',{},p.name||'Produto'),el('div',{class:'toolbar'},button('↑',()=>{if(index>0){[order[index-1],order[index]]=[order[index],order[index-1]];renderOrder()}},'ghost small'),button('↓',()=>{if(index<ids.length-1){[order[index+1],order[index]]=[order[index],order[index+1]];renderOrder()}},'ghost small'))))});
+  };
+  const renderAll=()=>{renderPicks();renderOrder()};
+  renderOrder();
+  form.append(field('Título',title),field('Formato',format),field('Subtítulo / coleção',subtitle),field('Preços',showPrice),field('Selecionar produtos',picks,true,'Seleciona os artigos que farão parte deste catálogo.'),field('Ordem dos produtos',ordering,true,'Usa ↑ e ↓ para definir a sequência apresentada no catálogo.'));
   modal(existing.id?'Editar catálogo visual':'Novo catálogo visual',form,{wide:true,saveText:'Guardar rascunho',onSave:async()=>{
     if(!title.value.trim()){alert('Indica um título para o catálogo.');return false}if(!selected.size){alert('Seleciona pelo menos um produto.');return false}
     await db.put('catalogs',{...existing,id:existing.id||uid('vc'),kind:'visual-catalog',title:title.value.trim(),subtitle:subtitle.value.trim(),format:format.value,showPrice:showPrice.value==='true',productIds:[...order.filter(id=>selected.has(id)),...[...selected].filter(id=>!order.includes(id))],status:'draft',createdAt:existing.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()});
