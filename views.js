@@ -435,20 +435,20 @@ export async function visualCatalogsView(ctx){
 }
 function visualCatalogModal(ctx,products,existing={}){
   const form=el('div',{class:'form-grid'}),title=input('title',existing.title||''),subtitle=input('subtitle',existing.subtitle||''),format=select('format',[['A4','A4 · catálogo/PDF'],['Square','Quadrado · Instagram'],['Story','Vertical · Story']],existing.format||'A4'),showPrice=select('showPrice',[['true','Mostrar'],['false','Ocultar']],String(existing.showPrice!==false));
-  const selected=new Set(existing.productIds||[]),picks=el('div',{class:'visual-product-picker'});
+  const selected=new Set(existing.productIds||[]),order=[...(existing.productIds||[])],picks=el('div',{class:'visual-product-picker'});
   const renderPicks=()=>{picks.innerHTML='';for(const p of products.filter(x=>x.active!==false).sort((a,b)=>String(a.name).localeCompare(String(b.name)))){
     const cb=el('input',{type:'checkbox'});cb.checked=selected.has(p.id);
     const imageUrl=p.image||p.imageUrl||p.photo||p.photo1||p.coverImage||(p.images&&p.images[0])||'';
     const thumb=imageUrl?el('img',{src:imageUrl,alt:'',loading:'lazy'}):el('div',{class:'visual-product-placeholder'},'✨');
     const detail=(p.sku||'')+(p.price!=null?' · '+euro(p.price):'');
     const label=el('label',{class:'visual-product-choice'+(cb.checked?' selected':'')},thumb,el('div',{},el('strong',{},p.name||'Produto'),el('small',{},detail)),cb);
-    cb.onchange=()=>{cb.checked?selected.add(p.id):selected.delete(p.id);renderPicks()};picks.append(label);
+    cb.onchange=()=>{if(cb.checked){selected.add(p.id);if(!order.includes(p.id))order.push(p.id)}else{selected.delete(p.id);const i=order.indexOf(p.id);if(i>=0)order.splice(i,1)}renderPicks()};picks.append(label);
   }};
   renderPicks();
   form.append(field('Título',title),field('Formato',format),field('Subtítulo / coleção',subtitle),field('Preços',showPrice),field('Selecionar produtos',picks,true,'A ordem visual será acrescentada na fase seguinte; nesta fase validamos criação, persistência e reabertura sem tocar nos restantes módulos.'));
   modal(existing.id?'Editar catálogo visual':'Novo catálogo visual',form,{wide:true,saveText:'Guardar rascunho',onSave:async()=>{
     if(!title.value.trim()){alert('Indica um título para o catálogo.');return false}if(!selected.size){alert('Seleciona pelo menos um produto.');return false}
-    await db.put('catalogs',{...existing,id:existing.id||uid('vc'),kind:'visual-catalog',title:title.value.trim(),subtitle:subtitle.value.trim(),format:format.value,showPrice:showPrice.value==='true',productIds:[...selected],status:'draft',createdAt:existing.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()});
+    await db.put('catalogs',{...existing,id:existing.id||uid('vc'),kind:'visual-catalog',title:title.value.trim(),subtitle:subtitle.value.trim(),format:format.value,showPrice:showPrice.value==='true',productIds:[...order.filter(id=>selected.has(id)),...[...selected].filter(id=>!order.includes(id))],status:'draft',createdAt:existing.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()});
     toast('Rascunho do catálogo guardado.');ctx.refresh();return true
   }});
 }
