@@ -12,8 +12,10 @@ export function createPasskeyAdapter({createClient, url, publishableKey, enabled
   if (!client?.auth?.registerPasskey || !client?.auth?.signInWithPasskey) {
     throw new Error('Versão Supabase sem suporte experimental de Passkeys.');
   }
-  async function register() {
-    const {data: current, error: userError} = await client.auth.getUser();
+  async function register(existingAccessToken) {
+    if (typeof existingAccessToken !== 'string' || !existingAccessToken.trim())
+      throw new Error('Sessão atual obrigatória para registar biometria.');
+    const {data: current, error: userError} = await client.auth.getUser(existingAccessToken);
     if (userError || !current?.user || !current.user.email_confirmed_at && !current.user.phone_confirmed_at)
       throw new Error('É necessário iniciar sessão com uma conta confirmada antes de registar biometria.');
     const {data, error} = await client.auth.registerPasskey();
