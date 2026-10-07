@@ -418,6 +418,47 @@ function transferModal(ctx){const f=el('div',{class:'form-grid'}),from=input('fr
 async function managerCard(ctx,store,title,subtitle,fieldsDef){const rows=await db.all(store),card=el('div',{class:'card'},section(title,subtitle,[button('+ Adicionar',()=>creatorEntityModal(ctx,store,title,fieldsDef),'primary small')])),grid=el('div',{class:'creator-grid'});if(!rows.length)grid.append(el('div',{class:'empty'},'Ainda sem registos.'));for(const x of rows){const it=el('div',{class:'creator-item'}),head=el('div',{class:'creator-item-head'},el('div',{},el('strong',{},x.name||x.label||'Sem nome'),el('div',{class:'small muted'},x.description||x.note||'')),el('span',{html:badge(x.active!==false?'Ativo':'Inativo',x.active!==false?'ok':'neutral')}));it.append(head,el('div',{class:'toolbar',style:'margin-top:8px'},button('Editar',()=>creatorEntityModal(ctx,store,title,fieldsDef,x),'ghost small'),button(x.active!==false?'Desativar':'Ativar',async()=>{x.active=x.active===false; x.updatedAt=new Date().toISOString();await db.put(store,x);ctx.refresh()},'secondary small'),button('Eliminar',async()=>{if(confirm('Eliminar este registo?')){await db.del(store,x.id);ctx.refresh()}},'danger small')));grid.append(it)}card.append(grid);return card}
 function creatorEntityModal(ctx,store,title,defs,existing={}){const f=el('div',{class:'form-grid'}),controls={};for(const d of defs){let c;if(d.type==='select')c=select(d.key,d.options,existing[d.key]??d.default??'');else if(d.type==='textarea')c=textarea(d.key,existing[d.key]??d.default??'');else c=input(d.key,existing[d.key]??d.default??'',d.type||'text',d.attrs||{});controls[d.key]=c;f.append(field(d.label,c,!!d.span2,d.help||''))}modal(existing.id?`Editar ${title}`:`Adicionar · ${title}`,f,{onSave:async()=>{const row={...existing,id:existing.id||uid(store.slice(0,3)),active:existing.active!==false,updatedAt:new Date().toISOString()};for(const d of defs)row[d.key]=d.numeric?Number(controls[d.key].value||0):controls[d.key].value;await db.put(store,row);ctx.refresh();return true}})}
 
+
+export async function visualCatalogsView(ctx){
+  const [products,catalogs]=await Promise.all(['products','catalogs'].map(db.all));
+  const drafts=catalogs.filter(x=>x.kind==='visual-catalog').sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
+  const root=el('div',{class:'grid'});
+  root.append(el('div',{class:'card'},section('Catálogos Visuais','Módulo independente. Nesta primeira fase cria e guarda rascunhos; não publica nem altera o Catálogo Digital.',[button('+ Novo catálogo',()=>visualCatalogModal(ctx,products),'primary small')]),el('div',{class:'notice info'},'Os produtos são apenas referenciados. Criar ou editar um catálogo visual não altera produtos, preços, stock, publicação, Loja ou Catálogo Digital.')));
+  const grid=el('div',{class:'creator-grid'});
+  if(!drafts.length)grid.append(el('div',{class:'card empty'},'Ainda não existem catálogos visuais. Cria o primeiro rascunho.'));
+  for(const d of drafts){
+    const chosen=(d.productIds||[]).map(id=>products.find(p=>p.id===id)).filter(Boolean);
+    const info=chosen.length+' produto(s) · '+(d.format||'A4')+' · atualizado '+fmt(d.updatedAt);
+    grid.append(el('div',{class:'creator-item'},el('div',{class:'creator-item-head'},el('div',{},el('strong',{},d.title||'Catálogo sem título'),el('div',{class:'small muted'},info)),el('span',{html:badge('Rascunho','neutral')})),el('div',{class:'small muted',style:'margin-top:8px'},d.subtitle||'Sem subtítulo'),el('div',{class:'toolbar',style:'margin-top:10px'},button('Pré-visualizar',()=>visualCatalogPreview(d,chosen),'ghost small'),button('Editar',()=>visualCatalogModal(ctx,products,d),'secondary small'),button('Eliminar',async()=>{if(confirm('Eliminar este rascunho de catálogo?')){await db.del('catalogs',d.id);ctx.refresh()}},'danger small'))));
+  }
+  root.append(grid);return root;
+}
+function visualCatalogModal(ctx,products,existing={}){
+  const form=el('div',{class:'form-grid'}),title=input('title',existing.title||''),subtitle=input('subtitle',existing.subtitle||''),format=select('format',[['A4','A4 · catálogo/PDF'],['Square','Quadrado · Instagram'],['Story','Vertical · Story']],existing.format||'A4'),showPrice=select('showPrice',[['true','Mostrar'],['false','Ocultar']],String(existing.showPrice!==false));
+  const selected=new Set(existing.productIds||[]),picks=el('div',{class:'visual-product-picker'});
+  const renderPicks=()=>{picks.innerHTML='';for(const p of products.filter(x=>x.active!==false).sort((a,b)=>String(a.name).localeCompare(String(b.name)))){
+    const cb=el('input',{type:'checkbox'});cb.checked=selected.has(p.id);
+    const imageUrl=p.image||p.imageUrl||p.photo||p.photo1||p.coverImage||(p.images&&p.images[0])||'';
+    const thumb=imageUrl?el('img',{src:imageUrl,alt:'',loading:'lazy'}):el('div',{class:'visual-product-placeholder'},'✨');
+    const detail=(p.sku||'')+(p.price!=null?' · '+euro(p.price):'');
+    const label=el('label',{class:'visual-product-choice'+(cb.checked?' selected':'')},thumb,el('div',{},el('strong',{},p.name||'Produto'),el('small',{},detail)),cb);
+    cb.onchange=()=>{cb.checked?selected.add(p.id):selected.delete(p.id);renderPicks()};picks.append(label);
+  }};
+  renderPicks();
+  form.append(field('Título',title),field('Formato',format),field('Subtítulo / coleção',subtitle),field('Preços',showPrice),field('Selecionar produtos',picks,true,'A ordem visual será acrescentada na fase seguinte; nesta fase validamos criação, persistência e reabertura sem tocar nos restantes módulos.'));
+  modal(existing.id?'Editar catálogo visual':'Novo catálogo visual',form,{wide:true,saveText:'Guardar rascunho',onSave:async()=>{
+    if(!title.value.trim()){alert('Indica um título para o catálogo.');return false}if(!selected.size){alert('Seleciona pelo menos um produto.');return false}
+    await db.put('catalogs',{...existing,id:existing.id||uid('vc'),kind:'visual-catalog',title:title.value.trim(),subtitle:subtitle.value.trim(),format:format.value,showPrice:showPrice.value==='true',productIds:[...selected],status:'draft',createdAt:existing.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()});
+    toast('Rascunho do catálogo guardado.');ctx.refresh();return true
+  }});
+}
+function visualCatalogPreview(catalog,products){
+  const body=el('div',{class:'visual-catalog-preview'},el('div',{class:'visual-catalog-head'},el('div',{class:'eyebrow'},'ARTESSENCIA'),el('h2',{},catalog.title||'Catálogo'),catalog.subtitle?el('p',{class:'muted'},catalog.subtitle):null));
+  const grid=el('div',{class:'visual-catalog-grid'});
+  for(const p of products){const imageUrl=p.image||p.imageUrl||p.photo||p.photo1||p.coverImage||(p.images&&p.images[0])||'';grid.append(el('div',{class:'visual-catalog-product'},imageUrl?el('img',{src:imageUrl,alt:p.name||'',loading:'lazy'}):el('div',{class:'visual-catalog-placeholder'},'ARTESSENCIA'),el('strong',{},p.name||'Produto'),catalog.showPrice!==false?el('span',{},euro(p.price||0)):null))}
+  body.append(grid);modal('Pré-visualização · rascunho',body,{wide:true});
+}
+
 export async function catalogsView(ctx,opts={}){const tab=opts.tab||'catalogs',root=el('div'),nav=el('div',{class:'subnav'});[['catalogs','Catálogos'],['themes','Temas'],['occasions','Ocasiões'],['colors','Cores'],['personalizations','Personalizações'],['pricing','Preços do Criador']].forEach(([id,l])=>nav.append(el('button',{class:tab===id?'active':'',onclick:()=>ctx.go('catalogs',{tab:id})},l)));root.append(nav);
  if(tab==='catalogs'){const products=await db.all('products'),catalogs=await db.all('catalogs');root.append(await catalogsPanel(ctx,catalogs,products))}
  if(tab==='themes')root.append(await managerCard(ctx,'themes','Temas','Ex.: Batizado, Comunhão, Natal, Botânico',[{key:'name',label:'Nome'},{key:'description',label:'Descrição',span2:true},{key:'image',label:'Imagem / URL',span2:true}]));
@@ -442,6 +483,6 @@ export async function backupView(ctx){const root=el('div',{class:'grid cols-2'})
 export const views={
  today:todayView,sale:saleView,atelier:atelierView,orders:ordersView,quotes:quotesView,products:productsView,costs:costsView,
  stock:stockView,materials:stockView,purchases:purchasesView,clients:clientsView,cash:cashAdvancedView,reports:reportsView,
- catalogs:catalogsView,specialEditions:specialEditionsView,homepage:homepageView,campaigns:campaignsView,delivery:deliveryView,
+ visualCatalogs:visualCatalogsView,catalogs:catalogsView,specialEditions:specialEditionsView,homepage:homepageView,campaigns:campaignsView,delivery:deliveryView,
  shop:shopView,settings:settingsView,cloud:cloudView,backup:backupView,audit:auditView
 };
