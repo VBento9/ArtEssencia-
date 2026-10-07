@@ -31,3 +31,14 @@ test('botão biométrico oculto e login por palavra-passe visível',()=>{
 test('cliente Cloud preserva sessão persistente e refresh',()=>{
  match(/persistSession:true,autoRefreshToken:true,detectSessionInUrl:true/,'configuração original');
 });
+
+test('SDK Supabase fixado para suporte a Passkeys',()=>{
+ match(/supabase-js@2[.]105[.]0\/dist\/umd\/supabase[.]min[.]js/,'SDK compatível');
+});
+test('registo protegido por sessão, identidade e domínio',()=>{
+ const fn=html.split('async function registerCloudPasskeyV20261008(){')[1]?.split('async function authGatePasskeyLoginV20261008(){')[0];
+ assert.ok(fn,'registo implementado');
+ for(const pattern of [/PASSKEY_PREVIEW_V20261008/,/location[.]hostname!=='art-essencia[.]vercel[.]app'/,/initCloudClient\(\)/,/auth[.]getSession\(\)/,/auth[.]getUser\(\)/,/auth[.]registerPasskey\(\)/])assert.match(fn,pattern);
+ assert.doesNotMatch(fn,/createClient\(/);
+ match(/id="cloudPasskeyRegisterV20261008" class="btn hidden"/,'registo oculto');
+});
