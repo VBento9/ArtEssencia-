@@ -2,6 +2,7 @@ import {views} from './views.js';
 import {qs,el,modal,input,field} from './ui.js';
 import * as db from './db.js';
 import * as cloud from './cloud.js';
+import {inspectPasskeyCapabilities} from './security/passkey-capabilities.js';
 
 const NAV=[
   {group:'Hoje',items:[['today','Hoje','⌂'],['sale','Nova venda','＋']]},
@@ -26,7 +27,13 @@ async function updateCloudPill(){try{const s=await cloud.status();const b=qs('#c
 async function render(){
   buildNav();const [context,title,sub]=META[state.view]||META.today;qs('#pageContext').textContent=context;qs('#pageTitle').textContent=title;qs('#pageSubtitle').textContent=sub;
   updateCloudPill();
-  const view=qs('#view');view.innerHTML='<div class="empty">A carregar…</div>';try{view.innerHTML='';view.append(await views[state.view]({go,refresh:render,version:state.version},state.opts||{}));state.opts={}}catch(e){console.error(e);view.innerHTML=`<div class="card"><h3>Erro ao abrir módulo</h3><p>${String(e.message||e)}</p></div>`}
+  const view=qs('#view');view.innerHTML='<div class="empty">A carregar…</div>';try{view.innerHTML='';view.append(await views[state.view]({go,refresh:render,version:state.version},state.opts||{}));if(state.view==='cloud'){
+    const diagnostic=el('div',{class:'card'},el('h3',{},'Compatibilidade biométrica (diagnóstico)'),el('p',{class:'muted'},'Verificação local de compatibilidade. Não ativa biometria, não cria credenciais e não altera o início de sessão.'));
+    const output=el('p',{class:'muted'},'Diagnóstico ainda não executado.');
+    const check=el('button',{type:'button',class:'btn'},'Verificar este dispositivo');
+    check.onclick=async()=>{check.disabled=true;output.textContent='A verificar…';try{const cap=await inspectPasskeyCapabilities();output.textContent=!cap.secureContext?'É necessária uma ligação segura (HTTPS).':!cap.webAuthnAvailable?'Este navegador não disponibiliza WebAuthn.':cap.platformAuthenticatorAvailable?'Autenticador do dispositivo disponível. Login biométrico ainda não configurado.':'Não foi detetado um autenticador de plataforma disponível. Login atual mantém-se.'}catch{output.textContent='Não foi possível concluir o diagnóstico. O login atual mantém-se.'}finally{check.disabled=false}};
+    diagnostic.append(check,output);view.append(diagnostic);
+  }state.opts={}}catch(e){console.error(e);view.innerHTML=`<div class="card"><h3>Erro ao abrir módulo</h3><p>${String(e.message||e)}</p></div>`}
 }
 export function go(view,opts={}){if(!views[view])return;state.view=view;state.opts=opts;history.replaceState(null,'',`#${view}`);render()}
 window.addEventListener('hashchange',()=>{const v=location.hash.slice(1);if(views[v]){state.view=v;render()}});
