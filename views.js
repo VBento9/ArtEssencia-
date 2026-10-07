@@ -429,7 +429,7 @@ export async function visualCatalogsView(ctx){
   for(const d of drafts){
     const chosen=(d.productIds||[]).map(id=>products.find(p=>p.id===id)).filter(Boolean);
     const info=chosen.length+' produto(s) · '+(d.format||'A4')+' · atualizado '+fmt(d.updatedAt);
-    grid.append(el('div',{class:'creator-item'},el('div',{class:'creator-item-head'},el('div',{},el('strong',{},d.title||'Catálogo sem título'),el('div',{class:'small muted'},info)),el('span',{html:badge('Rascunho','neutral')})),el('div',{class:'small muted',style:'margin-top:8px'},d.subtitle||'Sem subtítulo'),el('div',{class:'toolbar',style:'margin-top:10px'},button('Pré-visualizar',()=>visualCatalogPreview(d,chosen),'ghost small'),button('Editar',()=>visualCatalogModal(ctx,products,d),'secondary small'),button('Eliminar',async()=>{if(confirm('Eliminar este rascunho de catálogo?')){await db.del('catalogs',d.id);ctx.refresh()}},'danger small'))));
+    grid.append(el('div',{class:'creator-item'},el('div',{class:'creator-item-head'},el('div',{},el('strong',{},d.title||'Catálogo sem título'),el('div',{class:'small muted'},info)),el('span',{html:badge('Rascunho','neutral')})),el('div',{class:'small muted',style:'margin-top:8px'},d.subtitle||'Sem subtítulo'),el('div',{class:'toolbar',style:'margin-top:10px'},button('Pré-visualizar',()=>visualCatalogPreview(d,chosen),'ghost small'),button('Exportar',()=>visualCatalogExport(d,chosen),'secondary small'),button('Editar',()=>visualCatalogModal(ctx,products,d),'secondary small'),button('Eliminar',async()=>{if(confirm('Eliminar este rascunho de catálogo?')){await db.del('catalogs',d.id);ctx.refresh()}},'danger small'))));
   }
   root.append(grid);return root;
 }
@@ -463,6 +463,33 @@ function visualCatalogPreview(catalog,products){
   const grid=el('div',{class:'visual-catalog-grid'});
   for(const p of products){const imageUrl=p.image||p.imageUrl||p.photo||p.photo1||p.coverImage||(p.images&&p.images[0])||'';grid.append(el('div',{class:'visual-catalog-product'},imageUrl?el('img',{src:imageUrl,alt:p.name||'',loading:'lazy'}):el('div',{class:'visual-catalog-placeholder'},'ARTESSENCIA'),el('strong',{},p.name||'Produto'),catalog.showPrice!==false?el('span',{},euro(p.price||0)):null))}
   body.append(grid);modal('Pré-visualização · rascunho',body,{wide:true});
+}
+
+function visualCatalogExport(catalog,products){
+  const wrap=el('div',{class:'grid'});
+  wrap.append(el('div',{class:'notice info'},'A4: abre a impressão para guardar em PDF. Feed e Stories: descarrega uma imagem PNG por página. Não publica nas redes sociais.'));
+  const actions=el('div',{class:'toolbar'});
+  const safe=(catalog.title||'catalogo').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9-]+/gi,'-').slice(0,45);
+  const makePage=(p,kind,index)=>{const w=kind==='story'?1080:kind==='feed'?1080:1240,h=kind==='story'?1920:kind==='feed'?1350:1754;
+    const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const g=canvas.getContext('2d');
+    g.fillStyle='#f8f1e8';g.fillRect(0,0,w,h);g.fillStyle='#614535';g.textAlign='center';g.font='bold 35px sans-serif';g.fillText('ARTESSENCIA',w/2,95);
+    g.font='bold 53px sans-serif';g.fillText((catalog.title||'Catálogo').slice(0,30),w/2,180);
+    const margin=90,top=250,bottom=h-260;
+    const drawText=(value,y,size)=>{g.fillStyle='#382b24';g.font='bold '+size+'px sans-serif';const words=String(value||'').split(/\s+/);let line='',yy=y;for(const word of words){const test=line?line+' '+word:word;if(g.measureText(test).width>w-160&&line){g.fillText(line,w/2,yy);yy+=size*1.25;line=word}else line=test}if(line)g.fillText(line,w/2,yy);return yy};
+    const finish=()=>{if(p){drawText(p.name||'Produto',h-195,45);if(catalog.showPrice!==false&&p.price!=null){g.font='34px sans-serif';g.fillText(euro(p.price),w/2,h-105)}}else{drawText(catalog.subtitle||'Coleção artesanal',h/2,43)}return canvas};
+    if(!p)return Promise.resolve(finish());
+    const url=p.image||p.imageUrl||p.photo||p.photo1||p.coverImage||(p.images&&p.images[0])||'';
+    if(!url)return Promise.resolve(finish());
+    return new Promise(resolve=>{const img=new Image();img.crossOrigin='anonymous';img.onload=()=>{try{const scale=Math.min((w-margin*2)/img.width,(bottom-top)/img.height);const iw=img.width*scale,ih=img.height*scale;g.drawImage(img,(w-iw)/2,top+(bottom-top-ih)/2,iw,ih)}catch(e){}resolve(finish())};img.onerror=()=>resolve(finish());img.src=url});
+  };
+  const pages=[null,...products];
+  const exportPng=async kind=>{for(let i=0;i<pages.length;i++){const canvas=await makePage(pages[i],kind,i);try{const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw Error('PNG indisponível');const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=safe+'-'+kind+'-'+String(i+1).padStart(2,'0')+'.png';a.click();setTimeout(()=>URL.revokeObjectURL(url),30000)}catch(e){alert('Não foi possível exportar a página '+(i+1)+'. Verifica as permissões das imagens.');break}}};
+  actions.append(button('Imagens Feed 4:5',()=>exportPng('feed'),'primary small'),button('Imagens Stories 9:16',()=>exportPng('story'),'secondary small'),button('PDF A4',async()=>{
+    const pagesHtml=[];for(const p of pages){const cv=await makePage(p,'a4',0);try{pagesHtml.push('<img src="'+cv.toDataURL('image/png')+'" style="width:100%;height:100%;object-fit:contain;display:block;page-break-after:always">')}catch(e){alert('Erro ao preparar o PDF.');return}}
+    const win=window.open('','_blank');if(!win){alert('Permite janelas pop-up para exportar o PDF.');return}
+    win.document.write('<!doctype html><html><head><title>Catálogo '+esc(catalog.title||'')+'</title><style>@page{size:A4 portrait;margin:0}body{margin:0}img{break-after:page}</style></head><body>'+pagesHtml.join('')+'</body></html>');win.document.close();win.focus();setTimeout(()=>win.print(),450);
+  },'ghost small'));
+  wrap.append(actions);modal('Exportar · '+(catalog.title||'Catálogo'),wrap,{wide:true});
 }
 
 export async function catalogsView(ctx,opts={}){const tab=opts.tab||'catalogs',root=el('div'),nav=el('div',{class:'subnav'});[['catalogs','Catálogos'],['themes','Temas'],['occasions','Ocasiões'],['colors','Cores'],['personalizations','Personalizações'],['pricing','Preços do Criador']].forEach(([id,l])=>nav.append(el('button',{class:tab===id?'active':'',onclick:()=>ctx.go('catalogs',{tab:id})},l)));root.append(nav);
