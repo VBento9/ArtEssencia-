@@ -5,8 +5,8 @@ import {readFileSync} from 'node:fs';
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const match=(pattern,label)=>assert.match(html,pattern,label);
 
-test('biometria bloqueada por defeito',()=>{
- match(/const PASSKEY_PREVIEW_V20261008=false\s*;/,'feature flag segura');
+test('biometria ativada apenas no domínio oficial e protegida no registo',()=>{
+ match(/const PASSKEY_PREVIEW_V20261008=true\s*;/,'feature flag de lançamento');
  match(/if\(!PASSKEY_PREVIEW_V20261008\)return;/,'guarda na ação biométrica');
 });
 test('Passkey utiliza o cliente Cloud existente, sem novo cliente',()=>{
