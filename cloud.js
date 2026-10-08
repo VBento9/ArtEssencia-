@@ -34,7 +34,7 @@ export async function pushRecord(store,row){
  const updated=row.updatedAt||row.updated_at||row.createdAt||new Date().toISOString();
  const result=await request('/rest/v1/rpc/artessencia_cloud_upsert_record_v1',{method:'POST',token:live.access_token,body:{p_entity:store,p_record_id:String(row.id),p_data:{...row,updatedAt:updated},p_client_updated_at:updated,p_device_id:dev}});
  if(result?.applied===true)return result;
- if(result?.applied===false&&result?.reason==='STALE')return result;
+ if(result?.applied===false)return {...result,conflict:true};
  throw new Error('Cloud: gravação de '+store+'/'+String(row.id)+' sem confirmação.');
 }
 export async function verifyRecord(store,id){
@@ -53,7 +53,7 @@ export async function pushAll(){
    if(!syncableRow(store,row)){skipped++;continue}
    const updated=row.updatedAt||row.updated_at||row.createdAt||new Date().toISOString();
    const result=await request('/rest/v1/rpc/artessencia_cloud_upsert_record_v1',{method:'POST',token:s.access_token,body:{p_entity:store,p_record_id:String(row.id),p_data:{...row,updatedAt:updated},p_client_updated_at:updated,p_device_id:dev}});
-   if(result?.applied)n++;else if(result?.applied===false&&result?.reason==='STALE'){skipped++}else{failed++;skipped++}
+   if(result?.applied)n++;else if(result?.applied===false){skipped++}else{failed++;skipped++}
   }
  }
  if(failed)throw new Error('Cloud: '+failed+' registo(s) sem confirmação de gravação. Os dados locais foram preservados.');
