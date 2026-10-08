@@ -18016,6 +18016,8 @@ function renderCloudUI(){
    localStorage.setItem(CLOUD_META,JSON.stringify(meta));
  }
  renderCloudUICore();
+ const passkeyEnroll=document.getElementById('cloudPasskeyRegisterV20261008');
+ if(passkeyEnroll)passkeyEnroll.classList.toggle('hidden',!(PASSKEY_PREVIEW_V20261008&&!!cloudUser&&location.protocol==='https:'&&location.hostname==='art-essencia.vercel.app'&&typeof cloudClient?.auth?.registerPasskey==='function'));
  meta=cloudMeta();
  const cfg=cloudCfg(),online=navigator.onLine!==false;
  const connected=!!cloudUser;
@@ -18108,6 +18110,7 @@ async function registerCloudPasskeyV20261008(){
  try{
   const {data:sessionData,error:sessionError}=await c.auth.getSession();if(sessionError)throw sessionError;
   if(!sessionData?.session?.access_token)throw new Error('Sessão expirada');
+  if(!navigator.onLine)throw new Error('Sem ligação à internet');
   const {data:userData,error:userError}=await c.auth.getUser();if(userError)throw userError;
   if(!userData?.user?.id||userData.user.id!==sessionData.session.user?.id)throw new Error('Conta não validada');
   if(userData.user.is_anonymous||!userData.user.email_confirmed_at)throw new Error('Conta não elegível para Passkeys');
@@ -18118,6 +18121,7 @@ async function registerCloudPasskeyV20261008(){
 }
 async function authGatePasskeyLoginV20261008(){
  if(!PASSKEY_PREVIEW_V20261008)return;
+ if(location.protocol!=='https:'||location.hostname!=='art-essencia.vercel.app'){authGateMessageV1880('Biometria disponível apenas no domínio oficial.');return}
  const c=initCloudClient();
  if(typeof c?.auth?.signInWithPasskey!=='function'){authGateMessageV1880('Passkeys indisponíveis. Utiliza a palavra-passe.');return}
  const btn=document.getElementById('authGatePasskeyV20261008');if(btn)btn.disabled=true;
