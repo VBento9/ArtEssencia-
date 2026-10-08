@@ -477,23 +477,47 @@ function visualCatalogExport(catalog,products){
     const margin=90,top=250,bottom=h-260;
     const drawText=(value,y,size)=>{g.fillStyle='#382b24';g.font='bold '+size+'px sans-serif';const words=String(value||'').split(/\s+/);let line='',yy=y;for(const word of words){const test=line?line+' '+word:word;if(g.measureText(test).width>w-160&&line){g.fillText(line,w/2,yy);yy+=size*1.25;line=word}else line=test}if(line)g.fillText(line,w/2,yy);return yy};
     const finish=()=>{if(p){drawText(p.name||'Produto',h-195,45);if(catalog.showPrice!==false&&p.price!=null){g.font='34px sans-serif';g.fillText(euro(p.price),w/2,h-105)}}else{drawText(catalog.subtitle||'Coleção artesanal',h/2,43)}return canvas};
+    if(Array.isArray(p)){
+      const cols=kind==='story'?2:3,rows=kind==='a4'?3:2;
+      const gap=kind==='story'?26:20, left=55, right=55, gridTop=245, gridBottom=h-105;
+      const tileW=(w-left-right-(cols-1)*gap)/cols, tileH=(gridBottom-gridTop-(rows-1)*gap)/rows;
+      const fontSize=kind==='story'?28:kind==='a4'?22:26;
+      const drawCard=async(product,i)=>{
+        const x=left+(i%cols)*(tileW+gap), y=gridTop+Math.floor(i/cols)*(tileH+gap);
+        const imageH=tileH-94;
+        g.fillStyle='#fffdf9';g.fillRect(x,y,tileW,tileH);
+        g.strokeStyle='#dfd1c4';g.lineWidth=2;g.strokeRect(x,y,tileW,tileH);
+        const url=product.image||product.imageUrl||product.photo||product.photo1||product.coverImage||(product.images&&product.images[0])||'';
+        if(url){
+          await new Promise(resolve=>{const img=new Image();img.crossOrigin='anonymous';img.onload=()=>{
+            try{const scale=Math.min((tileW-18)/img.width,(imageH-18)/img.height);const iw=img.width*scale,ih=img.height*scale;g.drawImage(img,x+(tileW-iw)/2,y+(imageH-ih)/2,iw,ih)}
+            catch(e){missingImages.push(product.name||'Produto')}resolve()};img.onerror=()=>{missingImages.push(product.name||'Produto');resolve()};img.src=url});
+        }else missingImages.push(product.name||'Produto');
+        g.fillStyle='#382b24';g.textAlign='center';g.font='bold '+fontSize+'px sans-serif';
+        let name=String(product.name||'Produto');while(g.measureText(name).width>tileW-20&&name.length>4)name=name.slice(0,-2)+'…';
+        g.fillText(name,x+tileW/2,y+tileH-55);
+        if(catalog.showPrice!==false&&product.price!=null){g.fillStyle='#795746';g.font=(fontSize-2)+'px sans-serif';g.fillText(euro(product.price),x+tileW/2,y+tileH-18)}
+      };
+      return (async()=>{for(let i=0;i<p.length;i++)await drawCard(p[i],i);return canvas})();
+    }
     if(!p)return Promise.resolve(finish());
     const url=p.image||p.imageUrl||p.photo||p.photo1||p.coverImage||(p.images&&p.images[0])||'';
     if(!url){if(p)missingImages.push(p.name||'Produto');return Promise.resolve(finish());}
     return new Promise(resolve=>{const img=new Image();img.crossOrigin='anonymous';img.onload=()=>{try{const scale=Math.min((w-margin*2)/img.width,(bottom-top)/img.height);const iw=img.width*scale,ih=img.height*scale;g.drawImage(img,(w-iw)/2,top+(bottom-top-ih)/2,iw,ih)}catch(e){missingImages.push(p.name||'Produto')}resolve(finish())};img.onerror=()=>{missingImages.push(p.name||'Produto');resolve(finish())};img.src=url});
   };
   const missingImages=[];
-  const pages=[null,...products];
-  const exportPng=async kind=>{let exported=0;for(let i=0;i<pages.length;i++){const canvas=await makePage(pages[i],kind,i);try{const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw Error('PNG indisponível');const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=safe+'-'+kind+'-'+String(i+1).padStart(2,'0')+'.png';a.click();exported++;setTimeout(()=>URL.revokeObjectURL(url),30000)}catch(e){alert('Não foi possível exportar a página '+(i+1)+'. Verifica as permissões das imagens.');break}}if(exported===pages.length)toast('Exportação iniciada: '+exported+' imagens. Confirma os downloads no navegador.');};
+  const pagesFor=kind=>{const n=kind==='story'?4:kind==='a4'?9:6;const pages=[null];for(let i=0;i<products.length;i+=n)pages.push(products.slice(i,i+n));return pages};
+  const exportPng=async kind=>{const pages=pagesFor(kind);missingImages.length=0;let exported=0;for(let i=0;i<pages.length;i++){const canvas=await makePage(pages[i],kind,i);try{const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw Error('PNG indisponível');const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=safe+'-'+kind+'-'+String(i+1).padStart(2,'0')+'.png';a.click();exported++;setTimeout(()=>URL.revokeObjectURL(url),30000)}catch(e){alert('Não foi possível exportar a página '+(i+1)+'. Verifica as permissões das imagens.');break}}if(exported===pages.length)toast('Exportação iniciada: '+exported+' imagens. Confirma os downloads no navegador.');};
   actions.append(button('Imagens Feed 4:5',()=>exportPng('feed'),'primary small'),button('Imagens Stories 9:16',()=>exportPng('story'),'secondary small'),button('PDF A4',async()=>{
     const win=window.open('','_blank');if(!win){alert('Permite janelas pop-up para exportar o PDF.');return}
     win.document.write('<!doctype html><html><head><title>A preparar catálogo PDF…</title></head><body><p>A preparar '+products.length+' produtos…</p></body></html>');win.document.close();
     missingImages.length=0;
+    const pages=pagesFor('a4');
     const images=[];
     try{
       for(const p of pages){const cv=await makePage(p,'a4',0);images.push(cv.toDataURL('image/jpeg',0.88))}
     }catch(e){win.close();alert('Não foi possível preparar todas as páginas do PDF.');return}
-    if(images.length!==products.length+1){win.close();alert('A exportação ficou incompleta. Tenta novamente.');return}
+    if(images.length!==pages.length){win.close();alert('A exportação ficou incompleta. Tenta novamente.');return}
     const missing=[...new Set(missingImages)];
     win.document.open();win.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Catálogo '+esc(catalog.title||'')+'</title><style>@page{size:A4 portrait;margin:0}html,body{margin:0;padding:0}.page{width:210mm;height:297mm;break-after:page;page-break-after:always;overflow:hidden}.page:last-child{break-after:auto;page-break-after:auto}.page img{width:100%;height:100%;object-fit:contain;display:block}@media screen{body{background:#ddd}.page{margin:12px auto;background:white;box-shadow:0 2px 8px #999}}</style></head><body><div id="status" style="padding:12px;font:16px sans-serif">A preparar '+images.length+' páginas…</div>'+images.map(src=>'<div class="page"><img src="'+src+'"></div>').join('')+'</body></html>');win.document.close();
     const loaded=await Promise.all(Array.from(win.document.images).map(img=>new Promise(resolve=>{if(img.complete){resolve(img.naturalWidth>0);return}img.onload=()=>resolve(true);img.onerror=()=>resolve(false)})));
