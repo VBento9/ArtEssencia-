@@ -5851,7 +5851,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           <button class="btn primary" onclick="cloudConnect()">Ligar / Entrar</button>
           <button class="btn" onclick="saveCloudConfig()">Guardar configuração</button>
           <button class="btn" onclick="cloudDisconnect()">Terminar sessão</button>
-          <button id="cloudPasskeyRegisterV20261008" class="btn hidden" type="button" onclick="registerCloudPasskeyV20261008()">Registar biometria neste dispositivo</button>
+          <button id="cloudPasskeyRegisterV20261008" class="btn hidden" type="button" onclick="registerCloudPasskeyV20261008()">Registar biometria neste dispositivo</button><small id="cloudPasskeyErrorV20261008" class="hidden" role="status" aria-live="polite"></small>
         </div>
         <p class="security-note">A palavra-passe não é guardada pela ArtEssencia. Nunca uses uma service_role key na aplicação.</p>
       </div>
@@ -18116,7 +18116,21 @@ async function registerCloudPasskeyV20261008(){
   if(userData.user.is_anonymous||!userData.user.email_confirmed_at)throw new Error('Conta não elegível para Passkeys');
   const {error}=await c.auth.registerPasskey();if(error)throw error;
   toast('Passkey registada. Mantém a palavra-passe como alternativa.');
- }catch(e){console.warn('[passkey] registo falhou:',e?.message||e);toast('Não foi possível registar a Passkey. A palavra-passe continua disponível.')}
+ }catch(e){
+  const code=String(e?.code||e?.name||'');
+  const detail=String(e?.message||'');
+  console.warn('[passkey] registo falhou:',code,detail);
+  const guidance=code==='NotAllowedError'?'Operação cancelada ou bloqueada. Confirma o bloqueio de ecrã e o gestor de palavras-passe do tablet.'
+   :code==='NotSupportedError'||code==='SecurityError'?'Este navegador não permite criar a chave. Experimenta abrir o endereço oficial no Chrome.'
+   :code==='InvalidStateError'||code==='webauthn_credential_exists'?'Esta chave pode já estar registada. Experimenta entrar com a chave existente.'
+   :code==='passkey_disabled'?'As Passkeys não estão ativas no servidor.'
+   :code==='too_many_passkeys'?'A conta atingiu o limite de chaves de acesso.'
+   :code==='webauthn_verification_failed'?'A verificação da chave falhou. Confirma a data/hora automática e tenta novamente.'
+   :'Não foi possível registar a chave neste dispositivo.';
+  toast(guidance+' A palavra-passe continua disponível.');
+  const note=document.getElementById('cloudPasskeyErrorV20261008');
+  if(note){note.textContent=guidance+' Código: '+(code||'desconhecido');note.classList.remove('hidden');}
+ }
  finally{if(btn)btn.disabled=false}
 }
 async function authGatePasskeyLoginV20261008(){
