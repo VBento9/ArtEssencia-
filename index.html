@@ -7118,19 +7118,39 @@ async function visualCatalogSocialImageV196(x,items){
  }
  return await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Falhou a imagem')),'image/png'));
 }
+async function visualCatalogZipV197(entries){
+ const encoder=new TextEncoder(),chunks=[],central=[];let offset=0;
+ const crcTable=new Uint32Array(256);
+ for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?(0xEDB88320^(c>>>1)):(c>>>1);crcTable[n]=c>>>0}
+ const makeCrc=data=>{let c=0xFFFFFFFF;for(const v of data)c=crcTable[(c^v)&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0};
+ const u16=(dv,p,v)=>dv.setUint16(p,v,true),u32=(dv,p,v)=>dv.setUint32(p,v>>>0,true);
+ for(const item of entries){
+  const name=encoder.encode(item.name),data=new Uint8Array(await item.blob.arrayBuffer()),crc=makeCrc(data);
+  if(name.length>65535||data.length>0xFFFFFFFF)throw new Error('Imagem demasiado grande para ZIP');
+  const lh=new Uint8Array(30+name.length),ld=new DataView(lh.buffer);
+  u32(ld,0,0x04034b50);u16(ld,4,20);u16(ld,6,0x800);u16(ld,8,0);u32(ld,14,crc);u32(ld,18,data.length);u32(ld,22,data.length);u16(ld,26,name.length);lh.set(name,30);
+  const ch=new Uint8Array(46+name.length),cd=new DataView(ch.buffer);
+  u32(cd,0,0x02014b50);u16(cd,4,20);u16(cd,6,20);u16(cd,8,0x800);u32(cd,16,crc);u32(cd,20,data.length);u32(cd,24,data.length);u16(cd,28,name.length);u32(cd,42,offset);ch.set(name,46);
+  chunks.push(lh,data);central.push(ch);offset+=lh.length+data.length;
+ }
+ const centralSize=central.reduce((n,x)=>n+x.length,0);
+ const end=new Uint8Array(22),ed=new DataView(end.buffer);
+ u32(ed,0,0x06054b50);u16(ed,8,entries.length);u16(ed,10,entries.length);u32(ed,12,centralSize);u32(ed,16,offset);
+ return new Blob([...chunks,...central,end],{type:'application/zip'});
+}
 async function previewVisualCatalogSocialV196(id){
  const w=window.open('about:blank','_blank');
  try{
-  const {x,chosen}=visualCatalogSocialSelectionV196(id),urls=[];
+  const {x,chosen}=visualCatalogSocialSelectionV196(id),urls=[],entries=[];
   const perPage=x.format==='Story'?4:6;
-  for(let i=0;i<chosen.length;i+=perPage)urls.push(URL.createObjectURL(await visualCatalogSocialImageV196(x,chosen.slice(i,i+perPage))));
+  for(let i=0;i<chosen.length;i+=perPage){const blob=await visualCatalogSocialImageV196(x,chosen.slice(i,i+perPage));urls.push(URL.createObjectURL(blob));entries.push({blob,name:'pagina_'+String(entries.length+1).padStart(2,'0')+'.png'});}
   if(!w){urls.forEach(URL.revokeObjectURL);throw new Error('Autoriza janelas pop-up para pré-visualizar')}
-  const base=visualCatalogFileNameV194(x).replace(/\\.pdf$/,'');
+  const base=visualCatalogFileNameV194(x).replace(/\\.pdf$/,'');\n  const zipUrl=URL.createObjectURL(await visualCatalogZipV197(entries));
   const escapeText=v=>String(v||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   w.document.open();
-  w.document.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Catálogo visual</title><style>body{background:#eee9e5;margin:0;font:16px Arial}header{position:sticky;top:0;background:white;padding:12px;text-align:center}article{max-width:540px;margin:15px auto 24px;background:white}img{display:block;width:100%;height:auto}aside{display:flex;justify-content:space-between;padding:12px}a{color:#5a240b;font-weight:bold}</style></head><body><header>'+escapeText(x.title)+' — '+urls.length+' página(s). Desliza para ver todas.</header>'+urls.map((url,n)=>'<article><aside><b>Página '+(n+1)+' de '+urls.length+'</b><a href="'+url+'" download="'+escapeText(base)+'_'+x.format+'_'+(n+1)+'.png">Guardar PNG</a></aside><img src="'+url+'" alt="Página '+(n+1)+'"></article>').join('')+'</body></html>');
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Catálogo visual</title><style>body{background:#eee9e5;margin:0;font:16px Arial}header{position:sticky;top:0;background:white;padding:12px;text-align:center}article{max-width:540px;margin:15px auto 24px;background:white}img{display:block;width:100%;height:auto}aside{display:flex;justify-content:space-between;padding:12px}a{color:#5a240b;font-weight:bold}</style></head><body><header>'+escapeText(x.title)+' — '+urls.length+' página(s). <a href="'+zipUrl+'" download="'+escapeText(base)+'.zip">Guardar todas (ZIP)</a> · Desliza para ver todas.</header>'+urls.map((url,n)=>'<article><aside><b>Página '+(n+1)+' de '+urls.length+'</b><a href="'+url+'" download="'+escapeText(base)+'_'+x.format+'_'+(n+1)+'.png">Guardar PNG</a></aside><img src="'+url+'" alt="Página '+(n+1)+'"></article>').join('')+'</body></html>');
   w.document.close();
-  w.addEventListener('pagehide',()=>urls.forEach(url=>URL.revokeObjectURL(url)),{once:true});
+  w.addEventListener('pagehide',()=>{urls.forEach(url=>URL.revokeObjectURL(url));URL.revokeObjectURL(zipUrl)},{once:true});
  }catch(e){if(w)w.close();toast(e.message||'Erro ao abrir catálogo')}
 }
 async function downloadVisualCatalogSocialV196(id){return previewVisualCatalogSocialV196(id)}
