@@ -3358,6 +3358,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
     <div class="field"><label>Palavra-passe</label><input id="authGatePasswordV1880" type="password" autocomplete="current-password" onkeydown="authGateKeyV1881(event)" placeholder="Palavra-passe"></div>
     <div id="authGateMessageV1880" class="auth-message-v1880"></div>
     <button id="authGateButtonV1880" class="btn primary" type="button" onclick="authGateLoginV1880()">Entrar</button>
+    <button id="authGatePasskeyV20261008" class="btn hidden" type="button" onclick="authGatePasskeyLoginV20261008()">Entrar com biometria</button>
   </div>
 </div>
 
@@ -5850,6 +5851,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           <button class="btn primary" onclick="cloudConnect()">Ligar / Entrar</button>
           <button class="btn" onclick="saveCloudConfig()">Guardar configuração</button>
           <button class="btn" onclick="cloudDisconnect()">Terminar sessão</button>
+          <button id="cloudPasskeyRegisterV20261008" class="btn hidden" type="button" onclick="registerCloudPasskeyV20261008()">Registar biometria neste dispositivo</button>
         </div>
         <p class="security-note">A palavra-passe não é guardada pela ArtEssencia. Nunca uses uma service_role key na aplicação.</p>
       </div>
@@ -5960,7 +5962,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 <dialog id="emailDetailDialogV177" style="border:0;border-radius:20px;padding:0;max-width:760px;width:94%;box-shadow:0 25px 80px rgba(0,0,0,.35)"><div class="card" style="box-shadow:none;border:0"><div class="row" style="align-items:flex-start;gap:12px"><div><h2 id="emailDetailTitleV177" style="margin:0">Email</h2><small id="emailDetailSubtitleV177"></small></div><button class="btn" type="button" onclick="document.getElementById('emailDetailDialogV177')?.close()">Fechar</button></div><div id="emailDetailBodyV177"></div></div></dialog>
 <dialog id="clientCommunicationDialogV172" style="border:0;border-radius:20px;padding:0;max-width:720px;width:94%;box-shadow:0 25px 80px rgba(0,0,0,.35)"><div class="card" style="box-shadow:none;border:0"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div><h2 id="clientCommunicationTitleV172" style="margin:0">Comunicar com cliente</h2><small>Escolhe o canal, a encomenda e o modelo. Revê sempre a mensagem antes de abrir a aplicação.</small></div><button class="btn" type="button" onclick="closeClientCommunicationV172()">Fechar</button></div><div id="clientCommunicationBodyV172" style="margin-top:14px"></div></div></dialog>
 <div id="toast" class="toast"></div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
 <script>
 
 document.addEventListener('input',e=>{
@@ -18014,6 +18016,8 @@ function renderCloudUI(){
    localStorage.setItem(CLOUD_META,JSON.stringify(meta));
  }
  renderCloudUICore();
+ const passkeyEnroll=document.getElementById('cloudPasskeyRegisterV20261008');
+ if(passkeyEnroll)passkeyEnroll.classList.toggle('hidden',!(PASSKEY_PREVIEW_V20261008&&!!cloudUser&&location.protocol==='https:'&&location.hostname==='art-essencia.vercel.app'&&typeof cloudClient?.auth?.registerPasskey==='function'));
  meta=cloudMeta();
  const cfg=cloudCfg(),online=navigator.onLine!==false;
  const connected=!!cloudUser;
@@ -18033,7 +18037,9 @@ function renderCloudUI(){
 }
 
 function saveCloudConfig(){const url=(document.getElementById('cloudUrl')?.value||'').trim().replace(/\/$/,'');const key=(document.getElementById('cloudKey')?.value||'').trim();const email=(document.getElementById('cloudEmail')?.value||'').trim();if(url&&!/^https:\/\/[^\s]+$/i.test(url)){toast('URL Supabase inválido');return false}if((url&&!key)||(!url&&key)){toast('Preenche URL e chave');return false}const prev=cloudCfg();localStorage.setItem(CLOUD_CFG,JSON.stringify({url,key,email}));if(prev.url!==url||prev.key!==key){cloudClient=null;cloudUser=null;cloudChannel=null;setCloudMeta({verified:false})}cloudLogMsg('Configuração cloud guardada');toast('Configuração cloud guardada');renderCloudUI();return true}
-function initCloudClient(){const cfg=cloudCfg();if(!cfg.url||!cfg.key)return null;if(!window.supabase||!window.supabase.createClient){cloudLogMsg('Biblioteca Supabase indisponível');return null}if(cloudClient)return cloudClient;cloudClient=window.supabase.createClient(cfg.url,cfg.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},db:{schema:'public'}});cloudClient.auth.onAuthStateChange((event,session)=>{cloudUser=session?.user||null;renderCloudUI();if(cloudUser&&cloudStartupDone&&!cloudHydrating&&(event==='SIGNED_IN'||event==='TOKEN_REFRESHED')){if(!cloudChannel)subscribeCloud();if((cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending)&&!cloudMeta().conflict&&!hasRestorePendingV12645())scheduleCloudPushV1860(300)}});return cloudClient}
+const PASSKEY_PREVIEW_V20261008=true;
+// O botão de registo permanece oculto até à ativação explícita da experiência. // Aguardar validação da configuração Supabase e RP ID.
+function initCloudClient(){const cfg=cloudCfg();if(!cfg.url||!cfg.key)return null;if(!window.supabase||!window.supabase.createClient){cloudLogMsg('Biblioteca Supabase indisponível');return null}if(cloudClient)return cloudClient;cloudClient=window.supabase.createClient(cfg.url,cfg.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,...(PASSKEY_PREVIEW_V20261008?{experimental:{passkey:true}}:{})},db:{schema:'public'}});cloudClient.auth.onAuthStateChange((event,session)=>{cloudUser=session?.user||null;renderCloudUI();if(cloudUser&&cloudStartupDone&&!cloudHydrating&&(event==='SIGNED_IN'||event==='TOKEN_REFRESHED')){if(!cloudChannel)subscribeCloud();if((cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending)&&!cloudMeta().conflict&&!hasRestorePendingV12645())scheduleCloudPushV1860(300)}});return cloudClient}
 function cloudStateQuery(){return cloudClient.schema('public').from(CLOUD_TABLE)}
 function cloudErrText(e){if(!e)return 'Erro desconhecido';const parts=[];if(e.message)parts.push(e.message);if(e.code)parts.push('code='+e.code);if(e.details)parts.push('details='+e.details);if(e.hint)parts.push('hint='+e.hint);if(e.status)parts.push('status='+e.status);return parts.join(' | ')}
 async function cloudApiDiagnostic(showToast=false){
@@ -18090,10 +18096,42 @@ function authGateShowV1880(message=''){
  if(email&&!email.value)email.value=cloudCfg().email||'';
  if(password)password.value='';
  authGateMessageV1880(message);gate.classList.remove('hidden');
+ document.getElementById('authGatePasskeyV20261008')?.classList.toggle('hidden',!PASSKEY_PREVIEW_V20261008);
  setTimeout(()=>{(email?.value?password:email)?.focus()},80)
 }
 function authGateHideV1880(){document.getElementById('authGateV1880')?.classList.add('hidden');authGateMessageV1880('')}
 function authGateKeyV1881(event){if(event.key==='Enter'){event.preventDefault();authGateLoginV1880()}}
+async function registerCloudPasskeyV20261008(){
+ if(!PASSKEY_PREVIEW_V20261008)return;
+ if(location.protocol!=='https:'||location.hostname!=='art-essencia.vercel.app'){toast('Registo de biometria apenas no domínio oficial da ArtEssencia');return}
+ const c=initCloudClient();
+ if(typeof c?.auth?.registerPasskey!=='function'){toast('SDK Supabase sem suporte para Passkeys');return}
+ const btn=document.getElementById('cloudPasskeyRegisterV20261008');if(btn)btn.disabled=true;
+ try{
+  const {data:sessionData,error:sessionError}=await c.auth.getSession();if(sessionError)throw sessionError;
+  if(!sessionData?.session?.access_token)throw new Error('Sessão expirada');
+  if(!navigator.onLine)throw new Error('Sem ligação à internet');
+  const {data:userData,error:userError}=await c.auth.getUser();if(userError)throw userError;
+  if(!userData?.user?.id||userData.user.id!==sessionData.session.user?.id)throw new Error('Conta não validada');
+  if(userData.user.is_anonymous||!userData.user.email_confirmed_at)throw new Error('Conta não elegível para Passkeys');
+  const {error}=await c.auth.registerPasskey();if(error)throw error;
+  toast('Passkey registada. Mantém a palavra-passe como alternativa.');
+ }catch(e){console.warn('[passkey] registo falhou:',e?.message||e);toast('Não foi possível registar a Passkey. A palavra-passe continua disponível.')}
+ finally{if(btn)btn.disabled=false}
+}
+async function authGatePasskeyLoginV20261008(){
+ if(!PASSKEY_PREVIEW_V20261008)return;
+ if(location.protocol!=='https:'||location.hostname!=='art-essencia.vercel.app'){authGateMessageV1880('Biometria disponível apenas no domínio oficial.');return}
+ const c=initCloudClient();
+ if(typeof c?.auth?.signInWithPasskey!=='function'){authGateMessageV1880('Passkeys indisponíveis. Utiliza a palavra-passe.');return}
+ const btn=document.getElementById('authGatePasskeyV20261008');if(btn)btn.disabled=true;
+ try{
+  const {data,error}=await c.auth.signInWithPasskey();if(error)throw error;
+  if(!data?.session?.access_token||!data?.user?.id)throw new Error('Sessão não validada');
+  cloudUser=data.user;authGateHideV1880();await cloudStartup();
+ }catch(e){authGateShowV1880('Não foi possível entrar com biometria. Usa a palavra-passe.')}
+ finally{if(btn)btn.disabled=false}
+}
 async function authGateLoginV1880(){
  const email=String(document.getElementById('authGateEmailV1880')?.value||'').trim();
  const password=String(document.getElementById('authGatePasswordV1880')?.value||'');

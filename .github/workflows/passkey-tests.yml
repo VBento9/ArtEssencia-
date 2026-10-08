@@ -1,0 +1,25 @@
+name: Passkeys isolated tests
+on:
+  push:
+    branches:
+      - feature/auth-passkeys-safe-20261008
+    paths:
+      - 'security/passkey-*.js'
+      - 'security/passkey-*.mjs'
+      - 'index.html'
+      - 'cloud.js'
+      - 'views.js'
+      - '.github/workflows/passkey-tests.yml'
+  workflow_dispatch:
+jobs:
+  passkey-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run isolated Passkey tests
+        run: node --test security/passkey-capabilities.test.mjs security/passkey-supabase-adapter.test.mjs security/passkey-index-integration.test.mjs
