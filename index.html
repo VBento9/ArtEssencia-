@@ -7090,9 +7090,10 @@ function visualCatalogSocialSelectionV196(id){
  if(!ids.length||chosen.some(p=>!p))throw new Error('Seleção incompleta. Revê os produtos do catálogo.');
  return {x,chosen};
 }
-async function visualCatalogSocialImageV196(x,p){
+async function visualCatalogSocialImageV196(x,items){
  const format=x.format==='Story'?'Story':x.format==='Square'?'Square':'Feed';
  const w=1080,h=format==='Story'?1920:format==='Square'?1080:1350;
+ const cols=format==='Story'?2:3,rows=2,margin=54,gap=20,top=202,bottom=h-65;
  const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
  const c=canvas.getContext('2d');c.fillStyle='#fffaf4';c.fillRect(0,0,w,h);
  const logo=await loadVisualCatalogSafeImageV195('brand-artessencia.png');
@@ -7101,24 +7102,28 @@ async function visualCatalogSocialImageV196(x,p){
  c.fillStyle='#5a240b';c.textAlign='right';c.font='bold 37px Georgia';
  c.fillText(String(x.title||'ArtEssencia').slice(0,26),1020,105);c.textAlign='left';
  c.strokeStyle='#f12473';c.lineWidth=4;c.beginPath();c.moveTo(60,165);c.lineTo(1020,165);c.stroke();
- const src=visualProductImageV192(p);if(!src)throw new Error('Fotografia em falta: '+(p.name||'Produto'));
- let img;try{img=await loadVisualCatalogSafeImageV195(src)}catch(e){throw new Error('Fotografia indisponível: '+(p.name||'Produto'))}
- const top=205,bottom=h-250,boxW=960,boxH=bottom-top;
- c.fillStyle='#fff';c.fillRect(60,top,boxW,boxH);
- const scale=Math.min(boxW/img.width,boxH/img.height),dw=img.width*scale,dh=img.height*scale;
- c.drawImage(img,60+(boxW-dw)/2,top+(boxH-dh)/2,dw,dh);
- c.fillStyle='#5a240b';c.font='bold 43px Georgia';c.textAlign='left';
- const title=String(p.name||'Produto');let lines=[],words=title.split(' '),line='';
- for(const word of words){const test=line?line+' '+word:word;if(c.measureText(test).width>900&&line){lines.push(line);line=word}else line=test}
- if(line)lines.push(line);lines.slice(0,2).forEach((v,i)=>c.fillText(v,65,h-195+i*48));
- if(x.showPrice!==false){c.font='bold 37px Arial';c.fillStyle='#f12473';c.fillText(euro(p.price||0),65,h-65)}
+ const cardW=(w-2*margin-gap*(cols-1))/cols,cardH=(bottom-top-gap*(rows-1))/rows;
+ for(let i=0;i<items.length;i++){
+  const p=items[i],left=margin+(i%cols)*(cardW+gap),y=top+Math.floor(i/cols)*(cardH+gap);
+  const src=visualProductImageV192(p);if(!src)throw new Error('Fotografia em falta: '+(p.name||'Produto'));
+  let img;try{img=await loadVisualCatalogSafeImageV195(src)}catch(e){throw new Error('Fotografia indisponível: '+(p.name||'Produto'))}
+  c.fillStyle='#fff';c.fillRect(left,y,cardW,cardH);
+  const imageH=cardH-110,pad=10,scale=Math.min((cardW-2*pad)/img.width,(imageH-2*pad)/img.height);
+  const dw=img.width*scale,dh=img.height*scale;
+  c.drawImage(img,left+(cardW-dw)/2,y+(imageH-dh)/2,dw,dh);
+  c.textAlign='center';c.fillStyle='#5a240b';c.font='bold 25px Georgia';
+  let name=String(p.name||'Produto');while(name.length>3&&c.measureText(name).width>cardW-16)name=name.slice(0,-2)+'…';
+  c.fillText(name,left+cardW/2,y+cardH-65);
+  if(x.showPrice!==false){c.font='bold 24px Arial';c.fillStyle='#f12473';c.fillText(euro(p.price||0),left+cardW/2,y+cardH-23)}
+ }
  return await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Falhou a imagem')),'image/png'));
 }
 async function previewVisualCatalogSocialV196(id){
  const w=window.open('about:blank','_blank');
  try{
   const {x,chosen}=visualCatalogSocialSelectionV196(id),urls=[];
-  for(const p of chosen)urls.push(URL.createObjectURL(await visualCatalogSocialImageV196(x,p)));
+  const perPage=x.format==='Story'?4:6;
+  for(let i=0;i<chosen.length;i+=perPage)urls.push(URL.createObjectURL(await visualCatalogSocialImageV196(x,chosen.slice(i,i+perPage))));
   if(!w){urls.forEach(URL.revokeObjectURL);throw new Error('Autoriza janelas pop-up para pré-visualizar')}
   const base=visualCatalogFileNameV194(x).replace(/\\.pdf$/,'');
   const escapeText=v=>String(v||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
