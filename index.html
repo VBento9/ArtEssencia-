@@ -7145,7 +7145,8 @@ async function previewVisualCatalogSocialV196(id){
   const perPage=x.format==='Story'?4:6;
   for(let i=0;i<chosen.length;i+=perPage){const blob=await visualCatalogSocialImageV196(x,chosen.slice(i,i+perPage));urls.push(URL.createObjectURL(blob));entries.push({blob,name:'pagina_'+String(entries.length+1).padStart(2,'0')+'.png'});}
   if(!w){urls.forEach(URL.revokeObjectURL);throw new Error('Autoriza janelas pop-up para pré-visualizar')}
-  const base=visualCatalogFileNameV194(x).replace(/\\.pdf$/,'');\n  const zipUrl=URL.createObjectURL(await visualCatalogZipV197(entries));
+  const base=visualCatalogFileNameV194(x).replace(/\\.pdf$/,'');
+  const zipUrl=URL.createObjectURL(await visualCatalogZipV197(entries));
   const escapeText=v=>String(v||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   w.document.open();
   w.document.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Catálogo visual</title><style>body{background:#eee9e5;margin:0;font:16px Arial}header{position:sticky;top:0;background:white;padding:12px;text-align:center}article{max-width:540px;margin:15px auto 24px;background:white}img{display:block;width:100%;height:auto}aside{display:flex;justify-content:space-between;padding:12px}a{color:#5a240b;font-weight:bold}</style></head><body><header>'+escapeText(x.title)+' — '+urls.length+' página(s). <a href="'+zipUrl+'" download="'+escapeText(base)+'.zip">Guardar todas (ZIP)</a> · Desliza para ver todas.</header>'+urls.map((url,n)=>'<article><aside><b>Página '+(n+1)+' de '+urls.length+'</b><a href="'+url+'" download="'+escapeText(base)+'_'+x.format+'_'+(n+1)+'.png">Guardar PNG</a></aside><img src="'+url+'" alt="Página '+(n+1)+'"></article>').join('')+'</body></html>');
