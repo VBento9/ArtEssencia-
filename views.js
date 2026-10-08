@@ -479,16 +479,29 @@ function visualCatalogExport(catalog,products){
     const finish=()=>{if(p){drawText(p.name||'Produto',h-195,45);if(catalog.showPrice!==false&&p.price!=null){g.font='34px sans-serif';g.fillText(euro(p.price),w/2,h-105)}}else{drawText(catalog.subtitle||'Coleção artesanal',h/2,43)}return canvas};
     if(!p)return Promise.resolve(finish());
     const url=p.image||p.imageUrl||p.photo||p.photo1||p.coverImage||(p.images&&p.images[0])||'';
-    if(!url)return Promise.resolve(finish());
-    return new Promise(resolve=>{const img=new Image();img.crossOrigin='anonymous';img.onload=()=>{try{const scale=Math.min((w-margin*2)/img.width,(bottom-top)/img.height);const iw=img.width*scale,ih=img.height*scale;g.drawImage(img,(w-iw)/2,top+(bottom-top-ih)/2,iw,ih)}catch(e){}resolve(finish())};img.onerror=()=>resolve(finish());img.src=url});
+    if(!url){if(p)missingImages.push(p.name||'Produto');return Promise.resolve(finish());}
+    return new Promise(resolve=>{const img=new Image();img.crossOrigin='anonymous';img.onload=()=>{try{const scale=Math.min((w-margin*2)/img.width,(bottom-top)/img.height);const iw=img.width*scale,ih=img.height*scale;g.drawImage(img,(w-iw)/2,top+(bottom-top-ih)/2,iw,ih)}catch(e){missingImages.push(p.name||'Produto')}resolve(finish())};img.onerror=()=>{missingImages.push(p.name||'Produto');resolve(finish())};img.src=url});
   };
+  const missingImages=[];
   const pages=[null,...products];
   const exportPng=async kind=>{let exported=0;for(let i=0;i<pages.length;i++){const canvas=await makePage(pages[i],kind,i);try{const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw Error('PNG indisponível');const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=safe+'-'+kind+'-'+String(i+1).padStart(2,'0')+'.png';a.click();exported++;setTimeout(()=>URL.revokeObjectURL(url),30000)}catch(e){alert('Não foi possível exportar a página '+(i+1)+'. Verifica as permissões das imagens.');break}}if(exported===pages.length)toast('Exportação iniciada: '+exported+' imagens. Confirma os downloads no navegador.');};
   actions.append(button('Imagens Feed 4:5',()=>exportPng('feed'),'primary small'),button('Imagens Stories 9:16',()=>exportPng('story'),'secondary small'),button('PDF A4',async()=>{
     const win=window.open('','_blank');if(!win){alert('Permite janelas pop-up para exportar o PDF.');return}
-    win.document.write('<!doctype html><html><head><title>A preparar catálogo PDF…</title></head><body><p>A preparar páginas do catálogo…</p></body></html>');win.document.close();
-    const pagesHtml=[];for(const p of pages){const cv=await makePage(p,'a4',0);try{pagesHtml.push('<img src="'+cv.toDataURL('image/png')+'" style="width:100%;height:100%;object-fit:contain;display:block;page-break-after:always">')}catch(e){win.close();alert('Erro ao preparar o PDF.');return}}
-    win.document.open();win.document.write('<!doctype html><html><head><title>Catálogo '+esc(catalog.title||'')+'</title><style>@page{size:A4 portrait;margin:0}body{margin:0}img{break-after:page}</style></head><body>'+pagesHtml.join('')+'</body></html>');win.document.close();win.focus();const images=Array.from(win.document.images);await Promise.all(images.map(img=>img.complete?Promise.resolve():new Promise(resolve=>{img.onload=resolve;img.onerror=resolve})));win.print();
+    win.document.write('<!doctype html><html><head><title>A preparar catálogo PDF…</title></head><body><p>A preparar '+products.length+' produtos…</p></body></html>');win.document.close();
+    missingImages.length=0;
+    const images=[];
+    try{
+      for(const p of pages){const cv=await makePage(p,'a4',0);images.push(cv.toDataURL('image/jpeg',0.88))}
+    }catch(e){win.close();alert('Não foi possível preparar todas as páginas do PDF.');return}
+    if(images.length!==products.length+1){win.close();alert('A exportação ficou incompleta. Tenta novamente.');return}
+    const missing=[...new Set(missingImages)];
+    win.document.open();win.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Catálogo '+esc(catalog.title||'')+'</title><style>@page{size:A4 portrait;margin:0}html,body{margin:0;padding:0}.page{width:210mm;height:297mm;break-after:page;page-break-after:always;overflow:hidden}.page:last-child{break-after:auto;page-break-after:auto}.page img{width:100%;height:100%;object-fit:contain;display:block}@media screen{body{background:#ddd}.page{margin:12px auto;background:white;box-shadow:0 2px 8px #999}}</style></head><body><div id="status" style="padding:12px;font:16px sans-serif">A preparar '+images.length+' páginas…</div>'+images.map(src=>'<div class="page"><img src="'+src+'"></div>').join('')+'</body></html>');win.document.close();
+    const loaded=await Promise.all(Array.from(win.document.images).map(img=>new Promise(resolve=>{if(img.complete){resolve(img.naturalWidth>0);return}img.onload=()=>resolve(true);img.onerror=()=>resolve(false)})));
+    const status=win.document.getElementById('status');
+    if(loaded.some(ok=>!ok)){status.textContent='Erro ao carregar páginas para impressão. Não foi iniciada a exportação.';alert('Algumas páginas não ficaram prontas. O PDF não foi exportado.');return}
+    status.remove();
+    if(missing.length){const warning='Fotografias não carregadas: '+missing.join(', ')+'. O PDF terá páginas sem essas fotografias. Continuar?';if(!confirm(warning)){win.close();return}}
+    win.focus();win.print();
   },'ghost small'));
   wrap.append(actions);modal('Exportar · '+(catalog.title||'Catálogo'),wrap,{wide:true});
 }
