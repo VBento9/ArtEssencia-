@@ -63,7 +63,9 @@ export async function pullAll(){
   const local=await db.get(r.entity,r.data.id);
   const lt=new Date(local?.updatedAt||local?.updated_at||local?.createdAt||0).getTime();
   const rt=new Date(r.client_updated_at||r.server_updated_at||0).getTime();
-  if(!local||rt>=lt){await db.put(r.entity,{...r.data,updatedAt:r.client_updated_at||r.server_updated_at},{silent:true});applied++}else skipped++
+  // Equal timestamps do not prove identical content. Keep the existing local
+  // record, especially an unpublished visual-catalog draft.
+  if(!local||rt>lt){await db.put(r.entity,{...r.data,updatedAt:r.client_updated_at||r.server_updated_at},{silent:true});applied++}else skipped++
  }
  await db.setSetting('cloud.lastPull',new Date().toISOString());return {applied,skipped,total:rows.length}
 }
