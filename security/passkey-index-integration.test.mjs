@@ -33,7 +33,7 @@ test('cliente Cloud preserva sessão persistente e refresh',()=>{
 });
 
 test('SDK Supabase fixado para suporte a Passkeys',()=>{
- match(/supabase-js@2[.]105[.]0\/dist\/umd\/supabase[.]min[.]js/,'SDK compatível');
+ match(/supabase-js@2[.]105[.]0(?=["'])/,'SDK compatível');
 });
 test('registo protegido por sessão, identidade e domínio',()=>{
  const fn=html.split('async function registerCloudPasskeyV20261008(){')[1]?.split('async function authGatePasskeyLoginV20261008(){')[0];
