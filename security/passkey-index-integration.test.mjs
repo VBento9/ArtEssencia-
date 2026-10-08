@@ -42,3 +42,12 @@ test('registo protegido por sessão, identidade e domínio',()=>{
  assert.doesNotMatch(fn,/createClient\(/);
  match(/id="cloudPasskeyRegisterV20261008" class="btn hidden"/,'registo oculto');
 });
+
+test('botão de registo visível apenas com sessão, SDK e origem válidos',()=>{
+ match(/passkeyEnroll[.]classList[.]toggle\('hidden',!\(PASSKEY_PREVIEW_V20261008&&!!cloudUser/,'sessão necessária');
+ match(/typeof cloudClient[?][.]auth[?][.]registerPasskey==='function'/,'SDK necessário');
+});
+test('login biométrico bloqueado em origem de pré-visualização',()=>{
+ const fn=html.split('async function authGatePasskeyLoginV20261008(){')[1]?.split('async function authGateLoginV1880()')[0];
+ assert.match(fn,/location[.]hostname!=='art-essencia[.]vercel[.]app'/);
+});
