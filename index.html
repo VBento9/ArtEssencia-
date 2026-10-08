@@ -7114,24 +7114,22 @@ async function visualCatalogSocialImageV196(x,p){
  if(x.showPrice!==false){c.font='bold 37px Arial';c.fillStyle='#f12473';c.fillText(euro(p.price||0),65,h-65)}
  return await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Falhou a imagem')),'image/png'));
 }
-async function downloadVisualCatalogSocialV196(id){
- try{
-  const {x,chosen}=visualCatalogSocialSelectionV196(id),blobs=[];
-  for(const p of chosen)blobs.push(await visualCatalogSocialImageV196(x,p));
-  const base=visualCatalogFileNameV194(x).replace(/\.pdf$/,'');
-  for(let i=0;i<blobs.length;i++){
-   const url=URL.createObjectURL(blobs[i]),a=document.createElement('a');
-   a.href=url;a.download=base+'_'+x.format+'_'+String(i+1).padStart(2,'0')+'.png';
-   document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
-  }
-  toast(blobs.length+' imagem(ns) preparadas. Autoriza múltiplos downloads, se solicitado.');
- }catch(e){toast(e.message||'Falha na exportação das imagens')}
-}
 async function previewVisualCatalogSocialV196(id){
  const w=window.open('about:blank','_blank');
- try{const {x,chosen}=visualCatalogSocialSelectionV196(id),blob=await visualCatalogSocialImageV196(x,chosen[0]),url=URL.createObjectURL(blob);if(w)w.location.href=url;else window.location.href=url;setTimeout(()=>URL.revokeObjectURL(url),120000)}
- catch(e){if(w)w.close();toast(e.message||'Falha na pré-visualização')}
+ try{
+  const {x,chosen}=visualCatalogSocialSelectionV196(id),urls=[];
+  for(const p of chosen)urls.push(URL.createObjectURL(await visualCatalogSocialImageV196(x,p)));
+  if(!w){urls.forEach(URL.revokeObjectURL);throw new Error('Autoriza janelas pop-up para pré-visualizar')}
+  const base=visualCatalogFileNameV194(x).replace(/\\.pdf$/,'');
+  const escapeText=v=>String(v||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  w.document.open();
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Catálogo visual</title><style>body{background:#eee9e5;margin:0;font:16px Arial}header{position:sticky;top:0;background:white;padding:12px;text-align:center}article{max-width:540px;margin:15px auto 24px;background:white}img{display:block;width:100%;height:auto}aside{display:flex;justify-content:space-between;padding:12px}a{color:#5a240b;font-weight:bold}</style></head><body><header>'+escapeText(x.title)+' — '+urls.length+' página(s). Desliza para ver todas.</header>'+urls.map((url,n)=>'<article><aside><b>Página '+(n+1)+' de '+urls.length+'</b><a href="'+url+'" download="'+escapeText(base)+'_'+x.format+'_'+(n+1)+'.png">Guardar PNG</a></aside><img src="'+url+'" alt="Página '+(n+1)+'"></article>').join('')+'</body></html>');
+  w.document.close();
+  w.addEventListener('pagehide',()=>urls.forEach(url=>URL.revokeObjectURL(url)),{once:true});
+ }catch(e){if(w)w.close();toast(e.message||'Erro ao abrir catálogo')}
 }
+async function downloadVisualCatalogSocialV196(id){return previewVisualCatalogSocialV196(id)}
+
 function visualCatalogFileNameV194(x){return 'ArtEssencia_'+String(x?.title||'Catalogo').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/gi,'_').replace(/^_+|_+$/g,'')+'.pdf'}
 function downloadVisualCatalogPdfV194(id){const x=visualCatalogsDataV192().find(v=>v.id===id);if(!x)return;return downloadPdfBlob(()=>buildVisualCatalogPdfV194(id),visualCatalogFileNameV194(x))}
 function shareVisualCatalogPdfV194(id){const x=visualCatalogsDataV192().find(v=>v.id===id);if(!x)return;return sharePdfBlob(()=>buildVisualCatalogPdfV194(id),visualCatalogFileNameV194(x),'Catálogo ArtEssencia — '+(x.title||'Seleção'),'Olá! Segue o catálogo ArtEssencia '+(x.title||'')+'.')}
