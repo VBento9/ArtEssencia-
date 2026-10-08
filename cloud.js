@@ -68,8 +68,10 @@ export async function reconcile(){
  if(reconcilePromise)return reconcilePromise;
  reconcilePromise=(async()=>{
   const s=session();if(!s)return {skipped:true,reason:'NO_SESSION'};
-  const pulled=await pullAll();
+  // Preserve local changes first. Pulling before a confirmed push could overwrite
+  // a locally saved catalog with an older server version.
   const pushed=await pushAll();
+  const pulled=await pullAll();
   const at=new Date().toISOString();await db.setSetting('cloud.lastReconcile',at);
   return {pulled,pushed,at}
  })();
