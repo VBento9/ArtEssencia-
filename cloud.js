@@ -37,6 +37,14 @@ export async function pushRecord(store,row){
  if(result?.applied===false&&result?.reason==='STALE')return result;
  throw new Error('Cloud: gravação de '+store+'/'+String(row.id)+' sem confirmação.');
 }
+export async function verifyRecord(store,id){
+ if(!SYNC_STORES.includes(store)||!id)throw new Error('Registo inválido para verificação Cloud.');
+ const live=await ensureSession();
+ const path='/rest/v1/artessencia_cloud_records?select=record_id,client_updated_at,data&entity=eq.'+encodeURIComponent(store)+'&record_id=eq.'+encodeURIComponent(String(id))+'&deleted_at=is.null&limit=1';
+ const rows=await request(path,{token:live.access_token});
+ const remote=Array.isArray(rows)?rows[0]:null;
+ return {exists:!!remote,updatedAt:remote?.client_updated_at||'',data:remote?.data||null};
+}
 export async function pushAll(){
  const s=await ensureSession(),dev=await deviceId();let n=0,skipped=0,failed=0;
  for(const store of SYNC_STORES){
@@ -63,7 +71,9 @@ export async function pullAll(){
   const local=await db.get(r.entity,r.data.id);
   const lt=new Date(local?.updatedAt||local?.updated_at||local?.createdAt||0).getTime();
   const rt=new Date(r.client_updated_at||r.server_updated_at||0).getTime();
-  if(!local||rt>=lt){await db.put(r.entity,{...r.data,updatedAt:r.client_updated_at||r.server_updated_at},{silent:true});applied++}else skipped++
+  // Equal timestamps do not prove identical content. Keep the existing local
+  // record, especially an unpublished visual-catalog draft.
+  if(!local||rt>lt){await db.put(r.entity,{...r.data,updatedAt:r.client_updated_at||r.server_updated_at},{silent:true});applied++}else skipped++
  }
  await db.setSetting('cloud.lastPull',new Date().toISOString());return {applied,skipped,total:rows.length}
 }
