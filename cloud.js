@@ -35,16 +35,17 @@ export async function pushRecord(store,row){
  return request('/rest/v1/rpc/artessencia_cloud_upsert_record_v1',{method:'POST',token:live.access_token,body:{p_entity:store,p_record_id:String(row.id),p_data:{...row,updatedAt:updated},p_client_updated_at:updated,p_device_id:dev}})
 }
 export async function pushAll(){
- const s=await ensureSession(),dev=await deviceId();let n=0,skipped=0;
+ const s=await ensureSession(),dev=await deviceId();let n=0,skipped=0,failed=0;
  for(const store of SYNC_STORES){
   const rows=await db.all(store);
   for(const row of rows){
    if(!syncableRow(store,row)){skipped++;continue}
    const updated=row.updatedAt||row.updated_at||row.createdAt||new Date().toISOString();
    const result=await request('/rest/v1/rpc/artessencia_cloud_upsert_record_v1',{method:'POST',token:s.access_token,body:{p_entity:store,p_record_id:String(row.id),p_data:{...row,updatedAt:updated},p_client_updated_at:updated,p_device_id:dev}});
-   if(result?.applied)n++;else skipped++
+   if(result?.applied)n++;else if(result?.applied===false&&result?.reason==='STALE'){skipped++}else{failed++;skipped++}
   }
  }
+ if(failed)throw new Error('Cloud: '+failed+' registo(s) sem confirmação de gravação. Os dados locais foram preservados.');
  await db.setSetting('cloud.lastPush',new Date().toISOString());return {applied:n,skipped}
 }
 export async function pullAll(){
