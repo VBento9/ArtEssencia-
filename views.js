@@ -485,9 +485,10 @@ function visualCatalogExport(catalog,products){
   const pages=[null,...products];
   const exportPng=async kind=>{for(let i=0;i<pages.length;i++){const canvas=await makePage(pages[i],kind,i);try{const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw Error('PNG indisponível');const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=safe+'-'+kind+'-'+String(i+1).padStart(2,'0')+'.png';a.click();setTimeout(()=>URL.revokeObjectURL(url),30000)}catch(e){alert('Não foi possível exportar a página '+(i+1)+'. Verifica as permissões das imagens.');break}}};
   actions.append(button('Imagens Feed 4:5',()=>exportPng('feed'),'primary small'),button('Imagens Stories 9:16',()=>exportPng('story'),'secondary small'),button('PDF A4',async()=>{
-    const pagesHtml=[];for(const p of pages){const cv=await makePage(p,'a4',0);try{pagesHtml.push('<img src="'+cv.toDataURL('image/png')+'" style="width:100%;height:100%;object-fit:contain;display:block;page-break-after:always">')}catch(e){alert('Erro ao preparar o PDF.');return}}
     const win=window.open('','_blank');if(!win){alert('Permite janelas pop-up para exportar o PDF.');return}
-    win.document.write('<!doctype html><html><head><title>Catálogo '+esc(catalog.title||'')+'</title><style>@page{size:A4 portrait;margin:0}body{margin:0}img{break-after:page}</style></head><body>'+pagesHtml.join('')+'</body></html>');win.document.close();win.focus();setTimeout(()=>win.print(),450);
+    win.document.write('<!doctype html><html><head><title>A preparar catálogo PDF…</title></head><body><p>A preparar páginas do catálogo…</p></body></html>');win.document.close();
+    const pagesHtml=[];for(const p of pages){const cv=await makePage(p,'a4',0);try{pagesHtml.push('<img src="'+cv.toDataURL('image/png')+'" style="width:100%;height:100%;object-fit:contain;display:block;page-break-after:always">')}catch(e){win.close();alert('Erro ao preparar o PDF.');return}}
+    win.document.open();win.document.write('<!doctype html><html><head><title>Catálogo '+esc(catalog.title||'')+'</title><style>@page{size:A4 portrait;margin:0}body{margin:0}img{break-after:page}</style></head><body>'+pagesHtml.join('')+'</body></html>');win.document.close();win.focus();setTimeout(()=>win.print(),450);
   },'ghost small'));
   wrap.append(actions);modal('Exportar · '+(catalog.title||'Catálogo'),wrap,{wide:true});
 }
