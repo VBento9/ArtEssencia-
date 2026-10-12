@@ -7313,7 +7313,7 @@ function hideSaleClientMatchesV1756(){setTimeout(()=>document.getElementById('sa
 function fillQuoteClientContact(){const c=clientByUniqueName(document.getElementById('quoteClient')?.value);if(!c)return;const p=document.getElementById('quoteContact'),e=document.getElementById('quoteEmail');if(p&&!p.value)p.value=c.phone||'';if(e&&!e.value)e.value=c.email||''}
 function orderMessage(id){
  const o=db.orders.find(x=>x.id===id);if(!o)return'';const c=calcOrder(o),remaining=Math.max(c.total-(+o.paid||0),0),s=db.settings||{};let pay='';
- if(remaining>0){pay=`\nValor a pagar: ${euro(remaining)}.`;if(mbWayInstructionsForOrderV1800(o))pay+=`\nMB Way: ${String(s.businessPhone||'').replace(/\D/g,'')}`;if(o.payment==='Transferência'&&s.iban)pay+=`\nIBAN: ${s.iban}`;if(s.paymentNote)pay+=`\n${s.paymentNote}`}
+ if(remaining>0){pay=`\nValor a pagar: ${euro(remaining)}.`;if(mbWayInstructionsForOrderV1800(o))pay+=`\nMB WAY (opção de pagamento): ${String(s.businessPhone||'').replace(/\D/g,'')}`;if(o.payment==='Transferência'&&s.iban)pay+=`\nIBAN: ${s.iban}`;if(s.paymentNote)pay+=`\n${s.paymentNote}`}
  const items=o.items.map(i=>`${i.qty}x ${i.name}`).join(', ');
  return `Olá ${o.client||''}! 👋\nA sua encomenda ${o.id} da ${s.businessName||'ArtEssencia'} está registada.\nEntrega: ${o.delivery||'a combinar'}\nEncomenda: ${items}\nTotal: ${euro(c.total)}.${pay}\nObrigada!`;
 }
@@ -8710,11 +8710,11 @@ function mbWayInstructionsForOrderV1800(o){
  const payment=String(o.payment||'').trim().toLowerCase().replace(/\s+/g,'');
  const requested=String(o.paymentRequested||'').trim().toLowerCase();
  const isMbWay=requested==='mbway_manual'||(requested===''&&(payment==='mbway'));
- if(!isMbWay)return '';
+ // A opção MB WAY deve constar nas confirmações com valor pendente, mesmo que o método guardado ainda seja Dinheiro.
  const phone=String(db.settings?.businessPhone||'').replace(/\D/g,'');
  if(!/^9\d{8}$/.test(phone))return '';
  const due=Math.max(0,Number(calcOrder(o).total||0)-Number(o.paid||0));
- return due>0.005?'\nPagamento MB WAY: '+phone+'\nValor por pagar: '+euro(due):'';
+ return due>0.005?'\n'+(isMbWay?'Pagamento MB WAY: ':'MB WAY (opção de pagamento): ')+phone+'\nValor por pagar: '+euro(due):'';
 }
 function clientCommunicationTemplateV172(c,type,o){
  const name=String(c.name||'').trim().split(/\s+/)[0]||'cliente';
