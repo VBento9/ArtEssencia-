@@ -7313,7 +7313,7 @@ function hideSaleClientMatchesV1756(){setTimeout(()=>document.getElementById('sa
 function fillQuoteClientContact(){const c=clientByUniqueName(document.getElementById('quoteClient')?.value);if(!c)return;const p=document.getElementById('quoteContact'),e=document.getElementById('quoteEmail');if(p&&!p.value)p.value=c.phone||'';if(e&&!e.value)e.value=c.email||''}
 function orderMessage(id){
  const o=db.orders.find(x=>x.id===id);if(!o)return'';const c=calcOrder(o),remaining=Math.max(c.total-(+o.paid||0),0),s=db.settings||{};let pay='';
- if(remaining>0){pay=`\nValor a pagar: ${euro(remaining)}.`;if(o.payment==='MB Way'&&s.businessPhone)pay+=`\nMB Way: ${s.businessPhone}`;if(o.payment==='Transferência'&&s.iban)pay+=`\nIBAN: ${s.iban}`;if(s.paymentNote)pay+=`\n${s.paymentNote}`}
+ if(remaining>0){pay=`\nValor a pagar: ${euro(remaining)}.`;if(mbWayInstructionsForOrderV1800(o))pay+=`\nMB Way: ${String(s.businessPhone||'').replace(/\D/g,'')}`;if(o.payment==='Transferência'&&s.iban)pay+=`\nIBAN: ${s.iban}`;if(s.paymentNote)pay+=`\n${s.paymentNote}`}
  const items=o.items.map(i=>`${i.qty}x ${i.name}`).join(', ');
  return `Olá ${o.client||''}! 👋\nA sua encomenda ${o.id} da ${s.businessName||'ArtEssencia'} está registada.\nEntrega: ${o.delivery||'a combinar'}\nEncomenda: ${items}\nTotal: ${euro(c.total)}.${pay}\nObrigada!`;
 }
@@ -8705,6 +8705,17 @@ function renderClients(){
 }
 
 /* ArtEssencia V1.7.1 — comunicações de clientes */
+function mbWayInstructionsForOrderV1800(o){
+ if(!o)return '';
+ const payment=String(o.payment||'').trim().toLowerCase().replace(/\s+/g,'');
+ const requested=String(o.paymentRequested||'').trim().toLowerCase();
+ const isMbWay=requested==='mbway_manual'||(requested===''&&(payment==='mbway'));
+ if(!isMbWay)return '';
+ const phone=String(db.settings?.businessPhone||'').replace(/\D/g,'');
+ if(!/^9\d{8}$/.test(phone))return '';
+ const due=Math.max(0,Number(calcOrder(o).total||0)-Number(o.paid||0));
+ return due>0.005?'\nPagamento MB WAY: '+phone+'\nValor por pagar: '+euro(due):'';
+}
 function clientCommunicationTemplateV172(c,type,o){
  const name=String(c.name||'').trim().split(/\s+/)[0]||'cliente';
  const ref=o?.id?` ${o.id}`:'';
@@ -8712,7 +8723,7 @@ function clientCommunicationTemplateV172(c,type,o){
  const total=o?euro(calcOrder(o).total):'';
  const templates={
   livre:`Olá ${name},`,
-  confirmacao:`Olá ${name}. A sua encomenda ArtEssencia${ref} está confirmada${date}.${total?` Total: ${total}.`:''}`,
+  confirmacao:`Olá ${name}. A sua encomenda ArtEssencia${ref} está confirmada${date}.${total?` Total: ${total}.`:''}${mbWayInstructionsForOrderV1800(o)}`,
   producao:`Olá ${name}. A sua encomenda ArtEssencia${ref} encontra-se em produção. Entraremos em contacto assim que estiver pronta.`,
   pronta:`Olá ${name}. A sua encomenda ArtEssencia${ref} está pronta. Podemos combinar o levantamento/entrega.`,
   agendamento:`Olá ${name}. Relativamente à sua encomenda ArtEssencia${ref}, precisamos de combinar o horário de levantamento/entrega${date}.`,
@@ -19834,7 +19845,7 @@ function emailTemplateV1716(type,client,ctx){
  }
  const oc=calcOrder(ctx),when=`${ctx.delivery||'—'}${ctx.deliveryTime?' · '+ctx.deliveryTime:''}`,method=ctx.deliveryMethod==='local_delivery'?'Entrega local':'Levantamento';
  const map={
-  order_confirmation:[`Encomenda ${ctx.id} confirmada · ${business}`,`Olá${name},\n\nA tua encomenda ${ctx.id} está confirmada.\n\nData/hora prevista: ${when}\nMétodo: ${method}\nTotal: ${euro(oc.total)}\n\nObrigado,\n${business}`],
+  order_confirmation:[`Encomenda ${ctx.id} confirmada · ${business}`,`Olá${name},\n\nA tua encomenda ${ctx.id} está confirmada.\n\nData/hora prevista: ${when}\nMétodo: ${method}\nTotal: ${euro(oc.total)}${mbWayInstructionsForOrderV1800(ctx)}\n\nObrigado,\n${business}`],
   order_preparing:[`Encomenda ${ctx.id} em preparação · ${business}`,`Olá${name},\n\nA tua encomenda ${ctx.id} já está em preparação.\n\nData/hora prevista: ${when}\n\n${business}`],
   order_ready:[`Encomenda ${ctx.id} pronta · ${business}`,`Olá${name},\n\nA tua encomenda ${ctx.id} está pronta.\n\n${method}: ${when}\n\n${business}`],
   delivery_pickup:[`${method} · Encomenda ${ctx.id} · ${business}`,`Olá${name},\n\nInformação relativa à tua encomenda ${ctx.id}:\n\n${method}\nData/hora: ${when}\n\nSe precisares de alterar alguma informação, responde a este email.\n\n${business}`],
