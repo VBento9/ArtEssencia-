@@ -43,3 +43,11 @@ Auditoria de leitura, 2026-10-14. Ramo isolado; não altera produção.
 - `public.artessencia_v1_state`: **1 registo**. A proteção de estado principal e respetivos escritores é prioritária.
 - **Não** migrar nem limpar dados da tabela vazia, nem presumir que a sincronização está desativada. Inventariar os chamadores no código completo da aplicação antes de alterar `artessencia_cloud_upsert_record_v1`.
 - A leitura efetuada não expôs dados pessoais, clientes ou encomendas.
+
+## Dois escritores concorrentes do estado público da Loja (auditoria adicional)
+
+- `artessencia_save_public_channel_status_admin_v1(p_channel,p_mode,p_message)` é a via que implementa explicitamente `open/updating/closed` e grava `mode`, `public_message`, `enabled` e `accepting_orders` para a Loja. Possui verificação de proprietário, mas substitui o JSON inteiro de `store_settings.store_status`.
+- `artessencia_save_shop_status_v1(p_status)` escreve na **mesma chave** `store_status` apenas `enabled` e `accepting_orders`. Se for chamada depois da primeira, elimina `mode` e `public_message`.
+- Portanto, não é seguro interpretar `artessencia_save_shop_status_v1` como único escritor do modo público. A correção tem de reconciliar ambas as RPC e os seus chamadores, preservar propriedades adicionais, e garantir que mudar opções de entrega não altera implicitamente `updating/closed` para `open`.
+- O protocolo de revisão `artessencia_v1_state` **não protege automaticamente** `store_settings.store_status`; é outro registo/tabela e exige estratégia de concorrência própria.
+- Recomenda-se desenhar primeiro um teste de regressão local com as sequências `save_public_channel_status(updating)` → `save_shop_status` e a sequência inversa, testando efeitos no checkout. Não publicar substituições até validar com o código cliente.
