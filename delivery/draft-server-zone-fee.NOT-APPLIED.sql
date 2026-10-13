@@ -14,6 +14,10 @@ declare
   v_zone jsonb;
   v_postal text;
   v_matched integer := 0;
+  v_seen_codes text[] := array[]::text[];
+  v_code_value jsonb;
+  v_zone_code text;
+  v_code_count integer := 0;
   v_fee_text text;
   v_fee bigint;
   v_result bigint;
@@ -49,6 +53,41 @@ begin
     if jsonb_typeof(v_zone->'postalCodes') is distinct from 'array' then
       raise exception 'invalid zone postal codes';
     end if;
+    if jsonb_array_length(v_zone->'postalCodes') not between 1 and 1000 then
+      raise exception 'invalid postal code count';
+    end if;
+    for v_code_value in select value from jsonb_array_elements(v_zone->'postalCodes') loop
+      if jsonb_typeof(v_code_value) is distinct from 'string' then raise exception 'invalid postal code entry'; end if;
+      v_zone_code := v_code_value #>> '{}';
+      if v_zone_code !~ '^[0-9]{4}-[0-9]{3}
+      v_matched := v_matched+1;
+      v_fee_text := v_zone->>'feeCents';
+      if jsonb_typeof(v_zone->'feeCents') is distinct from 'number'
+         or length(coalesce(v_fee_text,''))>8
+         or v_fee_text !~ '^[0-9]+$' then
+        raise exception 'invalid zone fee';
+      end if;
+      v_fee := v_fee_text::bigint;
+      if v_fee>10000000 then raise exception 'zone fee out of range'; end if;
+      v_result := v_fee;
+    end if;
+  end loop;
+  if v_matched<>1 then
+    raise exception 'postal code outside exactly one active delivery zone';
+  end if;
+  return v_result;
+end;
+$function$;
+
+-- BLOCKERS BEFORE USE: revoke PUBLIC EXECUTE; verify RLS and caller grants,
+-- test malicious/duplicate postal configs, align RPC v1/v2 transaction logic,
+-- handle user-supplied postal code canonicalization and checkout parity.
+ then raise exception 'invalid zone postal code'; end if;
+      if v_zone_code = any(v_seen_codes) then raise exception 'duplicate postal code across zones'; end if;
+      v_seen_codes := array_append(v_seen_codes,v_zone_code);
+      v_code_count := v_code_count+1;
+      if v_code_count>5000 then raise exception 'too many postal codes'; end if;
+    end loop;
     if v_zone->>'enabled' = 'true'
        and v_zone->'postalCodes' ? v_postal then
       v_matched := v_matched+1;
