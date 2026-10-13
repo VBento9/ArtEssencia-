@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const sql=fs.readFileSync(new URL('./draft-server-zone-fee.NOT-APPLIED.sql',import.meta.url),'utf8');
+assert.equal((sql.match(/create or replace function/gi)||[]).length,1);
+assert.equal((sql.match(/\$function\$/g)||[]).length,2);
+assert.match(sql,/security invoker/i);
+assert.match(sql,/localDeliveryEnabled/);
+assert.match(sql,/deliveryZoneConfig/);
+assert.match(sql,/postalCodes' \? v_postal/);
+assert.match(sql,/v_matched<>1/);
+assert.match(sql,/feeCents/);
+assert.doesNotMatch(sql,/localDeliveryFee/);
+assert.doesNotMatch(sql,/postalPrefixes/);
+console.log('Static SQL zone quote contract: OK');
