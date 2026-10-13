@@ -52,9 +52,12 @@ begin
   if not found then raise exception 'shop delivery settings missing'; end if;
 
   -- Evita sincronizar divergências já existentes.
-  if (v_shop_delivery - 'deliveryZoneConfig') is distinct from
-     (v_state_delivery - 'deliveryZoneConfig') then
-    raise exception 'shop delivery sources diverged';
+  if v_shop_delivery is distinct from v_state_delivery then
+    raise exception 'shop delivery sources diverged: reload before saving';
+  end if;
+  -- Um rascunho não pode substituir zonas já ativadas pela Loja.
+  if coalesce((v_shop_delivery #>> '{deliveryZoneConfig,enabled}')::boolean,false) then
+    raise exception 'active delivery zones require manual migration';
   end if;
 
   for v_zone in select value from jsonb_array_elements(p_zones) loop
