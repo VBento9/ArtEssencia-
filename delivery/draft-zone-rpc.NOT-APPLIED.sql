@@ -23,6 +23,7 @@ declare
   v_names text[] := array[]::text[];
   v_fee bigint;
   v_new jsonb;
+  v_code_count integer := 0;
 begin
   if v_uid is null or not public.artessencia_is_owner_v1() then
     raise exception 'store owner required';
@@ -71,7 +72,10 @@ begin
     if jsonb_typeof(v_zone->'postalCodes') <> 'array' or jsonb_array_length(v_zone->'postalCodes') = 0 then
       raise exception 'zone postal codes required';
     end if;
+    if jsonb_array_length(v_zone->'postalCodes') > 1000 then raise exception 'too many postal codes'; end if;
     for v_code in select value from jsonb_array_elements_text(v_zone->'postalCodes') loop
+      v_code_count := v_code_count + 1;
+      if v_code_count > 5000 then raise exception 'too many postal codes overall'; end if;
       if v_code !~ '^[0-9]{4}-[0-9]{3}$' then raise exception 'invalid postal code'; end if;
       if v_code = any(v_codes) then raise exception 'duplicate postal code'; end if;
       v_codes := array_append(v_codes,v_code);
@@ -85,12 +89,12 @@ begin
   );
 
   update public.artessencia_shop_settings
-  set data=jsonb_set(coalesce(data,'{}'::jsonb),'{delivery,deliveryZoneConfig}',v_new,true),
+  set data=jsonb_set(coalesce(data,'{}'::jsonb),'{delivery}',v_shop_delivery || jsonb_build_object('deliveryZoneConfig',v_new),true),
       updated_at=now()
   where user_id=v_uid;
 
   update public.artessencia_v1_state
-  set data=jsonb_set(coalesce(data,'{}'::jsonb),'{settings,shopDelivery,deliveryZoneConfig}',v_new,true),
+  set data=jsonb_set(coalesce(data,'{}'::jsonb),'{settings,shopDelivery}',v_state_delivery || jsonb_build_object('deliveryZoneConfig',v_new),true),
       revision=revision+1,updated_at=now()
   where user_id=v_uid;
 
