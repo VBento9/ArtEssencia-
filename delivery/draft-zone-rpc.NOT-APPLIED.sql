@@ -18,6 +18,7 @@ declare
   v_state_delivery jsonb;
   v_zone jsonb;
   v_code text;
+  v_code_json jsonb;
   v_codes text[] := array[]::text[];
   v_name text;
   v_names text[] := array[]::text[];
@@ -31,7 +32,10 @@ begin
   if p_expected_revision is null or p_expected_revision < 0 then
     raise exception 'expected revision required';
   end if;
-  if jsonb_typeof(p_zones) <> 'array' or jsonb_array_length(p_zones) > 100 then
+  if jsonb_typeof(p_zones) is distinct from 'array' then
+    raise exception 'invalid zones';
+  end if;
+  if jsonb_array_length(p_zones) > 100 then
     raise exception 'invalid zones';
   end if;
 
@@ -56,7 +60,7 @@ begin
     raise exception 'shop delivery sources diverged: reload before saving';
   end if;
   -- Um rascunho não pode substituir zonas já ativadas pela Loja.
-  if coalesce((v_shop_delivery #>> '{deliveryZoneConfig,enabled}')::boolean,false) then
+  if (v_shop_delivery #>> '{deliveryZoneConfig,enabled}') = 'true' then
     raise exception 'active delivery zones require manual migration';
   end if;
 
@@ -76,7 +80,9 @@ begin
       raise exception 'zone postal codes required';
     end if;
     if jsonb_array_length(v_zone->'postalCodes') > 1000 then raise exception 'too many postal codes'; end if;
-    for v_code in select value from jsonb_array_elements_text(v_zone->'postalCodes') loop
+    for v_code_json in select value from jsonb_array_elements(v_zone->'postalCodes') loop
+      if jsonb_typeof(v_code_json) is distinct from 'string' then raise exception 'invalid postal code type'; end if;
+      v_code := trim(both '"' from v_code_json::text);
       v_code_count := v_code_count + 1;
       if v_code_count > 5000 then raise exception 'too many postal codes overall'; end if;
       if v_code !~ '^[0-9]{4}-[0-9]{3}$' then raise exception 'invalid postal code'; end if;
