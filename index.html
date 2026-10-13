@@ -7335,11 +7335,11 @@ function sendReadyPaymentWhatsAppV20261013(id){
  if(!phone)return toast('Cliente sem número de telemóvel');
  const cfg=db.settings||{};
  const mbPhone=String(cfg.businessPhone||'').replace(/\D/g,'');
- let payment='\\nValor em falta: '+euro(balance)+'.';
- if(mbWayInstructionsForOrderV1800(o)&&mbPhone)payment+='\\nPagamento por MB WAY: '+mbPhone+'.';
- if(o.payment==='Transferência'&&cfg.iban)payment+='\\nIBAN: '+cfg.iban+'.';
- const msg='Olá '+(o.client||'')+'!\\nInformamos que a encomenda '+o.id+' da '+(cfg.businessName||'ArtEssencia')+' está pronta para entrega/levantamento.\\n'+
- 'O pagamento ainda se encontra pendente.'+payment+'\\n'+(cfg.paymentNote||'')+'\\nObrigado pela preferência!';
+ let payment='\nValor em falta: '+euro(balance)+'.';
+ if(mbWayInstructionsForOrderV1800(o)&&mbPhone)payment+='\nPagamento por MB WAY: '+mbPhone+'.';
+ if(o.payment==='Transferência'&&cfg.iban)payment+='\nIBAN: '+cfg.iban+'.';
+ const msg='Olá '+(o.client||'')+'!\nInformamos que a encomenda '+o.id+' da '+(cfg.businessName||'ArtEssencia')+' está pronta para entrega/levantamento.\n'+
+ 'O pagamento ainda se encontra pendente.'+payment+'\n'+(cfg.paymentNote||'')+'\nObrigado pela preferência!';
  openWhatsAppBusinessV1801(phone,msg);
 }
 function sendSMS(id){const o=db.orders.find(x=>x.id===id);if(!o)return;const phone=normalizePhone(o.contact);if(!phone)return toast('Cliente sem número de telemóvel');location.href='sms:'+phone+'?body='+encodeURIComponent(orderMessage(id))}
