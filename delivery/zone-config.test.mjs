@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import { readDeliveryZoneConfig, prepareDeliveryZoneConfig, withDeliveryZoneConfig, quoteDeliveryZone } from './zone-config.mjs';
+const old={localDeliveryFee:3,postalPrefixes:['6230'],allowedWeekdays:[0,1],pickupEnabled:false};
+assert.equal(readDeliveryZoneConfig(old).enabled,false);
+assert.deepEqual(old,{localDeliveryFee:3,postalPrefixes:['6230'],allowedWeekdays:[0,1],pickupEnabled:false});
+const config={enabled:false,headquarters:'Castelejo',zones:[{name:'Donas',enabled:true,feeCents:300,postalCodes:['6230-170']}]};
+const next=withDeliveryZoneConfig(old,config);
+assert.equal(next.localDeliveryFee,3);
+assert.deepEqual(next.postalPrefixes,['6230']);
+assert.equal(next.deliveryZoneConfig.enabled,false);
+assert.equal(quoteDeliveryZone('6230-170',next).available,false);
+assert.equal(quoteDeliveryZone('6230-170',{deliveryZoneConfig:{...config,enabled:true}}).feeCents,300);
+assert.equal(quoteDeliveryZone('6230-999',{deliveryZoneConfig:{...config,enabled:true}}).available,false);
+assert.throws(()=>prepareDeliveryZoneConfig({enabled:true,zones:[]}));
+assert.throws(()=>prepareDeliveryZoneConfig({enabled:true,zones:[{...config.zones[0]}, {...config.zones[0],name:'donas',postalCodes:['6230-171']}]}));
+console.log('Testes de compatibilidade de configuração concluídos.');
