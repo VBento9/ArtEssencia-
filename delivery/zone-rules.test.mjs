@@ -7,7 +7,7 @@ const zones = [
   {name:'Fundão',enabled:false,feeCents:300,postalCodes:['6230-999']}
 ];
 assert.equal(normalizePostalCode('6230 170'),'6230-170');
-assert.equal(normalizePostalCode('6230'),'null' === '' ? 'x' : null);
+assert.equal(normalizePostalCode('6230'),null);
 assert.deepEqual(resolveLocalDelivery('6230170',zones),{eligible:true,locality:'Donas',feeCents:300,postalCode:'6230-170'});
 assert.equal(resolveLocalDelivery('6230-999',zones).eligible,false);
 assert.equal(resolveLocalDelivery('6230-777',zones).eligible,false);
