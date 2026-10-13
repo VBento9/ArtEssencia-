@@ -30,14 +30,21 @@ begin
     raise exception 'cloud_revision_conflict';
   end if;
 
-  insert into public.artessencia_shop_settings(user_id,data,updated_at)
-  values(v_uid,jsonb_build_object('delivery','{}'::jsonb),now())
-  on conflict(user_id) do nothing;
+  -- Não criar configurações vazias automaticamente: falhar em segurança.
+  if not exists (
+    select 1 from public.artessencia_v1_state
+    where user_id=v_uid and jsonb_typeof(data->'settings')='object'
+  ) then
+    raise exception 'main settings object missing';
+  end if;
 
   select coalesce(data->'delivery','{}'::jsonb)
     into v_current from public.artessencia_shop_settings
     where user_id=v_uid for update;
 
+  if not found or jsonb_typeof(v_current) is distinct from 'object' then
+    raise exception 'shop delivery settings missing';
+  end if;
   if jsonb_typeof(v_state_current) is distinct from 'object' then
     raise exception 'invalid main delivery settings';
   end if;
