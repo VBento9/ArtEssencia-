@@ -49,8 +49,9 @@ BEGIN
   END IF;
 
   -- Um salvamento legado nunca pode reabrir Loja fechada ou em atualização.
-  IF coalesce(v_current->>'mode','') IN ('closed','updating') AND v_accepting THEN
-    RAISE EXCEPTION 'public channel mode blocks orders';
+  IF coalesce(v_current->>'mode','') IN ('closed','updating')
+     AND (v_enabled OR v_accepting) THEN
+    RAISE EXCEPTION 'public channel mode blocks enabling or accepting orders';
   END IF;
 
   v_next := v_current || jsonb_build_object(
@@ -68,7 +69,7 @@ $function$;
 -- 1) Nao aplicar sem avaliar chamadas legadas que antes passavam outros campos.
 -- 2) O editor de modos ('save_public_channel_status_admin_v1') ainda substitui JSON;
 --    necessita de migração e teste separados.
--- 3) O efeito sobre enabled quando mode='updating' ou 'closed' deve ser validado;
---    este rascunho bloqueia aceitar encomendas, mas não muda enabled.
+-- 3) Em 'updating' ou 'closed' bloqueia enabled=true e accepting_orders=true;
+--    transições de modo cabem exclusivamente ao editor de estados.
 -- 4) O escritor de mode pode disputar alteração com este escritor; FOR UPDATE
 --    sincroniza as linhas existentes, mas não dá controlo de revisão ao chamador.
