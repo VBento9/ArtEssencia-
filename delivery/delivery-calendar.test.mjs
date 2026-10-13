@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {lisbonDateTime,eligibleSundayFromInstant,evaluateDeliveryDateTime} from './delivery-calendar.mjs';
+assert.deepEqual(lisbonDateTime('2026-10-15T22:59:59Z'),{date:'2026-10-15',time:'23:59:59'});
+assert.deepEqual(lisbonDateTime('2026-10-15T23:00:00Z'),{date:'2026-10-16',time:'00:00:00'});
+assert.equal(eligibleSundayFromInstant('2026-10-15T22:59:59Z'),'2026-10-18');
+assert.equal(eligibleSundayFromInstant('2026-10-15T23:00:00Z'),'2026-10-25');
+assert.equal(eligibleSundayFromInstant('2026-10-25T12:00:00Z'),'2026-11-01');
+assert.equal(evaluateDeliveryDateTime({nowISO:'2026-10-15T22:59:59Z',deliveryDate:'2026-10-18',deliveryTime:'14:00'}).eligible,true);
+assert.equal(evaluateDeliveryDateTime({nowISO:'2026-10-15T23:00:00Z',deliveryDate:'2026-10-18',deliveryTime:'14:00'}).reason,'weekly_cutoff');
+assert.equal(evaluateDeliveryDateTime({nowISO:'2026-10-15T22:59:59Z',deliveryDate:'2026-10-19',deliveryTime:'12:00',leadHours:96}).reason,'preparation_time');
+assert.equal(evaluateDeliveryDateTime({nowISO:'2026-10-15T22:59:59Z',deliveryDate:'2026-10-20',deliveryTime:'14:00'}).reason,'delivery_day_unavailable');
+assert.equal(evaluateDeliveryDateTime({nowISO:'2026-03-26T16:00:00Z',deliveryDate:'2026-03-29',deliveryTime:'01:30'}).reason,'ambiguous_or_invalid_delivery_time');
+assert.equal(evaluateDeliveryDateTime({nowISO:'2026-10-22T12:00:00Z',deliveryDate:'2026-10-25',deliveryTime:'01:30'}).reason,'ambiguous_or_invalid_delivery_time');
+assert.equal(evaluateDeliveryDateTime({nowISO:'2026-10-22T12:00:00Z',deliveryDate:'2026-10-25',deliveryTime:'11:00'}).eligible,true);
+console.log('Calendário com hora oficial e antecedência: OK');
