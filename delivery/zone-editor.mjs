@@ -23,8 +23,9 @@ export function mountDeliveryZoneEditor(root, shopDelivery, { onSave } = {}) {
       const item = el('fieldset');
       item.append(field('Localidade',z.name,v=>{state.zones[i].name=v}));
       item.append(field('Portes (€)',(z.feeCents/100).toFixed(2),v=>{
-        const n=Number(v.replace(',','.'));
-        state.zones[i].feeCents=Number.isFinite(n) && n>=0 ? Math.round(n*100) : NaN;
+        const clean=v.trim().replace(',','.');
+        const n=Number(clean);
+        state.zones[i].feeCents=clean !== '' && /^\\d+(?:\\.\\d{1,2})?$/.test(clean) && Number.isSafeInteger(Math.round(n*100)) ? Math.round(n*100) : NaN;
       }));
       item.append(field('Códigos postais completos, separados por vírgula',z.postalCodes.join(', '),v=>{
         state.zones[i].postalCodes=v.split(',').map(s=>s.trim()).filter(Boolean);
@@ -40,6 +41,7 @@ export function mountDeliveryZoneEditor(root, shopDelivery, { onSave } = {}) {
     const error=el('p');error.setAttribute('role','alert');root.append(error);
     const save=el('button','Guardar pré-configuração');save.type='button';
     save.addEventListener('click',async ()=>{
+      if (save.disabled) return;
       try {
         // Durante a integração esta configuração permanece desativada.
         const validated=prepareDeliveryZoneConfig({...state,enabled:false});
