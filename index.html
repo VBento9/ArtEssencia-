@@ -8050,7 +8050,7 @@ function orderSnapshotLineV1757(o,line,index){
 }
 function productionRecipeForOrderLineV1757(o,line,index){
  const snap=orderSnapshotLineV1757(o,line,index);
- if(snap?.materialsCaptured)return (snap.materials||[]).map(r=>({item:r.item,qty:Number(r.qtyPerUnit)||0}));
+ if(snap?.materialsCaptured)return (snap.materials||[]).map(r=>({item:r.item==='fragrâncias Artficium'&&stockByName('Fragrância Artficium')?.unit==='ml'?'Fragrância Artficium':r.item,qty:Number(r.qtyPerUnit)||0}));
  const p=productionProductForLineV130(line);
  return p&&productManufacturedV130(p)?(db.productRecipes[p.code]||[]):[];
 }
