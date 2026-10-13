@@ -25,10 +25,13 @@ export async function saveProductPublicCharacteristics(code,characteristics={}){
  const s=await ensureSession();
  return request('/rest/v1/rpc/artessencia_save_product_public_characteristics_v1',{method:'POST',token:s.access_token,body:{p_code:sku,p_characteristics:characteristics&&typeof characteristics==='object'?characteristics:{}}});
 }
+// Legacy product records incorrectly stored as clients; keep local data for recovery.
+const INVALID_CLIENT_IDS=new Set(["a6c6d526-005e-4d0f-8fa6-382844dad173","568ddbd9-143a-4b78-895c-cecea06c00e8","7f4efa67-39c9-4cfc-b85e-826bee4b13b4","ac08e4e4-30d6-4838-8479-ba40529a4d5c","fe980aa7-d8bb-4d17-b96f-3f75fad2d479","44bd7990-6812-4c4d-9aec-46f77e490631","4b89f5e1-ae1b-4aae-9faf-56e00a8a02f2"]);
+function invalidClient(store,row){return store==='clients'&&INVALID_CLIENT_IDS.has(String(row?.id||''))}
 const SYNC_STORES=['settings','clients','suppliers','materials','products','productMaterials','molds','orders','orderItems','payments','purchases','expenses','investments','cashMovements','productionBatches','stockMovements','collections','kitItems','catalogs','homepage','campaigns','deliverySettings','recurringExpenses','transfers','themes','occasions','colors','personalizations','creatorPricing','unavailableDates','notifications','quoteHistory'];
 function syncableRow(store,row){if(store!=='settings')return true;return !String(row?.id||'').startsWith('cloud.')}
 export async function pushRecord(store,row){
- if(!SYNC_STORES.includes(store)||!row?.id||!syncableRow(store,row))return {applied:false,skipped:true};
+ if(!SYNC_STORES.includes(store)||!row?.id||!syncableRow(store,row)||invalidClient(store,row))return {applied:false,skipped:true};
  const s=session();if(!s||!navigator.onLine)return {applied:false,skipped:true};
  const live=await ensureSession(),dev=await deviceId();
  const updated=row.updatedAt||row.updated_at||row.createdAt||new Date().toISOString();
@@ -50,7 +53,7 @@ export async function pushAll(){
  for(const store of SYNC_STORES){
   const rows=await db.all(store);
   for(const row of rows){
-   if(!syncableRow(store,row)){skipped++;continue}
+   if(!syncableRow(store,row)||invalidClient(store,row)){skipped++;continue}
    const updated=row.updatedAt||row.updated_at||row.createdAt||new Date().toISOString();
    const result=await request('/rest/v1/rpc/artessencia_cloud_upsert_record_v1',{method:'POST',token:s.access_token,body:{p_entity:store,p_record_id:String(row.id),p_data:{...row,updatedAt:updated},p_client_updated_at:updated,p_device_id:dev}});
    if(result?.applied)n++;else if(result?.applied===false){skipped++}else{failed++;skipped++}
@@ -67,7 +70,7 @@ export async function pullAll(){
  }while((page||[]).length===1000);
  let applied=0,skipped=0;
  for(const r of rows){
-  if(!SYNC_STORES.includes(r.entity)||!r.data?.id){skipped++;continue}
+  if(!SYNC_STORES.includes(r.entity)||!r.data?.id||invalidClient(r.entity,r.data)){skipped++;continue}
   const local=await db.get(r.entity,r.data.id);
   const lt=new Date(local?.updatedAt||local?.updated_at||local?.createdAt||0).getTime();
   const rt=new Date(r.client_updated_at||r.server_updated_at||0).getTime();
