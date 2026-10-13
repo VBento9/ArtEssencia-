@@ -34,4 +34,14 @@ assert.throws(()=>validateDeliveryZones([{...zones[0],feeCents:10000001}]));
 assert.throws(()=>validateDeliveryZones([{...zones[0],name:'A'.repeat(101)}]));
 assert.throws(()=>validateDeliveryZones(Array.from({length:101},(_,i)=>({...zones[0],name:'Zona'+i,postalCodes:[String(1000+i).padStart(4,'0')+'-001']}))));
 assert.throws(()=>validateDeliveryZones([{...zones[0],postalCodes:Array.from({length:1001},(_,i)=>String(1000+i).padStart(4,'0')+'-001') }]));
+// Limites de corte, domingo/segunda-feira e transição de hora em Lisboa.
+assert.equal(firstEligibleDeliveryDate('2026-10-15','23:59:58'),'2026-10-18');
+assert.equal(firstEligibleDeliveryDate('2026-10-22','23:59:59'),'2026-10-25');
+assert.equal(firstEligibleDeliveryDate('2026-10-23','00:00:00'),'2026-11-01');
+assert.equal(firstEligibleDeliveryDate('2026-10-25','01:30:00'),'2026-11-01');
+assert.equal(firstEligibleDeliveryDate('2026-03-29','02:30:00'),'2026-04-05');
+assert.equal(isEligibleDeliveryDay('2026-10-26','2026-10-25'),true);
+assert.equal(isEligibleDeliveryDay('2026-10-25','2026-11-01'),false);
+assert.equal(isEligibleDeliveryDay('2026-11-02','2026-11-01'),true);
+assert.equal(isEligibleDeliveryDay('2026-10-24','2026-10-18'),false);
 console.log('Testes de zonas e calendário concluídos.');
