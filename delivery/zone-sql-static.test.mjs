@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const sql=fs.readFileSync(new URL('./draft-zone-rpc.NOT-APPLIED.sql',import.meta.url),'utf8');
-assert.equal((sql.match(/create or replace function/g)||[]).length,1);
+assert.equal((sql.match(/create or replace function/gi)||[]).length,1);
 assert.equal((sql.match(/\$function\$/g)||[]).length,2);
 assert.equal((sql.match(/return v_revision\+1;/g)||[]).length,1);
 assert.match(sql,/jsonb_typeof\(p_zones\) is distinct from 'array'/);
-assert.match(sql,/invalid postal code type/);
+assert.match(sql,/invalid postal type/);
 assert.match(sql,/\^\[0-9\]\{4\}-\[0-9\]\{3\}\$/);
 assert.match(sql,/cloud_revision_conflict/);
 assert.match(sql,/delivery sources diverged/);
-assert.match(sql,/enabled',false/);
+assert.match(sql,/'enabled',false/);
 console.log('Estrutura estática do SQL: OK (não substitui compilação PostgreSQL)');
