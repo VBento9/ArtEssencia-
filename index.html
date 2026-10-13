@@ -8109,7 +8109,13 @@ function detachSharedProductionOrderV148(run,o){
  return !!exact;
 }
 function productionOrderNeedsV12632(o){
- const needs={},add=(name,v)=>{if(name)needs[name]=(needs[name]||0)+(Number(v)||0)};
+ const needs={},add=(name,v)=>{
+  // Compatibilidade com snapshots de encomendas anteriores à consolidação do stock.
+  // Não reescreve os snapshots nem os movimentos históricos.
+  const canonical=name==='fragrâncias Artficium'&&stockByName('Fragrância Artficium')?.unit==='ml'
+    ?'Fragrância Artficium':name;
+  if(canonical)needs[canonical]=(needs[canonical]||0)+(Number(v)||0);
+ };
  (o.items||[]).forEach((line,index)=>{if(productionLineIgnoredV148(line))return;const p=productionProductForLineV130(line);if(p&&productManufacturedV130(p))productionRecipeForOrderLineV1757(o,line,index).forEach(r=>add(r.item,(Number(r.qty)||0)*(Number(line.qty)||0)))});
  // Embalagem escolhida na encomenda também é consumida, mas apenas quando existe
  // como artigo real no Stock com o mesmo nome. Caso contrário mantém-se apenas como custo.
