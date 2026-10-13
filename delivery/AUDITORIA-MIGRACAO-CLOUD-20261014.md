@@ -27,3 +27,12 @@ Auditoria de leitura, 2026-10-14. Ramo isolado; não altera produção.
 - Não constituem aprovação de RPC reais nem autorização para executar migração.
 
 **BLOQUEADO**: ativação de zonas/portes e substituição das RPC de produção até satisfazer os pontos acima.
+
+## Auditoria adicional de funções Cloud reais (2026-10-14)
+
+- `artessencia_state_revision_guard_v1` é uma trigger que apenas confirma que `NEW.revision = OLD.revision + 1` quando `data` muda. Não prova que o chamador trouxe uma revisão esperada; um escritor obsoleto pode calcular `revision = revision + 1` no servidor e passar a trigger.
+- `artessencia_cloud_upsert_record_v1` usa `excluded.client_updated_at >= current.client_updated_at` no `ON CONFLICT`, sem versão/CAS e com relógio fornecido pelo cliente. Datas iguais podem substituir dados; relógios adiantados podem impedir atualizações legítimas.
+- Antes de substituir a política de conflitos dos registos Cloud, mapear tipos de `entity`, chamadores e semântica de sincronização offline, para não afetar encomendas ou outras entidades.
+- Consulta ao GitHub confirmou `delivery/draft-general-delivery-save.NOT-APPLIED.sql` isolado. A pesquisa de código GitHub não devolveu chamadas do Backoffice e os caminhos de entrada usuais examinados não revelaram implementação; o inventário de chamadores **continua incompleto**, não presumir que todos foram encontrados.
+
+**Sem alteração de produção.**
