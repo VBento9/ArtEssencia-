@@ -82,7 +82,7 @@ begin
     if jsonb_array_length(v_zone->'postalCodes') > 1000 then raise exception 'too many postal codes'; end if;
     for v_code_json in select value from jsonb_array_elements(v_zone->'postalCodes') loop
       if jsonb_typeof(v_code_json) is distinct from 'string' then raise exception 'invalid postal code type'; end if;
-      v_code := trim(both '"' from v_code_json::text);
+      v_code := v_code_json #>> '{}';
       v_code_count := v_code_count + 1;
       if v_code_count > 5000 then raise exception 'too many postal codes overall'; end if;
       if v_code !~ '^[0-9]{4}-[0-9]{3}$' then raise exception 'invalid postal code'; end if;
