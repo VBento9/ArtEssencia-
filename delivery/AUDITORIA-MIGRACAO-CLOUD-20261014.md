@@ -36,3 +36,10 @@ Auditoria de leitura, 2026-10-14. Ramo isolado; não altera produção.
 - Consulta ao GitHub confirmou `delivery/draft-general-delivery-save.NOT-APPLIED.sql` isolado. A pesquisa de código GitHub não devolveu chamadas do Backoffice e os caminhos de entrada usuais examinados não revelaram implementação; o inventário de chamadores **continua incompleto**, não presumir que todos foram encontrados.
 
 **Sem alteração de produção.**
+
+## Inventário de dados Cloud (leitura em produção, 2026-10-14)
+
+- `public.artessencia_cloud_records`: **0 registos**. Não foi possível observar valores efetivamente utilizados de `entity` nesta tabela; não confundir ausência de dados com ausência de chamadores no código.
+- `public.artessencia_v1_state`: **1 registo**. A proteção de estado principal e respetivos escritores é prioritária.
+- **Não** migrar nem limpar dados da tabela vazia, nem presumir que a sincronização está desativada. Inventariar os chamadores no código completo da aplicação antes de alterar `artessencia_cloud_upsert_record_v1`.
+- A leitura efetuada não expôs dados pessoais, clientes ou encomendas.
