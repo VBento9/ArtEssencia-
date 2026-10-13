@@ -1,13 +1,15 @@
 -- ARTESSENCIA — PROPOSTA NÃO EXECUTADA
--- Revisão da função existente. Mantém o seu nome e contrato.
+-- Nova função v2 isolada: NÃO substitui a RPC v1 utilizada pela aplicação.
 -- Protege deliveryZoneConfig contra sobrescrita por Backoffice desatualizado.
 -- NÃO aplicar sem testar conflitos com cloud push e função draft-zone-rpc.
 
-create or replace function public.artessencia_save_shop_delivery_v1(p_shop_delivery jsonb)
+create or replace function public.artessencia_save_shop_delivery_v2(p_shop_delivery jsonb, p_expected_revision bigint)
 returns boolean language plpgsql set search_path to 'public'
 as $function$
 declare
   v_uid uuid := auth.uid();
+  v_revision bigint;
+  v_state_current jsonb;
   v_current jsonb;
   v_merged jsonb;
   v_zone jsonb;
@@ -20,8 +22,13 @@ begin
 
   -- Obter o lock na mesma ordem da futura RPC de rascunhos:
   -- primeiro o estado principal; depois as definições da Loja.
-  perform 1 from public.artessencia_v1_state where user_id=v_uid for update;
+  select revision, coalesce(data #> '{settings,shopDelivery}', '{}'::jsonb)
+    into v_revision, v_state_current
+    from public.artessencia_v1_state where user_id=v_uid for update;
   if not found then raise exception 'backoffice state missing'; end if;
+  if p_expected_revision is null or v_revision is distinct from p_expected_revision then
+    raise exception 'cloud_revision_conflict';
+  end if;
 
   insert into public.artessencia_shop_settings(user_id,data,updated_at)
   values(v_uid,jsonb_build_object('delivery','{}'::jsonb),now())
@@ -30,6 +37,10 @@ begin
   select coalesce(data->'delivery','{}'::jsonb)
     into v_current from public.artessencia_shop_settings
     where user_id=v_uid for update;
+
+  if v_state_current is distinct from v_current then
+    raise exception 'delivery sources diverged';
+  end if;
 
   -- Não permitir que o corpo enviado pelo navegador altere a nova chave;
   -- a fonte é o valor que está efetivamente no servidor.
@@ -71,5 +82,7 @@ begin
 end;
 $function$;
 
--- Limitação ainda aberta: esta função NÃO implementa controlo de revisão
--- para todos os campos antigos; exige revisão do cloud push geral antes de aplicar.
+-- A v1 continua inalterada. É necessário adaptar o chamador para fornecer
+-- p_expected_revision e testar conflitos/atualizações reais antes da migração.
+-- Uma chamada v1 concorrente não respeita este protocolo: não ativar até migrar.
+-- Rever explicitamente privilégios EXECUTE antes de aplicar.
