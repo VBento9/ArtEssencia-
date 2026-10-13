@@ -25,7 +25,7 @@ export function mountDeliveryZoneEditor(root, shopDelivery, { onSave } = {}) {
       item.append(field('Portes (€)',(z.feeCents/100).toFixed(2),v=>{
         const clean=v.trim().replace(',','.');
         const n=Number(clean);
-        state.zones[i].feeCents=clean !== '' && /^\\d+(?:\\.\\d{1,2})?$/.test(clean) && Number.isSafeInteger(Math.round(n*100)) ? Math.round(n*100) : NaN;
+        state.zones[i].feeCents=clean !== '' && /^\d+(?:\.\d{1,2})?$/.test(clean) && Number.isSafeInteger(Math.round(n*100)) ? Math.round(n*100) : NaN;
       }));
       item.append(field('Códigos postais completos, separados por vírgula',z.postalCodes.join(', '),v=>{
         state.zones[i].postalCodes=v.split(',').map(s=>s.trim()).filter(Boolean);
