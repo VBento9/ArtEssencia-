@@ -10,8 +10,8 @@ function simulateDeliverySave(remote, expectedRevision, incoming) {
   const zone = remote.shopSettingsDelivery.deliveryZoneConfig;
   const merged = { ...incoming };
   delete merged.deliveryZoneConfig;
-  if (zone !== undefined) merged.deliveryZoneConfig = structuredClone(zone);
-  return { revision: remote.revision + 1, shopDelivery: merged, shopSettingsDelivery: structuredClone(merged) };
+  if (zone !== undefined) merged.deliveryZoneConfig = JSON.parse(JSON.stringify(zone));
+  return { revision: remote.revision + 1, shopDelivery: merged, shopSettingsDelivery: JSON.parse(JSON.stringify(merged)) };
 }
 
 const zones = prepareDeliveryZoneConfig({
