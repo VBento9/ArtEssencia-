@@ -19,4 +19,8 @@ assert.equal(firstEligibleDeliveryDate('2026-10-17','18:00:00'),'2026-10-25');
 assert.equal(firstEligibleDeliveryDate('2026-10-18','14:00:00'),'2026-10-25');
 assert.equal(isEligibleDeliveryDay('2026-10-19','2026-10-18'),true);
 assert.equal(isEligibleDeliveryDay('2026-10-20','2026-10-18'),false);
+assert.throws(()=>firstEligibleDeliveryDate('2026-10-15','99:99:99'));
+assert.throws(()=>firstEligibleDeliveryDate('2026-02-30','12:00:00'));
+assert.equal(firstEligibleDeliveryDate('2026-10-12','12:00:00'),'2026-10-18');
+assert.equal(firstEligibleDeliveryDate('2026-10-19','12:00:00'),'2026-10-25');
 console.log('Testes de zonas e calendário concluídos.');
