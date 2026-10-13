@@ -30,4 +30,8 @@ assert.equal(isEligibleDeliveryDay('2026-02-30','2026-02-22'),false);
 assert.equal(isEligibleDeliveryDay('2026-10-19','2026-10-19'),false);
 assert.equal(isEligibleDeliveryDay('2026-10-18','2026-10-18'),true);
 assert.equal(isEligibleDeliveryDay('2026-10-25','2026-10-18'),true);
+assert.throws(()=>validateDeliveryZones([{...zones[0],feeCents:10000001}]));
+assert.throws(()=>validateDeliveryZones([{...zones[0],name:'A'.repeat(101)}]));
+assert.throws(()=>validateDeliveryZones(Array.from({length:101},(_,i)=>({...zones[0],name:'Zona'+i,postalCodes:[String(1000+i).padStart(4,'0')+'-001']}))));
+assert.throws(()=>validateDeliveryZones([{...zones[0],postalCodes:Array.from({length:1001},(_,i)=>String(1000+i).padStart(4,'0')+'-001') }]));
 console.log('Testes de zonas e calendário concluídos.');
