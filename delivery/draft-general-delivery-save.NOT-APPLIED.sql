@@ -4,7 +4,7 @@
 -- NÃO aplicar sem testar conflitos com cloud push e função draft-zone-rpc.
 
 create or replace function public.artessencia_save_shop_delivery_v2(p_shop_delivery jsonb, p_expected_revision bigint)
-returns boolean language plpgsql set search_path to 'public'
+returns boolean language plpgsql security invoker set search_path to 'public'
 as $function$
 declare
   v_uid uuid := auth.uid();
@@ -38,6 +38,9 @@ begin
     into v_current from public.artessencia_shop_settings
     where user_id=v_uid for update;
 
+  if jsonb_typeof(v_state_current) is distinct from 'object' then
+    raise exception 'invalid main delivery settings';
+  end if;
   if v_state_current is distinct from v_current then
     raise exception 'delivery sources diverged';
   end if;
@@ -60,14 +63,16 @@ begin
       revision=coalesce(revision,0)+1,updated_at=now()
   where user_id=v_uid;
 
-  -- Preservar comportamento original de fulfillment e fecho preventivo.
+  -- Mesclar as duas opções sem eliminar outras chaves fulfillment.
   insert into public.store_settings(key,value,updated_at)
   values('fulfillment',
     jsonb_build_object(
       'pickup_enabled',coalesce((v_merged->>'pickupEnabled')::boolean,false),
       'delivery_enabled',coalesce((v_merged->>'localDeliveryEnabled')::boolean,false)
     ),now())
-  on conflict(key) do update set value=excluded.value,updated_at=now();
+  on conflict(key) do update
+    set value=coalesce(public.store_settings.value,'{}'::jsonb) || excluded.value,
+        updated_at=now();
 
   if not (
       coalesce((v_merged->>'pickupEnabled')::boolean,false)
