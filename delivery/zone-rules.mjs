@@ -2,6 +2,12 @@
 // Não ligado ao Backoffice nem à Loja. Não modifica configurações existentes.
 // Entradas monetárias expressas em cêntimos para evitar arredondamentos de ponto flutuante.
 
+function validISODate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const d = new Date(value + 'T12:00:00Z');
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
+}
+
 export function normalizePostalCode(input) {
   const digits = String(input ?? '').replace(/\D/g, '');
   return /^\d{7}$/.test(digits) ? digits.slice(0, 4) + '-' + digits.slice(4) : null;
@@ -40,9 +46,8 @@ export function resolveLocalDelivery(postalCode, zones) {
 // Recebe o dia/hora LOCAL validado pelo servidor, YYYY-MM-DD e HH:mm:ss,
 // para não confiar no relógio do browser.
 export function firstEligibleDeliveryDate(localDate, localTime) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(localDate) || !/^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$/.test(localTime)) throw new Error('invalid local date/time');
+  if (!validISODate(localDate) || !/^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$/.test(localTime)) throw new Error('invalid local date/time');
   const d = new Date(localDate + 'T12:00:00Z');
-  if (Number.isNaN(d.getTime()) || d.toISOString().slice(0,10) !== localDate) throw new Error('invalid date');
   const dow = d.getUTCDay();
   const afterCutoff = dow >= 5; // sexta e sábado
   // Quinta-feira até 23:59:59 pertence à semana corrente; domingo após corte também à seguinte.
@@ -53,8 +58,9 @@ export function firstEligibleDeliveryDate(localDate, localTime) {
 }
 
 export function isEligibleDeliveryDay(dateISO, firstSundayISO) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateISO)) return false;
+  if (!validISODate(dateISO) || !validISODate(firstSundayISO)) return false;
   const d = new Date(dateISO + 'T12:00:00Z');
   const first = new Date(firstSundayISO + 'T12:00:00Z');
+  if (first.getUTCDay() !== 0) return false;
   return d.getTime() >= first.getTime() && (d.getUTCDay() === 0 || d.getUTCDay() === 1);
 }
