@@ -40,7 +40,7 @@ export function resolveLocalDelivery(postalCode, zones) {
 // Recebe o dia/hora LOCAL validado pelo servidor, YYYY-MM-DD e HH:mm:ss,
 // para não confiar no relógio do browser.
 export function firstEligibleDeliveryDate(localDate, localTime) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(localDate) || !/^\d{2}:\d{2}:\d{2}$/.test(localTime)) throw new Error('invalid local date/time');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(localDate) || !/^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$/.test(localTime)) throw new Error('invalid local date/time');
   const d = new Date(localDate + 'T12:00:00Z');
   if (Number.isNaN(d.getTime()) || d.toISOString().slice(0,10) !== localDate) throw new Error('invalid date');
   const dow = d.getUTCDay();
