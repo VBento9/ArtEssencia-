@@ -8627,9 +8627,18 @@ function mergeDuplicateClients(){
  if(remap.size){(db.orders||[]).forEach(o=>{if(remap.has(o.clientId))o.clientId=remap.get(o.clientId)});(db.quotes||[]).forEach(q=>{if(remap.has(q.clientId))q.clientId=remap.get(q.clientId)});db.clients=keep}
  return remap.size
 }
+// Display-only quarantine for seven confirmed product records misfiled as clients.
+// Do not mutate db.clients: local unsynced records and backups must remain intact.
+const CLIENT_PRODUCT_QUARANTINE_IDS=new Set(["a6c6d526-005e-4d0f-8fa6-382844dad173","568ddbd9-143a-4b78-895c-cecea06c00e8","7f4efa67-39c9-4cfc-b85e-826bee4b13b4","ac08e4e4-30d6-4838-8479-ba40529a4d5c","fe980aa7-d8bb-4d17-b96f-3f75fad2d479","44bd7990-6812-4c4d-9aec-46f77e490631","4b89f5e1-ae1b-4aae-9faf-56e00a8a02f2"]);
+const CLIENT_PRODUCT_QUARANTINE_NAMES=new Set(["anjo a dormir “pera”","bola de natal","carro & árvore","coleção essência iii - jardim secreto","flores natalícias","lembrancinhas frasco de vidro","tesouro do bosque"]);
+function isQuarantinedProductClient(c){
+ if(CLIENT_PRODUCT_QUARANTINE_IDS.has(String(c?.id||'')))return true;
+ const name=String(c?.name||'').trim().toLocaleLowerCase('pt-PT');
+ return CLIENT_PRODUCT_QUARANTINE_NAMES.has(name)&&!String(c?.phone||'').trim()&&!String(c?.email||'').trim();
+}
 function renderClients(){
  ensureRecordIds();
- const all=Array.isArray(db.clients)?db.clients:[];
+ const all=(Array.isArray(db.clients)?db.clients:[]).filter(c=>!isQuarantinedProductClient(c));
  const orders=Array.isArray(db.orders)?db.orders:[];
  const quotes=Array.isArray(db.quotes)?db.quotes:[];
 
