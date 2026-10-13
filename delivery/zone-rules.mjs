@@ -16,13 +16,16 @@ export function normalizePostalCode(input) {
 }
 
 export function validateDeliveryZones(zones) {
-  if (!Array.isArray(zones)) throw new Error('invalid zones');
+  if (!Array.isArray(zones) || zones.length > 100) throw new Error('invalid zones');
   const used = new Set();
+  let totalCodes = 0;
   return zones.map((zone) => {
-    if (!zone || typeof zone.name !== 'string' || !zone.name.trim()) throw new Error('invalid locality');
+    if (!zone || typeof zone.name !== 'string' || !zone.name.trim() || zone.name.trim().length > 100) throw new Error('invalid locality');
     if (typeof zone.enabled !== 'boolean') throw new Error('invalid zone status');
-    if (!Number.isSafeInteger(zone.feeCents) || zone.feeCents < 0) throw new Error('invalid delivery fee');
-    if (!Array.isArray(zone.postalCodes) || !zone.postalCodes.length) throw new Error('postal codes required');
+    if (!Number.isSafeInteger(zone.feeCents) || zone.feeCents < 0 || zone.feeCents > 10000000) throw new Error('invalid delivery fee');
+    if (!Array.isArray(zone.postalCodes) || !zone.postalCodes.length || zone.postalCodes.length > 1000) throw new Error('postal codes required');
+    totalCodes += zone.postalCodes.length;
+    if (totalCodes > 5000) throw new Error('too many postal codes');
     const codes = zone.postalCodes.map(normalizePostalCode);
     if (codes.some(code => !code)) throw new Error('invalid postal code');
     if (new Set(codes).size !== codes.length) throw new Error('duplicate code in zone');
