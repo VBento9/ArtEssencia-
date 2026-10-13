@@ -1,30 +1,24 @@
--- ARTESSENCIA / PROPOSTA NÃO EXECUTADA
--- Não aplicar enquanto artessencia_save_shop_delivery_v1 e o cloud push geral
--- não preservarem deliveryZoneConfig perante gravações concorrentes.
--- Contrato SQL transacional para atualização APENAS do rascunho das zonas.
-
+-- ARTESSENCIA — PROPOSTA NÃO APLICADA / APENAS PARA REVISÃO
+-- NÃO INSTALAR: a RPC v1 e o cloud push geral ainda não partilham este protocolo.
 create or replace function public.artessencia_save_delivery_zone_draft_v1(
-  p_expected_revision bigint,
-  p_zones jsonb
+  p_expected_revision bigint, p_zones jsonb
 ) returns bigint
-language plpgsql
-security invoker
-set search_path = public
-as $$
+language plpgsql security invoker set search_path = public
+as $function$
 declare
   v_uid uuid := auth.uid();
-  v_current_rev bigint;
-  v_shop_delivery jsonb;
-  v_state_delivery jsonb;
+  v_revision bigint;
+  v_main jsonb;
+  v_shop jsonb;
   v_zone jsonb;
+  v_code_value jsonb;
   v_code text;
-  v_code_json jsonb;
-  v_codes text[] := array[]::text[];
   v_name text;
-  v_names text[] := array[]::text[];
-  v_fee bigint;
-  v_new jsonb;
-  v_code_count integer := 0;
+  v_fee_text text;
+  v_seen_codes text[] := array[]::text[];
+  v_seen_names text[] := array[]::text[];
+  v_total_codes integer := 0;
+  v_draft jsonb;
 begin
   if v_uid is null or not public.artessencia_is_owner_v1() then
     raise exception 'store owner required';
@@ -36,179 +30,62 @@ begin
     raise exception 'invalid zones';
   end if;
   if jsonb_array_length(p_zones) > 100 then
-    raise exception 'invalid zones';
+    raise exception 'too many zones';
   end if;
 
-  -- Serializa gravações que cooperam com o lock desta linha.
-  select revision, coalesce(data #> '{settings,shopDelivery}', '{}'::jsonb)
-  into v_current_rev, v_state_delivery
-  from public.artessencia_v1_state
-  where user_id = v_uid
-  for update;
-  if not found or v_current_rev is distinct from p_expected_revision then
-    raise exception 'delivery draft conflict: reload settings';
+  -- Ordem de bloqueio partilhada com a proposta v2: state, depois settings.
+  select revision, coalesce(data #> '{settings,shopDelivery}','{}'::jsonb)
+    into v_revision,v_main from public.artessencia_v1_state
+    where user_id=v_uid for update;
+  if not found or v_revision is distinct from p_expected_revision then
+    raise exception 'cloud_revision_conflict';
   end if;
-
-  select coalesce(data->'delivery','{}'::jsonb) into v_shop_delivery
-  from public.artessencia_shop_settings
-  where user_id = v_uid
-  for update;
-  if not found then raise exception 'shop delivery settings missing'; end if;
-
-  -- Evita sincronizar divergências já existentes.
-  if v_shop_delivery is distinct from v_state_delivery then
-    raise exception 'shop delivery sources diverged: reload before saving';
-  end if;
-  -- Um rascunho não pode substituir zonas já ativadas pela Loja.
-  if (v_shop_delivery #>> '{deliveryZoneConfig,enabled}') = 'true' then
-    raise exception 'active delivery zones require manual migration';
+  select coalesce(data->'delivery','{}'::jsonb)
+    into v_shop from public.artessencia_shop_settings
+    where user_id=v_uid for update;
+  if not found then raise exception 'shop settings missing'; end if;
+  if v_shop is distinct from v_main then raise exception 'delivery sources diverged'; end if;
+  if v_shop #>> '{deliveryZoneConfig,enabled}' = 'true' then
+    raise exception 'active zones cannot be overwritten by draft';
   end if;
 
   for v_zone in select value from jsonb_array_elements(p_zones) loop
     if jsonb_typeof(v_zone) is distinct from 'object' then raise exception 'invalid zone'; end if;
-    v_name := nullif(btrim(v_zone->>'name'), '');
-    if v_name is null or length(v_name) > 100 then raise exception 'invalid locality'; end if;
-    if lower(v_name) = any(v_names) then raise exception 'duplicate locality'; end if;
-    v_names := array_append(v_names,lower(v_name));
-    if jsonb_typeof(v_zone->'enabled') is distinct from 'boolean' then raise exception 'invalid zone enabled'; end if;
-    if jsonb_typeof(v_zone->'feeCents') is distinct from 'number' or (v_zone->>'feeCents') !~ '^[0-9]+
-      raise exception 'invalid fee';
-    end if;
-    v_fee := (v_zone->>'feeCents')::bigint;
-    if v_fee > 10000000 then raise exception 'fee out of range'; end if;
-    if jsonb_typeof(v_zone->'postalCodes') is distinct from 'array' then
-      raise exception 'zone postal codes required';
-    end if;
-    if jsonb_array_length(v_zone->'postalCodes') = 0 then
-      raise exception 'zone postal codes required';
-    end if;
-    if jsonb_array_length(v_zone->'postalCodes') > 1000 then raise exception 'too many postal codes'; end if;
-    for v_code_json in select value from jsonb_array_elements(v_zone->'postalCodes') loop
-      if jsonb_typeof(v_code_json) is distinct from 'string' then raise exception 'invalid postal code type'; end if;
-      v_code := v_code_json #>> '{}';
-      v_code_count := v_code_count + 1;
-      if v_code_count > 5000 then raise exception 'too many postal codes overall'; end if;
-      -- Formato canónico guardado na Cloud; o editor normaliza previamente.
-      if v_code !~ '^[0-9]{4}-[0-9]{3}
-      if v_code = any(v_codes) then raise exception 'duplicate postal code'; end if;
-      v_codes := array_append(v_codes,v_code);
+    if jsonb_typeof(v_zone->'name') is distinct from 'string' then raise exception 'invalid locality'; end if;
+    v_name := nullif(btrim(v_zone->>'name'),'');
+    if v_name is null or length(v_name)>100 then raise exception 'invalid locality'; end if;
+    if lower(v_name)=any(v_seen_names) then raise exception 'duplicate locality'; end if;
+    v_seen_names:=array_append(v_seen_names,lower(v_name));
+    if jsonb_typeof(v_zone->'enabled') is distinct from 'boolean' then raise exception 'invalid zone state'; end if;
+
+    if jsonb_typeof(v_zone->'feeCents') is distinct from 'number' then raise exception 'invalid fee'; end if;
+    v_fee_text := v_zone->>'feeCents';
+    if length(v_fee_text)>8 or v_fee_text !~ '^[0-9]+$' then raise exception 'invalid fee'; end if;
+    if v_fee_text::bigint>10000000 then raise exception 'fee out of range'; end if;
+
+    if jsonb_typeof(v_zone->'postalCodes') is distinct from 'array' then raise exception 'postal codes required'; end if;
+    if jsonb_array_length(v_zone->'postalCodes') not between 1 and 1000 then raise exception 'postal codes limit'; end if;
+    for v_code_value in select value from jsonb_array_elements(v_zone->'postalCodes') loop
+      if jsonb_typeof(v_code_value) is distinct from 'string' then raise exception 'invalid postal code type'; end if;
+      v_code:=v_code_value #>> '{}';
+      if v_code !~ '^[0-9]{4}-[0-9]{3}$' then raise exception 'invalid postal code'; end if;
+      if v_code=any(v_seen_codes) then raise exception 'duplicate postal code'; end if;
+      v_seen_codes:=array_append(v_seen_codes,v_code);
+      v_total_codes:=v_total_codes+1;
+      if v_total_codes>5000 then raise exception 'too many postal codes'; end if;
     end loop;
   end loop;
 
-  v_new := jsonb_build_object(
-    'enabled',false,
-    'headquarters','Castelejo',
-    'zones',p_zones
-  );
-
+  v_draft:=jsonb_build_object('enabled',false,'headquarters','Castelejo','zones',p_zones);
   update public.artessencia_shop_settings
-  set data=jsonb_set(coalesce(data,'{}'::jsonb),'{delivery}',v_shop_delivery || jsonb_build_object('deliveryZoneConfig',v_new),true),
-      updated_at=now()
-  where user_id=v_uid;
-
+    set data=jsonb_set(coalesce(data,'{}'::jsonb),'{delivery}',v_shop||jsonb_build_object('deliveryZoneConfig',v_draft),true),
+        updated_at=now()
+    where user_id=v_uid;
   update public.artessencia_v1_state
-  set data=jsonb_set(coalesce(data,'{}'::jsonb),'{settings,shopDelivery}',v_state_delivery || jsonb_build_object('deliveryZoneConfig',v_new),true),
-      revision=revision+1,updated_at=now()
-  where user_id=v_uid;
-
-  return v_current_rev+1;
+    set data=jsonb_set(coalesce(data,'{}'::jsonb),'{settings,shopDelivery}',v_main||jsonb_build_object('deliveryZoneConfig',v_draft),true),
+        revision=revision+1,updated_at=now()
+    where user_id=v_uid;
+  return v_revision+1;
 end;
-$$;
-
--- NÃO EXECUTAR: confirmar política EXECUTE e atualizar gravação geral primeiro.
- then raise exception 'invalid postal code'; end if;
-      if v_code = any(v_codes) then raise exception 'duplicate postal code'; end if;
-      v_codes := array_append(v_codes,v_code);
-    end loop;
-  end loop;
-
-  v_new := jsonb_build_object(
-    'enabled',false,
-    'headquarters','Castelejo',
-    'zones',p_zones
-  );
-
-  update public.artessencia_shop_settings
-  set data=jsonb_set(coalesce(data,'{}'::jsonb),'{delivery}',v_shop_delivery || jsonb_build_object('deliveryZoneConfig',v_new),true),
-      updated_at=now()
-  where user_id=v_uid;
-
-  update public.artessencia_v1_state
-  set data=jsonb_set(coalesce(data,'{}'::jsonb),'{settings,shopDelivery}',v_state_delivery || jsonb_build_object('deliveryZoneConfig',v_new),true),
-      revision=revision+1,updated_at=now()
-  where user_id=v_uid;
-
-  return v_current_rev+1;
-end;
-$$;
-
--- NÃO EXECUTAR: confirmar política EXECUTE e atualizar gravação geral primeiro.
- then
-      raise exception 'invalid fee';
-    end if;
-    v_fee := (v_zone->>'feeCents')::bigint;
-    if v_fee > 10000000 then raise exception 'fee out of range'; end if;
-    if jsonb_typeof(v_zone->'postalCodes') <> 'array' or jsonb_array_length(v_zone->'postalCodes') = 0 then
-      raise exception 'zone postal codes required';
-    end if;
-    if jsonb_array_length(v_zone->'postalCodes') > 1000 then raise exception 'too many postal codes'; end if;
-    for v_code_json in select value from jsonb_array_elements(v_zone->'postalCodes') loop
-      if jsonb_typeof(v_code_json) is distinct from 'string' then raise exception 'invalid postal code type'; end if;
-      v_code := v_code_json #>> '{}';
-      v_code_count := v_code_count + 1;
-      if v_code_count > 5000 then raise exception 'too many postal codes overall'; end if;
-      -- Formato canónico guardado na Cloud; o editor normaliza previamente.
-      if v_code !~ '^[0-9]{4}-[0-9]{3}
-      if v_code = any(v_codes) then raise exception 'duplicate postal code'; end if;
-      v_codes := array_append(v_codes,v_code);
-    end loop;
-  end loop;
-
-  v_new := jsonb_build_object(
-    'enabled',false,
-    'headquarters','Castelejo',
-    'zones',p_zones
-  );
-
-  update public.artessencia_shop_settings
-  set data=jsonb_set(coalesce(data,'{}'::jsonb),'{delivery}',v_shop_delivery || jsonb_build_object('deliveryZoneConfig',v_new),true),
-      updated_at=now()
-  where user_id=v_uid;
-
-  update public.artessencia_v1_state
-  set data=jsonb_set(coalesce(data,'{}'::jsonb),'{settings,shopDelivery}',v_state_delivery || jsonb_build_object('deliveryZoneConfig',v_new),true),
-      revision=revision+1,updated_at=now()
-  where user_id=v_uid;
-
-  return v_current_rev+1;
-end;
-$$;
-
--- NÃO EXECUTAR: confirmar política EXECUTE e atualizar gravação geral primeiro.
- then raise exception 'invalid postal code'; end if;
-      if v_code = any(v_codes) then raise exception 'duplicate postal code'; end if;
-      v_codes := array_append(v_codes,v_code);
-    end loop;
-  end loop;
-
-  v_new := jsonb_build_object(
-    'enabled',false,
-    'headquarters','Castelejo',
-    'zones',p_zones
-  );
-
-  update public.artessencia_shop_settings
-  set data=jsonb_set(coalesce(data,'{}'::jsonb),'{delivery}',v_shop_delivery || jsonb_build_object('deliveryZoneConfig',v_new),true),
-      updated_at=now()
-  where user_id=v_uid;
-
-  update public.artessencia_v1_state
-  set data=jsonb_set(coalesce(data,'{}'::jsonb),'{settings,shopDelivery}',v_state_delivery || jsonb_build_object('deliveryZoneConfig',v_new),true),
-      revision=revision+1,updated_at=now()
-  where user_id=v_uid;
-
-  return v_current_rev+1;
-end;
-$$;
-
--- NÃO EXECUTAR: confirmar política EXECUTE e atualizar gravação geral primeiro.
+$function$;
+-- NÃO EXECUTAR EM PRODUÇÃO.
