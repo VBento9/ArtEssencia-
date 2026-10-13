@@ -7327,6 +7327,21 @@ function openWhatsAppBusinessV1801(phone,message){
  }else window.open(fallback,'_blank');
 }
 function sendWhatsApp(id){const o=db.orders.find(x=>x.id===id);if(!o)return;let phone=normalizePhone(o.contact);if(phone.startsWith('9')&&phone.length===9)phone='351'+phone;if(!phone)return toast('Cliente sem número de telemóvel');openWhatsAppBusinessV1801(phone,orderMessage(id))}
+function sendReadyPaymentWhatsAppV20261013(id){
+ const o=db.orders.find(x=>x.id===id);if(!o)return toast('Encomenda não encontrada');
+ const balance=Math.max(0,calcOrder(o).total-(Number(o.paid)||0));
+ if(o.status!=='Pronta'||balance<=0.005)return toast('Aviso disponível apenas para encomendas prontas com pagamento pendente');
+ let phone=normalizePhone(o.contact);if(phone.startsWith('9')&&phone.length===9)phone='351'+phone;
+ if(!phone)return toast('Cliente sem número de telemóvel');
+ const cfg=db.settings||{};
+ const mbPhone=String(cfg.businessPhone||'').replace(/\D/g,'');
+ let payment='\\nValor em falta: '+euro(balance)+'.';
+ if(mbWayInstructionsForOrderV1800(o)&&mbPhone)payment+='\\nPagamento por MB WAY: '+mbPhone+'.';
+ if(o.payment==='Transferência'&&cfg.iban)payment+='\\nIBAN: '+cfg.iban+'.';
+ const msg='Olá '+(o.client||'')+'!\\nInformamos que a encomenda '+o.id+' da '+(cfg.businessName||'ArtEssencia')+' está pronta para entrega/levantamento.\\n'+
+ 'O pagamento ainda se encontra pendente.'+payment+'\\n'+(cfg.paymentNote||'')+'\\nObrigado pela preferência!';
+ openWhatsAppBusinessV1801(phone,msg);
+}
 function sendSMS(id){const o=db.orders.find(x=>x.id===id);if(!o)return;const phone=normalizePhone(o.contact);if(!phone)return toast('Cliente sem número de telemóvel');location.href='sms:'+phone+'?body='+encodeURIComponent(orderMessage(id))}
 function renderTrend(){const el=document.getElementById('trendChart');if(!el)return;const now=new Date(),vals=[];for(let i=11;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1),y=d.getFullYear(),m=d.getMonth();const os=db.orders.filter(o=>completed(o)&&o.status==='Entregue'&&(()=>{const x=dashboardOrderPeriodDateV1831(o);return !!x&&x.getFullYear()===y&&x.getMonth()===m})());const sales=os.reduce((a,o)=>a+calcOrder(o).total,0),profit=os.reduce((a,o)=>a+calcOrder(o).profit,0);vals.push({label:d.toLocaleDateString('pt-PT',{month:'short'}),sales,profit})}const max=Math.max(1,...vals.map(x=>x.sales));el.innerHTML=vals.map(x=>`<div class="trend-col"><div class="trend-value">${x.sales?euro(x.sales):''}</div><div style="display:flex;align-items:flex-end;gap:3px;height:150px;width:100%;justify-content:center"><div class="trend-bar" title="Faturação ${euro(x.sales)}" style="height:${Math.max(2,x.sales/max*145)}px"></div><div class="trend-bar profit" title="Lucro ${euro(x.profit)}" style="height:${Math.max(2,x.profit/max*145)}px"></div></div><div class="trend-label">${x.label}</div></div>`).join('')}
 function dashboardKpiGo(label){
@@ -7774,6 +7789,7 @@ function renderOrders(){
         <button class="btn" onclick="showOrder('${escapeHtml(o.id)}')">Ver detalhe</button>
         <select aria-label="Alterar estado" onchange="setStatus('${escapeHtml(o.id)}',this.value)">${['Pedido','Confirmada','Em produção','Pronta','Entregue','Cancelado'].map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}</select>
         <button class="btn" onclick="sendWhatsApp('${escapeHtml(o.id)}')">WhatsApp</button>
+        ${o.status==='Pronta'&&Math.max(0,calcOrder(o).total-(Number(o.paid)||0))>0.005?`<button class="btn" onclick="sendReadyPaymentWhatsAppV20261013('${escapeHtml(o.id)}')">Pronta · pagamento pendente</button>`:''}
         <button class="btn danger" onclick="${canDeleteTestOrder(o)?'deleteTestOrder':'deleteOrder'}('${escapeHtml(o.id)}')">${canDeleteTestOrder(o)?'Limpar teste':(canDeleteOrder(o)?'Eliminar':'Eliminar definitivamente')}</button>
        </div>
      </article>`;
