@@ -14338,6 +14338,18 @@ async function saveShopDeliverySettings(){
    toast('Guardado localmente, mas falhou na cloud')
  }
 }
+// Pré-configuração opt-in. Não chama RPC nem altera o objeto shopDelivery.
+async function openDeliveryZoneDraftV1(){
+ const root=document.getElementById('deliveryZoneDraftV1'); if(!root)return;
+ try{
+   const {mountDeliveryZoneEditor}=await import('./delivery/zone-editor.mjs');
+   const saved=JSON.parse(localStorage.getItem('artessencia-delivery-zone-draft-v1')||'null');
+   const snapshot={deliveryZoneConfig:saved||{enabled:false,headquarters:'Castelejo',zones:[]}};
+   mountDeliveryZoneEditor(root,snapshot,{onSave:async config=>{
+     localStorage.setItem('artessencia-delivery-zone-draft-v1',JSON.stringify({...config,enabled:false}));
+   }});
+ }catch(err){root.textContent='Não foi possível abrir o rascunho de localidades: '+(err?.message||'erro inesperado');}
+}
 function renderShopDeliverySettings(){
  renderDeliveryOverview();
  const s=shopDeliverySettings();
@@ -14394,6 +14406,14 @@ function renderShopDeliverySettings(){
     </div>
    </section>
   </div>
+
+  <section class="delivery-v33-card delivery-v33-wide">
+   <div class="delivery-v33-cardhead">
+    <div><strong>📍 Zonas de entrega — preparação</strong><small>Pré-configuração local, sem alterar portes, disponibilidade ou encomendas da Loja.</small></div>
+   </div>
+   <div class="btnrow"><button type="button" class="btn" onclick="openDeliveryZoneDraftV1()">Gerir localidades (rascunho)</button></div>
+   <div id="deliveryZoneDraftV1"></div>
+  </section>
 
   <section class="delivery-v33-card delivery-v33-wide">
    <div class="delivery-v33-cardhead">
