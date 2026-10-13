@@ -5,7 +5,7 @@ assert.equal((sql.match(/create or replace function/gi)||[]).length,1);
 assert.equal((sql.match(/\$function\$/g)||[]).length,2);
 assert.equal((sql.match(/return v_revision\+1;/g)||[]).length,1);
 assert.match(sql,/jsonb_typeof\(p_zones\) is distinct from 'array'/);
-assert.match(sql,/invalid postal type/);
+assert.match(sql,/invalid postal code type/);
 assert.match(sql,/\^\[0-9\]\{4\}-\[0-9\]\{3\}\$/);
 assert.match(sql,/cloud_revision_conflict/);
 assert.match(sql,/delivery sources diverged/);
