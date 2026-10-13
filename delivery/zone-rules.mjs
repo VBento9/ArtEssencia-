@@ -9,8 +9,10 @@ function validISODate(value) {
 }
 
 export function normalizePostalCode(input) {
-  const digits = String(input ?? '').replace(/\D/g, '');
-  return /^\d{7}$/.test(digits) ? digits.slice(0, 4) + '-' + digits.slice(4) : null;
+  const value = String(input ?? '').trim();
+  if (!/^[0-9]{4}[- ]?[0-9]{3}$/.test(value)) return null;
+  const digits = value.replace(/[- ]/g, '');
+  return digits.slice(0, 4) + '-' + digits.slice(4);
 }
 
 export function validateDeliveryZones(zones) {
