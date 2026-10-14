@@ -4,12 +4,17 @@ import { evaluateDeliveryDateTime } from './delivery-calendar.mjs';
 // Contrato isolado. Apenas o servidor pode fornecer produtos, desconto e configuracao.
 // Nao cria clientes, encomendas nem escreve na base de dados.
 export function evaluateTrustedDeliveryCheckout({request,server,nowISO}) {
-  if (!request || !server || !Array.isArray(request.items) || !request.items.length) throw new Error('invalid order');
+  if (!request || !server || !Array.isArray(request.items) || !request.items.length || request.items.length>100 || !Array.isArray(server.products)) throw new Error('invalid order');
   if (server.storeStatus?.mode !== 'open' || server.storeStatus.enabled !== true || server.storeStatus.accepting_orders !== true) return {accepted:false,reason:'store_not_accepting_orders'};
   if (request.fulfillment !== 'ENTREGA') return {accepted:false,reason:'not_delivery'};
-  const products = new Map(server.products.map(p=>[String(p.id),p]));
+  const products = new Map();
+  for (const p of server.products) {
+    if (!p || p.id==null || products.has(String(p.id))) throw new Error('invalid server products');
+    products.set(String(p.id),p);
+  }
   let subtotalCents=0;
   for (const line of request.items) {
+    if (!line || line.product_id==null) return {accepted:false,reason:'invalid_item'};
     const product = products.get(String(line.product_id));
     if (!product || product.active !== true || product.available !== true) return {accepted:false,reason:'product_unavailable'};
     if (!Number.isSafeInteger(line.quantity) || line.quantity<1 || line.quantity>1000 || !Number.isSafeInteger(product.priceCents) || product.priceCents<0) return {accepted:false,reason:'invalid_item'};
@@ -17,6 +22,7 @@ export function evaluateTrustedDeliveryCheckout({request,server,nowISO}) {
     if (!Number.isSafeInteger(sum) || !Number.isSafeInteger(subtotalCents+sum)) throw new Error('total overflow');
     subtotalCents+=sum;
   }
+  if (typeof request.postalCode !== 'string' || request.postalCode.length>20) return {accepted:false,reason:'invalid_postal_code'};
   const date=evaluateDeliveryDateTime({nowISO,deliveryDate:request.deliveryDate,deliveryTime:request.deliveryTime,leadHours:server.preparationHours??48});
   if (!date.eligible) return {accepted:false,reason:date.reason};
   const quote=computeDeliveryQuote({postalCode:request.postalCode,shopDelivery:server.shopDelivery,subtotalCents});
