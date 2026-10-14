@@ -18,9 +18,13 @@ export function normalizePostalCode(input) {
 export function validateDeliveryZones(zones) {
   if (!Array.isArray(zones) || zones.length > 100) throw new Error('invalid zones');
   const used = new Set();
+  const usedNames = new Set();
   let totalCodes = 0;
   return zones.map((zone) => {
     if (!zone || typeof zone.name !== 'string' || !zone.name.trim() || zone.name.trim().length > 100) throw new Error('invalid locality');
+    const nameKey = zone.name.trim().toLocaleLowerCase('pt-PT');
+    if (usedNames.has(nameKey)) throw new Error('duplicate locality');
+    usedNames.add(nameKey);
     if (typeof zone.enabled !== 'boolean') throw new Error('invalid zone status');
     if (!Number.isSafeInteger(zone.feeCents) || zone.feeCents < 0 || zone.feeCents > 10000000) throw new Error('invalid delivery fee');
     if (!Array.isArray(zone.postalCodes) || !zone.postalCodes.length || zone.postalCodes.length > 1000) throw new Error('postal codes required');
