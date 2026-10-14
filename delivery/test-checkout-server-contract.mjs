@@ -18,4 +18,11 @@ test('minimo de compra validado no servidor',()=>assert.equal(run(request,{...cf
 test('hora e antecedencia validadas no servidor',()=>assert.equal(run(request,cfg,'2026-10-17T18:00:00Z').accepted,false));
 test('entrega por segunda-feira permitida',()=>assert.equal(run({...request,deliveryDate:'2026-10-19'}).accepted,true));
 test('desconto excessivo limitado ao subtotal',()=>assert.equal(run(request,{...cfg,discountCents:999999}).totalCents,200));
+test('mais de 100 linhas rejeitadas',()=>assert.throws(()=>run({...request,items:Array(101).fill({product_id:'p1',quantity:1})})));
+test('catalogo com identificadores duplicados rejeitado',()=>assert.throws(()=>run(request,{...cfg,products:[...cfg.products,...cfg.products]})));
+test('identificador do produto em falta rejeitado',()=>assert.equal(run({...request,items:[{quantity:1}]}).accepted,false));
+test('produto inativo rejeitado',()=>assert.equal(run(request,{...cfg,products:[{...cfg.products[0],active:false}]}).accepted,false));
+test('codigo postal excessivo rejeitado',()=>assert.equal(run({...request,postalCode:'6230-111'.repeat(4)}).accepted,false));
+test('desconto negativo do servidor rejeitado',()=>assert.throws(()=>run(request,{...cfg,discountCents:-1})));
+test('sexta-feira ultrapassa o corte da semana',()=>assert.equal(run(request,cfg,'2026-10-16T10:00:00Z').accepted,false));
 console.log('TOTAL:',count);
