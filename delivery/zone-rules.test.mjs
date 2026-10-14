@@ -44,4 +44,5 @@ assert.equal(isEligibleDeliveryDay('2026-10-26','2026-10-25'),true);
 assert.equal(isEligibleDeliveryDay('2026-10-25','2026-11-01'),false);
 assert.equal(isEligibleDeliveryDay('2026-11-02','2026-11-01'),true);
 assert.equal(isEligibleDeliveryDay('2026-10-24','2026-10-18'),false);
+assert.throws(()=>validateDeliveryZones([{...zones[0]},{...zones[1],name:' casTELeJo '} ]));
 console.log('Testes de zonas e calendário concluídos.');
