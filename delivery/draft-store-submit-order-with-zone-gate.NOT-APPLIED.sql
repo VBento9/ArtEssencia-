@@ -1,6 +1,6 @@
 -- RASCUNHO DE CHECKOUT COMPLETO: NÃO APLICAR. ZONAS ATIVAS FALHAM EM SEGURANÇA.
 -- Baseado na função de produção consultada apenas para leitura.
--- A integração definitiva depende da validação temporal em Europe/Lisbon, RPC e permissões.
+-- Calendário Lisboa implementado no ramo; falta testar PostgreSQL, rever horários legados e permissões.
 CREATE OR REPLACE FUNCTION public.store_submit_order_v1(p_payload jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -150,13 +150,27 @@ begin
   -- Entregas por zonas: substitui tarifa geral SOMENTE quando ativadas.
   -- A configuracao v_s foi lida da base, e v_postal foi normalizado no servidor.
   IF v_fulfillment='ENTREGA' AND v_s #>> '{deliveryZoneConfig,enabled}'='true' THEN
+    -- Hora local do agendamento resolvida em instante real com timezone PostgreSQL.
+    -- DST: rejeitar horários não existentes e ambíguos na mudança de hora.
     IF v_dow NOT IN (0,1) THEN RAISE EXCEPTION 'delivery weekday unavailable'; END IF;
-    -- A validação definitiva do corte semanal e 48h requer um
-    -- resolvedor timezone/DST antes de ativar esta versão.
-    RAISE EXCEPTION 'delivery zones not ready for activation';
-    -- v_fee := public.artessencia_delivery_fee_from_zones_draft(
-    --    substring(v_postal from 1 for 4)||'-'||substring(v_postal from 5 for 3),v_s
-    -- )::numeric/100;
+    IF v_requested_date <
+      (timezone('Europe/Lisbon',clock_timestamp())::date
+       + ((7-extract(dow from timezone('Europe/Lisbon',clock_timestamp()))::int)%7)
+       + CASE WHEN extract(dow from timezone('Europe/Lisbon',clock_timestamp()))::int IN (0,5,6) THEN 7 ELSE 0 END)
+    THEN RAISE EXCEPTION 'weekly delivery cutoff'; END IF;
+    IF (v_requested_date + v_requested_time)
+       <> timezone('Europe/Lisbon', (v_requested_date + v_requested_time) AT TIME ZONE 'Europe/Lisbon')
+    THEN RAISE EXCEPTION 'nonexistent delivery time'; END IF;
+    IF timezone('Europe/Lisbon', ((v_requested_date + v_requested_time) AT TIME ZONE 'Europe/Lisbon') - interval '1 hour')
+       = (v_requested_date + v_requested_time)
+       OR timezone('Europe/Lisbon', ((v_requested_date + v_requested_time) AT TIME ZONE 'Europe/Lisbon') + interval '1 hour')
+       = (v_requested_date + v_requested_time)
+    THEN RAISE EXCEPTION 'ambiguous delivery time'; END IF;
+    IF ((v_requested_date + v_requested_time) AT TIME ZONE 'Europe/Lisbon') - clock_timestamp() < interval '48 hours'
+    THEN RAISE EXCEPTION 'minimum preparation time'; END IF;
+    v_fee := public.artessencia_delivery_fee_from_zones_draft(
+      substring(v_postal from 1 for 4)||'-'||substring(v_postal from 5 for 3),v_s
+    )::numeric/100;
   END IF;
 
 
