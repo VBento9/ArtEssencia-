@@ -25,4 +25,7 @@ test('produto inativo rejeitado',()=>assert.equal(run(request,{...cfg,products:[
 test('codigo postal excessivo rejeitado',()=>assert.equal(run({...request,postalCode:'6230-111'.repeat(4)}).accepted,false));
 test('desconto negativo do servidor rejeitado',()=>assert.throws(()=>run(request,{...cfg,discountCents:-1})));
 test('sexta-feira ultrapassa o corte da semana',()=>assert.equal(run(request,cfg,'2026-10-16T10:00:00Z').accepted,false));
+test('quinta-feira antes do corte mantém domingo imediato',()=>assert.equal(run(request,cfg,'2026-10-15T22:59:59Z').accepted,true));
+test('mudança de hora de outubro não invalida entrega à tarde',()=>assert.equal(run({...request,deliveryDate:'2026-10-25'},cfg,'2026-10-21T10:00:00Z').accepted,true));
+test('domingo da própria semana já não é elegível',()=>assert.equal(run(request,cfg,'2026-10-18T00:00:00Z').accepted,false));
 console.log('TOTAL:',count);
