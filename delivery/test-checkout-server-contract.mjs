@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import {evaluateTrustedDeliveryCheckout} from './checkout-server-contract.mjs';
+const cfg={storeStatus:{mode:'open',enabled:true,accepting_orders:true},shopDelivery:{localDeliveryEnabled:true,minOrderLocalDelivery:10,deliveryZoneConfig:{enabled:true,zones:[{name:'Castelejo',enabled:true,postalCodes:['6230-111'],feeCents:200}]}},products:[{id:'p1',priceCents:3250,active:true,available:true}],discountCents:100};
+const request={fulfillment:'ENTREGA',postalCode:'6230-111',deliveryDate:'2026-10-18',deliveryTime:'15:00',items:[{product_id:'p1',quantity:1,priceCents:1}],feeCents:0};
+const nowISO='2026-10-14T10:00:00Z';
+let count=0;
+function test(title, fn){fn();console.log('APROVADO:',title);count++}
+const run=(r=request,s=cfg,t=nowISO)=>evaluateTrustedDeliveryCheckout({request:r,server:s,nowISO:t});
+test('valor dos produtos e portes calculado pelo servidor',()=>assert.deepEqual([run().subtotalCents,run().feeCents,run().discountCents,run().totalCents],[3250,200,100,3350]));
+test('loja em atualização bloqueia',()=>assert.equal(run(request,{...cfg,storeStatus:{...cfg.storeStatus,mode:'updating'}}).accepted,false));
+test('loja fechada bloqueia',()=>assert.equal(run(request,{...cfg,storeStatus:{...cfg.storeStatus,mode:'closed'}}).accepted,false));
+test('zonas desativadas bloqueiam',()=>assert.equal(run(request,{...cfg,shopDelivery:{...cfg.shopDelivery,deliveryZoneConfig:{...cfg.shopDelivery.deliveryZoneConfig,enabled:false}}}).accepted,false));
+test('codigo postal fora da zona bloqueia',()=>assert.equal(run({...request,postalCode:'6230-999'}).accepted,false));
+test('quantidade manipulada bloqueia',()=>assert.equal(run({...request,items:[{product_id:'p1',quantity:-1}]}).accepted,false));
+test('produto desconhecido bloqueia',()=>assert.equal(run({...request,items:[{product_id:'no',quantity:1}]}).accepted,false));
+test('dia fora domingo e segunda bloqueia',()=>assert.equal(run({...request,deliveryDate:'2026-10-20'}).accepted,false));
+test('minimo de compra validado no servidor',()=>assert.equal(run(request,{...cfg,shopDelivery:{...cfg.shopDelivery,minOrderLocalDelivery:40}}).accepted,false));
+test('hora e antecedencia validadas no servidor',()=>assert.equal(run(request,cfg,'2026-10-17T18:00:00Z').accepted,false));
+test('entrega por segunda-feira permitida',()=>assert.equal(run({...request,deliveryDate:'2026-10-19'}).accepted,true));
+test('desconto excessivo limitado ao subtotal',()=>assert.equal(run(request,{...cfg,discountCents:999999}).totalCents,200));
+console.log('TOTAL:',count);
