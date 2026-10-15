@@ -138,7 +138,12 @@ begin
     v_fee:=coalesce((v_s->>'localDeliveryFee')::numeric,0);
   end if;
 
-  if v_start is null or v_end is null or v_requested_time<v_start or v_requested_time>v_end then raise exception 'selected time unavailable'; end if;
+  -- O novo calendário não deve ser bloqueado pela janela horária legada.
+  -- A janela de horários própria das zonas precisa de configuração separada;
+  -- até lá não confiar em intervalos antigos como autorização de horários.
+  if NOT (v_fulfillment='ENTREGA' AND v_s #>> '{deliveryZoneConfig,enabled}'='true')
+     and (v_start is null or v_end is null or v_requested_time<v_start or v_requested_time>v_end)
+  then raise exception 'selected time unavailable'; end if;
 
   for v_item in select * from jsonb_array_elements(v_items) loop
     select * into v_product from public.store_products where id=(v_item->>'product_id')::uuid and active=true and available=true;
