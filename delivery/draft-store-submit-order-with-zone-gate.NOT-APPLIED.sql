@@ -1,4 +1,4 @@
--- RASCUNHO DE CHECKOUT COMPLETO: NÃO APLICAR. ZONAS ATIVAS FALHAM EM SEGURANÇA.
+-- RASCUNHO DE CHECKOUT COMPLETO: NÃO APLICAR. INTEGRAÇÃO REAL NÃO VALIDADA.
 -- Baseado na função de produção consultada apenas para leitura.
 -- Calendário Lisboa implementado no ramo; falta testar PostgreSQL, rever horários legados e permissões.
 CREATE OR REPLACE FUNCTION public.store_submit_order_v1(p_payload jsonb)
@@ -156,6 +156,8 @@ begin
   -- Entregas por zonas: substitui tarifa geral SOMENTE quando ativadas.
   -- A configuracao v_s foi lida da base, e v_postal foi normalizado no servidor.
   IF v_fulfillment='ENTREGA' AND v_s #>> '{deliveryZoneConfig,enabled}'='true' THEN
+    -- Para não confiar em valores de hora ligeiramente diferentes ao longo da transação,
+    -- é necessário fixar um único instante para todas as verificações temporais.
     -- Hora local do agendamento resolvida em instante real com timezone PostgreSQL.
     -- DST: rejeitar horários não existentes e ambíguos na mudança de hora.
     IF v_dow NOT IN (0,1) THEN RAISE EXCEPTION 'delivery weekday unavailable'; END IF;
