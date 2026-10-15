@@ -5,15 +5,19 @@ import { normalizePostalCode, validateDeliveryZones, resolveLocalDelivery } from
 export const DEFAULT_DELIVERY_ZONE_CONFIG = Object.freeze({
   enabled: false,
   headquarters: 'Castelejo',
+  deliveryStart: null,
+  deliveryEnd: null,
   zones: []
 });
 
 export function readDeliveryZoneConfig(shopDelivery) {
   const raw = shopDelivery?.deliveryZoneConfig;
-  if (!raw || typeof raw !== 'object') return { enabled: false, headquarters: 'Castelejo', zones: [] };
+  if (!raw || typeof raw !== 'object') return { enabled: false, headquarters: 'Castelejo', deliveryStart: null, deliveryEnd: null, zones: [] };
   return {
     enabled: raw.enabled === true,
     headquarters: typeof raw.headquarters === 'string' && raw.headquarters.trim() ? raw.headquarters.trim() : 'Castelejo',
+    deliveryStart: raw.deliveryStart ?? null,
+    deliveryEnd: raw.deliveryEnd ?? null,
     zones: Array.isArray(raw.zones) ? raw.zones.map(z => ({
       name: String(z?.name ?? '').trim(),
       enabled: z?.enabled === true,
@@ -34,7 +38,12 @@ export function prepareDeliveryZoneConfig(config) {
     names.add(nameKey);
   }
   if (config.enabled && !normalized.some(zone => zone.enabled)) throw new Error('no active delivery locality');
-  return { enabled: config.enabled, headquarters: 'Castelejo', zones: normalized };
+  const start=config.deliveryStart??null, end=config.deliveryEnd??null;
+  const validTime=x=>typeof x==='string' && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(x);
+  if ((start!==null && !validTime(start)) || (end!==null && !validTime(end))) throw new Error('invalid delivery hours');
+  if (config.enabled && (!validTime(start) || !validTime(end))) throw new Error('delivery hours required');
+  if (start!==null && end!==null && start>=end) throw new Error('invalid delivery hours range');
+  return { enabled: config.enabled, headquarters: 'Castelejo', deliveryStart:start, deliveryEnd:end, zones: normalized };
 }
 
 export function quoteDeliveryZone(postalCode, shopDelivery) {
