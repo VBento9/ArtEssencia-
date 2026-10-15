@@ -55,7 +55,9 @@ begin
   -- Não permitir que o corpo enviado pelo navegador altere a nova chave;
   -- a fonte é o valor que está efetivamente no servidor.
   v_zone := v_current->'deliveryZoneConfig';
-  v_merged := p_shop_delivery - 'deliveryZoneConfig';
+  -- Atualizar apenas os campos recebidos, preservando os desconhecidos.
+  -- A zona é sempre obtida do servidor, nunca do cliente antigo.
+  v_merged := v_current || (p_shop_delivery - 'deliveryZoneConfig');
   if v_zone is not null then
     v_merged := v_merged || jsonb_build_object('deliveryZoneConfig',v_zone);
   end if;
