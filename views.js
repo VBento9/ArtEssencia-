@@ -554,7 +554,7 @@ function addZoneRow(z={name:'',enabled:true,feeCents:0,postalCodes:[]}){
  const card=el('div',{class:'card'}),locality=input('zoneName',z.name||'','text',{placeholder:'Ex.: Fundão'}),codes=textarea('zoneCodes',(z.postalCodes||[]).join(', ')),fee=input('zoneFee',(Number(z.feeCents||0)/100).toFixed(2),'number',{min:0,step:.01}),status=select('zoneStatus',[['true','Ativa'],['false','Inativa']],String(z.enabled===true));
  const fields=el('div',{class:'form-grid'});fields.append(field('Localidade',locality),field('Códigos postais completos, separados por vírgula',codes,true),field('Portes (€)',fee),field('Estado da localidade',status));
  card.append(fields,button('Remover localidade',()=>{card.remove();zoneFeedback.textContent='Localidade retirada apenas desta pré-visualização.'},'secondary'));
- card._zoneDraft=()=>({name:locality.value.trim(),enabled:status.value==='true',feeCents:Math.round(Number(fee.value)*100),postalCodes:codes.value.split(/[,;\n]/).map(x=>x.trim()).filter(Boolean)});
+ card._zoneDraft=()=>({name:locality.value.trim(),enabled:status.value==='true',feeCents:(fee.value.trim()!=='' && /^(?:0|[1-9]\\d{0,5})(?:[.,]\\d{1,2})?$/.test(fee.value.trim()))?Math.round(Number(fee.value.replace(',','.'))*100):NaN,postalCodes:codes.value.split(/[,;\n]/).map(x=>x.trim()).filter(Boolean)});
  zoneRows.append(card);
 }
 zoneDrafts.forEach(addZoneRow);
@@ -567,6 +567,7 @@ zonesCard.append(zoneHours,zoneRows,el('div',{class:'toolbar'},
    const zones=[...zoneRows.children].map(card=>card._zoneDraft()).filter(Boolean);
    if(zones.some(z=>!Number.isFinite(z.feeCents)))throw new Error('portes inválidos');
    const valid=module.prepareDeliveryZoneConfig({enabled:false,deliveryStart:zoneStart.value||null,deliveryEnd:zoneEnd.value||null,zones});
+   if(valid.zones.length===0)throw new Error('adicione pelo menos uma localidade');
    zoneFeedback.textContent='Configuração validada: '+valid.zones.length+' localidade(s). Não foi guardada nem ativada.';
   }catch(err){zoneFeedback.textContent='Configuração inválida: '+String(err?.message||err)}
  },'primary')),zoneFeedback);
