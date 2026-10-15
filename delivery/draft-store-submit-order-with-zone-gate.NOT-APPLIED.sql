@@ -162,6 +162,14 @@ begin
   -- Entregas por zonas: substitui tarifa geral SOMENTE quando ativadas.
   -- A configuracao v_s foi lida da base, e v_postal foi normalizado no servidor.
   IF v_fulfillment='ENTREGA' AND v_s #>> '{deliveryZoneConfig,enabled}'='true' THEN
+    -- Falhar em segurança até os horários próprios das zonas estarem configurados.
+    -- Não aceitar qualquer hora apenas por não aplicar a janela legada.
+    IF nullif(v_s #>> '{deliveryZoneConfig,deliveryStart}','') IS NULL OR
+       nullif(v_s #>> '{deliveryZoneConfig,deliveryEnd}','') IS NULL
+    THEN RAISE EXCEPTION 'zone delivery time window not configured'; END IF;
+    IF v_requested_time < (v_s #>> '{deliveryZoneConfig,deliveryStart}')::time OR
+       v_requested_time > (v_s #>> '{deliveryZoneConfig,deliveryEnd}')::time
+    THEN RAISE EXCEPTION 'zone delivery time unavailable'; END IF;
     -- Mesmo instante para o corte e para as 48 horas (tempo real, não navegador).
     v_delivery_validation_now:=clock_timestamp();
     -- Hora local do agendamento resolvida em instante real com timezone PostgreSQL.
