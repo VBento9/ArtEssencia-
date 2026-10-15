@@ -113,7 +113,7 @@ begin
   v_dow:=extract(dow from v_requested_date)::int;
   select x into v_ex from jsonb_array_elements(coalesce(v_s->'dateExceptions','[]'::jsonb)) x where x->>'date'=v_requested_date::text limit 1;
   if coalesce((v_ex->>'closed')::boolean,false) then raise exception 'selected date is closed'; end if;
-  if v_ex is null and not (v_dow in (select value::int from jsonb_array_elements_text(coalesce(v_s->'allowedWeekdays','[]'::jsonb)))) then raise exception 'selected weekday unavailable'; end if;
+  if NOT (v_fulfillment='ENTREGA' AND v_s #>> '{deliveryZoneConfig,enabled}'='true') AND v_ex is null and not (v_dow in (select value::int from jsonb_array_elements_text(coalesce(v_s->'allowedWeekdays','[]'::jsonb)))) then raise exception 'selected weekday unavailable'; end if;
 
   if v_fulfillment='LEVANTAMENTO' then
     if not (case when v_ex is null then coalesce((v_s->>'pickupEnabled')::boolean,false) else coalesce((v_ex->>'pickupEnabled')::boolean,false) end) then raise exception 'pickup unavailable'; end if;
@@ -125,7 +125,7 @@ begin
     if v_address is null then raise exception 'delivery address required'; end if;
     if length(v_postal)<>7 then raise exception 'delivery postal code required'; end if;
     v_prefix:=left(v_postal,4);
-    if jsonb_array_length(coalesce(v_s->'postalPrefixes','[]'::jsonb))>0 and not (v_prefix in (select value from jsonb_array_elements_text(coalesce(v_s->'postalPrefixes','[]'::jsonb)))) then raise exception 'delivery area unavailable'; end if;
+    if NOT (v_s #>> '{deliveryZoneConfig,enabled}'='true') AND jsonb_array_length(coalesce(v_s->'postalPrefixes','[]'::jsonb))>0 and not (v_prefix in (select value from jsonb_array_elements_text(coalesce(v_s->'postalPrefixes','[]'::jsonb)))) then raise exception 'delivery area unavailable'; end if;
     v_start:=coalesce(nullif(v_ex->>'localStart','')::time,nullif(v_s->>'localStart','')::time);
     v_end:=coalesce(nullif(v_ex->>'localEnd','')::time,nullif(v_s->>'localEnd','')::time);
     v_fee:=coalesce((v_s->>'localDeliveryFee')::numeric,0);
