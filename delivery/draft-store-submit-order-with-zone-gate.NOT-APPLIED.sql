@@ -115,7 +115,7 @@ begin
   if v_requested_date is null or v_requested_time is null then raise exception 'booking date and time required'; end if;
   if jsonb_typeof(v_items)<>'array' or jsonb_array_length(v_items)=0 then raise exception 'order items required'; end if;
 
-  if v_requested_date<current_date+coalesce((v_s->>'leadDays')::int,0) then raise exception 'minimum lead time not met'; end if;
+  if NOT (v_fulfillment='ENTREGA' AND v_s #>> '{deliveryZoneConfig,enabled}'='true') AND v_requested_date<current_date+coalesce((v_s->>'leadDays')::int,0) then raise exception 'minimum lead time not met'; end if;
   v_dow:=extract(dow from v_requested_date)::int;
   select x into v_ex from jsonb_array_elements(coalesce(v_s->'dateExceptions','[]'::jsonb)) x where x->>'date'=v_requested_date::text limit 1;
   if coalesce((v_ex->>'closed')::boolean,false) then raise exception 'selected date is closed'; end if;
