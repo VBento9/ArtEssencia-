@@ -554,7 +554,7 @@ function addZoneRow(z={name:'',enabled:true,feeCents:0,postalCodes:[]}){
  const card=el('div',{class:'card'}),locality=input('zoneName',z.name||'','text',{placeholder:'Ex.: Fundão'}),codes=textarea('zoneCodes',(z.postalCodes||[]).join(', ')),fee=input('zoneFee',(Number(z.feeCents||0)/100).toFixed(2),'number',{min:0,step:.01}),status=select('zoneStatus',[['true','Ativa'],['false','Inativa']],String(z.enabled===true));
  const fields=el('div',{class:'form-grid'});fields.append(field('Localidade',locality),field('Códigos postais completos, separados por vírgula',codes,true),field('Portes (€)',fee),field('Estado da localidade',status));
  card.append(fields,button('Remover localidade',()=>{card.remove();zoneFeedback.textContent='Localidade retirada apenas desta pré-visualização.'},'secondary'));
- card._zoneDraft=()=>({name:locality.value.trim(),enabled:status.value==='true',feeCents:Math.round(Number(fee.value)*100),postalCodes:codes.value.split(/[,;\\n]/).map(x=>x.trim()).filter(Boolean)});
+ card._zoneDraft=()=>({name:locality.value.trim(),enabled:status.value==='true',feeCents:Math.round(Number(fee.value)*100),postalCodes:codes.value.split(/[,;\n]/).map(x=>x.trim()).filter(Boolean)});
  zoneRows.append(card);
 }
 zoneDrafts.forEach(addZoneRow);
