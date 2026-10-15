@@ -58,4 +58,6 @@ $body$;
 -- Guardar v_fee e desconto na mesma transação. NÃO confiar nos preços do cliente.
 -- NOTA: o checkout existente usa prefixos/localDeliveryFee; alterar só com branch,
 -- testes locais completos e estratégia de publicação/rollback.
--- Bloqueia invocação da API pública (RPC interna v1 executa como proprietário).\nREVOKE ALL ON FUNCTION public.artessencia_delivery_fee_from_zones_draft(text,jsonb) FROM PUBLIC, anon, authenticated;\n-- Antes de qualquer instalação rever o owner, a execução de v1 e a política de permissões.
+-- Bloqueia invocação da API pública (RPC interna v1 executa como proprietário).
+REVOKE ALL ON FUNCTION public.artessencia_delivery_fee_from_zones_draft(text,jsonb) FROM PUBLIC, anon, authenticated;
+-- Antes de qualquer instalação rever o owner, a execução de v1 e a política de permissões.
