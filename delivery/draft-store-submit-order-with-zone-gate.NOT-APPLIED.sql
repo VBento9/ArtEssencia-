@@ -56,6 +56,12 @@ begin
   select coalesce((value->>'enabled')::boolean,false),coalesce((value->>'accepting_orders')::boolean,false)
     into v_enabled,v_accepting from public.store_settings where key='store_status';
   if not coalesce(v_enabled,false) or not coalesce(v_accepting,false) then raise exception 'store is not accepting orders'; end if;
+  -- Não permitir pedidos quando o estado administrativo mantém o modo bloqueado,
+  -- mesmo que flags legadas estejam incoerentes.
+  if exists(select 1 from public.store_settings where key='store_status'
+    and lower(coalesce(value->>'mode','')) in ('updating','closed')) then
+    raise exception 'store is not accepting orders';
+  end if;
 
   select coalesce(data->'delivery','{}'::jsonb) into v_s
     from public.artessencia_shop_settings where user_id=v_owner;
