@@ -572,8 +572,9 @@ export async function deliveryView(ctx,opts={}){const rows=await db.all('deliver
    if(!Array.isArray(zones))throw new Error('É necessário carregar as zonas antes de guardar.');
    const name=locality.value.trim(), euros=Number(price.value);
    if(!name||!Number.isFinite(euros)||euros<0||!Number.isSafeInteger(Math.round(euros*100)))throw new Error('Localidade ou tarifa inválida.');
+   const existing=zones.find(z=>String(z.locality||'').toLocaleLowerCase('pt-PT')===name.toLocaleLowerCase('pt-PT'));
    const other=zones.filter(z=>String(z.locality||'').toLocaleLowerCase('pt-PT')!==name.toLocaleLowerCase('pt-PT'));
-   await cloud.deliveryZonesWrite([...other,{locality:name,fee_cents:Math.round(euros*100),active:active.value==='true',postal_codes:[]}]);
+   await cloud.deliveryZonesWrite([...other,{locality:name,fee_cents:Math.round(euros*100),active:active.value==='true',postal_codes:Array.isArray(existing?.postal_codes)?existing.postal_codes:[]}]);
    await refreshZones();toast('Zona guardada na Cloud.');
   }catch(e){alert(e.message)}
  },'primary'),
