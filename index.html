@@ -14427,7 +14427,7 @@ function renderShopDeliverySettings(){
   <section class="delivery-v33-card delivery-v33-wide">
    <div class="delivery-v33-cardhead"><div><strong>📍 Zonas e tarifas de entrega</strong><small>Uma linha por código postal. Apenas zonas ativas permitem entrega.</small></div></div>
    <div class="field"><label>Localidade; Código postal; Portes (€); Ativa (sim/não)</label>
-    <textarea id="deliveryZonesTextV20261016" rows="5" placeholder="Castelejo; 6230-001; 2,00; sim">${(s.zones||[]).flatMap(z=>(z.postal_codes||[]).map(cp=>[z.locality,cp,(Number(z.fee_cents||0)/100).toFixed(2).replace('.',','),z.active?'sim':'não'].join('; '))).join('\\n')}</textarea>
+    <textarea id="deliveryZonesTextV20261016" rows="5" placeholder="Castelejo; 6230-001; 2,00; sim">${(s.zones||[]).flatMap(z=>(z.postal_codes||[]).map(cp=>[z.locality,cp,(Number(z.fee_cents||0)/100).toFixed(2).replace('.',','),z.active?'sim':'não'].join('; '))).join('\n')}</textarea>
     <small>As tarifas são calculadas no servidor. Não abre a Loja nem ativa encomendas.</small></div>
    <div class="btnrow"><button type="button" class="btn primary" onclick="saveShopDeliveryZonesV20261016()">Guardar zonas na Cloud</button></div>
   </section>
