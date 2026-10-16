@@ -14338,6 +14338,35 @@ async function saveShopDeliverySettings(){
    toast('Guardado localmente, mas falhou na cloud')
  }
 }
+async function saveShopDeliveryZonesV20261016(){
+ const input=document.getElementById('deliveryZonesTextV20261016');
+ if(!input)return;
+ const lines=input.value.split(/\n/).map(x=>x.trim()).filter(Boolean);
+ if(lines.length>100){toast('Máximo de 100 zonas');return}
+ const zones=[];
+ for(const line of lines){
+  const parts=line.split(';').map(x=>x.trim());
+  if(parts.length!==4){toast('Formato: Localidade; Código postal; Portes em euros; Ativa (sim/não)');return}
+  const [locality,postal,amount,enabled]=parts;
+  if(!locality||locality.length>100||!/^[0-9]{4}-[0-9]{3}$/.test(postal)||!/^(?:0|[1-9][0-9]*)(?:[.,][0-9]{1,2})?$/.test(amount)||!/^(sim|não|nao)$/i.test(enabled)){toast('Verifica a localidade, código postal, portes e estado');return}
+  const cents=Math.round(Number(amount.replace(',','.'))*100);
+  if(!Number.isSafeInteger(cents)||cents>9999999){toast('Valor dos portes inválido');return}
+  zones.push({locality,postal_codes:[postal],fee_cents:cents,active:enabled.toLowerCase()==='sim'});
+ }
+ const keys=new Set();
+ for(const z of zones){const k=z.locality.toLocaleLowerCase('pt-PT')+'|'+z.postal_codes[0];if(z.active&&keys.has(k)){toast('Zona ativa duplicada');return}if(z.active)keys.add(k)}
+ try{
+  const c=initCloudClient(),u=cloudUser||await ensureCloudSession();
+  if(!c||!u)throw new Error('Sessão Cloud indisponível');
+  const {data,error}=await c.rpc('artessencia_update_delivery_zones_v1',{p_zones:zones});
+  if(error)throw error;
+  if(data?.ok!==true)throw new Error('A Cloud não confirmou as zonas');
+  shopDeliverySettings().zones=zones;
+  save();
+  toast('Zonas de entrega guardadas na Cloud');
+ }catch(e){toast('Não foi possível guardar as zonas na Cloud: '+(e?.message||'erro de ligação'))}
+}
+
 function renderShopDeliverySettings(){
  renderDeliveryOverview();
  const s=shopDeliverySettings();
@@ -14394,6 +14423,14 @@ function renderShopDeliverySettings(){
     </div>
    </section>
   </div>
+
+  <section class="delivery-v33-card delivery-v33-wide">
+   <div class="delivery-v33-cardhead"><div><strong>📍 Zonas e tarifas de entrega</strong><small>Uma linha por código postal. Apenas zonas ativas permitem entrega.</small></div></div>
+   <div class="field"><label>Localidade; Código postal; Portes (€); Ativa (sim/não)</label>
+    <textarea id="deliveryZonesTextV20261016" rows="5" placeholder="Castelejo; 6230-001; 2,00; sim">${(s.zones||[]).flatMap(z=>(z.postal_codes||[]).map(cp=>[z.locality,cp,(Number(z.fee_cents||0)/100).toFixed(2).replace('.',','),z.active?'sim':'não'].join('; '))).join('\\n')}</textarea>
+    <small>As tarifas são calculadas no servidor. Não abre a Loja nem ativa encomendas.</small></div>
+   <div class="btnrow"><button type="button" class="btn primary" onclick="saveShopDeliveryZonesV20261016()">Guardar zonas na Cloud</button></div>
+  </section>
 
   <section class="delivery-v33-card delivery-v33-wide">
    <div class="delivery-v33-cardhead">
