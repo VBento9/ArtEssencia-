@@ -95,3 +95,17 @@ export async function reconcile(){
  try{return await reconcilePromise}finally{reconcilePromise=null}
 }
 export async function status(){const c=await cfg();const s=session();return {configured:!!(c.url&&c.key),loggedIn:!!s,email:s?.user?.email||'',lastPush:await db.getSetting('cloud.lastPush',''),lastPull:await db.getSetting('cloud.lastPull',''),lastReconcile:await db.getSetting('cloud.lastReconcile','')}}
+
+/** Read the owner's existing delivery zones. Never infer an empty list from a failed read. */
+export async function deliveryZonesRead(){
+ const s=await ensureSession();
+ const data=await request('/rest/v1/rpc/artessencia_list_delivery_zones_v1',{method:'POST',token:s.access_token,body:{}});
+ if(!Array.isArray(data))throw new Error('Resposta inválida das zonas de entrega.');
+ return data;
+}
+/** Update only owner delivery zones through the server-side authorization RPC. */
+export async function deliveryZonesWrite(zones){
+ const s=await ensureSession();
+ if(!Array.isArray(zones))throw new Error('Zonas de entrega inválidas.');
+ return request('/rest/v1/rpc/artessencia_update_delivery_zones_v2',{method:'POST',token:s.access_token,body:{p_zones:zones}});
+}
