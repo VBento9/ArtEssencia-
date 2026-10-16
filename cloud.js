@@ -95,3 +95,13 @@ export async function reconcile(){
  try{return await reconcilePromise}finally{reconcilePromise=null}
 }
 export async function status(){const c=await cfg();const s=session();return {configured:!!(c.url&&c.key),loggedIn:!!s,email:s?.user?.email||'',lastPush:await db.getSetting('cloud.lastPush',''),lastPull:await db.getSetting('cloud.lastPull',''),lastReconcile:await db.getSetting('cloud.lastReconcile','')}}
+
+export async function saveDeliveryZones(zones){
+ const live=await ensureSession();
+ if(!Array.isArray(zones))throw new Error('Zonas inválidas.');
+ const result=await request('/rest/v1/rpc/artessencia_update_delivery_zones_v1',{
+  method:'POST',token:live.access_token,body:{p_zones:zones}
+ });
+ if(result?.ok!==true||!Array.isArray(result?.zones))throw new Error('A Cloud não confirmou a gravação das zonas.');
+ return result.zones;
+}
