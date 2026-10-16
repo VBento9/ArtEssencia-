@@ -547,7 +547,7 @@ export async function homepageView(ctx){const rows=await db.all('homepage'),cfg=
 export async function campaignsView(ctx){const campaigns=await db.all('campaigns'),root=el('div',{class:'grid'});root.append(el('div',{class:'card'},section('Campanhas & Push','As campanhas ficam preparadas localmente; o envio real usa a Cloud quando configurada.',[button('+ Nova campanha',()=>campaignModal(ctx),'primary small')]),table(['Criada','Título','Destino','Estado'],campaigns.sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt))).map(c=>[fmt(c.createdAt),esc(c.title),esc(c.destination||'Loja'),badge(c.status||'Rascunho',c.status==='Enviada'?'ok':c.status==='Agendada'?'warn':'neutral')]))));return root}
 
 export async function deliveryView(ctx,opts={}){const rows=await db.all('deliverySettings'),cfg=rows[0]||{id:'main',pickup:true,local:true,shipping:false,leadDays:3,localFee:0,radiusKm:0,weekdays:['1','2','3','4','5','6'],dailyCapacity:10,notes:''},closed=await db.all('unavailableDates'),root=el('div',{class:'grid'});const card=el('div',{class:'card'},section('Métodos & capacidade','Regras que a futura loja utiliza para validar datas'));const f=el('div',{class:'form-grid'}),pickup=select('pickup',[['true','Disponível'],['false','Indisponível']],String(cfg.pickup)),local=select('local',[['true','Disponível'],['false','Indisponível']],String(cfg.local)),shipping=select('shipping',[['true','Disponível'],['false','Indisponível']],String(cfg.shipping)),lead=input('lead',cfg.leadDays||0,'number',{min:0}),fee=input('fee',cfg.localFee||0,'number',{step:.01,min:0}),radius=input('radius',cfg.radiusKm||0,'number',{min:0}),cap=input('cap',cfg.dailyCapacity||0,'number',{min:0}),days=input('days',(cfg.weekdays||[]).join(','), 'text',{placeholder:'1,2,3,4,5,6 (Seg=1 ... Dom=0)'}),notes=textarea('notes',cfg.notes||'');f.append(field('Levantamento',pickup),field('Entrega local',local),field('Envio',shipping),field('Antecedência mínima (dias)',lead),field('Taxa local (€)',fee),field('Raio local (km)',radius),field('Capacidade diária (un./encomendas)',cap),field('Dias disponíveis',days),field('Notas',notes,true));card.append(f,el('div',{class:'toolbar',style:'margin-top:12px'},button('Guardar regras',async()=>{await db.put('deliverySettings',{id:'main',pickup:pickup.value==='true',local:local.value==='true',shipping:shipping.value==='true',leadDays:Number(lead.value),localFee:Number(fee.value),radiusKm:Number(radius.value),dailyCapacity:Number(cap.value),weekdays:days.value.split(',').map(x=>x.trim()).filter(Boolean),notes:notes.value,updatedAt:new Date().toISOString()});toast('Entregas atualizadas.')},'primary')));const zoneCard=el('div',{class:'card'},section('Zonas e portes','Configuração local de rascunho; ainda não sincroniza com a Loja.'));
-const zoneRows=Array.isArray(cfg.zones)?cfg.zones:[];
+const zoneRows=await db.getSetting('cloud.deliveryZonesDraft',[]);
 const zoneList=el('div',{class:'grid'});
 function addZoneRow(z={locality:'',active:false,postal_codes:[],fee_cents:0}){
  const name=input('zoneLocality',z.locality||'','text',{placeholder:'Localidade'}),
@@ -567,9 +567,8 @@ zoneRows.forEach(addZoneRow);
 zoneCard.append(zoneList,el('div',{class:'toolbar'},button('Adicionar zona',()=>addZoneRow(),'ghost'),button('Guardar zonas (rascunho local)',async()=>{
  try{
   const zones=normalizeDeliveryZones(Array.from(zoneList.children).map(entry=>entry.zoneData()));
-  const latest=(await db.all('deliverySettings')).find(x=>x.id==='main')||cfg;
-  await db.put('deliverySettings',{...latest,id:'main',zones,updatedAt:new Date().toISOString()});
-  toast('Zonas guardadas apenas nesta instalação. Não altera a Loja.');
+  await db.setSetting('cloud.deliveryZonesDraft',zones);
+  toast('Rascunho guardado neste dispositivo. Não altera os portes da Loja.');
  }catch(e){toast(e.message||'Não foi possível guardar as zonas.')}
 },'primary')));
 root.append(card,zoneCard,deliveryCalendar(ctx,closed));return root}
