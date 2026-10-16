@@ -14338,9 +14338,47 @@ async function saveShopDeliverySettings(){
    toast('Guardado localmente, mas falhou na cloud')
  }
 }
+let deliveryZonesCacheV20261016=null;
+let deliveryZonesLoadingV20261016=false;
+function formatDeliveryZonesV20261016(zones){
+ return (zones||[]).flatMap(z=>(Array.isArray(z.postal_codes)?z.postal_codes:[]).map(cp=>
+  [String(z.locality||''),String(cp),(Number(z.fee_cents||0)/100).toFixed(2).replace('.',','),z.active?'sim':'não'].join('; '))).join('\n');
+}
+function setDeliveryZonesStatusV20261016(message){
+ const info=document.getElementById('deliveryZonesStatusV20261016');
+ if(info)info.textContent=message;
+}
+async function loadShopDeliveryZonesV20261016(force=false){
+ const input=document.getElementById('deliveryZonesTextV20261016');
+ if(!input||deliveryZonesLoadingV20261016)return;
+ if(force&&deliveryZonesCacheV20261016!==null&&input.value!==formatDeliveryZonesV20261016(deliveryZonesCacheV20261016)
+    && !confirm('Descartar alterações ainda não guardadas e recarregar as zonas da Cloud?'))return;
+ deliveryZonesLoadingV20261016=true;
+ input.disabled=true;
+ setDeliveryZonesStatusV20261016('A carregar zonas da Cloud…');
+ try{
+  const c=initCloudClient(),u=cloudUser||await ensureCloudSession();
+  if(!c||!u)throw new Error('Inicia sessão na Cloud para gerir as zonas');
+  const {data,error}=await c.from('artessencia_shop_settings').select('data').eq('user_id',u.id).maybeSingle();
+  if(error)throw error;
+  if(!data)throw new Error('As configurações da Loja não estão disponíveis');
+  const zones=data.data?.delivery?.zones;
+  if(zones!=null&&!Array.isArray(zones))throw new Error('Formato das zonas na Cloud inválido');
+  deliveryZonesCacheV20261016=zones||[];
+  input.value=formatDeliveryZonesV20261016(deliveryZonesCacheV20261016);
+  setDeliveryZonesStatusV20261016('Zonas carregadas da Cloud. Confirma os valores antes de guardar.');
+ }catch(e){
+  deliveryZonesCacheV20261016=null;
+  setDeliveryZonesStatusV20261016('Não foi possível carregar as zonas: '+(e?.message||'erro de ligação'));
+ }finally{
+  deliveryZonesLoadingV20261016=false;
+  input.disabled=deliveryZonesCacheV20261016===null;
+ }
+}
 async function saveShopDeliveryZonesV20261016(){
  const input=document.getElementById('deliveryZonesTextV20261016');
  if(!input)return;
+ if(deliveryZonesCacheV20261016===null){toast('Carrega primeiro as zonas da Cloud');return}
  const lines=input.value.split(/\n/).map(x=>x.trim()).filter(Boolean);
  if(lines.length>100){toast('Máximo de 100 zonas');return}
  const zones=[];
@@ -14355,14 +14393,16 @@ async function saveShopDeliveryZonesV20261016(){
  }
  const keys=new Set();
  for(const z of zones){const k=z.locality.toLocaleLowerCase('pt-PT')+'|'+z.postal_codes[0];if(z.active&&keys.has(k)){toast('Zona ativa duplicada');return}if(z.active)keys.add(k)}
+ if(zones.length===0&&!confirm('Confirma que pretendes deixar todas as zonas de entrega vazias?'))return;
  try{
   const c=initCloudClient(),u=cloudUser||await ensureCloudSession();
   if(!c||!u)throw new Error('Sessão Cloud indisponível');
   const {data,error}=await c.rpc('artessencia_update_delivery_zones_v1',{p_zones:zones});
   if(error)throw error;
   if(data?.ok!==true)throw new Error('A Cloud não confirmou as zonas');
-  shopDeliverySettings().zones=zones;
-  save();
+  deliveryZonesCacheV20261016=zones;
+  input.value=formatDeliveryZonesV20261016(zones);
+  setDeliveryZonesStatusV20261016('Zonas guardadas na Cloud.');
   toast('Zonas de entrega guardadas na Cloud');
  }catch(e){toast('Não foi possível guardar as zonas na Cloud: '+(e?.message||'erro de ligação'))}
 }
@@ -14427,9 +14467,9 @@ function renderShopDeliverySettings(){
   <section class="delivery-v33-card delivery-v33-wide">
    <div class="delivery-v33-cardhead"><div><strong>📍 Zonas e tarifas de entrega</strong><small>Uma linha por código postal. Apenas zonas ativas permitem entrega.</small></div></div>
    <div class="field"><label>Localidade; Código postal; Portes (€); Ativa (sim/não)</label>
-    <textarea id="deliveryZonesTextV20261016" rows="5" placeholder="Castelejo; 6230-001; 2,00; sim">${(s.zones||[]).flatMap(z=>(z.postal_codes||[]).map(cp=>[z.locality,cp,(Number(z.fee_cents||0)/100).toFixed(2).replace('.',','),z.active?'sim':'não'].join('; '))).join('\n')}</textarea>
+    <textarea id="deliveryZonesTextV20261016" rows="5" placeholder="Castelejo; 6230-001; 2,00; sim"></textarea>
     <small>As tarifas são calculadas no servidor. Não abre a Loja nem ativa encomendas.</small></div>
-   <div class="btnrow"><button type="button" class="btn primary" onclick="saveShopDeliveryZonesV20261016()">Guardar zonas na Cloud</button></div>
+   <small id="deliveryZonesStatusV20261016">A carregar zonas da Cloud…</small><div class="btnrow"><button type="button" class="btn" onclick="loadShopDeliveryZonesV20261016(true)">Recarregar zonas da Cloud</button><button type="button" class="btn primary" onclick="saveShopDeliveryZonesV20261016()">Guardar zonas na Cloud</button></div>
   </section>
 
   <section class="delivery-v33-card delivery-v33-wide">
@@ -14483,6 +14523,12 @@ function renderShopDeliverySettings(){
   </div>
  </div>`;
  setTimeout(()=>loadPublicChannelStatusV1785('store'),0);
+ const zoneText=document.getElementById('deliveryZonesTextV20261016');
+ if(zoneText){
+  if(deliveryZonesCacheV20261016!==null)zoneText.value=formatDeliveryZonesV20261016(deliveryZonesCacheV20261016);
+  else if(!deliveryZonesLoadingV20261016)loadShopDeliveryZonesV20261016();
+ }
+
 }
 
 
