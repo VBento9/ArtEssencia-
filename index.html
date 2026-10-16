@@ -14375,6 +14375,26 @@ async function loadShopDeliveryZonesV20261016(force=false){
   input.disabled=deliveryZonesCacheV20261016===null;
  }
 }
+function addDeliveryZoneV20261016(){
+ const e=document.getElementById('deliveryZonesTextV20261016');
+ if(!e||e.disabled)return;
+ e.value+=(e.value.trim()?'\n':'')+'Nova localidade; 0000-000; 0,00; não';
+ e.focus();setDeliveryZonesStatusV20261016('Preenche a nova zona e guarda na Cloud.');
+}
+function toggleDeliveryZoneV20261016(){
+ const e=document.getElementById('deliveryZonesTextV20261016');if(!e||e.disabled)return;
+ const i=e.value.slice(0,e.selectionStart).split('\n').length-1;
+ const lines=e.value.split('\n');const parts=(lines[i]||'').split(';').map(x=>x.trim());
+ if(parts.length!==4||!/^(sim|não|nao)$/i.test(parts[3])){toast('Seleciona uma linha válida');return}
+ parts[3]=parts[3].toLowerCase()==='sim'?'não':'sim';lines[i]=parts.join('; ');e.value=lines.join('\n');
+ setDeliveryZonesStatusV20261016('Alteração por guardar na Cloud.');
+}
+function deleteDeliveryZoneV20261016(){
+ const e=document.getElementById('deliveryZonesTextV20261016');if(!e||e.disabled)return;
+ const i=e.value.slice(0,e.selectionStart).split('\n').length-1;const lines=e.value.split('\n');
+ if(!lines[i]?.trim()||!confirm('Eliminar a linha selecionada? A Cloud só será alterada ao guardar.'))return;
+ lines.splice(i,1);e.value=lines.join('\n');setDeliveryZonesStatusV20261016('Eliminação por guardar na Cloud.');
+}
 async function saveShopDeliveryZonesV20261016(){
  const input=document.getElementById('deliveryZonesTextV20261016');
  if(!input)return;
@@ -14469,7 +14489,7 @@ function renderShopDeliverySettings(){
    <div class="field"><label>Localidade; Código postal; Portes (€); Ativa (sim/não)</label>
     <textarea id="deliveryZonesTextV20261016" rows="5" placeholder="Castelejo; 6230-001; 2,00; sim"></textarea>
     <small>As tarifas são calculadas no servidor. Não abre a Loja nem ativa encomendas.</small></div>
-   <small id="deliveryZonesStatusV20261016">A carregar zonas da Cloud…</small><div class="btnrow"><button type="button" class="btn" onclick="loadShopDeliveryZonesV20261016(true)">Recarregar zonas da Cloud</button><button type="button" class="btn primary" onclick="saveShopDeliveryZonesV20261016()">Guardar zonas na Cloud</button></div>
+   <small id="deliveryZonesStatusV20261016">A carregar zonas da Cloud…</small><div class="btnrow"><button type="button" class="btn" onclick="addDeliveryZoneV20261016()">+ Adicionar zona</button><button type="button" class="btn" onclick="toggleDeliveryZoneV20261016()">Ativar/desativar linha</button><button type="button" class="btn" onclick="deleteDeliveryZoneV20261016()">Eliminar linha</button><button type="button" class="btn" onclick="loadShopDeliveryZonesV20261016(true)">Recarregar zonas da Cloud</button><button type="button" class="btn primary" onclick="saveShopDeliveryZonesV20261016()">Guardar zonas na Cloud</button></div>
   </section>
 
   <section class="delivery-v33-card delivery-v33-wide">
