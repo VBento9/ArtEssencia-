@@ -570,7 +570,14 @@ zoneCard.append(zoneList,el('div',{class:'toolbar'},button('Adicionar zona',()=>
   await db.setSetting('cloud.deliveryZonesDraft',zones);
   toast('Rascunho guardado neste dispositivo. Não altera os portes da Loja.');
  }catch(e){toast(e.message||'Não foi possível guardar as zonas.')}
-},'primary')));
+},'primary'),button('Guardar zonas na Cloud',async()=>{
+ try{
+  const zones=normalizeDeliveryZones(Array.from(zoneList.children).map(entry=>entry.zoneData()));
+  const saved=await cloud.saveDeliveryZones(zones);
+  await db.setSetting('cloud.deliveryZonesDraft',saved);
+  toast('Zonas confirmadas pelo Supabase.');
+ }catch(e){toast('Não foi possível guardar na Cloud: '+String(e?.message||e))}
+},'ghost')));
 root.append(card,zoneCard,deliveryCalendar(ctx,closed));return root}
 function deliveryCalendar(ctx,closed){const card=el('div',{class:'card'},section('Dias indisponíveis','Toca num dia para fechar/abrir a produção e entregas')),now=new Date(),year=now.getFullYear(),month=now.getMonth(),title=el('strong',{},now.toLocaleDateString('pt-PT',{month:'long',year:'numeric'}));card.append(title);const grid=el('div',{class:'calendar-grid',style:'margin-top:10px'});['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].forEach(d=>grid.append(el('div',{class:'calendar-head'},d)));let first=new Date(year,month,1).getDay();first=(first+6)%7;for(let i=0;i<first;i++)grid.append(el('div',{class:'calendar-day empty'}));const n=new Date(year,month+1,0).getDate();for(let d=1;d<=n;d++){const iso=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`,isClosed=closed.some(x=>x.id===iso);grid.append(el('button',{class:`calendar-day ${isClosed?'closed':''}`,type:'button',onclick:async()=>{if(isClosed)await db.del('unavailableDates',iso);else await db.put('unavailableDates',{id:iso,date:iso,reason:'Indisponível',updatedAt:new Date().toISOString()});ctx.refresh()}},String(d),isClosed?el('small',{},'Fechado'):null))}card.append(grid);return card}
 
