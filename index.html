@@ -14308,12 +14308,12 @@ function renderDeliveryOverview(){
 }
 async function saveShopDeliverySettings(){
  const s=shopDeliverySettings();
- s.pickupEnabled=!!document.getElementById('setPickupEnabled')?.checked;
+ s.pickupEnabled=false; // Levantamento desativado pela política de entrega da Loja.
  s.localDeliveryEnabled=!!document.getElementById('setLocalEnabled')?.checked;
  s.pickupFee=Math.max(0,Number(document.getElementById('setPickupFee')?.value)||0);
  s.localDeliveryFee=Math.max(0,Number(document.getElementById('setLocalFee')?.value)||0);
  s.minOrderLocalDelivery=Math.max(0,Number(document.getElementById('setLocalMin')?.value)||0);
- s.leadDays=Math.max(0,Math.min(30,Number(document.getElementById('setLeadDays')?.value)||0));
+ s.leadDays=2; // Representação legada no Backoffice; o servidor exige 48 horas exatas.
  s.pickupStart=document.getElementById('setPickupStart')?.value||'10:00';
  s.pickupEnd=document.getElementById('setPickupEnd')?.value||'19:00';
  s.localStart=document.getElementById('setLocalStart')?.value||'11:00';
@@ -14325,7 +14325,7 @@ async function saveShopDeliverySettings(){
  s.maxUnitsPerDay=Math.max(0,Number(document.getElementById('setMaxUnitsDay')?.value)||0);
  s.orderApprovalMode=document.getElementById('setOrderApprovalMode')?.value==='production'?'production':'testing';
  s.note=document.getElementById('setDeliveryNote')?.value.trim()||'';
- s.allowedWeekdays=[...document.querySelectorAll('[data-weekday]:checked')].map(x=>Number(x.dataset.weekday));
+ s.allowedWeekdays=[0,1]; // Apenas domingo e segunda-feira.
  const readiness=deliveryReadinessV140(s);
  if(s.orderApprovalMode==='production'&&!readiness.ok){s.orderApprovalMode='testing';const modeSel=document.getElementById('setOrderApprovalMode');if(modeSel)modeSel.value='testing';toast('Modo Produção não ativado: '+readiness.issues[0]);}
  save();renderShopDeliverySettings();renderShopCapacityAgenda();
@@ -14439,8 +14439,8 @@ function renderShopDeliverySettings(){
     <div class="delivery-v33-two">
    <section class="delivery-v33-card">
     <div class="delivery-v33-cardhead">
-     <div><strong>🏪 Levantamento</strong><small>O cliente recolhe a encomenda contigo.</small></div>
-     <label class="delivery-switch"><input id="setPickupEnabled" type="checkbox" ${s.pickupEnabled?'checked':''}><span></span></label>
+     <div><strong>🏪 Levantamento</strong><small>Desativado: esta Loja permite apenas entrega local.</small></div>
+     <label class="delivery-switch" title="Levantamento indisponível nesta modalidade"><input id="setPickupEnabled" type="checkbox" disabled><span></span></label>
     </div>
     <div class="delivery-v33-fields three">
      <div class="field"><label>Taxa (€)</label><input id="setPickupFee" type="number" min="0" step="0.01" value="${s.pickupFee||0}"></div>
@@ -14455,11 +14455,11 @@ function renderShopDeliverySettings(){
      <label class="delivery-switch"><input id="setLocalEnabled" type="checkbox" ${s.localDeliveryEnabled?'checked':''}><span></span></label>
     </div>
     <div class="delivery-v33-fields two">
-     <div class="field"><label>Taxa (€)</label><input id="setLocalFee" type="number" min="0" step="0.01" value="${s.localDeliveryFee||0}"></div>
+     <div class="field"><label>Taxa geral anterior (€)</label><input id="setLocalFee" type="number" min="0" step="0.01" value="${s.localDeliveryFee||0}" disabled><small>Não utilizada. Os portes são definidos abaixo por zona.</small></div>
      <div class="field"><label>Mínimo (€)</label><input id="setLocalMin" type="number" min="0" step="0.01" value="${s.minOrderLocalDelivery||0}"></div>
      <div class="field"><label>Desde</label><input id="setLocalStart" type="time" value="${s.localStart||'11:00'}"></div>
      <div class="field"><label>Até</label><input id="setLocalEnd" type="time" value="${s.localEnd||'19:00'}"></div>
-     <div class="field full"><label>Prefixos de código postal permitidos</label><input id="setPostalPrefixes" value="${(s.postalPrefixes||[]).join(', ')}" placeholder="Ex.: 6230, 6231"></div>
+     <div class="field full"><label>Prefixos antigos (informativo)</label><input id="setPostalPrefixes" value="${(s.postalPrefixes||[]).join(', ')}" disabled><small>As novas entregas utilizam os códigos postais completos definidos nas zonas.</small></div>
     </div>
    </section>
   </div>
@@ -14477,11 +14477,11 @@ function renderShopDeliverySettings(){
     <div><strong>📅 Disponibilidade e capacidade</strong><small>Controla antecedência, dias de trabalho e limites diários.</small></div>
    </div>
    <div class="delivery-v33-fields three">
-    <div class="field"><label>Antecedência mínima</label><div class="delivery-input-suffix"><input id="setLeadDays" type="number" min="0" max="30" value="${s.leadDays||0}"><span>dias</span></div></div>
+    <div class="field"><label>Antecedência mínima</label><div class="delivery-input-suffix"><input id="setLeadDays" type="number" value="2" disabled><span>dias</span></div><small>O servidor aplica um mínimo exato de 48 horas e o limite de sexta-feira.</small></div>
     <div class="field"><label>Máx. encomendas/dia</label><input id="setMaxOrdersDay" type="number" min="0" step="1" value="${s.maxOrdersPerDay||0}"><small>0 = sem limite</small></div>
     <div class="field"><label>Máx. unidades/unidades/dia</label><input id="setMaxUnitsDay" type="number" min="0" step="1" value="${s.maxUnitsPerDay||0}"><small>0 = sem limite</small></div>
     <div class="field full"><label>Dias disponíveis</label>
-     <div class="delivery-weekdays">${days.map(([l,n])=>`<label class="delivery-day"><input type="checkbox" data-weekday="${n}" ${(s.allowedWeekdays||[]).includes(n)?'checked':''}><span>${l}</span></label>`).join('')}</div>
+     <div class="delivery-weekdays">${days.map(([l,n])=>`<label class="delivery-day"><input type="checkbox" data-weekday="${n}" ${(n===0||n===1)?'checked':''} disabled><span>${l}</span></label>`).join('')}</div><small>Apenas domingos e segundas-feiras, sujeitos a exceções de encerramento.</small>
     </div>
    </div>
   </section>
