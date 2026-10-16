@@ -549,6 +549,7 @@ export async function deliveryView(ctx,opts={}){const rows=await db.all('deliver
  const zonesCard=el('div',{class:'card'},section('Zonas de Entrega da Loja Online','Configuração Cloud independente das regras locais acima. A Loja permanece fechada até validação final.'));
  const zoneStatus=el('div',{class:'notice info'},'A carregar zonas do Supabase…');
  const zoneRows=el('div',{class:'grid'});
+ const readiness=el('div',{class:'notice info'},'Loja NÃO PRONTA: falta validar os códigos postais e concluir os testes de encomendas.');
  const locality=input('zone-locality','','text',{placeholder:'Ex.: Castelejo, Covilhã'});
  const price=input('zone-price','3.00','number',{min:0,step:.01});
  const active=select('zone-active',[['true','Ativa'],['false','Inativa']],'false');
@@ -566,7 +567,7 @@ export async function deliveryView(ctx,opts={}){const rows=await db.all('deliver
   }
   zoneStatus.textContent=zones.length+' zona(s) carregada(s) da Cloud. A gravação não abre a Loja.';
  }
- zonesCard.append(zoneStatus,zoneRows,zoneForm,el('div',{class:'toolbar'},
+ zonesCard.append(readiness,zoneStatus,zoneRows,zoneForm,el('div',{class:'toolbar'},
  button('Guardar zona na Cloud',async()=>{
   try{
    if(!Array.isArray(zones))throw new Error('É necessário carregar as zonas antes de guardar.');
