@@ -9,7 +9,7 @@ BEGIN
  IF v_uid IS NULL OR NOT public.artessencia_is_owner_v1() THEN
   RAISE EXCEPTION 'not authorized';
  END IF;
- IF p_zones IS NULL OR jsonb_typeof(p_zones) IS DISTINCT FROM 'array' THEN
+ IF jsonb_typeof(p_zones) IS DISTINCT FROM 'array' THEN
   RAISE EXCEPTION 'invalid delivery zones';
  END IF;
  IF jsonb_array_length(p_zones)>100 THEN RAISE EXCEPTION 'too many zones'; END IF;
@@ -23,12 +23,12 @@ BEGIN
  ) THEN RAISE EXCEPTION 'invalid zone entry'; END IF;
  IF EXISTS (
   SELECT 1 FROM jsonb_array_elements(p_zones) AS x(zone)
-  WHERE jsonb_array_length(x.zone->'postal_codes') NOT BETWEEN 1 AND 100
+  WHERE CASE WHEN jsonb_typeof(x.zone->'postal_codes')='array' THEN jsonb_array_length(x.zone->'postal_codes') NOT BETWEEN 1 AND 100 ELSE true END
  ) THEN RAISE EXCEPTION 'invalid number of postal codes'; END IF;
  IF EXISTS (
   SELECT 1
   FROM jsonb_array_elements(p_zones) AS x(zone)
-  CROSS JOIN LATERAL jsonb_array_elements(x.zone->'postal_codes') AS c(code)
+  CROSS JOIN LATERAL jsonb_array_elements(CASE WHEN jsonb_typeof(x.zone->'postal_codes')='array' THEN x.zone->'postal_codes' ELSE '[]'::jsonb END) AS c(code)
   WHERE jsonb_typeof(c.code) IS DISTINCT FROM 'string'
      OR (c.code #>> '{}') !~ '^[0-9]{4}-[0-9]{3}$'
  ) THEN RAISE EXCEPTION 'invalid postal code'; END IF;
@@ -37,7 +37,7 @@ BEGIN
    SELECT lower(trim(x.zone->>'locality')) AS locality,
           c.code #>> '{}' AS postal_code, count(*) AS n
    FROM jsonb_array_elements(p_zones) AS x(zone)
-   CROSS JOIN LATERAL jsonb_array_elements(x.zone->'postal_codes') AS c(code)
+   CROSS JOIN LATERAL jsonb_array_elements(CASE WHEN jsonb_typeof(x.zone->'postal_codes')='array' THEN x.zone->'postal_codes' ELSE '[]'::jsonb END) AS c(code)
    WHERE x.zone->>'active'='true'
    GROUP BY 1,2 HAVING count(*)>1
   ) duplicates
