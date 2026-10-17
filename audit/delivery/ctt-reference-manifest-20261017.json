@@ -1,0 +1,706 @@
+{
+  "zip_sha256": "779af4dfdff8b6a7c7f248d9abcd7e249c650733ec446594a341f078059051f6",
+  "archive_member_date": "2026-10-17",
+  "source_rows": 330650,
+  "national_unique_codes": 192946,
+  "national_shared_codes": 4066,
+  "scope": "CTT district 05 / municipality 04 (Fundão)",
+  "reference_rows": 479,
+  "excluded_associations": 61,
+  "coverage": [
+    {
+      "locality": "Alcaide",
+      "ctt_identity": "05/04/18384",
+      "total_codes": 7,
+      "eligible_codes": 7,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Alcaria",
+      "ctt_identity": "05/04/18394",
+      "total_codes": 10,
+      "eligible_codes": 9,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Cruzamento de Alcaria",
+      "ctt_identity": "05/04/18396",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Pesinho",
+      "ctt_identity": "05/04/18399",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Ponte de Meimoa",
+      "ctt_identity": "05/04/18401",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Alcongosta",
+      "ctt_identity": "05/04/18405",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Acipreste",
+      "ctt_identity": "05/04/18406",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Aldeia de Joanes",
+      "ctt_identity": "05/04/18407",
+      "total_codes": 2,
+      "eligible_codes": 1,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Quinta da Escola",
+      "ctt_identity": "05/04/18408",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Quinta das Gaiolas",
+      "ctt_identity": "05/04/18409",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Quinta das Palmeiras",
+      "ctt_identity": "05/04/18410",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Vale das Pereiras",
+      "ctt_identity": "05/04/18412",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Aldeia Nova do Cabo",
+      "ctt_identity": "05/04/18413",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Quinta do Outeiro",
+      "ctt_identity": "05/04/18414",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Alpedrinha",
+      "ctt_identity": "05/04/18415",
+      "total_codes": 70,
+      "eligible_codes": 68,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Monte da Touca",
+      "ctt_identity": "05/04/18416",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Quinta Anjo da Guarda",
+      "ctt_identity": "05/04/18418",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Quinta da Tapada",
+      "ctt_identity": "05/04/18420",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Quinta do Loureiro",
+      "ctt_identity": "05/04/18422",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Termas da Touca",
+      "ctt_identity": "05/04/18423",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Touca",
+      "ctt_identity": "05/04/18424",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Atalaia do Campo",
+      "ctt_identity": "05/04/18425",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Alqueidão",
+      "ctt_identity": "05/04/18426",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Barroca",
+      "ctt_identity": "05/04/18427",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "São Martinho",
+      "ctt_identity": "05/04/18428",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Bogas de Baixo",
+      "ctt_identity": "05/04/18429",
+      "total_codes": 19,
+      "eligible_codes": 19,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Maxial da Ladeira",
+      "ctt_identity": "05/04/18432",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Bogas de Cima",
+      "ctt_identity": "05/04/18434",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Bogas do Meio",
+      "ctt_identity": "05/04/18435",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Boxinos",
+      "ctt_identity": "05/04/18436",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Descoberto",
+      "ctt_identity": "05/04/18437",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Malhada Velha",
+      "ctt_identity": "05/04/18438",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Capinha",
+      "ctt_identity": "05/04/18439",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Currais",
+      "ctt_identity": "05/04/18441",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Rascoa",
+      "ctt_identity": "05/04/18442",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Açor",
+      "ctt_identity": "05/04/18443",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Castelejo",
+      "ctt_identity": "05/04/18444",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Enxabarda",
+      "ctt_identity": "05/04/18445",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Castelo Novo",
+      "ctt_identity": "05/04/18448",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Chãos",
+      "ctt_identity": "05/04/18464",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Donas",
+      "ctt_identity": "05/04/18465",
+      "total_codes": 2,
+      "eligible_codes": 1,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Teixugas",
+      "ctt_identity": "05/04/18471",
+      "total_codes": 2,
+      "eligible_codes": 1,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Enxames",
+      "ctt_identity": "05/04/18472",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Ribeiro dos Baxiqueiros",
+      "ctt_identity": "05/04/18473",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Rossio do Magalão",
+      "ctt_identity": "05/04/18474",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Salgueiral",
+      "ctt_identity": "05/04/18475",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Simadas",
+      "ctt_identity": "05/04/18477",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Vale Teresa",
+      "ctt_identity": "05/04/18478",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Escarigo",
+      "ctt_identity": "05/04/18480",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Anjo da Guarda",
+      "ctt_identity": "05/04/18481",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Fatela",
+      "ctt_identity": "05/04/18483",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Fatela Gare",
+      "ctt_identity": "05/04/18484",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Quinta Cabeço Quintas",
+      "ctt_identity": "05/04/18485",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Quinta Vale Terno",
+      "ctt_identity": "05/04/18486",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Vila Pouca",
+      "ctt_identity": "05/04/18488",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Chão da Toca",
+      "ctt_identity": "05/04/18494",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Fundão",
+      "ctt_identity": "05/04/18495",
+      "total_codes": 158,
+      "eligible_codes": 148,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Vale de Canas",
+      "ctt_identity": "05/04/18515",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Janeiro de Cima",
+      "ctt_identity": "05/04/18518",
+      "total_codes": 27,
+      "eligible_codes": 27,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Lavacolhos",
+      "ctt_identity": "05/04/18519",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Quinta da Filhadeira",
+      "ctt_identity": "05/04/18520",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Cabeça do Boi",
+      "ctt_identity": "05/04/18521",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Gile",
+      "ctt_identity": "05/04/18522",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Mata da Rainha",
+      "ctt_identity": "05/04/18523",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Martianas",
+      "ctt_identity": "05/04/18524",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Orca",
+      "ctt_identity": "05/04/18525",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Zebras",
+      "ctt_identity": "05/04/18526",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Pêro Viseu",
+      "ctt_identity": "05/04/18527",
+      "total_codes": 49,
+      "eligible_codes": 48,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Vales de Pêro Viseu",
+      "ctt_identity": "05/04/18531",
+      "total_codes": 6,
+      "eligible_codes": 5,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Póvoa de Atalaia",
+      "ctt_identity": "05/04/18532",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Quintãs",
+      "ctt_identity": "05/04/18540",
+      "total_codes": 2,
+      "eligible_codes": 2,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Salgueiro",
+      "ctt_identity": "05/04/18542",
+      "total_codes": 3,
+      "eligible_codes": 3,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Silvares",
+      "ctt_identity": "05/04/18553",
+      "total_codes": 41,
+      "eligible_codes": 40,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Soalheira",
+      "ctt_identity": "05/04/18555",
+      "total_codes": 2,
+      "eligible_codes": 1,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Cascalhais",
+      "ctt_identity": "05/04/18564",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Courela",
+      "ctt_identity": "05/04/18565",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Souto da Casa",
+      "ctt_identity": "05/04/18575",
+      "total_codes": 56,
+      "eligible_codes": 56,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Vale D'Urso",
+      "ctt_identity": "05/04/18578",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Vale Mendinho",
+      "ctt_identity": "05/04/18579",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Vale Palaio",
+      "ctt_identity": "05/04/18580",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Freixial",
+      "ctt_identity": "05/04/18581",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Telhado",
+      "ctt_identity": "05/04/18582",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Catrão",
+      "ctt_identity": "05/04/18583",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Cortiçada",
+      "ctt_identity": "05/04/18584",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Monte Leal",
+      "ctt_identity": "05/04/18585",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Monte Valente",
+      "ctt_identity": "05/04/18586",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Póvoa da Palhaça",
+      "ctt_identity": "05/04/18587",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Quinta da Torre",
+      "ctt_identity": "05/04/18589",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Vale de Prazeres",
+      "ctt_identity": "05/04/18590",
+      "total_codes": 2,
+      "eligible_codes": 1,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Carvalhal",
+      "ctt_identity": "05/04/18591",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Quinta do Rosales",
+      "ctt_identity": "05/04/18592",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Senhora do Abade",
+      "ctt_identity": "05/04/18593",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Valverde",
+      "ctt_identity": "05/04/18594",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Urgueiro",
+      "ctt_identity": "05/04/59227",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    },
+    {
+      "locality": "Alcanceria",
+      "ctt_identity": "05/04/59284",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Valongo",
+      "ctt_identity": "05/04/61266",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Forca",
+      "ctt_identity": "05/04/71792",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Lameira Longa",
+      "ctt_identity": "05/04/75993",
+      "total_codes": 1,
+      "eligible_codes": 0,
+      "complete_postal_coverage": false
+    },
+    {
+      "locality": "Souto Alto",
+      "ctt_identity": "05/04/96108",
+      "total_codes": 1,
+      "eligible_codes": 1,
+      "complete_postal_coverage": true
+    }
+  ],
+  "limitation": "Postal-locality association only; does not prove street/door or physical residence."
+}
