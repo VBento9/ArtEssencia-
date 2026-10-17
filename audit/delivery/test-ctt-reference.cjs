@@ -1,0 +1,54 @@
+// Tests the actual CTT import and existing deployed lookup/quote in isolated PostgreSQL.
+const assert=require('node:assert/strict'),fs=require('node:fs');
+const {PGlite}=require(process.env.AE_PGLITE_MODULE||'@electric-sql/pglite');
+(async()=>{
+ const folder=process.argv[2];if(!folder)throw Error('Expected prepared CTT directory');
+ const db=new PGlite();let n=0;
+ const check=(ok,label)=>{assert(ok,label);n++;console.log('PASS',label)};
+ const reference=JSON.parse(fs.readFileSync(folder+'/reference.json','utf8'));
+ const manifest=JSON.parse(fs.readFileSync(folder+'/manifest.json','utf8'));
+ const importSql=fs.readFileSync(folder+'/import.sql','utf8');
+ await db.exec(`create table artessencia_postal_locality_reference(postal_code text primary key check(postal_code ~ '^[0-9]{4}-[0-9]{3}$'),locality_key text not null,source_name text not null,source_version text not null,verified_at timestamptz not null);
+ create table store_owner(user_id uuid primary key,active boolean);
+ create table artessencia_shop_settings(user_id uuid primary key,data jsonb);
+ insert into store_owner values('00000000-0000-0000-0000-000000000001',true);
+ insert into artessencia_shop_settings values('00000000-0000-0000-0000-000000000001','{"delivery":{"localDeliveryEnabled":false,"zones":[]}}');
+ create function store_delivery_settings_v1() returns jsonb language sql as $$select data->'delivery' from artessencia_shop_settings limit 1$$;`);
+ const deployed=fs.readFileSync('audit/delivery/deployed-existing-functions-20261017.sql','utf8');
+ const definitions=JSON.parse(fs.readFileSync('audit/delivery/live-function-snapshot.json','utf8'));
+ await db.exec(deployed.slice(deployed.indexOf('CREATE OR REPLACE FUNCTION public.artessencia_postal_matches_locality_v1')));
+ await db.exec(definitions.find(x=>x.definition.includes('FUNCTION public.store_delivery_fee_for_address_v1(')).definition);
+ const quoteDefinition=deployed.slice(deployed.indexOf('CREATE OR REPLACE FUNCTION public.store_quote_delivery_zone_v1'),deployed.indexOf('CREATE OR REPLACE FUNCTION public.artessencia_list_delivery_zones_v1'));
+ await db.exec(quoteDefinition);
+ await db.exec(importSql);
+ const scalar=async(sql,args)=>(await db.query(sql,args)).rows[0].value;
+ check(await scalar('select count(*)::int as value from artessencia_postal_locality_reference')===manifest.reference_rows,'atomic import has expected row count');
+ const matches=(loc,cp)=>scalar('select artessencia_postal_matches_locality_v1($1,$2) as value',[loc,cp]);
+ for(const row of reference)assert(await matches(row.locality_key,row.postal_code));
+ check(true,'all imported associations accepted by actual deployed lookup');
+ for(const code of ['6230-050','6230-173','6230-210','6230-481'])
+  check(await scalar('select count(*)::int as value from artessencia_postal_locality_reference where postal_code=$1',[code])===0,'shared CP quarantined '+code);
+ check(await matches('Castelejo','6230-152'),'current Castelejo association');
+ check(await matches('Enxabarda','6230-153'),'current Enxabarda association');
+ check(!await matches('Castelejo','6230-153'),'same prefix cannot authorize another locality');
+ check(!await matches('Fundão','6230-152'),'different locality cannot select cheaper zone');
+ check(!await matches('Alcaide','6230-001'),'obsolete historic Alcaide code not imported');
+ check(await matches('Alcaide','6230-009'),'new Alcaide code recognized');
+ check(!await matches('Aldeia Nova do Cabo','6230-050'),'Aldeia Nova do Cabo not authorized solely by shared CP');
+ const zones=[{locality:'Castelejo',fee_cents:425,active:true,postal_codes:[]}];
+ await db.query("update artessencia_shop_settings set data=jsonb_set(data,'{delivery,zones}',$1::jsonb)",[JSON.stringify(zones)]);
+ const quote=(loc,cp)=>scalar('select store_quote_delivery_zone_v1($1,$2) as value',[loc,cp]);
+ check((await quote('Castelejo','6230-152')).ok===false,'global disabled blocks quote despite active referenced zone');
+ await db.exec("update artessencia_shop_settings set data=jsonb_set(data,'{delivery,localDeliveryEnabled}','true')");
+ check((await quote('Castelejo','6230-152')).fee_cents===425,'server uses editable zone fee');
+ zones[0].fee_cents=580;
+ await db.query("update artessencia_shop_settings set data=jsonb_set(data,'{delivery,zones}',$1::jsonb)",[JSON.stringify(zones)]);
+ check((await quote('Castelejo','6230-152')).fee_cents===580,'Cloud fee changes take effect without republishing');
+ zones[0].active=false;
+ await db.query("update artessencia_shop_settings set data=jsonb_set(data,'{delivery,zones}',$1::jsonb)",[JSON.stringify(zones)]);
+ check((await quote('Castelejo','6230-152')).ok===false,'inactive locality blocked');
+ let refused=false;try{await db.exec(importSql)}catch(e){refused=/Postal reference changed/.test(e.message);await db.exec('ROLLBACK')}
+ check(refused,'second import refuses to overwrite existing references');
+ check(await scalar('select count(*)::int as value from artessencia_postal_locality_reference')===manifest.reference_rows,'failed reimport leaves data intact');
+ console.log('TOTAL',n,'checks; no production contact, prices are fixtures.');await db.close();
+})().catch(e=>{console.error(e);process.exitCode=1});
