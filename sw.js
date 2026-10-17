@@ -1,7 +1,7 @@
-const CACHE='artessencia-backoffice-pwa-refresh-20261017';
-const CORE=['/','/index.html','/manifest.webmanifest','/brand-artessencia.png','/icon-192.png','/icon-512.png'];
-self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).catch(()=>{}));self.skipWaiting()});
-self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
+const CACHE='artessencia-backoffice-1.9.7';
+const CORE=['/','/index.html','/pwa-update.js','/manifest.webmanifest','/brand-artessencia.png','/icon-192.png','/icon-512.png'];
+self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)));self.skipWaiting()});
+self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE&&(k.startsWith('artessencia-backoffice-')||k.startsWith('artessencia-v12-'))).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('message',event=>{if(event.data?.type==='SKIP_WAITING')self.skipWaiting()});
 self.addEventListener('fetch',event=>{
  if(event.request.method!=='GET')return;
@@ -10,7 +10,7 @@ self.addEventListener('fetch',event=>{
  // Ficheiros de código e versão nunca devem ser recuperados de uma cache antiga.
  const fresh=/\.(?:js|css|json|webmanifest)$/i.test(url.pathname)||url.pathname==='/sw.js';
  if(fresh){event.respondWith(fetch(event.request,{cache:'no-store'}));return}
- event.respondWith(fetch(event.request).then(res=>{if(res.ok){const copy=res.clone();caches.open(CACHE).then(c=>c.put(event.request,copy)).catch(()=>{})}return res}).catch(()=>caches.match(event.request).then(r=>r||caches.match('/index.html'))));
+ event.respondWith(fetch(event.request,{cache:event.request.mode==='navigate'?'no-store':'default'}).then(res=>{if(res.ok){const copy=res.clone();caches.open(CACHE).then(c=>c.put(event.request,copy)).catch(()=>{})}return res}).catch(()=>caches.match(event.request).then(r=>r||(event.request.mode==='navigate'?caches.match('/index.html'):Response.error()))));
 });
 function pushPayload(event){try{return event.data?.json?.()||{}}catch(e){return {body:event.data?.text?.()||''}}}
 self.addEventListener('push',event=>{
