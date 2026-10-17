@@ -9,7 +9,6 @@
 <title>ArtEssencia Backoffice</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="ArtEssencia Backoffice">
-<link rel="manifest" href="./manifest.webmanifest">
 
 <style>
 :root{--brown:#5A240B;--rose:#F12473;--cream:#FFFDF9;--gold:#FFF4CC;--green:#DFF6EE;--blue:#11ADB5;--purple:#93469C;--yellow:#FFB21A;--red:#FFD8E6;--line:#F0DED2;--shadow:0 8px 24px rgba(90,36,11,.10)}
@@ -5791,6 +5790,18 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
   <section id="delivery" class="screen">
     <div class="delivery-hero card"><div><div class="section-title" style="margin:0">Entregas & Capacidade</div><p class="muted" style="margin:4px 0 0">Controla levantamento, entrega local, horários, zonas e disponibilidade da loja online.</p></div><div id="deliveryModeHero"></div></div>
     <div id="deliverySummary" class="delivery-summary"></div>
+    <div class="card" style="margin-top:10px" id="deliveryZonesV197">
+      <h3>Zonas de Entrega da Loja Online</h3>
+      <p>A gravação das zonas não abre a loja. A loja deve permanecer fechada até validação final.</p>
+      <p id="deliveryZonesStatusV197" role="status">Abre este módulo para carregar as zonas da Cloud.</p>
+      <div id="deliveryZonesRowsV197"></div>
+      <form id="deliveryZonesFormV197" onsubmit="event.preventDefault();saveDeliveryZoneV197()" class="form-grid">
+        <div class="field"><label for="zoneLocalityV197">Localidade</label><input id="zoneLocalityV197" required maxlength="100" placeholder="Ex.: Castelejo"></div>
+        <div class="field"><label for="zoneFeeV197">Portes (€)</label><input id="zoneFeeV197" type="number" required min="0" max="99999.99" step="0.01" value="3.00"></div>
+        <div class="field"><label for="zoneActiveV197">Estado</label><select id="zoneActiveV197"><option value="false">Inativa</option><option value="true">Ativa</option></select></div>
+        <div><button id="zoneSaveV197" class="btn primary" disabled>Guardar zona na Cloud</button><button type="button" class="btn" onclick="loadDeliveryZonesV197()">Recarregar</button></div>
+      </form>
+    </div>
     <div class="card delivery-settings-pro" style="margin-top:10px"><div class="delivery-block-head"><div><div class="section-title" style="margin:0">Configuração da loja</div><small>Definições usadas pela loja para aceitar datas e métodos de entrega.</small></div></div><div id="shopDeliverySettingsBox"></div></div>
     <div class="card delivery-calendar-pro" style="margin-top:10px"><div class="capacity-head capacity-head-pro"><div><span class="capacity-kicker">PLANEAMENTO DE PRODUÇÃO</span><h3 style="margin:2px 0 0">Agenda de capacidade</h3><p class="muted" style="margin:5px 0 0">Calendário mensal das encomendas online, unidades reservadas e capacidade restante.</p></div><div class="capacity-nav"><button class="btn capacity-nav-arrow" onclick="changeCapacityMonth(-1)">‹</button><strong id="capacityMonthLabel"></strong><button class="btn capacity-nav-arrow" onclick="changeCapacityMonth(1)">›</button><button class="btn" onclick="capacityCalendarToday()">Hoje</button></div></div><div id="capacityMonthKpis" class="capacity-month-kpis"></div><div id="shopCapacityAgenda"></div></div>
   </section>
@@ -5974,7 +5985,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.5';
+const APP_VERSION='1.9.7';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -7058,11 +7069,50 @@ function go(id){
  const contextMap={dashboard:'VISÃO GERAL',sale:'ENCOMENDAS',orders:'ENCOMENDAS',quotes:'ORÇAMENTOS',production:'PRODUÇÃO',costs:'GESTÃO',stock:'GESTÃO',purchases:'GESTÃO',cash:'FINANCEIRO',clients:'CLIENTES',email:'COMUNICAÇÕES',digitalStats:'ESTATÍSTICAS DIGITAIS',reports:'RELATÓRIOS',quantityPricing:'PRECIFICAÇÃO',products:'CATÁLOGO DIGITAL',commercialCalendar:'PLANEAMENTO COMERCIAL',publication:'PUBLICAÇÃO',catalogDigital:'CATÁLOGO DIGITAL',visualCatalogs:'CONTEÚDO',catalogs:'CATÁLOGO DIGITAL',specialEditions:'CONTEÚDO SAZONAL',homepage:'CONTEÚDO PÚBLICO',socialAI:'MARKETING',campaigns:'MARKETING',delivery:'LOJA ONLINE',legal:'CONFORMIDADE',settings:'SISTEMA',cloud:'SISTEMA',backup:'SISTEMA'};
  const pc=document.getElementById('pageContext');if(pc)pc.textContent=contextMap[id]||'GESTÃO ArtEssencia';
  renderAll();if(id==='socialAI')setTimeout(()=>{loadSocialPublicationsV7(false);loadSocialMetaStatusV11(false)},30);if(id==='email')setTimeout(()=>loadEmailModuleV177(false),30);if(id==='digitalStats')setTimeout(()=>loadDigitalStatsV1795(false),30);if(id==='campaigns')setTimeout(()=>loadCampaignDashboardV12626(false),50);
- if(id==='delivery'){renderShopDeliverySettings();renderShopCapacityAgenda();}
+ if(id==='delivery'){renderShopDeliverySettings();renderShopCapacityAgenda();loadDeliveryZonesV197();}
  if(id==='quantityPricing')setTimeout(()=>renderQuantityPricingV1750(),20);if(id==='visualCatalogs')setTimeout(()=>renderVisualCatalogsV192(),20);
  if(id==='commercialCalendar'){renderCommercialCalendarV1850();loadSpecialEditionsAdmin(false).then(()=>renderCommercialCalendarV1850());} if(id==='publication'){renderPublicationCenterV1812();loadPublicationRemoteV1812(false);} if(id==='catalogDigital')loadCatalogDigitalCenterV160(false); if(id==='specialEditions'){renderSpecialEditionProductPicker([]);loadSpecialEditionsAdmin(false);} if(id==='homepage')loadHomepageAdminV12637(false);if(id==='legal')loadLegalAdminV1286(false);
  const active=document.querySelector(`.nav button[data-page="${id}"]`);active?.scrollIntoView({block:'nearest',behavior:'smooth'});
  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+
+// Owner RPCs already used by the delivery module; no local fallback or shop-state writes.
+let deliveryZonesV197=null,deliveryZoneBusyV197=false;
+async function deliveryZonesRpcV197(name,args={}){
+ const user=cloudUser||await ensureCloudSession();
+ if(!user||!cloudClient)throw new Error('Liga primeiro a ArtEssencia Cloud.');
+ const {data,error}=await cloudClient.rpc(name,args);if(error)throw error;return data;
+}
+async function loadDeliveryZonesV197(){
+ const status=document.getElementById('deliveryZonesStatusV197'),saveButton=document.getElementById('zoneSaveV197');
+ if(deliveryZoneBusyV197)return;deliveryZoneBusyV197=true;deliveryZonesV197=null;saveButton.disabled=true;status.textContent='A carregar zonas da Cloud…';
+ document.getElementById('deliveryZonesRowsV197').replaceChildren();
+ try{
+  const data=await deliveryZonesRpcV197('artessencia_list_delivery_zones_v1');
+  if(!Array.isArray(data))throw new Error('Resposta inválida das zonas.');deliveryZonesV197=data;
+  const rows=document.getElementById('deliveryZonesRowsV197');
+  for(const zone of data){
+   const row=document.createElement('p'),label=document.createElement('span'),edit=document.createElement('button');
+   label.textContent=String(zone.locality||'')+' · '+euro(Number(zone.fee_cents||0)/100)+' · '+(zone.active?'Ativa':'Inativa')+' ';
+   edit.type='button';edit.className='btn';edit.textContent='Editar';edit.onclick=()=>{document.getElementById('zoneLocalityV197').value=zone.locality;document.getElementById('zoneFeeV197').value=(Number(zone.fee_cents)/100).toFixed(2);document.getElementById('zoneActiveV197').value=String(!!zone.active)};
+   row.append(label,edit);rows.append(row);
+  }
+  status.textContent=data.length+' zona(s) carregada(s). A gravação não abre a loja.';saveButton.disabled=false;
+ }catch(e){status.textContent='Zonas indisponíveis: '+String(e.message||e)+' — gravação bloqueada.'}
+ finally{deliveryZoneBusyV197=false}
+}
+async function saveDeliveryZoneV197(){
+ if(deliveryZoneBusyV197||!Array.isArray(deliveryZonesV197))return;
+ const name=document.getElementById('zoneLocalityV197').value.trim(),raw=document.getElementById('zoneFeeV197').value,fee=Number(raw),cents=Math.round(fee*100);
+ if(!name||name.length>100||raw===''||!Number.isFinite(fee)||fee<0||cents>9999999||Math.abs(fee*100-cents)>0.00001)return toast('Localidade ou tarifa inválida.');
+ const key=x=>String(x||'').toLocaleLowerCase('pt-PT'),existing=deliveryZonesV197.find(z=>key(z.locality)===key(name));
+ const zones=deliveryZonesV197.filter(z=>key(z.locality)!==key(name)).map(z=>({locality:z.locality,fee_cents:z.fee_cents,active:z.active,postal_codes:Array.isArray(z.postal_codes)?z.postal_codes:[]}));
+ zones.push({locality:name,fee_cents:cents,active:document.getElementById('zoneActiveV197').value==='true',postal_codes:Array.isArray(existing?.postal_codes)?existing.postal_codes:[]});
+ deliveryZoneBusyV197=true;document.getElementById('zoneSaveV197').disabled=true;
+ try{await deliveryZonesRpcV197('artessencia_update_delivery_zones_v2',{p_zones:zones});deliveryZoneBusyV197=false;await loadDeliveryZonesV197();toast('Zona guardada na Cloud.');}
+ catch(e){deliveryZonesV197=null;document.getElementById('deliveryZonesStatusV197').textContent='Gravação não confirmada: '+String(e.message||e)+' — recarrega as zonas antes de tentar novamente.';}
+ finally{deliveryZoneBusyV197=false}
 }
 
 // ArtEssencia V1.9.2 — Catálogos Visuais integrados na PWA principal, isolados da Cloud.
@@ -19748,23 +19798,6 @@ function renderPublicationCenterV1812(){
 document.addEventListener('input',e=>{if(e.target&&['costPackQty','costPackPrice'].includes(e.target.id))updateCostPreview()});
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;installBtn.classList.remove('hidden');installBanner.classList.remove('hidden')});
 async function installApp(){if(!deferredPrompt)return toast('No Chrome: menu ⋮ → Adicionar ao ecrã principal / Instalar app');deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;installBtn.classList.add('hidden');installBanner.classList.add('hidden')}
-if('serviceWorker'in navigator&&location.protocol.startsWith('http')){
- navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(reg=>{
-   reg.update().catch(()=>{});
- }).catch(()=>{});
-}
-(async()=>{
- try{
-   const RESET_KEY='artessencia_runtime_reset_v12_3_1';
-   if(!sessionStorage.getItem(RESET_KEY)){
-     sessionStorage.setItem(RESET_KEY,'1');
-     if('caches'in window){
-       const keys=await caches.keys();
-       await Promise.all(keys.filter(k=>!String(k).includes('artessencia-v12-3-1')).map(k=>caches.delete(k)));
-     }
-   }
- }catch(e){}
-})();
 ensureCostModel();syncPackagingSelect();go('dashboard');configureLock();setTimeout(authGateStartupV1880,250);setTimeout(()=>{openPushOrderFromUrlV12625();openPushEventRequestFromUrlV1285()},900);
 
 
@@ -19955,6 +19988,7 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 
 
 
+<script src="pwa-update.js"></script>
 </body></html>
 
 <style id="artessencia-v1-overrides">
