@@ -5797,9 +5797,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       <div id="deliveryZonesRowsV197"></div>
       <form id="deliveryZonesFormV197" onsubmit="event.preventDefault();saveDeliveryZoneV197()" class="form-grid">
         <div class="field"><label for="zoneLocalityV197">Localidade</label><input id="zoneLocalityV197" required maxlength="100" placeholder="Ex.: Castelejo"></div>
-        <div class="field"><label for="zoneFeeV197">Portes (€)</label><input id="zoneFeeV197" type="number" required min="0" max="99999.99" step="0.01" value="3.00"></div>
+        <div class="field"><label for="zoneFeeV197">Portes (€)</label><input id="zoneFeeV197" type="number" required min="0" max="99999.99" step="0.01" placeholder="Definir portes"></div>
         <div class="field"><label for="zoneActiveV197">Estado</label><select id="zoneActiveV197"><option value="false">Inativa</option><option value="true">Ativa</option></select></div>
-        <div><button id="zoneSaveV197" class="btn primary" disabled>Guardar zona na Cloud</button><button type="button" class="btn" onclick="loadDeliveryZonesV197()">Recarregar</button></div>
+        <div><button type="button" class="btn" onclick="newDeliveryZoneV198()">Nova localidade</button><button id="zoneSaveV197" class="btn primary" disabled>Guardar zona na Cloud</button><button type="button" class="btn" onclick="loadDeliveryZonesV197()">Recarregar</button></div>
       </form>
     </div>
     <div class="card delivery-settings-pro" style="margin-top:10px"><div class="delivery-block-head"><div><div class="section-title" style="margin:0">Configuração da loja</div><small>Definições usadas pela loja para aceitar datas e métodos de entrega.</small></div></div><div id="shopDeliverySettingsBox"></div></div>
@@ -5985,7 +5985,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.7';
+const APP_VERSION='1.9.8';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -7078,7 +7078,7 @@ function go(id){
 
 
 // Owner RPCs already used by the delivery module; no local fallback or shop-state writes.
-let deliveryZonesV197=null,deliveryZoneBusyV197=false;
+let deliveryZonesV197=null,deliveryZoneBusyV197=false,editingDeliveryLocalityV198=null;
 async function deliveryZonesRpcV197(name,args={}){
  const user=cloudUser||await ensureCloudSession();
  if(!user||!cloudClient)throw new Error('Liga primeiro a ArtEssencia Cloud.');
@@ -7094,24 +7094,38 @@ async function loadDeliveryZonesV197(){
   const rows=document.getElementById('deliveryZonesRowsV197');
   for(const zone of data){
    const row=document.createElement('p'),label=document.createElement('span'),edit=document.createElement('button');
-   label.textContent=String(zone.locality||'')+' · '+euro(Number(zone.fee_cents||0)/100)+' · '+(zone.active?'Ativa':'Inativa')+' ';
-   edit.type='button';edit.className='btn';edit.textContent='Editar';edit.onclick=()=>{document.getElementById('zoneLocalityV197').value=zone.locality;document.getElementById('zoneFeeV197').value=(Number(zone.fee_cents)/100).toFixed(2);document.getElementById('zoneActiveV197').value=String(!!zone.active)};
-   row.append(label,edit);rows.append(row);
+   label.textContent=String(zone.locality||'')+' · '+euro(Number(zone.fee_cents||0)/100)+' · '+(zone.active?'Ativa':'Inativa')+' · '+(Number(zone.verified_postal_count)>0?'Referência postal disponível':'Referência postal por validar')+' ';
+   edit.type='button';edit.className='btn';edit.textContent='Editar';edit.onclick=()=>{editingDeliveryLocalityV198=zone.locality;document.getElementById('zoneLocalityV197').value=zone.locality;document.getElementById('zoneFeeV197').value=(Number(zone.fee_cents)/100).toFixed(2);document.getElementById('zoneActiveV197').value=String(!!zone.active)};
+   const remove=document.createElement('button');remove.type='button';remove.className='btn danger';remove.textContent='Eliminar';remove.onclick=()=>deleteDeliveryZoneV197(zone);row.className='card';row.style.marginBottom='10px';row.append(label,edit,remove);rows.append(row);
   }
-  status.textContent=data.length+' zona(s) carregada(s). A gravação não abre a loja.';saveButton.disabled=false;
+  status.textContent=data.length+' zona(s) carregada(s). Ativar uma zona não valida os códigos postais nem abre a loja. A entrega exige correspondência postal verificada no servidor.';saveButton.disabled=false;renderDeliveryOverview();
  }catch(e){status.textContent='Zonas indisponíveis: '+String(e.message||e)+' — gravação bloqueada.'}
  finally{deliveryZoneBusyV197=false}
 }
+async function deleteDeliveryZoneV197(zone){
+ if(deliveryZoneBusyV197||!Array.isArray(deliveryZonesV197))return;
+ if(!confirm('Eliminar a localidade '+String(zone.locality||'')+'? As encomendas existentes não serão alteradas.'))return;
+ deliveryZoneBusyV197=true;document.getElementById('zoneSaveV197').disabled=true;
+ try{
+  const payload=deliveryZonesV197.filter(z=>z!==zone).map(z=>({locality:z.locality,fee_cents:z.fee_cents,active:z.active,postal_codes:Array.isArray(z.postal_codes)?z.postal_codes:[]}));
+  const result=await deliveryZonesRpcV197('artessencia_update_delivery_zones_v2',{p_zones:payload});
+  if(result?.ok!==true)throw Error('A Cloud não confirmou a alteração.');
+  deliveryZoneBusyV197=false;await loadDeliveryZonesV197();toast('Localidade eliminada.');
+ }catch(e){deliveryZonesV197=null;document.getElementById('deliveryZonesStatusV197').textContent='Eliminação não confirmada: '+String(e.message||e)+' — recarrega as zonas.';}
+ finally{deliveryZoneBusyV197=false}
+}
+function newDeliveryZoneV198(){editingDeliveryLocalityV198=null;document.getElementById('zoneLocalityV197').value='';document.getElementById('zoneFeeV197').value='';document.getElementById('zoneActiveV197').value='false'}
 async function saveDeliveryZoneV197(){
  if(deliveryZoneBusyV197||!Array.isArray(deliveryZonesV197))return;
  const name=document.getElementById('zoneLocalityV197').value.trim(),raw=document.getElementById('zoneFeeV197').value,fee=Number(raw),cents=Math.round(fee*100);
  if(!name||name.length>100||raw===''||!Number.isFinite(fee)||fee<0||cents>9999999||Math.abs(fee*100-cents)>0.00001)return toast('Localidade ou tarifa inválida.');
- const key=x=>String(x||'').toLocaleLowerCase('pt-PT'),existing=deliveryZonesV197.find(z=>key(z.locality)===key(name));
- const zones=deliveryZonesV197.filter(z=>key(z.locality)!==key(name)).map(z=>({locality:z.locality,fee_cents:z.fee_cents,active:z.active,postal_codes:Array.isArray(z.postal_codes)?z.postal_codes:[]}));
+ const key=x=>String(x||'').toLocaleLowerCase('pt-PT'),existing=deliveryZonesV197.find(z=>key(z.locality)===key(editingDeliveryLocalityV198||name));
+ if(editingDeliveryLocalityV198&&key(editingDeliveryLocalityV198)!==key(name)&&deliveryZonesV197.some(z=>key(z.locality)===key(name)))return toast('Essa localidade já existe.');
+ const zones=deliveryZonesV197.filter(z=>key(z.locality)!==key(editingDeliveryLocalityV198||name)).map(z=>({locality:z.locality,fee_cents:z.fee_cents,active:z.active,postal_codes:Array.isArray(z.postal_codes)?z.postal_codes:[]}));
  zones.push({locality:name,fee_cents:cents,active:document.getElementById('zoneActiveV197').value==='true',postal_codes:Array.isArray(existing?.postal_codes)?existing.postal_codes:[]});
  deliveryZoneBusyV197=true;document.getElementById('zoneSaveV197').disabled=true;
- try{await deliveryZonesRpcV197('artessencia_update_delivery_zones_v2',{p_zones:zones});deliveryZoneBusyV197=false;await loadDeliveryZonesV197();toast('Zona guardada na Cloud.');}
- catch(e){deliveryZonesV197=null;document.getElementById('deliveryZonesStatusV197').textContent='Gravação não confirmada: '+String(e.message||e)+' — recarrega as zonas antes de tentar novamente.';}
+ try{const result=await deliveryZonesRpcV197('artessencia_update_delivery_zones_v2',{p_zones:zones});if(result?.ok!==true)throw Error('A Cloud não confirmou a alteração.');deliveryZoneBusyV197=false;await loadDeliveryZonesV197();newDeliveryZoneV198();toast('Zona guardada na Cloud.');}
+ catch(e){deliveryZonesV197=null;document.getElementById('deliveryZonesStatusV197').textContent='Gravação não confirmada: '+(String(e.message||e).includes('locality postal reference unavailable')?'A localidade ainda não tem referência postal verificada. Guarda-a como inativa.':String(e.message||e))+' — recarrega as zonas antes de tentar novamente.';}
  finally{deliveryZoneBusyV197=false}
 }
 
@@ -14199,18 +14213,18 @@ const DEFAULT_PRODUCT_RECIPES={};
 function ensureShopDeliverySettings(){
  db.settings=db.settings||{};
  db.settings.shopDelivery=db.settings.shopDelivery||{
-   pickupEnabled:true,
-   localDeliveryEnabled:true,
+   pickupEnabled:false,
+   localDeliveryEnabled:false,
    pickupFee:0,
    localDeliveryFee:0,
    minOrderLocalDelivery:0,
-   leadDays:1,
-   allowedWeekdays:[1,2,3,4,5,6],
+   leadDays:2,
+   allowedWeekdays:[0,1],
    pickupStart:'10:00',
    pickupEnd:'19:00',
    localStart:'11:00',
    localEnd:'19:00',
-   postalPrefixes:['6230','6231','6232','6233','6234','6235','6236','6237','6238','6239'],
+   postalPrefixes:[],
    maxOrdersPerDay:0,
    maxUnitsPerDay:0,
    orderApprovalMode:'testing',
@@ -14338,11 +14352,13 @@ function deliveryExceptionRows(){
 
 function deliveryReadinessV140(s=shopDeliverySettings()){
  const issues=[];
- if(!s.pickupEnabled&&!s.localDeliveryEnabled)issues.push('Ativa pelo menos um método de entrega');
+ if(!s.localDeliveryEnabled)issues.push('Entrega local globalmente desativada');
+ if(s.pickupEnabled)issues.push('Levantamento não permitido nesta modalidade');
  if(!Array.isArray(s.allowedWeekdays)||!s.allowedWeekdays.length)issues.push('Seleciona pelo menos um dia disponível');
  if(s.pickupEnabled&&(!s.pickupStart||!s.pickupEnd||s.pickupStart>=s.pickupEnd))issues.push('Corrige o horário de levantamento');
  if(s.localDeliveryEnabled&&(!s.localStart||!s.localEnd||s.localStart>=s.localEnd))issues.push('Corrige o horário de entrega local');
- if(s.localDeliveryEnabled&&(!Array.isArray(s.postalPrefixes)||!s.postalPrefixes.length))issues.push('Define pelo menos um prefixo postal para entrega local');
+ if(s.localDeliveryEnabled&&!Array.isArray(deliveryZonesV197))issues.push('Carrega as zonas da Cloud para verificar a configuração');
+ if(s.localDeliveryEnabled&&Array.isArray(deliveryZonesV197)&&!deliveryZonesV197.some(z=>z.active===true))issues.push('Não existe uma zona ativa');
  return {ok:issues.length===0,issues};
 }
 function renderDeliveryOverview(){
@@ -14351,31 +14367,31 @@ function renderDeliveryOverview(){
  if(mode)mode.innerHTML=`<span class="delivery-overview-mode ${s.orderApprovalMode==='production'&&readiness.ok?'production':'testing'}">${s.orderApprovalMode==='production'&&readiness.ok?'PRODUÇÃO':s.orderApprovalMode==='production'?'CONFIGURAÇÃO INCOMPLETA':'TESTES'}</span>`;
  if(summary)summary.innerHTML=[
   ['Levantamento',s.pickupEnabled?'Ativo':'Inativo',s.pickupEnabled?`${s.pickupStart||'10:00'}–${s.pickupEnd||'19:00'}`:'Não disponível'],
-  ['Entrega local',s.localDeliveryEnabled?'Ativa':'Inativa',s.localDeliveryEnabled?`${euro(Number(s.localDeliveryFee)||0)} de taxa`:'Não disponível'],
-  ['Antecedência',`${Number(s.leadDays)||0} dia${Number(s.leadDays)===1?'':'s'}`,'Mínimo para encomendar'],
-  ['Configuração',readiness.ok?'Pronta':'Em falta',readiness.ok?`${days} dias disponíveis/semana`:readiness.issues[0]||'Rever definições']
+  ['Entrega local',s.localDeliveryEnabled?'Ativa':'Inativa',s.localDeliveryEnabled?'Portes por zona':'Bloqueia todas as zonas'],
+  ['Antecedência','48 horas','Domingo e segunda · hora de Lisboa'],
+  ['Configuração',readiness.ok?'Verificação final pendente':'Em falta',readiness.ok?'Confirmar referência postal e checkout antes de abrir':readiness.issues[0]||'Rever definições']
  ].map(([a,b,c])=>`<div class="card delivery-kpi"><span>${a}</span><strong>${b}</strong><small>${escapeHtml(String(c))}</small></div>`).join('');
 }
 async function saveShopDeliverySettings(){
  const s=shopDeliverySettings();
- s.pickupEnabled=!!document.getElementById('setPickupEnabled')?.checked;
+ s.pickupEnabled=false; // Política existente no servidor: sem levantamento.
  s.localDeliveryEnabled=!!document.getElementById('setLocalEnabled')?.checked;
  s.pickupFee=Math.max(0,Number(document.getElementById('setPickupFee')?.value)||0);
- s.localDeliveryFee=Math.max(0,Number(document.getElementById('setLocalFee')?.value)||0);
+ // Preservar a taxa legada; os portes atuais pertencem a cada zona.
  s.minOrderLocalDelivery=Math.max(0,Number(document.getElementById('setLocalMin')?.value)||0);
- s.leadDays=Math.max(0,Math.min(30,Number(document.getElementById('setLeadDays')?.value)||0));
+ s.leadDays=2; // 48 horas reais são validadas pelo servidor em Europe/Lisbon.
  s.pickupStart=document.getElementById('setPickupStart')?.value||'10:00';
  s.pickupEnd=document.getElementById('setPickupEnd')?.value||'19:00';
  s.localStart=document.getElementById('setLocalStart')?.value||'11:00';
  s.localEnd=document.getElementById('setLocalEnd')?.value||'19:00';
  if(s.pickupEnabled&&s.pickupStart>=s.pickupEnd){toast('No levantamento, a hora final tem de ser posterior à hora inicial');return;}
  if(s.localDeliveryEnabled&&s.localStart>=s.localEnd){toast('Na entrega local, a hora final tem de ser posterior à hora inicial');return;}
- s.postalPrefixes=[...new Set(String(document.getElementById('setPostalPrefixes')?.value||'').split(',').map(x=>x.replace(/\D/g,'').slice(0,4)).filter(x=>x.length===4))];
+ // Preservar prefixos legados sem os usar como autorização de localidade.
  s.maxOrdersPerDay=Math.max(0,Number(document.getElementById('setMaxOrdersDay')?.value)||0);
  s.maxUnitsPerDay=Math.max(0,Number(document.getElementById('setMaxUnitsDay')?.value)||0);
  s.orderApprovalMode=document.getElementById('setOrderApprovalMode')?.value==='production'?'production':'testing';
  s.note=document.getElementById('setDeliveryNote')?.value.trim()||'';
- s.allowedWeekdays=[...document.querySelectorAll('[data-weekday]:checked')].map(x=>Number(x.dataset.weekday));
+ s.allowedWeekdays=[0,1]; // Política existente no servidor: domingo e segunda.
  const readiness=deliveryReadinessV140(s);
  if(s.orderApprovalMode==='production'&&!readiness.ok){s.orderApprovalMode='testing';const modeSel=document.getElementById('setOrderApprovalMode');if(modeSel)modeSel.value='testing';toast('Modo Produção não ativado: '+readiness.issues[0]);}
  save();renderShopDeliverySettings();renderShopCapacityAgenda();
@@ -14394,7 +14410,7 @@ function renderShopDeliverySettings(){
  const box=document.getElementById('shopDeliverySettingsBox'); if(!box)return;
  const days=[['Seg',1],['Ter',2],['Qua',3],['Qui',4],['Sex',5],['Sáb',6],['Dom',0]];
  box.innerHTML=`
- <div class="delivery-v33">
+ <div class="delivery-v33"><p class="soft-note">Regras aplicadas no servidor: apenas domingo e segunda, mínimo de 48 horas e corte à sexta-feira às 00:00 (Europe/Lisbon). Ao guardar, estas regras são alinhadas na configuração antiga. Os portes são definidos por zona; taxa geral e prefixos antigos não autorizam entregas. Uma zona ativa continua bloqueada se a entrega local estiver desativada. A abertura da loja exige validação postal e do checkout.</p>
 
   <div class="delivery-v33-head">
    <div>
@@ -14420,8 +14436,8 @@ function renderShopDeliverySettings(){
     <div class="delivery-v33-two">
    <section class="delivery-v33-card">
     <div class="delivery-v33-cardhead">
-     <div><strong>🏪 Levantamento</strong><small>O cliente recolhe a encomenda contigo.</small></div>
-     <label class="delivery-switch"><input id="setPickupEnabled" type="checkbox" ${s.pickupEnabled?'checked':''}><span></span></label>
+     <div><strong>🏪 Levantamento</strong><small>Indisponível: apenas entrega local.</small></div>
+     <label class="delivery-switch"><input id="setPickupEnabled" type="checkbox" disabled><span></span></label>
     </div>
     <div class="delivery-v33-fields three">
      <div class="field"><label>Taxa (€)</label><input id="setPickupFee" type="number" min="0" step="0.01" value="${s.pickupFee||0}"></div>
@@ -14436,11 +14452,11 @@ function renderShopDeliverySettings(){
      <label class="delivery-switch"><input id="setLocalEnabled" type="checkbox" ${s.localDeliveryEnabled?'checked':''}><span></span></label>
     </div>
     <div class="delivery-v33-fields two">
-     <div class="field"><label>Taxa (€)</label><input id="setLocalFee" type="number" min="0" step="0.01" value="${s.localDeliveryFee||0}"></div>
+     <div class="field"><label>Taxa geral anterior (€)</label><input disabled id="setLocalFee" type="number" min="0" step="0.01" value="${s.localDeliveryFee||0}"></div>
      <div class="field"><label>Mínimo (€)</label><input id="setLocalMin" type="number" min="0" step="0.01" value="${s.minOrderLocalDelivery||0}"></div>
      <div class="field"><label>Desde</label><input id="setLocalStart" type="time" value="${s.localStart||'11:00'}"></div>
      <div class="field"><label>Até</label><input id="setLocalEnd" type="time" value="${s.localEnd||'19:00'}"></div>
-     <div class="field full"><label>Prefixos de código postal permitidos</label><input id="setPostalPrefixes" value="${(s.postalPrefixes||[]).join(', ')}" placeholder="Ex.: 6230, 6231"></div>
+     <div class="field full"><label>Prefixos antigos — apenas informativos</label><input disabled id="setPostalPrefixes" value="${(s.postalPrefixes||[]).join(', ')}" placeholder="Ex.: 6230, 6231"></div>
     </div>
    </section>
   </div>
@@ -14450,11 +14466,11 @@ function renderShopDeliverySettings(){
     <div><strong>📅 Disponibilidade e capacidade</strong><small>Controla antecedência, dias de trabalho e limites diários.</small></div>
    </div>
    <div class="delivery-v33-fields three">
-    <div class="field"><label>Antecedência mínima</label><div class="delivery-input-suffix"><input id="setLeadDays" type="number" min="0" max="30" value="${s.leadDays||0}"><span>dias</span></div></div>
+    <div class="field"><label>Antecedência mínima</label><div class="delivery-input-suffix"><input id="setLeadDays" type="number" value="2" disabled><span>dias</span></div></div>
     <div class="field"><label>Máx. encomendas/dia</label><input id="setMaxOrdersDay" type="number" min="0" step="1" value="${s.maxOrdersPerDay||0}"><small>0 = sem limite</small></div>
     <div class="field"><label>Máx. unidades/unidades/dia</label><input id="setMaxUnitsDay" type="number" min="0" step="1" value="${s.maxUnitsPerDay||0}"><small>0 = sem limite</small></div>
     <div class="field full"><label>Dias disponíveis</label>
-     <div class="delivery-weekdays">${days.map(([l,n])=>`<label class="delivery-day"><input type="checkbox" data-weekday="${n}" ${(s.allowedWeekdays||[]).includes(n)?'checked':''}><span>${l}</span></label>`).join('')}</div>
+     <div class="delivery-weekdays">${days.map(([l,n])=>`<label class="delivery-day"><input type="checkbox" data-weekday="${n}" ${(n===0||n===1)?'checked':''} disabled><span>${l}</span></label>`).join('')}</div>
     </div>
    </div>
   </section>
