@@ -7098,7 +7098,7 @@ async function loadDeliveryZonesV197(){
    edit.type='button';edit.className='btn';edit.textContent='Editar';edit.onclick=()=>{editingDeliveryLocalityV198=zone.locality;document.getElementById('zoneLocalityV197').value=zone.locality;document.getElementById('zoneFeeV197').value=(Number(zone.fee_cents)/100).toFixed(2);document.getElementById('zoneActiveV197').value=String(!!zone.active)};
    const remove=document.createElement('button');remove.type='button';remove.className='btn danger';remove.textContent='Eliminar';remove.onclick=()=>deleteDeliveryZoneV197(zone);row.className='card';row.style.marginBottom='10px';row.append(label,edit,remove);rows.append(row);
   }
-  status.textContent=data.length+' zona(s) carregada(s). Ativar uma zona não valida os códigos postais nem abre a loja. A entrega exige correspondência postal verificada no servidor.';saveButton.disabled=false;renderDeliveryOverview();
+  status.textContent=data.length+' zona(s) carregada(s). Ativar uma zona não valida os códigos postais nem abre a loja. A entrega exige correspondência postal verificada no servidor.';saveButton.disabled=false;renderDeliveryOverview();syncDeliveryEstimateZoneRowsV1911();
  }catch(e){status.textContent='Zonas indisponíveis: '+String(e.message||e)+' — gravação bloqueada.'}
  finally{deliveryZoneBusyV197=false}
 }
@@ -14444,6 +14444,11 @@ function renderDeliveryEstimateRowsV1911(){
  const box=document.getElementById('deliveryEstimateRowsV1911');if(!box)return;box.replaceChildren();
  const names=Array.isArray(deliveryZonesV197)?deliveryZonesV197.map(z=>z.locality):[];
  for(const name of ['Castelejo','Fundão','Alcaide','Enxabarda','Aldeia Nova do Cabo','Donas',...names])appendDeliveryEstimateRowV1911(name);
+}
+function syncDeliveryEstimateZoneRowsV1911(){
+ const box=document.getElementById('deliveryEstimateRowsV1911');
+ if(!box||!Array.isArray(deliveryZonesV197))return;
+ for(const zone of deliveryZonesV197)appendDeliveryEstimateRowV1911(zone.locality);
 }
 function appendDeliveryEstimateRowV1911(name){
  const box=document.getElementById('deliveryEstimateRowsV1911');if(!box||typeof name!=='string'||name.trim().length<2||name.length>100)return;
