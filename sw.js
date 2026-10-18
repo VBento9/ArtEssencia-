@@ -1,4 +1,4 @@
-const CACHE='artessencia-backoffice-1.9.11-preview';
+const CACHE='artessencia-backoffice-1.9.12-preview';
 const CORE=['/','/index.html','/pwa-update.js','/manifest.webmanifest','/brand-artessencia.png','/icon-192.png','/icon-512.png'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)));self.skipWaiting()});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE&&(k.startsWith('artessencia-backoffice-')||k.startsWith('artessencia-v12-'))).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});

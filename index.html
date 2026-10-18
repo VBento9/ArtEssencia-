@@ -5985,7 +5985,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.11-preview';
+const APP_VERSION='1.9.12-preview';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -14462,10 +14462,10 @@ async function calculateDeliveryEstimateV1911(locality,result,button){
  try{
   const pricing=readDeliveryPricingV199(),stamp=JSON.stringify(pricing),cloud=initCloudClient(),session=cloud?await cloud.auth.getSession():null,token=session?.data?.session?.access_token;
   if(!token)throw Error('Liga primeiro a Cloud com a conta do proprietário.');
-  const endpoint=location.hostname==='art-essencia.vercel.app'?'https://artessencia-loja.vercel.app/api/delivery-estimates':'https://artessencia-loja-git-feature-portes-por-43942a-vascobento9-4541.vercel.app/api/delivery-estimates';
+  const endpoint='/api/delivery-estimates';
   const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({locality,pricing}),cache:'no-store',signal:AbortSignal.timeout(60000)});
   const data=await response.json();
-  if(!response.ok||data.ok!==true){const errors={reference_unresolved:'Ponto da localidade não confirmado; sem estimativa.',owner_required:'Apenas o proprietário pode calcular estimativas.',estimate_limit_exceeded:'A estimativa ultrapassa os limites configurados.',invalid_pricing:'Confirma os custos apresentados acima.',unavailable:'Serviço de estimativas ainda não disponível neste ambiente.'};throw Error(errors[data.error]||'Não foi possível obter uma estimativa. Tenta novamente.')}
+  if(!response.ok||data.ok!==true){const errors={reference_unresolved:'Ponto da localidade não confirmado; sem estimativa.',owner_required:'Apenas o proprietário pode calcular estimativas.',estimate_limit_exceeded:'A estimativa ultrapassa os limites configurados.',invalid_pricing:'Confirma os custos apresentados acima.',unavailable:'Serviço de estimativas ainda não disponível neste ambiente.',preview_link_unconfigured:'A ligação protegida entre as pré-visualizações ainda não está autorizada.'};throw Error(errors[data.error]||'Não foi possível obter uma estimativa. Tenta novamente.')}
   if(generation!==deliveryEstimatesGenerationV1911||stamp!==JSON.stringify(readDeliveryPricingV199())){result.textContent='Custos alterados — recalcular';return}
   const euros=new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR'}).format(data.fee_cents/100);
   result.textContent=data.referencePrecision==='fixed_locality'?euros+' · tarifa fixa':euros+' estimados · '+(data.roundTripMetres/1000).toLocaleString('pt-PT',{maximumFractionDigits:2})+' km ida e volta · '+data.routeShareCount+' entregas previstas · '+data.referenceLabel;
