@@ -13,10 +13,15 @@ const {chromium}=require('playwright'),fs=require('node:fs'),path=require('node:
    await page.setViewportSize(viewport);await page.setContent('<style>'+styles+'</style><main class="delivery-v33" id="fixture" style="padding:12px"></main>');
    await page.addScriptTag({content:code+"\ndocument.getElementById('fixture').innerHTML=deliveryPricingCardV199({localDeliveryEnabled:false});"});
    assert.equal(await page.locator('#setDistanceEnabledV199').isChecked(),false);
-   const expected={enabled:false,fixedFeeCents:100,consumptionWhPerKm:163,electricityCentsPerKwh:20,chargingPermille:1100,wearCentsPerKm:10,hourlyCents:800,serviceSeconds:300,roundingStepCents:1,maxRoundTripMetres:100000,maxFeeCents:10000};
+   const expected={enabled:false,routeShareCount:3,fixedFeeCents:100,consumptionWhPerKm:163,electricityCentsPerKwh:20,chargingPermille:1100,wearCentsPerKm:10,hourlyCents:800,serviceSeconds:300,roundingStepCents:1,maxRoundTripMetres:100000,maxFeeCents:10000};
    assert.deepEqual(await page.evaluate(()=>readDeliveryPricingV199()),expected);
    await page.locator('#deliveryPricing_electricityCentsPerKwh').fill('0.25');await page.locator('#deliveryPricing_wearCentsPerKm').fill('0.12');await page.locator('label:has(#setDistanceEnabledV199)').click();
    assert.deepEqual(await page.evaluate(()=>readDeliveryPricingV199()),{...expected,enabled:true,electricityCentsPerKwh:25,wearCentsPerKm:12});
+   await page.locator('#deliveryPricing_routeShareCount').fill('2');
+   assert.equal(await page.evaluate(()=>readDeliveryPricingV199().routeShareCount),2);
+   await page.locator('#deliveryPricing_routeShareCount').fill('1.5');
+   assert.equal(await page.evaluate(()=>{try{readDeliveryPricingV199();return false}catch{return true}}),true);
+   await page.locator('#deliveryPricing_routeShareCount').fill('3');
    await page.locator('#deliveryPricing_hourlyCents').fill('');
    assert.equal(await page.evaluate(()=>{try{readDeliveryPricingV199();return false}catch{return true}}),true);
    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2);assert.equal(overflow,false);
