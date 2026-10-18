@@ -9407,6 +9407,7 @@ function receiveOnlinePaymentPartial(id){
 function printOrderCompleteV12634(id){
  const o=db.orders.find(x=>x.id===id);if(!o)return toast('Encomenda não encontrada');
  const c=calcOrder(o),remaining=Math.max(0,c.total-(Number(o.paid)||0),0);
+ const qty=(Array.isArray(o.items)?o.items:[]).reduce((sum,item)=>sum+Math.max(0,Number(item.qty)||0),0);
  const fmt=(v)=>productionFmtQtyV12632(v);
  const h=(v)=>escapeHtml(String(v==null?'':v));
  const datePt=(v)=>{if(!v)return '—';const a=String(v).slice(0,10).split('-');return a.length===3?`${a[2]}/${a[1]}/${a[0]}`:String(v)};
