@@ -14457,8 +14457,19 @@ function appendDeliveryEstimateRowV1911(name){
 function addDeliveryEstimateV1911(){const el=document.getElementById('deliveryEstimateLocalityV1911');if(!el)return;appendDeliveryEstimateRowV1911(el.value);el.value=''}
 function bindDeliveryEstimatePricingV1911(){for(const [key] of DELIVERY_PRICING_FIELDS_V199)document.getElementById('deliveryPricing_'+key)?.addEventListener('input',invalidateDeliveryEstimatesV1911)}
 function invalidateDeliveryEstimatesV1911(){deliveryEstimatesGenerationV1911++;for(const el of document.querySelectorAll('.delivery-estimate-result'))if(el.dataset.calculated==='true'){el.textContent='Custos alterados — recalcular';el.dataset.calculated='false'}}
-async function calculateDeliveryEstimateV1911(locality,result,button){
- const generation=deliveryEstimatesGenerationV1911;button.disabled=true;result.textContent='A calcular referência…';result.dataset.calculated='false';
+let deliveryEstimateQueueV1911=Promise.resolve();
+function calculateDeliveryEstimateV1911(locality,result,button){
+ if(button.disabled)return;
+ button.disabled=true;result.textContent='Em fila — aguarda a estimativa anterior…';result.dataset.calculated='false';
+ const generation=deliveryEstimatesGenerationV1911;
+ const run=()=>calculateQueuedDeliveryEstimateV1911(locality,result,button,generation);
+ const pending=deliveryEstimateQueueV1911.then(run,run);
+ deliveryEstimateQueueV1911=pending.catch(()=>{});
+ return pending;
+}
+async function calculateQueuedDeliveryEstimateV1911(locality,result,button,generation){
+ if(generation!==deliveryEstimatesGenerationV1911||!button.isConnected){button.disabled=false;return;}
+ result.textContent='A calcular referência…';
  try{
   const pricing=readDeliveryPricingV199(),stamp=JSON.stringify(pricing),cloud=initCloudClient(),session=cloud?await cloud.auth.getSession():null,token=session?.data?.session?.access_token;
   if(!token)throw Error('Liga primeiro a Cloud com a conta do proprietário.');
