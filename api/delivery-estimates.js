@@ -1,10 +1,13 @@
 'use strict';
 // Same-origin owner planning proxy. No credentials are returned to the browser.
+const {getVercelOidcToken}=require('@vercel/oidc');
+async function runtimeToken(){try{return await getVercelOidcToken()}catch{return null}}
 module.exports=async(req,res)=>{
  res.setHeader('Cache-Control','private, no-store');
  if(req.method==='GET'&&process.env.VERCEL_ENV==='preview'){
-  if(!process.env.VERCEL_OIDC_TOKEN)return res.status(503).json({ok:false,error:'preview_link_unconfigured',credentialConfigured:false});
-  try{const r=await fetch('https://artessencia-loja-git-feature-portes-por-43942a-vascobento9-4541.vercel.app/api/delivery-estimates',{headers:{'x-vercel-trusted-oidc-idp-token':process.env.VERCEL_OIDC_TOKEN},redirect:'error',signal:AbortSignal.timeout(10000)});
+  const token=await runtimeToken();
+  if(!token)return res.status(503).json({ok:false,error:'preview_link_unconfigured',credentialConfigured:false});
+  try{const r=await fetch('https://artessencia-loja-git-feature-portes-por-43942a-vascobento9-4541.vercel.app/api/delivery-estimates',{headers:{'x-vercel-trusted-oidc-idp-token':token},redirect:'error',signal:AbortSignal.timeout(10000)});
    const d=(r.headers.get('content-type')||'').includes('application/json')?await r.json():null;
    const reachable=r.status===405&&d?.error==='method_not_allowed';return res.status(reachable?200:503).json({ok:reachable,upstreamReachable:reachable,credentialConfigured:true,upstreamStatus:r.status,notForCheckout:true,...(!reachable?{error:'preview_link_unconfigured'}:{})});
   }catch{return res.status(503).json({ok:false,error:'preview_link_unconfigured'})}
@@ -17,7 +20,7 @@ module.exports=async(req,res)=>{
  let body=req.body;try{if(typeof body==='string'){if(Buffer.byteLength(body)>4096)return res.status(413).json({ok:false,error:'invalid_request'});body=JSON.parse(body)}}catch{return res.status(400).json({ok:false,error:'invalid_request'})}
  if(!body||typeof body!=='object'||Array.isArray(body)||JSON.stringify(body).length>4096)return res.status(400).json({ok:false,error:'invalid_request'});
  const preview=process.env.VERCEL_ENV==='preview',headers={'Content-Type':'application/json',Authorization:auth};
- if(preview){if(!process.env.VERCEL_OIDC_TOKEN)return res.status(503).json({ok:false,error:'preview_link_unconfigured'});headers['x-vercel-trusted-oidc-idp-token']=process.env.VERCEL_OIDC_TOKEN}
+ if(preview){const token=await runtimeToken();if(!token)return res.status(503).json({ok:false,error:'preview_link_unconfigured'});headers['x-vercel-trusted-oidc-idp-token']=token}
  const target=preview?'https://artessencia-loja-git-feature-portes-por-43942a-vascobento9-4541.vercel.app/api/delivery-estimates':'https://artessencia-loja.vercel.app/api/delivery-estimates';
  try{
   const upstream=await fetch(target,{method:'POST',headers,body:JSON.stringify({locality:body.locality,pricing:body.pricing}),redirect:'error',signal:AbortSignal.timeout(55000)});
