@@ -5985,7 +5985,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.9';
+const APP_VERSION='1.9.13';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -7098,7 +7098,7 @@ async function loadDeliveryZonesV197(){
    edit.type='button';edit.className='btn';edit.textContent='Editar';edit.onclick=()=>{editingDeliveryLocalityV198=zone.locality;document.getElementById('zoneLocalityV197').value=zone.locality;document.getElementById('zoneFeeV197').value=(Number(zone.fee_cents)/100).toFixed(2);document.getElementById('zoneActiveV197').value=String(!!zone.active)};
    const remove=document.createElement('button');remove.type='button';remove.className='btn danger';remove.textContent='Eliminar';remove.onclick=()=>deleteDeliveryZoneV197(zone);row.className='card';row.style.marginBottom='10px';row.append(label,edit,remove);rows.append(row);
   }
-  status.textContent=data.length+' zona(s) carregada(s). Ativar uma zona não valida os códigos postais nem abre a loja. A entrega exige correspondência postal verificada no servidor.';saveButton.disabled=false;renderDeliveryOverview();
+  status.textContent=data.length+' zona(s) carregada(s). Ativar uma zona não valida os códigos postais nem abre a loja. A entrega exige correspondência postal verificada no servidor.';saveButton.disabled=false;renderDeliveryOverview();syncDeliveryEstimateZoneRowsV1911();
  }catch(e){status.textContent='Zonas indisponíveis: '+String(e.message||e)+' — gravação bloqueada.'}
  finally{deliveryZoneBusyV197=false}
 }
@@ -7118,13 +7118,13 @@ function newDeliveryZoneV198(){editingDeliveryLocalityV198=null;document.getElem
 async function saveDeliveryZoneV197(){
  if(deliveryZoneBusyV197||!Array.isArray(deliveryZonesV197))return;
  const name=document.getElementById('zoneLocalityV197').value.trim(),raw=document.getElementById('zoneFeeV197').value,fee=Number(raw),cents=Math.round(fee*100);
- if(!name||name.length>100||raw===''||!Number.isFinite(fee)||fee<0||cents>9999999||Math.abs(fee*100-cents)>0.00001)return toast('Localidade ou tarifa inválida.');
+ if(!name||name.length>100||raw===''||!Number.isFinite(fee)||fee<0||cents>9999999||Math.abs(fee*100-cents)>0.00001){document.getElementById('deliveryZonesStatusV197').textContent='Gravação bloqueada: preenche uma localidade e os portes em euros (por exemplo 3,00).';return;}
  const key=x=>String(x||'').toLocaleLowerCase('pt-PT'),existing=deliveryZonesV197.find(z=>key(z.locality)===key(editingDeliveryLocalityV198||name));
  if(editingDeliveryLocalityV198&&key(editingDeliveryLocalityV198)!==key(name)&&deliveryZonesV197.some(z=>key(z.locality)===key(name)))return toast('Essa localidade já existe.');
  const zones=deliveryZonesV197.filter(z=>key(z.locality)!==key(editingDeliveryLocalityV198||name)).map(z=>({locality:z.locality,fee_cents:z.fee_cents,active:z.active,postal_codes:Array.isArray(z.postal_codes)?z.postal_codes:[]}));
  zones.push({locality:name,fee_cents:cents,active:document.getElementById('zoneActiveV197').value==='true',postal_codes:Array.isArray(existing?.postal_codes)?existing.postal_codes:[]});
  deliveryZoneBusyV197=true;document.getElementById('zoneSaveV197').disabled=true;
- try{const result=await deliveryZonesRpcV197('artessencia_update_delivery_zones_v2',{p_zones:zones});if(result?.ok!==true)throw Error('A Cloud não confirmou a alteração.');deliveryZoneBusyV197=false;await loadDeliveryZonesV197();newDeliveryZoneV198();toast('Zona guardada na Cloud.');}
+ try{const result=await deliveryZonesRpcV197('artessencia_update_delivery_zones_v2',{p_zones:zones});if(result?.ok!==true)throw Error('A Cloud não confirmou a alteração.');deliveryZoneBusyV197=false;await loadDeliveryZonesV197();newDeliveryZoneV198();document.getElementById('deliveryZonesStatusV197').textContent+=' Zona guardada e confirmada na Cloud.';toast('Zona guardada na Cloud.');}
  catch(e){deliveryZonesV197=null;document.getElementById('deliveryZonesStatusV197').textContent='Gravação não confirmada: '+(String(e.message||e).includes('locality postal reference unavailable')?'A localidade ainda não tem referência postal verificada. Guarda-a como inativa.':String(e.message||e))+' — recarrega as zonas antes de tentar novamente.';}
  finally{deliveryZoneBusyV197=false}
 }
@@ -9953,13 +9953,15 @@ function renderDeliveryOverview(){
  if(mode)mode.innerHTML=`<span class="delivery-overview-mode ${s.orderApprovalMode==='production'&&readiness.ok?'production':'testing'}">${s.orderApprovalMode==='production'&&readiness.ok?'PRODUÇÃO':s.orderApprovalMode==='production'?'CONFIGURAÇÃO INCOMPLETA':'TESTES'}</span>`;
  if(summary)summary.innerHTML=[
   ['Levantamento',s.pickupEnabled?'Ativo':'Inativo',s.pickupEnabled?`${s.pickupStart||'10:00'}–${s.pickupEnd||'19:00'}`:'Não disponível'],
-  ['Entrega local',s.localDeliveryEnabled?'Ativa':'Inativa',s.localDeliveryEnabled?'Portes por zona':'Bloqueia todas as zonas'],
+  ['Entrega local',s.localDeliveryEnabled?'Ativa':'Inativa',s.localDeliveryEnabled?(s.distancePricing?.enabled?'Portes por morada':'Portes por zona'):'Bloqueia todas as zonas'],
   ['Antecedência','48 horas','Domingo e segunda · hora de Lisboa'],
   ['Configuração',readiness.ok?'Verificação final pendente':'Em falta',readiness.ok?'Confirmar referência postal e checkout antes de abrir':readiness.issues[0]||'Rever definições']
  ].map(([a,b,c])=>`<div class="card delivery-kpi"><span>${a}</span><strong>${b}</strong><small>${escapeHtml(String(c))}</small></div>`).join('');
 }
 async function saveShopDeliverySettings(){
  const s=shopDeliverySettings();
+ let pricing;try{pricing=readDeliveryPricingV199()}catch(e){toast(e.message);return;}
+ s.distancePricing=pricing;
  s.pickupEnabled=false; // Política existente no servidor: sem levantamento.
  s.localDeliveryEnabled=!!document.getElementById('setLocalEnabled')?.checked;
  s.pickupFee=Math.max(0,Number(document.getElementById('setPickupFee')?.value)||0);
@@ -9990,6 +9992,89 @@ async function saveShopDeliverySettings(){
    toast('Guardado localmente, mas falhou na cloud')
  }
 }
+// Numeric pricing remains in existing shopDelivery settings. Private origin/API keys never enter the PWA.
+const DELIVERY_PRICING_FIELDS_V199=[
+ ['fixedFeeCents','Castelejo — tarifa fixa (€)',100,100,1000],
+ ['consumptionWhPerKm','Consumo (kWh/100 km)',10,163,500],
+ ['electricityCentsPerKwh','Eletricidade (€/kWh)',100,20,100],
+ ['chargingPermille','Fator de carregamento',1000,1100,3],
+ ['wearCentsPerKm','Desgaste (€/km)',100,10,100],
+ ['hourlyCents','Tempo (€/hora)',100,800,1000],
+ ['serviceSeconds','Paragem por entrega (minutos)',60,300,1440],
+ ['routeShareCount','Entregas previstas por saída (estimativa)',1,3,20],
+ ['roundingStepCents','Arredondamento dos portes (€)',100,1,1],
+ ['maxRoundTripMetres','Limite de percurso ida e volta (km)',1000,100000,1000],
+ ['maxFeeCents','Limite de segurança dos portes (€)',100,10000,10000]
+];
+function deliveryPricingCardV199(s){
+ const pricing=s.distancePricing||{};
+ return `<section class="delivery-v33-card delivery-v33-wide"><div class="delivery-v33-cardhead"><div><strong>Portes automáticos por morada</strong><small>Castelejo com tarifa fixa; restantes localidades ativas pelo percurso real de ida e volta. Morada, localidade e código postal têm de ser confirmados no servidor.</small></div><label class="delivery-switch"><input id="setDistanceEnabledV199" type="checkbox" ${pricing.enabled===true?'checked':''}><span></span></label></div>
+ <p class="soft-note">Ativar este cálculo não abre a Loja nem ativa as entregas locais. No modo automático, as tarifas manuais das zonas ficam guardadas, mas não entram no cálculo. Os limites abaixo recusam uma cotação excessiva; não reduzem o preço ao limite.</p>
+ <div class="delivery-v33-fields two">${DELIVERY_PRICING_FIELDS_V199.map(([key,label,scale,fallback,max])=>`<div class="field"><label for="deliveryPricing_${key}">${label}</label><input id="deliveryPricing_${key}" type="number" min="${key==='routeShareCount'||key==='chargingPermille'?1:key==='roundingStepCents'?.01:key==='maxRoundTripMetres'||key==='maxFeeCents'?.01:0}" max="${max}" step="${key==='chargingPermille'?.001:key==='serviceSeconds'||key==='routeShareCount'?1:.01}" value="${Number(pricing[key]??(key==='routeShareCount'&&pricing.enabled!==undefined?1:fallback))/scale}" required></div>`).join('')}</div>
+ <small>Deslocação = (energia + desgaste + tempo de viagem) ÷ entregas previstas. A paragem é cobrada por encomenda. A estimativa não conta encomendas reais nem garante uma rota partilhada; com poucas entregas, a ArtEssencia suporta a diferença. As chaves do serviço de mapas e a origem exata são configurações privadas do servidor.</small></section>`;
+}
+function readDeliveryPricingV199(){
+ const result={enabled:!!document.getElementById('setDistanceEnabledV199')?.checked};
+ for(const [key,label,scale,,max] of DELIVERY_PRICING_FIELDS_V199){
+  const el=document.getElementById('deliveryPricing_'+key),n=Number(el?.value),scaled=n*scale,value=Math.round(scaled);
+  if(!el||el.value.trim()===''||!Number.isFinite(n)||n<0||n>max||Math.abs(scaled-value)>1e-6||!Number.isSafeInteger(value))throw new Error('Confirma o campo '+label);
+  result[key]=value;
+ }
+ if(result.routeShareCount<1||result.chargingPermille<1000||result.roundingStepCents<1||result.maxRoundTripMetres<1||result.maxFeeCents<1)throw new Error('Confirma o fator de carregamento e os limites dos portes.');
+ return result;
+}
+// Planning references never authorize delivery, overwrite zone tariffs or create orders.
+let deliveryEstimatesGenerationV1911=0;
+function deliveryEstimatesCardV1911(){return `<section class="delivery-v33-card delivery-v33-wide"><div class="delivery-v33-cardhead"><div><strong>Estimativas por localidade</strong><small>Valores de referência para planeamento. O checkout calcula a morada concreta e só aceita zonas autorizadas.</small></div></div><p class="soft-note">Usa os custos atualmente apresentados acima, mesmo antes de guardar. Cada estimativa usa um ponto da localidade, não todas as suas moradas. Não é um intervalo mínimo/máximo nem uma tarifa garantida.</p><div class="delivery-v33-fields two"><div class="field"><label for="deliveryEstimateLocalityV1911">Outra localidade de Portugal continental</label><input id="deliveryEstimateLocalityV1911" maxlength="100" placeholder="Ex.: Covilhã, Belmonte ou Alcaide"></div><div class="field" style="align-self:end"><button type="button" class="btn" onclick="addDeliveryEstimateV1911()">Adicionar à simulação</button></div></div><div id="deliveryEstimateRowsV1911" style="display:grid;gap:12px;margin-top:12px"></div><small>Adicionar aqui não cria nem ativa uma zona. Nenhuma encomenda é criada. A lista e os resultados desta simulação não são guardados na Cloud.</small></section>`}
+function renderDeliveryEstimateRowsV1911(){
+ const box=document.getElementById('deliveryEstimateRowsV1911');if(!box)return;box.replaceChildren();
+ const names=Array.isArray(deliveryZonesV197)?deliveryZonesV197.map(z=>z.locality):[];
+ for(const name of ['Castelejo','Fundão','Alcaide','Enxabarda','Aldeia Nova do Cabo','Donas',...names])appendDeliveryEstimateRowV1911(name);
+}
+function syncDeliveryEstimateZoneRowsV1911(){
+ const box=document.getElementById('deliveryEstimateRowsV1911');
+ if(!box||!Array.isArray(deliveryZonesV197))return;
+ for(const zone of deliveryZonesV197)appendDeliveryEstimateRowV1911(zone.locality);
+}
+function appendDeliveryEstimateRowV1911(name){
+ const box=document.getElementById('deliveryEstimateRowsV1911');if(!box||typeof name!=='string'||name.trim().length<2||name.length>100)return;
+ name=name.trim();if([...box.children].some(r=>r.dataset.locality.toLocaleLowerCase('pt-PT')===name.toLocaleLowerCase('pt-PT')))return;
+ const row=document.createElement('div');row.dataset.locality=name;row.className='delivery-estimate-row';row.style.cssText='border:1px solid var(--line,#ddd);border-radius:12px;padding:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center';
+ const title=document.createElement('strong');title.textContent=name;title.style.flex='1 1 100px';
+ const result=document.createElement('span');result.className='delivery-estimate-result';result.setAttribute('role','status');result.textContent='Por calcular';result.style.cssText='flex:2 1 180px;overflow-wrap:anywhere';
+ const button=document.createElement('button');button.type='button';button.className='btn';button.textContent='Calcular estimativa';button.onclick=()=>calculateDeliveryEstimateV1911(name,result,button);
+ row.append(title,result,button);box.append(row);
+}
+function addDeliveryEstimateV1911(){const el=document.getElementById('deliveryEstimateLocalityV1911');if(!el)return;appendDeliveryEstimateRowV1911(el.value);el.value=''}
+function bindDeliveryEstimatePricingV1911(){for(const [key] of DELIVERY_PRICING_FIELDS_V199)document.getElementById('deliveryPricing_'+key)?.addEventListener('input',invalidateDeliveryEstimatesV1911)}
+function invalidateDeliveryEstimatesV1911(){deliveryEstimatesGenerationV1911++;for(const el of document.querySelectorAll('.delivery-estimate-result'))if(el.dataset.calculated==='true'){el.textContent='Custos alterados — recalcular';el.dataset.calculated='false'}}
+let deliveryEstimateQueueV1911=Promise.resolve();
+function calculateDeliveryEstimateV1911(locality,result,button){
+ if(button.disabled)return;
+ button.disabled=true;result.textContent='Em fila — aguarda a estimativa anterior…';result.dataset.calculated='false';
+ const generation=deliveryEstimatesGenerationV1911;
+ const run=()=>calculateQueuedDeliveryEstimateV1911(locality,result,button,generation);
+ const pending=deliveryEstimateQueueV1911.then(run,run);
+ deliveryEstimateQueueV1911=pending.catch(()=>{});
+ return pending;
+}
+async function calculateQueuedDeliveryEstimateV1911(locality,result,button,generation){
+ if(generation!==deliveryEstimatesGenerationV1911||!button.isConnected){button.disabled=false;return;}
+ result.textContent='A calcular referência…';
+ try{
+  const pricing=readDeliveryPricingV199(),stamp=JSON.stringify(pricing),cloud=initCloudClient(),session=cloud?await cloud.auth.getSession():null,token=session?.data?.session?.access_token;
+  if(!token)throw Error('Liga primeiro a Cloud com a conta do proprietário.');
+  const endpoint='/api/delivery-estimates';
+  const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({locality,pricing}),cache:'no-store',signal:AbortSignal.timeout(60000)});
+  const data=await response.json();
+  if(!response.ok||data.ok!==true){const errors={reference_unresolved:'Ponto da localidade não confirmado; sem estimativa.',owner_required:'Apenas o proprietário pode calcular estimativas.',try_again_later:'Serviço ocupado. Aguarda alguns instantes e tenta novamente.',estimate_unavailable:'Serviço rodoviário temporariamente indisponível. Tenta novamente mais tarde.',estimate_limit_exceeded:'A estimativa ultrapassa os limites configurados.',invalid_pricing:'Confirma os custos apresentados acima.',unavailable:'Serviço de estimativas ainda não disponível neste ambiente.',preview_link_unconfigured:'A ligação protegida entre as pré-visualizações ainda não está autorizada.'};throw Error(errors[data.error]||'Não foi possível obter uma estimativa. Tenta novamente.')}
+  if(generation!==deliveryEstimatesGenerationV1911||stamp!==JSON.stringify(readDeliveryPricingV199())){result.textContent='Custos alterados — recalcular';return}
+  const euros=new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR'}).format(data.fee_cents/100);
+  result.textContent=data.referencePrecision==='fixed_locality'?euros+' · tarifa fixa':euros+' estimados · '+(data.roundTripMetres/1000).toLocaleString('pt-PT',{maximumFractionDigits:2})+' km ida e volta · '+data.routeShareCount+' entregas previstas · '+data.referenceLabel;
+  result.dataset.calculated='true';
+ }catch(e){result.textContent=String(e?.message||'Estimativa indisponível.')}finally{button.disabled=false}
+}
+
 function renderShopDeliverySettings(){
  renderDeliveryOverview();
  const s=shopDeliverySettings();
@@ -10047,6 +10132,9 @@ function renderShopDeliverySettings(){
    </section>
   </div>
 
+  ${deliveryPricingCardV199(s)}
+  ${deliveryEstimatesCardV1911()}
+
   <section class="delivery-v33-card delivery-v33-wide">
    <div class="delivery-v33-cardhead">
     <div><strong>📅 Disponibilidade e capacidade</strong><small>Controla antecedência, dias de trabalho e limites diários.</small></div>
@@ -10097,6 +10185,8 @@ function renderShopDeliverySettings(){
    <small>As alterações ficam guardadas na Cloud e são usadas pela loja online.</small>
   </div>
  </div>`;
+ renderDeliveryEstimateRowsV1911();
+ bindDeliveryEstimatePricingV1911();
  setTimeout(()=>loadPublicChannelStatusV1785('store'),0);
 }
 
