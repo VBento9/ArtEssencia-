@@ -5985,7 +5985,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.8';
+const APP_VERSION='1.9.9-preview';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -14367,13 +14367,15 @@ function renderDeliveryOverview(){
  if(mode)mode.innerHTML=`<span class="delivery-overview-mode ${s.orderApprovalMode==='production'&&readiness.ok?'production':'testing'}">${s.orderApprovalMode==='production'&&readiness.ok?'PRODUÇÃO':s.orderApprovalMode==='production'?'CONFIGURAÇÃO INCOMPLETA':'TESTES'}</span>`;
  if(summary)summary.innerHTML=[
   ['Levantamento',s.pickupEnabled?'Ativo':'Inativo',s.pickupEnabled?`${s.pickupStart||'10:00'}–${s.pickupEnd||'19:00'}`:'Não disponível'],
-  ['Entrega local',s.localDeliveryEnabled?'Ativa':'Inativa',s.localDeliveryEnabled?'Portes por zona':'Bloqueia todas as zonas'],
+  ['Entrega local',s.localDeliveryEnabled?'Ativa':'Inativa',s.localDeliveryEnabled?(s.distancePricing?.enabled?'Portes por morada':'Portes por zona'):'Bloqueia todas as zonas'],
   ['Antecedência','48 horas','Domingo e segunda · hora de Lisboa'],
   ['Configuração',readiness.ok?'Verificação final pendente':'Em falta',readiness.ok?'Confirmar referência postal e checkout antes de abrir':readiness.issues[0]||'Rever definições']
  ].map(([a,b,c])=>`<div class="card delivery-kpi"><span>${a}</span><strong>${b}</strong><small>${escapeHtml(String(c))}</small></div>`).join('');
 }
 async function saveShopDeliverySettings(){
  const s=shopDeliverySettings();
+ let pricing;try{pricing=readDeliveryPricingV199()}catch(e){toast(e.message);return;}
+ s.distancePricing=pricing;
  s.pickupEnabled=false; // Política existente no servidor: sem levantamento.
  s.localDeliveryEnabled=!!document.getElementById('setLocalEnabled')?.checked;
  s.pickupFee=Math.max(0,Number(document.getElementById('setPickupFee')?.value)||0);
@@ -14403,6 +14405,36 @@ async function saveShopDeliverySettings(){
    cloudLogMsg('Falha ao enviar definições de entrega: '+cloudErrText(e));
    toast('Guardado localmente, mas falhou na cloud')
  }
+}
+// Numeric pricing remains in existing shopDelivery settings. Private origin/API keys never enter the PWA.
+const DELIVERY_PRICING_FIELDS_V199=[
+ ['fixedFeeCents','Castelejo — tarifa fixa (€)',100,100,1000],
+ ['consumptionWhPerKm','Consumo (kWh/100 km)',10,163,500],
+ ['electricityCentsPerKwh','Eletricidade (€/kWh)',100,20,100],
+ ['chargingPermille','Fator de carregamento',1000,1100,3],
+ ['wearCentsPerKm','Desgaste (€/km)',100,10,100],
+ ['hourlyCents','Tempo (€/hora)',100,800,1000],
+ ['serviceSeconds','Paragem por entrega (minutos)',60,300,1440],
+ ['roundingStepCents','Arredondamento dos portes (€)',100,1,1],
+ ['maxRoundTripMetres','Limite de percurso ida e volta (km)',1000,100000,1000],
+ ['maxFeeCents','Limite de segurança dos portes (€)',100,10000,10000]
+];
+function deliveryPricingCardV199(s){
+ const pricing=s.distancePricing||{};
+ return `<section class="delivery-v33-card delivery-v33-wide"><div class="delivery-v33-cardhead"><div><strong>Portes automáticos por morada</strong><small>Castelejo com tarifa fixa; restantes localidades ativas pelo percurso real de ida e volta. Morada, localidade e código postal têm de ser confirmados no servidor.</small></div><label class="delivery-switch"><input id="setDistanceEnabledV199" type="checkbox" ${pricing.enabled===true?'checked':''}><span></span></label></div>
+ <p class="soft-note">Ativar este cálculo não abre a Loja nem ativa as entregas locais. No modo automático, as tarifas manuais das zonas ficam guardadas, mas não entram no cálculo. Os limites abaixo recusam uma cotação excessiva; não reduzem o preço ao limite.</p>
+ <div class="delivery-v33-fields two">${DELIVERY_PRICING_FIELDS_V199.map(([key,label,scale,fallback,max])=>`<div class="field"><label for="deliveryPricing_${key}">${label}</label><input id="deliveryPricing_${key}" type="number" min="${key==='chargingPermille'?1:key==='roundingStepCents'?.01:key==='maxRoundTripMetres'||key==='maxFeeCents'?.01:0}" max="${max}" step="${key==='chargingPermille'?.001:key==='serviceSeconds'?1:.01}" value="${Number(pricing[key]??fallback)/scale}" required></div>`).join('')}</div>
+ <small>Energia + desgaste + tempo de viagem e paragem. As chaves do serviço de mapas e a origem exata são configurações privadas do servidor.</small></section>`;
+}
+function readDeliveryPricingV199(){
+ const result={enabled:!!document.getElementById('setDistanceEnabledV199')?.checked};
+ for(const [key,label,scale,,max] of DELIVERY_PRICING_FIELDS_V199){
+  const el=document.getElementById('deliveryPricing_'+key),n=Number(el?.value),scaled=n*scale,value=Math.round(scaled);
+  if(!el||el.value.trim()===''||!Number.isFinite(n)||n<0||n>max||Math.abs(scaled-value)>1e-6||!Number.isSafeInteger(value))throw new Error('Confirma o campo '+label);
+  result[key]=value;
+ }
+ if(result.chargingPermille<1000||result.roundingStepCents<1||result.maxRoundTripMetres<1||result.maxFeeCents<1)throw new Error('Confirma o fator de carregamento e os limites dos portes.');
+ return result;
 }
 function renderShopDeliverySettings(){
  renderDeliveryOverview();
@@ -14460,6 +14492,8 @@ function renderShopDeliverySettings(){
     </div>
    </section>
   </div>
+
+  ${deliveryPricingCardV199(s)}
 
   <section class="delivery-v33-card delivery-v33-wide">
    <div class="delivery-v33-cardhead">
