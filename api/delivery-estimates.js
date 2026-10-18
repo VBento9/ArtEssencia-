@@ -3,10 +3,10 @@
 module.exports=async(req,res)=>{
  res.setHeader('Cache-Control','private, no-store');
  if(req.method==='GET'&&process.env.VERCEL_ENV==='preview'){
-  if(!process.env.VERCEL_OIDC_TOKEN)return res.status(503).json({ok:false,error:'preview_link_unconfigured'});
+  if(!process.env.VERCEL_OIDC_TOKEN)return res.status(503).json({ok:false,error:'preview_link_unconfigured',credentialConfigured:false});
   try{const r=await fetch('https://artessencia-loja-git-feature-portes-por-43942a-vascobento9-4541.vercel.app/api/delivery-estimates',{headers:{'x-vercel-trusted-oidc-idp-token':process.env.VERCEL_OIDC_TOKEN},redirect:'error',signal:AbortSignal.timeout(10000)});
    const d=(r.headers.get('content-type')||'').includes('application/json')?await r.json():null;
-   const reachable=r.status===405&&d?.error==='method_not_allowed';return res.status(reachable?200:503).json({ok:reachable,upstreamReachable:reachable,notForCheckout:true,...(!reachable?{error:'preview_link_unconfigured'}:{})});
+   const reachable=r.status===405&&d?.error==='method_not_allowed';return res.status(reachable?200:503).json({ok:reachable,upstreamReachable:reachable,credentialConfigured:true,upstreamStatus:r.status,notForCheckout:true,...(!reachable?{error:'preview_link_unconfigured'}:{})});
   }catch{return res.status(503).json({ok:false,error:'preview_link_unconfigured'})}
  }
  if(req.method!=='POST')return res.status(405).json({ok:false,error:'method_not_allowed'});
