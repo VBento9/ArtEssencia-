@@ -7118,13 +7118,13 @@ function newDeliveryZoneV198(){editingDeliveryLocalityV198=null;document.getElem
 async function saveDeliveryZoneV197(){
  if(deliveryZoneBusyV197||!Array.isArray(deliveryZonesV197))return;
  const name=document.getElementById('zoneLocalityV197').value.trim(),raw=document.getElementById('zoneFeeV197').value,fee=Number(raw),cents=Math.round(fee*100);
- if(!name||name.length>100||raw===''||!Number.isFinite(fee)||fee<0||cents>9999999||Math.abs(fee*100-cents)>0.00001)return toast('Localidade ou tarifa inválida.');
+ if(!name||name.length>100||raw===''||!Number.isFinite(fee)||fee<0||cents>9999999||Math.abs(fee*100-cents)>0.00001){document.getElementById('deliveryZonesStatusV197').textContent='Gravação bloqueada: preenche uma localidade e os portes em euros (por exemplo 3,00).';return;}
  const key=x=>String(x||'').toLocaleLowerCase('pt-PT'),existing=deliveryZonesV197.find(z=>key(z.locality)===key(editingDeliveryLocalityV198||name));
  if(editingDeliveryLocalityV198&&key(editingDeliveryLocalityV198)!==key(name)&&deliveryZonesV197.some(z=>key(z.locality)===key(name)))return toast('Essa localidade já existe.');
  const zones=deliveryZonesV197.filter(z=>key(z.locality)!==key(editingDeliveryLocalityV198||name)).map(z=>({locality:z.locality,fee_cents:z.fee_cents,active:z.active,postal_codes:Array.isArray(z.postal_codes)?z.postal_codes:[]}));
  zones.push({locality:name,fee_cents:cents,active:document.getElementById('zoneActiveV197').value==='true',postal_codes:Array.isArray(existing?.postal_codes)?existing.postal_codes:[]});
  deliveryZoneBusyV197=true;document.getElementById('zoneSaveV197').disabled=true;
- try{const result=await deliveryZonesRpcV197('artessencia_update_delivery_zones_v2',{p_zones:zones});if(result?.ok!==true)throw Error('A Cloud não confirmou a alteração.');deliveryZoneBusyV197=false;await loadDeliveryZonesV197();newDeliveryZoneV198();toast('Zona guardada na Cloud.');}
+ try{const result=await deliveryZonesRpcV197('artessencia_update_delivery_zones_v2',{p_zones:zones});if(result?.ok!==true)throw Error('A Cloud não confirmou a alteração.');deliveryZoneBusyV197=false;await loadDeliveryZonesV197();newDeliveryZoneV198();document.getElementById('deliveryZonesStatusV197').textContent+=' Zona guardada e confirmada na Cloud.';toast('Zona guardada na Cloud.');}
  catch(e){deliveryZonesV197=null;document.getElementById('deliveryZonesStatusV197').textContent='Gravação não confirmada: '+(String(e.message||e).includes('locality postal reference unavailable')?'A localidade ainda não tem referência postal verificada. Guarda-a como inativa.':String(e.message||e))+' — recarrega as zonas antes de tentar novamente.';}
  finally{deliveryZoneBusyV197=false}
 }
