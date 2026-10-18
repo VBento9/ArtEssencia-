@@ -6,6 +6,7 @@
     "node": ">=20"
   },
   "dependencies": {
+    "@vercel/oidc": "4.0.1",
     "imapflow": "^1.0.181"
   }
 }
