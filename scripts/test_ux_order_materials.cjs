@@ -1,0 +1,11 @@
+'use strict';
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const html=fs.readFileSync('index.html','utf8');
+const start=html.indexOf('function orderMaterialPreviewV1916(o){');
+const end=html.indexOf('\nfunction orderAttentionLabelV1915',start);
+assert.ok(start>=0&&end>start,'Material preview must exist');
+const body=html.slice(start,end);
+for(const x of ['productionOrderNeedsV12632(o)','productionMissingRecipesV1757([o])','productionUnresolvedLinesV148([o])','stockByName(name)','escapeHtml(name)','Não reserva nem desconta stock'])assert.ok(body.includes(x),'Missing safeguard: '+x);
+assert.doesNotMatch(body,/(?:saveDB\(|setStatus\(|saveOrder\(|stockMove\(|\.insert\(|\.update\(|localStorage\.setItem\()/,'Preview must be read-only');
+assert.match(html,/orderMaterialPreviewV1916\(o\)/);
+console.log('Order material preview static safety checks passed');
