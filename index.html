@@ -3389,6 +3389,26 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 #dashboard .dashboard-section-head{scroll-margin-top:85px}
 @media(max-width:650px){#dashboard .ae-ux-daily-guide{font-size:13px;padding:0 2px}#dashboard .dashboard-today-card{margin-top:10px}}
 </style>
+<style id="ae-ux-mobile-hotfix-20261019">
+@media(max-width:650px){
+ .sidebar{height:auto!important;max-height:calc(79px + env(safe-area-inset-bottom))!important;overflow:hidden!important;padding:5px 7px calc(5px + env(safe-area-inset-bottom))!important}
+ .sidebar .brand,.sidebar .sidebar-signature{display:none!important}
+ .sidebar #nav{display:flex!important;flex-flow:row nowrap!important;align-items:stretch!important;gap:5px!important;overflow-x:auto!important;overflow-y:hidden!important;max-height:64px!important;white-space:nowrap!important}
+ .sidebar #nav details.ae-ux-nav-group,.sidebar #nav details.ae-ux-nav-group[open]{display:contents!important}
+ .sidebar #nav details.ae-ux-nav-group>summary{display:none!important}
+ .sidebar #nav button[data-page]{display:flex!important;flex:0 0 94px!important;width:94px!important;min-width:94px!important;max-width:94px!important;height:56px!important;min-height:56px!important;max-height:56px!important;align-items:center!important;justify-content:center!important;flex-direction:column!important;gap:2px!important;padding:5px!important;overflow:hidden!important;white-space:nowrap!important}
+ .sidebar #nav button[data-page] .nav-label{display:block!important;width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;text-align:center!important;font-size:11px!important}
+ .sidebar #nav button[data-page] .nav-icon{font-size:18px!important;line-height:20px!important}
+ body{padding-bottom:calc(89px + env(safe-area-inset-bottom))!important}
+ #dashboard .dashboard-hero{padding:12px!important}
+ #dashboard .dashboard-hero h2{font-size:27px!important;margin:4px 0!important}
+ #dashboard .dashboard-hero p{font-size:13px!important;line-height:1.35!important;margin:3px 0 9px!important}
+ #dashboard .dashboard-period{padding:9px!important;gap:7px!important}
+ #dashboard .dashboard-period .field label{font-size:11px!important}
+ #dashboard .dashboard-period input,#dashboard .dashboard-period select{min-height:42px!important}
+ #dashboard .dashboard-update{min-height:44px!important;padding:9px!important}
+}
+</style>
 </head>
 <body>
 <div id="brandSplashV1778" aria-hidden="true"><div class="brand-splash-card"><img src="brand-artessencia.png" alt=""></div></div>
