@@ -9,5 +9,5 @@ for(const fn of ['renderDashboard','renderOrders','renderProduction','renderProd
 for(const id of ['globalSearchV142','cloudStatus','runtimeVersion','deliveryEstimateLocalityV1911','deliveryEstimateRowsV1911'])assert.ok(html.includes('id="'+id+'"'),'Critical element missing: '+id);
 assert.match(html,/const APP_VERSION='1\.9\.14'/,'Unexpected app version: baseline changes require separate release review');
 const sw=fs.readFileSync('sw.js','utf8'),ver=JSON.parse(fs.readFileSync('version.json','utf8'));
-assert.equal(ver.app,'1.9.14');assert.ok(sw.includes("artessencia-backoffice-1.9.14"));
-console.log('UX baseline checks passed: '+pages.length+' modules, critical functions, PWA 1.9.14');
+assert.equal(ver.app,'1.9.15');assert.ok(sw.includes("artessencia-backoffice-1.9.15"));
+console.log('UX baseline checks passed: '+pages.length+' modules, critical functions, PWA 1.9.15');
