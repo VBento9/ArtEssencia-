@@ -25,3 +25,5 @@ jobs:
         run: node scripts/test_ux_navigation.cjs
       - name: Audit mobile navigation
         run: node scripts/test_ux_mobile_audit.cjs
+      - name: Verify orders filter controls
+        run: node scripts/test_ux_orders_filters.cjs

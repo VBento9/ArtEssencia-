@@ -3428,6 +3428,15 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
  .ae-ux-module-panel input{width:100%;margin-top:12px;padding:12px;border:1px solid #cdb7a9;border-radius:10px}
 }
 </style>
+<style id="ae-orders-utility-20261019">
+#orders .orders-filter-utility-v1915{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#orders .orders-filter-utility-v1915 small{font-size:12px;color:var(--muted,#756b63)}
+#orders #ordersClearFiltersV1915:disabled{opacity:.5;cursor:default}
+</style>
+<style id="ae-orders-attention-v1915">
+#orders .order-attention-v1915{display:inline-flex;align-items:center;border:1px solid #cbb4a5;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:700;color:#603a24;background:#fff7eb}
+#orders .order-card-head{flex-wrap:wrap;gap:6px}
+</style>
 </head>
 <body>
 <div id="brandSplashV1778" aria-hidden="true"><div class="brand-splash-card"><img src="brand-artessencia.png" alt=""></div></div>
@@ -3599,6 +3608,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div class="field orders-period-v1882"><label>De</label><input id="orderDateFromV1882" type="date" onchange="renderOrders()"></div>
         <div class="field orders-period-v1882"><label>Até</label><input id="orderDateToV1882" type="date" onchange="renderOrders()"></div>
         <div class="field"><label>Vista</label><div class="orders-view-switch"><button id="ordersCardsBtn" class="active" onclick="setOrdersView('cards')">▦ Cartões</button><button id="ordersTableBtn" onclick="setOrdersView('table')">☷ Tabela</button></div></div>
+        <div class="orders-filter-utility-v1915"><button type="button" class="btn" id="ordersClearFiltersV1915" onclick="clearOrderFiltersV1915()" disabled>Limpar filtros</button><small id="ordersResultsV1915" role="status" aria-live="polite">—</small></div>
         <div class="orders-new-wrap-v1728"><button class="btn primary orders-new" onclick="go('sale')">＋ Nova encomenda</button></div>
       </div>
     </div>
@@ -3722,6 +3732,10 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
   </section>
 
   <section id="production" class="screen">
+    <div id="orderProductionContextV1915" class="card" hidden style="margin-bottom:12px">
+      <span id="orderProductionMessageV1915" style="flex:1"></span>
+      <button type="button" class="btn" onclick="document.getElementById('orderProductionContextV1915').hidden=true;go('orders')">← Voltar às encomendas</button>
+    </div>
     <div class="card prod-head">
       <div class="prod-head-main">
         <div>
@@ -7209,6 +7223,7 @@ async function loadSocialMetaStatusV11(showToast=false){const box=document.getEl
 async function markSocialPublishedV10(id){try{const c=await socialCloudV7(),r=await c.from('artessencia_social_publications').update({status:'published',published_at:new Date().toISOString()}).eq('id',id).eq('status','approved').select('id');if(r.error)throw r.error;if(!r.data?.length)return toast('A proposta já não está aprovada ou não pôde ser atualizada');toast('Publicação marcada como publicada');await loadSocialPublicationsV7(false)}catch(e){console.error('social publication publish',e);toast('Não foi possível atualizar o estado')}}
 async function loadSocialPublicationsV7(showToast=false){const h=document.getElementById('socialPublicationsV7');if(!h)return;try{const c=await socialCloudV7(),r=await c.from('artessencia_social_publications').select('id,product_name,network,format,status,scheduled_for,created_at').order('created_at',{ascending:false}).limit(50);if(r.error)throw r.error;const d=r.data||[],labels={draft:'Rascunho',approved:'Aprovada',published:'Publicada',rejected:'Rejeitada'};h.innerHTML=d.length?'<div class="tablewrap"><table><thead><tr><th>Produto</th><th>Rede / formato</th><th>Estado</th><th>Prevista</th><th>Criada</th><th>Ações</th></tr></thead><tbody>'+d.map(x=>'<tr><td>'+escapeHtml(x.product_name||'')+'</td><td>'+escapeHtml((x.network||'')+' · '+(x.format||''))+'</td><td>'+escapeHtml(labels[x.status]||x.status||'')+'</td><td>'+escapeHtml(x.scheduled_for?new Date(x.scheduled_for).toLocaleString('pt-PT'):'—')+'</td><td>'+escapeHtml(x.created_at?new Date(x.created_at).toLocaleString('pt-PT'):'—')+'</td><td>'+(x.status==='draft'?'<button class="smallbtn social-open-draft-v9" type="button" data-social-id="'+escapeHtml(x.id||'')+'">Abrir</button>':x.status==='approved'?'<button class="smallbtn social-mark-published-v10" type="button" data-social-id="'+escapeHtml(x.id||'')+'">Marcar publicada</button>':'—')+'</td></tr>').join('')+'</tbody></table></div>':'<p class="muted">Ainda não existem propostas guardadas.</p>';h.querySelectorAll('.social-open-draft-v9').forEach(btn=>btn.addEventListener('click',()=>openSocialDraftV9(btn.dataset.socialId||'')));h.querySelectorAll('.social-mark-published-v10').forEach(btn=>btn.addEventListener('click',()=>markSocialPublishedV10(btn.dataset.socialId||'')));if(showToast)toast('Histórico atualizado')}catch(e){console.error('social publications load',e);h.innerHTML='<p class="muted">Não foi possível carregar o histórico.</p>'}}
 function go(id){
+ if(id==='production'){const context=document.getElementById('orderProductionContextV1915');if(context)context.hidden=true;}
  document.querySelectorAll('dialog[open]').forEach(d=>{try{d.close()}catch(e){}});
  document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active','screen-enter'));
  const target=document.getElementById(id);if(!target)return toast('Módulo não encontrado');
@@ -7945,6 +7960,34 @@ function orderStatusClass(status){
  return status==='Entregue'?'done':status==='Cancelado'?'cancel':status==='Pronta'?'ready':status==='Em produção'?'production':status==='Confirmada'?'confirmed':'request';
 }
 function orderFilterDateV1882(o){return String(o?.created||o?.orderDate||o?.delivery||'').slice(0,10)}
+function viewOrderProductionV1915(id){
+ const order=(db.orders||[]).find(o=>o.id===id);
+ if(!order)return;
+ const date=String(order.delivery||'').slice(0,10);
+ go('production');
+ const el=document.getElementById('prodDate');
+ const validDate=/^\d{4}-\d{2}-\d{2}$/.test(date)&&!Number.isNaN(Date.parse(date))&&new Date(date+'T12:00:00').toISOString().slice(0,10)===date;
+ if(el&&validDate){el.value=date;renderProduction();}
+ const context=document.getElementById('orderProductionContextV1915');
+ const message=document.getElementById('orderProductionMessageV1915');
+ if(context&&message){
+  message.textContent=validDate?'Consulta da agenda de '+date+' a partir da encomenda '+String(order.id||'')+'. A agenda pode incluir outras encomendas da mesma data.':'Encomenda '+String(order.id||'')+' sem data de entrega válida. Consulta a agenda sem filtro específico desta encomenda.';
+  context.hidden=false;
+ }
+}
+function clearOrderFiltersV1915(){
+ for(const id of ['orderSearch','orderFilter','orderDateFromV1882','orderDateToV1882']){const el=document.getElementById(id);if(el)el.value='';}
+ renderOrders();
+}
+function orderAttentionLabelV1915(o){
+ if(o.status==='Pedido')return 'Por confirmar';
+ if(o.status==='Em produção')return 'Em produção';
+ if(o.status==='Pronta'){
+  const balance=Math.max(0,calcOrder(o).total-(Number(o.paid)||0));
+  return balance>0.005?'Pronta · pagamento pendente':'Pronta para entrega';
+ }
+ return '';
+}
 function renderOrders(){
  const q=(document.getElementById('orderSearch')?.value||'').trim().toLowerCase(),f=document.getElementById('orderFilter')?.value||'';
  const from=document.getElementById('orderDateFromV1882')?.value||'',to=document.getElementById('orderDateToV1882')?.value||'';
@@ -7956,6 +7999,10 @@ function renderOrders(){
    const d=orderFilterDateV1882(o);
    return (!q||hay.includes(q))&&(!f||o.status===f)&&(!from||d>=from)&&(!to||d<=to)
  }).slice().reverse();
+ const filtersActive=Boolean(q||f||from||to);
+ const clearBtn=document.getElementById('ordersClearFiltersV1915'),results=document.getElementById('ordersResultsV1915');
+ if(clearBtn)clearBtn.disabled=!filtersActive;
+ if(results)results.textContent=rows.length+' de '+base.length+' encomendas'+(filtersActive?' · filtros ativos':'');
 
  const activeCount=document.getElementById('ordersActiveCountV1882'),historyCount=document.getElementById('ordersHistoryCountV1882');
  if(activeCount)activeCount.textContent=String(activeAll.length);
@@ -7990,6 +8037,7 @@ function renderOrders(){
        <div class="order-card-head">
         <div><span class="order-ref">${escapeHtml(o.id||'Encomenda')}</span>${o.source==='online_store'?'<span class="badge ok">ONLINE</span>':''}</div>
         <span class="order-status-pill ${orderStatusClass(o.status)}">${escapeHtml(o.status||'Pedido')}</span>
+        ${orderAttentionLabelV1915(o)?`<span class="order-attention-v1915">${escapeHtml(orderAttentionLabelV1915(o))}</span>`:''}
        </div>
        <button class="order-card-main" onclick="showOrder('${escapeHtml(o.id)}')">
         <div class="order-client"><span>👤</span><div><b>${escapeHtml(o.client||'Cliente')}</b><small>${escapeHtml(o.contact||'Sem contacto')}</small></div></div>
@@ -8003,6 +8051,7 @@ function renderOrders(){
        </button>
        <div class="order-card-actions">
         <button class="btn" onclick="showOrder('${escapeHtml(o.id)}')">Ver detalhe</button>
+        <button class="btn" type="button" onclick="viewOrderProductionV1915('${escapeHtml(o.id)}')">Ver produção</button>
         <select aria-label="Alterar estado" onchange="setStatus('${escapeHtml(o.id)}',this.value)">${['Pedido','Confirmada','Em produção','Pronta','Entregue','Cancelado'].map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}</select>
         <button class="btn" onclick="sendWhatsApp('${escapeHtml(o.id)}')">WhatsApp</button>
         ${o.status==='Pronta'&&Math.max(0,calcOrder(o).total-(Number(o.paid)||0))>0.005?`<button class="btn" onclick="sendReadyPaymentWhatsAppV20261013('${escapeHtml(o.id)}')">Pronta · pagamento pendente</button>`:''}
