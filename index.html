@@ -3608,7 +3608,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div class="field orders-period-v1882"><label>De</label><input id="orderDateFromV1882" type="date" onchange="renderOrders()"></div>
         <div class="field orders-period-v1882"><label>Até</label><input id="orderDateToV1882" type="date" onchange="renderOrders()"></div>
         <div class="field"><label>Vista</label><div class="orders-view-switch"><button id="ordersCardsBtn" class="active" onclick="setOrdersView('cards')">▦ Cartões</button><button id="ordersTableBtn" onclick="setOrdersView('table')">☷ Tabela</button></div></div>
-        <div class="orders-filter-utility-v1915"><button type="button" class="btn" id="ordersClearFiltersV1915" onclick="clearOrderFiltersV1915()" disabled>Limpar filtros</button><small id="ordersResultsV1915" role="status" aria-live="polite">—</small></div>
+        <div class="orders-filter-utility-v1915"><label for="ordersSortV1916">Ordenar</label><select id="ordersSortV1916" aria-label="Ordenar encomendas" onchange="renderOrders()"><option value="recent">Mais recentes</option><option value="due">Entrega mais próxima</option></select><button type="button" class="btn" id="ordersClearFiltersV1915" onclick="clearOrderFiltersV1915()" disabled>Limpar filtros</button><small id="ordersResultsV1915" role="status" aria-live="polite">—</small></div>
         <div class="orders-new-wrap-v1728"><button class="btn primary orders-new" onclick="go('sale')">＋ Nova encomenda</button></div>
       </div>
     </div>
@@ -7999,6 +7999,8 @@ function renderOrders(){
    const d=orderFilterDateV1882(o);
    return (!q||hay.includes(q))&&(!f||o.status===f)&&(!from||d>=from)&&(!to||d<=to)
  }).slice().reverse();
+ const sortMode=document.getElementById('ordersSortV1916')?.value||'recent';
+ if(sortMode==='due'&&ordersModeV1882==='active')rows.sort((a,b)=>{const da=String(a.delivery||'').slice(0,10),db=String(b.delivery||'').slice(0,10);const va=/^\d{4}-\d{2}-\d{2}$/.test(da)?da:'9999-12-31',vb=/^\d{4}-\d{2}-\d{2}$/.test(db)?db:'9999-12-31';return va.localeCompare(vb)});
  const filtersActive=Boolean(q||f||from||to);
  const clearBtn=document.getElementById('ordersClearFiltersV1915'),results=document.getElementById('ordersResultsV1915');
  if(clearBtn)clearBtn.disabled=!filtersActive;
