@@ -5985,7 +5985,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.13';
+const APP_VERSION='1.9.14';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -10064,7 +10064,7 @@ function selectDeliveryReferenceV1914(candidates,locality,result,button){
  group.append(label,select,confirm);row.append(group);result.textContent=candidates.length?'Seleciona uma correspondência para calcular.':'Sem correspondências confirmadas. Confirma a grafia ou acrescenta o concelho na pesquisa.';
 }
 
-function deliveryEstimatesCardV1911(){return `<section class="delivery-v33-card delivery-v33-wide"><div class="delivery-v33-cardhead"><div><strong>Estimativas por localidade</strong><small>Valores de referência para planeamento. O checkout calcula a morada concreta e só aceita zonas autorizadas.</small></div></div><p class="soft-note">Usa os custos atualmente apresentados acima, mesmo antes de guardar. Cada estimativa usa um ponto da localidade, não todas as suas moradas. Não é um intervalo mínimo/máximo nem uma tarifa garantida.</p><div class="delivery-v33-fields two"><div class="field"><label for="deliveryEstimateLocalityV1911">Outra localidade de Portugal continental</label><input id="deliveryEstimateLocalityV1911" maxlength="100" placeholder="Ex.: Covilhã, Belmonte ou Alcaide"></div><div class="field" style="align-self:end"><button type="button" class="btn" onclick="addDeliveryEstimateV1911()">Adicionar à simulação</button></div></div><div id="deliveryEstimateRowsV1911" style="display:grid;gap:12px;margin-top:12px"></div><small>Adicionar aqui não cria nem ativa uma zona. Nenhuma encomenda é criada. As escolhas geográficas são guardadas neste dispositivo, por conta. As referências são sempre verificadas pelo servidor e não alteram zonas nem moradas.</small></section>`}
+function deliveryEstimatesCardV1911(){return `<section class="delivery-v33-card delivery-v33-wide"><div class="delivery-v33-cardhead"><div><strong>Estimativas por localidade</strong><small>Valores de referência para planeamento. O checkout calcula a morada concreta e só aceita zonas autorizadas.</small></div></div><p class="soft-note">Usa os custos atualmente apresentados acima, mesmo antes de guardar. Cada estimativa usa um ponto da localidade, não todas as suas moradas. Não é um intervalo mínimo/máximo nem uma tarifa garantida.</p><div class="delivery-v33-fields two"><div class="field"><label for="deliveryEstimateLocalityV1911">Outra localidade de Portugal continental</label><input id="deliveryEstimateLocalityV1911" maxlength="100" placeholder="Ex.: Covilhã, Belmonte ou Alcaide"></div><div class="field" style="align-self:end"><button type="button" class="btn" onclick="addDeliveryEstimateV1911()">Adicionar à simulação</button></div></div><div class="delivery-v33-fields two"><div class="field"><label for="deliveryEstimateDistrictV1914">Distrito (opcional)</label><input id="deliveryEstimateDistrictV1914" maxlength="100" placeholder="Para limitar a pesquisa"></div><div class="field"><label for="deliveryEstimateMunicipalityV1914">Concelho (opcional)</label><input id="deliveryEstimateMunicipalityV1914" maxlength="100" placeholder="Para distinguir nomes repetidos"></div></div><div id="deliveryEstimateRowsV1911" style="display:grid;gap:12px;margin-top:12px"></div><small>Adicionar aqui não cria nem ativa uma zona. Nenhuma encomenda é criada. As escolhas geográficas são guardadas neste dispositivo, por conta. As referências são sempre verificadas pelo servidor e não alteram zonas nem moradas.</small></section>`}
 function renderDeliveryEstimateRowsV1911(){
  const box=document.getElementById('deliveryEstimateRowsV1911');if(!box)return;box.replaceChildren();
  const names=Array.isArray(deliveryZonesV197)?deliveryZonesV197.map(z=>z.locality):[];
@@ -10085,7 +10085,7 @@ function appendDeliveryEstimateRowV1911(name){
  const change=document.createElement('button');change.type='button';change.className='btn';change.textContent='Escolher localidade';change.onclick=()=>{if(button.disabled)return;row._planningReference=null;row._planningSearch=true;calculateDeliveryEstimateV1911(name,result,button)};
  row.append(title,result,button,change);box.append(row);
 }
-function addDeliveryEstimateV1911(){const el=document.getElementById('deliveryEstimateLocalityV1911');if(!el)return;appendDeliveryEstimateRowV1911(el.value);el.value=''}
+function addDeliveryEstimateV1911(){const el=document.getElementById('deliveryEstimateLocalityV1911');if(!el)return;const row=appendDeliveryEstimateRowV1911(el.value);if(!row)return;row._planningSearchScope={district:document.getElementById('deliveryEstimateDistrictV1914')?.value.trim()||'',municipality:document.getElementById('deliveryEstimateMunicipalityV1914')?.value.trim()||''};row._planningSearch=true;calculateDeliveryEstimateV1911(row.dataset.locality,row.querySelector('.delivery-estimate-result'),row.querySelector('button'));el.value=''}
 function bindDeliveryEstimatePricingV1911(){for(const [key] of DELIVERY_PRICING_FIELDS_V199)document.getElementById('deliveryPricing_'+key)?.addEventListener('input',invalidateDeliveryEstimatesV1911)}
 function invalidateDeliveryEstimatesV1911(){deliveryEstimatesGenerationV1911++;for(const el of document.querySelectorAll('.delivery-estimate-result'))if(el.dataset.calculated==='true'){el.textContent='Custos alterados — recalcular';el.dataset.calculated='false'}}
 let deliveryEstimateQueueV1911=Promise.resolve();
@@ -10107,7 +10107,7 @@ async function calculateQueuedDeliveryEstimateV1911(locality,result,button,gener
   const row=button.parentElement,reference=row._planningReference||deliveryReferencesV1914()[locality.toLocaleLowerCase('pt-PT')]||{};
   const search=row._planningSearch===true;row._planningSearch=false;
   const endpoint='/api/delivery-estimates';
-  const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({locality,pricing,...reference,...(search?{action:'search',candidateId:undefined,district:undefined,municipality:undefined}:{})}),cache:'no-store',signal:AbortSignal.timeout(60000)});
+  const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({locality,pricing,...reference,...(search?{action:'search',candidateId:undefined,district:row._planningSearchScope?.district||undefined,municipality:row._planningSearchScope?.municipality||undefined}:{})}),cache:'no-store',signal:AbortSignal.timeout(60000)});
   const data=await response.json();
   if(generation!==deliveryEstimatesGenerationV1911||!button.isConnected)return;
   if(Array.isArray(data.candidates)&&(search||data.error==='reference_unresolved')){selectDeliveryReferenceV1914(data.candidates,locality,result,button);return}
