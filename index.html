@@ -7979,6 +7979,16 @@ function clearOrderFiltersV1915(){
  for(const id of ['orderSearch','orderFilter','orderDateFromV1882','orderDateToV1882']){const el=document.getElementById(id);if(el)el.value='';}
  renderOrders();
 }
+function orderMaterialPreviewV1916(o){
+ const missing=productionMissingRecipesV1757([o]),unresolved=productionUnresolvedLinesV148([o]);
+ const needs=Object.entries(productionOrderNeedsV12632(o)).filter(([,q])=>Number(q)>0);
+ const rows=needs.map(([name,qty])=>{
+  const stock=stockByName(name),available=Number(stock?.qty)||0,shortage=!stock||available+1e-9<Number(qty);
+  return '<div class="prod-line"><span>'+escapeHtml(name)+(shortage?' · <strong>Insuficiente</strong>':'')+'</span><strong>'+productionFmtQtyV12632(qty)+' '+escapeHtml(stock?.unit||'')+' / disp. '+productionFmtQtyV12632(available)+'</strong></div>';
+ }).join('');
+ const warning=missing.length||unresolved.length?'<div class="empty prod-warning">Existem produtos ou fichas técnicas por configurar. A lista pode estar incompleta.</div>':'';
+ return '<details class="prod-order-prep-v12632"><summary><strong>Materiais previstos</strong><span>Consultar</span></summary>'+warning+(rows||'<div class="empty">Sem materiais calculados para esta encomenda.</div>')+'<small>Consulta indicativa. Não reserva nem desconta stock.</small></details>';
+}
 function orderAttentionLabelV1915(o){
  if(o.status==='Pedido')return 'Por confirmar';
  if(o.status==='Em produção')return 'Em produção';
@@ -8054,6 +8064,7 @@ function renderOrders(){
        <div class="order-card-actions">
         <button class="btn" onclick="showOrder('${escapeHtml(o.id)}')">Ver detalhe</button>
         <button class="btn" type="button" onclick="viewOrderProductionV1915('${escapeHtml(o.id)}')">Ver produção</button>
+        ${orderMaterialPreviewV1916(o)}
         <select aria-label="Alterar estado" onchange="setStatus('${escapeHtml(o.id)}',this.value)">${['Pedido','Confirmada','Em produção','Pronta','Entregue','Cancelado'].map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}</select>
         <button class="btn" onclick="sendWhatsApp('${escapeHtml(o.id)}')">WhatsApp</button>
         ${o.status==='Pronta'&&Math.max(0,calcOrder(o).total-(Number(o.paid)||0))>0.005?`<button class="btn" onclick="sendReadyPaymentWhatsAppV20261013('${escapeHtml(o.id)}')">Pronta · pagamento pendente</button>`:''}
