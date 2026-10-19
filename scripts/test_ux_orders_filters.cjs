@@ -26,4 +26,8 @@ assert.equal(context.orderAttentionLabelV1915({status:'Entregue'}),'');
 assert.match(html,/function viewOrderProductionV1915\(id\)/);
 assert.match(html,/go\('production'\)/);
 assert.match(html,/Ver produção/);
+assert.match(html,/id="orderProductionContextV1915"/);
+assert.match(html,/id="orderProductionMessageV1915"/);
+assert.match(html,/Voltar às encomendas/);
+assert.match(html,/A agenda pode incluir outras encomendas da mesma data/);
 console.log('Orders filters and read-only attention labels structural checks passed');
