@@ -14,11 +14,15 @@ assert.match(html, /aeUXOpenNavGroup/, 'Navigation must reopen the selected grou
 assert.match(html, /window\.matchMedia\('\(max-width:650px\)'\)/, 'Mobile breakpoint must be explicit');
 assert.match(html, /#nav button\[data-page\]/, 'Mobile controls must preserve data-page buttons');
 assert.match(html, /overflow-x:auto!important/, 'Horizontal menu must permit scrolling');
+const uxBlock = html.slice(html.indexOf('(function groupNavigationVUX20261019()'), html.indexOf('function updateTopDateTimeV1906()'));
+assert.match(uxBlock, /window\.aeUXOpenNavGroup=function\(page\)/, 'Selected route must open its navigation group');
+assert.match(uxBlock, /getBoundingClientRect\(\)/, 'Active item needs viewport measurement');
+assert.match(uxBlock, /nav\.scrollTo\(\{left:/, 'Selected mobile module must auto-scroll into view');
 assert.match(html, /const APP_VERSION='1\.9\.14'/, 'Do not publish from audit branch');
 // Expose a gap to resolve before rollout rather than silently passing an absent usability requirement:
 const hasActiveVisibility = /scrollIntoView\s*\(|\.scrollTo\s*\(/.test(
   html.slice(html.indexOf('(function groupNavigationVUX20261019()'), html.indexOf('function updateTopDateTimeV1906()'))
 );
 console.log('Static baseline OK: '+pages.length+' navigation modules, mobile overflow, same PWA version.');
-console.log('Selected-module auto-visibility: '+(hasActiveVisibility?'manual review required':'NOT implemented in UX navigation block; device verification required'));
+console.log('Selected-module auto-visibility: '+(hasActiveVisibility?'static implementation present; device review required':'NOT implemented; device verification required'));
 console.log('Required device checks: Honor Pad 9, Honor Magic 8 Pro, navigation to last module, print/PDF, passkey, page overlays, PWA update.');
