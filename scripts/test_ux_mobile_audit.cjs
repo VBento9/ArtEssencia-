@@ -1,5 +1,5 @@
 'use strict';
-// Non-destructive audit of mobile navigation in Backoffice 1.9.14 UX preview.
+// Non-destructive audit of mobile navigation in Backoffice 1.9.15 UX preview.
 // Run with: node scripts/test_ux_mobile_audit.cjs
 // This is a static safety gate, NOT a substitute for browser/PWA device tests.
 const fs = require('node:fs');
