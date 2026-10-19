@@ -3433,6 +3433,10 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 #orders .orders-filter-utility-v1915 small{font-size:12px;color:var(--muted,#756b63)}
 #orders #ordersClearFiltersV1915:disabled{opacity:.5;cursor:default}
 </style>
+<style id="ae-orders-attention-v1915">
+#orders .order-attention-v1915{display:inline-flex;align-items:center;border:1px solid #cbb4a5;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:700;color:#603a24;background:#fff7eb}
+#orders .order-card-head{flex-wrap:wrap;gap:6px}
+</style>
 </head>
 <body>
 <div id="brandSplashV1778" aria-hidden="true"><div class="brand-splash-card"><img src="brand-artessencia.png" alt=""></div></div>
@@ -7955,6 +7959,15 @@ function clearOrderFiltersV1915(){
  for(const id of ['orderSearch','orderFilter','orderDateFromV1882','orderDateToV1882']){const el=document.getElementById(id);if(el)el.value='';}
  renderOrders();
 }
+function orderAttentionLabelV1915(o){
+ if(o.status==='Pedido')return 'Por confirmar';
+ if(o.status==='Em produção')return 'Em produção';
+ if(o.status==='Pronta'){
+  const balance=Math.max(0,calcOrder(o).total-(Number(o.paid)||0));
+  return balance>0.005?'Pronta · pagamento pendente':'Pronta para entrega';
+ }
+ return '';
+}
 function renderOrders(){
  const q=(document.getElementById('orderSearch')?.value||'').trim().toLowerCase(),f=document.getElementById('orderFilter')?.value||'';
  const from=document.getElementById('orderDateFromV1882')?.value||'',to=document.getElementById('orderDateToV1882')?.value||'';
@@ -8004,6 +8017,7 @@ function renderOrders(){
        <div class="order-card-head">
         <div><span class="order-ref">${escapeHtml(o.id||'Encomenda')}</span>${o.source==='online_store'?'<span class="badge ok">ONLINE</span>':''}</div>
         <span class="order-status-pill ${orderStatusClass(o.status)}">${escapeHtml(o.status||'Pedido')}</span>
+        ${orderAttentionLabelV1915(o)?`<span class="order-attention-v1915">${escapeHtml(orderAttentionLabelV1915(o))}</span>`:''}
        </div>
        <button class="order-card-main" onclick="showOrder('${escapeHtml(o.id)}')">
         <div class="order-client"><span>👤</span><div><b>${escapeHtml(o.client||'Cliente')}</b><small>${escapeHtml(o.contact||'Sem contacto')}</small></div></div>
