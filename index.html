@@ -3428,6 +3428,11 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
  .ae-ux-module-panel input{width:100%;margin-top:12px;padding:12px;border:1px solid #cdb7a9;border-radius:10px}
 }
 </style>
+<style id="ae-orders-utility-20261019">
+#orders .orders-filter-utility-v1915{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#orders .orders-filter-utility-v1915 small{font-size:12px;color:var(--muted,#756b63)}
+#orders #ordersClearFiltersV1915:disabled{opacity:.5;cursor:default}
+</style>
 </head>
 <body>
 <div id="brandSplashV1778" aria-hidden="true"><div class="brand-splash-card"><img src="brand-artessencia.png" alt=""></div></div>
@@ -3599,6 +3604,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div class="field orders-period-v1882"><label>De</label><input id="orderDateFromV1882" type="date" onchange="renderOrders()"></div>
         <div class="field orders-period-v1882"><label>Até</label><input id="orderDateToV1882" type="date" onchange="renderOrders()"></div>
         <div class="field"><label>Vista</label><div class="orders-view-switch"><button id="ordersCardsBtn" class="active" onclick="setOrdersView('cards')">▦ Cartões</button><button id="ordersTableBtn" onclick="setOrdersView('table')">☷ Tabela</button></div></div>
+        <div class="orders-filter-utility-v1915"><button type="button" class="btn" id="ordersClearFiltersV1915" onclick="clearOrderFiltersV1915()" disabled>Limpar filtros</button><small id="ordersResultsV1915" role="status" aria-live="polite">—</small></div>
         <div class="orders-new-wrap-v1728"><button class="btn primary orders-new" onclick="go('sale')">＋ Nova encomenda</button></div>
       </div>
     </div>
@@ -7945,6 +7951,10 @@ function orderStatusClass(status){
  return status==='Entregue'?'done':status==='Cancelado'?'cancel':status==='Pronta'?'ready':status==='Em produção'?'production':status==='Confirmada'?'confirmed':'request';
 }
 function orderFilterDateV1882(o){return String(o?.created||o?.orderDate||o?.delivery||'').slice(0,10)}
+function clearOrderFiltersV1915(){
+ for(const id of ['orderSearch','orderFilter','orderDateFromV1882','orderDateToV1882']){const el=document.getElementById(id);if(el)el.value='';}
+ renderOrders();
+}
 function renderOrders(){
  const q=(document.getElementById('orderSearch')?.value||'').trim().toLowerCase(),f=document.getElementById('orderFilter')?.value||'';
  const from=document.getElementById('orderDateFromV1882')?.value||'',to=document.getElementById('orderDateToV1882')?.value||'';
@@ -7956,6 +7966,10 @@ function renderOrders(){
    const d=orderFilterDateV1882(o);
    return (!q||hay.includes(q))&&(!f||o.status===f)&&(!from||d>=from)&&(!to||d<=to)
  }).slice().reverse();
+ const filtersActive=Boolean(q||f||from||to);
+ const clearBtn=document.getElementById('ordersClearFiltersV1915'),results=document.getElementById('ordersResultsV1915');
+ if(clearBtn)clearBtn.disabled=!filtersActive;
+ if(results)results.textContent=rows.length+' de '+base.length+' encomendas'+(filtersActive?' · filtros ativos':'');
 
  const activeCount=document.getElementById('ordersActiveCountV1882'),historyCount=document.getElementById('ordersHistoryCountV1882');
  if(activeCount)activeCount.textContent=String(activeAll.length);
