@@ -1,0 +1,12 @@
+'use strict';
+const fs=require('node:fs');const assert=require('node:assert/strict');
+const html=fs.readFileSync('index.html','utf8');
+assert.match(html,/id="ae-tablet-ux-20261019"/);
+assert.match(html,/min-width:651px\) and \(max-width:1250px/);
+assert.match(html,/initAETabletSidebar20261019/);
+assert.match(html,/body\.ae-tablet-sidebar-collapsed \.sidebar/);
+assert.match(html,/#orders \.orders-toolbar-controls/);
+assert.match(html,/const APP_VERSION='1\.9\.15'/);
+assert.match(html,/ae-ux-quickbar/);
+assert.match(html,/function go\(id\)/);
+console.log('Tablet UX structural checks passed');

@@ -1,0 +1,15 @@
+'use strict';
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const html=fs.readFileSync('index.html','utf8');
+assert.ok(html.includes('id="ae-tablet-ux-20261019"'));
+assert.ok(html.includes('initAETabletSidebar20261019'));
+assert.equal((html.match(/function initAETabletSidebar20261019/g)||[]).length,1);
+assert.ok(!html.includes('initAETabletToggle20261019'));
+assert.ok(!html.includes('initTabletToggle20261019'));
+assert.ok(!html.includes('ae-tablet-pad9-ux-20261019'));
+assert.ok(html.includes('body.ae-tablet-sidebar-collapsed .sidebar'));
+assert.ok(html.includes("main.prepend(button)"));
+assert.ok(html.includes('aria-expanded'));
+assert.ok(html.includes('#orders .tablewrap'));
+assert.ok(html.includes("const APP_VERSION='1.9.15'"));
+console.log('Tablet UX structural checks passed; browser/device verification still required');

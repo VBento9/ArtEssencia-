@@ -6,6 +6,7 @@ on:
       - 'sw.js'
       - 'version.json'
       - 'scripts/test_ux_*.cjs'
+      - 'scripts/test_tablet_ux.cjs'
       - '.github/workflows/ux-safety.yml'
   workflow_dispatch:
 permissions:
@@ -25,3 +26,7 @@ jobs:
         run: node scripts/test_ux_navigation.cjs
       - name: Audit mobile navigation
         run: node scripts/test_ux_mobile_audit.cjs
+      - name: Audit tablet sidebar and orders
+        run: |
+          node scripts/test_tablet_ux.cjs
+          node scripts/test_ux_tablet.cjs
