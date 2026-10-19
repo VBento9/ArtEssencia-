@@ -29,3 +29,5 @@ jobs:
         run: node scripts/test_ux_orders_filters.cjs
       - name: Verify order priority sorting
         run: node scripts/test_ux_order_priority.cjs
+      - name: Verify order material preview
+        run: node scripts/test_ux_order_materials.cjs
