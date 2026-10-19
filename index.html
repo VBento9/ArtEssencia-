@@ -6581,6 +6581,13 @@ document.getElementById('nav').innerHTML=pages.map(([id,l])=>{const group=navGro
  button.addEventListener('click',()=>{document.body.classList.toggle('ae-tablet-sidebar-collapsed');sync()});
  main.prepend(button);sync();
 })();
+(function initTabletToggle20261019(){
+ const sidebar=document.querySelector('.sidebar'),app=document.querySelector('.app');if(!sidebar||!app)return;
+ const button=document.createElement('button');button.type='button';button.className='ae-tablet-toggle';button.textContent='Recolher menu';button.setAttribute('aria-label','Recolher ou expandir menu do tablet');
+ function update(){const compact=app.classList.contains('ae-tablet-compact');button.textContent=compact?'Expandir menu':'Recolher menu';button.setAttribute('aria-expanded',String(!compact));}
+ button.addEventListener('click',()=>{app.classList.toggle('ae-tablet-compact');update()});
+ sidebar.prepend(button);update();
+})();
 function updateTopDateTimeV1906(){const el=document.getElementById('today');if(!el)return;const now=new Date(),date=now.toLocaleDateString('pt-PT',{weekday:'short',day:'2-digit',month:'short'}),time=now.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});el.textContent=date+' · '+time}updateTopDateTimeV1906();setInterval(updateTopDateTimeV1906,30000);
 function todayISO(){const d=new Date(),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`}document.getElementById('saleDate').value=todayISO();document.getElementById('prodDate').value=todayISO();
 setTimeout(()=>{if(document.getElementById('purchaseDate'))document.getElementById('purchaseDate').value=todayISO();if(document.getElementById('cashDate'))document.getElementById('cashDate').value=todayISO()},0);
