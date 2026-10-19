@@ -8051,7 +8051,7 @@ function renderOrders(){
        </button>
        <div class="order-card-actions">
         <button class="btn" onclick="showOrder('${escapeHtml(o.id)}')">Ver detalhe</button>
-        <button class="btn" type="button" onclick="viewOrderProductionV1915(\'${escapeHtml(o.id)}\')">Ver produção</button>
+        <button class="btn" type="button" onclick="viewOrderProductionV1915('${escapeHtml(o.id)}')">Ver produção</button>
         <select aria-label="Alterar estado" onchange="setStatus('${escapeHtml(o.id)}',this.value)">${['Pedido','Confirmada','Em produção','Pronta','Entregue','Cancelado'].map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}</select>
         <button class="btn" onclick="sendWhatsApp('${escapeHtml(o.id)}')">WhatsApp</button>
         ${o.status==='Pronta'&&Math.max(0,calcOrder(o).total-(Number(o.paid)||0))>0.005?`<button class="btn" onclick="sendReadyPaymentWhatsAppV20261013('${escapeHtml(o.id)}')">Pronta · pagamento pendente</button>`:''}
