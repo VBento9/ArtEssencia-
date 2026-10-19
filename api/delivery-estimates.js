@@ -23,7 +23,7 @@ module.exports=async(req,res)=>{
  if(preview){const token=await runtimeToken();if(!token)return res.status(503).json({ok:false,error:'preview_link_unconfigured'});headers['x-vercel-trusted-oidc-idp-token']=token}
  const target=preview?'https://artessencia-loja-git-feature-portes-por-43942a-vascobento9-4541.vercel.app/api/delivery-estimates':'https://artessencia-loja.vercel.app/api/delivery-estimates';
  try{
-  const upstream=await fetch(target,{method:'POST',headers,body:JSON.stringify({locality:body.locality,pricing:body.pricing}),redirect:'error',signal:AbortSignal.timeout(55000)});
+  const upstream=await fetch(target,{method:'POST',headers,body:JSON.stringify({locality:body.locality,pricing:body.pricing,district:body.district,municipality:body.municipality}),redirect:'error',signal:AbortSignal.timeout(55000)});
   const type=upstream.headers.get('content-type')||'';
   if(!type.includes('application/json'))return res.status(503).json({ok:false,error:preview?'preview_link_unconfigured':'estimate_unavailable'});
   const result=await upstream.json();
