@@ -1,0 +1,11 @@
+'use strict';
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const html=fs.readFileSync('index.html','utf8');
+for(const id of ['orderSearch','orderFilter','orderDateFromV1882','orderDateToV1882','ordersClearFiltersV1915','ordersResultsV1915'])assert.ok(html.includes('id="'+id+'"'), 'Missing '+id);
+assert.match(html,/function clearOrderFiltersV1915\(\)\{/);
+assert.match(html,/if\(clearBtn\)clearBtn.disabled=!filtersActive/);
+assert.match(html,/if\(results\)results.textContent=rows.length/);
+assert.match(html,/function renderOrders\(\)/);
+assert.match(html,/function setStatus\(/);
+assert.match(html,/function showOrder\(/);
+console.log('Orders filter utility structural checks passed');
