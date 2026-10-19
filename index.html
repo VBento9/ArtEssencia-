@@ -3444,6 +3444,21 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 }
 @media (min-width:1251px), (max-width:650px){.ae-tablet-toggle{display:none!important}}
 </style>
+<style id="ae-tablet-pad9-ux-20261019">
+@media(min-width:651px) and (max-width:1200px){
+ .app.ae-tablet-collapsed{grid-template-columns:64px minmax(0,1fr)!important}
+ .app:not(.ae-tablet-collapsed){grid-template-columns:220px minmax(0,1fr)!important}
+ .sidebar{min-width:0!important}
+ .sidebar .ae-tablet-toggle{display:block!important;width:100%;padding:10px 5px;margin-bottom:10px;background:#fff4cc;border:1px solid #e4d0b9;border-radius:10px;font-weight:800;cursor:pointer}
+ .app.ae-tablet-collapsed .sidebar{padding:12px 7px!important;overflow:visible!important}
+ .app.ae-tablet-collapsed .sidebar .brand,.app.ae-tablet-collapsed .sidebar .sidebar-signature,.app.ae-tablet-collapsed .sidebar #nav{display:none!important}
+ .app .main{min-width:0!important}
+ #orders .tablewrap{max-width:100%;overflow-x:auto!important}
+ #orders table{min-width:700px}
+ #orders th,#orders td{white-space:normal;overflow-wrap:anywhere;vertical-align:top}
+}
+.sidebar .ae-tablet-toggle{display:none}
+</style>
 </head>
 <body>
 <div id="brandSplashV1778" aria-hidden="true"><div class="brand-splash-card"><img src="brand-artessencia.png" alt=""></div></div>
@@ -6587,6 +6602,15 @@ document.getElementById('nav').innerHTML=pages.map(([id,l])=>{const group=navGro
  function update(){const compact=app.classList.contains('ae-tablet-compact');button.textContent=compact?'Expandir menu':'Recolher menu';button.setAttribute('aria-expanded',String(!compact));}
  button.addEventListener('click',()=>{app.classList.toggle('ae-tablet-compact');update()});
  sidebar.prepend(button);update();
+})();
+
+// Tablet-only sidebar toggle. Module routes and data remain untouched.
+(function initAETabletToggle20261019(){
+ const aside=document.querySelector('.sidebar'),app=document.querySelector('.app');if(!aside||!app)return;
+ const b=document.createElement('button');b.type='button';b.className='ae-tablet-toggle';b.setAttribute('aria-controls','nav');
+ function sync(){const collapsed=app.classList.contains('ae-tablet-collapsed');b.textContent=collapsed?'☰ Menu':'← Recolher menu';b.setAttribute('aria-expanded',String(!collapsed));b.setAttribute('aria-label',collapsed?'Abrir menu lateral':'Recolher menu lateral')}
+ b.onclick=()=>{app.classList.toggle('ae-tablet-collapsed');sync()};
+ aside.prepend(b);sync();
 })();
 function updateTopDateTimeV1906(){const el=document.getElementById('today');if(!el)return;const now=new Date(),date=now.toLocaleDateString('pt-PT',{weekday:'short',day:'2-digit',month:'short'}),time=now.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});el.textContent=date+' · '+time}updateTopDateTimeV1906();setInterval(updateTopDateTimeV1906,30000);
 function todayISO(){const d=new Date(),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`}document.getElementById('saleDate').value=todayISO();document.getElementById('prodDate').value=todayISO();
