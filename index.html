@@ -6460,6 +6460,13 @@ document.getElementById('nav').innerHTML=pages.map(([id,l])=>{const group=navGro
  const search=document.createElement('input');search.type='search';search.className='ae-ux-nav-search';
  search.placeholder='Encontrar módulo…';search.setAttribute('aria-label','Encontrar módulo no menu');
  search.autocomplete='off';nav.prepend(search);
+ const clearNavFilter=()=>{
+  search.value='';
+  nav.querySelectorAll('details.ae-ux-nav-group').forEach(g=>{
+   g.hidden=false;g.style.display='';
+   g.querySelectorAll('button[data-page]').forEach(b=>{b.hidden=false;b.style.display=''});
+  });
+ };
  search.addEventListener('input',()=>{
   const term=search.value.trim().toLocaleLowerCase('pt-PT');
   nav.querySelectorAll('details.ae-ux-nav-group').forEach(g=>{
@@ -6472,9 +6479,9 @@ document.getElementById('nav').innerHTML=pages.map(([id,l])=>{const group=navGro
    if(term&&visible)g.open=true;
   });
  });
- const expandMobileGroups=()=>{if(window.matchMedia('(max-width:650px)').matches)nav.querySelectorAll('details.ae-ux-nav-group').forEach(d=>d.open=true)};
+ const expandMobileGroups=()=>{if(window.matchMedia('(max-width:650px)').matches){clearNavFilter();nav.querySelectorAll('details.ae-ux-nav-group').forEach(d=>d.open=true)}};
  expandMobileGroups();window.addEventListener('resize',expandMobileGroups,{passive:true});
- window.aeUXOpenNavGroup=function(page){const el=[...nav.querySelectorAll('button[data-page]')].find(b=>b.dataset.page===page);if(el?.closest('details'))el.closest('details').open=true};
+ window.aeUXOpenNavGroup=function(page){clearNavFilter();const el=[...nav.querySelectorAll('button[data-page]')].find(b=>b.dataset.page===page);if(el?.closest('details'))el.closest('details').open=true};
  aeUXOpenNavGroup('dashboard');
 })();
 function updateTopDateTimeV1906(){const el=document.getElementById('today');if(!el)return;const now=new Date(),date=now.toLocaleDateString('pt-PT',{weekday:'short',day:'2-digit',month:'short'}),time=now.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});el.textContent=date+' · '+time}updateTopDateTimeV1906();setInterval(updateTopDateTimeV1906,30000);
