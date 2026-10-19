@@ -23,4 +23,7 @@ assert.equal(context.orderAttentionLabelV1915({status:'Em produção'}),'Em prod
 assert.equal(context.orderAttentionLabelV1915({status:'Pronta',total:30,paid:10}),'Pronta · pagamento pendente');
 assert.equal(context.orderAttentionLabelV1915({status:'Pronta',total:30,paid:30}),'Pronta para entrega');
 assert.equal(context.orderAttentionLabelV1915({status:'Entregue'}),'');
+assert.match(html,/function viewOrderProductionV1915\(id\)/);
+assert.match(html,/go\('production'\)/);
+assert.match(html,/Ver produção/);
 console.log('Orders filters and read-only attention labels structural checks passed');
