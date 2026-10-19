@@ -7,5 +7,5 @@ assert.match(html,/body\.ae-tablet-sidebar-collapsed \.sidebar/);
 assert.match(html,/id='ae-tablet-toggle-20261019'/);
 assert.match(html,/aria-expanded/);
 assert.match(html,/#orders \.tablewrap/);
-assert.match(html,/const APP_VERSION='1\.9\.15'/);
+assert.match(html,/const APP_VERSION='1\.9\.16'/);
 console.log('Tablet integrated static safety checks passed. Device testing still required.');

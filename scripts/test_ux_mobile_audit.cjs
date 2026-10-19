@@ -1,5 +1,5 @@
 'use strict';
-// Non-destructive audit of mobile navigation in Backoffice 1.9.15 UX preview.
+// Non-destructive audit of mobile navigation in Backoffice 1.9.16 UX preview.
 // Run with: node scripts/test_ux_mobile_audit.cjs
 // This is a static safety gate, NOT a substitute for browser/PWA device tests.
 const fs = require('node:fs');
@@ -18,7 +18,7 @@ const uxBlock = html.slice(html.indexOf('(function groupNavigationVUX20261019()'
 assert.match(uxBlock, /window\.aeUXOpenNavGroup=function\(page\)/, 'Selected route must open its navigation group');
 assert.match(uxBlock, /getBoundingClientRect\(\)/, 'Active item needs viewport measurement');
 assert.match(uxBlock, /nav\.scrollTo\(\{left:/, 'Selected mobile module must auto-scroll into view');
-assert.match(html, /const APP_VERSION='1\.9\.15'/, 'Do not publish from audit branch');
+assert.match(html, /const APP_VERSION='1\.9\.16'/, 'Do not publish from audit branch');
 assert.match(html, /id="ae-ux-quicknav-20261019"/, 'Mobile quick navigation styles missing');
 assert.match(html, /initUXQuickNav20261019/, 'Mobile quick navigation missing');
 for (const name of ['Início','Voltar','Módulos']) assert.ok(html.includes("'"+name+"'"), 'Mobile shortcut missing: '+name);

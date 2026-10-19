@@ -16,8 +16,8 @@ for(const id of ['cloudStatus','runtimeVersion','deliveryEstimateLocalityV1911',
 assert.match(html,/function viewOrderProductionV1915\(id\)/,'Order to production route missing');
 assert.match(html,/function clearOrderFiltersV1915\(\)/,'Order filtering missing');
 assert.match(html,/window\.aeUXOpenNavGroup/,'Responsive navigation integration missing');
-assert.match(html,/const APP_VERSION='1\.9\.15'/,'Release version requires separate approval');
-assert.equal(version.app,'1.9.15','Unexpected version change');
-assert.ok(sw.includes('artessencia-backoffice-1.9.15'),'PWA cache change requires independent review');
+assert.match(html,/const APP_VERSION='1\.9\.16'/,'Release version requires separate approval');
+assert.equal(version.app,'1.9.16','Unexpected version change');
+assert.ok(sw.includes('artessencia-backoffice-1.9.16'),'PWA cache change requires independent review');
 console.log('PASS: cross-module structural baseline, 29 routes, order workflow, delivery elements and PWA version.');
 console.log('NOT VERIFIED: cloud runtime, checkout, catalog publication, printing, passkeys, installed PWA and device layout.');
