@@ -3362,6 +3362,23 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 }
 @media(prefers-reduced-motion:reduce){.nav button{transition:none!important}}
 </style>
+<style id="ae-ux-groups-20261019">
+@media(min-width:651px){
+.sidebar .nav .ae-ux-nav-group{display:grid;gap:4px;border:0;margin:0;padding:0}
+.sidebar .nav .ae-ux-nav-group>summary{cursor:pointer;list-style:none;user-select:none;padding:12px 9px 8px;font-size:11px;letter-spacing:.04em;font-weight:900;color:#684337}
+.sidebar .nav .ae-ux-nav-group>summary::-webkit-details-marker{display:none}
+.sidebar .nav .ae-ux-nav-group>summary:after{content:'⌄';float:right}
+.sidebar .nav .ae-ux-nav-group:not([open])>summary:after{content:'›'}
+.sidebar .nav .ae-ux-nav-group>summary:focus-visible{outline:3px solid #0b7285}
+.sidebar .nav button.nav-group-start-v1857{margin-top:0}
+.sidebar .nav button.nav-group-start-v1857:before{display:none}
+}
+@media(max-width:650px){
+.sidebar .nav .ae-ux-nav-group{display:contents}
+.sidebar .nav .ae-ux-nav-group>summary{display:none}
+.sidebar .nav .ae-ux-nav-group:not([open])>button{display:flex}
+}
+</style>
 </head>
 <body>
 <div id="brandSplashV1778" aria-hidden="true"><div class="brand-splash-card"><img src="brand-artessencia.png" alt=""></div></div>
@@ -6421,6 +6438,26 @@ const pageIcons={
 };
 const navGroupsV1857={dashboard:'Visão geral',sale:'Operação',costs:'Gestão',clients:'Clientes e comunicação',digitalStats:'Análise',products:'Conteúdo público',campaigns:'Marketing',delivery:'Loja e conformidade',settings:'Sistema'};
 document.getElementById('nav').innerHTML=pages.map(([id,l])=>{const group=navGroupsV1857[id]||'';return `<button data-page="${id}" ${group?`class="nav-group-start-v1857" data-group-label="${group}"`:''} onclick="go('${id}')"><span class="nav-icon">${pageIcons[id]||'•'}</span><span class="nav-label">${l}</span>${id==='orders'?'<span id="navOrderBadgeV12624" class="nav-order-badge-v12624 hidden">0</span>':''}${id==='email'?'<span id="navEmailBadgeV1716" class="nav-order-badge-v12624 hidden">0</span>':''}<span class="nav-active-dot"></span></button>`}).join('');
+// UX grouping is DOM-only: original navigation buttons, page ids and onclick handlers remain intact.
+(function groupNavigationVUX20261019(){
+ const nav=document.getElementById('nav');if(!nav)return;
+ const buttons=[...nav.querySelectorAll(':scope > button[data-page]')];if(buttons.length!==pages.length)return;
+ const sections=[['Visão geral',1],['Operação',4],['Gestão de materiais',4],['Clientes e comunicação',2],['Análise',3],['Produtos e conteúdo',9],['Marketing',1],['Loja e conformidade',2],['Sistema',3]];
+ // Use explicit start pages rather than inferred counts, so all existing destinations stay accessible.
+ const starts={dashboard:'Visão geral',sale:'Operação',costs:'Gestão de materiais',clients:'Clientes e comunicação',digitalStats:'Análise',products:'Produtos e conteúdo',campaigns:'Marketing',delivery:'Loja e conformidade',settings:'Sistema'};
+ const fragment=document.createDocumentFragment();let group=null;
+ for(const button of buttons){
+  const id=button.dataset.page;
+  if(starts[id]){
+   group=document.createElement('details');group.className='ae-ux-nav-group';group.open=['dashboard','sale'].includes(id);
+   const summary=document.createElement('summary');summary.textContent=starts[id];group.append(summary);fragment.append(group);
+  }
+  if(group)group.append(button);else fragment.append(button);
+ }
+ nav.replaceChildren(fragment);
+ window.aeUXOpenNavGroup=function(page){const el=[...nav.querySelectorAll('button[data-page]')].find(b=>b.dataset.page===page);if(el?.closest('details'))el.closest('details').open=true};
+ aeUXOpenNavGroup('dashboard');
+})();
 function updateTopDateTimeV1906(){const el=document.getElementById('today');if(!el)return;const now=new Date(),date=now.toLocaleDateString('pt-PT',{weekday:'short',day:'2-digit',month:'short'}),time=now.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});el.textContent=date+' · '+time}updateTopDateTimeV1906();setInterval(updateTopDateTimeV1906,30000);
 function todayISO(){const d=new Date(),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`}document.getElementById('saleDate').value=todayISO();document.getElementById('prodDate').value=todayISO();
 setTimeout(()=>{if(document.getElementById('purchaseDate'))document.getElementById('purchaseDate').value=todayISO();if(document.getElementById('cashDate'))document.getElementById('cashDate').value=todayISO()},0);
@@ -7079,6 +7116,7 @@ function go(id){
  document.querySelectorAll('dialog[open]').forEach(d=>{try{d.close()}catch(e){}});
  document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active','screen-enter'));
  const target=document.getElementById(id);if(!target)return toast('Módulo não encontrado');
+ if(typeof window.aeUXOpenNavGroup==='function')window.aeUXOpenNavGroup(id);
  target.classList.add('active');
  requestAnimationFrame(()=>target.classList.add('screen-enter'));
  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
