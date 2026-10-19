@@ -5985,7 +5985,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.13';
+const APP_VERSION='1.9.14';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -10049,11 +10049,26 @@ function readDeliveryPricingV199(){
 }
 // Planning references never authorize delivery, overwrite zone tariffs or create orders.
 let deliveryEstimatesGenerationV1911=0;
-function deliveryEstimatesCardV1911(){return `<section class="delivery-v33-card delivery-v33-wide"><div class="delivery-v33-cardhead"><div><strong>Estimativas por localidade</strong><small>Valores de referência para planeamento. O checkout calcula a morada concreta e só aceita zonas autorizadas.</small></div></div><p class="soft-note">Usa os custos atualmente apresentados acima, mesmo antes de guardar. Cada estimativa usa um ponto da localidade, não todas as suas moradas. Não é um intervalo mínimo/máximo nem uma tarifa garantida.</p><div class="delivery-v33-fields two"><div class="field"><label for="deliveryEstimateLocalityV1911">Outra localidade de Portugal continental</label><input id="deliveryEstimateLocalityV1911" maxlength="100" placeholder="Ex.: Covilhã, Belmonte ou Alcaide"></div><div class="field" style="align-self:end"><button type="button" class="btn" onclick="addDeliveryEstimateV1911()">Adicionar à simulação</button></div></div><div id="deliveryEstimateRowsV1911" style="display:grid;gap:12px;margin-top:12px"></div><small>Adicionar aqui não cria nem ativa uma zona. Nenhuma encomenda é criada. A lista e os resultados desta simulação não são guardados na Cloud.</small></section>`}
+function deliveryReferenceKeyV1914(){return 'artessencia-planning-references-v1:'+String(typeof cloudUser!=='undefined'&&cloudUser?.id||'local')}
+function deliveryReferencesV1914(){try{const d=JSON.parse(localStorage.getItem(deliveryReferenceKeyV1914())||'{}');return d&&typeof d==='object'&&!Array.isArray(d)?d:{}}catch{return {}}}
+function saveDeliveryReferenceV1914(locality,reference){const d=deliveryReferencesV1914();d[locality.toLocaleLowerCase('pt-PT')]=reference;try{localStorage.setItem(deliveryReferenceKeyV1914(),JSON.stringify(d));return true}catch{return false}}
+function selectDeliveryReferenceV1914(candidates,locality,result,button){
+ const row=button.parentElement;row.querySelector('.delivery-reference-choice')?.remove();
+ const group=document.createElement('div');group.className='delivery-reference-choice';group.style.cssText='flex-basis:100%;display:grid;gap:8px';
+ const label=document.createElement('label');label.textContent='Confirma a localidade, concelho e distrito';
+ const select=document.createElement('select');select.setAttribute('aria-label','Correspondência geográfica de '+locality);
+ const empty=document.createElement('option');empty.value='';empty.textContent='Seleciona a correspondência correta';select.append(empty);
+ candidates.forEach((c,i)=>{const o=document.createElement('option');o.value=String(i);o.textContent=[c.locality,c.municipality,c.district].join(' · ');select.append(o)});
+ const confirm=document.createElement('button');confirm.type='button';confirm.className='btn';confirm.textContent='Confirmar e calcular';confirm.disabled=true;
+ select.onchange=()=>confirm.disabled=select.value==='';confirm.onclick=()=>{const c=candidates[Number(select.value)];if(!c)return;const saved=saveDeliveryReferenceV1914(locality,{candidateId:c.id,district:c.district,municipality:c.municipality});row.dataset.referenceSaved=saved?'true':'false';row._planningReference={candidateId:c.id,district:c.district,municipality:c.municipality};group.remove();calculateDeliveryEstimateV1911(locality,result,button)};
+ group.append(label,select,confirm);row.append(group);result.textContent=candidates.length?'Seleciona uma correspondência para calcular.':'Sem correspondências confirmadas. Confirma a grafia ou acrescenta o concelho na pesquisa.';
+}
+
+function deliveryEstimatesCardV1911(){return `<section class="delivery-v33-card delivery-v33-wide"><div class="delivery-v33-cardhead"><div><strong>Estimativas por localidade</strong><small>Valores de referência para planeamento. O checkout calcula a morada concreta e só aceita zonas autorizadas.</small></div></div><p class="soft-note">Usa os custos atualmente apresentados acima, mesmo antes de guardar. Cada estimativa usa um ponto da localidade, não todas as suas moradas. Não é um intervalo mínimo/máximo nem uma tarifa garantida.</p><div class="delivery-v33-fields two"><div class="field"><label for="deliveryEstimateLocalityV1911">Outra localidade de Portugal continental</label><input id="deliveryEstimateLocalityV1911" maxlength="100" placeholder="Ex.: Covilhã, Belmonte ou Alcaide"></div><div class="field" style="align-self:end"><button type="button" class="btn" onclick="addDeliveryEstimateV1911()">Adicionar à simulação</button></div></div><div class="delivery-v33-fields two"><div class="field"><label for="deliveryEstimateDistrictV1914">Distrito (opcional)</label><input id="deliveryEstimateDistrictV1914" maxlength="100" placeholder="Para limitar a pesquisa"></div><div class="field"><label for="deliveryEstimateMunicipalityV1914">Concelho (opcional)</label><input id="deliveryEstimateMunicipalityV1914" maxlength="100" placeholder="Para distinguir nomes repetidos"></div></div><div id="deliveryEstimateRowsV1911" style="display:grid;gap:12px;margin-top:12px"></div><small>Adicionar aqui não cria nem ativa uma zona. Nenhuma encomenda é criada. As escolhas geográficas são guardadas neste dispositivo, por conta. As referências são sempre verificadas pelo servidor e não alteram zonas nem moradas.</small></section>`}
 function renderDeliveryEstimateRowsV1911(){
  const box=document.getElementById('deliveryEstimateRowsV1911');if(!box)return;box.replaceChildren();
  const names=Array.isArray(deliveryZonesV197)?deliveryZonesV197.map(z=>z.locality):[];
- for(const name of ['Castelejo','Fundão','Alcaide','Enxabarda','Aldeia Nova do Cabo','Donas',...names])appendDeliveryEstimateRowV1911(name);
+ for(const name of ['Castelejo','Fundão','Alcaide','Enxabarda','Aldeia Nova do Cabo','Donas',...names,...Object.keys(deliveryReferencesV1914())])appendDeliveryEstimateRowV1911(name);
 }
 function syncDeliveryEstimateZoneRowsV1911(){
  const box=document.getElementById('deliveryEstimateRowsV1911');
@@ -10067,9 +10082,10 @@ function appendDeliveryEstimateRowV1911(name){
  const title=document.createElement('strong');title.textContent=name;title.style.flex='1 1 100px';
  const result=document.createElement('span');result.className='delivery-estimate-result';result.setAttribute('role','status');result.textContent='Por calcular';result.style.cssText='flex:2 1 180px;overflow-wrap:anywhere';
  const button=document.createElement('button');button.type='button';button.className='btn';button.textContent='Calcular estimativa';button.onclick=()=>calculateDeliveryEstimateV1911(name,result,button);
- row.append(title,result,button);box.append(row);
+ const change=document.createElement('button');change.type='button';change.className='btn';change.textContent='Escolher localidade';change.onclick=()=>{if(button.disabled)return;row._planningReference=null;row._planningSearch=true;calculateDeliveryEstimateV1911(name,result,button)};
+ row.append(title,result,button,change);box.append(row);
 }
-function addDeliveryEstimateV1911(){const el=document.getElementById('deliveryEstimateLocalityV1911');if(!el)return;appendDeliveryEstimateRowV1911(el.value);el.value=''}
+function addDeliveryEstimateV1911(){const el=document.getElementById('deliveryEstimateLocalityV1911');if(!el)return;const row=appendDeliveryEstimateRowV1911(el.value);if(!row)return;row._planningSearchScope={district:document.getElementById('deliveryEstimateDistrictV1914')?.value.trim()||'',municipality:document.getElementById('deliveryEstimateMunicipalityV1914')?.value.trim()||''};row._planningSearch=true;calculateDeliveryEstimateV1911(row.dataset.locality,row.querySelector('.delivery-estimate-result'),row.querySelector('button'));el.value=''}
 function bindDeliveryEstimatePricingV1911(){for(const [key] of DELIVERY_PRICING_FIELDS_V199)document.getElementById('deliveryPricing_'+key)?.addEventListener('input',invalidateDeliveryEstimatesV1911)}
 function invalidateDeliveryEstimatesV1911(){deliveryEstimatesGenerationV1911++;for(const el of document.querySelectorAll('.delivery-estimate-result'))if(el.dataset.calculated==='true'){el.textContent='Custos alterados — recalcular';el.dataset.calculated='false'}}
 let deliveryEstimateQueueV1911=Promise.resolve();
@@ -10088,13 +10104,18 @@ async function calculateQueuedDeliveryEstimateV1911(locality,result,button,gener
  try{
   const pricing=readDeliveryPricingV199(),stamp=JSON.stringify(pricing),cloud=initCloudClient(),session=cloud?await cloud.auth.getSession():null,token=session?.data?.session?.access_token;
   if(!token)throw Error('Liga primeiro a Cloud com a conta do proprietário.');
+  const row=button.parentElement,reference=row._planningReference||deliveryReferencesV1914()[locality.toLocaleLowerCase('pt-PT')]||{};
+  const search=row._planningSearch===true;row._planningSearch=false;
   const endpoint='/api/delivery-estimates';
-  const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({locality,pricing}),cache:'no-store',signal:AbortSignal.timeout(60000)});
+  const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({locality,pricing,...reference,...(search?{action:'search',candidateId:undefined,district:row._planningSearchScope?.district||undefined,municipality:row._planningSearchScope?.municipality||undefined}:{})}),cache:'no-store',signal:AbortSignal.timeout(60000)});
   const data=await response.json();
+  if(generation!==deliveryEstimatesGenerationV1911||!button.isConnected)return;
+  if(Array.isArray(data.candidates)&&(search||data.error==='reference_unresolved')){selectDeliveryReferenceV1914(data.candidates,locality,result,button);return}
   if(!response.ok||data.ok!==true){const errors={reference_unresolved:'Ponto da localidade não confirmado; sem estimativa.',owner_required:'Apenas o proprietário pode calcular estimativas.',try_again_later:'Serviço ocupado. Aguarda alguns instantes e tenta novamente.',estimate_unavailable:'Serviço rodoviário temporariamente indisponível. Tenta novamente mais tarde.',estimate_limit_exceeded:'A estimativa ultrapassa os limites configurados.',invalid_pricing:'Confirma os custos apresentados acima.',unavailable:'Serviço de estimativas ainda não disponível neste ambiente.',preview_link_unconfigured:'A ligação protegida entre as pré-visualizações ainda não está autorizada.'};throw Error(errors[data.error]||'Não foi possível obter uma estimativa. Tenta novamente.')}
   if(generation!==deliveryEstimatesGenerationV1911||stamp!==JSON.stringify(readDeliveryPricingV199())){result.textContent='Custos alterados — recalcular';return}
   const euros=new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR'}).format(data.fee_cents/100);
   result.textContent=data.referencePrecision==='fixed_locality'?euros+' · tarifa fixa':euros+' estimados · '+(data.roundTripMetres/1000).toLocaleString('pt-PT',{maximumFractionDigits:2})+' km ida e volta · '+data.routeShareCount+' entregas previstas · '+data.referenceLabel;
+  if(data.candidateId){const saved=saveDeliveryReferenceV1914(locality,{candidateId:data.candidateId,district:data.district,municipality:data.municipality});if(!saved)result.textContent+=' · não foi possível guardar a escolha neste dispositivo';}
   result.dataset.calculated='true';
  }catch(e){result.textContent=String(e?.message||'Estimativa indisponível.')}finally{button.disabled=false}
 }
