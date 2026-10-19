@@ -26,6 +26,7 @@ assert.equal(context.orderAttentionLabelV1915({status:'Entregue'}),'');
 assert.match(html,/function viewOrderProductionV1915\(id\)/);
 assert.match(html,/go\('production'\)/);
 assert.match(html,/Ver produção/);
+assert.ok(html.includes("onclick=\"viewOrderProductionV1915('${escapeHtml(o.id)}')\""),'Production button handler must have valid quoting');
 assert.match(html,/id="orderProductionContextV1915"/);
 assert.match(html,/id="orderProductionMessageV1915"/);
 assert.match(html,/Voltar às encomendas/);
