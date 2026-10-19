@@ -19,6 +19,12 @@ assert.match(uxBlock, /window\.aeUXOpenNavGroup=function\(page\)/, 'Selected rou
 assert.match(uxBlock, /getBoundingClientRect\(\)/, 'Active item needs viewport measurement');
 assert.match(uxBlock, /nav\.scrollTo\(\{left:/, 'Selected mobile module must auto-scroll into view');
 assert.match(html, /const APP_VERSION='1\.9\.14'/, 'Do not publish from audit branch');
+assert.match(html, /id="ae-ux-quicknav-20261019"/, 'Mobile quick navigation styles missing');
+assert.match(html, /initUXQuickNav20261019/, 'Mobile quick navigation missing');
+for (const name of ['Início','Voltar','Módulos']) assert.ok(html.includes("'"+name+"'"), 'Mobile shortcut missing: '+name);
+assert.match(html, /window\.aeUXRecordPage\(id\)/, 'Navigation history must be updated on module changes');
+assert.match(html, /panel\.hidden=true/, 'Module panel must close safely');
+
 // Expose a gap to resolve before rollout rather than silently passing an absent usability requirement:
 const hasActiveVisibility = /scrollIntoView\s*\(|\.scrollTo\s*\(/.test(
   html.slice(html.indexOf('(function groupNavigationVUX20261019()'), html.indexOf('function updateTopDateTimeV1906()'))
