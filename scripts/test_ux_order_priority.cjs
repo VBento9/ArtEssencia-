@@ -1,0 +1,11 @@
+'use strict';
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const html=fs.readFileSync('index.html','utf8');
+assert.match(html,/id="ordersSortV1916"/);
+assert.match(html,/value="recent">Mais recentes/);
+assert.match(html,/value="due">Entrega mais próxima/);
+assert.match(html,/if\(sortMode==='due'&&ordersModeV1882==='active'\)/);
+assert.match(html,/rows\.sort\(\(a,b\)=>/);
+assert.match(html,/return va\.localeCompare\(vb\)/);
+assert.match(html,/function renderOrders\(\)/);
+console.log('Order urgency sorting static checks passed');
