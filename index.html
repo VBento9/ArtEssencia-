@@ -3345,6 +3345,89 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 #visualCatalogs label.visual-pick>input[type="checkbox"]{width:18px!important;height:18px!important;margin:0!important}
 @media(max-width:650px){#visualCatalogs .visual-catalog-picker{grid-template-columns:1fr!important}}
 </style>
+<style id="ae-ux-nav-20261019">
+/* UX-only: all pages, handlers and identifiers remain unchanged. */
+@media(min-width:651px){
+.sidebar .nav{gap:4px}
+.sidebar .nav button{min-height:42px;padding:9px 11px;border-radius:10px;line-height:1.25}
+.sidebar .nav button.nav-group-start-v1857{margin-top:23px}
+.sidebar .nav button.nav-group-start-v1857:before{top:-14px;font-size:9px;letter-spacing:.08em}
+.sidebar .nav button .nav-label{white-space:normal;overflow-wrap:anywhere}
+}
+.nav button:focus-visible{outline:3px solid #0b7285;outline-offset:2px}
+@media(max-width:650px){
+.sidebar .nav button{min-height:54px;min-width:94px}
+.sidebar .nav button.active{box-shadow:inset 0 -3px 0 rgba(255,255,255,.85)}
+.sidebar .nav{scroll-padding-inline:12px}
+}
+@media(prefers-reduced-motion:reduce){.nav button{transition:none!important}}
+</style>
+<style id="ae-ux-groups-20261019">
+@media(min-width:651px){
+.sidebar .nav .ae-ux-nav-group{display:grid;gap:4px;border:0;margin:0;padding:0}
+.sidebar .nav .ae-ux-nav-group>summary{cursor:pointer;list-style:none;user-select:none;padding:12px 9px 8px;font-size:11px;letter-spacing:.04em;font-weight:900;color:#684337}
+.sidebar .nav .ae-ux-nav-group>summary::-webkit-details-marker{display:none}
+.sidebar .nav .ae-ux-nav-group>summary:after{content:'⌄';float:right}
+.sidebar .nav .ae-ux-nav-group:not([open])>summary:after{content:'›'}
+.sidebar .nav .ae-ux-nav-group>summary:focus-visible{outline:3px solid #0b7285}
+.sidebar .nav button.nav-group-start-v1857{margin-top:0}
+.sidebar .nav button.nav-group-start-v1857:before{display:none}
+}
+@media(max-width:650px){
+.sidebar .nav .ae-ux-nav-group{display:contents}
+.sidebar .nav .ae-ux-nav-group>summary{display:none}
+.sidebar .nav .ae-ux-nav-group:not([open])>button{display:flex}
+}
+.sidebar .ae-ux-nav-search{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;padding:10px 11px;font-size:14px;margin:3px 0 8px;background:#fff}
+@media(max-width:650px){.sidebar .ae-ux-nav-search{display:none}}
+</style>
+<style id="ae-ux-daily-20261019">
+#dashboard .ae-ux-daily-guide{margin:0 0 12px;color:#684b40;font-size:13px;line-height:1.5}
+#dashboard .dashboard-ops-strip,#dashboard .dashboard-daily{min-width:0}
+#dashboard .dashboard-today-card{margin-top:12px}
+#dashboard .dashboard-actions{margin-bottom:15px}
+#dashboard .dashboard-section-head{scroll-margin-top:85px}
+@media(max-width:650px){#dashboard .ae-ux-daily-guide{font-size:13px;padding:0 2px}#dashboard .dashboard-today-card{margin-top:10px}}
+</style>
+<style id="ae-ux-mobile-hotfix-20261019">
+@media(max-width:650px){
+ .sidebar{height:auto!important;max-height:calc(79px + env(safe-area-inset-bottom))!important;overflow:hidden!important;padding:5px 7px calc(5px + env(safe-area-inset-bottom))!important}
+ .sidebar .brand,.sidebar .sidebar-signature{display:none!important}
+ .sidebar #nav{display:flex!important;flex-flow:row nowrap!important;align-items:stretch!important;gap:5px!important;overflow-x:auto!important;overflow-y:hidden!important;max-height:64px!important;white-space:nowrap!important}
+ .sidebar #nav details.ae-ux-nav-group,.sidebar #nav details.ae-ux-nav-group[open]{display:contents!important}
+ .sidebar #nav details.ae-ux-nav-group>summary{display:none!important}
+ .sidebar #nav button[data-page]{display:flex!important;flex:0 0 94px!important;width:94px!important;min-width:94px!important;max-width:94px!important;height:56px!important;min-height:56px!important;max-height:56px!important;align-items:center!important;justify-content:center!important;flex-direction:column!important;gap:2px!important;padding:5px!important;overflow:hidden!important;white-space:nowrap!important}
+ .sidebar #nav button[data-page] .nav-label{display:block!important;width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;text-align:center!important;font-size:11px!important}
+ .sidebar #nav button[data-page] .nav-icon{font-size:18px!important;line-height:20px!important}
+ body{padding-bottom:calc(89px + env(safe-area-inset-bottom))!important}
+ #dashboard .dashboard-hero{padding:12px!important}
+ #dashboard .dashboard-hero h2{font-size:27px!important;margin:4px 0!important}
+ #dashboard .dashboard-hero p{font-size:13px!important;line-height:1.35!important;margin:3px 0 9px!important}
+ #dashboard .dashboard-period{padding:9px!important;gap:7px!important}
+ #dashboard .dashboard-period .field label{font-size:11px!important}
+ #dashboard .dashboard-period input,#dashboard .dashboard-period select{min-height:42px!important}
+ #dashboard .dashboard-update{min-height:44px!important;padding:9px!important}
+}
+</style>
+<style id="ae-ux-quicknav-20261019">
+.ae-ux-quickbar,.ae-ux-module-panel{display:none}
+@media(max-width:650px){
+ .sidebar #nav{display:none!important}
+ .sidebar{height:calc(70px + env(safe-area-inset-bottom))!important;max-height:none!important;overflow:visible!important}
+ .ae-ux-quickbar{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;width:100%}
+ .ae-ux-quickbar button{min-height:53px;border:1px solid #ead9d0;border-radius:12px;background:#fff7fa;color:#542e1d;font-size:13px;font-weight:800}
+ .ae-ux-quickbar button:focus-visible,.ae-ux-module-panel button:focus-visible{outline:3px solid #0b7285}
+ .ae-ux-module-panel:not([hidden]){display:block!important;position:fixed;z-index:1000;inset:0;background:rgba(35,20,12,.5);padding:calc(18px + env(safe-area-inset-top)) 12px calc(90px + env(safe-area-inset-bottom))}
+ .ae-ux-module-panel-inner{height:100%;overflow:auto;background:#fff;border-radius:18px;padding:15px;box-shadow:0 12px 35px #0003}
+ .ae-ux-module-panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+ .ae-ux-module-panel-head h2{font-size:19px;margin:0}
+ .ae-ux-module-panel button{border:1px solid #ead9d0;background:#fff7fa;border-radius:10px;padding:12px;text-align:left;color:#542e1d;font-weight:750}
+ .ae-ux-module-panel-head button{flex:0 0 auto}
+ .ae-ux-module-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+ .ae-ux-module-list button[aria-current="page"]{background:#f12473;color:#fff}
+ .ae-ux-module-panel input{width:100%;margin-top:12px;padding:12px;border:1px solid #cdb7a9;border-radius:10px}
+}
+</style>
 </head>
 <body>
 <div id="brandSplashV1778" aria-hidden="true"><div class="brand-splash-card"><img src="brand-artessencia.png" alt=""></div></div>
@@ -3398,11 +3481,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
     </div>
     <div class="grid4 dashboard-kpis" id="kpis"></div>
 
-    <div class="dashboard-section-head"><div><span>RENTABILIDADE</span><h3>Para onde foi o valor vendido</h3></div><small>Materiais consumidos, trabalho, custos gerais e lucro do período selecionado.</small></div>
-    <div id="dashboardProfitabilityV1769" class="dashboard-profitability-v1769"></div>
-    <div id="dashboardProfitabilityNoteV1769" class="dashboard-profitability-note-v1769"></div>
-
     <div class="dashboard-section-head"><div><span>HOJE</span><h3>Centro de controlo diário</h3></div></div>
+    <p class="ae-ux-daily-guide">Começa pelas tarefas urgentes, confirma as encomendas em curso e verifica as próximas entregas.</p>
     <div class="dashboard-ops-strip" id="dashboardOpsStrip"></div>
     <div class="dashboard-daily" id="dashboardDaily"></div>
     <div class="card dashboard-today-card">
@@ -3435,6 +3515,10 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
     <div class="tablewrap"><table><thead><tr><th>Encomenda</th><th>Cliente</th><th>Entrega</th><th>Total</th><th>Recebido</th><th>Falta</th><th>Ações</th></tr></thead><tbody id="receivablesBody"></tbody></table></div>
     <div class="section-title">Orçamentos a acompanhar</div>
     <div class="tablewrap"><table><thead><tr><th>Orçamento</th><th>Cliente</th><th>Evento</th><th>Total</th><th>Pagamento</th><th>Situação</th></tr></thead><tbody id="quotePipelineBody"></tbody></table></div>
+    <div class="dashboard-section-head"><div><span>RENTABILIDADE</span><h3>Para onde foi o valor vendido</h3></div><small>Materiais consumidos, trabalho, custos gerais e lucro do período selecionado.</small></div>
+    <div id="dashboardProfitabilityV1769" class="dashboard-profitability-v1769"></div>
+    <div id="dashboardProfitabilityNoteV1769" class="dashboard-profitability-note-v1769"></div>
+
     <div class="section-title">Evolução dos últimos 12 meses</div><div class="card"><div class="trend" id="trendChart"></div><div class="soft-note">Rosa = faturação mensal · Verde = lucro estimado. O gráfico usa o histórico guardado na app.</div></div>
   </section>
 
@@ -5985,7 +6069,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.14';
+const APP_VERSION='1.9.15';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -6404,6 +6488,72 @@ const pageIcons={
 };
 const navGroupsV1857={dashboard:'Visão geral',sale:'Operação',costs:'Gestão',clients:'Clientes e comunicação',digitalStats:'Análise',products:'Conteúdo público',campaigns:'Marketing',delivery:'Loja e conformidade',settings:'Sistema'};
 document.getElementById('nav').innerHTML=pages.map(([id,l])=>{const group=navGroupsV1857[id]||'';return `<button data-page="${id}" ${group?`class="nav-group-start-v1857" data-group-label="${group}"`:''} onclick="go('${id}')"><span class="nav-icon">${pageIcons[id]||'•'}</span><span class="nav-label">${l}</span>${id==='orders'?'<span id="navOrderBadgeV12624" class="nav-order-badge-v12624 hidden">0</span>':''}${id==='email'?'<span id="navEmailBadgeV1716" class="nav-order-badge-v12624 hidden">0</span>':''}<span class="nav-active-dot"></span></button>`}).join('');
+// UX grouping is DOM-only: original navigation buttons, page ids and onclick handlers remain intact.
+(function groupNavigationVUX20261019(){
+ const nav=document.getElementById('nav');if(!nav)return;
+ const buttons=[...nav.querySelectorAll(':scope > button[data-page]')];if(buttons.length!==pages.length)return;
+ // Use explicit start pages rather than inferred counts, so all existing destinations stay accessible.
+ const starts={dashboard:'Visão geral',sale:'Operação',costs:'Gestão de materiais',clients:'Clientes e comunicação',digitalStats:'Análise',products:'Produtos e conteúdo',campaigns:'Marketing',delivery:'Loja e conformidade',settings:'Sistema'};
+ const fragment=document.createDocumentFragment();let group=null;
+ for(const button of buttons){
+  const id=button.dataset.page;
+  if(starts[id]){
+   group=document.createElement('details');group.className='ae-ux-nav-group';group.open=['dashboard','sale'].includes(id);
+   const summary=document.createElement('summary');summary.textContent=starts[id];group.append(summary);fragment.append(group);
+  }
+  if(group)group.append(button);else fragment.append(button);
+ }
+ nav.replaceChildren(fragment);
+ // Desktop module search filters only the visible navigation, never modules or application data.
+ const search=document.createElement('input');search.type='search';search.className='ae-ux-nav-search';
+ search.placeholder='Encontrar módulo…';search.setAttribute('aria-label','Encontrar módulo no menu');
+ search.autocomplete='off';nav.prepend(search);
+ const clearNavFilter=()=>{
+  search.value='';
+  nav.querySelectorAll('details.ae-ux-nav-group').forEach(g=>{
+   g.hidden=false;g.style.display='';
+   g.querySelectorAll('button[data-page]').forEach(b=>{b.hidden=false;b.style.display=''});
+  });
+ };
+ search.addEventListener('input',()=>{
+  const term=search.value.trim().toLocaleLowerCase('pt-PT');
+  nav.querySelectorAll('details.ae-ux-nav-group').forEach(g=>{
+   let visible=0;
+   g.querySelectorAll('button[data-page]').forEach(b=>{
+    const match=!term||b.textContent.toLocaleLowerCase('pt-PT').includes(term);
+    b.hidden=!match;b.style.display=match?'':'none';if(match)visible++;
+   });
+   g.hidden=!!term&&!visible;g.style.display=term&&!visible?'none':'';
+   if(term&&visible)g.open=true;
+  });
+ });
+ const expandMobileGroups=()=>{if(window.matchMedia('(max-width:650px)').matches){clearNavFilter();nav.querySelectorAll('details.ae-ux-nav-group').forEach(d=>d.open=true)}};
+ expandMobileGroups();window.addEventListener('resize',expandMobileGroups,{passive:true});
+ window.aeUXOpenNavGroup=function(page){clearNavFilter();const el=[...nav.querySelectorAll('button[data-page]')].find(b=>b.dataset.page===page);if(!el)return;if(el.closest('details'))el.closest('details').open=true;if(window.matchMedia('(max-width:650px)').matches){requestAnimationFrame(()=>{const nr=nav.getBoundingClientRect(),er=el.getBoundingClientRect();if(er.left<nr.left||er.right>nr.right){const left=nav.scrollLeft+(er.left-nr.left)-(nr.width-er.width)/2;nav.scrollTo({left:Math.max(0,left),behavior:'auto'});}})}};
+ aeUXOpenNavGroup('dashboard');
+})();
+
+// Mobile shortcuts are additive and do not change existing page handlers.
+(function initUXQuickNav20261019(){
+ const sidebar=document.querySelector('.sidebar');if(!sidebar)return;
+ const bar=document.createElement('div');bar.className='ae-ux-quickbar';bar.setAttribute('aria-label','Navegação rápida');
+ const panel=document.createElement('div');panel.className='ae-ux-module-panel';panel.hidden=true;
+ panel.innerHTML='<div class="ae-ux-module-panel-inner" role="dialog" aria-modal="true" aria-label="Escolher módulo"><div class="ae-ux-module-panel-head"><h2>Escolher módulo</h2><button type="button" data-close>Fechar</button></div><input type="search" aria-label="Pesquisar módulo" placeholder="Pesquisar módulo…"><div class="ae-ux-module-list"></div></div>';
+ const list=panel.querySelector('.ae-ux-module-list'),search=panel.querySelector('input');
+ const labels=[...document.querySelectorAll('#nav button[data-page]')].map(b=>({id:b.dataset.page,name:b.querySelector('.nav-label')?.textContent?.trim()||b.dataset.page}));
+ let previous=null,current='dashboard',opener=null;
+ function close(){panel.hidden=true;search.value='';document.body.style.overflow='';opener?.focus()}
+ function render(){const q=search.value.trim().toLocaleLowerCase('pt-PT');list.replaceChildren();labels.filter(p=>p.name.toLocaleLowerCase('pt-PT').includes(q)).forEach(p=>{const b=document.createElement('button');b.type='button';b.textContent=p.name;if(p.id===current)b.setAttribute('aria-current','page');b.onclick=()=>{close();go(p.id)};list.append(b)})}
+ [['Início',()=>go('dashboard')],['Voltar',()=>previous&&go(previous)],['Módulos',()=>{opener=bar.lastElementChild;render();panel.hidden=false;document.body.style.overflow='hidden';search.focus()}]].forEach(([label,fn])=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',fn);bar.append(b)});
+ function sync(){bar.children[1].disabled=!previous;bar.children[1].setAttribute('aria-label',previous?'Voltar ao módulo anterior':'Sem módulo anterior')}
+ panel.querySelector('[data-close]').onclick=close;
+ panel.addEventListener('click',e=>{if(e.target===panel)close()});
+ panel.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();close()}});
+ search.addEventListener('input',render);
+ sidebar.append(bar);document.body.append(panel);
+ window.aeUXRecordPage=function(id){if(id!==current){previous=current;current=id}sync()};
+ sync();
+})();
 function updateTopDateTimeV1906(){const el=document.getElementById('today');if(!el)return;const now=new Date(),date=now.toLocaleDateString('pt-PT',{weekday:'short',day:'2-digit',month:'short'}),time=now.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});el.textContent=date+' · '+time}updateTopDateTimeV1906();setInterval(updateTopDateTimeV1906,30000);
 function todayISO(){const d=new Date(),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`}document.getElementById('saleDate').value=todayISO();document.getElementById('prodDate').value=todayISO();
 setTimeout(()=>{if(document.getElementById('purchaseDate'))document.getElementById('purchaseDate').value=todayISO();if(document.getElementById('cashDate'))document.getElementById('cashDate').value=todayISO()},0);
@@ -7062,6 +7212,8 @@ function go(id){
  document.querySelectorAll('dialog[open]').forEach(d=>{try{d.close()}catch(e){}});
  document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active','screen-enter'));
  const target=document.getElementById(id);if(!target)return toast('Módulo não encontrado');
+ if(typeof window.aeUXOpenNavGroup==='function')window.aeUXOpenNavGroup(id);
+ if(typeof window.aeUXRecordPage==='function')window.aeUXRecordPage(id);
  target.classList.add('active');
  requestAnimationFrame(()=>target.classList.add('screen-enter'));
  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
