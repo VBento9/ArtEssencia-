@@ -3912,6 +3912,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <input id="stockSearch" placeholder="Pesquisar artigo…" oninput="renderStock()">
         <select id="stockStateFilter" onchange="renderStock()">
           <option value="all">Todos</option>
+          <option value="replenish">A repor (sem stock + baixo)</option>
           <option value="out">Sem stock</option>
           <option value="low">Stock baixo</option>
           <option value="ok">Stock OK</option>
@@ -8778,7 +8779,7 @@ function renderStock(){
  const rows=all.map((x,i)=>({x,i})).filter(({x})=>{
    const qty=Number(x.qty)||0,min=Number(x.min)||0;
    const st=qty<=0?'out':qty<=min?'low':'ok';
-   return (!q||String(x.name||'').toLowerCase().includes(q)||String(x.unit||'').toLowerCase().includes(q))&&(state==='all'||state===st);
+   return (!q||String(x.name||'').toLowerCase().includes(q)||String(x.unit||'').toLowerCase().includes(q))&&(state==='all'||state===st||(state==='replenish'&&(st==='out'||st==='low')));
  });
 
  const count=document.getElementById('stockResultCount');
