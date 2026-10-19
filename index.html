@@ -3378,6 +3378,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 .sidebar .nav .ae-ux-nav-group>summary{display:none}
 .sidebar .nav .ae-ux-nav-group:not([open])>button{display:flex}
 }
+.sidebar .ae-ux-nav-search{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;padding:10px 11px;font-size:14px;margin:3px 0 8px;background:#fff}
+@media(max-width:650px){.sidebar .ae-ux-nav-search{display:none}}
 </style>
 </head>
 <body>
@@ -6454,6 +6456,22 @@ document.getElementById('nav').innerHTML=pages.map(([id,l])=>{const group=navGro
   if(group)group.append(button);else fragment.append(button);
  }
  nav.replaceChildren(fragment);
+ // Desktop module search filters only the visible navigation, never modules or application data.
+ const search=document.createElement('input');search.type='search';search.className='ae-ux-nav-search';
+ search.placeholder='Encontrar módulo…';search.setAttribute('aria-label','Encontrar módulo no menu');
+ search.autocomplete='off';nav.prepend(search);
+ search.addEventListener('input',()=>{
+  const term=search.value.trim().toLocaleLowerCase('pt-PT');
+  nav.querySelectorAll('details.ae-ux-nav-group').forEach(g=>{
+   let visible=0;
+   g.querySelectorAll('button[data-page]').forEach(b=>{
+    const match=!term||b.textContent.toLocaleLowerCase('pt-PT').includes(term);
+    b.hidden=!match;b.style.display=match?'':'none';if(match)visible++;
+   });
+   g.hidden=!!term&&!visible;g.style.display=term&&!visible?'none':'';
+   if(term&&visible)g.open=true;
+  });
+ });
  const expandMobileGroups=()=>{if(window.matchMedia('(max-width:650px)').matches)nav.querySelectorAll('details.ae-ux-nav-group').forEach(d=>d.open=true)};
  expandMobileGroups();window.addEventListener('resize',expandMobileGroups,{passive:true});
  window.aeUXOpenNavGroup=function(page){const el=[...nav.querySelectorAll('button[data-page]')].find(b=>b.dataset.page===page);if(el?.closest('details'))el.closest('details').open=true};
