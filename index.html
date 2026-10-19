@@ -10073,6 +10073,7 @@ function addDeliveryEstimateV1911(){const el=document.getElementById('deliveryEs
 function bindDeliveryEstimatePricingV1911(){for(const [key] of DELIVERY_PRICING_FIELDS_V199)document.getElementById('deliveryPricing_'+key)?.addEventListener('input',invalidateDeliveryEstimatesV1911)}
 function invalidateDeliveryEstimatesV1911(){deliveryEstimatesGenerationV1911++;for(const el of document.querySelectorAll('.delivery-estimate-result'))if(el.dataset.calculated==='true'){el.textContent='Custos alterados — recalcular';el.dataset.calculated='false'}}
 let deliveryEstimateQueueV1911=Promise.resolve();
+const deliveryEstimateChoicesV1911=new Map();
 function calculateDeliveryEstimateV1911(locality,result,button){
  if(button.disabled)return;
  button.disabled=true;result.textContent='Em fila — aguarda a estimativa anterior…';result.dataset.calculated='false';
@@ -10089,9 +10090,21 @@ async function calculateQueuedDeliveryEstimateV1911(locality,result,button,gener
   const pricing=readDeliveryPricingV199(),stamp=JSON.stringify(pricing),cloud=initCloudClient(),session=cloud?await cloud.auth.getSession():null,token=session?.data?.session?.access_token;
   if(!token)throw Error('Liga primeiro a Cloud com a conta do proprietário.');
   const endpoint='/api/delivery-estimates';
-  const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({locality,pricing}),cache:'no-store',signal:AbortSignal.timeout(60000)});
+  const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({locality,pricing,...(deliveryEstimateChoicesV1911.get(locality.toLocaleLowerCase('pt-PT'))||{})}),cache:'no-store',signal:AbortSignal.timeout(60000)});
   const data=await response.json();
-  if(!response.ok||data.ok!==true){const errors={reference_unresolved:'Ponto da localidade não confirmado; sem estimativa.',owner_required:'Apenas o proprietário pode calcular estimativas.',try_again_later:'Serviço ocupado. Aguarda alguns instantes e tenta novamente.',estimate_unavailable:'Serviço rodoviário temporariamente indisponível. Tenta novamente mais tarde.',estimate_limit_exceeded:'A estimativa ultrapassa os limites configurados.',invalid_pricing:'Confirma os custos apresentados acima.',unavailable:'Serviço de estimativas ainda não disponível neste ambiente.',preview_link_unconfigured:'A ligação protegida entre as pré-visualizações ainda não está autorizada.'};throw Error(errors[data.error]||'Não foi possível obter uma estimativa. Tenta novamente.')}
+  if(!response.ok||data.ok!==true){
+   if(data.error==='reference_unresolved'&&Array.isArray(data.candidates)&&data.candidates.length){
+    const choices=data.candidates.filter(c=>c.locality?.toLocaleLowerCase('pt-PT')===locality.toLocaleLowerCase('pt-PT')&&c.district&&c.municipality);
+    if(choices.length){
+     result.replaceChildren();const caption=document.createElement('span');caption.textContent='Seleciona o concelho e distrito corretos: ';
+     const select=document.createElement('select');select.setAttribute('aria-label','Escolher concelho e distrito');select.style.maxWidth='100%';
+     const first=document.createElement('option');first.value='';first.textContent='Escolher localidade…';select.append(first);
+     choices.forEach((c,i)=>{const opt=document.createElement('option');opt.value=String(i);opt.textContent=c.municipality+' · '+c.district;select.append(opt)});
+     select.addEventListener('change',()=>{if(select.value==='')return;const selected=choices[Number(select.value)];deliveryEstimateChoicesV1911.set(locality.toLocaleLowerCase('pt-PT'),{district:selected.district,municipality:selected.municipality});result.textContent='Localidade selecionada — clica em Calcular estimativa.';});
+     result.append(caption,select);return;
+    }
+   }
+   const errors={reference_unresolved:'Ponto da localidade não confirmado; sem estimativa.',owner_required:'Apenas o proprietário pode calcular estimativas.',try_again_later:'Serviço ocupado. Aguarda alguns instantes e tenta novamente.',estimate_unavailable:'Serviço rodoviário temporariamente indisponível. Tenta novamente mais tarde.',estimate_limit_exceeded:'A estimativa ultrapassa os limites configurados.',invalid_pricing:'Confirma os custos apresentados acima.',unavailable:'Serviço de estimativas ainda não disponível neste ambiente.',preview_link_unconfigured:'A ligação protegida entre as pré-visualizações ainda não está autorizada.'};throw Error(errors[data.error]||'Não foi possível obter uma estimativa. Tenta novamente.')}
   if(generation!==deliveryEstimatesGenerationV1911||stamp!==JSON.stringify(readDeliveryPricingV199())){result.textContent='Custos alterados — recalcular';return}
   const euros=new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR'}).format(data.fee_cents/100);
   result.textContent=data.referencePrecision==='fixed_locality'?euros+' · tarifa fixa':euros+' estimados · '+(data.roundTripMetres/1000).toLocaleString('pt-PT',{maximumFractionDigits:2})+' km ida e volta · '+data.routeShareCount+' entregas previstas · '+data.referenceLabel;
