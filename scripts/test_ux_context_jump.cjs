@@ -1,0 +1,12 @@
+'use strict';
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const html=fs.readFileSync('index.html','utf8');
+assert.match(html,/id="aeContextJumpV1916"/);
+assert.match(html,/id="ae-context-jump-script-v1916"/);
+for(const id of ['orderSearch','productSearch','stockSearch','clientSearch','prodDate'])assert.ok(html.includes("'"+id+"'"),'Missing context field '+id);
+assert.match(html,/\.screen\.active/);
+assert.match(html,/MutationObserver\(update\)/);
+assert.match(html,/input\.scrollIntoView/);
+assert.match(html,/input\.focus\(\{preventScroll:true\}\)/);
+assert.match(html,/button\.hidden=!input/);
+console.log('Contextual quick-navigation static gate passed; device verification still needed.');
