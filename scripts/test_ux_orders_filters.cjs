@@ -8,4 +8,7 @@ assert.match(html,/if\(results\)results.textContent=rows.length/);
 assert.match(html,/function renderOrders\(\)/);
 assert.match(html,/function setStatus\(/);
 assert.match(html,/function showOrder\(/);
-console.log('Orders filter utility structural checks passed');
+assert.match(html,/function orderAttentionLabelV1915\(o\)/);
+assert.match(html,/Pronta · pagamento pendente/);
+assert.match(html,/order-attention-v1915/);
+console.log('Orders filters and read-only attention labels structural checks passed');
