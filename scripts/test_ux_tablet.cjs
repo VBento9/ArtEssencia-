@@ -1,0 +1,11 @@
+'use strict';
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const html=fs.readFileSync('index.html','utf8');
+assert.ok(html.includes('id="ae-tablet-pad9-ux-20261019"'));
+assert.ok(html.includes('initAETabletToggle20261019'));
+assert.ok(html.includes('min-width:651px) and (max-width:1200px)'));
+assert.ok(html.includes('ae-tablet-collapsed'));
+assert.ok(html.includes('aria-expanded'));
+assert.ok(html.includes('#orders .tablewrap'));
+assert.ok(html.includes("const APP_VERSION='1.9.15'"));
+console.log('Tablet UX static checks passed; visual verification still required');
