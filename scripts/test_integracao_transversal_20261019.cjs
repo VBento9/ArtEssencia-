@@ -1,0 +1,23 @@
+'use strict';
+// Non-destructive integration gate. Run: node scripts/test_integracao_transversal_20261019.cjs
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const html=fs.readFileSync('index.html','utf8');
+const sw=fs.readFileSync('sw.js','utf8');
+const version=JSON.parse(fs.readFileSync('version.json','utf8'));
+const pageBlock=html.slice(html.indexOf('const pages='),html.indexOf('const pageIcons='));
+assert.ok(pageBlock.length>100,'Navigation declaration missing');
+const pages=[...pageBlock.matchAll(/\['([^']+)','([^']+)'\]/g)].map(m=>m[1]);
+assert.equal(pages.length,29,'All 29 existing modules must remain');
+assert.equal(new Set(pages).size,29,'Duplicate navigation modules');
+for(const id of pages)assert.ok(html.includes('<section id="'+id+'" class="screen'),'Missing screen '+id);
+for(const id of ['dashboard','orders','production','products','stock','clients','delivery','catalogDigital','visualCatalogs','cloud','backup'])assert.ok(pages.includes(id),'Missing cross-functional module '+id);
+for(const fn of ['renderDashboard','renderOrders','renderProduction','renderProducts','renderStock','renderClients','showOrder','go'])assert.ok(html.includes('function '+fn+'(')||html.includes('async function '+fn+'('),'Missing function '+fn);
+for(const id of ['cloudStatus','runtimeVersion','deliveryEstimateLocalityV1911','deliveryEstimateRowsV1911','orderSearch','orderFilter'])assert.ok(html.includes('id="'+id+'"'),'Missing integration element '+id);
+assert.match(html,/function viewOrderProductionV1915\(id\)/,'Order to production route missing');
+assert.match(html,/function clearOrderFiltersV1915\(\)/,'Order filtering missing');
+assert.match(html,/window\.aeUXOpenNavGroup/,'Responsive navigation integration missing');
+assert.match(html,/const APP_VERSION='1\.9\.16'/,'Release version requires separate approval');
+assert.equal(version.app,'1.9.16','Unexpected version change');
+assert.ok(sw.includes('artessencia-backoffice-1.9.16'),'PWA cache change requires independent review');
+console.log('PASS: cross-module structural baseline, 29 routes, order workflow, delivery elements and PWA version.');
+console.log('NOT VERIFIED: cloud runtime, checkout, catalog publication, printing, passkeys, installed PWA and device layout.');

@@ -6,6 +6,7 @@ on:
       - 'sw.js'
       - 'version.json'
       - 'scripts/test_ux_*.cjs'
+      - 'scripts/test_integracao_transversal_20261019.cjs'
       - '.github/workflows/ux-safety.yml'
   workflow_dispatch:
 permissions:
@@ -29,3 +30,7 @@ jobs:
         run: node scripts/test_ux_orders_filters.cjs
       - name: Protect order-production navigation
         run: node scripts/test_ux_order_production_safety.cjs
+      - name: Verify stock replenishment filter
+        run: node scripts/test_ux_stock_replenish.cjs
+      - name: Verify cross-module integration baseline
+        run: node scripts/test_integracao_transversal_20261019.cjs

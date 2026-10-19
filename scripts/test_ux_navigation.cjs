@@ -22,5 +22,5 @@ assert.ok(group.includes('window.aeUXOpenNavGroup=function(page){clearNavFilter(
 assert.ok(html.includes("window.aeUXOpenNavGroup(id)"));
 assert.ok(html.includes(".sidebar .nav .ae-ux-nav-group{display:contents}"));
 assert.ok(html.includes(".sidebar .nav .ae-ux-nav-group:not([open])>button{display:flex}"));
-assert.ok(html.includes("const APP_VERSION='1.9.15'"));
+assert.ok(html.includes("const APP_VERSION='1.9.16'"));
 console.log('Navigation structural checks pass: '+pages.length+' original routes preserved');
