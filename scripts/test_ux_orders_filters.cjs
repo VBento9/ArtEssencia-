@@ -30,4 +30,6 @@ assert.match(html,/id="orderProductionContextV1915"/);
 assert.match(html,/id="orderProductionMessageV1915"/);
 assert.match(html,/Voltar às encomendas/);
 assert.match(html,/A agenda pode incluir outras encomendas da mesma data/);
+assert.match(html,/new Date\(date\+'T12:00:00'\)\.toISOString\(\)\.slice\(0,10\)===date/);
+assert.match(html,/if\(el&&validDate\)\{el.value=date;renderProduction\(\);\}/);
 console.log('Orders filters and read-only attention labels structural checks passed');
