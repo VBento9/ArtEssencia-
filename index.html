@@ -3439,6 +3439,22 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 #orders .order-attention-v1915{display:inline-flex;align-items:center;border:1px solid #cbb4a5;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:700;color:#603a24;background:#fff7eb}
 #orders .order-card-head{flex-wrap:wrap;gap:6px}
 </style>
+<style id="ae-tablet-integrated-20261019">
+@media(min-width:651px) and (max-width:1250px){
+ .app{grid-template-columns:220px minmax(0,1fr)}
+ .main{min-width:0}
+ #orders .orders-toolbar,#orders .orders-toolbar-controls,#orders .orders-toolbar-title{min-width:0;max-width:100%}
+ #orders .orders-toolbar-controls{display:flex;flex-wrap:wrap;align-items:end;gap:10px}
+ #orders .orders-toolbar-controls>.field{min-width:min(180px,100%);flex:1 1 190px;max-width:100%}
+ #orders .orders-mode-tabs-v1882{display:flex;flex-wrap:wrap;gap:6px;max-width:100%}
+ #orders .tablewrap{max-width:100%;overflow-x:auto}
+ #orders th,#orders td{overflow-wrap:anywhere}
+ .ae-tablet-toggle-20261019{display:block;position:sticky;top:6px;z-index:12;margin:0 0 9px;padding:10px 14px;border:1px solid #d6b9a7;border-radius:10px;background:#fff;color:#5a240b;font-weight:800}
+ body.ae-tablet-sidebar-collapsed .app{grid-template-columns:0 minmax(0,1fr)}
+ body.ae-tablet-sidebar-collapsed .sidebar{visibility:hidden;width:0;min-width:0;padding:0;border:0;overflow:hidden}
+}
+@media(min-width:1251px),(max-width:650px){.ae-tablet-toggle-20261019{display:none!important}}
+</style>
 </head>
 <body>
 <div id="brandSplashV1778" aria-hidden="true"><div class="brand-splash-card"><img src="brand-artessencia.png" alt=""></div></div>
@@ -7385,7 +7401,21 @@ async function previewVisualCatalogSocialV196(id){
   const zipUrl=URL.createObjectURL(await visualCatalogZipV197(entries));
   const escapeText=v=>String(v||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   w.document.open();
-  w.document.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Catálogo visual</title><style>body{background:#eee9e5;margin:0;font:16px Arial}header{position:sticky;top:0;background:white;padding:12px;text-align:center}article{max-width:540px;margin:15px auto 24px;background:white}img{display:block;width:100%;height:auto}aside{display:flex;justify-content:space-between;padding:12px}a{color:#5a240b;font-weight:bold}</style></head><body><header>'+escapeText(x.title)+' — '+urls.length+' página(s). <a href="'+zipUrl+'" download="'+escapeText(base)+'.zip">Guardar todas (ZIP)</a> · Desliza para ver todas.</header>'+urls.map((url,n)=>'<article><aside><b>Página '+(n+1)+' de '+urls.length+'</b><a href="'+url+'" download="'+escapeText(base)+'_'+x.format+'_'+(n+1)+'.png">Guardar PNG</a></aside><img src="'+url+'" alt="Página '+(n+1)+'"></article>').join('')+'</body></html>');
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Catálogo visual</title><style>body{background:#eee9e5;margin:0;font:16px Arial}header{position:sticky;top:0;background:white;padding:12px;text-align:center}article{max-width:540px;margin:15px auto 24px;background:white}img{display:block;width:100%;height:auto}aside{display:flex;justify-content:space-between;padding:12px}a{color:#5a240b;font-weight:bold}</style></head><body><header>'+escapeText(x.title)+' — '+urls.length+' página(s). <a href="'+zipUrl+'" download="'+escapeText(base)+'.zip">Guardar todas (ZIP)</a> · Desliza para ver todas.</header>'+urls.map((url,n)=>'<article><aside><b>Página '+(n+1)+' de '+urls.length+'</b><a href="'+url+'" download="'+escapeText(base)+'_'+x.format+'_'+(n+1)+'.png">Guardar PNG</a></aside><img src="'+url+'" alt="Página '+(n+1)+'"></article>').join('')+'<script id="ae-tablet-integrated-script-20261019">
+(function(){
+function init(){
+ const main=document.querySelector('.main'),sidebar=document.querySelector('.sidebar');
+ if(!main||!sidebar||document.getElementById('ae-tablet-toggle-20261019'))return;
+ const button=document.createElement('button');button.id='ae-tablet-toggle-20261019';button.type='button';button.className='ae-tablet-toggle-20261019';
+ button.setAttribute('aria-controls','nav');
+ const sync=()=>{const collapsed=document.body.classList.contains('ae-tablet-sidebar-collapsed');button.textContent=collapsed?'Mostrar menu lateral':'Recolher menu lateral';button.setAttribute('aria-expanded',String(!collapsed));};
+ button.addEventListener('click',()=>{document.body.classList.toggle('ae-tablet-sidebar-collapsed');sync();});
+ main.prepend(button);sync();
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+</script>
+</body></html>');
   w.document.close();
   w.addEventListener('pagehide',()=>{urls.forEach(url=>URL.revokeObjectURL(url));URL.revokeObjectURL(zipUrl)},{once:true});
  }catch(e){if(w)w.close();toast(e.message||'Erro ao abrir catálogo')}
