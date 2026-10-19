@@ -1,0 +1,12 @@
+'use strict';
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const html=fs.readFileSync('index.html','utf8');
+const a=html.indexOf('function renderDashboard(){'),b=html.indexOf('function renderCart(){',a);
+assert.ok(a>=0&&b>a);
+const section=html.slice(a,b);
+assert.match(section,/onclick="showOrder\('/);
+assert.match(section,/aria-label="Abrir encomenda/);
+assert.match(section,/escapeHtml\(o\.id\|\|'—'\)/);
+assert.match(section,/escapeHtml\(o\.client\|\|'—'\)/);
+assert.match(section,/escapeHtml\(o\.status\|\|'—'\)/);
+console.log('Dashboard order access regression check passed');
