@@ -11,4 +11,16 @@ assert.match(html,/function showOrder\(/);
 assert.match(html,/function orderAttentionLabelV1915\(o\)/);
 assert.match(html,/Pronta · pagamento pendente/);
 assert.match(html,/order-attention-v1915/);
+
+const vm=require('node:vm');
+const start=html.indexOf('function orderAttentionLabelV1915(o){');
+const end=html.indexOf('\nfunction ',start+10);
+assert.ok(start>=0&&end>start,'Attention-label function should be extractable');
+const context={calcOrder:o=>({total:o.total})};
+vm.runInNewContext(html.slice(start,end),context);
+assert.equal(context.orderAttentionLabelV1915({status:'Pedido'}),'Por confirmar');
+assert.equal(context.orderAttentionLabelV1915({status:'Em produção'}),'Em produção');
+assert.equal(context.orderAttentionLabelV1915({status:'Pronta',total:30,paid:10}),'Pronta · pagamento pendente');
+assert.equal(context.orderAttentionLabelV1915({status:'Pronta',total:30,paid:30}),'Pronta para entrega');
+assert.equal(context.orderAttentionLabelV1915({status:'Entregue'}),'');
 console.log('Orders filters and read-only attention labels structural checks passed');
