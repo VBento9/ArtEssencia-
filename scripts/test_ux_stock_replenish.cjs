@@ -1,0 +1,10 @@
+'use strict';
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const s=fs.readFileSync('index.html','utf8');
+assert.match(s,/<option value="replenish">A repor/);
+const a=s.indexOf('function renderStock(){'),b=s.indexOf('function ',a+20);
+assert.ok(a>=0&&b>a);
+const code=s.slice(a,b);
+assert.ok(code.includes("state==='replenish'&&(st==='out'||st==='low')"));
+assert.match(code,/state==='all'/);
+console.log('Stock replenishment filter static test passed');
