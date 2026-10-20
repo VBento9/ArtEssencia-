@@ -1,0 +1,16 @@
+/* ArtEssencia: reformulação visual isolada. Sem JS, sem alterações a formulários, IDs, Cloud ou PWA. */
+@media (min-width:701px) and (max-width:1200px){
+ #products .product-editor-nav-v1762{gap:6px;padding:6px;grid-template-columns:repeat(4,minmax(0,1fr))}
+ #products .product-editor-nav-v1762 button{min-width:0;min-height:48px;padding:7px}
+ #products .product-editor-nav-v1762 button span{overflow-wrap:anywhere}
+ #orders .orders-toolbar{min-width:0}
+}
+@media (max-width:700px){
+ #products .product-editor-nav-v1762{display:flex;overflow-x:auto;gap:6px;max-width:100%;overscroll-behavior-x:contain;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+ #products .product-editor-nav-v1762 button{flex:0 0 130px;min-width:0;min-height:46px;scroll-snap-align:start;padding:7px}
+ #products .product-editor-nav-v1762 button small{display:none}
+ #orders .orders-toolbar{min-width:0}
+}
+#products .product-editor-nav-v1762 button:focus-visible{outline:3px solid #9b6640;outline-offset:2px}
+#products .product-editor-panel-v1762{min-width:0}
+#stock .stock-tools input,#purchases .purchase-tools input{min-width:0;max-width:100%}
