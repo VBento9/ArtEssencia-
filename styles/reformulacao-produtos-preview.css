@@ -1,0 +1,13 @@
+/* ArtEssencia — reorganização VISUAL conservadora, sem DOM, handlers ou dados.
+   Aplica-se apenas aos painéis já existentes de Produtos. */
+@media (min-width:701px) and (max-width:1180px) {
+ #products .product-editor-nav-v1762{gap:6px;padding:6px}
+ #products .product-editor-nav-v1762 button{min-height:49px;padding:7px;min-width:0}
+ #products .product-editor-nav-v1762 button span{overflow-wrap:anywhere}
+}
+@media (max-width:700px) {
+ #products .product-editor-nav-v1762{display:flex;overflow-x:auto;gap:6px;padding:6px;max-width:100%;overscroll-behavior-inline:contain;-webkit-overflow-scrolling:touch}
+ #products .product-editor-nav-v1762 button{flex:0 0 130px;min-height:47px;padding:7px;min-width:0}
+ #products .product-editor-nav-v1762 button small{display:none}
+}
+#products .product-editor-nav-v1762 button:focus-visible{outline:3px solid #ad7543;outline-offset:2px}
