@@ -1,0 +1,12 @@
+'use strict';
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const index=fs.readFileSync('index.html','utf8');
+const tabs=fs.readFileSync('order-detail-tabs-20261020.js','utf8');
+assert.ok(index.includes('src="/order-detail-tabs-20261020.js"'));
+for(const key of ['overview','details','finance'])assert.ok(tabs.includes("'"+key+"'"));
+assert.ok(tabs.includes('MutationObserver'));
+assert.ok(tabs.includes('root.appendChild'));
+assert.ok(tabs.includes('hidden=k!==key'));
+assert.ok(!/localStorage|supabase|\.update\(|\.delete\(/.test(tabs),'Navigation module must not modify application data');
+assert.ok(index.includes("const APP_VERSION='1.9.15'"));
+console.log('Estrutura de separadores validada; testes de interação em dispositivo pendentes.');
