@@ -1,0 +1,13 @@
+'use strict';
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const html=fs.readFileSync('index.html','utf8');
+assert.match(html,/id="ae-tabs-integrated-20261020"/);
+assert.match(html,/id="ae-tabs-integrated-script-20261020"/);
+assert.match(html,/role','tablist'/);
+assert.match(html,/ae-order-tabpanel-20261020/);
+assert.match(html,/MutationObserver/);
+assert.match(html,/product-editor-nav-v1762/);
+for(const name of ['identity','pricing','production','public'])assert.ok(html.includes('data-product-panel-btn="'+name+'"'));
+for(const name of ['orderDetail','orderDialog','products','prodName','prodCode'])assert.ok(html.includes('id="'+name+'"'));
+assert.match(html,/const APP_VERSION='1\.9\.15'/);
+console.log('Static tab-preservation checks passed; browser regression and data-flow tests still required.');
