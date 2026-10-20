@@ -5616,9 +5616,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         </div>
       </div>
       <div class="product-editor-nav-v1762" role="tablist" aria-label="Secções do produto">
-        <button type="button" class="active" data-product-panel-btn="identity" onclick="showProductPanelV1762('identity')"><b>1</b><span>Geral</span><small>Identificação e ficha</small><i id="productStepIdentityV1851" class="product-step-state-v1851">—</i></button>
-        <button type="button" data-product-panel-btn="pricing" onclick="showProductPanelV1762('pricing')"><b>2</b><span>Custos e PVP</span><small>Custo e PVP</small><i id="productStepPricingV1851" class="product-step-state-v1851">—</i></button>
-        <button type="button" data-product-panel-btn="production" onclick="showProductPanelV1762('production')"><b>3</b><span>Composição</span><small>Parâmetros técnicos</small><i id="productStepProductionV1851" class="product-step-state-v1851">—</i></button>
+        <button type="button" class="active" data-product-panel-btn="identity" onclick="showProductPanelV1762('identity')"><b>1</b><span>Essencial</span><small>Identificação e ficha</small><i id="productStepIdentityV1851" class="product-step-state-v1851">—</i></button>
+        <button type="button" data-product-panel-btn="pricing" onclick="showProductPanelV1762('pricing')"><b>2</b><span>Preço</span><small>Custo e PVP</small><i id="productStepPricingV1851" class="product-step-state-v1851">—</i></button>
+        <button type="button" data-product-panel-btn="production" onclick="showProductPanelV1762('production')"><b>3</b><span>Produção</span><small>Parâmetros técnicos</small><i id="productStepProductionV1851" class="product-step-state-v1851">—</i></button>
         <button type="button" data-product-panel-btn="public" onclick="showProductPanelV1762('public')"><b>4</b><span>Publicação</span><small>Cliente e canais</small><i id="productStepPublicV1851" class="product-step-state-v1851">—</i></button>
       </div>
       <div id="productCompletenessEditorV1762" class="product-completeness-editor-v1762"></div>
@@ -7380,10 +7380,7 @@ async function previewVisualCatalogSocialV196(id){
   const zipUrl=URL.createObjectURL(await visualCatalogZipV197(entries));
   const escapeText=v=>String(v||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   w.document.open();
-  w.document.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Catálogo visual</title><style>body{background:#eee9e5;margin:0;font:16px Arial}header{position:sticky;top:0;background:white;padding:12px;text-align:center}article{max-width:540px;margin:15px auto 24px;background:white}img{display:block;width:100%;height:auto}aside{display:flex;justify-content:space-between;padding:12px}a{color:#5a240b;font-weight:bold}</style></head><body><header>'+escapeText(x.title)+' — '+urls.length+' página(s). <a href="'+zipUrl+'" download="'+escapeText(base)+'.zip">Guardar todas (ZIP)</a> · Desliza para ver todas.</header>'+urls.map((url,n)=>'<article><aside><b>Página '+(n+1)+' de '+urls.length+'</b><a href="'+url+'" download="'+escapeText(base)+'_'+x.format+'_'+(n+1)+'.png">Guardar PNG</a></aside><img src="'+url+'" alt="Página '+(n+1)+'"></article>').join('')+'
-<!-- Isolado por regressão de abertura: &lt;script defer src="/order-detail-tabs-20261020.js"&gt;&lt;/script&gt; -->
-<!-- Isolado por regressão de abertura: &lt;script defer src="/product-nav-accessibility-20261020.js"&gt;&lt;/script&gt; -->
-</body></html>');
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Catálogo visual</title><style>body{background:#eee9e5;margin:0;font:16px Arial}header{position:sticky;top:0;background:white;padding:12px;text-align:center}article{max-width:540px;margin:15px auto 24px;background:white}img{display:block;width:100%;height:auto}aside{display:flex;justify-content:space-between;padding:12px}a{color:#5a240b;font-weight:bold}</style></head><body><header>'+escapeText(x.title)+' — '+urls.length+' página(s). <a href="'+zipUrl+'" download="'+escapeText(base)+'.zip">Guardar todas (ZIP)</a> · Desliza para ver todas.</header>'+urls.map((url,n)=>'<article><aside><b>Página '+(n+1)+' de '+urls.length+'</b><a href="'+url+'" download="'+escapeText(base)+'_'+x.format+'_'+(n+1)+'.png">Guardar PNG</a></aside><img src="'+url+'" alt="Página '+(n+1)+'"></article>').join('')+'</body></html>');
   w.document.close();
   w.addEventListener('pagehide',()=>{urls.forEach(url=>URL.revokeObjectURL(url));URL.revokeObjectURL(zipUrl)},{once:true});
  }catch(e){if(w)w.close();toast(e.message||'Erro ao abrir catálogo')}
