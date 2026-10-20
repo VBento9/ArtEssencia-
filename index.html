@@ -3437,7 +3437,18 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 #orders .order-attention-v1915{display:inline-flex;align-items:center;border:1px solid #cbb4a5;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:700;color:#603a24;background:#fff7eb}
 #orders .order-card-head{flex-wrap:wrap;gap:6px}
 </style>
-</head>
+<style id="ae-tabs-integrated-20261020">
+/* Presentation-only; existing form fields, IDs and handlers remain unchanged. */
+#products .product-editor-nav-v1762{position:sticky;top:0;z-index:8;display:flex;overflow-x:auto;gap:6px;padding:8px;background:var(--card,#fff);scrollbar-width:thin}
+#products .product-editor-nav-v1762>button{flex:1 0 130px;min-width:0}
+#products .products-form-card .form-grid{min-width:0}
+#orderDialog{max-height:94dvh;overflow:auto}
+#ae-order-tablist-20261020{display:flex;position:sticky;top:0;z-index:8;gap:6px;overflow-x:auto;padding:9px 2px;background:var(--card,#fff);scrollbar-width:thin}
+#ae-order-tablist-20261020 button{white-space:nowrap;padding:8px 12px;border-radius:999px;border:1px solid #d5c2b3;background:transparent;color:inherit;cursor:pointer}
+#ae-order-tablist-20261020 button[aria-selected="true"]{background:#5a240b;color:white;border-color:#5a240b}
+.ae-order-tabpanel-20261020[hidden]{display:none!important}
+@media(max-width:650px){#products .product-editor-nav-v1762>button{flex:0 0 115px}#orderDialog{width:98%;max-width:98%}}
+</style></head>
 <body>
 <div id="brandSplashV1778" aria-hidden="true"><div class="brand-splash-card"><img src="brand-artessencia.png" alt=""></div></div>
 <div id="authGateV1880" class="auth-gate-v1880 hidden" aria-modal="true" role="dialog">
@@ -7380,7 +7391,53 @@ async function previewVisualCatalogSocialV196(id){
   const zipUrl=URL.createObjectURL(await visualCatalogZipV197(entries));
   const escapeText=v=>String(v||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   w.document.open();
-  w.document.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Catálogo visual</title><style>body{background:#eee9e5;margin:0;font:16px Arial}header{position:sticky;top:0;background:white;padding:12px;text-align:center}article{max-width:540px;margin:15px auto 24px;background:white}img{display:block;width:100%;height:auto}aside{display:flex;justify-content:space-between;padding:12px}a{color:#5a240b;font-weight:bold}</style></head><body><header>'+escapeText(x.title)+' — '+urls.length+' página(s). <a href="'+zipUrl+'" download="'+escapeText(base)+'.zip">Guardar todas (ZIP)</a> · Desliza para ver todas.</header>'+urls.map((url,n)=>'<article><aside><b>Página '+(n+1)+' de '+urls.length+'</b><a href="'+url+'" download="'+escapeText(base)+'_'+x.format+'_'+(n+1)+'.png">Guardar PNG</a></aside><img src="'+url+'" alt="Página '+(n+1)+'"></article>').join('')+'</body></html>');
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Catálogo visual</title><style>body{background:#eee9e5;margin:0;font:16px Arial}header{position:sticky;top:0;background:white;padding:12px;text-align:center}article{max-width:540px;margin:15px auto 24px;background:white}img{display:block;width:100%;height:auto}aside{display:flex;justify-content:space-between;padding:12px}a{color:#5a240b;font-weight:bold}</style></head><body><header>'+escapeText(x.title)+' — '+urls.length+' página(s). <a href="'+zipUrl+'" download="'+escapeText(base)+'.zip">Guardar todas (ZIP)</a> · Desliza para ver todas.</header>'+urls.map((url,n)=>'<article><aside><b>Página '+(n+1)+' de '+urls.length+'</b><a href="'+url+'" download="'+escapeText(base)+'_'+x.format+'_'+(n+1)+'.png">Guardar PNG</a></aside><img src="'+url+'" alt="Página '+(n+1)+'"></article>').join('')+'<script id="ae-tabs-integrated-script-20261020">
+/* Progressive enhancement of order details. No data updates or API calls. */
+(function(){
+function mount(){
+ const content=document.getElementById('orderDetail');
+ if(!content||content.dataset.aeTabsMounted==='1')return;
+ content.dataset.aeTabsMounted='1';
+ let observer;
+ function apply(){
+  if(observer)observer.disconnect();
+  try{
+   // Existing order renderer replaces innerHTML on every open.
+   if(content.querySelector('#ae-order-tablist-20261020'))return;
+   const nodes=Array.from(content.children);
+   if(nodes.length<4)return;
+   const groups=[{title:'Resumo',nodes:[]}];
+   for(const node of nodes){
+    if(node.classList.contains('section-title')){
+     const name=(node.textContent||'Secção').trim().slice(0,50);
+     groups.push({title:name,nodes:[]});
+    }
+    groups[groups.length-1].nodes.push(node);
+   }
+   const nonEmpty=groups.filter(g=>g.nodes.length);
+   if(nonEmpty.length<2)return;
+   const tabs=document.createElement('div');tabs.id='ae-order-tablist-20261020';tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Secções da encomenda');
+   const panels=[];
+   nonEmpty.forEach((group,i)=>{
+    const panel=document.createElement('section');panel.className='ae-order-tabpanel-20261020';panel.id='ae-order-panel-'+i;panel.setAttribute('role','tabpanel');panel.hidden=i!==0;
+    group.nodes.forEach(node=>panel.appendChild(node));
+    const tab=document.createElement('button');tab.type='button';tab.textContent=group.title;tab.id='ae-order-tab-'+i;tab.setAttribute('role','tab');tab.setAttribute('aria-controls',panel.id);tab.setAttribute('aria-selected',String(i===0));tab.tabIndex=i===0?0:-1;
+    tab.addEventListener('click',()=>{
+     panels.forEach((p,k)=>{p.hidden=k!==i;const b=tabs.children[k];b.setAttribute('aria-selected',String(k===i));b.tabIndex=k===i?0:-1;});
+    });
+    tabs.appendChild(tab);panels.push(panel);
+   });
+   content.prepend(tabs);panels.forEach(p=>content.appendChild(p));
+  }catch(e){console.warn('Separadores da encomenda indisponíveis; manter apresentação original',e)}
+  finally{if(observer)observer.observe(content,{childList:true});}
+ }
+ observer=new MutationObserver(()=>{if(!content.querySelector('#ae-order-tablist-20261020'))apply()});
+ observer.observe(content,{childList:true});
+ if(content.children.length)apply();
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
+})();
+</script></body></html>');
   w.document.close();
   w.addEventListener('pagehide',()=>{urls.forEach(url=>URL.revokeObjectURL(url));URL.revokeObjectURL(zipUrl)},{once:true});
  }catch(e){if(w)w.close();toast(e.message||'Erro ao abrir catálogo')}
