@@ -1,0 +1,11 @@
+'use strict';
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const html=fs.readFileSync('index.html','utf8'),js=fs.readFileSync('product-nav-accessibility-20261020.js','utf8');
+const tag='<script defer src="/product-nav-accessibility-20261020.js"></script>';
+assert.equal(html.split(tag).length-1,1);
+assert.ok(html.lastIndexOf(tag)>html.lastIndexOf('</main>')&&html.lastIndexOf(tag)<html.lastIndexOf('</body>'));
+for(const id of ['prodName','prodCode','productEditorTitleV145'])assert.ok(html.includes('id="'+id+'"'));
+assert.ok(html.includes('function showProductPanelV1762('));
+for(const part of ['ArrowRight','ArrowLeft','aria-selected','max-width:700px'])assert.ok(js.includes(part));
+assert.doesNotMatch(js,/localStorage|supabase|\.update\(|\.delete\(/);
+console.log('PASS: controlos e navegação preservados; validação funcional pendente.');
