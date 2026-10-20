@@ -63,3 +63,24 @@ input,select,textarea{width:100%;border:1px solid var(--line);background:white;c
 .visual-catalog-preview{background:#fbf7f2;border:1px solid var(--line);border-radius:16px;padding:24px}.visual-catalog-head{text-align:center;margin-bottom:18px}.visual-catalog-head h2{font-family:Georgia,serif;font-size:30px;margin:6px 0}
 .visual-catalog-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.visual-catalog-product{background:#fff;border:1px solid var(--line);border-radius:13px;padding:9px;display:grid;gap:6px}.visual-catalog-product img,.visual-catalog-placeholder{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:9px;background:#eee5dd;display:grid;place-items:center}.visual-catalog-product span{font-weight:900;color:var(--brand)}
 @media(max-width:760px){.visual-product-picker{grid-template-columns:1fr}.visual-catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.visual-catalog-preview{padding:14px}}
+
+
+/* TESTE ISOLADO 2026-10-20 — compactação visual do Dashboard.
+   Sem alterações a eventos, navegação, IDs, formulários, dados ou Cloud.
+   Deliberadamente limitado ao ecrã com .quick-grid. */
+#view:has(> .grid > .quick-grid) > .grid{gap:10px}
+#view:has(> .grid > .quick-grid) .quick-grid{gap:8px}
+#view:has(> .grid > .quick-grid) .quick-card{padding:10px 12px;border-radius:12px;min-width:0}
+#view:has(> .grid > .quick-grid) .quick-card strong{line-height:1.25}
+#view:has(> .grid > .quick-grid) .card{padding:13px 14px;border-radius:13px}
+#view:has(> .grid > .quick-grid) .kpi-card .value{font-size:25px;line-height:1.15}
+#view:has(> .grid > .quick-grid) .section-head{margin-bottom:9px}
+#view:has(> .grid > .quick-grid) .metric{min-width:0}
+@media(max-width:900px){
+ #view:has(> .grid > .quick-grid) .quick-card{padding:10px}
+ #view:has(> .grid > .quick-grid) .card{padding:12px}
+}
+@media(max-width:600px){
+ #view:has(> .grid > .quick-grid) .quick-grid{gap:7px}
+ #view:has(> .grid > .quick-grid) .kpi-card .value{font-size:23px}
+}
