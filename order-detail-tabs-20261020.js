@@ -15,7 +15,12 @@ function enhance(root){
  for(const [key,name]of visible){const b=document.createElement('button');b.type='button';b.dataset.key=key;b.textContent=name;b.setAttribute('role','tab');b.onclick=()=>select(key);bar.appendChild(b)}
  root.appendChild(bar);for(const [key]of visible)root.appendChild(panels[key]);select(visible[0][0]);
 }
-function init(){const root=document.getElementById('orderDetail');if(!root)return;
+function init(){
+ if(!document.getElementById('ae-order-tabs-css')){
+ const style=document.createElement('style');style.id='ae-order-tabs-css';
+ style.textContent='#orderDialog{max-height:95dvh;overflow:auto}.ae-order-tabs{display:flex;gap:6px;overflow-x:auto;position:sticky;top:0;background:var(--card,#fff);padding:8px 0;z-index:5;border-bottom:1px solid #ded2c1}.ae-order-tabs button{padding:9px 12px;min-height:42px;border:1px solid #d6c7ba;border-radius:10px;background:#fff;color:#4f3222;white-space:nowrap;font-weight:600}.ae-order-tabs button[aria-selected="true"]{background:#553726;color:white}.ae-order-tab-panel[hidden]{display:none!important}.ae-order-tab-panel{padding-top:8px}';
+ document.head.appendChild(style)}
+ const root=document.getElementById('orderDetail');if(!root)return;
  let queued=false;
  const observer=new MutationObserver(()=>{if(queued)return;queued=true;queueMicrotask(()=>{queued=false;if(!root.querySelector('.ae-order-tabs'))enhance(root)})});
  observer.observe(root,{childList:true});
