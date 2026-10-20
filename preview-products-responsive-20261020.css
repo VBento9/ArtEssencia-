@@ -1,0 +1,13 @@
+/* ArtEssencia preview: melhorias visuais não destrutivas; sem alterações a dados, funções ou eventos. */
+@media (min-width:701px) and (max-width:1200px){
+ #products .product-editor-nav-v1762{gap:6px;padding:6px;grid-template-columns:repeat(4,minmax(0,1fr))}
+ #products .product-editor-nav-v1762 button{min-height:49px;padding:7px;min-width:0}
+ #products .product-editor-nav-v1762 button span{overflow-wrap:anywhere}
+}
+@media (max-width:700px){
+ #products .product-editor-nav-v1762{display:flex;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;gap:6px;padding:6px;max-width:100%;-webkit-overflow-scrolling:touch}
+ #products .product-editor-nav-v1762 button{flex:0 0 130px;min-height:47px;scroll-snap-align:start;padding:7px;min-width:0}
+ #products .product-editor-nav-v1762 button small{display:none}
+}
+#products .product-editor-nav-v1762 button:focus-visible{outline:3px solid #ad7543;outline-offset:2px}
+#products .product-editor-panel-v1762{min-width:0}

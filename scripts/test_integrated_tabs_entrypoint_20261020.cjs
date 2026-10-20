@@ -1,0 +1,10 @@
+'use strict';
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const s=fs.readFileSync('index.html','utf8');
+const script='<script defer src="/order-detail-tabs-20261020.js"></script>';
+assert.equal(s.split(script).length-1,1,'O script deve ser carregado uma única vez');
+assert.ok(s.lastIndexOf(script)>s.lastIndexOf('</main>')&&s.lastIndexOf(script)<s.lastIndexOf('</body>'),'Script fora do documento principal');
+for(const name of ['identity','pricing','production','public'])assert.ok(s.includes('data-product-panel-btn="'+name+'"'),'Falta painel '+name);
+for(const id of ['prodName','prodCode','productEditorTitleV145','orderDetail'])assert.ok(s.includes('id="'+id+'"'));
+assert.ok(s.includes("const APP_VERSION='1.9.15'"),'Versão base alterada');
+console.log('PASS: script e painéis existentes preservados. Testes funcionais pendentes.');

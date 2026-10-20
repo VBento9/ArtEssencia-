@@ -1,0 +1,10 @@
+'use strict';
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const index=fs.readFileSync('index.html','utf8');
+const tabs=fs.readFileSync('order-detail-tabs-20261020.js','utf8');
+assert.ok(index.includes('src="/order-detail-tabs-20261020.js"'));
+for(const key of ['overview','items','production','finance','history'])assert.ok(tabs.includes("'"+key+"'"),'Falta separador '+key);
+for(const feature of ['MutationObserver','root.appendChild','aria-selected','ArrowRight','ArrowLeft','type=\'button\''])assert.ok(tabs.includes(feature),'Falta '+feature);
+assert.ok(!/localStorage|supabase|\.update\(|\.delete\(/.test(tabs),'Separadores não devem modificar dados');
+assert.ok(index.includes("const APP_VERSION='1.9.15'"));
+console.log('PASS: navegação não destrutiva de encomendas; faltam testes reais em dispositivos.');
