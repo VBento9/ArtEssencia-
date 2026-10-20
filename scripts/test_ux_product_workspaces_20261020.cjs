@@ -1,0 +1,10 @@
+'use strict';
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const s=fs.readFileSync('index.html','utf8');
+assert.match(s,/id="ae-product-workspaces"/);
+assert.match(s,/id="ae-product-workspaces-script"/);
+for(const name of ['list','editor','tools'])assert.ok(s.includes('data-area="'+name+'"'));
+for(const id of ['prodName','prodCode','productsSummary','productEditorTitleV145'])assert.ok(s.includes('id="'+id+'"'),'Missing '+id);
+for(const fn of ['editProduct','renderProducts','showProductPanelV1762'])assert.ok(s.includes('function '+fn+'('),'Missing '+fn);
+assert.match(s,/const APP_VERSION='1\.9\.15'/);
+console.log('PASS: Products workspace controls and baseline preserved. Device tests required.');
