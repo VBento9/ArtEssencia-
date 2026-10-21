@@ -28,3 +28,14 @@ test('CSS é limitado ao ecrã Stock',()=>{
   assert.match(css,/#stock #stockBody tr\[hidden\]/);
   assert.doesNotMatch(css,/(?:^|\n)\s*(?:html|body|\.table)\s*\{/);
 });
+
+test('a interface principal carrega ambos os recursos do Stock compacto',()=>{
+  const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
+  assert.match(index,/<link rel="stylesheet" href="\.\/stock-compact-ui\.css" id="ae-stock-compact-styles">/);
+  assert.match(index,/<script defer src="\.\/stock-compact-ui\.js" id="ae-stock-compact-script"><\/script>/);
+});
+test('o service worker procura JavaScript e CSS na rede, sem servir versões antigas',()=>{
+  const sw=fs.readFileSync(path.join(root,'sw.js'),'utf8');
+  assert.match(sw,/const fresh=\/\\\.\(\?:js\|css/);
+  assert.match(sw,/cache:'no-store'/);
+});
