@@ -1,0 +1,30 @@
+name: Backoffice compact browser smoke
+on:
+  pull_request:
+    paths:
+      - 'tests/ui-compact-browser.spec.cjs'
+      - '*-compact-ui.js'
+      - '*-compact-ui.css'
+      - '.github/workflows/ui-compact-browser.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '20'
+      - name: Install browser test dependencies
+        run: |
+          npm install --no-save --package-lock=false --ignore-scripts @playwright/test@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Serve checkout locally
+        run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/ae-local-http.log 2>&1 &
+      - name: Run browser smoke without Cloud
+        run: npx playwright test tests/ui-compact-browser.spec.cjs --workers=1 --reporter=line

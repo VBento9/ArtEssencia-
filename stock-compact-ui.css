@@ -1,0 +1,11 @@
+/* Interface Stock compacta — apenas CSS, sem regras globais. */
+#stock .ae-stock-compact-controls{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin:12px 0}
+#stock .ae-stock-action-tabs,#stock .ae-stock-pages{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#stock .ae-stock-action-tabs button,#stock .ae-stock-pages button{border:1px solid var(--border,#d9cfc5);background:var(--card,#fff);color:inherit;border-radius:10px;padding:9px 12px;cursor:pointer;font:inherit}
+#stock .ae-stock-action-tabs button[aria-expanded=true]{background:#eee2d7;border-color:#ad8d79}
+#stock .ae-stock-pages button:disabled{opacity:.45;cursor:not-allowed}
+#stock .ae-stock-pages span{font-size:12px;color:var(--text-muted,#786e65)}
+#stock .ae-stock-bottom-pages{justify-content:flex-end;margin-top:12px}
+#stock .stock-create-section-v1736[hidden],#stock .stock-move-section-v1721[hidden],#stock .ae-stock-pages[hidden],#stock #stockBody tr[hidden]{display:none!important}
+#stock .stock-list-card{scroll-margin-top:80px}
+@media(max-width:700px){#stock .ae-stock-compact-controls{align-items:stretch;flex-direction:column}#stock .ae-stock-action-tabs>*{flex:1}#stock .ae-stock-pages{justify-content:center}#stock .stock-create-section-v1736,#stock .stock-move-section-v1721{scroll-margin-top:75px}}
