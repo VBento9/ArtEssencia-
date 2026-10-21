@@ -21,10 +21,8 @@ for(const viewport of [{width:390,height:844},{width:1024,height:768}]){
   await expect(page.locator('#products .products-form-card')).not.toHaveAttribute('hidden','');
   await page.locator('#aeProductsCompact button').nth(0).click();
   await expect(page.locator('#products .products-list-card')).not.toHaveAttribute('hidden','');
-  await activate('orders');
   await page.locator('#aeOrdersCompact').click();
   await expect(page.locator('#aeOrdersAdvanced')).not.toHaveAttribute('hidden','');
-  await activate('dashboard');
   await page.locator('#aeDashCompact button').nth(1).click();
   await expect(page.locator('#dashboard #receivablesBody').locator('xpath=ancestor::div[contains(@class,"tablewrap")]')).not.toHaveAttribute('hidden','');
  });
