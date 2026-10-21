@@ -1,64 +1,66 @@
-/* Stock compacto — apresentação exclusivamente; não escreve dados. */
+/* Stock compacto: camada de apresentação, sem alterações de dados. */
 (function(){
 'use strict';
 const PAGE_SIZE=20;
-let page=0, enabled=false, observer=null, ignore=false;
-const id=x=>document.getElementById(x);
-function setup(){
- const stock=id('stock'), body=id('stockBody');
- if(!stock||!body||id('aeStockCompactControls'))return;
- const stack=stock.querySelector('.stock-stack-v1721');
+function init(){
+ const stock=document.getElementById('stock'),body=document.getElementById('stockBody');
+ if(!stock||!body||document.getElementById('aeStockCompactControls'))return;
  const list=stock.querySelector('.stock-list-card');
- if(!stack||!list)return;
- const toolbar=document.createElement('div');
- toolbar.id='aeStockCompactControls';toolbar.className='ae-stock-compact-controls';
- const create=document.createElement('button');create.type='button';create.textContent='Nova matéria-prima';create.setAttribute('aria-expanded','false');
- const move=document.createElement('button');move.type='button';move.textContent='Movimento rápido';move.setAttribute('aria-expanded','false');
- const previous=document.createElement('button');previous.type='button';previous.textContent='Anterior';
- const next=document.createElement('button');next.type='button';next.textContent='Seguinte';
- const pages=document.createElement('span');pages.setAttribute('aria-live','polite');
  const form=stock.querySelector('.stock-create-section-v1736');
  const movement=stock.querySelector('.stock-move-section-v1721');
- function toggle(which,button){const expanded=button.getAttribute('aria-expanded')==='true';form.hidden=which!=='create'||expanded;movement.hidden=which!=='move'||expanded;create.setAttribute('aria-expanded',String(which==='create'&&!expanded));move.setAttribute('aria-expanded',String(which==='move'&&!expanded));if(!expanded)(which==='create'?form:movement).scrollIntoView({block:'nearest',behavior:'smooth'});}
- create.onclick=()=>toggle('create',create);
- move.onclick=()=>toggle('move',move);
- const actions=document.createElement('div');actions.className='ae-stock-action-tabs';actions.append(create,move);
- const pagination=document.createElement('div');pagination.className='ae-stock-pages';pagination.append(previous,pages,next);
- toolbar.append(actions,pagination);
- list.insertBefore(toolbar,list.querySelector('.tablewrap'));
- const lower=document.createElement('div');lower.className='ae-stock-pages ae-stock-bottom-pages';
- const prevBottom=document.createElement('button');prevBottom.type='button';prevBottom.textContent='Anterior';
- const nextBottom=document.createElement('button');nextBottom.type='button';nextBottom.textContent='Seguinte';
- const labelBottom=document.createElement('span');labelBottom.setAttribute('aria-live','polite');
- lower.append(prevBottom,labelBottom,nextBottom);list.append(lower);
- function apply(){
-   const rows=[...body.rows].filter(row=>!row.querySelector('td[colspan]'));
-   const pagesCount=Math.max(1,Math.ceil(rows.length/PAGE_SIZE));
-   page=Math.min(page,pagesCount-1);
-   rows.forEach((row,index)=>{row.hidden=index<page*PAGE_SIZE||index>=(page+1)*PAGE_SIZE});
-   const text=(page+1)+' / '+pagesCount+' · '+rows.length+' artigos';
-   pages.textContent=text;labelBottom.textContent=text;
-   previous.disabled=prevBottom.disabled=page===0;
-   next.disabled=nextBottom.disabled=page>=pagesCount-1;
-   lower.hidden=pagesCount===1;pagination.hidden=pagesCount===1;
+ const anchor=list?.querySelector('.tablewrap');
+ if(!list||!form||!movement||!anchor)return;
+ const makeButton=label=>{const b=document.createElement('button');b.type='button';b.textContent=label;return b};
+ const container=document.createElement('div');container.id='aeStockCompactControls';container.className='ae-stock-compact-controls';
+ const actions=document.createElement('div');actions.className='ae-stock-action-tabs';
+ const add=makeButton('Nova matéria-prima'),move=makeButton('Movimento rápido');
+ add.setAttribute('aria-expanded','false');move.setAttribute('aria-expanded','false');
+ actions.append(add,move);
+ const pages=document.createElement('div');pages.className='ae-stock-pages';
+ const prev=makeButton('Anterior'),next=makeButton('Seguinte'),indicator=document.createElement('span');
+ indicator.setAttribute('aria-live','polite');pages.append(prev,indicator,next);
+ container.append(actions,pages);list.insertBefore(container,anchor);
+ const bottom=pages.cloneNode(false);bottom.classList.add('ae-stock-bottom-pages');
+ const prev2=makeButton('Anterior'),next2=makeButton('Seguinte'),indicator2=document.createElement('span');
+ indicator2.setAttribute('aria-live','polite');bottom.append(prev2,indicator2,next2);list.append(bottom);
+ let page=0;
+ function open(which){
+   form.hidden=which!=='form';movement.hidden=which!=='movement';
+   add.setAttribute('aria-expanded',String(which==='form'));
+   move.setAttribute('aria-expanded',String(which==='movement'));
+   if(which==='form'||which==='movement')(which==='form'?form:movement).scrollIntoView({block:'nearest'});
  }
- const jump=delta=>{page+=delta;apply();list.scrollIntoView({block:'start',behavior:'smooth'})};
- previous.onclick=prevBottom.onclick=()=>jump(-1);
- next.onclick=nextBottom.onclick=()=>jump(1);
- // Reaplica só depois de o renderStock substituir os filhos de tbody.
- observer=new MutationObserver(()=>{if(!ignore){page=0;apply()}});
+ add.addEventListener('click',()=>open(form.hidden?'form':null));
+ move.addEventListener('click',()=>open(movement.hidden?'movement':null));
+ function apply(){
+   // A posição visual muda, mas os índices das linhas e handlers inline ficam inalterados.
+   const rows=Array.from(body.rows).filter(row=>!row.querySelector('td[colspan]'));
+   const count=Math.max(1,Math.ceil(rows.length/PAGE_SIZE));page=Math.max(0,Math.min(page,count-1));
+   rows.forEach((row,i)=>{row.hidden=i<page*PAGE_SIZE||i>=(page+1)*PAGE_SIZE});
+   const label=`${page+1} / ${count} · ${rows.length} artigos`;
+   indicator.textContent=indicator2.textContent=label;
+   prev.disabled=prev2.disabled=page===0;next.disabled=next2.disabled=page===count-1;
+   pages.hidden=bottom.hidden=count===1;
+ }
+ function advance(delta){page+=delta;apply();list.scrollIntoView({block:'start'})}
+ prev.onclick=prev2.onclick=()=>advance(-1);next.onclick=next2.onclick=()=>advance(1);
+ // Stock original recria tbody após pesquisa/filtro/gravação.
+ const observer=new MutationObserver(()=>{page=0;apply()});
  observer.observe(body,{childList:true});
- form.hidden=true;movement.hidden=true;
- // Quando Editar é acionado, o formulário existente tem de estar visível.
- // Não altera loadStock, nem reatribui handlers de dados.
- stock.addEventListener('click',event=>{
-   const edit=event.target.closest('.stock-actions button');
-   if(edit&&edit.textContent.trim()==='Editar'){
-     form.hidden=false;movement.hidden=true;
-     create.setAttribute('aria-expanded','true');move.setAttribute('aria-expanded','false');
+ stock.addEventListener('click',e=>{
+   const btn=e.target.closest?.('button');
+   if(!btn)return;
+   if(btn.closest('.stock-actions')&&btn.textContent.trim()==='Editar'){
+     // O handler original loadStock continua a preencher os campos.
+     // Abrir antes da ação inline para tornar o formulário visível.
+     open('form');
    }
+   if(btn.id==='stockCancelBtnV145')open(null);
  });
- apply();enabled=true;
+ // Nunca ocultar um formulário já em edição ao inicializar.
+ const editing=document.getElementById('stockCancelBtnV145');
+ if(!(editing&&!editing.classList.contains('hidden')))open(null);
+ apply();
 }
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup,{once:true});else setup();
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
