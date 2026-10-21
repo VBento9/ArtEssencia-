@@ -33,8 +33,8 @@ function init(){
    const action=e.target.closest?.('[onclick]');
    if(!action)return;
    const source=action.getAttribute('onclick')||'';
-   if(/\beditProduct\s*\(/.test(source))select('editor');
-   if(/\bcancelProductEditV145\s*\(/.test(source))select('list');
+   if(source.includes('editProduct('))select('editor');
+   if(source.includes('cancelProductEditV145('))select('list');
  },true);
  // Se um filtro avançado estiver ativo, mantê-lo visível no carregamento.
  const secondary=[...filters].slice(1).flatMap(g=>[...g.querySelectorAll('select')]);
