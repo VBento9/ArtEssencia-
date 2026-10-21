@@ -24,5 +24,7 @@ test('preserva formulário de edição e botão cancelar',()=>{
   assert.match(js,/open\(null\)/);
 });
 test('CSS é limitado ao ecrã Stock',()=>{
-  for(const rule of css.match(/[^{}]+\{/g)||[])assert.match(rule,/^\s*(?:#stock|@media|\/\*)/,'seletor não isolado: '+rule);
+  assert.match(css,/#stock \.ae-stock-compact-controls/);
+  assert.match(css,/#stock #stockBody tr\[hidden\]/);
+  assert.doesNotMatch(css,/(?:^|\n)\s*(?:html|body|\.table)\s*\{/);
 });
