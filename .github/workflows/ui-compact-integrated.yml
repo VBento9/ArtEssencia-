@@ -6,6 +6,7 @@ on:
       - '*-compact-ui.css'
       - 'index.html'
       - 'tests/*compact*.test.cjs'
+      - 'tests/ui-compact-integration-contract.test.cjs'
       - '.github/workflows/ui-compact-integrated.yml'
   workflow_dispatch:
 permissions:
@@ -30,4 +31,4 @@ jobs:
       - name: Install DOM test runtime
         run: npm install --no-save --package-lock=false --ignore-scripts jsdom@26.1.0
       - name: Run five suites
-        run: node --test tests/stock-compact-contract.test.cjs tests/stock-compact-functional.test.cjs tests/dashboard-compact-functional.test.cjs tests/products-compact-functional.test.cjs tests/orders-compact-functional.test.cjs
+        run: node --test tests/stock-compact-contract.test.cjs tests/stock-compact-functional.test.cjs tests/dashboard-compact-functional.test.cjs tests/products-compact-functional.test.cjs tests/orders-compact-functional.test.cjs tests/ui-compact-integration-contract.test.cjs
