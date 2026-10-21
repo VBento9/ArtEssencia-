@@ -17,6 +17,18 @@ assert.equal(saldoDisponivel(50,27.3,false,0),50);
 assert.ok(saldoDisponivel(50,27.3,true,60)<27.3);
 assert.equal(Number((50-27.3).toFixed(1)),22.7);
 
+// Reproduz a fórmula observada no histórico para tornar explícitos os limites.
+function saldoHistorico(stock,necessidade,comprometido){
+ const anterior=Math.max(0,comprometido-necessidade);
+ return Math.max(0,stock-anterior);
+}
+assert.equal(saldoHistorico(50,27.3,27.3),50);
+assert.equal(saldoHistorico(50,27.3,77.3),0);
+// Sem garantias sobre o que entra em 'comprometido', subtrair a necessidade
+// corrente pode libertar indevidamente reservas de outras encomendas.
+assert.equal(saldoHistorico(50,27.3,50),27.3);
+assert.equal(saldoDisponivel(50,27.3,false,50),0);
+
 // Guardrail estrutural: não converter g em ml por mera alteração de rótulo
 // no momento de concluir produção (exige conversão explícita e comprovada).
 assert.doesNotMatch(
