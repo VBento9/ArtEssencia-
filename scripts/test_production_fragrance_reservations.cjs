@@ -29,6 +29,10 @@ assert.equal(saldoHistorico(50,27.3,77.3),0);
 assert.equal(saldoHistorico(50,27.3,50),27.3);
 assert.equal(saldoDisponivel(50,27.3,false,50),0);
 
+// Exigir a função real de compromissos externos em ambos os pontos de cálculo.
+assert.match(html,/function productionOtherCommitmentsV20261021\(cutoffDate,selectedOrders\)/);
+assert.equal((html.match(/productionOtherCommitmentsV20261021\(d,ords\)/g)||[]).length,2);
+assert.doesNotMatch(html,/Math\.max\(0,\(Number\(committed\[name\]\)\|\|0\)-\(Number\(need\)\|\|0\)\)/);
 // Guardrail estrutural: não converter g em ml por mera alteração de rótulo
 // no momento de concluir produção (exige conversão explícita e comprovada).
 assert.doesNotMatch(
