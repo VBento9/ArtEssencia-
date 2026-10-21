@@ -1,5 +1,5 @@
 const {test,expect}=require('@playwright/test');
-const base='http://127.0.0.1:8765/';
+const base='http://127.0.0.1:8765/tests/ui-compact-browser-fixture.html';
 for(const viewport of [{width:390,height:844},{width:1024,height:768}]){
  test('Interface compacta '+viewport.width+'px, sem Cloud',async({page})=>{
   await page.setViewportSize(viewport);
@@ -17,13 +17,6 @@ for(const viewport of [{width:390,height:844},{width:1024,height:768}]){
    ['orders','#aeOrdersCompact']]){
     await expect(page.locator('#'+section+' '+control)).toHaveCount(1);
   }
-  async function activate(id){
-    await page.evaluate((screenId)=>{
-      // Navegação apenas no DOM local: sem autenticação nem gravações.
-      document.querySelectorAll('.screen').forEach(el=>el.classList.toggle('active',el.id===screenId));
-    },id);
-  }
-  await activate('products');
   await page.locator('#aeProductsCompact button').nth(1).click();
   await expect(page.locator('#products .products-form-card')).not.toHaveAttribute('hidden','');
   await page.locator('#aeProductsCompact button').nth(0).click();
