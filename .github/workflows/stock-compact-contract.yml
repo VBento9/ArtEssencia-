@@ -6,6 +6,7 @@ on:
       - 'stock-compact-ui.css'
       - 'index.html'
       - 'tests/stock-compact-contract.test.cjs'
+      - 'tests/stock-compact-functional.test.cjs'
       - '.github/workflows/stock-compact-contract.yml'
   workflow_dispatch:
 permissions:
@@ -25,5 +26,7 @@ jobs:
           node-version: '20'
       - name: Syntax check
         run: node --check stock-compact-ui.js
-      - name: Contract checks
-        run: node --test tests/stock-compact-contract.test.cjs
+      - name: Install test DOM (isolated CI)
+        run: npm install --no-save --package-lock=false --ignore-scripts jsdom@26.1.0
+      - name: Contract and functional DOM checks
+        run: node --test tests/stock-compact-contract.test.cjs tests/stock-compact-functional.test.cjs
