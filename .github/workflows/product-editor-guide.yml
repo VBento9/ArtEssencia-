@@ -1,0 +1,25 @@
+name: Product editor guidance checks
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '20'
+      - run: node --check product-editor-guide.js
+      - name: Verify additive UI contract
+        run: |
+          node - <<'NODE'
+          const fs=require('fs'),assert=require('node:assert/strict');
+          const html=fs.readFileSync('index.html','utf8'),js=fs.readFileSync('product-editor-guide.js','utf8');
+          for(const id of ['prodName','prodCat','prodTechSheetBtn','productSaveBtnV145','productCancelEditBtnV145'])assert(html.includes('id="'+id+'"'));
+          assert(html.includes('src="./product-editor-guide.js"'));
+          assert(html.includes('href="./product-editor-guide.css"'));
+          for(const t of ['db.products','localStorage.setItem','supabase','saveProduct(','fetch('])assert(!js.includes(t));
+          NODE
