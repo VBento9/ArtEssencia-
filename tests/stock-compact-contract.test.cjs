@@ -36,6 +36,6 @@ test('a interface principal carrega ambos os recursos do Stock compacto',()=>{
 });
 test('o service worker procura JavaScript e CSS na rede, sem servir versões antigas',()=>{
   const sw=fs.readFileSync(path.join(root,'sw.js'),'utf8');
-  assert.match(sw,/const fresh=\/\\\.\(\?:js\|css/);
-  assert.match(sw,/cache:'no-store'/);
+  assert.ok(sw.includes('js|css|json|webmanifest'));
+  assert.ok(sw.includes("cache:'no-store'"));
 });
