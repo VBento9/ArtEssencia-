@@ -17,6 +17,13 @@ for(const viewport of [{width:390,height:844},{width:1024,height:768}]){
    ['orders','#aeOrdersCompact']]){
     await expect(page.locator('#'+section+' '+control)).toHaveCount(1);
   }
+  await expect(page.locator('#aeProductionTabs button')).toHaveCount(6);
+  await page.locator('#aeProductionTabs button').nth(3).click();
+  await expect(page.locator('#productionStockCheck')).toBeVisible();
+  await expect(page.locator('#productionOrders')).toBeHidden();
+  await page.locator('#aeProductionTabs button').nth(0).click();
+  await expect(page.locator('#productionOrders')).toBeVisible();
+  await expect(page.locator('#productionSummary')).toBeVisible();
   await page.locator('#aeProductsCompact button').nth(1).click();
   await expect(page.locator('#products .products-form-card')).not.toHaveAttribute('hidden','');
   await page.locator('#aeProductsCompact button').nth(0).click();
