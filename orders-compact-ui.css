@@ -1,0 +1,1 @@
+#orders .ae-orders-advanced{display:flex;align-items:end;gap:10px;flex-wrap:wrap;grid-column:1/-1}#orders .ae-orders-advanced[hidden]{display:none!important}#orders #aeOrdersCompact{white-space:nowrap}@media(max-width:700px){#orders .ae-orders-advanced>*{flex:1 1 130px}#orders #aeOrdersCompact{width:100%}}
