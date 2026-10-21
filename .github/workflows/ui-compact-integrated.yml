@@ -1,0 +1,33 @@
+name: Backoffice integrated compact UI validation
+on:
+  pull_request:
+    paths:
+      - '*-compact-ui.js'
+      - '*-compact-ui.css'
+      - 'index.html'
+      - 'tests/*compact*.test.cjs'
+      - '.github/workflows/ui-compact-integrated.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  integrated-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '20'
+      - name: Check four scripts
+        run: |
+          node --check stock-compact-ui.js
+          node --check dashboard-compact-ui.js
+          node --check products-compact-ui.js
+          node --check orders-compact-ui.js
+      - name: Install DOM test runtime
+        run: npm install --no-save --package-lock=false --ignore-scripts jsdom@26.1.0
+      - name: Run five suites
+        run: node --test tests/stock-compact-contract.test.cjs tests/stock-compact-functional.test.cjs tests/dashboard-compact-functional.test.cjs tests/products-compact-functional.test.cjs tests/orders-compact-functional.test.cjs
