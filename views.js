@@ -539,7 +539,7 @@ async function artessenciaBoxesPanel(ctx){
  for(const box of boxes){
   const linked=(box.components||[]).map(c=>{const p=products.find(p=>p.id===c.productId);return (p?.name||'Produto indisponível')+' × '+c.qty}).join(' · ');
   const card=el('div',{class:'card'},section(box.name||'Box sem nome',box.description||'Sem descrição'),el('div',{class:'small muted'},linked||'Sem artigos'));
-  card.append(el('div',{class:'small muted'},'Estado: Rascunho privado · '+(box.components||[]).length+' componente(s)'),el('div',{class:'toolbar',style:'margin-top:12px'},button('Editar',()=>editArtessenciaBox(ctx,products,box),'secondary small'),button('Duplicar',()=>editArtessenciaBox(ctx,products,{...box,id:null,name:(box.name||'Box')+' · cópia'}),'ghost small')));
+  card.append(el('div',{class:'small muted'},'Estado: Rascunho privado · '+(box.components||[]).length+' componente(s)'),el('div',{class:'toolbar',style:'margin-top:12px'},button('Editar',()=>editArtessenciaBox(ctx,products,box),'secondary small'),button('Duplicar',()=>editArtessenciaBox(ctx,products,{...box,id:null,components:(box.components||[]).map(c=>({...c,alternativeProductIds:[...(c.alternativeProductIds||[])]})),name:(box.name||'Box')+' · cópia'}),'ghost small')));
   root.append(card);
  }
  if(!boxes.length)root.append(el('div',{class:'empty'},'Ainda não existem modelos de boxes ArtEssencia.'));
@@ -609,6 +609,8 @@ async function editArtessenciaBox(ctx,products,existing={}){
   if(!components.length||components.some(c=>!c.productId||!Number.isInteger(c.qty)||c.qty<1)){alert('Adiciona artigos e quantidades válidos.');return false}
   const ids=new Set(products.map(p=>p.id));if(components.some(c=>!ids.has(c.productId))){alert('Existe um artigo indisponível.');return false}
   if(components.some(c=>products.find(p=>p.id===c.productId)?.active===false)){alert('Os modelos novos só podem conter artigos ativos.');return false}
+  if(components.some(c=>!Array.isArray(c.alternativeProductIds)&&c.allowReplace)){alert('As alternativas da box são inválidas.');return false}
+  if(components.some(c=>c.allowReplace&&(c.alternativeProductIds||[]).length!==new Set(c.alternativeProductIds||[]).size)){alert('Existem alternativas duplicadas.');return false}
   if(components.some(c=>!Number.isFinite(Number(products.find(p=>p.id===c.productId)?.price))||Number(products.find(p=>p.id===c.productId)?.price)<0)){alert('Corrige o PVP dos artigos antes de guardar o modelo.');return false}
   if(components.some(c=>[c.scentSupplement,c.colorSupplement].some(x=>x!==undefined&&(!Number.isFinite(Number(x))||Number(x)<0)))){alert('Corrige os suplementos de personalização.');return false}
   if(!Number.isFinite(Number(dedicationSupplement.value))||Number(dedicationSupplement.value)<0){alert('Suplemento da dedicatória inválido.');return false}
