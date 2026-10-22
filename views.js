@@ -632,7 +632,43 @@ async function editArtessenciaBox(ctx,products,existing={}){
   toast('Modelo guardado como rascunho privado.');ctx.refresh();return true;
  }});
 }
-export async function catalogsView(ctx,opts={}){const tab=opts.tab||'boxes',root=el('div'),nav=el('div',{class:'subnav'});[['boxes','Boxes ArtEssencia'],['catalogs','Catálogos'],['themes','Temas'],['occasions','Ocasiões'],['colors','Cores'],['personalizations','Personalizações'],['pricing','Preços do Criador']].forEach(([id,l])=>nav.append(el('button',{class:tab===id?'active':'',onclick:()=>ctx.go('catalogs',{tab:id})},l)));root.append(nav);
+export async function catalogsView(ctx,opts={}){
+ const root=el('div',{class:'grid'}),tab=opts.tab||'boxes';
+ const hero=el('div',{class:'card'},section('Boxes & Presentes · ArtEssencia','Cria uma oferta com composição predefinida. Define apenas as opções que o cliente poderá personalizar na futura Loja Online.'));
+ hero.append(el('div',{class:'notice info'},'As boxes prontas do Catálogo Digital continuam independentes. Estes modelos são rascunhos privados e não são enviados para a Loja.'));
+ root.append(hero);
+ const nav=el('div',{class:'subnav'});
+ [['boxes','As minhas Boxes'],['composition','Composição & artigos'],['customize','Personalizações'],['prices','Custos & PVP'],['preview','Pré-visualização'],['legacy','Configuração anterior']].forEach(([id,label])=>nav.append(el('button',{class:tab===id?'active':'',onclick:()=>ctx.go('catalogs',{tab:id})},label)));
+ root.append(nav);
+ if(tab==='boxes')root.append(await artessenciaBoxesPanel(ctx));
+ else if(tab==='composition'||tab==='customize'||tab==='prices'){
+  const [catalogs,products]=await Promise.all([db.all('catalogs'),db.all('products')]);
+  const boxes=catalogs.filter(c=>c.kind==='artessencia-gift-box-template');
+  const explanations={
+   composition:['Composição das Boxes','Edita os artigos e quantidades de cada box, sem alterar os produtos de origem.'],
+   customize:['Personalização controlada','Define por box que fragrâncias, cores, dedicatórias e substituições são permitidas.'],
+   prices:['Custos e preços por Box','Consulta e edita os custos adicionais, a margem-alvo e o PVP próprio de cada box.']
+  };
+  const [title,subtitle]=explanations[tab];
+  const card=el('div',{class:'card'},section(title,subtitle));
+  if(!boxes.length)card.append(el('div',{class:'empty'},'Cria primeiro um modelo em «As minhas Boxes».'));
+  for(const box of boxes){
+   const n=(box.components||[]).length;
+   const detail=tab==='composition'?n+' artigo(s) na composição':tab==='customize'?(box.components||[]).filter(c=>c.allowColor||c.allowFragrance||c.allowReplace).length+' artigo(s) com personalização':euro(box.salePrice||0)+' · PVP configurado';
+   card.append(el('div',{class:'creator-item'},el('strong',{},box.name||'Box'),el('div',{class:'small muted'},detail),el('div',{class:'toolbar'},button('Editar esta box',()=>editArtessenciaBox(ctx,products,box),'primary small'))));
+  }
+  root.append(card);
+ }else if(tab==='preview'){
+  const boxes=(await db.all('catalogs')).filter(c=>c.kind==='artessencia-gift-box-template');
+  const card=el('div',{class:'card'},section('Pré-visualização interna','Representação simplificada. Não publica nem cria encomendas.'));
+  for(const box of boxes)card.append(el('div',{class:'creator-item'},el('strong',{},box.name||'Box'),el('p',{},box.description||'Sem descrição'),el('div',{class:'small muted'},(box.components||[]).length+' artigos · PVP base '+euro(box.salePrice||0)+' · Rascunho privado')));
+  if(!boxes.length)card.append(el('div',{class:'empty'},'Ainda não há modelos para pré-visualizar.'));
+  root.append(card);
+ }else if(tab==='legacy')root.append(await legacyCreatorSettingsView(ctx,{tab:opts.legacyTab||'catalogs'}));
+ return root;
+}
+
+async function legacyCreatorSettingsView(ctx,opts={}){const tab=opts.tab||'boxes',root=el('div'),nav=el('div',{class:'subnav'});[['boxes','Boxes ArtEssencia'],['catalogs','Catálogos'],['themes','Temas'],['occasions','Ocasiões'],['colors','Cores'],['personalizations','Personalizações'],['pricing','Preços do Criador']].forEach(([id,l])=>nav.append(el('button',{class:tab===id?'active':'',onclick:()=>ctx.go('catalogs',{tab:id})},l)));root.append(nav);
  if(tab==='boxes')root.append(await artessenciaBoxesPanel(ctx));
  if(tab==='catalogs'){const products=await db.all('products'),catalogs=await db.all('catalogs');root.append(await catalogsPanel(ctx,catalogs,products))}
  if(tab==='themes')root.append(await managerCard(ctx,'themes','Temas','Ex.: Batizado, Comunhão, Natal, Botânico',[{key:'name',label:'Nome'},{key:'description',label:'Descrição',span2:true},{key:'image',label:'Imagem / URL',span2:true}]));
