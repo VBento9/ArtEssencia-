@@ -82,7 +82,7 @@ export async function atelierView(ctx,opts={}){
   return root;
 }
 async function consumeStock(product,qty,materials,completedBatch){
-  if(!product)return true;
+  if(!product){alert('Produto da produção não encontrado.');return false}
   const needs=stockNeed(product,qty);
   const totals=new Map();
   for(const n of needs){
