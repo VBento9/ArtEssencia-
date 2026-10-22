@@ -72,7 +72,7 @@ export async function atelierView(ctx,opts={}){
     const econ=p?calcProduct(p,materials,[],products):null;
     if(econ)card.append(el('div',{class:'metric-list'},metric('Custo estimado lote',euro(econ.trueCost*Number(b.qty||1))),metric('Prazo / nota',b.note||'—')));
     const acts=el('div',{class:'toolbar'});
-    if(idx<stages.length-1)acts.append(button('Avançar etapa',async()=>{b.status=stages[idx+1];b.updatedAt=new Date().toISOString();if(b.status==='Pronto'&&!b.stockPosted){const ok=await consumeStock(p,b.qty||1,materials);if(!ok)return;b.stockPosted=true}await db.put('productionBatches',b);toast('Produção atualizada.');ctx.refresh()},'primary'));
+    if(idx<stages.length-1)acts.append(button('Avançar etapa',async()=>{const nextStatus=stages[idx+1];if(nextStatus==='Pronto'&&!b.stockPosted){const ok=await consumeStock(p,b.qty||1,materials);if(!ok)return;b.stockPosted=true}b.status=nextStatus;b.updatedAt=new Date().toISOString();await db.put('productionBatches',b);toast('Produção atualizada.');ctx.refresh()},'primary'));
     acts.append(button('Editar',()=>productionModal(ctx,products,orders,b),'ghost small'));
     card.append(acts);cards.append(card);
   }
@@ -84,8 +84,14 @@ export async function atelierView(ctx,opts={}){
 async function consumeStock(product,qty,materials){
   if(!product)return true;
   const needs=stockNeed(product,qty);
-  for(const n of needs){const m=materials.find(x=>x.id===n.materialId);if(!m||Number(m.stock||0)<n.qty){alert(`Stock insuficiente: ${m?.name||'matéria em falta'}`);return false}}
-  for(const n of needs){const m=materials.find(x=>x.id===n.materialId);m.stock=Number(m.stock||0)-n.qty;m.updatedAt=new Date().toISOString();await db.put('materials',m);await db.put('stockMovements',{id:uid('sm'),materialId:m.id,type:'out',qty:n.qty,note:`Produção: ${product.name}`,createdAt:new Date().toISOString()})}
+  const totals=new Map();
+  for(const n of needs){
+    const amount=Number(n.qty),id=n.materialId;
+    if(!id||!Number.isFinite(amount)||amount<0){alert('Ficha técnica inválida: verifica materiais e quantidades.');return false}
+    totals.set(id,(totals.get(id)||0)+amount);
+  }
+  for(const [id,amount] of totals){const m=materials.find(x=>x.id===id);if(!m||!Number.isFinite(Number(m.stock))||Number(m.stock)<amount){alert(`Stock insuficiente: ${m?.name||'matéria em falta'}`);return false}}
+  for(const [id,amount] of totals){if(amount===0)continue;const m=materials.find(x=>x.id===id);m.stock=Number(m.stock)-amount;m.updatedAt=new Date().toISOString();await db.put('materials',m);await db.put('stockMovements',{id:uid('sm'),materialId:m.id,type:'out',qty:amount,note:`Produção: ${product.name}`,createdAt:new Date().toISOString()})}
   return true;
 }
 function productionModal(ctx,products,orders,existing={}){
