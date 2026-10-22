@@ -4189,7 +4189,32 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       <small class="muted">Os preços são retirados do Stock. Valores sem custo unitário válido são sinalizados e bloqueiam a simulação. Não cria produtos nem encomendas.</small>
     </section>
 
-    <section class="card catalog-editor-card catalog-editor-card-v1731">
+    <section class="card" id="aeUnifiedBoxesEditor">
+      <div class="section-title">Criar / editar Box ArtEssencia</div>
+      <p class="muted">Composição, personalização, custos e pré-visualização num único editor. Modelos privados deste dispositivo; não são publicados na Loja nem alteram as caixas prontas.</p>
+      <input type="hidden" id="aeBoxDraftId">
+      <div class="form-grid">
+        <div class="field"><label>Nome da box</label><input id="aeBoxDraftName" placeholder="Ex.: Box Aconchego"></div>
+        <div class="field"><label>PVP base (€)</label><input id="aeBoxDraftPrice" type="number" min="0" step=".01" value="0"></div>
+        <div class="field"><label>Fotografia (URL HTTPS)</label><input id="aeBoxDraftImage" placeholder="https://..."></div>
+        <div class="field"><label>Embalagem (€)</label><input id="aeBoxDraftPackaging" type="number" min="0" step=".01" value="0"></div>
+      </div>
+      <div class="section-title" style="margin-top:12px">Composição e artigos</div>
+      <div class="form-grid">
+        <div class="field"><label>Produto</label><select id="aeBoxDraftProduct"></select></div>
+        <div class="field"><label>Quantidade</label><input id="aeBoxDraftQty" type="number" min="1" step="1" value="1"></div>
+      </div>
+      <div class="btnrow"><button type="button" class="btn" onclick="aeBoxDraftAdd()">+ Adicionar artigo</button></div>
+      <div id="aeBoxDraftLines"></div>
+      <div class="section-title" style="margin-top:12px">Personalização autorizada</div>
+      <div class="btnrow"><label><input type="checkbox" id="aeBoxDraftColor"> Escolha de cor</label><label><input type="checkbox" id="aeBoxDraftScent"> Escolha de fragrância</label><label><input type="checkbox" id="aeBoxDraftDedication"> Dedicatória</label></div>
+      <div class="section-title" style="margin-top:12px">Revisão e pré-visualização</div>
+      <div id="aeBoxDraftReview" class="card" aria-live="polite"></div>
+      <div class="btnrow"><button class="btn primary" type="button" onclick="aeBoxDraftSave()">Guardar rascunho privado</button><button class="btn" type="button" onclick="aeBoxDraftReset()">Nova box</button></div>
+      <div class="section-title" style="margin-top:12px">Modelos guardados neste dispositivo</div>
+      <div id="aeBoxDraftSaved"></div>
+    </section>
+    <section class="card catalog-editor-card catalog-editor-card-v1731" style="display:none" aria-hidden="true">
       <div class="catalog-editor-head">
         <div>
           <div class="section-title" style="margin:0">Criar / editar uma Box ArtEssencia</div>
@@ -16334,5 +16359,27 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
  fields.forEach(id=>$(id)?.addEventListener('input',render));refreshOptions()}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
  document.addEventListener('click',e=>{if(e.target?.closest?.('[onclick*="catalogs"]'))setTimeout(refreshOptions,100)});
+})();
+</script>
+
+<script id="ae-unified-boxes-drafts">
+(function(){
+ const KEY='ae_boxes_unified_drafts_v1'; let items=[],lines=[];
+ const $=id=>document.getElementById(id), money=n=>Number(n).toFixed(2).replace('.',',')+' €';
+ const products=()=>typeof db!=='undefined'&&Array.isArray(db.products)?db.products:[];
+ const get=()=>{try{const v=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(v)?v:[]}catch{return []}};
+ const set=()=>{localStorage.setItem(KEY,JSON.stringify(items))};
+ const num=id=>{const value=$(id)?.value;if(value===''||value==null)return NaN;return Number(value)};
+ const preview=()=>{const host=$('aeBoxDraftReview');if(!host)return;host.replaceChildren();const img=$('aeBoxDraftImage')?.value.trim()||'';if(/^https:\/\/\S+$/i.test(img)){const el=document.createElement('img');el.src=img;el.alt='Fotografia da box';el.style.cssText='max-width:100%;max-height:180px;object-fit:contain';el.onerror=()=>el.remove();host.append(el)}
+ const sum=lines.reduce((n,l)=>{const p=products().find(x=>String(x.id)===l.productId);const v=Number(p?.price);return n+(Number.isFinite(v)?v*l.qty:0)},0);
+ const cost=document.createElement('p');cost.textContent='Artigos: '+lines.length+' · Referência de PVP individual: '+money(sum)+' · Embalagem: '+(Number.isFinite(num('aeBoxDraftPackaging'))?money(num('aeBoxDraftPackaging')):'inválida')+' · PVP da box: '+(Number.isFinite(num('aeBoxDraftPrice'))?money(num('aeBoxDraftPrice')):'inválido')+'. Os custos de produção e a disponibilidade de stock exigem validação no Backoffice; nenhum stock é reservado.';host.append(cost)};
+ const render=()=>{const host=$('aeBoxDraftLines');if(!host)return;host.replaceChildren();lines.forEach((l,i)=>{const p=products().find(x=>String(x.id)===l.productId);const row=document.createElement('div');row.className='card';row.style.margin='6px 0';const label=document.createElement('span');label.textContent=(p?.name||'Produto indisponível')+' × '+l.qty+' ';const b=document.createElement('button');b.className='btn';b.type='button';b.textContent='Retirar';b.onclick=()=>{lines.splice(i,1);render()};row.append(label,b);host.append(row)});preview()};
+ const saved=()=>{const host=$('aeBoxDraftSaved');if(!host)return;host.replaceChildren();items.forEach(x=>{const row=document.createElement('div');row.className='card';row.style.margin='6px 0';const name=document.createElement('strong');name.textContent=x.name+' · '+x.components.length+' artigos · rascunho privado ';const b=document.createElement('button');b.className='btn';b.type='button';b.textContent='Editar';b.onclick=()=>{aeBoxDraftReset();$('aeBoxDraftId').value=x.id;$('aeBoxDraftName').value=x.name;$('aeBoxDraftPrice').value=x.price;$('aeBoxDraftPackaging').value=x.packaging;$('aeBoxDraftImage').value=x.image||'';$('aeBoxDraftColor').checked=!!x.color;$('aeBoxDraftScent').checked=!!x.scent;$('aeBoxDraftDedication').checked=!!x.dedication;lines=x.components.map(y=>({...y}));render()};row.append(name,b);host.append(row)})};
+ window.aeBoxDraftAdd=()=>{const id=$('aeBoxDraftProduct')?.value,qty=num('aeBoxDraftQty');if(!id||!Number.isInteger(qty)||qty<1)return alert('Seleciona um artigo e uma quantidade inteira positiva.');const p=products().find(x=>String(x.id)===id);if(!p)return alert('Produto indisponível.');const current=lines.find(x=>x.productId===id);if(current)current.qty+=qty;else lines.push({productId:id,qty});render()};
+ window.aeBoxDraftReset=()=>{$('aeBoxDraftId').value='';$('aeBoxDraftName').value='';$('aeBoxDraftPrice').value=0;$('aeBoxDraftPackaging').value=0;$('aeBoxDraftImage').value='';for(const id of ['aeBoxDraftColor','aeBoxDraftScent','aeBoxDraftDedication'])$(id).checked=false;lines=[];render()};
+ window.aeBoxDraftSave=()=>{const name=$('aeBoxDraftName').value.trim(),price=num('aeBoxDraftPrice'),pack=num('aeBoxDraftPackaging');if(!name||!lines.length||!Number.isFinite(price)||price<0||!Number.isFinite(pack)||pack<0)return alert('Preenche nome, composição, preço e embalagem com valores válidos.');if(lines.some(l=>!products().some(p=>String(p.id)===l.productId)))return alert('Existem produtos indisponíveis.');const id=$('aeBoxDraftId').value||'box-'+Date.now()+'-'+Math.random().toString(36).slice(2,7);const obj={id,name,price,packaging:pack,image:$('aeBoxDraftImage').value.trim(),components:lines.map(l=>({...l})),color:$('aeBoxDraftColor').checked,scent:$('aeBoxDraftScent').checked,dedication:$('aeBoxDraftDedication').checked,published:false,active:false,updatedAt:new Date().toISOString()};const before=items.slice();const idx=items.findIndex(x=>x.id===id);if(idx>=0)items[idx]=obj;else items.push(obj);try{set();if(!get().some(x=>x.id===id))throw Error('Persistência indisponível')}catch(e){items=before;return alert('Não foi possível guardar localmente.')}saved();$('aeBoxDraftId').value=id;alert('Rascunho guardado neste dispositivo. Não foi publicado.')};
+ const init=()=>{items=get();const sel=$('aeBoxDraftProduct');if(!sel)return;sel.replaceChildren();const empty=document.createElement('option');empty.value='';empty.textContent='Selecionar produto';sel.append(empty);products().filter(p=>p.active!==false).forEach(p=>{const o=document.createElement('option');o.value=String(p.id);o.textContent=p.name||'Produto';sel.append(o)});for(const id of ['aeBoxDraftPrice','aeBoxDraftPackaging','aeBoxDraftImage'])$(id)?.addEventListener('input',preview);saved();render()};
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+ document.addEventListener('click',e=>{if(e.target?.closest?.('[onclick*="catalogs"]'))setTimeout(init,100)});
 })();
 </script>
