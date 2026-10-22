@@ -530,7 +530,55 @@ function visualCatalogExport(catalog,products){
   wrap.append(actions);modal('Exportar · '+(catalog.title||'Catálogo'),wrap,{wide:true});
 }
 
-export async function catalogsView(ctx,opts={}){const tab=opts.tab||'catalogs',root=el('div'),nav=el('div',{class:'subnav'});[['catalogs','Catálogos'],['themes','Temas'],['occasions','Ocasiões'],['colors','Cores'],['personalizations','Personalizações'],['pricing','Preços do Criador']].forEach(([id,l])=>nav.append(el('button',{class:tab===id?'active':'',onclick:()=>ctx.go('catalogs',{tab:id})},l)));root.append(nav);
+async function artessenciaBoxesPanel(ctx){
+ const [catalogs,products]=await Promise.all([db.all('catalogs'),db.all('products')]);
+ const boxes=catalogs.filter(c=>c.kind==='artessencia-gift-box-template');
+ const root=el('div',{class:'grid'});
+ root.append(el('div',{class:'card'},section('Boxes personalizáveis · ArtEssencia','Modelos predefinidos para a futura Loja Online. As boxes prontas do Catálogo Digital não são alteradas.'),el('div',{class:'notice info'},'Publicação desativada nesta fase. As composições ficam em rascunho até validação de custos, stock, regras de troca e integração na Loja.'),el('div',{class:'toolbar'},button('+ Criar modelo de box',()=>editArtessenciaBox(ctx,products),'primary'))));
+ const available=products.filter(p=>p.active!==false);
+ for(const box of boxes){
+  const linked=(box.components||[]).map(c=>{const p=products.find(p=>p.id===c.productId);return (p?.name||'Produto indisponível')+' × '+c.qty}).join(' · ');
+  const card=el('div',{class:'card'},section(box.name||'Box sem nome',box.description||'Sem descrição'),el('div',{class:'small muted'},linked||'Sem artigos'));
+  card.append(el('div',{class:'small muted'},'Estado: Rascunho privado · '+(box.components||[]).length+' componente(s)'),el('div',{class:'toolbar',style:'margin-top:12px'},button('Editar',()=>editArtessenciaBox(ctx,products,box),'secondary small'),button('Duplicar',()=>editArtessenciaBox(ctx,products,{...box,id:null,name:(box.name||'Box')+' · cópia'}),'ghost small')));
+  root.append(card);
+ }
+ if(!boxes.length)root.append(el('div',{class:'empty'},'Ainda não existem modelos de boxes ArtEssencia.'));
+ return root;
+}
+function editArtessenciaBox(ctx,products,existing={}){
+ const form=el('div',{class:'form-grid'});
+ const name=input('name',existing.name||''),description=textarea('description',existing.description||''),image=input('image',existing.image||''),packaging=input('packaging',existing.packaging||''),preparation=input('preparation',existing.preparationDays??2,'number',{min:0,step:1}),notes=textarea('notes',existing.internalNotes||'');
+ form.append(field('Nome da box',name),field('Prazo de preparação (dias)',preparation),field('Descrição',description,true),field('Imagem da box / URL',image,true),field('Embalagem e dimensões',packaging,true));
+ const components=(existing.components||[]).map(c=>({...c}));
+ const list=el('div',{class:'grid'});
+ const renderComponents=()=>{
+  list.innerHTML='';
+  components.forEach((c,i)=>{
+   const allowed=products.filter(p=>p.active!==false||p.id===c.productId);
+   const product=select('product'+i,[['','Selecionar artigo'],...allowed.map(p=>[p.id,p.name])],c.productId||'');
+   const qty=input('qty'+i,c.qty||1,'number',{min:1,step:1});
+   const fragrance=el('input',{type:'checkbox'});fragrance.checked=!!c.allowFragrance;fragrance.onchange=()=>c.allowFragrance=fragrance.checked;
+   const color=el('input',{type:'checkbox'});color.checked=!!c.allowColor;color.onchange=()=>c.allowColor=color.checked;
+   const replace=el('input',{type:'checkbox'});replace.checked=!!c.allowReplace;replace.onchange=()=>c.allowReplace=replace.checked;
+   product.onchange=()=>c.productId=product.value;qty.onchange=()=>c.qty=Math.max(1,Math.floor(Number(qty.value)||1));
+   list.append(el('div',{class:'card'},el('div',{class:'form-grid'},field('Artigo',product),field('Quantidade',qty),field('Permitir trocar fragrância',fragrance),field('Permitir escolher cor',color),field('Permitir substituição autorizada',replace)),el('div',{class:'toolbar'},button('Remover artigo',()=>{components.splice(i,1);renderComponents()},'danger small'))));
+  });
+ };
+ renderComponents();
+ const wrap=el('div',{class:'field span2'},el('label',{},'Composição-base e opções por artigo'),list,button('+ Adicionar artigo',()=>{components.push({productId:'',qty:1,allowFragrance:false,allowColor:false,allowReplace:false});renderComponents()},'ghost small'));
+ const dedication=el('input',{type:'checkbox'});dedication.checked=existing.allowDedication!==false;
+ const extras=el('input',{type:'checkbox'});extras.checked=!!existing.allowExtras;
+ form.append(wrap,field('Permitir dedicatória',dedication),field('Permitir artigos extra',extras),field('Notas internas',notes,true));
+ modal(existing.id?'Editar box ArtEssencia':'Nova box ArtEssencia',form,{wide:true,onSave:async()=>{
+  if(!name.value.trim()){alert('Indica o nome da box.');return false}
+  if(!components.length||components.some(c=>!c.productId||!Number.isInteger(c.qty)||c.qty<1)){alert('Adiciona artigos e quantidades válidos.');return false}
+  const ids=new Set(products.map(p=>p.id));if(components.some(c=>!ids.has(c.productId))){alert('Existe um artigo indisponível.');return false}
+  await db.put('catalogs',{...existing,id:existing.id||uid('bx'),kind:'artessencia-gift-box-template',name:name.value.trim(),description:description.value,image:image.value,packaging:packaging.value,preparationDays:Math.max(0,Math.floor(Number(preparation.value)||0)),components,allowDedication:dedication.checked,allowExtras:extras.checked,internalNotes:notes.value,active:false,published:false,updatedAt:new Date().toISOString()});
+  toast('Modelo guardado como rascunho privado.');ctx.refresh();return true;
+ }});
+}
+export async function catalogsView(ctx,opts={}){const tab=opts.tab||'catalogs',root=el('div'),nav=el('div',{class:'subnav'});[['boxes','Boxes ArtEssencia'],['catalogs','Catálogos'],['themes','Temas'],['occasions','Ocasiões'],['colors','Cores'],['personalizations','Personalizações'],['pricing','Preços do Criador']].forEach(([id,l])=>nav.append(el('button',{class:tab===id?'active':'',onclick:()=>ctx.go('catalogs',{tab:id})},l)));root.append(nav);
+ if(tab==='boxes')root.append(await artessenciaBoxesPanel(ctx));
  if(tab==='catalogs'){const products=await db.all('products'),catalogs=await db.all('catalogs');root.append(await catalogsPanel(ctx,catalogs,products))}
  if(tab==='themes')root.append(await managerCard(ctx,'themes','Temas','Ex.: Batizado, Comunhão, Natal, Botânico',[{key:'name',label:'Nome'},{key:'description',label:'Descrição',span2:true},{key:'image',label:'Imagem / URL',span2:true}]));
  if(tab==='occasions')root.append(await managerCard(ctx,'occasions','Ocasiões','Eventos e momentos em que o cliente poderá usar o criador',[{key:'name',label:'Nome'},{key:'description',label:'Descrição',span2:true}]));
