@@ -551,6 +551,12 @@ function editArtessenciaBox(ctx,products,existing={}){
  form.append(field('Nome da box',name),field('Prazo de preparação (dias)',preparation),field('Descrição',description,true),field('Imagem da box / URL',image,true),field('Embalagem e dimensões',packaging,true));
  const components=(existing.components||[]).map(c=>({...c}));
  const list=el('div',{class:'grid'});
+ const estimate=el('div',{class:'notice info'});
+ const updateEstimate=()=>{
+  const subtotal=components.reduce((sum,c)=>{const product=products.find(p=>p.id===c.productId);const price=Number(product?.price);return sum+(Number.isFinite(price)&&price>=0&&Number.isInteger(c.qty)&&c.qty>0?price*c.qty:0)},0);
+  const invalid=components.some(c=>{const p=products.find(p=>p.id===c.productId);return !p||!Number.isFinite(Number(p.price))||Number(p.price)<0||!Number.isInteger(c.qty)||c.qty<1});
+  estimate.textContent='Soma dos PVP dos artigos: '+euro(subtotal)+(invalid?' · Existem artigos sem PVP válido ou quantidades incorretas.':'')+' · Não inclui embalagem, custos adicionais nem margem da box. Não é um preço de venda final.';
+ };
  const renderComponents=()=>{
   list.innerHTML='';
   components.forEach((c,i)=>{
@@ -560,12 +566,13 @@ function editArtessenciaBox(ctx,products,existing={}){
    const fragrance=el('input',{type:'checkbox'});fragrance.checked=!!c.allowFragrance;fragrance.onchange=()=>c.allowFragrance=fragrance.checked;
    const color=el('input',{type:'checkbox'});color.checked=!!c.allowColor;color.onchange=()=>c.allowColor=color.checked;
    const replace=el('input',{type:'checkbox'});replace.checked=!!c.allowReplace;replace.onchange=()=>c.allowReplace=replace.checked;
-   product.onchange=()=>c.productId=product.value;qty.onchange=()=>c.qty=Math.max(1,Math.floor(Number(qty.value)||1));
+   product.onchange=()=>{c.productId=product.value;updateEstimate()};qty.oninput=()=>{c.qty=Number(qty.value);updateEstimate()};
    list.append(el('div',{class:'card'},el('div',{class:'form-grid'},field('Artigo',product),field('Quantidade',qty),field('Permitir trocar fragrância',fragrance),field('Permitir escolher cor',color),field('Permitir substituição autorizada',replace)),el('div',{class:'toolbar'},button('Remover artigo',()=>{components.splice(i,1);renderComponents()},'danger small'))));
   });
+  updateEstimate();
  };
  renderComponents();
- const wrap=el('div',{class:'field span2'},el('label',{},'Composição-base e opções por artigo'),list,button('+ Adicionar artigo',()=>{components.push({productId:'',qty:1,allowFragrance:false,allowColor:false,allowReplace:false});renderComponents()},'ghost small'));
+ const wrap=el('div',{class:'field span2'},el('label',{},'Composição-base e opções por artigo'),list,estimate,button('+ Adicionar artigo',()=>{components.push({productId:'',qty:1,allowFragrance:false,allowColor:false,allowReplace:false});renderComponents()},'ghost small'));
  const dedication=el('input',{type:'checkbox'});dedication.checked=existing.allowDedication!==false;
  const extras=el('input',{type:'checkbox'});extras.checked=!!existing.allowExtras;
  form.append(wrap,field('Permitir dedicatória',dedication),field('Permitir artigos extra',extras),field('Notas internas',notes,true));
@@ -573,6 +580,10 @@ function editArtessenciaBox(ctx,products,existing={}){
   if(!name.value.trim()){alert('Indica o nome da box.');return false}
   if(!components.length||components.some(c=>!c.productId||!Number.isInteger(c.qty)||c.qty<1)){alert('Adiciona artigos e quantidades válidos.');return false}
   const ids=new Set(products.map(p=>p.id));if(components.some(c=>!ids.has(c.productId))){alert('Existe um artigo indisponível.');return false}
+  if(components.some(c=>!products.find(p=>p.id===c.productId)?.active)){alert('Os modelos novos só podem conter artigos ativos.');return false}
+  if(components.some(c=>!Number.isFinite(Number(products.find(p=>p.id===c.productId)?.price))||Number(products.find(p=>p.id===c.productId)?.price)<0)){alert('Corrige o PVP dos artigos antes de guardar o modelo.');return false}
+  if(components.some(c=>c.allowReplace)){alert('A substituição ainda exige uma lista de alternativas autorizadas. Desativa essa opção até estar configurada.');return false}
+  if(!Number.isInteger(Number(preparation.value))||Number(preparation.value)<0){alert('Define um prazo de preparação válido, em dias inteiros.');return false}
   await db.put('catalogs',{...existing,id:existing.id||uid('bx'),kind:'artessencia-gift-box-template',name:name.value.trim(),description:description.value,image:image.value,packaging:packaging.value,preparationDays:Math.max(0,Math.floor(Number(preparation.value)||0)),components,allowDedication:dedication.checked,allowExtras:extras.checked,internalNotes:notes.value,active:false,published:false,updatedAt:new Date().toISOString()});
   toast('Modelo guardado como rascunho privado.');ctx.refresh();return true;
  }});
