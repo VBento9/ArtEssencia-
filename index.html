@@ -4166,20 +4166,29 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 
     <section class="card" aria-label="Partilhar seleção de produtos"><div class="section-title">Partilhar produtos selecionados</div><p class="muted">Para enviar uma seleção de produtos de Natal, Halloween, outra ocasião ou uma coleção, utiliza Catálogos Visuais. Escolhes os artigos, a ordem e o formato, sem os adicionares a uma box.</p><button class="btn primary" type="button" onclick="go('visualCatalogs')">Abrir Catálogos Visuais</button></section>
 
-    <section class="card" id="aeBoxComposerV1">
-      <div class="section-title">Composição da Box · ArtEssencia</div>
-      <p class="muted">Cria a composição a partir dos produtos existentes no Backoffice. Este editor é uma pré-visualização local e não altera o stock, a Loja nem as caixas já criadas.</p>
+    <section class="card" id="aeBoxComposerV2">
+      <div class="section-title">Simulador de Produção de Boxes · ArtEssencia</div>
+      <p class="muted">Calcula o custo real previsto com matérias-primas do stock, embalagem, montagem e margem. Simulação privada, sem descontar stock.</p>
       <div class="form-grid">
-        <div class="field"><label>Nome do modelo</label><input id="aeBoxDraftName" placeholder="Ex.: Box Aconchego"></div>
-        <div class="field"><label>Artigo</label><select id="aeBoxProductSelect"></select></div>
-        <div class="field"><label>Quantidade</label><input id="aeBoxProductQty" type="number" min="1" step="1" value="1"></div>
-        <div class="field"><label>&nbsp;</label><button class="btn primary" type="button" onclick="aeBoxAddItemV1()">+ Adicionar à box</button></div>
+        <div class="field"><label>Nome da box</label><input id="aeSimName" placeholder="Ex.: Box Aconchego"></div>
+        <div class="field"><label>Matéria-prima do Stock</label><select id="aeSimMaterial"></select></div>
+        <div class="field"><label>Quantidade na unidade do Stock</label><input id="aeSimQty" type="number" min="0.001" step="any" value="100"></div>
+        <div class="field"><label>&nbsp;</label><button type="button" class="btn primary" onclick="aeSimAdd()">Adicionar material</button></div>
       </div>
-      <div id="aeBoxCompositionList" class="catalog-grid" aria-live="polite"></div>
-      <div class="card" style="margin-top:12px"><strong>Pré-visualização da composição</strong><p id="aeBoxSummaryV1" class="muted">Sem artigos selecionados.</p></div>
-      <div class="btnrow"><button class="btn" type="button" onclick="aeBoxSaveLocalDraftV1()">Guardar rascunho neste dispositivo</button><button class="btn" type="button" onclick="aeBoxResetV1()">Limpar</button></div>
-      <small class="muted">Rascunho apenas neste dispositivo de testes. A sincronização Cloud e a publicação na Loja não estão ativadas.</small>
+      <div id="aeSimLines" class="catalog-grid"></div>
+      <div class="form-grid">
+        <div class="field"><label>Custo da embalagem (€)</label><input id="aeSimPackaging" type="number" step="0.01" min="0" value="0"></div>
+        <div class="field"><label>Outros custos (€)</label><input id="aeSimOther" type="number" step="0.01" min="0" value="0"></div>
+        <div class="field"><label>Tempo de montagem (min)</label><input id="aeSimMinutes" type="number" step="1" min="0" value="0"></div>
+        <div class="field"><label>Custo hora (€)</label><input id="aeSimHourly" type="number" step="0.01" min="0" value="6"></div>
+        <div class="field"><label>Desperdício (%)</label><input id="aeSimWaste" type="number" step="0.1" min="0" max="100" value="10"></div>
+        <div class="field"><label>Margem pretendida (%)</label><input id="aeSimMargin" type="number" step="1" min="0" max="95" value="60"></div>
+      </div>
+      <div class="card" style="margin-top:12px"><strong>Resultado da simulação</strong><div id="aeSimSummary" aria-live="polite">Adiciona materiais para simular.</div></div>
+      <div class="btnrow"><button class="btn primary" type="button" onclick="aeSimSave()">Guardar simulação local</button><button class="btn" type="button" onclick="aeSimReset()">Limpar</button></div>
+      <small class="muted">Os preços são retirados do Stock. Valores sem custo unitário válido são sinalizados e bloqueiam a simulação. Não cria produtos nem encomendas.</small>
     </section>
+
     <section class="card catalog-editor-card catalog-editor-card-v1731">
       <div class="catalog-editor-head">
         <div>
@@ -16296,33 +16305,32 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 </style>
 <!-- V1.7.69 — Dashboard: materiais, trabalho, custos gerais, custo total, lucro e fluxo de caixa separados -->
 
-<script id="ae-box-composer-v1">
+<script id="ae-box-simulator-v2">
 (function(){
- const KEY='ae_preview_box_composition_v1';
- let items=[];
- function get(id){return document.getElementById(id)}
- function products(){return Array.isArray(window.db?.products)?window.db.products:(typeof db!=='undefined'&&Array.isArray(db.products)?db.products:[])}
- function usable(p){return p&&p.active!==false&&!p.archivedV1803}
- function escText(v){return String(v??'')}
- function render(){
-  const list=get('aeBoxCompositionList'),summary=get('aeBoxSummaryV1');if(!list||!summary)return;
-  list.replaceChildren();
-  let total=0;
-  for(let i=0;i<items.length;i++){const x=items[i],p=products().find(p=>String(p.id||p.code)===x.id);const price=Number(p?.price)||0;total+=price*x.qty;
-   const row=document.createElement('div');row.className='card';row.style.margin='8px 0';
-   const title=document.createElement('strong');title.textContent=(p?.name||'Artigo indisponível')+' × '+x.qty;
-   const cost=document.createElement('div');cost.className='muted';cost.textContent='Referência PVP: '+(price*x.qty).toFixed(2).replace('.',',')+' €';
-   const remove=document.createElement('button');remove.className='btn';remove.type='button';remove.textContent='Retirar';remove.onclick=()=>{items.splice(i,1);render()};
-   row.append(title,cost,remove);list.append(row)
-  }
-  summary.textContent=items.length?items.length+' artigo(s) distinto(s) · Valor indicativo dos produtos: '+total.toFixed(2).replace('.',',')+' €':'Sem artigos selecionados.';
- }
- function refresh(){const select=get('aeBoxProductSelect');if(!select)return;const old=select.value;select.replaceChildren();for(const p of products().filter(usable)){const opt=document.createElement('option');opt.value=String(p.id||p.code||'');opt.textContent=p.name||p.code||'Artigo';select.append(opt)}if([...select.options].some(x=>x.value===old))select.value=old;render()}
- window.aeBoxAddItemV1=function(){const id=get('aeBoxProductSelect')?.value,qty=Number(get('aeBoxProductQty')?.value);if(!id||!Number.isInteger(qty)||qty<1){alert('Seleciona um artigo e uma quantidade inteira positiva.');return}const p=products().find(x=>String(x.id||x.code)===id);if(!usable(p)){alert('Artigo indisponível.');return}const found=items.find(x=>x.id===id);if(found)found.qty+=qty;else items.push({id,qty});render()};
- window.aeBoxSaveLocalDraftV1=function(){const name=get('aeBoxDraftName')?.value.trim()||'';if(!name||!items.length){alert('Indica o nome e adiciona artigos.');return}try{localStorage.setItem(KEY,JSON.stringify({name,items}));if(typeof toast==='function')toast('Rascunho guardado neste dispositivo.');else alert('Rascunho local guardado.')}catch{alert('Não foi possível guardar o rascunho neste dispositivo.')}};
- window.aeBoxResetV1=function(){items=[];if(get('aeBoxDraftName'))get('aeBoxDraftName').value='';render()};
- function restore(){try{const d=JSON.parse(localStorage.getItem(KEY)||'null');if(d&&Array.isArray(d.items)){items=d.items.filter(x=>typeof x.id==='string'&&Number.isInteger(x.qty)&&x.qty>0);if(get('aeBoxDraftName'))get('aeBoxDraftName').value=d.name||''}}catch{}refresh()}
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',restore);else restore();
- document.addEventListener('click',e=>{if(e.target?.closest?.('[onclick*="catalogs"]'))setTimeout(refresh,100)});
+ const KEY='ae_preview_box_simulator_v2';
+ const fields=['aeSimPackaging','aeSimOther','aeSimMinutes','aeSimHourly','aeSimWaste','aeSimMargin'];
+ let lines=[];
+ const $=id=>document.getElementById(id), num=v=>Number(v), money=v=>v.toFixed(2).replace('.',',')+' €';
+ const materials=()=>typeof db!=='undefined'&&Array.isArray(db.stock)?db.stock:[];
+ const identity=(m,i)=>String(m.id??m.code??i);
+ const valid=x=>Number.isFinite(x)&&x>=0;
+ function refreshOptions(){const sel=$('aeSimMaterial');if(!sel)return;const prev=sel.value;sel.replaceChildren();materials().forEach((m,i)=>{const op=document.createElement('option');op.value=identity(m,i);op.textContent=(m.name||'Material')+' ('+(m.unit||'un.')+')';sel.append(op)});if([...sel.options].some(x=>x.value===prev))sel.value=prev;render()}
+ function calculate(){const mats=materials();let materialCost=0,ok=true,warnings=[];
+ for(const l of lines){const m=mats.find((m,i)=>identity(m,i)===l.id),unit=Number(m?.unitCost);if(!m||!valid(unit)||!valid(l.qty)||l.qty<=0){ok=false;warnings.push('Material sem custo unitário ou quantidade válida: '+(m?.name||l.id));continue}materialCost+=unit*l.qty}
+ const vals=fields.map(id=>num($(id)?.value));if(vals.some(x=>!valid(x))||vals[4]>100||vals[5]>95){ok=false;warnings.push('Corrige os custos, desperdício e margem.')}
+ const [pack,other,minutes,hourly,waste,margin]=vals;
+ const labor=minutes/60*hourly,base=materialCost+pack+other+labor,total=base*(1+waste/100),price=total/(1-margin/100);
+ if(![labor,total,price].every(Number.isFinite))ok=false;
+ return {ok,materialCost,labor,total,price,warnings}}
+ function render(){const host=$('aeSimLines'),summary=$('aeSimSummary');if(!host||!summary)return;host.replaceChildren();
+ lines.forEach((l,i)=>{const m=materials().find((m,j)=>identity(m,j)===l.id);const row=document.createElement('div');row.className='card';row.style.margin='8px 0';const label=document.createElement('span');label.textContent=(m?.name||'Material indisponível')+' · '+l.qty+' '+(m?.unit||'un.')+' · '+(valid(num(m?.unitCost))?money(num(m.unitCost)*l.qty):'custo desconhecido');const remove=document.createElement('button');remove.type='button';remove.className='btn';remove.textContent='Retirar';remove.onclick=()=>{lines.splice(i,1);render()};row.append(label,remove);host.append(row)});
+ const result=calculate();summary.textContent=result.ok?('Matérias-primas: '+money(result.materialCost)+' · Mão de obra: '+money(result.labor)+' · Custo total com desperdício: '+money(result.total)+' · PVP recomendado: '+money(result.price)):('Simulação incompleta. '+result.warnings.join(' · '))}
+ window.aeSimAdd=()=>{const id=$('aeSimMaterial')?.value,qty=num($('aeSimQty')?.value);if(!id||!Number.isFinite(qty)||qty<=0){alert('Seleciona um material e quantidade positiva.');return}const item=lines.find(l=>l.id===id);if(item)item.qty+=qty;else lines.push({id,qty});render()};
+ window.aeSimSave=()=>{const name=$('aeSimName')?.value.trim(),result=calculate();if(!name||!lines.length||!result.ok){alert('Preenche o nome, materiais e custos válidos antes de guardar.');return}const values=Object.fromEntries(fields.map(id=>[id,$(id).value]));try{localStorage.setItem(KEY,JSON.stringify({name,lines,values}));alert('Simulação guardada localmente. Não foi publicada.')}catch{alert('Falha ao guardar neste dispositivo.')}};
+ window.aeSimReset=()=>{lines=[];if($('aeSimName'))$('aeSimName').value='';render()};
+ function init(){const data=(()=>{try{return JSON.parse(localStorage.getItem(KEY)||'null')}catch{return null}})();if(data&&Array.isArray(data.lines)){lines=data.lines.filter(x=>typeof x.id==='string'&&Number.isFinite(num(x.qty))&&num(x.qty)>0);if($('aeSimName'))$('aeSimName').value=data.name||'';for(const [id,value] of Object.entries(data.values||{}))if(fields.includes(id)&&$(id))$(id).value=value}
+ fields.forEach(id=>$(id)?.addEventListener('input',render));refreshOptions()}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+ document.addEventListener('click',e=>{if(e.target?.closest?.('[onclick*="catalogs"]'))setTimeout(refreshOptions,100)});
 })();
 </script>
