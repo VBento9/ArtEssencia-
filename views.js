@@ -545,7 +545,7 @@ async function artessenciaBoxesPanel(ctx){
  if(!boxes.length)root.append(el('div',{class:'empty'},'Ainda não existem modelos de boxes ArtEssencia.'));
  return root;
 }
-async async function editArtessenciaBox(ctx,products,existing={}){
+async function editArtessenciaBox(ctx,products,existing={}){
  const [materials,kitItems]=await Promise.all([db.all('materials'),db.all('kitItems')]);
  const form=el('div',{class:'form-grid'});
  const name=input('name',existing.name||''),description=textarea('description',existing.description||''),image=input('image',existing.image||''),packaging=input('packaging',existing.packaging||''),preparation=input('preparation',existing.preparationDays??2,'number',{min:0,step:1}),notes=textarea('notes',existing.internalNotes||'');
