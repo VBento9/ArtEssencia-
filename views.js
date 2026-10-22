@@ -549,13 +549,17 @@ function editArtessenciaBox(ctx,products,existing={}){
  const form=el('div',{class:'form-grid'});
  const name=input('name',existing.name||''),description=textarea('description',existing.description||''),image=input('image',existing.image||''),packaging=input('packaging',existing.packaging||''),preparation=input('preparation',existing.preparationDays??2,'number',{min:0,step:1}),notes=textarea('notes',existing.internalNotes||'');
  form.append(field('Nome da box',name),field('Prazo de preparação (dias)',preparation),field('Descrição',description,true),field('Imagem da box / URL',image,true),field('Embalagem e dimensões',packaging,true));
+ const packagingCost=input('packagingCost',existing.packagingCost??0,'number',{min:0,step:.01}),laborCost=input('laborCost',existing.laborCost??0,'number',{min:0,step:.01}),extraCost=input('extraCost',existing.extraCost??0,'number',{min:0,step:.01}),targetMargin=input('targetMargin',existing.targetMarginPct??40,'number',{min:0,max:95,step:1}),salePrice=input('salePrice',existing.salePrice??'','number',{min:0,step:.01});
+ form.append(field('Custo de embalagem (€)',packagingCost),field('Trabalho adicional (€)',laborCost),field('Outros custos (€)',extraCost),field('Margem-alvo (%)',targetMargin),field('PVP da box (€)',salePrice));
  const components=(existing.components||[]).map(c=>({...c}));
  const list=el('div',{class:'grid'});
  const estimate=el('div',{class:'notice info'});
  const updateEstimate=()=>{
   const subtotal=components.reduce((sum,c)=>{const product=products.find(p=>p.id===c.productId);const price=Number(product?.price);return sum+(Number.isFinite(price)&&price>=0&&Number.isInteger(c.qty)&&c.qty>0?price*c.qty:0)},0);
   const invalid=components.some(c=>{const p=products.find(p=>p.id===c.productId);return !p||!Number.isFinite(Number(p.price))||Number(p.price)<0||!Number.isInteger(c.qty)||c.qty<1});
-  estimate.textContent='Soma dos PVP dos artigos: '+euro(subtotal)+(invalid?' · Existem artigos sem PVP válido ou quantidades incorretas.':'')+' · Não inclui embalagem, custos adicionais nem margem da box. Não é um preço de venda final.';
+  const costs=[packagingCost,laborCost,extraCost].map(v=>Number(v.value));const extrasTotal=costs.every(v=>Number.isFinite(v)&&v>=0)?costs.reduce((a,b)=>a+b,0):NaN;
+  const provisional=Number.isFinite(extrasTotal)?subtotal+extrasTotal:NaN;
+  estimate.textContent='Referência de PVP dos artigos: '+euro(subtotal)+' · Custos adicionais declarados: '+(Number.isFinite(extrasTotal)?euro(extrasTotal):'inválidos')+' · Soma orientativa: '+(Number.isFinite(provisional)?euro(provisional):'indisponível')+(invalid?' · Corrige os artigos e quantidades.':'')+' · A margem-alvo só poderá ser validada quando existirem custos reais por artigo. O PVP da box é definido manualmente nesta fase.';
  };
  const renderComponents=()=>{
   list.innerHTML='';
@@ -572,6 +576,7 @@ function editArtessenciaBox(ctx,products,existing={}){
   updateEstimate();
  };
  renderComponents();
+ [packagingCost,laborCost,extraCost,targetMargin,salePrice].forEach(v=>v.addEventListener('input',updateEstimate));
  const wrap=el('div',{class:'field span2'},el('label',{},'Composição-base e opções por artigo'),list,estimate,button('+ Adicionar artigo',()=>{components.push({productId:'',qty:1,allowFragrance:false,allowColor:false,allowReplace:false});renderComponents()},'ghost small'));
  const dedication=el('input',{type:'checkbox'});dedication.checked=existing.allowDedication!==false;
  const extras=el('input',{type:'checkbox'});extras.checked=!!existing.allowExtras;
@@ -584,7 +589,9 @@ function editArtessenciaBox(ctx,products,existing={}){
   if(components.some(c=>!Number.isFinite(Number(products.find(p=>p.id===c.productId)?.price))||Number(products.find(p=>p.id===c.productId)?.price)<0)){alert('Corrige o PVP dos artigos antes de guardar o modelo.');return false}
   if(components.some(c=>c.allowReplace)){alert('A substituição ainda exige uma lista de alternativas autorizadas. Desativa essa opção até estar configurada.');return false}
   if(!Number.isInteger(Number(preparation.value))||Number(preparation.value)<0){alert('Define um prazo de preparação válido, em dias inteiros.');return false}
-  await db.put('catalogs',{...existing,id:existing.id||uid('bx'),kind:'artessencia-gift-box-template',name:name.value.trim(),description:description.value,image:image.value,packaging:packaging.value,preparationDays:Math.max(0,Math.floor(Number(preparation.value)||0)),components,allowDedication:dedication.checked,allowExtras:extras.checked,internalNotes:notes.value,active:false,published:false,updatedAt:new Date().toISOString()});
+  const financial=[packagingCost,laborCost,extraCost,salePrice].map(v=>Number(v.value));if(financial.some(v=>!Number.isFinite(v)||v<0)||salePrice.value.trim()===''){alert('Indica um PVP válido e custos adicionais não negativos.');return false}
+  const margin=Number(targetMargin.value);if(!Number.isFinite(margin)||margin<0||margin>95){alert('A margem-alvo deve estar entre 0% e 95%.');return false}
+  await db.put('catalogs',{...existing,id:existing.id||uid('bx'),kind:'artessencia-gift-box-template',name:name.value.trim(),description:description.value,image:image.value,packaging:packaging.value,preparationDays:Math.max(0,Math.floor(Number(preparation.value)||0)),packagingCost:financial[0],laborCost:financial[1],extraCost:financial[2],targetMarginPct:margin,salePrice:financial[3],pricingStatus:'manual-unverified',components,allowDedication:dedication.checked,allowExtras:extras.checked,internalNotes:notes.value,active:false,published:false,updatedAt:new Date().toISOString()});
   toast('Modelo guardado como rascunho privado.');ctx.refresh();return true;
  }});
 }
