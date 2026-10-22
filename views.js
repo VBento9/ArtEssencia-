@@ -580,7 +580,7 @@ function editArtessenciaBox(ctx,products,existing={}){
   if(!name.value.trim()){alert('Indica o nome da box.');return false}
   if(!components.length||components.some(c=>!c.productId||!Number.isInteger(c.qty)||c.qty<1)){alert('Adiciona artigos e quantidades válidos.');return false}
   const ids=new Set(products.map(p=>p.id));if(components.some(c=>!ids.has(c.productId))){alert('Existe um artigo indisponível.');return false}
-  if(components.some(c=>!products.find(p=>p.id===c.productId)?.active)){alert('Os modelos novos só podem conter artigos ativos.');return false}
+  if(components.some(c=>products.find(p=>p.id===c.productId)?.active===false)){alert('Os modelos novos só podem conter artigos ativos.');return false}
   if(components.some(c=>!Number.isFinite(Number(products.find(p=>p.id===c.productId)?.price))||Number(products.find(p=>p.id===c.productId)?.price)<0)){alert('Corrige o PVP dos artigos antes de guardar o modelo.');return false}
   if(components.some(c=>c.allowReplace)){alert('A substituição ainda exige uma lista de alternativas autorizadas. Desativa essa opção até estar configurada.');return false}
   if(!Number.isInteger(Number(preparation.value))||Number(preparation.value)<0){alert('Define um prazo de preparação válido, em dias inteiros.');return false}
