@@ -617,9 +617,12 @@ async function editArtessenciaBox(ctx,products,existing={}){
   for(const c of components){if(!c.allowReplace)c.alternativeProductIds=[]}
   if(extras.checked){alert('A seleção de artigos extra só poderá ser ativada quando existir uma lista de artigos autorizados.');return false}
   const stockWarnings=[];
-  const available=(p,qty)=>{const needs=stockNeed(p,qty);for(const line of needs){const mat=materialById.get(line.materialId);if(!mat||!Number.isFinite(line.qty)||line.qty<0||!Number.isFinite(Number(mat.stock))||Number(mat.stock)<line.qty)stockWarnings.push((p.name||'Artigo')+': '+(mat?.name||line.materialId||'matéria')+' insuficiente ou inválida')}};
-  for(const c of components){const p=products.find(p=>p.id===c.productId);if(p)available(p,c.qty);if(c.allowReplace)for(const id of (c.alternativeProductIds||[])){const alternative=products.find(p=>p.id===id);if(alternative)available(alternative,c.qty)}}
-  if(stockWarnings.length&&!confirm('Aviso de stock (o modelo continuará privado):\\n'+[...new Set(stockWarnings)].join('\\n')+'\\nGuardar o rascunho mesmo assim?'))return false;
+  const baseNeeds=new Map();
+  for(const c of components){const p=products.find(p=>p.id===c.productId);if(!p)continue;for(const line of stockNeed(p,c.qty)){baseNeeds.set(line.materialId,(baseNeeds.get(line.materialId)||0)+Number(line.qty))}}
+  const checkNeeds=(needs,context)=>{for(const [id,qty] of needs){const mat=materialById.get(id);if(!mat||!id||!Number.isFinite(qty)||qty<0||!Number.isFinite(Number(mat.stock))||Number(mat.stock)<qty)stockWarnings.push(context+': '+(mat?.name||id||'matéria desconhecida')+' (necessário '+qty+', disponível '+(mat?.stock??'n/d')+')')}};
+  checkNeeds(baseNeeds,'Composição-base');
+  for(const c of components.filter(c=>c.allowReplace)){const original=products.find(p=>p.id===c.productId);for(const id of (c.alternativeProductIds||[])){const alternative=products.find(p=>p.id===id);if(!alternative||!original)continue;const scenario=new Map(baseNeeds);for(const line of stockNeed(original,c.qty))scenario.set(line.materialId,(scenario.get(line.materialId)||0)-Number(line.qty));for(const line of stockNeed(alternative,c.qty))scenario.set(line.materialId,(scenario.get(line.materialId)||0)+Number(line.qty));checkNeeds(scenario,'Alternativa '+alternative.name)}}
+  if(stockWarnings.length&&!confirm('Aviso de stock (modelo privado):\\n'+[...new Set(stockWarnings)].join('\\n')+'\\nGuardar rascunho mesmo assim?'))return false;
   if(!Number.isInteger(Number(preparation.value))||Number(preparation.value)<0){alert('Define um prazo de preparação válido, em dias inteiros.');return false}
   const financial=[packagingCost,laborCost,extraCost,salePrice].map(v=>Number(v.value));if(financial.some(v=>!Number.isFinite(v)||v<0)||salePrice.value.trim()===''){alert('Indica um PVP válido e custos adicionais não negativos.');return false}
   const margin=Number(targetMargin.value);if(!Number.isFinite(margin)||margin<0||margin>95){alert('A margem-alvo deve estar entre 0% e 95%.');return false}
