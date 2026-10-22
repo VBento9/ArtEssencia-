@@ -700,7 +700,15 @@ export async function catalogsView(ctx,opts={}){
  }else if(tab==='preview'){
   const boxes=(await db.all('catalogs')).filter(c=>c.kind==='artessencia-gift-box-template');
   const card=el('div',{class:'card'},section('Pré-visualização interna','Representação simplificada. Não publica nem cria encomendas.'));
-  for(const box of boxes)card.append(el('div',{class:'creator-item'},aeBoxPhoto(box.image,box.name),el('strong',{},box.name||'Box'),el('p',{},box.description||'Sem descrição'),el('div',{class:'small muted'},(box.components||[]).length+' artigos · PVP base '+euro(box.salePrice||0)+' · Rascunho privado · '+(box.pricingStatus==='cost-incomplete'?'Custos incompletos':'PVP não validado')));
+  for(const box of boxes){
+   const item=el('div',{class:'creator-item'});
+   item.append(aeBoxPhoto(box.image,box.name));
+   item.append(el('strong',{},box.name||'Box'));
+   item.append(el('p',{},box.description||'Sem descrição'));
+   const pricing=box.pricingStatus==='cost-incomplete'?'Custos incompletos':'PVP não validado';
+   item.append(el('div',{class:'small muted'},(box.components||[]).length+' artigos · PVP base '+euro(box.salePrice||0)+' · Rascunho privado · '+pricing));
+   card.append(item);
+  }
   if(!boxes.length)card.append(el('div',{class:'empty'},'Ainda não há modelos para pré-visualizar.'));
   root.append(card);
  }else if(tab==='settings'){const card=el('div',{class:'card'},section('Definições ArtEssencia','As opções comuns continuam disponíveis sem a estrutura antiga da DONART.'));card.append(el('div',{class:'toolbar'},button('Cores disponíveis',()=>ctx.go('catalogs',{tab:'settings',setting:'colors'}),'ghost small'),button('Opções de personalização',()=>ctx.go('catalogs',{tab:'settings',setting:'personalizations'}),'ghost small')));root.append(card);if(opts.setting==='colors')root.append(await managerCard(ctx,'colors','Cores disponíveis','Cores aplicáveis aos artigos ArtEssencia',[{key:'name',label:'Nome'},{key:'hex',label:'Cor HEX',default:'#c8a58d'},{key:'description',label:'Notas',span2:true}]));if(opts.setting==='personalizations')root.append(await managerCard(ctx,'personalizations','Opções reutilizáveis','Fitas, cartões, dedicatórias e acabamentos',[{key:'name',label:'Nome'},{key:'type',label:'Tipo',type:'select',options:[['text','Texto'],['select','Seleção'],['boolean','Sim/Não']]},{key:'extraPrice',label:'Suplemento (€)',type:'number',numeric:true,attrs:{step:.01,min:0}},{key:'description',label:'Descrição',span2:true}]));}
