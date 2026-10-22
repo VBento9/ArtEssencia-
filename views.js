@@ -550,10 +550,10 @@ async function editArtessenciaBox(ctx,products,existing={}){
  const materialById=new Map(materials.map(m=>[m.id,m]));
  const form=el('div',{class:'form-grid'});
  const wizardNav=el('div',{class:'subnav field span2'});
- const wizardPages=[el('div',{class:'form-grid field span2'}),el('div',{class:'form-grid field span2'}),el('div',{class:'form-grid field span2'}),el('div',{class:'form-grid field span2'})];
+ const wizardPages=[el('div',{class:'form-grid field span2'}),el('div',{class:'form-grid field span2'}),el('div',{class:'form-grid field span2'}),el('div',{class:'form-grid field span2'}),el('div',{class:'form-grid field span2'})];
  let wizardIndex=0;
- const showWizard=n=>{wizardIndex=Math.max(0,Math.min(3,n));wizardPages.forEach((p,i)=>p.style.display=i===wizardIndex?'':'none');wizardNav.querySelectorAll('button').forEach((b,i)=>b.classList.toggle('active',i===wizardIndex))};
- ['1 · Identidade','2 · Artigos','3 · Personalização','4 · Preço'].forEach((title,i)=>wizardNav.append(button(title,()=>showWizard(i),'ghost small')));
+ const showWizard=n=>{wizardIndex=Math.max(0,Math.min(4,n));wizardPages.forEach((p,i)=>p.style.display=i===wizardIndex?'':'none');wizardNav.querySelectorAll('button').forEach((b,i)=>b.classList.toggle('active',i===wizardIndex))};
+ ['1 · Identidade','2 · Artigos','3 · Personalização','4 · Preço','5 · Revisão'].forEach((title,i)=>wizardNav.append(button(title,()=>showWizard(i),'ghost small')));
  form.append(wizardNav,...wizardPages);
 
  const name=input('name',existing.name||''),description=textarea('description',existing.description||''),image=input('image',existing.image||''),packaging=input('packaging',existing.packaging||''),preparation=input('preparation',existing.preparationDays??2,'number',{min:0,step:1}),notes=textarea('notes',existing.internalNotes||'');
@@ -612,6 +612,15 @@ async function editArtessenciaBox(ctx,products,existing={}){
  wizardPages[1].append(el('div',{class:'field span2'},section('Composição da Box','Escolhe os artigos predefinidos e as substituições que autorizas.'),wrap),el('div',{class:'field span2'},section('Personalização ArtEssencia','Configura dedicatórias e opções específicas desta box.'),field('Permitir dedicatória',dedication),field('Permitir artigos extra',extras),field('Notas internas',notes,true)));
  wizardPages[1].append(el('div',{class:'toolbar'},button('Seguinte: Personalização',()=>showWizard(2),'secondary small')));
  wizardPages[2].append(el('div',{class:'toolbar'},button('Seguinte: Preços',()=>showWizard(3),'secondary small')));
+ const review=el('div',{class:'card field span2'});
+ const updateReview=()=>{
+  review.innerHTML='';
+  review.append(section('Revisão da Box','Resumo interno. A box não será publicada automaticamente.'),el('div',{class:'small'},'Nome: '+(name.value.trim()||'Por definir')),el('div',{class:'small'},'Artigos: '+(components.map(c=>{const p=products.find(x=>x.id===c.productId);return (p?.name||'Por selecionar')+' × '+c.qty}).join(' · ')||'Nenhum')),el('div',{class:'small'},'Personalizações: '+components.filter(c=>c.allowColor||c.allowFragrance||c.allowReplace).length+' artigo(s) com opções'),el('div',{class:'small'},'Dedicatória: '+(dedication.checked?'permitida':'não permitida')),el('div',{class:'small'},'PVP base: '+euro(Number(salePrice.value||0)),el('div',{class:'small muted'},'Estado após guardar: rascunho privado')));
+ };
+ wizardPages[3].append(el('div',{class:'toolbar'},button('Seguinte: Revisão',()=>showWizard(4),'secondary small')));
+ wizardPages[4].append(review);
+ const showWizardBase=showWizard;
+ showWizard=n=>{showWizardBase(n);if(wizardIndex===4)updateReview()};
  showWizard(0);
  dedicationSupplement.addEventListener('input',updateEstimate);dedication.addEventListener('change',updateEstimate);
  modal(existing.id?'Editar box ArtEssencia':'Nova box ArtEssencia',form,{wide:true,onSave:async()=>{
