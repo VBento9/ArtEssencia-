@@ -4166,6 +4166,20 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 
     <section class="card" aria-label="Partilhar seleção de produtos"><div class="section-title">Partilhar produtos selecionados</div><p class="muted">Para enviar uma seleção de produtos de Natal, Halloween, outra ocasião ou uma coleção, utiliza Catálogos Visuais. Escolhes os artigos, a ordem e o formato, sem os adicionares a uma box.</p><button class="btn primary" type="button" onclick="go('visualCatalogs')">Abrir Catálogos Visuais</button></section>
 
+    <section class="card" id="aeBoxComposerV1">
+      <div class="section-title">Composição da Box · ArtEssencia</div>
+      <p class="muted">Cria a composição a partir dos produtos existentes no Backoffice. Este editor é uma pré-visualização local e não altera o stock, a Loja nem as caixas já criadas.</p>
+      <div class="form-grid">
+        <div class="field"><label>Nome do modelo</label><input id="aeBoxDraftName" placeholder="Ex.: Box Aconchego"></div>
+        <div class="field"><label>Artigo</label><select id="aeBoxProductSelect"></select></div>
+        <div class="field"><label>Quantidade</label><input id="aeBoxProductQty" type="number" min="1" step="1" value="1"></div>
+        <div class="field"><label>&nbsp;</label><button class="btn primary" type="button" onclick="aeBoxAddItemV1()">+ Adicionar à box</button></div>
+      </div>
+      <div id="aeBoxCompositionList" class="catalog-grid" aria-live="polite"></div>
+      <div class="card" style="margin-top:12px"><strong>Pré-visualização da composição</strong><p id="aeBoxSummaryV1" class="muted">Sem artigos selecionados.</p></div>
+      <div class="btnrow"><button class="btn" type="button" onclick="aeBoxSaveLocalDraftV1()">Guardar rascunho neste dispositivo</button><button class="btn" type="button" onclick="aeBoxResetV1()">Limpar</button></div>
+      <small class="muted">Rascunho apenas neste dispositivo de testes. A sincronização Cloud e a publicação na Loja não estão ativadas.</small>
+    </section>
     <section class="card catalog-editor-card catalog-editor-card-v1731">
       <div class="catalog-editor-head">
         <div>
@@ -16281,3 +16295,34 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 @media(max-width:650px){#dashboard .dashboard-profitability-v1769{grid-template-columns:1fr 1fr}#dashboard .dashboard-profit-card-v1769{grid-template-columns:32px minmax(0,1fr);padding:10px}.dashboard-profit-icon-v1769{width:32px!important;height:32px!important}.dashboard-profit-card-v1769 strong{font-size:17px!important}}
 </style>
 <!-- V1.7.69 — Dashboard: materiais, trabalho, custos gerais, custo total, lucro e fluxo de caixa separados -->
+
+<script id="ae-box-composer-v1">
+(function(){
+ const KEY='ae_preview_box_composition_v1';
+ let items=[];
+ function get(id){return document.getElementById(id)}
+ function products(){return Array.isArray(window.db?.products)?window.db.products:(typeof db!=='undefined'&&Array.isArray(db.products)?db.products:[])}
+ function usable(p){return p&&p.active!==false&&!p.archivedV1803}
+ function escText(v){return String(v??'')}
+ function render(){
+  const list=get('aeBoxCompositionList'),summary=get('aeBoxSummaryV1');if(!list||!summary)return;
+  list.replaceChildren();
+  let total=0;
+  for(let i=0;i<items.length;i++){const x=items[i],p=products().find(p=>String(p.id||p.code)===x.id);const price=Number(p?.price)||0;total+=price*x.qty;
+   const row=document.createElement('div');row.className='card';row.style.margin='8px 0';
+   const title=document.createElement('strong');title.textContent=(p?.name||'Artigo indisponível')+' × '+x.qty;
+   const cost=document.createElement('div');cost.className='muted';cost.textContent='Referência PVP: '+(price*x.qty).toFixed(2).replace('.',',')+' €';
+   const remove=document.createElement('button');remove.className='btn';remove.type='button';remove.textContent='Retirar';remove.onclick=()=>{items.splice(i,1);render()};
+   row.append(title,cost,remove);list.append(row)
+  }
+  summary.textContent=items.length?items.length+' artigo(s) distinto(s) · Valor indicativo dos produtos: '+total.toFixed(2).replace('.',',')+' €':'Sem artigos selecionados.';
+ }
+ function refresh(){const select=get('aeBoxProductSelect');if(!select)return;const old=select.value;select.replaceChildren();for(const p of products().filter(usable)){const opt=document.createElement('option');opt.value=String(p.id||p.code||'');opt.textContent=p.name||p.code||'Artigo';select.append(opt)}if([...select.options].some(x=>x.value===old))select.value=old;render()}
+ window.aeBoxAddItemV1=function(){const id=get('aeBoxProductSelect')?.value,qty=Number(get('aeBoxProductQty')?.value);if(!id||!Number.isInteger(qty)||qty<1){alert('Seleciona um artigo e uma quantidade inteira positiva.');return}const p=products().find(x=>String(x.id||x.code)===id);if(!usable(p)){alert('Artigo indisponível.');return}const found=items.find(x=>x.id===id);if(found)found.qty+=qty;else items.push({id,qty});render()};
+ window.aeBoxSaveLocalDraftV1=function(){const name=get('aeBoxDraftName')?.value.trim()||'';if(!name||!items.length){alert('Indica o nome e adiciona artigos.');return}try{localStorage.setItem(KEY,JSON.stringify({name,items}));if(typeof toast==='function')toast('Rascunho guardado neste dispositivo.');else alert('Rascunho local guardado.')}catch{alert('Não foi possível guardar o rascunho neste dispositivo.')}};
+ window.aeBoxResetV1=function(){items=[];if(get('aeBoxDraftName'))get('aeBoxDraftName').value='';render()};
+ function restore(){try{const d=JSON.parse(localStorage.getItem(KEY)||'null');if(d&&Array.isArray(d.items)){items=d.items.filter(x=>typeof x.id==='string'&&Number.isInteger(x.qty)&&x.qty>0);if(get('aeBoxDraftName'))get('aeBoxDraftName').value=d.name||''}}catch{}refresh()}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',restore);else restore();
+ document.addEventListener('click',e=>{if(e.target?.closest?.('[onclick*="catalogs"]'))setTimeout(refresh,100)});
+})();
+</script>
