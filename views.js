@@ -562,7 +562,7 @@ async function editArtessenciaBox(ctx,products,existing={}){
  wizardPages[3].append(el('div',{class:'field span2'},section('Custos e preço da Box','Valores desta box, sem interferir com produtos individuais.'),field('Custo de embalagem (€)',packagingCost),field('Trabalho adicional (€)',laborCost),field('Outros custos (€)',extraCost),field('Margem-alvo (%)',targetMargin),field('PVP da box (€)',salePrice)));
  const dedicationSupplement=input('dedicationSupplement',existing.dedicationSupplement??0,'number',{min:0,step:.01});
  wizardPages[2].append(field('Suplemento dedicatória (€)',dedicationSupplement));
- const components=(existing.components||[]).map(c=>({...c}));
+ const components=(existing.components||[]).map(c=>({...c,alternativeProductIds:[...(c.alternativeProductIds||[])]}));
  const dedication=el('input',{type:'checkbox'});dedication.checked=existing.allowDedication!==false;
  const extras=el('input',{type:'checkbox'});extras.checked=!!existing.allowExtras;
  const list=el('div',{class:'grid'});
@@ -609,7 +609,8 @@ async function editArtessenciaBox(ctx,products,existing={}){
  renderComponents();
  [packagingCost,laborCost,extraCost,targetMargin,salePrice].forEach(v=>v.addEventListener('input',()=>{updateEstimate();list.querySelectorAll('[data-box-simulation]').forEach(n=>n.dispatchEvent(new Event('change')))}));
  const wrap=el('div',{class:'field span2'},el('label',{},'Composição-base e opções por artigo'),list,estimate,button('+ Adicionar artigo',()=>{components.push({productId:'',qty:1,allowFragrance:false,allowColor:false,allowReplace:false});renderComponents()},'ghost small'));
- wizardPages[1].append(el('div',{class:'field span2'},section('Composição da Box','Escolhe os artigos predefinidos e as substituições que autorizas.'),wrap),el('div',{class:'field span2'},section('Personalização ArtEssencia','Configura dedicatórias e opções específicas desta box.'),field('Permitir dedicatória',dedication),field('Permitir artigos extra',extras),field('Notas internas',notes,true)));
+ wizardPages[1].append(el('div',{class:'field span2'},section('Composição da Box','Escolhe os artigos predefinidos e as substituições que autorizas.'),wrap));
+ wizardPages[2].append(el('div',{class:'field span2'},section('Personalização ArtEssencia','Configura dedicatórias e opções específicas desta box.'),field('Permitir dedicatória',dedication),field('Permitir artigos extra',extras),field('Notas internas',notes,true)));
  wizardPages[1].append(el('div',{class:'toolbar'},button('Seguinte: Personalização',()=>showWizard(2),'secondary small')));
  wizardPages[2].append(el('div',{class:'toolbar'},button('Seguinte: Preços',()=>showWizard(3),'secondary small')));
  const review=el('div',{class:'card field span2'});
