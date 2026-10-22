@@ -545,7 +545,8 @@ async function artessenciaBoxesPanel(ctx){
  if(!boxes.length)root.append(el('div',{class:'empty'},'Ainda não existem modelos de boxes ArtEssencia.'));
  return root;
 }
-function editArtessenciaBox(ctx,products,existing={}){
+async function editArtessenciaBox(ctx,products,existing={}){
+ const [materials,kitItems]=await Promise.all([db.all('materials'),db.all('kitItems')]);
  const form=el('div',{class:'form-grid'});
  const name=input('name',existing.name||''),description=textarea('description',existing.description||''),image=input('image',existing.image||''),packaging=input('packaging',existing.packaging||''),preparation=input('preparation',existing.preparationDays??2,'number',{min:0,step:1}),notes=textarea('notes',existing.internalNotes||'');
  form.append(field('Nome da box',name),field('Prazo de preparação (dias)',preparation),field('Descrição',description,true),field('Imagem da box / URL',image,true),field('Embalagem e dimensões',packaging,true));
@@ -558,8 +559,13 @@ function editArtessenciaBox(ctx,products,existing={}){
   const subtotal=components.reduce((sum,c)=>{const product=products.find(p=>p.id===c.productId);const price=Number(product?.price);return sum+(Number.isFinite(price)&&price>=0&&Number.isInteger(c.qty)&&c.qty>0?price*c.qty:0)},0);
   const invalid=components.some(c=>{const p=products.find(p=>p.id===c.productId);return !p||!Number.isFinite(Number(p.price))||Number(p.price)<0||!Number.isInteger(c.qty)||c.qty<1});
   const costs=[packagingCost,laborCost,extraCost].map(v=>Number(v.value));const extrasTotal=costs.every(v=>Number.isFinite(v)&&v>=0)?costs.reduce((a,b)=>a+b,0):NaN;
+  const productionCost=components.reduce((total,c)=>{const p=products.find(p=>p.id===c.productId);if(!p||!Number.isInteger(c.qty)||c.qty<1)return total;const calc=calcProduct(p,materials,kitItems,products);return total+calc.production*c.qty},0);
+  const baseCost=productionCost+extrasTotal;
+  const pvp=Number(salePrice.value),target=Number(targetMargin.value);
+  const margin=Number.isFinite(baseCost)&&Number.isFinite(pvp)&&pvp>0?(pvp-baseCost)/pvp*100:NaN;
+  const recommended=Number.isFinite(baseCost)&&target>=0&&target<100?baseCost/(1-target/100):NaN;
   const provisional=Number.isFinite(extrasTotal)?subtotal+extrasTotal:NaN;
-  estimate.textContent='Referência de PVP dos artigos: '+euro(subtotal)+' · Custos adicionais declarados: '+(Number.isFinite(extrasTotal)?euro(extrasTotal):'inválidos')+' · Soma orientativa: '+(Number.isFinite(provisional)?euro(provisional):'indisponível')+(invalid?' · Corrige os artigos e quantidades.':'')+' · A margem-alvo só poderá ser validada quando existirem custos reais por artigo. O PVP da box é definido manualmente nesta fase.';
+  estimate.textContent='Referência de PVP dos artigos: '+euro(subtotal)+' · Custos adicionais declarados: '+(Number.isFinite(extrasTotal)?euro(extrasTotal):'inválidos')+' · Soma orientativa: '+(Number.isFinite(provisional)?euro(provisional):'indisponível')+(invalid?' · Corrige os artigos e quantidades.':'')+' · Custo de produção estimado: '+(Number.isFinite(baseCost)?euro(baseCost):'inválido')+' · PVP sugerido pela margem-alvo: '+(Number.isFinite(recommended)?euro(recommended):'indisponível')+' · Margem bruta estimada do PVP: '+(Number.isFinite(margin)?margin.toFixed(1)+'%':'indisponível')+'. Não inclui eventuais comissões, impostos ou custos externos não registados.';
  };
  const renderComponents=()=>{
   list.innerHTML='';
