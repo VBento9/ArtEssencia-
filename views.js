@@ -547,6 +547,22 @@ function aeBoxStockNeed(product,qty,products,kitItems,trail=new Set()) {
  }else if(!recipe.length)errors.push('Produto sem receita de stock: '+product.name);
  return {needs,errors};
 }
+function aeBoxProductionCost(product,materials,kitItems,products,trail=new Set()){
+ if(!product||trail.has(product.id))return NaN;
+ const next=new Set(trail);next.add(product.id);
+ if(product.family==='kit'){
+  const children=kitItems.filter(k=>k.kitProductId===product.id);
+  if(!children.length)return NaN;
+  let total=0;
+  for(const c of children){const child=products.find(p=>p.id===c.productId),qty=Number(c.qty),cost=aeBoxProductionCost(child,materials,kitItems,products,next);if(!Number.isFinite(qty)||qty<=0||!Number.isFinite(cost))return NaN;total+=qty*cost}
+  const own=calcProduct({...product,family:'box-cost-preview'},materials,[],products);
+  return total+own.production;
+ }
+ const errors=aeBoxIntegrity(product,materials,kitItems,products);
+ if(errors.length)return NaN;
+ const cost=calcProduct(product,materials,kitItems,products).production;
+ return Number.isFinite(cost)&&cost>=0?cost:NaN;
+}
 async function artessenciaBoxesPanel(ctx){
  const [catalogs,products]=await Promise.all([db.all('catalogs'),db.all('products')]);
  const boxes=catalogs.filter(c=>c.kind==='artessencia-gift-box-template');
@@ -590,7 +606,7 @@ async function editArtessenciaBox(ctx,products,existing={}){
   const costs=[packagingCost,laborCost,extraCost].map(v=>Number(v.value));const extrasTotal=costs.every(v=>Number.isFinite(v)&&v>=0)?costs.reduce((a,b)=>a+b,0):NaN;
   const missingCostData=components.filter(c=>{const p=products.find(p=>p.id===c.productId);return p&&p.family!=='kit'&&!(p.recipe||[]).length&&!(Number(p.lastTrueCost)>0)}).map(c=>products.find(p=>p.id===c.productId)?.name||'Artigo');
   const integrityProblems=components.flatMap(c=>{const p=products.find(p=>p.id===c.productId);return aeBoxIntegrity(p,materials,kitItems,products).map(issue=>(p?.name||'Artigo')+': '+issue)});
-  const productionCost=components.reduce((total,c)=>{const p=products.find(p=>p.id===c.productId);if(!p||!Number.isInteger(c.qty)||c.qty<1)return total;const calc=calcProduct(p,materials,kitItems,products);return total+calc.production*c.qty},0);
+  const productionCost=components.reduce((total,c)=>{const p=products.find(p=>p.id===c.productId);if(!p||!Number.isInteger(c.qty)||c.qty<1)return total;const calc=aeBoxProductionCost(p,materials,kitItems,products);return total+calc*c.qty},0);
   const baseCost=productionCost+extrasTotal;
   const pvp=Number(salePrice.value),target=Number(targetMargin.value);
   const margin=Number.isFinite(baseCost)&&Number.isFinite(pvp)&&pvp>0?(pvp-baseCost)/pvp*100:NaN;
