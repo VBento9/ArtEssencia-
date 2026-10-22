@@ -559,13 +559,14 @@ async function editArtessenciaBox(ctx,products,existing={}){
   const subtotal=components.reduce((sum,c)=>{const product=products.find(p=>p.id===c.productId);const price=Number(product?.price);return sum+(Number.isFinite(price)&&price>=0&&Number.isInteger(c.qty)&&c.qty>0?price*c.qty:0)},0);
   const invalid=components.some(c=>{const p=products.find(p=>p.id===c.productId);return !p||!Number.isFinite(Number(p.price))||Number(p.price)<0||!Number.isInteger(c.qty)||c.qty<1});
   const costs=[packagingCost,laborCost,extraCost].map(v=>Number(v.value));const extrasTotal=costs.every(v=>Number.isFinite(v)&&v>=0)?costs.reduce((a,b)=>a+b,0):NaN;
+  const missingCostData=components.filter(c=>{const p=products.find(p=>p.id===c.productId);return p&&p.family!=='kit'&&!(p.recipe||[]).length&&!(Number(p.lastTrueCost)>0)}).map(c=>products.find(p=>p.id===c.productId)?.name||'Artigo');
   const productionCost=components.reduce((total,c)=>{const p=products.find(p=>p.id===c.productId);if(!p||!Number.isInteger(c.qty)||c.qty<1)return total;const calc=calcProduct(p,materials,kitItems,products);return total+calc.production*c.qty},0);
   const baseCost=productionCost+extrasTotal;
   const pvp=Number(salePrice.value),target=Number(targetMargin.value);
   const margin=Number.isFinite(baseCost)&&Number.isFinite(pvp)&&pvp>0?(pvp-baseCost)/pvp*100:NaN;
   const recommended=Number.isFinite(baseCost)&&target>=0&&target<100?baseCost/(1-target/100):NaN;
   const provisional=Number.isFinite(extrasTotal)?subtotal+extrasTotal:NaN;
-  estimate.textContent='Referência de PVP dos artigos: '+euro(subtotal)+' · Custos adicionais declarados: '+(Number.isFinite(extrasTotal)?euro(extrasTotal):'inválidos')+' · Soma orientativa: '+(Number.isFinite(provisional)?euro(provisional):'indisponível')+(invalid?' · Corrige os artigos e quantidades.':'')+' · Custo de produção estimado: '+(Number.isFinite(baseCost)?euro(baseCost):'inválido')+' · PVP sugerido pela margem-alvo: '+(Number.isFinite(recommended)?euro(recommended):'indisponível')+' · Margem bruta estimada do PVP: '+(Number.isFinite(margin)?margin.toFixed(1)+'%':'indisponível')+'. Não inclui eventuais comissões, impostos ou custos externos não registados.';
+  estimate.textContent='Referência de PVP dos artigos: '+euro(subtotal)+' · Custos adicionais declarados: '+(Number.isFinite(extrasTotal)?euro(extrasTotal):'inválidos')+' · Soma orientativa: '+(Number.isFinite(provisional)?euro(provisional):'indisponível')+(invalid?' · Corrige os artigos e quantidades.':'')+' · Custo de produção estimado: '+(Number.isFinite(baseCost)?euro(baseCost):'inválido')+' · PVP sugerido pela margem-alvo: '+(Number.isFinite(recommended)?euro(recommended):'indisponível')+' · Margem bruta estimada do PVP: '+(Number.isFinite(margin)?margin.toFixed(1)+'%':'indisponível')+'. Não inclui eventuais comissões, impostos ou custos externos não registados.'+(missingCostData.length?' ATENÇÃO: ficha técnica sem receita para '+missingCostData.join(', ')+'. Rever os custos antes de aprovar o PVP.':'');
  };
  const renderComponents=()=>{
   list.innerHTML='';
