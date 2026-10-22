@@ -552,7 +552,7 @@ async function editArtessenciaBox(ctx,products,existing={}){
  const name=input('name',existing.name||''),description=textarea('description',existing.description||''),image=input('image',existing.image||''),packaging=input('packaging',existing.packaging||''),preparation=input('preparation',existing.preparationDays??2,'number',{min:0,step:1}),notes=textarea('notes',existing.internalNotes||'');
  form.append(field('Nome da box',name),field('Prazo de preparação (dias)',preparation),field('Descrição',description,true),field('Imagem da box / URL',image,true),field('Embalagem e dimensões',packaging,true));
  const packagingCost=input('packagingCost',existing.packagingCost??0,'number',{min:0,step:.01}),laborCost=input('laborCost',existing.laborCost??0,'number',{min:0,step:.01}),extraCost=input('extraCost',existing.extraCost??0,'number',{min:0,step:.01}),targetMargin=input('targetMargin',existing.targetMarginPct??40,'number',{min:0,max:95,step:1}),salePrice=input('salePrice',existing.salePrice??'','number',{min:0,step:.01});
- form.append(field('Custo de embalagem (€)',packagingCost),field('Trabalho adicional (€)',laborCost),field('Outros custos (€)',extraCost),field('Margem-alvo (%)',targetMargin),field('PVP da box (€)',salePrice));
+ form.append(el('div',{class:'field span2'},section('Custos e preço da Box','Valores desta box, sem interferir com produtos individuais.'),field('Custo de embalagem (€)',packagingCost),field('Trabalho adicional (€)',laborCost),field('Outros custos (€)',extraCost),field('Margem-alvo (%)',targetMargin),field('PVP da box (€)',salePrice)));
  const dedicationSupplement=input('dedicationSupplement',existing.dedicationSupplement??0,'number',{min:0,step:.01});
  form.append(field('Suplemento dedicatória (€)',dedicationSupplement));
  const components=(existing.components||[]).map(c=>({...c}));
@@ -602,7 +602,7 @@ async function editArtessenciaBox(ctx,products,existing={}){
  renderComponents();
  [packagingCost,laborCost,extraCost,targetMargin,salePrice].forEach(v=>v.addEventListener('input',()=>{updateEstimate();list.querySelectorAll('[data-box-simulation]').forEach(n=>n.dispatchEvent(new Event('change')))}));
  const wrap=el('div',{class:'field span2'},el('label',{},'Composição-base e opções por artigo'),list,estimate,button('+ Adicionar artigo',()=>{components.push({productId:'',qty:1,allowFragrance:false,allowColor:false,allowReplace:false});renderComponents()},'ghost small'));
- form.append(wrap,field('Permitir dedicatória',dedication),field('Permitir artigos extra',extras),field('Notas internas',notes,true));
+ form.append(el('div',{class:'field span2'},section('Composição da Box','Escolhe os artigos predefinidos e as substituições que autorizas.'),wrap),el('div',{class:'field span2'},section('Personalização ArtEssencia','Configura dedicatórias e opções específicas desta box.'),field('Permitir dedicatória',dedication),field('Permitir artigos extra',extras),field('Notas internas',notes,true)));
  dedicationSupplement.addEventListener('input',updateEstimate);dedication.addEventListener('change',updateEstimate);
  modal(existing.id?'Editar box ArtEssencia':'Nova box ArtEssencia',form,{wide:true,onSave:async()=>{
   if(!name.value.trim()){alert('Indica o nome da box.');return false}
