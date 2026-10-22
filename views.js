@@ -642,8 +642,7 @@ async function editArtessenciaBox(ctx,products,existing={}){
   if(components.some(c=>c.allowReplace&&(c.alternativeProductIds||[]).some(id=>!Number.isFinite(Number(products.find(p=>p.id===id)?.price))||Number(products.find(p=>p.id===id)?.price)<0))){alert('Existem alternativas sem PVP válido.');return false}
   for(const c of components){if(!c.allowReplace)c.alternativeProductIds=[]}
   if(extras.checked){alert('A seleção de artigos extra só poderá ser ativada quando existir uma lista de artigos autorizados.');return false}
-  const integrityWarnings=components.flatMap(c=>{const p=products.find(p=>p.id===c.productId);return aeBoxIntegrity(p,materials,kitItems,products).map(issue=>(p?.name||'Artigo')+': '+issue)});if(integrityWarnings.length&&!confirm('Custos não validados:\n'+[...new Set(integrityWarnings)].join('\n')+'
-Guardar apenas como rascunho sem PVP validado?'))return false;
+  const integrityWarnings=components.flatMap(c=>{const p=products.find(p=>p.id===c.productId);return aeBoxIntegrity(p,materials,kitItems,products).map(issue=>(p?.name||'Artigo')+': '+issue)});if(integrityWarnings.length&&!confirm('Custos não validados:\\n'+[...new Set(integrityWarnings)].join('\\n')+'\\nGuardar apenas como rascunho sem PVP validado?'))return false;
   const stockWarnings=[];
   const baseNeeds=new Map();
   for(const c of components){const p=products.find(p=>p.id===c.productId);if(!p)continue;for(const line of stockNeed(p,c.qty)){baseNeeds.set(line.materialId,(baseNeeds.get(line.materialId)||0)+Number(line.qty))}}
