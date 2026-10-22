@@ -4155,43 +4155,16 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
     <div class="catalog-dashboard card">
       <div>
         <div class="section-title" style="margin:0">Boxes & Presentes · ArtEssencia</div>
-        <p class="muted" style="margin:4px 0 0">Gere as embalagens, a apresentação das boxes e as opções específicas da ArtEssencia.</p>
+        <p class="muted" style="margin:4px 0 0">Gere as boxes e embalagens ArtEssencia. A seleção de produtos para PDF e partilha é feita em Catálogos Visuais.</p>
       </div>
       <div class="catalog-top-actions">
-        <button class="btn" onclick="previewMenuPDF()">Ver catálogo</button>
-        <button class="btn" onclick="previewThemedBoxesPDF()">Ver catálogo de caixas</button>
+        <button class="btn primary" type="button" onclick="go('visualCatalogs')">Selecionar produtos e criar PDF</button>
       </div>
     </div>
 
     <div class="card" style="margin:12px 0"><strong>Gestão ArtEssencia</strong><p class="muted">O antigo criador de ocasiões e temas foi retirado deste ecrã. Os dados mantêm-se preservados.</p></div><div id="catalogSummary" class="catalog-summary"></div>
 
-    <section class="catalog-documents-stack-v1731">
-      <article class="card catalog-document-card catalog-document-card-v1731">
-        <div>
-          <div class="catalog-doc-kicker">CATÁLOGO</div>
-          <div class="section-title" style="margin:3px 0 4px">Produtos ArtEssencia</div>
-          <p class="muted">Gerado automaticamente a partir dos produtos e PVP definidos em Produtos.</p>
-        </div>
-        <div class="catalog-actions catalog-actions-v1731">
-          <button class="btn" onclick="previewMenuPDF()">Ver PDF</button>
-          <button class="btn primary" onclick="shareMenuPDF()">Enviar PDF</button>
-          <button class="btn" onclick="downloadMenuPDF()">Guardar PDF</button>
-        </div>
-      </article>
-
-      <article class="card catalog-document-card catalog-document-card-v1731">
-        <div>
-          <div class="catalog-doc-kicker">CAIXAS TEMÁTICAS</div>
-          <div class="section-title" style="margin:3px 0 4px">Catálogo para clientes</div>
-          <p class="muted">Fotografia, capacidade, descrição e preço de venda das caixas especiais.</p>
-        </div>
-        <div class="catalog-actions catalog-actions-v1731">
-          <button class="btn" onclick="previewThemedBoxesPDF()">Ver PDF</button>
-          <button class="btn primary" onclick="shareThemedBoxesPDF()">Enviar PDF</button>
-          <button class="btn" onclick="downloadThemedBoxesPDF()">Guardar PDF</button>
-        </div>
-      </article>
-    </section>
+    <section class="card" aria-label="Partilhar seleção de produtos"><div class="section-title">Partilhar produtos selecionados</div><p class="muted">Para enviar uma seleção de produtos de Natal, Halloween, outra ocasião ou uma coleção, utiliza Catálogos Visuais. Escolhes os artigos, a ordem e o formato, sem os adicionares a uma box.</p><button class="btn primary" type="button" onclick="go('visualCatalogs')">Abrir Catálogos Visuais</button></section>
 
     <section class="card catalog-editor-card catalog-editor-card-v1731">
       <div class="catalog-editor-head">
