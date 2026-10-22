@@ -545,13 +545,15 @@ async function artessenciaBoxesPanel(ctx){
  if(!boxes.length)root.append(el('div',{class:'empty'},'Ainda não existem modelos de boxes ArtEssencia.'));
  return root;
 }
-async function editArtessenciaBox(ctx,products,existing={}){
+async async function editArtessenciaBox(ctx,products,existing={}){
  const [materials,kitItems]=await Promise.all([db.all('materials'),db.all('kitItems')]);
  const form=el('div',{class:'form-grid'});
  const name=input('name',existing.name||''),description=textarea('description',existing.description||''),image=input('image',existing.image||''),packaging=input('packaging',existing.packaging||''),preparation=input('preparation',existing.preparationDays??2,'number',{min:0,step:1}),notes=textarea('notes',existing.internalNotes||'');
  form.append(field('Nome da box',name),field('Prazo de preparação (dias)',preparation),field('Descrição',description,true),field('Imagem da box / URL',image,true),field('Embalagem e dimensões',packaging,true));
  const packagingCost=input('packagingCost',existing.packagingCost??0,'number',{min:0,step:.01}),laborCost=input('laborCost',existing.laborCost??0,'number',{min:0,step:.01}),extraCost=input('extraCost',existing.extraCost??0,'number',{min:0,step:.01}),targetMargin=input('targetMargin',existing.targetMarginPct??40,'number',{min:0,max:95,step:1}),salePrice=input('salePrice',existing.salePrice??'','number',{min:0,step:.01});
  form.append(field('Custo de embalagem (€)',packagingCost),field('Trabalho adicional (€)',laborCost),field('Outros custos (€)',extraCost),field('Margem-alvo (%)',targetMargin),field('PVP da box (€)',salePrice));
+ const dedicationSupplement=input('dedicationSupplement',existing.dedicationSupplement??0,'number',{min:0,step:.01});
+ form.append(field('Suplemento dedicatória (€)',dedicationSupplement));
  const components=(existing.components||[]).map(c=>({...c}));
  const list=el('div',{class:'grid'});
  const estimate=el('div',{class:'notice info'});
@@ -565,8 +567,9 @@ async function editArtessenciaBox(ctx,products,existing={}){
   const pvp=Number(salePrice.value),target=Number(targetMargin.value);
   const margin=Number.isFinite(baseCost)&&Number.isFinite(pvp)&&pvp>0?(pvp-baseCost)/pvp*100:NaN;
   const recommended=Number.isFinite(baseCost)&&target>=0&&target<100?baseCost/(1-target/100):NaN;
+  const possibleSurcharges=components.reduce((sum,c)=>sum+(c.allowFragrance?Number(c.scentSupplement||0):0)+(c.allowColor?Number(c.colorSupplement||0):0),0)+(dedication.checked?Number(dedicationSupplement.value||0):0);
   const provisional=Number.isFinite(extrasTotal)?subtotal+extrasTotal:NaN;
-  estimate.textContent='Referência de PVP dos artigos: '+euro(subtotal)+' · Custos adicionais declarados: '+(Number.isFinite(extrasTotal)?euro(extrasTotal):'inválidos')+' · Soma orientativa: '+(Number.isFinite(provisional)?euro(provisional):'indisponível')+(invalid?' · Corrige os artigos e quantidades.':'')+' · Custo de produção estimado: '+(Number.isFinite(baseCost)?euro(baseCost):'inválido')+' · PVP sugerido pela margem-alvo: '+(Number.isFinite(recommended)?euro(recommended):'indisponível')+' · Margem bruta estimada do PVP: '+(Number.isFinite(margin)?margin.toFixed(1)+'%':'indisponível')+'. Não inclui eventuais comissões, impostos ou custos externos não registados.'+(missingCostData.length?' ATENÇÃO: ficha técnica sem receita para '+missingCostData.join(', ')+'. Rever os custos antes de aprovar o PVP.':'');
+  estimate.textContent='Referência de PVP dos artigos: '+euro(subtotal)+' · Custos adicionais declarados: '+(Number.isFinite(extrasTotal)?euro(extrasTotal):'inválidos')+' · Soma orientativa: '+(Number.isFinite(provisional)?euro(provisional):'indisponível')+(invalid?' · Corrige os artigos e quantidades.':'')+' · Suplementos máximos configurados (por seleção): '+euro(possibleSurcharges)+' · Custo de produção estimado: '+(Number.isFinite(baseCost)?euro(baseCost):'inválido')+' · PVP sugerido pela margem-alvo: '+(Number.isFinite(recommended)?euro(recommended):'indisponível')+' · Margem bruta estimada do PVP: '+(Number.isFinite(margin)?margin.toFixed(1)+'%':'indisponível')+'. Não inclui eventuais comissões, impostos ou custos externos não registados.'+(missingCostData.length?' ATENÇÃO: ficha técnica sem receita para '+missingCostData.join(', ')+'. Rever os custos antes de aprovar o PVP.':'');
  };
  const renderComponents=()=>{
   list.innerHTML='';
@@ -577,8 +580,10 @@ async function editArtessenciaBox(ctx,products,existing={}){
    const fragrance=el('input',{type:'checkbox'});fragrance.checked=!!c.allowFragrance;fragrance.onchange=()=>c.allowFragrance=fragrance.checked;
    const color=el('input',{type:'checkbox'});color.checked=!!c.allowColor;color.onchange=()=>c.allowColor=color.checked;
    const replace=el('input',{type:'checkbox'});replace.checked=!!c.allowReplace;replace.onchange=()=>c.allowReplace=replace.checked;
+   const scentExtra=input('scentExtra'+i,c.scentSupplement??0,'number',{min:0,step:.01}),colorExtra=input('colorExtra'+i,c.colorSupplement??0,'number',{min:0,step:.01});
+   scentExtra.oninput=()=>{c.scentSupplement=Number(scentExtra.value);updateEstimate()};colorExtra.oninput=()=>{c.colorSupplement=Number(colorExtra.value);updateEstimate()};
    product.onchange=()=>{c.productId=product.value;updateEstimate()};qty.oninput=()=>{c.qty=Number(qty.value);updateEstimate()};
-   list.append(el('div',{class:'card'},el('div',{class:'form-grid'},field('Artigo',product),field('Quantidade',qty),field('Permitir trocar fragrância',fragrance),field('Permitir escolher cor',color),field('Permitir substituição autorizada',replace)),el('div',{class:'toolbar'},button('Remover artigo',()=>{components.splice(i,1);renderComponents()},'danger small'))));
+   list.append(el('div',{class:'card'},el('div',{class:'form-grid'},field('Artigo',product),field('Quantidade',qty),field('Permitir trocar fragrância',fragrance),field('Permitir escolher cor',color),field('Suplemento fragrância (€)',scentExtra),field('Suplemento cor (€)',colorExtra),field('Permitir substituição autorizada',replace)),el('div',{class:'toolbar'},button('Remover artigo',()=>{components.splice(i,1);renderComponents()},'danger small'))));
   });
   updateEstimate();
  };
@@ -588,17 +593,21 @@ async function editArtessenciaBox(ctx,products,existing={}){
  const dedication=el('input',{type:'checkbox'});dedication.checked=existing.allowDedication!==false;
  const extras=el('input',{type:'checkbox'});extras.checked=!!existing.allowExtras;
  form.append(wrap,field('Permitir dedicatória',dedication),field('Permitir artigos extra',extras),field('Notas internas',notes,true));
+ dedicationSupplement.addEventListener('input',updateEstimate);
  modal(existing.id?'Editar box ArtEssencia':'Nova box ArtEssencia',form,{wide:true,onSave:async()=>{
   if(!name.value.trim()){alert('Indica o nome da box.');return false}
   if(!components.length||components.some(c=>!c.productId||!Number.isInteger(c.qty)||c.qty<1)){alert('Adiciona artigos e quantidades válidos.');return false}
   const ids=new Set(products.map(p=>p.id));if(components.some(c=>!ids.has(c.productId))){alert('Existe um artigo indisponível.');return false}
   if(components.some(c=>products.find(p=>p.id===c.productId)?.active===false)){alert('Os modelos novos só podem conter artigos ativos.');return false}
   if(components.some(c=>!Number.isFinite(Number(products.find(p=>p.id===c.productId)?.price))||Number(products.find(p=>p.id===c.productId)?.price)<0)){alert('Corrige o PVP dos artigos antes de guardar o modelo.');return false}
+  if(components.some(c=>[c.scentSupplement,c.colorSupplement].some(x=>x!==undefined&&(!Number.isFinite(Number(x))||Number(x)<0)))){alert('Corrige os suplementos de personalização.');return false}
+  if(!Number.isFinite(Number(dedicationSupplement.value))||Number(dedicationSupplement.value)<0){alert('Suplemento da dedicatória inválido.');return false}
   if(components.some(c=>c.allowReplace)){alert('A substituição ainda exige uma lista de alternativas autorizadas. Desativa essa opção até estar configurada.');return false}
+  if(extras.checked){alert('A seleção de artigos extra só poderá ser ativada quando existir uma lista de artigos autorizados.');return false}
   if(!Number.isInteger(Number(preparation.value))||Number(preparation.value)<0){alert('Define um prazo de preparação válido, em dias inteiros.');return false}
   const financial=[packagingCost,laborCost,extraCost,salePrice].map(v=>Number(v.value));if(financial.some(v=>!Number.isFinite(v)||v<0)||salePrice.value.trim()===''){alert('Indica um PVP válido e custos adicionais não negativos.');return false}
   const margin=Number(targetMargin.value);if(!Number.isFinite(margin)||margin<0||margin>95){alert('A margem-alvo deve estar entre 0% e 95%.');return false}
-  await db.put('catalogs',{...existing,id:existing.id||uid('bx'),kind:'artessencia-gift-box-template',name:name.value.trim(),description:description.value,image:image.value,packaging:packaging.value,preparationDays:Math.max(0,Math.floor(Number(preparation.value)||0)),packagingCost:financial[0],laborCost:financial[1],extraCost:financial[2],targetMarginPct:margin,salePrice:financial[3],pricingStatus:'manual-unverified',components,allowDedication:dedication.checked,allowExtras:extras.checked,internalNotes:notes.value,active:false,published:false,updatedAt:new Date().toISOString()});
+  await db.put('catalogs',{...existing,id:existing.id||uid('bx'),kind:'artessencia-gift-box-template',name:name.value.trim(),description:description.value,image:image.value,packaging:packaging.value,preparationDays:Math.max(0,Math.floor(Number(preparation.value)||0)),packagingCost:financial[0],laborCost:financial[1],extraCost:financial[2],targetMarginPct:margin,salePrice:financial[3],pricingStatus:'manual-unverified',components,allowDedication:dedication.checked,dedicationSupplement:Number(dedicationSupplement.value),allowExtras:extras.checked,internalNotes:notes.value,active:false,published:false,updatedAt:new Date().toISOString()});
   toast('Modelo guardado como rascunho privado.');ctx.refresh();return true;
  }});
 }
