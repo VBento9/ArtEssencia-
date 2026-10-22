@@ -533,6 +533,20 @@ function visualCatalogExport(catalog,products){
 function aeBoxPhoto(url,name){const raw=String(url||'').trim();const safe=/^https:\/\/[^\s]+$/i.test(raw)||/^data:image\/(?:png|jpeg|webp);base64,[a-z0-9+/=]+$/i.test(raw);const holder=el('div',{class:'field'});if(safe){const img=el('img',{src:raw,alt:'Fotografia da box '+(name||''),loading:'lazy'});img.style.cssText='width:100%;max-height:180px;object-fit:contain;border-radius:12px';img.onerror=()=>{holder.replaceChildren(el('div',{class:'notice'},'Fotografia indisponível'))};holder.append(img)}else holder.append(el('div',{class:'notice'},'Fotografia ainda não definida'));return holder}
 function aeBoxIntegrity(product,materials,kitItems,products){if(!product)return ['Artigo inexistente'];const faults=[];const recipe=Array.isArray(product.recipe)?product.recipe:[];if(product.family==='kit'){const children=kitItems.filter(k=>k.kitProductId===product.id);if(!children.length)faults.push('Kit sem componentes');for(const item of children){const child=products.find(p=>p.id===item.productId);if(!child||!Number.isFinite(Number(item.qty))||Number(item.qty)<=0||!Number.isFinite(Number(child.lastTrueCost??child.lastProductionCost))||Number(child.lastTrueCost??child.lastProductionCost)<=0)faults.push('Componente de kit sem custo válido')}}else if(!recipe.length&&!Number.isFinite(Number(product.lastTrueCost))){faults.push('Sem receita ou custo comprovado')}else if(!recipe.length&&Number(product.lastTrueCost)<=0)faults.push('Custo registado não positivo');
 for(const line of recipe){const m=materials.find(x=>x.id===line.materialId);if(!m||!Number.isFinite(Number(line.qty))||Number(line.qty)<=0||m.unitCost==null||m.unitCost===''||!Number.isFinite(Number(m.unitCost))||Number(m.unitCost)<0)faults.push('Matéria-prima ou custo inválido')}return faults}
+function aeBoxStockNeed(product,qty,products,kitItems,trail=new Set()) {
+ if(!product||!Number.isFinite(Number(qty))||Number(qty)<=0)return {needs:[],errors:['Produto ou quantidade inválida']};
+ if(trail.has(product.id))return {needs:[],errors:['Referência circular no kit '+(product.name||product.id)]};
+ const visited=new Set(trail);visited.add(product.id);
+ const needs=[],errors=[];
+ const recipe=Array.isArray(product.recipe)?product.recipe:[];
+ for(const r of recipe){const units=Number(product.batchUnits);const n=Number(r.qty)*Number(qty)/(Number.isFinite(units)&&units>0?units:1);if(!r.materialId||!Number.isFinite(n)||n<=0)errors.push('Quantidade ou matéria inválida em '+product.name);else needs.push({materialId:r.materialId,qty:n})}
+ if(product.family==='kit'){
+  const children=kitItems.filter(k=>k.kitProductId===product.id);
+  if(!children.length)errors.push('Kit sem componentes: '+product.name);
+  for(const child of children){const p=products.find(x=>x.id===child.productId);const count=Number(child.qty)*Number(qty);const sub=aeBoxStockNeed(p,count,products,kitItems,visited);needs.push(...sub.needs);errors.push(...sub.errors)}
+ }else if(!recipe.length)errors.push('Produto sem receita de stock: '+product.name);
+ return {needs,errors};
+}
 async function artessenciaBoxesPanel(ctx){
  const [catalogs,products]=await Promise.all([db.all('catalogs'),db.all('products')]);
  const boxes=catalogs.filter(c=>c.kind==='artessencia-gift-box-template');
@@ -645,10 +659,10 @@ async function editArtessenciaBox(ctx,products,existing={}){
   const integrityWarnings=components.flatMap(c=>{const p=products.find(p=>p.id===c.productId);return aeBoxIntegrity(p,materials,kitItems,products).map(issue=>(p?.name||'Artigo')+': '+issue)});if(integrityWarnings.length&&!confirm('Custos não validados:\\n'+[...new Set(integrityWarnings)].join('\\n')+'\\nGuardar apenas como rascunho sem PVP validado?'))return false;
   const stockWarnings=[];
   const baseNeeds=new Map();
-  for(const c of components){const p=products.find(p=>p.id===c.productId);if(!p)continue;for(const line of stockNeed(p,c.qty)){baseNeeds.set(line.materialId,(baseNeeds.get(line.materialId)||0)+Number(line.qty))}}
+  for(const c of components){const p=products.find(p=>p.id===c.productId);if(!p)continue;const result=aeBoxStockNeed(p,c.qty,products,kitItems);stockWarnings.push(...result.errors);for(const line of result.needs){baseNeeds.set(line.materialId,(baseNeeds.get(line.materialId)||0)+Number(line.qty))}}
   const checkNeeds=(needs,context)=>{for(const [id,qty] of needs){const mat=materialById.get(id);if(!mat||!id||!Number.isFinite(qty)||qty<0||!Number.isFinite(Number(mat.stock))||Number(mat.stock)<qty)stockWarnings.push(context+': '+(mat?.name||id||'matéria desconhecida')+' (necessário '+qty+', disponível '+(mat?.stock??'n/d')+')')}};
   checkNeeds(baseNeeds,'Composição-base');
-  for(const c of components.filter(c=>c.allowReplace)){const original=products.find(p=>p.id===c.productId);for(const id of (c.alternativeProductIds||[])){const alternative=products.find(p=>p.id===id);if(!alternative||!original)continue;const scenario=new Map(baseNeeds);for(const line of stockNeed(original,c.qty))scenario.set(line.materialId,(scenario.get(line.materialId)||0)-Number(line.qty));for(const line of stockNeed(alternative,c.qty))scenario.set(line.materialId,(scenario.get(line.materialId)||0)+Number(line.qty));checkNeeds(scenario,'Alternativa '+alternative.name)}}
+  for(const c of components.filter(c=>c.allowReplace)){const original=products.find(p=>p.id===c.productId);for(const id of (c.alternativeProductIds||[])){const alternative=products.find(p=>p.id===id);if(!alternative||!original)continue;const scenario=new Map(baseNeeds);const originalNeed=aeBoxStockNeed(original,c.qty,products,kitItems),alternativeNeed=aeBoxStockNeed(alternative,c.qty,products,kitItems);stockWarnings.push(...originalNeed.errors,...alternativeNeed.errors);for(const line of originalNeed.needs)scenario.set(line.materialId,(scenario.get(line.materialId)||0)-Number(line.qty));for(const line of alternativeNeed.needs)scenario.set(line.materialId,(scenario.get(line.materialId)||0)+Number(line.qty));checkNeeds(scenario,'Alternativa '+alternative.name)}}
   if(stockWarnings.length&&!confirm('Aviso de stock (modelo privado):\n'+[...new Set(stockWarnings)].join('\n')+'\nGuardar rascunho mesmo assim?'))return false;
   if(!Number.isInteger(Number(preparation.value))||Number(preparation.value)<0){alert('Define um prazo de preparação válido, em dias inteiros.');return false}
   const financial=[packagingCost,laborCost,extraCost,salePrice].map(v=>Number(v.value));if(financial.some(v=>!Number.isFinite(v)||v<0)||salePrice.value.trim()===''){alert('Indica um PVP válido e custos adicionais não negativos.');return false}
