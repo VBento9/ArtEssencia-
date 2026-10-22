@@ -584,8 +584,11 @@ async async function editArtessenciaBox(ctx,products,existing={}){
    const replace=el('input',{type:'checkbox'});replace.checked=!!c.allowReplace;replace.onchange=()=>c.allowReplace=replace.checked;
    const scentExtra=input('scentExtra'+i,c.scentSupplement??0,'number',{min:0,step:.01}),colorExtra=input('colorExtra'+i,c.colorSupplement??0,'number',{min:0,step:.01});
    scentExtra.oninput=()=>{c.scentSupplement=Number(scentExtra.value);updateEstimate()};colorExtra.oninput=()=>{c.colorSupplement=Number(colorExtra.value);updateEstimate()};
-   product.onchange=()=>{c.productId=product.value;updateEstimate()};qty.oninput=()=>{c.qty=Number(qty.value);updateEstimate()};
-   list.append(el('div',{class:'card'},el('div',{class:'form-grid'},field('Artigo',product),field('Quantidade',qty),field('Permitir trocar fragrância',fragrance),field('Permitir escolher cor',color),field('Suplemento fragrância (€)',scentExtra),field('Suplemento cor (€)',colorExtra),field('Permitir substituição autorizada',replace)),el('div',{class:'toolbar'},button('Remover artigo',()=>{components.splice(i,1);renderComponents()},'danger small'))));
+   const alternatives=el('div',{class:'field span2'},el('label',{},'Alternativas autorizadas para este artigo'));const selected=new Set(c.alternativeProductIds||[]);
+   const renderAlternatives=()=>{alternatives.querySelectorAll('label.chip').forEach(n=>n.remove());for(const p of products.filter(p=>p.active!==false&&p.id!==c.productId)){const cb=el('input',{type:'checkbox'});cb.checked=selected.has(p.id);cb.onchange=()=>{cb.checked?selected.add(p.id):selected.delete(p.id);c.alternativeProductIds=[...selected]};alternatives.append(el('label',{class:'chip'},cb,' ',p.name))}};
+   replace.onchange=()=>{c.allowReplace=replace.checked;alternatives.style.display=replace.checked?'':'none'};alternatives.style.display=replace.checked?'':'none';renderAlternatives();
+   product.onchange=()=>{c.productId=product.value;selected.delete(product.value);c.alternativeProductIds=[...selected];renderAlternatives();updateEstimate()};qty.oninput=()=>{c.qty=Number(qty.value);updateEstimate()};
+   list.append(el('div',{class:'card'},el('div',{class:'form-grid'},field('Artigo',product),field('Quantidade',qty),field('Permitir trocar fragrância',fragrance),field('Permitir escolher cor',color),field('Suplemento fragrância (€)',scentExtra),field('Suplemento cor (€)',colorExtra),field('Permitir substituição autorizada',replace),alternatives),el('div',{class:'toolbar'},button('Remover artigo',()=>{components.splice(i,1);renderComponents()},'danger small'))));
   });
   updateEstimate();
  };
@@ -602,7 +605,8 @@ async async function editArtessenciaBox(ctx,products,existing={}){
   if(components.some(c=>!Number.isFinite(Number(products.find(p=>p.id===c.productId)?.price))||Number(products.find(p=>p.id===c.productId)?.price)<0)){alert('Corrige o PVP dos artigos antes de guardar o modelo.');return false}
   if(components.some(c=>[c.scentSupplement,c.colorSupplement].some(x=>x!==undefined&&(!Number.isFinite(Number(x))||Number(x)<0)))){alert('Corrige os suplementos de personalização.');return false}
   if(!Number.isFinite(Number(dedicationSupplement.value))||Number(dedicationSupplement.value)<0){alert('Suplemento da dedicatória inválido.');return false}
-  if(components.some(c=>c.allowReplace)){alert('A substituição ainda exige uma lista de alternativas autorizadas. Desativa essa opção até estar configurada.');return false}
+  if(components.some(c=>c.allowReplace&&(!(c.alternativeProductIds||[]).length||(c.alternativeProductIds||[]).some(id=>id===c.productId||!products.some(p=>p.id===id&&p.active!==false))))){alert('Escolhe alternativas válidas e ativas para os artigos que permitem substituição.');return false}
+  for(const c of components){if(!c.allowReplace)c.alternativeProductIds=[]}
   if(extras.checked){alert('A seleção de artigos extra só poderá ser ativada quando existir uma lista de artigos autorizados.');return false}
   if(!Number.isInteger(Number(preparation.value))||Number(preparation.value)<0){alert('Define um prazo de preparação válido, em dias inteiros.');return false}
   const financial=[packagingCost,laborCost,extraCost,salePrice].map(v=>Number(v.value));if(financial.some(v=>!Number.isFinite(v)||v<0)||salePrice.value.trim()===''){alert('Indica um PVP válido e custos adicionais não negativos.');return false}
