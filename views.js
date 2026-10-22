@@ -555,6 +555,8 @@ async async function editArtessenciaBox(ctx,products,existing={}){
  const dedicationSupplement=input('dedicationSupplement',existing.dedicationSupplement??0,'number',{min:0,step:.01});
  form.append(field('Suplemento dedicatória (€)',dedicationSupplement));
  const components=(existing.components||[]).map(c=>({...c}));
+ const dedication=el('input',{type:'checkbox'});dedication.checked=existing.allowDedication!==false;
+ const extras=el('input',{type:'checkbox'});extras.checked=!!existing.allowExtras;
  const list=el('div',{class:'grid'});
  const estimate=el('div',{class:'notice info'});
  const updateEstimate=()=>{
@@ -577,8 +579,8 @@ async async function editArtessenciaBox(ctx,products,existing={}){
    const allowed=products.filter(p=>p.active!==false||p.id===c.productId);
    const product=select('product'+i,[['','Selecionar artigo'],...allowed.map(p=>[p.id,p.name])],c.productId||'');
    const qty=input('qty'+i,c.qty||1,'number',{min:1,step:1});
-   const fragrance=el('input',{type:'checkbox'});fragrance.checked=!!c.allowFragrance;fragrance.onchange=()=>c.allowFragrance=fragrance.checked;
-   const color=el('input',{type:'checkbox'});color.checked=!!c.allowColor;color.onchange=()=>c.allowColor=color.checked;
+   const fragrance=el('input',{type:'checkbox'});fragrance.checked=!!c.allowFragrance;fragrance.onchange=()=>{c.allowFragrance=fragrance.checked;updateEstimate()};
+   const color=el('input',{type:'checkbox'});color.checked=!!c.allowColor;color.onchange=()=>{c.allowColor=color.checked;updateEstimate()};
    const replace=el('input',{type:'checkbox'});replace.checked=!!c.allowReplace;replace.onchange=()=>c.allowReplace=replace.checked;
    const scentExtra=input('scentExtra'+i,c.scentSupplement??0,'number',{min:0,step:.01}),colorExtra=input('colorExtra'+i,c.colorSupplement??0,'number',{min:0,step:.01});
    scentExtra.oninput=()=>{c.scentSupplement=Number(scentExtra.value);updateEstimate()};colorExtra.oninput=()=>{c.colorSupplement=Number(colorExtra.value);updateEstimate()};
@@ -590,10 +592,8 @@ async async function editArtessenciaBox(ctx,products,existing={}){
  renderComponents();
  [packagingCost,laborCost,extraCost,targetMargin,salePrice].forEach(v=>v.addEventListener('input',updateEstimate));
  const wrap=el('div',{class:'field span2'},el('label',{},'Composição-base e opções por artigo'),list,estimate,button('+ Adicionar artigo',()=>{components.push({productId:'',qty:1,allowFragrance:false,allowColor:false,allowReplace:false});renderComponents()},'ghost small'));
- const dedication=el('input',{type:'checkbox'});dedication.checked=existing.allowDedication!==false;
- const extras=el('input',{type:'checkbox'});extras.checked=!!existing.allowExtras;
  form.append(wrap,field('Permitir dedicatória',dedication),field('Permitir artigos extra',extras),field('Notas internas',notes,true));
- dedicationSupplement.addEventListener('input',updateEstimate);
+ dedicationSupplement.addEventListener('input',updateEstimate);dedication.addEventListener('change',updateEstimate);
  modal(existing.id?'Editar box ArtEssencia':'Nova box ArtEssencia',form,{wide:true,onSave:async()=>{
   if(!name.value.trim()){alert('Indica o nome da box.');return false}
   if(!components.length||components.some(c=>!c.productId||!Number.isInteger(c.qty)||c.qty<1)){alert('Adiciona artigos e quantidades válidos.');return false}
