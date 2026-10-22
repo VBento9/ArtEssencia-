@@ -668,7 +668,7 @@ export async function catalogsView(ctx,opts={}){
  return root;
 }
 
-async function legacyCreatorSettingsView(ctx,opts={}){const tab=opts.tab||'boxes',root=el('div'),nav=el('div',{class:'subnav'});[['boxes','Boxes ArtEssencia'],['catalogs','Catálogos'],['themes','Temas'],['occasions','Ocasiões'],['colors','Cores'],['personalizations','Personalizações'],['pricing','Preços do Criador']].forEach(([id,l])=>nav.append(el('button',{class:tab===id?'active':'',onclick:()=>ctx.go('catalogs',{tab:id})},l)));root.append(nav);
+async function legacyCreatorSettingsView(ctx,opts={}){const tab=opts.tab||'boxes',root=el('div'),nav=el('div',{class:'subnav'});[['boxes','Boxes ArtEssencia'],['catalogs','Catálogos'],['themes','Temas'],['occasions','Ocasiões'],['colors','Cores'],['personalizations','Personalizações'],['pricing','Preços do Criador']].forEach(([id,l])=>nav.append(el('button',{class:tab===id?'active':'',onclick:()=>ctx.go('catalogs',{tab:'legacy',legacyTab:id})},l)));root.append(nav);
  if(tab==='boxes')root.append(await artessenciaBoxesPanel(ctx));
  if(tab==='catalogs'){const products=await db.all('products'),catalogs=await db.all('catalogs');root.append(await catalogsPanel(ctx,catalogs,products))}
  if(tab==='themes')root.append(await managerCard(ctx,'themes','Temas','Ex.: Batizado, Comunhão, Natal, Botânico',[{key:'name',label:'Nome'},{key:'description',label:'Descrição',span2:true},{key:'image',label:'Imagem / URL',span2:true}]));
