@@ -586,6 +586,7 @@ async async function editArtessenciaBox(ctx,products,existing={}){
    scentExtra.oninput=()=>{c.scentSupplement=Number(scentExtra.value);updateEstimate()};colorExtra.oninput=()=>{c.colorSupplement=Number(colorExtra.value);updateEstimate()};
    const deltaPreview=el('div',{class:'notice info'});
    const simulation=select('replacementSimulation'+i,[['','Simular composição original'],...(c.alternativeProductIds||[]).map(id=>{const p=products.find(p=>p.id===id);return [id,p?.name||'Alternativa indisponível']})]);
+   simulation.dataset.boxSimulation='1';
    const updateSimulationOptions=()=>{const chosen=simulation.value;simulation.innerHTML='';for(const [id,label] of [['','Simular composição original'],...(c.alternativeProductIds||[]).map(id=>{const p=products.find(p=>p.id===id);return [id,p?.name||'Alternativa indisponível']})]){const opt=document.createElement('option');opt.value=id;opt.textContent=label;simulation.append(opt)}simulation.value=(c.alternativeProductIds||[]).includes(chosen)?chosen:'';renderDelta()};
    const renderDelta=()=>{const base=products.find(p=>p.id===c.productId);const b=Number(base?.price);const choices=(c.alternativeProductIds||[]).map(id=>products.find(p=>p.id===id)).filter(Boolean);const chosen=products.find(p=>p.id===simulation.value);const rawDelta=chosen&&Number.isFinite(Number(chosen.price))&&Number.isFinite(b)?Math.round((Number(chosen.price)-b)*100)*Math.max(1,Number(c.qty)||1)/100:0;const simulatedTotal=Math.round((Number(salePrice.value||0)+rawDelta)*100)/100;deltaPreview.textContent='Simulação do PVP: '+euro(Number(salePrice.value||0))+' + diferença '+euro(rawDelta)+' = '+(simulatedTotal>=0?euro(simulatedTotal):'inválido (negativo)')+'. '+(!choices.length?'Sem alternativas selecionadas.':choices.map(p=>{const a=Number(p.price);return p.name+': '+(Number.isFinite(a)&&Number.isFinite(b)?((a-b)>=0?'+':'')+euro(a-b)+' por unidade; total '+euro((a-b)*Math.max(1,Number(c.qty)||1)):'PVP em falta')}).join(' · ')+' · Diferenças informativas; não são aplicadas ao PVP da box nesta fase.'};
    simulation.onchange=renderDelta;
@@ -598,7 +599,7 @@ async async function editArtessenciaBox(ctx,products,existing={}){
   updateEstimate();
  };
  renderComponents();
- [packagingCost,laborCost,extraCost,targetMargin,salePrice].forEach(v=>v.addEventListener('input',updateEstimate));
+ [packagingCost,laborCost,extraCost,targetMargin,salePrice].forEach(v=>v.addEventListener('input',()=>{updateEstimate();list.querySelectorAll('[data-box-simulation]').forEach(n=>n.dispatchEvent(new Event('change')))}));
  const wrap=el('div',{class:'field span2'},el('label',{},'Composição-base e opções por artigo'),list,estimate,button('+ Adicionar artigo',()=>{components.push({productId:'',qty:1,allowFragrance:false,allowColor:false,allowReplace:false});renderComponents()},'ghost small'));
  form.append(wrap,field('Permitir dedicatória',dedication),field('Permitir artigos extra',extras),field('Notas internas',notes,true));
  dedicationSupplement.addEventListener('input',updateEstimate);dedication.addEventListener('change',updateEstimate);
