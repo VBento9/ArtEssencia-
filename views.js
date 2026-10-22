@@ -552,7 +552,7 @@ async function editArtessenciaBox(ctx,products,existing={}){
  const wizardNav=el('div',{class:'subnav field span2'});
  const wizardPages=[el('div',{class:'form-grid field span2'}),el('div',{class:'form-grid field span2'}),el('div',{class:'form-grid field span2'}),el('div',{class:'form-grid field span2'}),el('div',{class:'form-grid field span2'})];
  let wizardIndex=0;
- const showWizard=n=>{wizardIndex=Math.max(0,Math.min(4,n));wizardPages.forEach((p,i)=>p.style.display=i===wizardIndex?'':'none');wizardNav.querySelectorAll('button').forEach((b,i)=>b.classList.toggle('active',i===wizardIndex))};
+ let showWizard=n=>{wizardIndex=Math.max(0,Math.min(4,n));wizardPages.forEach((p,i)=>p.style.display=i===wizardIndex?'':'none');wizardNav.querySelectorAll('button').forEach((b,i)=>b.classList.toggle('active',i===wizardIndex))};
  ['1 · Identidade','2 · Artigos','3 · Personalização','4 · Preço','5 · Revisão'].forEach((title,i)=>wizardNav.append(button(title,()=>showWizard(i),'ghost small')));
  form.append(wizardNav,...wizardPages);
 
@@ -615,7 +615,7 @@ async function editArtessenciaBox(ctx,products,existing={}){
  const review=el('div',{class:'card field span2'});
  const updateReview=()=>{
   review.innerHTML='';
-  review.append(section('Revisão da Box','Resumo interno. A box não será publicada automaticamente.'),el('div',{class:'small'},'Nome: '+(name.value.trim()||'Por definir')),el('div',{class:'small'},'Artigos: '+(components.map(c=>{const p=products.find(x=>x.id===c.productId);return (p?.name||'Por selecionar')+' × '+c.qty}).join(' · ')||'Nenhum')),el('div',{class:'small'},'Personalizações: '+components.filter(c=>c.allowColor||c.allowFragrance||c.allowReplace).length+' artigo(s) com opções'),el('div',{class:'small'},'Dedicatória: '+(dedication.checked?'permitida':'não permitida')),el('div',{class:'small'},'PVP base: '+euro(Number(salePrice.value||0)),el('div',{class:'small muted'},'Estado após guardar: rascunho privado')));
+  review.append(section('Revisão da Box','Resumo interno. A box não será publicada automaticamente.'),el('div',{class:'small'},'Nome: '+(name.value.trim()||'Por definir')),el('div',{class:'small'},'Artigos: '+(components.map(c=>{const p=products.find(x=>x.id===c.productId);return (p?.name||'Por selecionar')+' × '+c.qty}).join(' · ')||'Nenhum')),el('div',{class:'small'},'Personalizações: '+components.filter(c=>c.allowColor||c.allowFragrance||c.allowReplace).length+' artigo(s) com opções'),el('div',{class:'small'},'Dedicatória: '+(dedication.checked?'permitida':'não permitida')),el('div',{class:'small'},'PVP base: '+euro(Number(salePrice.value||0))),el('div',{class:'small muted'},'Estado após guardar: rascunho privado'));
  };
  wizardPages[3].append(el('div',{class:'toolbar'},button('Seguinte: Revisão',()=>showWizard(4),'secondary small')));
  wizardPages[4].append(review);
