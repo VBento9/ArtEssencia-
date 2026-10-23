@@ -29,3 +29,5 @@ jobs:
         run: node scripts/test_ux_orders_filters.cjs
       - name: Protect order-production navigation
         run: node scripts/test_ux_order_production_safety.cjs
+      - name: Verify dashboard operational priorities
+        run: node scripts/test_ux_dashboard_priority.cjs
