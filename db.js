@@ -23,6 +23,27 @@ const QUARANTINED_CLIENT_IDS=new Set(["a6c6d526-005e-4d0f-8fa6-382844dad173","56
 export async function all(name){const s=await store(name);return new Promise((res,rej)=>{const r=s.getAll();r.onsuccess=()=>{const rows=r.result||[];res(name==='clients'?rows.filter(x=>!QUARANTINED_CLIENT_IDS.has(String(x?.id||''))):rows)};r.onerror=()=>rej(r.error)})}
 export async function get(name,id){const s=await store(name);return new Promise((res,rej)=>{const r=s.get(id);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
 export async function put(name,obj,opts={}){const s=await store(name,'readwrite');return new Promise((res,rej)=>{const r=s.put(obj);r.onsuccess=()=>{if(!opts?.silent&&typeof window!=='undefined')window.dispatchEvent(new CustomEvent('ae:local-change',{detail:{store:name,row:obj}}));res(obj)};r.onerror=()=>rej(r.error)})}
+export async function commitProductionConsumption(batch,materialRows,movementRows){
+  const database=await openDB();
+  const tx=database.transaction(['materials','stockMovements','productionBatches'],'readwrite');
+  const entries=[
+    ...materialRows.map(row=>({store:'materials',row})),
+    ...movementRows.map(row=>({store:'stockMovements',row})),
+    {store:'productionBatches',row:batch}
+  ];
+  const done=new Promise((resolve,reject)=>{
+    tx.oncomplete=()=>resolve();
+    tx.onabort=()=>reject(tx.error||new Error('Gravação da produção cancelada'));
+    tx.onerror=()=>reject(tx.error||new Error('Falha ao guardar a produção'));
+  });
+  try{for(const entry of entries)tx.objectStore(entry.store).put(entry.row)}
+  catch(error){tx.abort();await done.catch(()=>{});throw error}
+  await done;
+  if(typeof window!=='undefined'){
+    for(const entry of entries)window.dispatchEvent(new CustomEvent('ae:local-change',{detail:entry}));
+  }
+  return true;
+}
 export async function del(name,id){const s=await store(name,'readwrite');return new Promise((res,rej)=>{const r=s.delete(id);r.onsuccess=()=>res(true);r.onerror=()=>rej(r.error)})}
 export async function clear(name){const s=await store(name,'readwrite');return new Promise((res,rej)=>{const r=s.clear();r.onsuccess=()=>res(true);r.onerror=()=>rej(r.error)})}
 export async function exportAll(){const data={};for(const s of stores)data[s]=await all(s);return {meta:{app:'ArtEssencia Atelier Pro',version:'2.0.0',exportedAt:new Date().toISOString()},data}}

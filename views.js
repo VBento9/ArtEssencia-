@@ -72,7 +72,7 @@ export async function atelierView(ctx,opts={}){
     const econ=p?calcProduct(p,materials,[],products):null;
     if(econ)card.append(el('div',{class:'metric-list'},metric('Custo estimado lote',euro(econ.trueCost*Number(b.qty||1))),metric('Prazo / nota',b.note||'—')));
     const acts=el('div',{class:'toolbar'});
-    if(idx<stages.length-1)acts.append(button('Avançar etapa',async()=>{b.status=stages[idx+1];b.updatedAt=new Date().toISOString();if(b.status==='Pronto'&&!b.stockPosted){const ok=await consumeStock(p,b.qty||1,materials);if(!ok)return;b.stockPosted=true}await db.put('productionBatches',b);toast('Produção atualizada.');ctx.refresh()},'primary'));
+    if(idx<stages.length-1)acts.append(button('Avançar etapa',async()=>{const nextStatus=stages[idx+1];if(nextStatus==='Pronto'&&!b.stockPosted){const ok=await consumeStock(p,b.qty||1,materials,{...b,status:nextStatus,stockPosted:true,updatedAt:new Date().toISOString()});if(!ok)return;}else{await db.put('productionBatches',{...b,status:nextStatus,updatedAt:new Date().toISOString()})}toast('Produção atualizada.');ctx.refresh()},'primary'));
     acts.append(button('Editar',()=>productionModal(ctx,products,orders,b),'ghost small'));
     card.append(acts);cards.append(card);
   }
@@ -81,11 +81,17 @@ export async function atelierView(ctx,opts={}){
   if(opts.create)setTimeout(()=>productionModal(ctx,products,orders),0);
   return root;
 }
-async function consumeStock(product,qty,materials){
-  if(!product)return true;
+async function consumeStock(product,qty,materials,completedBatch){
+  if(!product){alert('Produto da produção não encontrado.');return false}
   const needs=stockNeed(product,qty);
-  for(const n of needs){const m=materials.find(x=>x.id===n.materialId);if(!m||Number(m.stock||0)<n.qty){alert(`Stock insuficiente: ${m?.name||'matéria em falta'}`);return false}}
-  for(const n of needs){const m=materials.find(x=>x.id===n.materialId);m.stock=Number(m.stock||0)-n.qty;m.updatedAt=new Date().toISOString();await db.put('materials',m);await db.put('stockMovements',{id:uid('sm'),materialId:m.id,type:'out',qty:n.qty,note:`Produção: ${product.name}`,createdAt:new Date().toISOString()})}
+  const totals=new Map();
+  for(const n of needs){
+    const amount=Number(n.qty),id=n.materialId;
+    if(!id||!Number.isFinite(amount)||amount<0){alert('Ficha técnica inválida: verifica materiais e quantidades.');return false}
+    totals.set(id,(totals.get(id)||0)+amount);
+  }
+  for(const [id,amount] of totals){const m=materials.find(x=>x.id===id);if(!m||!Number.isFinite(Number(m.stock))||Number(m.stock)<amount){alert(`Stock insuficiente: ${m?.name||'matéria em falta'}`);return false}}
+  const changed=[],movements=[];for(const [id,amount] of totals){if(amount===0)continue;const m=materials.find(x=>x.id===id);changed.push({...m,stock:Number(m.stock)-amount,updatedAt:new Date().toISOString()});movements.push({id:uid('sm'),materialId:m.id,type:'out',qty:amount,note:`Produção: ${product.name}`,createdAt:new Date().toISOString()})}try{await db.commitProductionConsumption(completedBatch,changed,movements)}catch(e){alert('Não foi possível concluir a produção. Nenhuma alteração parcial foi guardada localmente.');return false}
   return true;
 }
 function productionModal(ctx,products,orders,existing={}){
@@ -402,7 +408,7 @@ export async function stockView(ctx,opts={}){
  if(tab==='movements'){root.append(el('div',{class:'toolbar'},button('+ Movimento manual',()=>stockMoveModal(ctx,materials),'primary')));root.append(table(['Data','Artigo','Tipo','Quantidade','Motivo'],moves.sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt))).map(m=>[fmt(m.createdAt),esc(materials.find(x=>x.id===m.materialId)?.name||m.materialId),badge(m.type,m.type==='in'?'ok':m.type==='waste'?'danger':'warn'),Number(m.qty||0).toFixed(3),esc(m.note||'')])))}
  if(tab==='alerts'){const crit=materials.filter(m=>Number(m.stock)<=Number(m.minStock||0));root.append(el('div',{class:'card'},section('Lista de compras sugerida','Materiais abaixo ou no mínimo'),table(['Matéria','Atual','Mínimo','Sugestão'],crit.map(m=>[esc(m.name),`${m.stock} ${m.unit}`,`${m.minStock} ${m.unit}`,`${Math.max(0,Number(m.minStock||0)*2-Number(m.stock||0)).toFixed(2)} ${m.unit}`]))))}return root;
 }
-function stockMoveModal(ctx,materials){const f=el('div',{class:'form-grid'}),mat=select('m',[['','Selecionar'],...materials.map(m=>[m.id,m.name])]),type=select('type',[['in','Entrada'],['out','Saída'],['waste','Desperdício'],['adjust','Acerto para valor']]),qty=input('qty',0,'number',{step:.001}),note=input('note','');f.append(field('Artigo',mat),field('Tipo',type),field('Quantidade / novo valor',qty),field('Motivo',note));modal('Movimento de stock',f,{onSave:async()=>{const m=materials.find(x=>x.id===mat.value);if(!m)return false;const q=Number(qty.value||0),before=Number(m.stock||0);m.stock=type.value==='adjust'?q:type.value==='in'?before+q:before-q;m.updatedAt=new Date().toISOString();await db.put('materials',m);await db.put('stockMovements',{id:uid('sm'),materialId:m.id,type:type.value,qty:q,before,after:m.stock,note:note.value,createdAt:new Date().toISOString()});ctx.refresh();return true}})}
+function stockMoveModal(ctx,materials){const f=el('div',{class:'form-grid'}),mat=select('m',[['','Selecionar'],...materials.map(m=>[m.id,m.name])]),type=select('type',[['in','Entrada'],['out','Saída'],['waste','Desperdício'],['adjust','Acerto para valor']]),qty=input('qty',0,'number',{step:.001}),note=input('note','');f.append(field('Artigo',mat),field('Tipo',type),field('Quantidade / novo valor',qty),field('Motivo',note));modal('Movimento de stock',f,{onSave:async()=>{const m=materials.find(x=>x.id===mat.value);if(!m)return false;const raw=String(qty.value??'').trim(),q=Number(raw),before=Number(m.stock||0);if(!raw||!Number.isFinite(q)||q<0||(type.value!=='adjust'&&q===0)){alert('Introduz uma quantidade válida e positiva.');return false}if(!Number.isFinite(before)||before<0){alert('Stock atual inválido. Verifica a matéria antes de continuar.');return false}if((type.value==='out'||type.value==='waste')&&q>before){alert('Stock insuficiente para este movimento.');return false}m.stock=type.value==='adjust'?q:type.value==='in'?before+q:before-q;m.updatedAt=new Date().toISOString();await db.put('materials',m);await db.put('stockMovements',{id:uid('sm'),materialId:m.id,type:type.value,qty:q,before,after:m.stock,note:note.value,createdAt:new Date().toISOString()});ctx.refresh();return true}})}
 
 export async function cashAdvancedView(ctx,opts={}){
  const [cash,payments,orders,items,clients,expenses,investments,transfers]=await Promise.all(['cashMovements','payments','orders','orderItems','clients','expenses','investments','transfers'].map(db.all));const tab=opts.tab||'cash',root=el('div'),nav=el('div',{class:'subnav'});[['cash','Caixa'],['receivable','Por receber'],['expenses','Despesas'],['investments','Investimentos'],['transfers','Transferências']].forEach(([id,l])=>nav.append(el('button',{class:tab===id?'active':'',onclick:()=>ctx.go('cash',{tab:id})},l)));root.append(nav);
