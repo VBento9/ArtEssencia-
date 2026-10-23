@@ -4178,50 +4178,71 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
   <section id="catalogs" class="screen">
     <div class="catalog-dashboard card">
       <div>
-        <div class="section-title" style="margin:0">Catálogos & Caixas</div>
-        <p class="muted" style="margin:4px 0 0">Centraliza o catálogo de produtos, conjuntos temáticos e coleções sazonais da futura loja.</p>
+        <div class="section-title" style="margin:0">Boxes & Presentes · ArtEssencia</div>
+        <p class="muted" style="margin:4px 0 0">Gere as boxes e embalagens ArtEssencia. A seleção de produtos para PDF e partilha é feita em Catálogos Visuais.</p>
       </div>
       <div class="catalog-top-actions">
-        <button class="btn" onclick="previewMenuPDF()">Ver catálogo</button>
-        <button class="btn" onclick="previewThemedBoxesPDF()">Ver catálogo de caixas</button>
+        <button class="btn primary" type="button" onclick="go('visualCatalogs')">Selecionar produtos e criar PDF</button>
       </div>
     </div>
 
-    <div id="catalogSummary" class="catalog-summary"></div>
+    <div class="card" style="margin:12px 0"><strong>Gestão ArtEssencia</strong><p class="muted">O antigo criador de ocasiões e temas foi retirado deste ecrã. Os dados mantêm-se preservados.</p></div><div id="catalogSummary" class="catalog-summary"></div>
 
-    <section class="catalog-documents-stack-v1731">
-      <article class="card catalog-document-card catalog-document-card-v1731">
-        <div>
-          <div class="catalog-doc-kicker">CATÁLOGO</div>
-          <div class="section-title" style="margin:3px 0 4px">Produtos ArtEssencia</div>
-          <p class="muted">Gerado automaticamente a partir dos produtos e PVP definidos em Produtos.</p>
-        </div>
-        <div class="catalog-actions catalog-actions-v1731">
-          <button class="btn" onclick="previewMenuPDF()">Ver PDF</button>
-          <button class="btn primary" onclick="shareMenuPDF()">Enviar PDF</button>
-          <button class="btn" onclick="downloadMenuPDF()">Guardar PDF</button>
-        </div>
-      </article>
+    <section class="card" aria-label="Partilhar seleção de produtos"><div class="section-title">Partilhar produtos selecionados</div><p class="muted">Para enviar uma seleção de produtos de Natal, Halloween, outra ocasião ou uma coleção, utiliza Catálogos Visuais. Escolhes os artigos, a ordem e o formato, sem os adicionares a uma box.</p><button class="btn primary" type="button" onclick="go('visualCatalogs')">Abrir Catálogos Visuais</button></section>
 
-      <article class="card catalog-document-card catalog-document-card-v1731">
-        <div>
-          <div class="catalog-doc-kicker">CAIXAS TEMÁTICAS</div>
-          <div class="section-title" style="margin:3px 0 4px">Catálogo para clientes</div>
-          <p class="muted">Fotografia, capacidade, descrição e preço de venda das caixas especiais.</p>
-        </div>
-        <div class="catalog-actions catalog-actions-v1731">
-          <button class="btn" onclick="previewThemedBoxesPDF()">Ver PDF</button>
-          <button class="btn primary" onclick="shareThemedBoxesPDF()">Enviar PDF</button>
-          <button class="btn" onclick="downloadThemedBoxesPDF()">Guardar PDF</button>
-        </div>
-      </article>
+    <section class="card" id="aeBoxComposerV2">
+      <div class="section-title">Simulador de Produção de Boxes · ArtEssencia</div>
+      <p class="muted">Calcula o custo real previsto com matérias-primas do stock, embalagem, montagem e margem. Simulação privada, sem descontar stock.</p>
+      <div class="form-grid">
+        <div class="field"><label>Nome da box</label><input id="aeSimName" placeholder="Ex.: Box Aconchego"></div>
+        <div class="field"><label>Matéria-prima do Stock</label><select id="aeSimMaterial"></select></div>
+        <div class="field"><label>Quantidade na unidade do Stock</label><input id="aeSimQty" type="number" min="0.001" step="any" value="100"></div>
+        <div class="field"><label>&nbsp;</label><button type="button" class="btn primary" onclick="aeSimAdd()">Adicionar material</button></div>
+      </div>
+      <div id="aeSimLines" class="catalog-grid"></div>
+      <div class="form-grid">
+        <div class="field"><label>Custo da embalagem (€)</label><input id="aeSimPackaging" type="number" step="0.01" min="0" value="0"></div>
+        <div class="field"><label>Outros custos (€)</label><input id="aeSimOther" type="number" step="0.01" min="0" value="0"></div>
+        <div class="field"><label>Tempo de montagem (min)</label><input id="aeSimMinutes" type="number" step="1" min="0" value="0"></div>
+        <div class="field"><label>Custo hora (€)</label><input id="aeSimHourly" type="number" step="0.01" min="0" value="6"></div>
+        <div class="field"><label>Desperdício (%)</label><input id="aeSimWaste" type="number" step="0.1" min="0" max="100" value="10"></div>
+        <div class="field"><label>Margem pretendida (%)</label><input id="aeSimMargin" type="number" step="1" min="0" max="95" value="60"></div>
+      </div>
+      <div class="card" style="margin-top:12px"><strong>Resultado da simulação</strong><div id="aeSimSummary" aria-live="polite">Adiciona materiais para simular.</div></div>
+      <div class="btnrow"><button class="btn primary" type="button" onclick="aeSimSave()">Guardar simulação local</button><button class="btn" type="button" onclick="aeSimReset()">Limpar</button></div>
+      <small class="muted">Os preços são retirados do Stock. Valores sem custo unitário válido são sinalizados e bloqueiam a simulação. Não cria produtos nem encomendas.</small>
     </section>
 
-    <section class="card catalog-editor-card catalog-editor-card-v1731">
+    <section class="card" id="aeUnifiedBoxesEditor">
+      <div class="section-title">Criar / editar Box ArtEssencia</div>
+      <p class="muted">Composição, personalização, custos e pré-visualização num único editor. Modelos privados deste dispositivo; não são publicados na Loja nem alteram as caixas prontas.</p>
+      <input type="hidden" id="aeBoxDraftId">
+      <div class="form-grid">
+        <div class="field"><label>Nome da box</label><input id="aeBoxDraftName" placeholder="Ex.: Box Aconchego"></div>
+        <div class="field"><label>PVP base (€)</label><input id="aeBoxDraftPrice" type="number" min="0" step=".01" value="0"></div>
+        <div class="field"><label>Fotografia da box</label><input id="aeBoxDraftFile" type="file" accept="image/*"><input id="aeBoxDraftImage" type="hidden"><small class="muted">Escolhe uma imagem do dispositivo.</small></div>
+        <div class="field"><label>Embalagem (€)</label><input id="aeBoxDraftPackaging" type="number" min="0" step=".01" value="0"></div>
+      </div>
+      <div class="section-title" style="margin-top:12px">Composição e artigos</div>
+      <div class="form-grid">
+        <div class="field"><label>Pesquisar produto</label><input id="aeBoxSearch" type="search" placeholder="Nome ou SKU"><div id="aeBoxSearchResults" role="listbox" style="max-height:260px;overflow:auto"></div><input type="hidden" id="aeBoxDraftProduct"><small id="aeBoxResults" class="muted"></small><strong id="aeBoxChosen" style="display:block"></strong></div>
+        <div class="field"><label>Quantidade</label><input id="aeBoxDraftQty" type="number" min="1" step="1" value="1"></div>
+      </div>
+      <div class="btnrow"><small class="muted">Toca no botão do produto para o adicionar imediatamente à composição.</small></div>
+      <div id="aeBoxDraftLines"></div>
+      <div class="section-title" style="margin-top:12px">Personalização autorizada</div>
+      <div class="btnrow"><label><input type="checkbox" id="aeBoxDraftColor"> Escolha de cor</label><label><input type="checkbox" id="aeBoxDraftScent"> Escolha de fragrância</label><label><input type="checkbox" id="aeBoxDraftDedication"> Dedicatória</label></div>
+      <div class="section-title" style="margin-top:12px">Revisão e pré-visualização</div>
+      <div id="aeBoxDraftReview" class="card" aria-live="polite"></div>
+      <div class="btnrow"><button class="btn primary" type="button" onclick="aeBoxDraftSave()">Guardar rascunho privado</button><button class="btn" type="button" onclick="aeBoxDraftReset()">Nova box</button></div>
+      <div class="section-title" style="margin-top:12px">Modelos guardados neste dispositivo</div>
+      <div id="aeBoxDraftSaved"></div>
+    </section>
+    <section class="card catalog-editor-card catalog-editor-card-v1731" style="display:none" aria-hidden="true">
       <div class="catalog-editor-head">
         <div>
-          <div class="section-title" style="margin:0">Adicionar / editar conjunto personalizado</div>
-          <small>Associa uma apresentação temática a uma caixa física e define o preço ao cliente.</small>
+          <div class="section-title" style="margin:0">Criar / editar uma Box ArtEssencia</div>
+          <small>Define a embalagem física, fotografia e preço. A composição por produtos será integrada neste editor numa fase seguinte.</small>
         </div>
       </div>
       <input id="themeBoxId" type="hidden">
@@ -4239,7 +4260,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       <div class="catalog-theme-preview-v1731"><img id="themeBoxPreview" class="image-preview hidden" alt="Pré-visualização"></div>
     </section>
 
-    <section class="card catalog-creator-card creator-ui-v114 catalog-creator-card-v1731">
+    <section class="card catalog-creator-card creator-ui-v114 catalog-creator-card-v1731" id="aeLegacyCreatorSettings" style="display:none" aria-hidden="true">
       <div class="creator-ui-head creator-head-v1261">
         <div>
           <div class="section-title" style="margin:0">Criador de Caixas</div>
@@ -16342,3 +16363,60 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 @media(max-width:650px){#dashboard .dashboard-profitability-v1769{grid-template-columns:1fr 1fr}#dashboard .dashboard-profit-card-v1769{grid-template-columns:32px minmax(0,1fr);padding:10px}.dashboard-profit-icon-v1769{width:32px!important;height:32px!important}.dashboard-profit-card-v1769 strong{font-size:17px!important}}
 </style>
 <!-- V1.7.69 — Dashboard: materiais, trabalho, custos gerais, custo total, lucro e fluxo de caixa separados -->
+
+<script id="ae-box-simulator-v2">
+(function(){
+ const KEY='ae_preview_box_simulator_v2';
+ const fields=['aeSimPackaging','aeSimOther','aeSimMinutes','aeSimHourly','aeSimWaste','aeSimMargin'];
+ let lines=[];
+ const $=id=>document.getElementById(id), num=v=>Number(v), money=v=>v.toFixed(2).replace('.',',')+' €';
+ const materials=()=>typeof db!=='undefined'&&Array.isArray(db.stock)?db.stock:[];
+ const identity=(m,i)=>String(m.id??m.code??i);
+ const valid=x=>Number.isFinite(x)&&x>=0;
+ const unitPrice=m=>m&&m.unitCost!==''&&m.unitCost!==null&&m.unitCost!==undefined?Number(m.unitCost):NaN;
+ const stockQuantity=m=>m&&m.qty!==''&&m.qty!==null&&m.qty!==undefined?Number(m.qty):NaN;
+ function refreshOptions(){const sel=$('aeSimMaterial');if(!sel)return;const prev=sel.value;sel.replaceChildren();materials().forEach((m,i)=>{const op=document.createElement('option');op.value=identity(m,i);op.textContent=(m.name||'Material')+' ('+(m.unit||'un.')+')';sel.append(op)});if([...sel.options].some(x=>x.value===prev))sel.value=prev;render()}
+ function calculate(){const mats=materials();let materialCost=0,ok=true,warnings=[];
+ for(const l of lines){const m=mats.find((m,i)=>identity(m,i)===l.id),unit=unitPrice(m);if(!m||!Number.isFinite(unit)||unit<0||!valid(l.qty)||l.qty<=0){ok=false;warnings.push('Material sem custo unitário ou quantidade válida: '+(m?.name||l.id));continue}materialCost+=unit*l.qty;const available=stockQuantity(m);if(Number.isFinite(available)&&l.qty>available)warnings.push('Stock insuficiente para '+m.name+': '+l.qty+' '+(m.unit||'un.')+' necessários; disponíveis '+available+' (simulação sem reserva).')}
+ const vals=fields.map(id=>{const v=$(id)?.value;return v===''||v==null?NaN:num(v)});if(vals.some(x=>!valid(x))||vals[4]>100||vals[5]>95){ok=false;warnings.push('Corrige os custos, desperdício e margem.')}
+ const [pack,other,minutes,hourly,waste,margin]=vals;
+ const labor=minutes/60*hourly,base=materialCost+pack+other+labor,total=base*(1+waste/100),price=total/(1-margin/100);
+ if(![labor,total,price].every(Number.isFinite))ok=false;
+ return {ok,materialCost,labor,total,price,warnings}}
+ function render(){const host=$('aeSimLines'),summary=$('aeSimSummary');if(!host||!summary)return;host.replaceChildren();
+ lines.forEach((l,i)=>{const m=materials().find((m,j)=>identity(m,j)===l.id);const row=document.createElement('div');row.className='card';row.style.margin='8px 0';const label=document.createElement('span');label.textContent=(m?.name||'Material indisponível')+' · '+l.qty+' '+(m?.unit||'un.')+' · '+(Number.isFinite(unitPrice(m))&&unitPrice(m)>=0?money(unitPrice(m)*l.qty):'custo desconhecido');const remove=document.createElement('button');remove.type='button';remove.className='btn';remove.textContent='Retirar';remove.onclick=()=>{lines.splice(i,1);render()};row.append(label,remove);host.append(row)});
+ const result=calculate();summary.textContent=result.ok?('Matérias-primas: '+money(result.materialCost)+' · Mão de obra: '+money(result.labor)+' · Custo total com desperdício: '+money(result.total)+' · PVP recomendado: '+money(result.price))+(result.warnings.length?' · Avisos: '+result.warnings.join(' · '):''):('Simulação incompleta. '+result.warnings.join(' · '))}
+ window.aeSimAdd=()=>{const id=$('aeSimMaterial')?.value,qty=$('aeSimQty')?.value===''?NaN:num($('aeSimQty')?.value);if(!id||!Number.isFinite(qty)||qty<=0){alert('Seleciona um material e quantidade positiva.');return}const item=lines.find(l=>l.id===id);if(item)item.qty+=qty;else lines.push({id,qty});render()};
+ window.aeSimSave=()=>{const name=$('aeSimName')?.value.trim(),result=calculate();if(!name||!lines.length||!result.ok){alert('Preenche o nome, materiais e custos válidos antes de guardar.');return}const values=Object.fromEntries(fields.map(id=>[id,$(id).value]));try{localStorage.setItem(KEY,JSON.stringify({name,lines,values}));alert('Simulação guardada localmente. Não foi publicada.')}catch{alert('Falha ao guardar neste dispositivo.')}};
+ window.aeSimReset=()=>{lines=[];if($('aeSimName'))$('aeSimName').value='';render()};
+ function init(){const data=(()=>{try{return JSON.parse(localStorage.getItem(KEY)||'null')}catch{return null}})();if(data&&Array.isArray(data.lines)){lines=data.lines.filter(x=>typeof x.id==='string'&&Number.isFinite(num(x.qty))&&num(x.qty)>0);if($('aeSimName'))$('aeSimName').value=data.name||'';for(const [id,value] of Object.entries(data.values||{}))if(fields.includes(id)&&$(id))$(id).value=value}
+ fields.forEach(id=>$(id)?.addEventListener('input',render));refreshOptions()}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+ document.addEventListener('click',e=>{if(e.target?.closest?.('[onclick*="catalogs"]'))setTimeout(refreshOptions,100)});
+})();
+</script>
+
+<script id="ae-unified-boxes-drafts">
+(function(){
+ const KEY='ae_boxes_unified_drafts_v1'; let items=[],lines=[],selectedProductId='';
+ const $=id=>document.getElementById(id), money=n=>Number(n).toFixed(2).replace('.',',')+' €';
+ const products=()=>typeof db!=='undefined'&&Array.isArray(db.products)?db.products:[];
+ const productKey=p=>String(p?.code||p?.sku||p?.id||'').trim();
+ const findByKey=key=>products().find(p=>productKey(p)===key);
+ const get=()=>{try{const v=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(v)?v:[]}catch{return []}};
+ const set=()=>{localStorage.setItem(KEY,JSON.stringify(items))};
+ const num=id=>{const value=$(id)?.value;if(value===''||value==null)return NaN;return Number(value)};
+ const preview=()=>{const host=$('aeBoxDraftReview');if(!host)return;host.replaceChildren();const img=$('aeBoxDraftImage')?.value.trim()||'';if(/^(https:\/\/\S+|data:image\/(?:png|jpeg|webp);base64,)/i.test(img)){const el=document.createElement('img');el.src=img;el.alt='Fotografia da box';el.style.cssText='max-width:100%;max-height:180px;object-fit:contain';el.onerror=()=>el.remove();host.append(el)}
+ const sum=lines.reduce((n,l)=>{const p=findByKey(l.productId);const v=Number(p?.price);return n+(Number.isFinite(v)?v*l.qty:0)},0);
+ const cost=document.createElement('p');cost.textContent='Artigos: '+lines.length+' · Referência de PVP individual: '+money(sum)+' · Embalagem: '+(Number.isFinite(num('aeBoxDraftPackaging'))?money(num('aeBoxDraftPackaging')):'inválida')+' · PVP da box: '+(Number.isFinite(num('aeBoxDraftPrice'))?money(num('aeBoxDraftPrice')):'inválido')+'. Os custos de produção e a disponibilidade de stock exigem validação no Backoffice; nenhum stock é reservado.';host.append(cost)};
+ const render=()=>{const host=$('aeBoxDraftLines');if(!host)return;host.replaceChildren();lines.forEach((l,i)=>{const p=findByKey(l.productId);const row=document.createElement('div');row.className='card';row.style.margin='6px 0';const label=document.createElement('span');label.textContent=(p?.name||'Produto indisponível')+' × '+l.qty+' ';const b=document.createElement('button');b.className='btn';b.type='button';b.textContent='Retirar';b.onclick=()=>{lines.splice(i,1);render()};row.append(label,b);host.append(row)});preview()};
+ const saved=()=>{const host=$('aeBoxDraftSaved');if(!host)return;host.replaceChildren();items.forEach(x=>{const row=document.createElement('div');row.className='card';row.style.margin='6px 0';const name=document.createElement('strong');name.textContent=x.name+' · '+x.components.length+' artigos · rascunho privado ';const b=document.createElement('button');b.className='btn';b.type='button';b.textContent='Editar';b.onclick=()=>{aeBoxDraftReset();$('aeBoxDraftId').value=x.id;$('aeBoxDraftName').value=x.name;$('aeBoxDraftPrice').value=x.price;$('aeBoxDraftPackaging').value=x.packaging;$('aeBoxDraftImage').value=x.image||'';$('aeBoxDraftColor').checked=!!x.color;$('aeBoxDraftScent').checked=!!x.scent;$('aeBoxDraftDedication').checked=!!x.dedication;lines=x.components.map(y=>({...y}));render()};row.append(name,b);host.append(row)})};
+ window.aeBoxDraftAdd=(productId)=>{const id=String(productId||''),qty=num('aeBoxDraftQty');if(!id||!Number.isInteger(qty)||qty<1)return alert('Define uma quantidade inteira positiva.');const duplicates=products().filter(x=>productKey(x)===id);if(duplicates.length!==1)return alert('Referência de produto inexistente ou duplicada.');const p=duplicates[0];const current=lines.find(x=>x.productId===id);if(current)current.qty+=qty;else lines.push({productId:id,qty});$('aeBoxChosen').textContent='Adicionado: '+(p.name||'Produto')+' × '+qty;render()};
+ window.aeBoxDraftReset=()=>{$('aeBoxDraftId').value='';if($('aeBoxDraftFile'))$('aeBoxDraftFile').value='';$('aeBoxDraftName').value='';$('aeBoxDraftPrice').value=0;$('aeBoxDraftPackaging').value=0;$('aeBoxDraftImage').value='';for(const id of ['aeBoxDraftColor','aeBoxDraftScent','aeBoxDraftDedication'])$(id).checked=false;lines=[];render()};
+ window.aeBoxDraftSave=()=>{const name=$('aeBoxDraftName').value.trim(),price=num('aeBoxDraftPrice'),pack=num('aeBoxDraftPackaging');if(!name||!lines.length||!Number.isFinite(price)||price<0||!Number.isFinite(pack)||pack<0)return alert('Preenche nome, composição, preço e embalagem com valores válidos.');if(lines.some(l=>!products().some(p=>productKey(p)===l.productId)))return alert('Existem produtos indisponíveis.');const id=$('aeBoxDraftId').value||'box-'+Date.now()+'-'+Math.random().toString(36).slice(2,7);const obj={id,name,price,packaging:pack,image:$('aeBoxDraftImage').value.trim(),components:lines.map(l=>({...l})),color:$('aeBoxDraftColor').checked,scent:$('aeBoxDraftScent').checked,dedication:$('aeBoxDraftDedication').checked,published:false,active:false,updatedAt:new Date().toISOString()};const before=items.slice();const idx=items.findIndex(x=>x.id===id);if(idx>=0)items[idx]=obj;else items.push(obj);try{set();const stored=get().find(x=>x.id===id);if(!stored||stored.name!==obj.name||stored.components.length!==obj.components.length||stored.components.some((c,i)=>c.productId!==obj.components[i].productId||c.qty!==obj.components[i].qty)||stored.image!==obj.image)throw Error('Persistência incompleta')}catch(e){items=before;return alert('Não foi possível guardar localmente.')}saved();$('aeBoxDraftId').value=id;alert('Rascunho guardado neste dispositivo. Não foi publicado.')};
+ const filter=()=>{const host=$('aeBoxSearchResults');if(!host)return;const q=($('aeBoxSearch').value||'').trim().toLocaleLowerCase('pt-PT');selectedProductId='';$('aeBoxDraftProduct').value='';$('aeBoxChosen').textContent='Nenhum produto selecionado';host.replaceChildren();const matches=products().filter(p=>p.active!==false&&productKey(p)&&[p.name,p.sku,p.code].some(v=>String(v||'').toLocaleLowerCase('pt-PT').includes(q))).slice(0,40);for(const p of matches){const btn=document.createElement('button');btn.type='button';btn.className='btn';btn.style.cssText='display:block;width:100%;text-align:left;margin:4px 0';btn.textContent=(p.name||'Produto')+(p.sku?' · '+p.sku:'');btn.onclick=()=>window.aeBoxDraftAdd(productKey(p));host.append(btn)}$('aeBoxResults').textContent=matches.length+' resultados. Toca no nome do produto para o selecionar.'};
+ const init=()=>{items=get();if(!$('aeBoxSearchResults'))return;if(!$('aeBoxSearch').dataset.ready){$('aeBoxSearch').addEventListener('input',filter);$('aeBoxSearch').dataset.ready='1';$('aeBoxDraftFile').addEventListener('change',async()=>{const file=$('aeBoxDraftFile').files?.[0];if(!file)return;if(!['image/jpeg','image/png','image/webp'].includes(file.type))return alert('Usa uma fotografia JPG, PNG ou WebP.');if(file.size>12*1024*1024)return alert('Fotografia demasiado grande. Usa uma imagem até 12 MB.');try{$('aeBoxDraftImage').value=await compressImageFile(file);preview()}catch(e){alert('Erro ao processar fotografia.')}});for(const id of ['aeBoxDraftPrice','aeBoxDraftPackaging'])$(id)?.addEventListener('input',preview)}filter();saved();render()};
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+ document.addEventListener('click',e=>{if(e.target?.closest?.('[onclick*="catalogs"]'))setTimeout(init,100)});
+})();
+</script>
