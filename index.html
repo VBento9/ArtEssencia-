@@ -3990,13 +3990,14 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
             <div class="stock-photo-editor-v1771">
               <div id="stockImagePlaceholderV1771" class="stock-photo-placeholder-v1771">📷</div>
               <img id="stockImagePreviewV1771" class="stock-photo-preview-v1771 hidden" alt="Pré-visualização da matéria-prima">
-              <div class="stock-photo-controls-v1771">
-                <input id="stockImageFileV1771" type="file" accept="image/jpeg,image/png,image/webp" onchange="previewStockImageFileV1771()">
-                <div class="stock-photo-actions-v1771">
-                  <button type="button" class="btn" onclick="uploadStockImageV1771()">Carregar fotografia</button>
-                  <button type="button" class="btn ghost" onclick="removeStockImageV1771()">Remover</button>
+              <div class="product-photo-editor">
+                <div>
+                  <input id="stockImageFileV1771" type="file" accept="image/jpeg,image/png,image/webp" onchange="previewStockImageFileV1771()">
+                  <div class="btnrow" style="margin-top:8px">
+                    <button type="button" class="btn" onclick="uploadStockImageV1771()">Carregar</button>
+                    <button type="button" class="btn danger" onclick="removeStockImageV1771()">Remover</button>
+                  </div>
                 </div>
-                <small>JPG, PNG ou WebP · máx. 8 MB. Seleciona uma imagem guardada no dispositivo.</small>
               </div>
             </div>
             <input id="stockImageUrlV1771" type="hidden">
@@ -6114,7 +6115,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.22';
+const APP_VERSION='1.9.23';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -8714,10 +8715,9 @@ function setStockImagePreviewV1771(url=''){
 }
 function previewStockImageFileV1771(){
  const file=document.getElementById('stockImageFileV1771')?.files?.[0];if(!file)return;
- if(!/^image\/(jpeg|png|webp)$/i.test(file.type))return toast('Formato de imagem não suportado');
- if(file.size>8*1024*1024)return toast('A imagem é demasiado grande (máx. 8 MB)');
- const img=document.getElementById('stockImagePreviewV1771'),ph=document.getElementById('stockImagePlaceholderV1771');
- if(img){img.src=URL.createObjectURL(file);img.classList.remove('hidden')}if(ph)ph.classList.add('hidden');
+ if(!/^image\\/(jpeg|png|webp)$/i.test(file.type))return toast('Formato de imagem não suportado');
+ if(file.size>12*1024*1024)return toast('A imagem é demasiado grande (máx. 12 MB antes da otimização)');
+ const r=new FileReader();r.onload=()=>{const img=document.getElementById('stockImagePreviewV1771'),ph=document.getElementById('stockImagePlaceholderV1771');if(img){img.src=r.result;img.classList.remove('hidden')}if(ph)ph.classList.add('hidden')};r.readAsDataURL(file);
 }
 function stockImageSafeNameV1771(v){return String(v||'materia-prima').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'materia-prima'}
 async function uploadStockImageV1771(){
