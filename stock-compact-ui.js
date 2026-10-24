@@ -15,11 +15,15 @@ function init(){
  const useStoredImages=()=>{
    form.querySelectorAll('input[type="file"]').forEach(input=>{
      input.removeAttribute('capture');
-     input.accept='image/*';
+     // Extensões explícitas evitam o pedido de captura da câmara em Android.
+     input.setAttribute('accept','.jpg,.jpeg,.png,.webp,.gif,.heic,.heif');
    });
  };
  useStoredImages();
- new MutationObserver(useStoredImages).observe(form,{childList:true,subtree:true,attributes:true,attributeFilter:['capture']});
+ new MutationObserver(useStoredImages).observe(form,{childList:true,subtree:true,attributes:true,attributeFilter:['capture','accept']});
+ // Ajustar também imediatamente antes do gesto que abre o seletor.
+ form.addEventListener('pointerdown',useStoredImages,true);
+ form.addEventListener('click',useStoredImages,true);
  const makeButton=label=>{const b=document.createElement('button');b.type='button';b.textContent=label;return b};
  const container=document.createElement('div');container.id='aeStockCompactControls';container.className='ae-stock-compact-controls';
  const actions=document.createElement('div');actions.className='ae-stock-action-tabs';
