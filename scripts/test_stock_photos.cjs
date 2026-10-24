@@ -24,7 +24,7 @@ for(const m of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi))new vm.Scr
    remove:async()=>{throw new Error('Must preserve previously stored objects')}
   })}});
   // Exercise real addStock and serialization without scheduling cloud synchronization.
-  cloudAutoPushSoon=()=>{};
+  scheduleCloudPushV1860=()=>{};
   window.fixtureOld='https://fixture.invalid/old.png';
   db.stock=[{name:'Fixture wax',qty:1000,unit:'g',min:0,target:null,unitCost:.01,preferredSupplier:'',imageUrl:fixtureOld}];
   go('stock');loadStock(0);
