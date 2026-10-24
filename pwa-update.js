@@ -8,7 +8,7 @@
   Object.assign(box.style,{position:'fixed',bottom:'20px',left:'16px',right:'16px',zIndex:'99999',padding:'16px',background:'#fff',color:'#5a240b',border:'2px solid #5a240b',borderRadius:'12px'});
   const message=document.createElement('span');message.textContent='Atualização disponível. Conclui e guarda o que estás a editar antes de atualizar. ';
   const button=document.createElement('button');button.className='btn primary';button.textContent='Carregar atualização';
-  button.onclick=()=>{location.reload()};box.append(message,button);document.body.append(box);
+  button.onclick=()=>{const url=new URL(location.href);url.searchParams.set('ae_update',Date.now().toString());location.replace(url.href)};box.append(message,button);document.body.append(box);
  }
  async function check(){
   if(checking||!navigator.onLine)return;checking=true;
