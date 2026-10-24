@@ -10,6 +10,16 @@ function init(){
  const movement=stock.querySelector('.stock-move-section-v1721');
  const anchor=list?.querySelector('.tablewrap');
  if(!list||!form||!movement||!anchor)return;
+ // No formulário de matérias-primas, escolher imagens guardadas em vez de abrir a câmara.
+ // Preserva os handlers de pré-visualização e gravação existentes.
+ const useStoredImages=()=>{
+   form.querySelectorAll('input[type="file"]').forEach(input=>{
+     input.removeAttribute('capture');
+     input.accept='image/*';
+   });
+ };
+ useStoredImages();
+ new MutationObserver(useStoredImages).observe(form,{childList:true,subtree:true,attributes:true,attributeFilter:['capture']});
  const makeButton=label=>{const b=document.createElement('button');b.type='button';b.textContent=label;return b};
  const container=document.createElement('div');container.id='aeStockCompactControls';container.className='ae-stock-compact-controls';
  const actions=document.createElement('div');actions.className='ae-stock-action-tabs';
