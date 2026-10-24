@@ -10,32 +10,6 @@ function init(){
  const movement=stock.querySelector('.stock-move-section-v1721');
  const anchor=list?.querySelector('.tablewrap');
  if(!list||!form||!movement||!anchor)return;
- // Abrir imagens guardadas através do seletor de ficheiros do Android.
- // Mantém o input original e os seus handlers de pré-visualização e upload.
- const imageInput=document.getElementById('stockImageFileV1771');
- if(imageInput){
-   imageInput.removeAttribute('capture');
-   imageInput.removeAttribute('accept');
-   imageInput.style.display='none';
-   const choose=document.createElement('button');
-   choose.type='button';choose.className='btn ghost';
-   choose.textContent='Escolher imagem da galeria';
-   choose.addEventListener('click',async()=>{
-     if(typeof window.showOpenFilePicker==='function'){
-       try{
-         const [handle]=await window.showOpenFilePicker({multiple:false,types:[{description:'Imagens',accept:{'image/jpeg':['.jpg','.jpeg'],'image/png':['.png'],'image/webp':['.webp']}}]});
-         if(!handle)return;
-         const file=await handle.getFile();
-         const dt=new DataTransfer();dt.items.add(file);imageInput.files=dt.files;
-         imageInput.dispatchEvent(new Event('change',{bubbles:true}));
-       }catch(error){
-         if(error?.name==='AbortError')return;
-         imageInput.click();
-       }
-     }else imageInput.click();
-   });
-   imageInput.insertAdjacentElement('afterend',choose);
- }
  const makeButton=label=>{const b=document.createElement('button');b.type='button';b.textContent=label;return b};
  const container=document.createElement('div');container.id='aeStockCompactControls';container.className='ae-stock-compact-controls';
  const actions=document.createElement('div');actions.className='ae-stock-action-tabs';
