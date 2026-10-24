@@ -3991,8 +3991,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
               <div id="stockImagePlaceholderV1771" class="stock-photo-placeholder-v1771">📷</div>
               <img id="stockImagePreviewV1771" class="stock-photo-preview-v1771 hidden" alt="Pré-visualização da matéria-prima">
               <div class="stock-photo-controls-v1771">
-                <input id="stockImageFileV1771" type="file" accept=".jpg,.jpeg,.png,.webp" style="display:none" onchange="previewStockImageFileV1771()">
-                <button type="button" class="btn ghost" onclick="chooseStockImageFromFilesV1771()">Escolher imagem da galeria ou ficheiros</button>
+                <input id="stockImageFileV1771" type="file" accept="image/jpeg,image/png,image/webp" onchange="previewStockImageFileV1771()">
                 <div class="stock-photo-actions-v1771">
                   <button type="button" class="btn" onclick="uploadStockImageV1771()">Carregar fotografia</button>
                   <button type="button" class="btn ghost" onclick="removeStockImageV1771()">Remover</button>
@@ -6115,7 +6114,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.21';
+const APP_VERSION='1.9.22';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -8721,18 +8720,6 @@ function previewStockImageFileV1771(){
  if(img){img.src=URL.createObjectURL(file);img.classList.remove('hidden')}if(ph)ph.classList.add('hidden');
 }
 function stockImageSafeNameV1771(v){return String(v||'materia-prima').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'materia-prima'}
-async function chooseStockImageFromFilesV1771(){
- const input=document.getElementById('stockImageFileV1771');if(!input)return;
- if(typeof window.showOpenFilePicker==='function'){
-  try{
-   const handles=await window.showOpenFilePicker({multiple:false,types:[{description:'Fotografias',accept:{'image/jpeg':['.jpg','.jpeg'],'image/png':['.png'],'image/webp':['.webp']}}]});
-   if(!handles?.length)return;
-   const file=await handles[0].getFile(),dt=new DataTransfer();dt.items.add(file);input.files=dt.files;
-   input.dispatchEvent(new Event('change',{bubbles:true}));return;
-  }catch(error){if(error?.name==='AbortError')return;console.warn('Seletor de ficheiros alternativo:',error)}
- }
- input.removeAttribute('capture');input.click();
-}
 async function uploadStockImageV1771(){
  const file=document.getElementById('stockImageFileV1771')?.files?.[0];if(!file)return toast('Escolhe primeiro uma fotografia');
  if(!/^image\/(jpeg|png|webp)$/i.test(file.type))return toast('Formato de imagem não suportado');
