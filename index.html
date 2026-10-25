@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.28">
+<meta name="artessencia-version" content="1.9.29">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <link rel="manifest" href="manifest.webmanifest">
@@ -5674,7 +5674,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       <div id="productPublicStatusV1850" class="product-public-status-v1850" aria-live="polite"><div class="pps-head"><div><strong>Estado público do produto</strong><small>Leitura rápida do último estado guardado. Não altera publicação, preços, stock ou ficha técnica.</small></div><span class="badge">Novo produto</span></div><div class="pps-grid"><div class="pps-item"><span>Estado</span><b>Guarda ou seleciona um produto</b></div></div></div>
       <div class="form-grid">
         <div class="product-editor-panel-v1762 active" data-product-panel="identity">
-        <div class="product-section-divider-v1748"><span>1</span><div><strong>Identificação e disponibilidade</strong><small>Dados base, categoria, disponibilidade, coleções e Ficha Técnica.</small></div></div>
+        <div class="product-section-divider-v1748"><span>1</span><div><strong>Identificação e disponibilidade</strong><small>Dados base, categoria, disponibilidade e coleções.</small></div></div>
         <div class="field span2 product-name-v1726"><label>Nome</label><input id="prodName" placeholder="Nome do produto"></div>
         <div class="field product-code-field-v147"><label>Código</label><input id="prodCode" maxlength="40" placeholder="Automático se ficar vazio"><small>Identidade interna; fica protegida depois da criação.</small></div>
         <div class="field" id="prodCategoryField"><label>Tipo / família do produto</label><select id="prodCat" onchange="syncProductionTypeFromCategoryV130()"><option value="Velas em molde">Velas decorativas / em molde</option><option value="Velas em recipiente">Velas em recipiente</option><option value="Wax melts">Wax melts</option><option value="Sabonetes">Sabonetes</option><option value="Resina e Jesmonite">Resina e Jesmonite</option><option value="Personalizados">Personalizados</option><option value="Outros produtos artesanais">Outros produtos artesanais</option></select><small class="mix-help">Define o tipo físico do produto. Ex.: uma vela decorativa pode depois pertencer simultaneamente a Natal, Páscoa ou outra coleção.</small></div>
@@ -6132,7 +6132,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.28';
+const APP_VERSION='1.9.29';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -11762,8 +11762,12 @@ function productSearchTextV1752(p){
 function productPublicDescriptionV1762(p){const raw=String(p?.shopDescription||'').trim();if(!raw)return '';if(p?.aprecoImportIdV1753&&/^[\d\s.,x×-]{1,12}$/i.test(raw))return '';return raw}
 function productCompletenessV1762(p){const photo=!!String(p?.shopImageUrl||'').trim(),tech=productTechSheetStateV146(p).ok,description=!!productPublicDescriptionV1762(p),price=(Number(p?.onlinePrice)>0||Number(p?.price)>0),review=(Array.isArray(p?.tagsV1753)&&p.tagsV1753.includes('Por rever'))||!!p?.aprecoNeedsReviewV1753;return{photo,tech,description,price,review,ready:photo&&tech&&description&&price&&!review}}
 function renderProductCompletenessEditorV1762(p=null){const el=document.getElementById('productCompletenessEditorV1762');if(!el)return;if(!p){el.innerHTML='<span>Seleciona ou cria um produto para acompanhar o preenchimento.</span>';return}const c=productCompletenessV1762(p);el.innerHTML=[[c.photo,'Fotografia'],[c.tech,'Ficha Técnica'],[c.description,'Descrição'],[c.price,'PVP'],[!c.review,'Revisão']].map(([ok,l])=>`<span class="${ok?'ok':'warn'}">${ok?'✓':'•'} ${l}</span>`).join('')+`<span class="${c.ready?'ok':'warn'}">${c.ready?'✓ Pronto para publicar':'Ainda incompleto'}</span>`}
-function showProductPanelV1762(name='identity'){document.querySelectorAll('#products [data-product-panel]').forEach(x=>x.classList.toggle('active',x.dataset.productPanel===name));document.querySelectorAll('#products [data-product-panel-btn]').forEach(x=>x.classList.toggle('active',x.dataset.productPanelBtn===name));try{localStorage.setItem('artessencia_product_panel_v1762',name)}catch(_){}}
-function restoreProductPanelV1762(){let n='identity';try{n=localStorage.getItem('artessencia_product_panel_v1762')||'identity'}catch(_){};if(!['identity','pricing','production','public'].includes(n))n='identity';showProductPanelV1762(n)}
+function showProductPanelV1762(name='identity'){
+ document.querySelectorAll('#products [data-product-panel]').forEach(x=>x.classList.toggle('active',x.dataset.productPanel===name));
+ document.querySelectorAll('#products [data-product-panel-btn]').forEach(x=>{const active=x.dataset.productPanelBtn===name;x.classList.toggle('active',active);x.setAttribute('aria-selected',String(active));x.tabIndex=active?0:-1});
+ try{localStorage.setItem('artessencia_product_panel_v1762',name)}catch(_){}
+}
+function restoreProductPanelV1762(){let n='identity';try{n=localStorage.getItem('artessencia_product_panel_v1762')||'identity'}catch(_){};if(!['identity','photos','pricing','production','public'].includes(n))n='identity';showProductPanelV1762(n)}
 let bulkPersonalizationSelectedV1821=new Set();
 let bulkPersonalizationSourceSignatureV1822='';
 function personalizationConfiguredPartsV1821(p){

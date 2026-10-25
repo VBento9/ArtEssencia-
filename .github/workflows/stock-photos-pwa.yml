@@ -12,6 +12,9 @@ on:
       - 'scripts/test_*integrity*.cjs'
       - 'scripts/test_reports_costs*.cjs'
       - 'scripts/test_orders_layout_browser.cjs'
+      - 'scripts/test_products_editor_browser.cjs'
+      - 'product-editor-guide.*'
+      - 'products-compact-ui.*'
       - 'order-detail-compact-ui.*'
       - 'orders-compact-ui.*'
       - 'scripts/test_production_atomic_sql.cjs'
@@ -62,3 +65,6 @@ jobs:
 
       - name: Verify compact order workflow
         run: node scripts/test_orders_layout_browser.cjs
+
+      - name: Verify product editor and draft preservation
+        run: node scripts/test_products_editor_browser.cjs

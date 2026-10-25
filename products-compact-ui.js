@@ -9,7 +9,7 @@ function init(){
  if(!hero||!form||!list||filters.length<2)return;
  const bar=document.createElement('div');bar.id='aeProductsCompact';bar.className='ae-products-compact-bar';
  const make=(label)=>{const el=document.createElement('button');el.type='button';el.textContent=label;return el};
- const showList=make('Ver catálogo'),showForm=make('Novo / editar produto'),filterButton=make('Filtros avançados');
+ const showList=make('Ver catálogo'),showForm=make('Abrir editor'),filterButton=make('Filtros avançados');
  bar.append(showList,showForm,filterButton);
  const summary=document.getElementById('productsSummary');
  (summary||hero).after(bar);
