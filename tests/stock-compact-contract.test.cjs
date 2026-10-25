@@ -34,8 +34,17 @@ test('a interface principal carrega ambos os recursos do Stock compacto',()=>{
   assert.match(index,/<link rel="stylesheet" href="\.\/stock-compact-ui\.css" id="ae-stock-compact-styles">/);
   assert.match(index,/<script defer src="\.\/stock-compact-ui\.js" id="ae-stock-compact-script"><\/script>/);
 });
-test('o service worker procura JavaScript e CSS na rede, sem servir versões antigas',()=>{
-  const sw=fs.readFileSync(path.join(root,'sw.js'),'utf8');
-  assert.ok(sw.includes('js|css|json|webmanifest'));
-  assert.ok(sw.includes("cache:'no-store'"));
+test('o service worker prefere rede e só recupera código da cache da versão atual',async()=>{
+  const sw=fs.readFileSync(path.join(root,'sw.js'),'utf8'),handlers={},stored=new Map();
+  let offline=false,options;
+  const context={URL,Response,self:{location:{origin:'https://fixture.invalid'},addEventListener:(n,f)=>handlers[n]=f},
+    caches:{open:async name=>{assert.equal(name,'artessencia-backoffice-'+JSON.parse(fs.readFileSync(path.join(root,'version.json'))).app);return {put:async(r,v)=>stored.set(r.url,v),match:async r=>stored.get(r.url)}},match:()=>{throw new Error('Must not read caches of other versions')}},
+    fetch:async(r,o)=>{options=o;if(offline)throw new Error('offline');return new Response('current-network-code')}
+  };
+  require('node:vm').runInNewContext(sw,context);
+  for(const ext of ['js','css']){
+    let response;const request={method:'GET',url:'https://fixture.invalid/stock-compact-ui.'+ext};
+    offline=false;handlers.fetch({request,respondWith:p=>response=p});assert.equal(await(await response).text(),'current-network-code');assert.equal(options.cache,'no-store');
+    offline=true;handlers.fetch({request,respondWith:p=>response=p});assert.equal(await(await response).text(),'current-network-code');
+  }
 });

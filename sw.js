@@ -1,16 +1,28 @@
-const CACHE='artessencia-backoffice-1.9.25';
-const CORE=['/','/index.html','/pwa-update.js','/manifest.webmanifest','/brand-artessencia.png','/icon-192.png','/icon-512.png'];
-self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)));self.skipWaiting()});
+const CACHE='artessencia-backoffice-1.9.26';
+const SUPABASE_SDK="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0";
+const CORE=["/", "/index.html", "/pwa-update.js", "/manifest.webmanifest", "/brand-artessencia.png", "/icon-192.png", "/icon-512.png", "/order-detail-compact-ui.js", "/order-detail-compact-ui.css", "/production-compact-ui.js", "/production-compact-ui.css", "/product-editor-guide.js", "/product-editor-guide.css", "/stock-compact-ui.js", "/stock-compact-ui.css", "/dashboard-compact-ui.js", "/dashboard-compact-ui.css", "/products-compact-ui.js", "/products-compact-ui.css", "/orders-compact-ui.js", "/orders-compact-ui.css"];
+self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE).then(()=>c.addAll([SUPABASE_SDK]).catch(()=>{}))));self.skipWaiting()});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE&&(k.startsWith('artessencia-backoffice-')||k.startsWith('artessencia-v12-'))).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('message',event=>{if(event.data?.type==='SKIP_WAITING')self.skipWaiting()});
 self.addEventListener('fetch',event=>{
  if(event.request.method!=='GET')return;
- const url=new URL(event.request.url);
- if(url.origin!==self.location.origin)return;
- // Ficheiros de código e versão nunca devem ser recuperados de uma cache antiga.
- const fresh=/\.(?:js|css|json|webmanifest)$/i.test(url.pathname)||url.pathname==='/sw.js';
- if(fresh){event.respondWith(fetch(event.request,{cache:'no-store'}));return}
- event.respondWith(fetch(event.request,{cache:event.request.mode==='navigate'?'no-store':'default'}).then(res=>{if(res.ok){const copy=res.clone();caches.open(CACHE).then(c=>c.put(event.request,copy)).catch(()=>{})}return res}).catch(()=>caches.match(event.request).then(r=>r||(event.request.mode==='navigate'?caches.match('/index.html'):Response.error()))));
+ const url=new URL(event.request.url),sdk=url.href===SUPABASE_SDK;
+ if(url.origin!==self.location.origin&&!sdk)return;
+ // API responses and version discovery remain network-only.
+ if(!sdk&&(/\.(?:json|webmanifest)$/i.test(url.pathname)||url.pathname==='/sw.js'||url.pathname.startsWith('/api/'))){event.respondWith(fetch(event.request,{cache:'no-store'}));return}
+ const code=sdk||/\.(?:js|css)$/i.test(url.pathname);
+ const task=(async()=>{
+  const cache=await caches.open(CACHE);
+  try{
+   const response=await fetch(event.request,{cache:code||event.request.mode==='navigate'?'no-store':'default'});
+   if(!response.ok)throw new Error('Resource unavailable');
+   try{await cache.put(event.request,response.clone())}catch(e){}
+   return response;
+  }catch(e){
+   return await cache.match(event.request)||(event.request.mode==='navigate'?await cache.match('/index.html'):null)||Response.error();
+  }
+ })();
+ event.respondWith(task);
 });
 function pushPayload(event){try{return event.data?.json?.()||{}}catch(e){return {body:event.data?.text?.()||''}}}
 self.addEventListener('push',event=>{

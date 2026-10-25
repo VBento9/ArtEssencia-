@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.25">
+<meta name="artessencia-version" content="1.9.26">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <link rel="manifest" href="manifest.webmanifest">
@@ -6116,7 +6116,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.25';
+const APP_VERSION='1.9.26';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -6162,6 +6162,80 @@ function stableStringify(v){
 }
 function dataFingerprint(v){const str=stableStringify(v);let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}return (h>>>0).toString(16)}
 function parseLocal(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}}
+
+// Backoffice-only production transaction and explicit local-storage recovery.
+let productionBusyV1926=false,localSaveFailedV1926=false;
+const PRODUCTION_PENDING_V1926='artessencia_production_pending_v1926';
+function productionPendingV1926(){return parseLocal(PRODUCTION_PENDING_V1926)}
+function productionBlockedV1926(){return productionBusyV1926||!!productionPendingV1926()||localSaveFailedV1926}
+function productionOverlayV1926(message,retry=false){
+ let box=document.getElementById('productionTransactionV1926');
+ if(!box){box=document.createElement('div');box.id='productionTransactionV1926';box.setAttribute('role','alertdialog');box.setAttribute('aria-modal','true');box.style.cssText='position:fixed;inset:0;z-index:99998;background:#f5f0e9;display:grid;place-content:center;padding:24px;text-align:center;gap:16px';document.body.append(box)}
+ box.replaceChildren();const title=document.createElement('h2');title.textContent='Conclusão da produção';const text=document.createElement('p');text.textContent=message;box.append(title,text);
+ if(retry){const btn=document.createElement('button');btn.className='btn';btn.textContent='Verificar e concluir';btn.onclick=()=>resumeProductionV1926();box.append(btn);btn.focus()}
+}
+function showLocalSaveRecoveryV1926(){
+ let box=document.getElementById('localSaveRecoveryV1926');if(box)return;
+ box=document.createElement('div');box.id='localSaveRecoveryV1926';box.setAttribute('role','alertdialog');box.style.cssText='position:fixed;inset:0;z-index:99999;background:#fff8ef;display:grid;place-content:center;padding:24px;gap:16px;text-align:center';
+ const text=document.createElement('p');text.textContent='Não foi possível guardar neste dispositivo. As alterações continuam na memória: não feches a aplicação. Guarda uma cópia de segurança antes de libertar espaço no dispositivo e tentar novamente.';
+ const backup=document.createElement('button');backup.className='btn';backup.textContent='Descarregar cópia de segurança';backup.onclick=()=>downloadBlob(backupBlob(),backupFileName('ArtEssencia_recuperacao'));
+ const retry=document.createElement('button');retry.className='btn';retry.textContent='Tentar guardar novamente';retry.onclick=()=>{if(save())toast('Alterações guardadas neste dispositivo')};box.append(text,backup,retry);document.body.append(box);
+}
+window.addEventListener('beforeunload',event=>{if(localSaveFailedV1926||productionBusyV1926){event.preventDefault();event.returnValue=''}});
+window.addEventListener('load',()=>{if(productionPendingV1926())productionOverlayV1926('Existe uma conclusão por confirmar. A sincronização está suspensa até verificar o resultado na Cloud.',true)});
+function productionComparableV1926(value,kind='order'){
+ const keys=kind==='product'?['code','name','manufactured']:['id','status','items','technicalSnapshotV1757','box','boxes','delivery'];
+ const data={};for(const key of keys)if(value[key]!==undefined)data[key]=value[key];return stableStringify(data);
+}
+async function completeProductionAtomicV1926(run,orders){
+ if(productionBlockedV1926())return;
+ if(navigator.onLine===false)return toast('Liga a internet para concluir a produção com segurança');
+ if(cloudBusy||cloudPushRunning||cloudHydrating||!cloudStartupDone)return toast('Aguarda a sincronização antes de concluir a produção');
+ relDetectChangedOrders();
+ if(cloudMeta().dirty||cloudMeta().conflict||localStorage.getItem(REL_DIRTY)==='1'||relOrderPendingSet().size){scheduleCloudPushV1860(100);return toast('Existem alterações por sincronizar. Aguarda a confirmação Cloud e volta a concluir.')}
+ productionBusyV1926=true;productionOverlayV1926('A validar encomendas, fichas técnicas e stock na Cloud…');
+ try{
+  const user=await ensureCloudSession();if(!user)throw new Error('Inicia sessão na Cloud para concluir a produção');
+  const [state,remoteOrders,remoteProducts]=await Promise.all([fetchCloudRowAuthoritative(user),relFetchAll(REL_TABLES.orders),relFetchAll(REL_TABLES.products)]);
+  if(!state||stableStringify(operationalCloudSnapshotV139())!==stableStringify(operationalCloudRowSnapshotV1858(state)))throw new Error('O stock ou as fichas técnicas mudaram. Recebe os dados da Cloud antes de concluir.');
+  const snapshots=orders.map(order=>{const row=remoteOrders.find(r=>r.id===order._rid);if(!row||productionComparableV1926(row.data)!==productionComparableV1926(order))throw new Error('A encomenda '+order.id+' mudou ou ainda não está sincronizada. Recebe os dados da Cloud.');return row});
+  const used=new Map();for(const order of orders)for(const line of order.items||[]){if(productionLineIgnoredV148(line))continue;const product=productionProductForLineV130(line);const row=remoteProducts.find(r=>r.id===product?._rid);if(!row||productionComparableV1926(row.data,'product')!==productionComparableV1926(product,'product'))throw new Error('Um produto mudou ou ainda não está sincronizado. Recebe os dados da Cloud.');used.set(row.id,row)}
+  const pending={userId:user.id,args:{p_revision:state.revision,p_run:run,p_orders:snapshots,p_products:[...used.values()],p_device:getDeviceId()}};
+  // Persist before issuing the RPC: a lost response/restart must reuse this id.
+  localStorage.setItem(PRODUCTION_PENDING_V1926,JSON.stringify(pending));
+ }catch(error){document.getElementById('productionTransactionV1926')?.remove();toast(error.message||'Não foi possível preparar a produção');return false}
+ finally{productionBusyV1926=false}
+ return resumeProductionV1926();
+}
+async function resumeProductionV1926(){
+ if(productionBusyV1926)return false;
+ const pending=productionPendingV1926();if(!pending)return false;
+ productionBusyV1926=true;productionOverlayV1926('A confirmar a transação na Cloud. Aguarda…');
+ let committed=false;
+ try{
+  const user=await ensureCloudSession();if(!user||user.id!==pending.userId)throw new Error('Inicia sessão com a conta que iniciou esta produção.');
+  if(navigator.onLine===false)throw new Error('Sem internet. Liga a rede e volta a verificar.');
+  const {data,error}=await cloudClient.rpc('artessencia_complete_production_backoffice_v1',pending.args);
+  if(error){
+   // These are explicit PostgreSQL rejections: the transaction rolled back.
+   if(['P0001','40001','22023','22P02','42501'].includes(error.code)){
+    localStorage.removeItem(PRODUCTION_PENDING_V1926);document.getElementById('productionTransactionV1926')?.remove();
+    toast('Produção não concluída: '+(error.message||'dados alterados na Cloud')+'. Recebe os dados da Cloud e verifica a produção.');return false;
+   }
+   throw new Error(error.message||'A Cloud não confirmou o resultado.');
+  }
+  if(!data?.state?.data||data.state.user_id!==user.id||!Array.isArray(data.orders)||!data.state.data.productionRuns?.some(r=>r.id===pending.args.p_run.id))throw new Error('Resposta incompleta. É necessário verificar novamente.');
+  committed=true;
+  // Apply only the authoritative transaction response; never optimistically consume stock.
+  CLOUD_OPERATIONAL_KEYS_V139.forEach(key=>{if(data.state.data[key]!==undefined)db[key]=relClone(data.state.data[key])});
+  for(const row of data.orders){const index=db.orders.findIndex(o=>o._rid===row.id||o.id===row.data.id);const value={...(index>=0?db.orders[index]:{}),...row.data,_rid:row.id,status:row.status};if(index<0)db.orders.push(value);else db.orders[index]=value;relClearOrderPending(value);relShadowRememberOrder(value)}
+  localStorage.setItem(KEY,JSON.stringify(db));saveConfirmedShadow(data.state);
+  setCloudMeta({baseRevision:Number(data.state.revision),remoteRevision:Number(data.state.revision),lastCloudAt:data.state.updated_at,lastSync:new Date().toISOString(),dirty:false,verified:true,conflict:false});
+  localStorage.removeItem(REL_DIRTY);localStorage.removeItem(PRODUCTION_PENDING_V1926);
+  document.getElementById('productionTransactionV1926')?.remove();renderAll();toast('Produção confirmada na Cloud · stock descontado · encomendas Prontas');return true;
+ }catch(error){productionOverlayV1926((committed?'A produção ficou confirmada na Cloud, mas a cópia local não foi guardada. ':'O resultado ainda não foi confirmado. ')+(error.message||'Tenta novamente.')+' Verificar novamente não desconta o stock duas vezes.',true);return false}
+ finally{productionBusyV1926=false}
+}
 
 function relOrderKey(o){
  if(!o)return '';
@@ -6240,7 +6314,7 @@ function relShadowForgetOrder(o){
  try{localStorage.setItem(REL_ORDER_SHADOW,JSON.stringify(sh))}catch(e){}
 }
 function relDetectChangedOrders(){
- if(cloudApplying)return;
+ if(cloudApplying||productionBlockedV1926())return;
  const sh=relOrderShadowMap();
  const pending=relOrderPendingSet();
  (db.orders||[]).forEach(o=>{
@@ -6430,14 +6504,18 @@ function renderAfterSaveV1800(scope='all'){
  renderBackupInfo();
 }
 function save(scope='all'){
- if(!cloudApplying)relDetectChangedOrders();
- localStorage.setItem(KEY,JSON.stringify(db));
+ let persisted=false;
+ try{
+  if(!cloudApplying)relDetectChangedOrders();
+  localStorage.setItem(KEY,JSON.stringify(db));persisted=true;
+  localSaveFailedV1926=false;document.getElementById('localSaveRecoveryV1926')?.remove();
+ }catch(error){localSaveFailedV1926=true;showLocalSaveRecoveryV1926(error)}
  if(!cloudApplying){
-   localStorage.setItem(REL_DIRTY,'1');
-   setCloudMeta({dirty:true,verified:false,localChangedAt:new Date().toISOString()});
-   scheduleCloudPushV1860(650)
+  try{localStorage.setItem(REL_DIRTY,'1');setCloudMeta({dirty:true,verified:false,localChangedAt:new Date().toISOString()})}catch(error){localSaveFailedV1926=true;showLocalSaveRecoveryV1926(error)}
+  scheduleCloudPushV1860(650);
  }
- renderAfterSaveV1800(scope)
+ renderAfterSaveV1800(scope);
+ return persisted&&!localSaveFailedV1926;
 }
 function saveFromCloud(){localStorage.setItem(KEY,JSON.stringify(db));renderAll()}
 function saveConfirmedShadow(row){
@@ -8912,7 +8990,7 @@ function stockGoPurchase(i){
    toast('Compra preparada: '+x.name+(rec>0?' · '+rec.toLocaleString('pt-PT')+' '+(x.unit||''):'') );
  },80);
 }
-function showStockHistory(i){const x=db.stock[i];if(!x)return;const moves=[];(db.purchases||[]).filter(p=>p.item===x.name).forEach(p=>moves.push({date:p.date||'',type:purchaseIsTestVoidedV1770(p)?'Compra teste anulada':((p.status||'received')==='ordered'?'Compra encomendada':'Compra recebida'),qty:Number(p.qty)||0,note:[p.supplier?('Fornecedor: '+p.supplier):'',purchaseIsTestVoidedV1770(p)?'Fora das contas; stock preservado':'',Number.isFinite(Number(p.previousAvgUnitCost))?('Custo médio: '+euro(p.previousAvgUnitCost)+' → '+euro(p.newAvgUnitCost)):'' ].filter(Boolean).join(' · '),value:Number(p.total)||0}));(db.stockMoves||[]).filter(m=>m.item===x.name).forEach(m=>{let note=m.note||'';if(m.type==='production'){const run=(db.productionRuns||[]).find(r=>r.id===m.productionRunId),ids=(Array.isArray(m.orderIds)&&m.orderIds.length?m.orderIds:(run?.orders||[]));if(ids.length){const label=ids.length===1?'Encomenda '+ids[0]:'Encomendas '+ids.join(', ');if(!note.includes(ids[0]))note=(note?note+' · ':'')+label}}moves.push({date:String(m.date||'').slice(0,10),type:m.type==='production'?'Produção':m.type==='in'?'Entrada':m.type==='out'?'Saída':m.type==='waste'?'Desperdício':m.type==='initial'?'Saldo inicial':m.type==='cost_adjustment'?'Correção custo':'Acerto',qty:Number(m.qty)||0,note,value:null,beforeQty:m.beforeQty,afterQty:m.afterQty,previousUnitCost:m.previousUnitCost,newUnitCost:m.newUnitCost})});moves.sort((a,b)=>(b.date||'').localeCompare(a.date||''));stockDialogTitle.textContent='Histórico - '+x.name;stockHistoryDetail.innerHTML=`<div class="totalbox"><div class="mini"><span>Stock atual</span><strong>${Number(x.qty||0).toLocaleString('pt-PT')} ${x.unit}</strong></div><div class="mini"><span>Stock alvo</span><strong>${stockTargetValueV135(x)?stockTargetValueV135(x).toLocaleString('pt-PT')+' '+x.unit:'—'}</strong></div><div class="mini"><span>Custo/base</span><strong>${formatUnitCostV145(x.unitCost||0,x.unit||'')}</strong></div><div class="mini"><span>Valor stock</span><strong>${euro((Number(x.qty)||0)*(Number(x.unitCost)||0))}</strong></div><div class="mini"><span>Fornecedor</span><strong>${escapeHtml(x.preferredSupplier||'—')}</strong></div><div class="mini"><span>Movimentos</span><strong>${moves.length}</strong></div></div><div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>Data</th><th>Tipo</th><th>Quantidade</th><th>Valor</th><th>Nota</th></tr></thead><tbody>${moves.length?moves.map(m=>`<tr><td>${m.date||'—'}</td><td>${m.type}</td><td>${m.type==='Correção custo'?formatUnitCostV145(m.previousUnitCost,x.unit)+' → '+formatUnitCostV145(m.newUnitCost,x.unit):m.type==='Acerto'&&Number.isFinite(Number(m.beforeQty))?Number(m.beforeQty).toLocaleString('pt-PT')+' → '+Number(m.afterQty).toLocaleString('pt-PT')+' '+x.unit:m.qty.toLocaleString('pt-PT')+' '+x.unit}</td><td>${m.value==null?'—':euro(m.value)}</td><td>${m.note||'—'}</td></tr>`).join(''):'<tr><td colspan="5" class="empty">Sem movimentos registados.</td></tr>'}</tbody></table></div>`;stockDialog.showModal()}
+function showStockHistory(i){const x=db.stock[i];if(!x)return;const moves=[];(db.purchases||[]).filter(p=>p.item===x.name).forEach(p=>moves.push({date:p.date||'',type:purchaseIsTestVoidedV1770(p)?'Compra teste anulada':((p.status||'received')==='ordered'?'Compra encomendada':'Compra recebida'),qty:Number(p.qty)||0,note:[p.supplier?('Fornecedor: '+p.supplier):'',purchaseIsTestVoidedV1770(p)?'Fora das contas; stock preservado':'',Number.isFinite(Number(p.previousAvgUnitCost))?('Custo médio: '+euro(p.previousAvgUnitCost)+' → '+euro(p.newAvgUnitCost)):'' ].filter(Boolean).join(' · '),value:Number(p.total)||0}));(db.stockMoves||[]).filter(m=>m.item===x.name).forEach(m=>{let note=m.note||'';if(m.type==='production'){const run=(db.productionRuns||[]).find(r=>r.id===m.productionRunId),ids=(Array.isArray(m.orderIds)&&m.orderIds.length?m.orderIds:(run?.orders||[]));if(ids.length){const label=ids.length===1?'Encomenda '+ids[0]:'Encomendas '+ids.join(', ');if(!note.includes(ids[0]))note=(note?note+' · ':'')+label}}moves.push({date:String(m.date||'').slice(0,10),type:m.type==='production'?'Produção':m.type==='in'?'Entrada':m.type==='out'?'Saída':m.type==='waste'?'Desperdício':m.type==='initial'?'Saldo inicial':m.type==='cost_adjustment'?'Correção custo':'Acerto',qty:Number(m.qty)||0,note,value:null,beforeQty:m.beforeQty,afterQty:m.afterQty,previousUnitCost:m.previousUnitCost,newUnitCost:m.newUnitCost})});moves.sort((a,b)=>(b.date||'').localeCompare(a.date||''));stockDialogTitle.textContent='Histórico - '+x.name;stockHistoryDetail.innerHTML=`<div class="totalbox"><div class="mini"><span>Stock atual</span><strong>${Number(x.qty||0).toLocaleString('pt-PT')} ${escapeHtml(x.unit)}</strong></div><div class="mini"><span>Stock alvo</span><strong>${stockTargetValueV135(x)?stockTargetValueV135(x).toLocaleString('pt-PT')+' '+escapeHtml(x.unit):'—'}</strong></div><div class="mini"><span>Custo/base</span><strong>${formatUnitCostV145(x.unitCost||0,x.unit||'')}</strong></div><div class="mini"><span>Valor stock</span><strong>${euro((Number(x.qty)||0)*(Number(x.unitCost)||0))}</strong></div><div class="mini"><span>Fornecedor</span><strong>${escapeHtml(x.preferredSupplier||'—')}</strong></div><div class="mini"><span>Movimentos</span><strong>${moves.length}</strong></div></div><div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>Data</th><th>Tipo</th><th>Quantidade</th><th>Valor</th><th>Nota</th></tr></thead><tbody>${moves.length?moves.map(m=>`<tr><td>${escapeHtml(m.date||'—')}</td><td>${m.type}</td><td>${m.type==='Correção custo'?formatUnitCostV145(m.previousUnitCost,x.unit)+' → '+formatUnitCostV145(m.newUnitCost,x.unit):m.type==='Acerto'&&Number.isFinite(Number(m.beforeQty))?Number(m.beforeQty).toLocaleString('pt-PT')+' → '+Number(m.afterQty).toLocaleString('pt-PT')+' '+escapeHtml(x.unit):m.qty.toLocaleString('pt-PT')+' '+escapeHtml(x.unit)}</td><td>${m.value==null?'—':euro(m.value)}</td><td>${escapeHtml(m.note||'—')}</td></tr>`).join(''):'<tr><td colspan="5" class="empty">Sem movimentos registados.</td></tr>'}</tbody></table></div>`;stockDialog.showModal()}
 function loadStock(i){
  stockImageGenerationV1925++;
  const x=db.stock[i];if(!x)return toast('Matéria-prima não encontrada');
@@ -12121,13 +12199,18 @@ function renderProductionFlowV147(){
  ];
  el.innerHTML=`<div class="production-flow-head-v147"><div><strong>Fluxo da encomenda → produção</strong><br><small>O stock só é descontado quando conclui a produção. Não é necessário fazer movimentos manuais.</small></div>${missing.length?`<span class="badge bad">Falta ficha: ${escapeHtml(missing.join(' · '))}</span>`:'<span class="badge ok">Fichas técnicas verificadas</span>'}</div><div class="production-flow-steps-v147">${steps.map(x=>`<div class="production-flow-step-v147 ${x.blocked?'blocked':x.current?'current':x.done?'done':''}"><span>${x.done?'✓':x.n}</span><div><b>${x.t}</b><small>${escapeHtml(x.v)}</small></div></div>`).join('')}</div>`;
 }
-function consumeProduction(){
+async function consumeProduction(){
+ if(productionPendingV1926())return resumeProductionV1926();
+ if(productionBusyV1926)return;
  const d=prodDate.value||todayISO(),done=orderAlreadyProducedIds(),ords=db.orders.filter(o=>o.delivery===d&&['Em produção','Produção'].includes(o.status)&&!done.has(o.id));if(!ords.length)return toast('Sem encomendas em produção para concluir');
  const unresolved=productionUnresolvedLinesV148(ords);if(unresolved.length)return toast('Produção bloqueada — produto não encontrado no catálogo: '+unresolved.map(x=>x.name+' ('+x.orderId+')').join(' · '));
  const products=new Map();ords.forEach(o=>(o.items||[]).forEach(line=>{if(productionLineIgnoredV148(line))return;const p=productionProductForLineV130(line),key=p?.code||line.code||line.name,cur=products.get(key)||{p,name:p?.name||line.name||'Produto',qty:0};cur.qty+=(Number(line.qty)||0);products.set(key,cur)}));const manufactured=[...products.values()].filter(x=>x.p&&productManufacturedV130(x.p)),missing=productionMissingRecipesV1757(ords);if(missing.length)return toast('Produção bloqueada — falta a ficha técnica de: '+missing.map(x=>x.name+' ('+x.orderId+')').join(' · '));
  const needs={},addNeed=(n,q)=>needs[n]=(needs[n]||0)+(Number(q)||0);ords.forEach(o=>Object.entries(productionOrderNeedsV12632(o)).forEach(([name,qty])=>addNeed(name,qty)));const committed=productionOtherCommitmentsV20261021(d,ords);const shortages=Object.entries(needs).filter(([name,need])=>{const x=stockByName(name),have=x?Number(x.qty)||0:0,prior=Math.max(0,Number(committed[name])||0);return !x||have-prior+1e-9<need});if(shortages.length){const msg=shortages.slice(0,5).map(([name,need])=>{const x=stockByName(name),have=x?Number(x.qty)||0:0,unit=x?.unit||'',prior=Math.max(0,Number(committed[name])||0),available=Math.max(0,have-prior);return name+': precisa '+Number(need).toLocaleString('pt-PT')+' '+unit+', disponível após compromissos '+available.toLocaleString('pt-PT')+' '+unit}).join(' · ');return toast('Produção bloqueada — stock comprometido/insuficiente. '+msg)}
  const orderMaterials={},orderProducts={};ords.forEach(o=>{orderMaterials[o.id]=productionNeedsSnapshotV148(productionOrderNeedsV12632(o));orderProducts[o.id]=(o.items||[]).filter(line=>!productionLineIgnoredV148(line)).map(line=>({code:line.code||'',name:line.name||'',qty:Number(line.qty)||0}))});
- const runId=uid('PROD'),productionOrderIds=ords.map(o=>o.id),productionOrderLabel=productionOrderIds.length===1?'Encomenda '+productionOrderIds[0]:'Encomendas '+productionOrderIds.join(', ');Object.entries(needs).forEach(([name,need])=>{const x=stockByName(name);x.qty=(Number(x.qty)||0)-need;db.stockMoves.push({date:new Date().toISOString(),item:x.name,type:'production',qty:need,note:'Produção '+d+' · '+productionOrderLabel,productionRunId:runId,orderIds:[...productionOrderIds]})});ords.forEach(o=>{const prev=o.status||'Em produção';o.status='Pronta';o.readyAt=o.readyAt||new Date().toISOString();o.statusHistory=Array.isArray(o.statusHistory)?o.statusHistory:[];o.statusHistory.push({from:prev,to:'Pronta',date:new Date().toISOString(),source:'production'})});const total=ords.reduce((sum,o)=>sum+calcOrder(o).qty,0);const materialUnitCosts={};let materialCostTotal=0;Object.entries(needs).forEach(([name,need])=>{const uc=materialUnitCost(name);materialUnitCosts[name]=uc;materialCostTotal+=(Number(need)||0)*uc});db.productionRuns.push({id:runId,date:d,createdAt:new Date().toISOString(),total,batches:0,orders:ords.map(o=>o.id),materials:{...needs},orderMaterials,orderProducts,materialUnitCosts,materialCostTotal,materialCostSnapshotAt:new Date().toISOString(),products:[...products.values()].map(x=>({code:x.p?.code||'',name:x.name,qty:x.qty,productionType:productProductionTypeV130(x.p)})),orderInstructions:ords.map(o=>({orderId:o.id,instructions:productionOrderInstructionsV136(o)})),missing:[]});save();setTimeout(()=>cloudPushNow(false),0);renderProduction();renderProductionFlowV147();toast('Produção concluída com sucesso · stock descontado automaticamente · encomendas marcadas como Prontas')
+ const runId=uid('PROD');const total=ords.reduce((sum,o)=>sum+calcOrder(o).qty,0);const materialUnitCosts={};let materialCostTotal=0;Object.entries(needs).forEach(([name,need])=>{const uc=materialUnitCost(name);materialUnitCosts[name]=uc;materialCostTotal+=(Number(need)||0)*uc});
+ const run={id:runId,date:d,createdAt:new Date().toISOString(),total,batches:0,orders:ords.map(o=>o.id),materials:{...needs},orderMaterials,orderProducts,materialUnitCosts,materialCostTotal,materialCostSnapshotAt:new Date().toISOString(),products:[...products.values()].map(x=>({code:x.p?.code||'',name:x.name,qty:x.qty,productionType:productProductionTypeV130(x.p)})),orderInstructions:ords.map(o=>({orderId:o.id,instructions:productionOrderInstructionsV136(o)})),missing:[]};
+ return completeProductionAtomicV1926(run,ords);
+
 }
 
 function escapeHtml(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
@@ -14433,7 +14516,7 @@ async function subscribeCloud(){
      table:REL_TABLES[k],
      filter:'user_id=eq.'+cloudUser.id
    },payload=>{
-     if(cloudApplying)return;
+     if(cloudApplying||productionBlockedV1926())return;
      const eventType=payload?.eventType||'UPDATE';
      const row=eventType==='DELETE'?payload?.old:payload?.new;
      const rid=row?.id||'';
@@ -14456,7 +14539,7 @@ async function subscribeCloud(){
    table:CLOUD_TABLE,
    filter:'user_id=eq.'+cloudUser.id
  },payload=>{
-   if(cloudApplying)return;
+   if(cloudApplying||productionBlockedV1926())return;
    const row=payload?.eventType==='DELETE'?payload?.old:payload?.new;
    if(!row||!row.data||typeof row.data!=='object')return;
    if(row.device_id&&String(row.device_id)===String(getDeviceId()))return;
@@ -14467,7 +14550,8 @@ async function subscribeCloud(){
    const incomingRev=Number(row.revision||0);
    const knownRev=Number(cloudMeta().remoteRevision||0);
    if(incomingRev&&knownRev&&incomingRev<knownRev)return;
-   const changed=mergeOperationalCloudSnapshotV139(row.data);
+   if(productionBlockedV1926())return false;
+ const changed=mergeOperationalCloudSnapshotV139(row.data);
    if(changed){
      cloudApplying=true;
      try{localStorage.setItem(KEY,JSON.stringify(db))}finally{cloudApplying=false}
@@ -14517,7 +14601,7 @@ function forceApplyCloudRow(row,source='Cloud manual'){
 }
 async function handleCloudChange(payload){
  const row=payload?.new;
- if(!row||row.user_id!==cloudUser?.id||cloudApplying)return;
+ if(!row||row.user_id!==cloudUser?.id||cloudApplying||productionBlockedV1926())return;
  if(cloudHydrating||!cloudStartupDone){cloudLogMsg('Realtime adiado durante validação inicial');return}
  const m=cloudMeta(),rr=Number(row.revision||0);
  if(row.device_id&&row.device_id===getDeviceId()){
@@ -14592,7 +14676,7 @@ function recoverProductPersonalizationV1820(){
 }
 function restoreCloudSafetySnapshot(){const raw=localStorage.getItem(CLOUD_SAFETY);if(!raw)return toast('Não existe cópia de segurança pré-Cloud neste dispositivo');try{const snap=JSON.parse(raw);if(!snap?.data)return toast('Cópia inválida');const when=snap.at?new Date(snap.at).toLocaleString('pt-PT'):'—';if(!confirm('Recuperar os dados de antes da última sincronização Cloud (guardados em '+when+')?\n\nOs dados atuais serão substituídos por esta cópia local.'))return;db=normalizeImportedDb(JSON.parse(JSON.stringify(snap.data)));ensureQuotePaymentModel();ensureCostModel();ensureRecordIds();ensureClientsFromOrders();save();toast('Cópia pré-Cloud recuperada')}catch(e){toast('Não foi possível recuperar a cópia')}}
 function markCloudDirty(){
- if(cloudApplying)return;
+ if(cloudApplying||productionBlockedV1926())return;
  localStorage.setItem(REL_DIRTY,'1');
  setCloudMeta({dirty:true,verified:false,conflict:false,localChangedAt:new Date().toISOString()});
  scheduleCloudPushV1860(500);
@@ -14768,8 +14852,10 @@ async function pushOperationalCloudStateV139(user,{force=false}={}){
  return await saveCloudStateSimple(user,payload,{force})
 }
 async function pullOperationalCloudStateV139(user){
+ if(productionBlockedV1926())return false;
  const row=await fetchCloudRowAuthoritative(user);
  if(!row?.data||typeof row.data!=='object')return false;
+ if(productionBlockedV1926())return false;
  const changed=mergeOperationalCloudSnapshotV139(row.data);
  if(changed){
    cloudApplying=true;
@@ -14832,6 +14918,7 @@ function finalizeCloudCleanV1739(syncStartedMs,showToast=false){
 }
 
 async function cloudPushNow(showToast=true){
+ if(productionBlockedV1926())return false;
  const syncStartedMs=Date.now();
  if(hasRestorePendingV12645()){
    cloudLogMsg('Envio automático bloqueado: existe um restauro pendente de reconciliação');
@@ -14929,6 +15016,7 @@ async function cloudPushNow(showToast=true){
 }
 function hasMeaningfulLocalData(){return meaningfulState(db)}
 async function cloudPullNow(force=false){
+ if(productionBlockedV1926())return false;
  if(hasRestorePendingV12645()){
    if(!force){cloudLogMsg('Receção adiada: existe um restauro pendente');return false}
    if(!confirm('Existe um backup restaurado neste dispositivo. Usar agora os dados da Cloud irá substituir/reconciliar esse restauro. Continuar?'))return false;
@@ -15114,6 +15202,7 @@ async function bindOrderRidFromCloud(order,u){
 }
 
 async function syncSingleOrderToCloud(order){
+ if(productionBlockedV1926())throw new Error("Conclusão de produção por confirmar");
  const u=cloudUser||await ensureCloudSession();
  if(!u||!cloudClient)throw new Error('Cloud sem sessão');
  if(!navigator.onLine)throw new Error('Sem internet');
@@ -15221,6 +15310,7 @@ async function diagnoseOrdersCloud(showToast=true){
 }
 
 async function syncPendingOrdersOnly(showToast=false){
+ if(productionBlockedV1926())return false;
  const u=cloudUser||await ensureCloudSession();
  if(!u||!cloudClient)return false;
  const pruned=relPruneOrphanPendingOrdersV1741();
@@ -15268,11 +15358,13 @@ function scheduleRelationalSync(){
  scheduleCloudPushV1860(650)
 }
 async function pullOnlineOrders(showToast=false){
+ if(productionBlockedV1926())return false;
  const u=cloudUser||await ensureCloudSession();
  if(!u||!cloudClient)return false;
  try{
    const {data,error}=await cloudClient.rpc('artessencia_get_online_orders_v1');
    if(error)throw error;
+   if(productionBlockedV1926())return false;
    const rows=Array.isArray(data)?data:[];
    const pending=relOrderPendingSet();
 
@@ -15407,6 +15499,7 @@ async function syncStoreCatalogV1421(user){
 }
 
 async function relationalSyncCore(showToast=false){
+ if(productionBlockedV1926())return false;
  if(cloudBusy){
    cloudPushPending=true;
    return false
@@ -15514,6 +15607,7 @@ async function relationalSyncCore(showToast=false){
  }
 }
 async function relationalHydrateCore(initial=false){
+ if(productionBlockedV1926())return false;
  const u=cloudUser||await ensureCloudSession();
  if(!u)return false;
  const ownBusy=!cloudBusy;
@@ -15523,6 +15617,7 @@ async function relationalHydrateCore(initial=false){
      relFetchAll(REL_TABLES.clients),relFetchAll(REL_TABLES.products),relFetchAll(REL_TABLES.orders),relFetchAll(REL_TABLES.quotes)
    ]);
 
+   if(productionBlockedV1926())return false;
    cloudApplying=true;
    try{
      const localClients=(db.clients||[]).slice();
