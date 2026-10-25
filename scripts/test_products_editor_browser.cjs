@@ -19,7 +19,7 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
  assert.equal(await page.evaluate(()=>originalFile===document.getElementById('prodShopImageFile')),true);assert.equal(await page.locator('#prodShopImageFile').evaluate(e=>e.files[0].name),'fixture.png');
  assert.equal(await page.locator('#prodName').inputValue(),'Fixture editor');assert.equal(await page.locator('#prodProductionNotesV130').inputValue(),'Rascunho técnico');assert.equal(await page.evaluate(()=>JSON.stringify(db.products)===beforeProducts),true);
  await tab('photos').focus();await page.keyboard.press('ArrowRight');assert.equal(await tab('production').getAttribute('aria-selected'),'true');
- assert.equal(await page.locator('.product-editor-nav-v1762').evaluate(e=>e.scrollWidth<=e.clientWidth+2),true);
+ assert.equal(await page.locator('.product-editor-nav-v1762').evaluate(e=>e.scrollWidth<=e.clientWidth+2),true,'Tabs must fit at '+width+'px');
  // Existing save handler with no pending upload. Stored URL is a local fixture reference.
  await page.locator('#prodShopImageFile').setInputFiles([]);await page.evaluate(()=>{document.getElementById('prodShopImageUrl').value='https://fixture.invalid/saved.png';saveProduct()});
  await page.waitForFunction(()=>db.products.some(p=>p.code==='FIX-EDITOR'));
