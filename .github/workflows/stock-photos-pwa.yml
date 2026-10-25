@@ -11,6 +11,9 @@ on:
       - 'scripts/test_pwa_transition.cjs'
       - 'scripts/test_*integrity*.cjs'
       - 'scripts/test_reports_costs*.cjs'
+      - 'scripts/test_orders_layout_browser.cjs'
+      - 'order-detail-compact-ui.*'
+      - 'orders-compact-ui.*'
       - 'scripts/test_production_atomic_sql.cjs'
       - 'sql/complete-production-backoffice-v1.sql'
       - '.github/workflows/stock-photos-pwa.yml'
@@ -56,3 +59,6 @@ jobs:
         run: |
           node scripts/test_reports_costs.cjs
           node scripts/test_reports_costs_browser.cjs
+
+      - name: Verify compact order workflow
+        run: node scripts/test_orders_layout_browser.cjs

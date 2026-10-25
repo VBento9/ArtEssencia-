@@ -1,1 +1,20 @@
 #orders .ae-orders-advanced{display:flex;align-items:end;gap:10px;flex-wrap:wrap;grid-column:1/-1}#orders .ae-orders-advanced[hidden]{display:none!important}#orders #aeOrdersCompact{white-space:nowrap}@media(max-width:700px){#orders .ae-orders-advanced>*{flex:1 1 130px}#orders #aeOrdersCompact{width:100%}}
+#orders .ae-orders-list-nav{display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:var(--ae-orders-top-offset,130px);z-index:20;background:#fffdf9;padding:10px 0;border-bottom:1px solid #e4d8ca;margin-bottom:10px}
+#orders .ae-orders-list-nav>label{display:flex;gap:8px;align-items:center;font-size:12px}
+#orders .ae-orders-list-nav select{width:auto;min-height:38px}
+#orders .ae-orders-pagination{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0;flex:1}
+#orders .ae-orders-pagination>span{font-size:12px;text-align:center}
+#orders .order-card-actions{justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
+#orders .order-card-actions>.btn{font-size:12px;min-height:40px}
+#orders .ae-order-more{flex:1;min-width:130px}
+#orders .ae-order-more>summary{cursor:pointer;text-align:right;padding:11px 8px;font-size:12px;font-weight:700}
+#orders .ae-order-more-content{display:flex;gap:8px;flex-wrap:wrap;padding:10px 0}
+#orders .ae-order-more-content>*{flex:1 1 120px;min-height:40px!important;font-size:12px!important}
+#orders .orders-table-wrap table{min-width:630px;font-size:12px}
+#orders .orders-table-wrap :is(th,td){padding:11px 9px}
+#orders .orders-table-wrap td:nth-child(2){min-width:140px;max-width:240px;overflow-wrap:anywhere}
+#orders .orders-table-wrap .btn{min-height:40px}
+#orders .order-card-main{padding:10px 12px}
+#orders .order-card-grid{gap:8px}
+#orders .order-card-head{padding:9px 12px}
+@media(max-width:650px){#orders .ae-orders-list-nav{gap:8px}#orders .ae-orders-list-nav>.ae-orders-pagination{flex-basis:100%;margin:0}#orders .ae-orders-list-nav>.btn{flex:1}#orders .ae-orders-pagination .btn{padding:9px;min-height:40px}#orders .order-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#orders .order-client b{font-size:15px}}
