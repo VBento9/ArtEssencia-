@@ -1,0 +1,18 @@
+'use strict';
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const html=fs.readFileSync('index.html','utf8');
+const fields=new Map();function field(id){if(!fields.has(id))fields.set(id,{value:'',hidden:false,textContent:''});return fields.get(id)}
+const c={document:{getElementById:field},todayISO:()=> '2026-10-25',db:{orders:[],purchases:[],cash:[]},completed:o=>o.status!=='Cancelado'&&!o.voidedAt,calcOrder:o=>({total:o.total,cost:20,qty:1}),purchaseIsTestVoidedV1770:p=>!!p.voidedAt,purchaseStatusV135:p=>p.status,renderReports:()=>{},downloadCSV:(name,headers,rows)=>c.csv={name,headers,rows}};
+vm.createContext(c);vm.runInContext(html.slice(html.indexOf('// Report filters are independent'),html.indexOf('function pdfAscii(')),c);
+const month=c.buildReportPeriodV1927('month','2024-02','','','');assert.equal(month.end,'2024-02-29');assert.ok(month.matchDate('2024-02-29T23:59:59Z'));assert.ok(!month.matchDate('2024-03-01'));
+const year=c.buildReportPeriodV1927('year','','2024','','');assert.ok(year.matchDate('2024-01-01'));assert.ok(year.matchDate('2024-12-31'));assert.ok(!year.matchDate('2025-01-01'));
+assert.throws(()=>c.buildReportPeriodV1927('custom','','','2024-02-30','2024-03-01'));assert.throws(()=>c.buildReportPeriodV1927('custom','','','2025-01-01','2024-12-31'));assert.throws(()=>c.buildReportPeriodV1927('year','','','', ''));
+c.db.orders=[{id:'LEAP',status:'Entregue',delivery:'2024-02-29',total:100},{id:'END',status:'Entregue',delivery:'2024-12-31',total:200},{id:'NEXT',status:'Entregue',delivery:'2025-01-01',total:300},{id:'OPEN',status:'Confirmada',delivery:'2024-02-15',total:50}];c.db.purchases=[{date:'2023-12-31',receivedDate:'2024-02-29',status:'received',total:12}];c.db.cash=[{date:'2024-02-29',type:'Entrada',source:'order_payment',value:30},{date:'2025-01-01',type:'Entrada',source:'order_payment',value:90}];
+field('reportPeriodModeV1927').value='month';field('reportMonthV1927').value='2024-02';assert.ok(c.applyReportPeriodV1927());let r=c.reportPeriodData();assert.equal(r.d.total,100);assert.equal(r.openOrders.length,1);assert.equal(r.purchases.length,1);assert.equal(r.receivedPeriod,30);
+c.exportReportCSVV1927('orders');assert.deepEqual(Array.from(c.csv.rows,r=>r[0]),['LEAP','OPEN']);assert.ok(c.csv.name.endsWith('2024-02'));
+field('reportPeriodModeV1927').value='year';field('reportYearV1927').value='2024';assert.ok(c.applyReportPeriodV1927());assert.equal(c.reportPeriodData().d.total,300);
+field('reportPeriodModeV1927').value='custom';field('reportStartV1927').value='2024-12-31';field('reportEndV1927').value='2025-01-01';assert.ok(c.applyReportPeriodV1927());assert.equal(c.reportPeriodData().d.total,500);
+field('reportStartV1927').value='2025-02-01';assert.equal(c.applyReportPeriodV1927(),false);assert.equal(c.reportPeriodData().d.total,500);assert.equal(field('reportPeriodErrorV1927').hidden,false);
+field('dashYear').value='2099';field('dashMonth').value='9';assert.equal(c.reportPeriodData().d.total,500);
+const rows=Array.from({length:37},(_,i)=>({name:'Matéria '+i})),before=JSON.stringify(rows);assert.equal(c.costPageRowsV1927('materials',rows,x=>x.name).length,10);assert.match(field('costCountmaterials').textContent,/1–10 de 37/);field('costSearchmaterials').value='materia 36';assert.equal(c.costPageRowsV1927('materials',rows,x=>x.name)[0].name,'Matéria 36');assert.equal(JSON.stringify(rows),before);
+console.log('PASS: month/year/custom inclusive dates, leap year, invalid ranges, independent Dashboard, matching financial/CSV filters, bounded cost rows and accent-insensitive search.');
