@@ -2,6 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
+<meta name="artessencia-version" content="1.9.25">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <link rel="manifest" href="manifest.webmanifest">
@@ -6115,7 +6116,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.24';
+const APP_VERSION='1.9.25';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -8713,30 +8714,62 @@ function setStockImagePreviewV1771(url=''){
  if(img){if(url){img.src=url;img.classList.remove('hidden')}else{img.removeAttribute('src');img.classList.add('hidden')}}
  if(ph)ph.classList.toggle('hidden',!!url);
 }
+// Stock uses the Products native file input and preview implementation.
+let stockImageBusyV1925=false,stockImageGenerationV1925=0;
+function initStockImagePickerV1925(){
+ const source=document.getElementById('prodShopImageFile'),target=document.getElementById('stockImageFileV1771');
+ if(!source||!target)return;
+ const picker=source.cloneNode(false);picker.id=target.id;picker.value='';
+ picker.setAttribute('onchange','previewStockImageFileV1771()');
+ target.replaceWith(picker);
+}
 function previewStockImageFileV1771(){
- const file=document.getElementById('stockImageFileV1771')?.files?.[0];if(!file)return;
- if(!/^image\\/(jpeg|png|webp)$/i.test(file.type))return toast('Formato de imagem não suportado');
- if(file.size>12*1024*1024)return toast('A imagem é demasiado grande (máx. 12 MB antes da otimização)');
- const r=new FileReader();r.onload=()=>{const img=document.getElementById('stockImagePreviewV1771'),ph=document.getElementById('stockImagePlaceholderV1771');if(img){img.src=r.result;img.classList.remove('hidden')}if(ph)ph.classList.add('hidden')};r.readAsDataURL(file);
+ const input=document.getElementById('stockImageFileV1771'),file=input?.files?.[0];
+ if(!file)return;
+ if(stockImageBusyV1925){input.value='';return toast('Aguarda o carregamento da fotografia')}
+ // Same MIME validation, size limit and FileReader as Products; no second picker.
+ previewShopImageFile('stockImageFileV1771','stockImagePreviewV1771');
+ const valid=/^image\/(jpeg|png|webp)$/i.test(file.type)&&file.size<=12*1024*1024;
+ if(valid){document.getElementById('stockImagePreviewV1771')?.classList.remove('hidden');document.getElementById('stockImagePlaceholderV1771')?.classList.add('hidden')}
+ else{input.value='';setStockImagePreviewV1771(document.getElementById('stockImageUrlV1771')?.value||'')}
 }
 function stockImageSafeNameV1771(v){return String(v||'materia-prima').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'materia-prima'}
 async function uploadStockImageV1771(){
- const file=document.getElementById('stockImageFileV1771')?.files?.[0];if(!file)return toast('Escolhe primeiro uma fotografia');
+ const input=document.getElementById('stockImageFileV1771'),file=input?.files?.[0];
+ if(stockImageBusyV1925)return toast('Aguarda o carregamento da fotografia');
+ if(!file)return toast('Escolhe primeiro uma fotografia');
  if(!/^image\/(jpeg|png|webp)$/i.test(file.type))return toast('Formato de imagem não suportado');
- if(file.size>8*1024*1024)return toast('A imagem é demasiado grande (máx. 8 MB)');
+ if(file.size>12*1024*1024)return toast('A imagem é demasiado grande (máx. 12 MB antes da otimização)');
  const name=String(document.getElementById('stockName')?.value||'').trim();if(!name)return toast('Indica primeiro o nome da matéria-prima');
- const c=initCloudClient();if(!c)return toast('Liga primeiro a Cloud para carregar a fotografia');
- const user=cloudUser||await ensureCloudSession();if(!user)return toast('Inicia sessão na Cloud');
- const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg',path=`${user.id}/stock/${stockImageSafeNameV1771(name)}/photo-${Date.now()}.${ext}`;
- try{toast('A carregar fotografia…');const {error}=await c.storage.from('artessencia-shop').upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type});if(error)throw error;const {data}=c.storage.from('artessencia-shop').getPublicUrl(path),url=data?.publicUrl||'';if(!url)throw new Error('URL pública indisponível');setStockImagePreviewV1771(url);toast('Fotografia carregada — guarda a matéria-prima')}catch(e){cloudLogMsg('Erro fotografia matéria-prima: '+cloudErrText(e));toast('Não foi possível carregar a fotografia')}
+ const generation=stockImageGenerationV1925;
+ stockImageBusyV1925=true;input.disabled=true;
+ try{
+  const c=initCloudClient();if(!c)return toast('Liga primeiro a Cloud para carregar a fotografia');
+  const user=cloudUser||await ensureCloudSession();if(!user)return toast('Inicia sessão na Cloud');
+  toast('A preparar fotografia…');
+  const optimized=await optimizeProductImageV1806(file);
+  const ext=optimized.type==='image/webp'?'webp':optimized.type==='image/png'?'png':'jpg';
+  const path=user.id+'/stock/'+stockImageSafeNameV1771(name)+'/photo-'+crypto.randomUUID()+'.'+ext;
+  const {error}=await c.storage.from('artessencia-shop').upload(path,optimized,{cacheControl:'3600',upsert:false,contentType:optimized.type});if(error)throw error;
+  const {data}=c.storage.from('artessencia-shop').getPublicUrl(path),url=data?.publicUrl||'';if(!url)throw new Error('URL pública indisponível');
+  // A response for a cancelled/previous editor must never modify the next material.
+  if(generation!==stockImageGenerationV1925)return;
+  setStockImagePreviewV1771(url);input.value='';
+  toast('Fotografia carregada — guarda a matéria-prima');
+ }catch(e){cloudLogMsg('Erro fotografia matéria-prima: '+cloudErrText(e));toast('Não foi possível carregar a fotografia — tenta novamente')}
+ finally{stockImageBusyV1925=false;input.disabled=false}
 }
-async function removeStockImageV1771(){
+function removeStockImageV1771(){
+ if(stockImageBusyV1925)return toast('Aguarda o carregamento da fotografia');
  const url=String(document.getElementById('stockImageUrlV1771')?.value||'');
  if(url&&!confirm('Remover a fotografia desta matéria-prima?'))return;
- try{const c=initCloudClient(),user=cloudUser||await ensureCloudSession();if(c&&user&&url){const marker='/storage/v1/object/public/artessencia-shop/',i=url.indexOf(marker);if(i>=0){const path=decodeURIComponent(url.slice(i+marker.length));if(path.startsWith(user.id+'/'))await c.storage.from('artessencia-shop').remove([path])}}}catch(e){cloudLogMsg('Aviso ao remover fotografia matéria-prima: '+cloudErrText(e))}
- setStockImagePreviewV1771('');const f=document.getElementById('stockImageFileV1771');if(f)f.value='';toast('Fotografia removida — guarda a matéria-prima');
+ // Remove the association only when the material is saved. Keep stored objects
+ // intact: existing backups or another record may still reference the old URL.
+ setStockImagePreviewV1771('');const f=document.getElementById('stockImageFileV1771');if(f)f.value='';
+ toast('Fotografia removida do formulário — guarda a matéria-prima');
 }
 function resetStockFormV145(message=true){
+ stockImageGenerationV1925++;
  editingStockIndex=null;
  stockName.value='';stockQty.value='';stockMin.value='';stockUnitCost.value='';stockUnit.value='g';
  for(const id of ['stockPurchaseQtyV1736','stockPurchaseTotalV1736','stockMinPurchaseV1736','stockTargetPurchaseV1736']){const el=document.getElementById(id);if(el)el.value=''}
@@ -8753,6 +8786,8 @@ function resetStockFormV145(message=true){
 }
 function cancelStockEditV145(){resetStockFormV145(true);toast('Edição cancelada')}
 function addStock(){
+ if(stockImageBusyV1925)return toast('Aguarda o carregamento da fotografia antes de guardar');
+ if(document.getElementById('stockImageFileV1771')?.files?.length)return toast('Carrega a fotografia selecionada antes de guardar a matéria-prima');
  syncSimpleStockCreateV1736();
  const n=stockName.value.trim();if(!n){setStockSaveStateV143('error','Falta o nome','Indique a matéria-prima antes de guardar.');return toast('Indique a matéria-prima')}
  const targetRaw=String(document.getElementById('stockTarget')?.value||'').trim();
@@ -8879,6 +8914,7 @@ function stockGoPurchase(i){
 }
 function showStockHistory(i){const x=db.stock[i];if(!x)return;const moves=[];(db.purchases||[]).filter(p=>p.item===x.name).forEach(p=>moves.push({date:p.date||'',type:purchaseIsTestVoidedV1770(p)?'Compra teste anulada':((p.status||'received')==='ordered'?'Compra encomendada':'Compra recebida'),qty:Number(p.qty)||0,note:[p.supplier?('Fornecedor: '+p.supplier):'',purchaseIsTestVoidedV1770(p)?'Fora das contas; stock preservado':'',Number.isFinite(Number(p.previousAvgUnitCost))?('Custo médio: '+euro(p.previousAvgUnitCost)+' → '+euro(p.newAvgUnitCost)):'' ].filter(Boolean).join(' · '),value:Number(p.total)||0}));(db.stockMoves||[]).filter(m=>m.item===x.name).forEach(m=>{let note=m.note||'';if(m.type==='production'){const run=(db.productionRuns||[]).find(r=>r.id===m.productionRunId),ids=(Array.isArray(m.orderIds)&&m.orderIds.length?m.orderIds:(run?.orders||[]));if(ids.length){const label=ids.length===1?'Encomenda '+ids[0]:'Encomendas '+ids.join(', ');if(!note.includes(ids[0]))note=(note?note+' · ':'')+label}}moves.push({date:String(m.date||'').slice(0,10),type:m.type==='production'?'Produção':m.type==='in'?'Entrada':m.type==='out'?'Saída':m.type==='waste'?'Desperdício':m.type==='initial'?'Saldo inicial':m.type==='cost_adjustment'?'Correção custo':'Acerto',qty:Number(m.qty)||0,note,value:null,beforeQty:m.beforeQty,afterQty:m.afterQty,previousUnitCost:m.previousUnitCost,newUnitCost:m.newUnitCost})});moves.sort((a,b)=>(b.date||'').localeCompare(a.date||''));stockDialogTitle.textContent='Histórico - '+x.name;stockHistoryDetail.innerHTML=`<div class="totalbox"><div class="mini"><span>Stock atual</span><strong>${Number(x.qty||0).toLocaleString('pt-PT')} ${x.unit}</strong></div><div class="mini"><span>Stock alvo</span><strong>${stockTargetValueV135(x)?stockTargetValueV135(x).toLocaleString('pt-PT')+' '+x.unit:'—'}</strong></div><div class="mini"><span>Custo/base</span><strong>${formatUnitCostV145(x.unitCost||0,x.unit||'')}</strong></div><div class="mini"><span>Valor stock</span><strong>${euro((Number(x.qty)||0)*(Number(x.unitCost)||0))}</strong></div><div class="mini"><span>Fornecedor</span><strong>${escapeHtml(x.preferredSupplier||'—')}</strong></div><div class="mini"><span>Movimentos</span><strong>${moves.length}</strong></div></div><div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>Data</th><th>Tipo</th><th>Quantidade</th><th>Valor</th><th>Nota</th></tr></thead><tbody>${moves.length?moves.map(m=>`<tr><td>${m.date||'—'}</td><td>${m.type}</td><td>${m.type==='Correção custo'?formatUnitCostV145(m.previousUnitCost,x.unit)+' → '+formatUnitCostV145(m.newUnitCost,x.unit):m.type==='Acerto'&&Number.isFinite(Number(m.beforeQty))?Number(m.beforeQty).toLocaleString('pt-PT')+' → '+Number(m.afterQty).toLocaleString('pt-PT')+' '+x.unit:m.qty.toLocaleString('pt-PT')+' '+x.unit}</td><td>${m.value==null?'—':euro(m.value)}</td><td>${m.note||'—'}</td></tr>`).join(''):'<tr><td colspan="5" class="empty">Sem movimentos registados.</td></tr>'}</tbody></table></div>`;stockDialog.showModal()}
 function loadStock(i){
+ stockImageGenerationV1925++;
  const x=db.stock[i];if(!x)return toast('Matéria-prima não encontrada');
  editingStockIndex=i;stockName.value=x.name;stockQty.value=x.qty;stockUnit.value=x.unit;stockMin.value=x.min;stockUnitCost.value=x.unitCost||0;hydrateSimpleStockFormV1736(x);
  if(document.getElementById('stockTarget'))stockTarget.value=x.target??'';if(document.getElementById('stockPreferredSupplier'))stockPreferredSupplier.value=x.preferredSupplier||'';
@@ -10736,7 +10772,7 @@ async function removeProductGalleryImageV1860(slot){
   toast('Fotografia '+slot+' removida da galeria — guarda o produto')
  }catch(e){cloudLogMsg('Aviso remoção fotografia '+slot+': '+cloudErrText(e));toast('Não foi possível preparar a remoção')}
 }
-function previewShopImageFile(){const file=document.getElementById('prodShopImageFile')?.files?.[0];if(!file)return;if(!/^image\/(jpeg|png|webp)$/i.test(file.type))return toast('Formato de imagem não suportado');if(file.size>12*1024*1024)return toast('A imagem é demasiado grande (máx. 12 MB antes da otimização)');const r=new FileReader();r.onload=()=>{const img=document.getElementById('prodShopImagePreview');if(img){img.src=r.result;img.style.display='block'}};r.readAsDataURL(file)}
+function previewShopImageFile(fileId='prodShopImageFile',previewId='prodShopImagePreview'){const file=document.getElementById(fileId)?.files?.[0];if(!file)return;if(!/^image\/(jpeg|png|webp)$/i.test(file.type))return toast('Formato de imagem não suportado');if(file.size>12*1024*1024)return toast('A imagem é demasiado grande (máx. 12 MB antes da otimização)');const r=new FileReader();r.onload=()=>{const img=document.getElementById(previewId);if(img){img.src=r.result;img.style.display='block'}};r.readAsDataURL(file)}
 async function optimizeProductImageV1806(file){
  if(!file||!/^image\/(jpeg|png|webp)$/i.test(file.type))return file;
  // Qualidade primeiro: ficheiros até 1 MB e PNG ficam intactos.
@@ -15791,6 +15827,7 @@ async function installApp(){if(!deferredPrompt)return toast('No Chrome: menu ⋮
 ensureCostModel();syncPackagingSelect();go('dashboard');configureLock();setTimeout(authGateStartupV1880,250);setTimeout(()=>{openPushOrderFromUrlV12625();openPushEventRequestFromUrlV1285()},900);
 
 
+initStockImagePickerV1925();
 document.getElementById('runtimeVersion').textContent='V'+APP_VERSION;syncProductPersonalizationUIV1773();
 setTimeout(()=>{restoreProductPanelV1762();syncPricingQuickFromBaseV1762();renderProductCompletenessEditorV1762(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null);renderProductWorkflowV1851(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null);renderProductPublicStatusV1850(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null)},40);
 function globalSearchKeyV142(ev){

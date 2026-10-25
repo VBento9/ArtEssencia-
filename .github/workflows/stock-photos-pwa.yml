@@ -1,0 +1,42 @@
+name: Stock photos and PWA release checks
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'sw.js'
+      - 'pwa-update.js'
+      - 'version.json'
+      - 'scripts/test_stock_photos.cjs'
+      - 'scripts/test_pwa_update*.cjs'
+      - 'scripts/test_pwa_transition.cjs'
+      - '.github/workflows/stock-photos-pwa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  stock-photos-pwa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Install isolated browser
+        run: |
+          npm install --no-save --package-lock=false --ignore-scripts @playwright/test@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Check PWA update safety
+        run: |
+          node scripts/test_pwa_update.cjs
+          node scripts/test_pwa_update_banner.cjs
+      - name: Serve checkout
+        run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/ae-local-http.log 2>&1 &
+      - name: Verify stock photo lifecycle and Products compatibility
+        run: node scripts/test_stock_photos.cjs
+
+      - name: Verify installed worker update without losing storage
+        run: node scripts/test_pwa_transition.cjs
