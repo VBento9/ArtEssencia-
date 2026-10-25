@@ -11,7 +11,7 @@
  function offerUpdate(version){
   if(document.getElementById('ae-update-available'))return;
   const box=document.createElement('div');box.id='ae-update-available';box.setAttribute('role','status');
-  Object.assign(box.style,{position:'fixed',bottom:'20px',left:'16px',right:'16px',zIndex:'99999',padding:'16px',background:'#fff',color:'#5a240b',border:'2px solid #5a240b',borderRadius:'12px'});
+  Object.assign(box.style,{position:'fixed',bottom:'20px',left:'16px',right:'16px',zIndex:'2147483647',padding:'16px',background:'#fff',color:'#5a240b',border:'2px solid #5a240b',borderRadius:'12px'});
   const message=document.createElement('span');message.textContent='Versão '+version+' disponível. Guarda o que estás a editar antes de atualizar. ';
   const button=document.createElement('button');button.type='button';button.className='btn primary';button.textContent='Carregar atualização';
   button.onclick=reloadFresh;box.append(message,button);document.body.append(box);
