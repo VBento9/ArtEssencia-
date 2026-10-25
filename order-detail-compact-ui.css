@@ -1,1 +1,12 @@
-#orderDetail .ae-order-detail-toggle{width:100%;text-align:left;border:0;background:transparent;color:inherit;font:inherit;font-weight:700;padding:7px 0;cursor:pointer}#orderDetail .ae-order-detail-collapsed{display:none!important}
+#orderDialog{max-height:90dvh;overflow:auto}
+#orderDialog>.card>div:first-child{position:sticky;top:-1px;z-index:5;background:#fffdf9;padding:10px 0;border-bottom:1px solid #e4d8ca}
+#orderDetail .ae-order-detail-customer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:12px 0;font-size:14px}
+#orderDetail .ae-order-detail-customer strong{font-size:18px}
+#orderDetail .totalbox{margin:10px 0;grid-template-columns:repeat(4,minmax(0,1fr))}
+#orderDetail .ae-order-detail-tools{display:flex;gap:8px;margin:12px 0}
+#orderDetail .ae-order-detail-primary{margin:14px 0}
+#orderDetail .ae-order-detail-section{margin:9px 0;border:1px solid #e4d8ca;border-radius:10px;padding:0 12px;background:#fffdf9}
+#orderDetail .ae-order-detail-section>summary{padding:13px 0;cursor:pointer;font-weight:700;color:#44372b}
+#orderDetail .ae-order-detail-section[open]{padding-bottom:12px}
+#orderDetail .ae-order-detail-primary .section-title{margin-top:12px}
+@media(max-width:650px){#orderDialog{width:96%!important;max-height:94dvh;border-radius:14px!important}#orderDialog>.card{padding:12px}#orderDetail .totalbox{grid-template-columns:repeat(2,minmax(0,1fr))}#orderDetail .cart-row{grid-template-columns:minmax(0,1fr) 60px 74px!important;gap:7px}#orderDetail .cart-row>.danger{grid-column:1/-1;justify-self:end}#orderDetail .ae-order-detail-tools .btn{width:100%}}

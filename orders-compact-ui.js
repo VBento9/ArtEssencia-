@@ -25,6 +25,8 @@
   const hasDates=dateFields.some(field=>[...field.querySelectorAll('input')].some(input=>!!input.value));
   button.addEventListener('click',()=>apply(advanced.hidden));
   apply(hasDates);
+  const header=document.querySelector('.topbar');
+  if(header){const measure=()=>root.style.setProperty('--ae-orders-top-offset',(header.getBoundingClientRect().height+8)+'px');measure();if(typeof ResizeObserver!=='undefined')new ResizeObserver(measure).observe(header)}
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
