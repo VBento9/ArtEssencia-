@@ -1,4 +1,4 @@
-const CACHE='artessencia-backoffice-1.9.29';
+const CACHE='artessencia-backoffice-1.9.30';
 const SUPABASE_SDK="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0";
 const CORE=["/", "/index.html", "/pwa-update.js", "/manifest.webmanifest", "/brand-artessencia.png", "/icon-192.png", "/icon-512.png", "/order-detail-compact-ui.js", "/order-detail-compact-ui.css", "/production-compact-ui.js", "/production-compact-ui.css", "/product-editor-guide.js", "/product-editor-guide.css", "/stock-compact-ui.js", "/stock-compact-ui.css", "/dashboard-compact-ui.js", "/dashboard-compact-ui.css", "/products-compact-ui.js", "/products-compact-ui.css", "/orders-compact-ui.js", "/orders-compact-ui.css"];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE).then(()=>c.addAll([SUPABASE_SDK]).catch(()=>{}))));self.skipWaiting()});
