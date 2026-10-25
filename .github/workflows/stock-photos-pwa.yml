@@ -10,6 +10,7 @@ on:
       - 'scripts/test_pwa_update*.cjs'
       - 'scripts/test_pwa_transition.cjs'
       - 'scripts/test_*integrity*.cjs'
+      - 'scripts/test_reports_costs*.cjs'
       - 'scripts/test_production_atomic_sql.cjs'
       - 'sql/complete-production-backoffice-v1.sql'
       - '.github/workflows/stock-photos-pwa.yml'
@@ -50,3 +51,8 @@ jobs:
 
       - name: Verify integrity in browser
         run: node scripts/test_integrity_browser.cjs
+
+      - name: Verify report periods and compact costs
+        run: |
+          node scripts/test_reports_costs.cjs
+          node scripts/test_reports_costs_browser.cjs

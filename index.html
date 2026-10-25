@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.26">
+<meta name="artessencia-version" content="1.9.27">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <link rel="manifest" href="manifest.webmanifest">
@@ -3463,6 +3463,24 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 #visualCatalogs .visual-catalog-picker{max-height:380px;overflow:auto;overscroll-behavior:contain}
 @media(max-width:650px){#visualCatalogs .visual-filter-toolbar-v20261023{padding:12px;border-radius:15px}#visualCatalogs .visual-filter-row-v20261023{grid-template-columns:1fr}#visualCatalogs .visual-filter-actions-v20261023 button{flex:1 1 auto}}
 </style>
+<style>
+#costs .cost-panel-v1927[hidden],#reports [hidden]{display:none!important}
+#costs .cost-tabs-v1927{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+#costs .cost-tabs-v1927 button{border:1px solid #d8c7b5;background:#fffaf3;border-radius:10px;padding:12px 16px;font:inherit;cursor:pointer}
+#costs .cost-tabs-v1927 button[aria-selected="true"]{background:#44372b;color:#fff;border-color:#44372b}
+#costs .cost-list-tools-v1927,#reports .report-period-fields-v1927{display:flex;align-items:end;flex-wrap:wrap;gap:12px;margin:12px 0}
+#costs .cost-list-tools-v1927 label,#reports .report-period-fields-v1927 label{display:grid;gap:6px;font-weight:700}
+#costs .cost-list-tools-v1927 label:first-child{flex:1;min-width:180px}
+#costs .cost-list-tools-v1927 input,#costs .cost-list-tools-v1927 select,#reports .report-period-fields-v1927 input,#reports .report-period-fields-v1927 select{padding:10px;border:1px solid #d8c7b5;border-radius:8px;min-height:44px;max-width:100%;font:inherit}
+#costs .cost-list-pages-v1927{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px}
+#costs .cost-list-pages-v1927 span{font-size:12px;text-align:center}
+#costs .cost-details-toggle-v1927{display:flex;align-items:center;gap:8px;margin:12px 0;font-size:12px}
+#costs .cost-details-toggle-v1927 input{width:auto}
+#costs #costPanelproducts[data-details="false"] :is(th,td):nth-child(2),#costs #costPanelproducts[data-details="false"] :is(th,td):nth-child(3),#costs #costPanelproducts[data-details="false"] :is(th,td):nth-child(4),#costs #costPanelproducts[data-details="false"] :is(th,td):nth-child(5),#costs #costPanelproducts[data-details="false"] :is(th,td):nth-child(6),#costs #costPanelproducts[data-details="false"] :is(th,td):nth-child(8),#costs #costPanelproducts[data-details="false"] :is(th,td):nth-child(11),#costs #costPanelproducts[data-details="false"] :is(th,td):nth-child(12){display:none}
+#costs .cost-manual-details-v1927{margin-top:14px}#costs .cost-manual-details-v1927 summary{cursor:pointer;padding:14px;border:1px solid #d8c7b5;border-radius:10px;background:#fffaf3;font-weight:700}
+#reports .report-period-v1927{margin:12px 0;padding:14px}#reports .report-period-v1927>small{display:block;margin-top:8px;color:#756251}#reportPeriodErrorV1927{color:#a12626}
+@media(max-width:650px){#costs .cost-tabs-v1927 button{flex:1 1 40%;padding:11px 8px}#reports .report-period-fields-v1927 label{flex:1 1 42%;min-width:0}#reports .report-period-fields-v1927 button{width:100%}#costs .cost-list-pages-v1927 .btn{padding:10px}}
+</style>
 </head>
 <body>
 <div id="brandSplashV1778" aria-hidden="true"><div class="brand-splash-card"><img src="brand-artessencia.png" alt=""></div></div>
@@ -3866,8 +3884,21 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
     </div>
     <div class="costs-summary" id="costKpis"></div>
 
-    <div class="costs-stack-v1720">
-      <section class="card costs-card costs-manual-section-v1720">
+<div class="cost-tabs-v1927" role="tablist" aria-label="Áreas de custos"><button id="costTabrecipes" type="button" role="tab" aria-controls="costPanelrecipes" aria-selected="true" tabindex="0" onclick="showCostTabV1927('recipes')" onkeydown="costTabKeyV1927(event,'recipes')">Fichas técnicas</button><button id="costTabproducts" type="button" role="tab" aria-controls="costPanelproducts" aria-selected="false" tabindex="-1" onclick="showCostTabV1927('products')" onkeydown="costTabKeyV1927(event,'products')">Produtos</button><button id="costTabmaterials" type="button" role="tab" aria-controls="costPanelmaterials" aria-selected="false" tabindex="-1" onclick="showCostTabV1927('materials')" onkeydown="costTabKeyV1927(event,'materials')">Matérias-primas</button><button id="costTabpackaging" type="button" role="tab" aria-controls="costPanelpackaging" aria-selected="false" tabindex="-1" onclick="showCostTabV1927('packaging')" onkeydown="costTabKeyV1927(event,'packaging')">Embalagens</button><button id="costTabpricing" type="button" role="tab" aria-controls="costPanelpricing" aria-selected="false" tabindex="-1" onclick="showCostTabV1927('pricing')" onkeydown="costTabKeyV1927(event,'pricing')">Precificação</button></div><div id="costPanelrecipes" class="cost-panel-v1927" role="tabpanel" aria-labelledby="costTabrecipes" data-details="false"><section class="card costs-card costs-recipe-section-v1720">
+        <div class="costs-card-head"><div><div class="section-title" style="margin:0">Ficha técnica por produto</div><small>Cada quantidade corresponde ao consumo de uma unidade do produto selecionado.</small></div></div>
+        <div class="costs-recipe-form costs-recipe-grid-v1720">
+          <div class="field recipe-product-picker-v1763"><label>Produto</label><select id="costProduct" onchange="syncRecipeProductChoiceV1763();renderProductRecipeEditor()" hidden aria-hidden="true" tabindex="-1"></select><div class="recipe-touch-choice-v1763"><button id="recipeProductChoiceV1763" type="button" class="recipe-choice-display-v1763" onclick="toggleRecipeProductSearchV1763()"><span>Selecionar produto…</span><small>Toque para pesquisar</small></button><button type="button" class="btn ghost recipe-search-button-v1763" onclick="toggleRecipeProductSearchV1763()">Pesquisar</button></div><div id="recipeProductSearchPanelV1763" class="recipe-search-panel-v1763" hidden><div class="recipe-search-row-v1763"><input id="recipeProductSearchInputV1763" type="search" inputmode="search" autocomplete="off" placeholder="Pesquisar nome, código, tipo…" oninput="renderRecipeProductResultsV1763()"><button type="button" class="btn ghost" onclick="clearRecipeProductSearchV1763()">Limpar</button></div><small id="recipeProductSearchCountV1763">0 produtos</small><div id="recipeProductSearchResultsV1763" class="recipe-search-results-v1763"></div></div></div>
+          <div class="field recipe-material-picker-v1758"><label>Material / componente</label><select id="costIngredient" hidden aria-hidden="true" tabindex="-1"></select><div class="recipe-touch-choice-v1763"><button id="recipeMaterialChoiceV1763" type="button" class="recipe-choice-display-v1763" onclick="toggleRecipeMaterialSearchV1758()"><span>Selecionar material…</span><small>Toque para pesquisar</small></button><button type="button" class="btn ghost recipe-search-button-v1763" onclick="toggleRecipeMaterialSearchV1758()">Pesquisar</button></div><div id="recipeMaterialSearchPanelV1758" class="recipe-search-panel-v1763" hidden><div class="recipe-search-row-v1763"><input id="recipeMaterialSearchInputV1758" type="search" inputmode="search" autocomplete="off" placeholder="Pesquisar cera, lavanda, caixa…" oninput="filterRecipeMaterialsV1758()"><button type="button" class="btn ghost" onclick="clearRecipeMaterialSearchV1758()">Limpar</button></div><small id="recipeMaterialSearchCountV1758">0 resultados</small><div id="recipeMaterialSearchResultsV1763" class="recipe-search-results-v1763"></div></div></div>
+          <div class="field"><label>Quantidade por unidade</label><input id="costIngredientQty" type="number" min="0" step="any" placeholder="g/ml/cm/un"></div>
+          <div class="field costs-recipe-action-v1720"><label>&nbsp;</label><button id="recipeSaveBtnV143" class="btn primary" onclick="addRecipeLine()">Guardar material</button></div>
+        </div>
+        <div class="costs-recipe-state"><div id="recipeSaveStateV143" class="save-state-v143 neutral"><span>●</span><div><strong>Selecione um produto</strong><small>Cada material fica guardado imediatamente ao carregar em “Guardar material”.</small></div></div></div>
+        <div id="productRecipeEditor" style="margin-top:12px"></div>
+      </section></div><div id="costPanelproducts" class="cost-panel-v1927" role="tabpanel" aria-labelledby="costTabproducts" data-details="false" hidden><div class="card costs-table-card"><div class="costs-card-head"><div><div class="section-title" style="margin:0">Custo real e preços recomendados por produto</div><small>O PVP permanece manual; as recomendações acompanham o custo atual.</small></div></div>
+      <div class="cost-list-tools-v1927"><label>Pesquisar produtos<input id="costSearchproducts" type="search" placeholder="Nome ou código…" oninput="costListChangedV1927('products')"></label><label>Por página<select id="costSizeproducts" onchange="costListChangedV1927('products')"><option value="10">10</option><option value="20">20</option><option value="50">50</option></select></label></div><label class="cost-details-toggle-v1927"><input type="checkbox" onchange="document.getElementById('costPanelproducts').dataset.details=String(this.checked)"> Ver composição do custo e preços da Loja</label><div class="tablewrap"><table><thead><tr><th>Produto</th><th>Categoria</th><th>Materiais</th><th>Mão de obra</th><th>Custos gerais</th><th>Outros</th><th>Custo total</th><th>Margem alvo</th><th>PVP definido</th><th>PVP recomendado</th><th>PVP Loja</th><th>Recomendado Loja</th><th>Margem real</th></tr></thead><tbody id="costProductsBody"></tbody></table></div>
+    <div class="cost-list-pages-v1927"><button id="costPrevproducts" type="button" class="btn" onclick="costPageMoveV1927('products',-1)">Anterior</button><span id="costCountproducts" role="status" aria-live="polite"></span><button id="costNextproducts" type="button" class="btn" onclick="costPageMoveV1927('products',1)">Seguinte</button></div></div></div><div id="costPanelmaterials" class="cost-panel-v1927" role="tabpanel" aria-labelledby="costTabmaterials" data-details="false" hidden><div class="card costs-table-card"><div class="costs-card-head"><div><div class="section-title" style="margin:0">Custos das matérias-primas</div><small>Valor atual utilizado nas fichas técnicas e no valor de Stock.</small></div></div>
+      <div class="cost-list-tools-v1927"><label>Pesquisar matérias-primas<input id="costSearchmaterials" type="search" placeholder="Nome ou código…" oninput="costListChangedV1927('materials')"></label><label>Por página<select id="costSizematerials" onchange="costListChangedV1927('materials')"><option value="10">10</option><option value="20">20</option><option value="50">50</option></select></label></div><div class="tablewrap"><table><thead><tr><th>Matéria-prima</th><th>Unidade</th><th>Custo/base</th><th>Stock</th><th>Valor stock</th><th>Origem</th></tr></thead><tbody id="costMaterialsBody"></tbody></table></div>
+    <div class="cost-list-pages-v1927"><button id="costPrevmaterials" type="button" class="btn" onclick="costPageMoveV1927('materials',-1)">Anterior</button><span id="costCountmaterials" role="status" aria-live="polite"></span><button id="costNextmaterials" type="button" class="btn" onclick="costPageMoveV1927('materials',1)">Seguinte</button></div></div><details class="cost-manual-details-v1927"><summary>Correção manual de custo</summary><section class="card costs-card costs-manual-section-v1720">
         <div class="costs-card-head"><div><div class="section-title" style="margin:0">Custo manual de matéria-prima</div><small>Correção excecional do custo atual, sem alterar a quantidade em Stock.</small></div></div>
         <div class="form-grid costs-manual-grid-v1720">
           <div class="field"><label>Matéria-prima</label><select id="costMaterial" onchange="syncCostUnitV120();updateCostPreview()"></select></div>
@@ -3882,33 +3913,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           <button class="btn primary" onclick="applyMaterialCost()">Atualizar custo</button>
         </div>
         <small class="costs-manual-help-v1720">Use esta operação apenas para uma correção manual justificada. Para entradas reais de material, utilize Compras.</small>
-      </section>
-
-      <section class="card costs-card costs-recipe-section-v1720">
-        <div class="costs-card-head"><div><div class="section-title" style="margin:0">Ficha técnica por produto</div><small>Cada quantidade corresponde ao consumo de uma unidade do produto selecionado.</small></div></div>
-        <div class="costs-recipe-form costs-recipe-grid-v1720">
-          <div class="field recipe-product-picker-v1763"><label>Produto</label><select id="costProduct" onchange="syncRecipeProductChoiceV1763();renderProductRecipeEditor()" hidden aria-hidden="true" tabindex="-1"></select><div class="recipe-touch-choice-v1763"><button id="recipeProductChoiceV1763" type="button" class="recipe-choice-display-v1763" onclick="toggleRecipeProductSearchV1763()"><span>Selecionar produto…</span><small>Toque para pesquisar</small></button><button type="button" class="btn ghost recipe-search-button-v1763" onclick="toggleRecipeProductSearchV1763()">Pesquisar</button></div><div id="recipeProductSearchPanelV1763" class="recipe-search-panel-v1763" hidden><div class="recipe-search-row-v1763"><input id="recipeProductSearchInputV1763" type="search" inputmode="search" autocomplete="off" placeholder="Pesquisar nome, código, tipo…" oninput="renderRecipeProductResultsV1763()"><button type="button" class="btn ghost" onclick="clearRecipeProductSearchV1763()">Limpar</button></div><small id="recipeProductSearchCountV1763">0 produtos</small><div id="recipeProductSearchResultsV1763" class="recipe-search-results-v1763"></div></div></div>
-          <div class="field recipe-material-picker-v1758"><label>Material / componente</label><select id="costIngredient" hidden aria-hidden="true" tabindex="-1"></select><div class="recipe-touch-choice-v1763"><button id="recipeMaterialChoiceV1763" type="button" class="recipe-choice-display-v1763" onclick="toggleRecipeMaterialSearchV1758()"><span>Selecionar material…</span><small>Toque para pesquisar</small></button><button type="button" class="btn ghost recipe-search-button-v1763" onclick="toggleRecipeMaterialSearchV1758()">Pesquisar</button></div><div id="recipeMaterialSearchPanelV1758" class="recipe-search-panel-v1763" hidden><div class="recipe-search-row-v1763"><input id="recipeMaterialSearchInputV1758" type="search" inputmode="search" autocomplete="off" placeholder="Pesquisar cera, lavanda, caixa…" oninput="filterRecipeMaterialsV1758()"><button type="button" class="btn ghost" onclick="clearRecipeMaterialSearchV1758()">Limpar</button></div><small id="recipeMaterialSearchCountV1758">0 resultados</small><div id="recipeMaterialSearchResultsV1763" class="recipe-search-results-v1763"></div></div></div>
-          <div class="field"><label>Quantidade por unidade</label><input id="costIngredientQty" type="number" min="0" step="any" placeholder="g/ml/cm/un"></div>
-          <div class="field costs-recipe-action-v1720"><label>&nbsp;</label><button id="recipeSaveBtnV143" class="btn primary" onclick="addRecipeLine()">Guardar material</button></div>
-        </div>
-        <div class="costs-recipe-state"><div id="recipeSaveStateV143" class="save-state-v143 neutral"><span>●</span><div><strong>Selecione um produto</strong><small>Cada material fica guardado imediatamente ao carregar em “Guardar material”.</small></div></div></div>
-        <div id="productRecipeEditor" style="margin-top:12px"></div>
-      </section>
-    </div>
-
-    <div class="card costs-table-card">
-      <div class="costs-card-head"><div><div class="section-title" style="margin:0">Custos das matérias-primas</div><small>Valor atual utilizado nas fichas técnicas e no valor de Stock.</small></div></div>
-      <div class="tablewrap"><table><thead><tr><th>Matéria-prima</th><th>Unidade</th><th>Custo/base</th><th>Stock</th><th>Valor stock</th><th>Origem</th></tr></thead><tbody id="costMaterialsBody"></tbody></table></div>
-    </div>
-
-    <div class="card costs-table-card">
-      <div class="costs-card-head"><div><div class="section-title" style="margin:0">Custo real e preços recomendados por produto</div><small>O PVP permanece manual; as recomendações acompanham o custo atual.</small></div></div>
-      <div class="tablewrap"><table><thead><tr><th>Produto</th><th>Categoria</th><th>Materiais</th><th>Mão de obra</th><th>Custos gerais</th><th>Outros</th><th>Custo total</th><th>Margem alvo</th><th>PVP definido</th><th>PVP recomendado</th><th>PVP Loja</th><th>Recomendado Loja</th><th>Margem real</th></tr></thead><tbody id="costProductsBody"></tbody></table></div>
-    </div>
-
-    <div class="card costs-table-card">
-      <div class="costs-card-head"><div><div class="section-title" style="margin:0">Referência de precificação</div><small>Os parâmetros globais são geridos num único local para evitar fórmulas contraditórias.</small></div></div>
+      </section></details></div><div id="costPanelpackaging" class="cost-panel-v1927" role="tabpanel" aria-labelledby="costTabpackaging" data-details="false" hidden><div class="card costs-table-card"><div class="costs-card-head"><div><div class="section-title" style="margin:0">Embalagens</div><small>Consulta dos custos definidos em Configuração.</small></div><button class="btn" onclick="go('settings')">Gerir</button></div>
+      <div class="cost-list-tools-v1927"><label>Pesquisar embalagens<input id="costSearchpackaging" type="search" placeholder="Nome ou código…" oninput="costListChangedV1927('packaging')"></label><label>Por página<select id="costSizepackaging" onchange="costListChangedV1927('packaging')"><option value="10">10</option><option value="20">20</option><option value="50">50</option></select></label></div><div class="tablewrap"><table><thead><tr><th>Embalagem</th><th>Capacidade</th><th>Custo/un.</th><th>Custo por unidade cheio</th></tr></thead><tbody id="costPackagingBody"></tbody></table></div>
+    <div class="cost-list-pages-v1927"><button id="costPrevpackaging" type="button" class="btn" onclick="costPageMoveV1927('packaging',-1)">Anterior</button><span id="costCountpackaging" role="status" aria-live="polite"></span><button id="costNextpackaging" type="button" class="btn" onclick="costPageMoveV1927('packaging',1)">Seguinte</button></div></div></div><div id="costPanelpricing" class="cost-panel-v1927" role="tabpanel" aria-labelledby="costTabpricing" data-details="false" hidden><div class="card costs-table-card"><div class="costs-card-head"><div><div class="section-title" style="margin:0">Referência de precificação</div><small>Os parâmetros globais são geridos num único local para evitar fórmulas contraditórias.</small></div></div>
       <div class="apreco-config-summary-v1744">
         <div><span>Mão de obra</span><strong id="costPricingLaborV1745">—</strong></div>
         <div><span>Custos gerais</span><strong id="costPricingFixedV1745">—</strong></div>
@@ -3916,12 +3923,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       </div>
       <div class="btnrow" style="margin-top:10px"><button class="btn primary" onclick="go('settings')">Abrir Configuração → Precificação</button></div>
       <div hidden aria-hidden="true"><input id="costLaborRate" type="number"><input id="costLaborMinutes" type="number"><input id="costWasteRate" type="number"></div>
-    </div>
-
-    <div class="card costs-table-card">
-      <div class="costs-card-head"><div><div class="section-title" style="margin:0">Embalagens</div><small>Consulta dos custos definidos em Configuração.</small></div><button class="btn" onclick="go('settings')">Gerir</button></div>
-      <div class="tablewrap"><table><thead><tr><th>Embalagem</th><th>Capacidade</th><th>Custo/un.</th><th>Custo por unidade cheio</th></tr></thead><tbody id="costPackagingBody"></tbody></table></div>
-    </div>
+    </div></div>
   </section>
 
   <section id="stock" class="screen">
@@ -5411,15 +5413,28 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
     <div class="reports-hero card">
       <div>
         <div class="section-title" style="margin:0">Relatórios</div>
-        <small>Análise do período selecionado no Dashboard, com exportação PDF e CSV.</small>
+        <small>Escolhe o período aqui. O resumo, o PDF e os CSV seguem o período aplicado.</small>
       </div>
       <div class="reports-actions">
-        <button class="btn" onclick="renderReports()">Atualizar</button>
+        <button class="btn" onclick="applyReportPeriodV1927()">Atualizar</button>
         <button class="btn primary" onclick="exportManagementPDF()">Gerar PDF</button>
         <button class="btn" onclick="previewManagementReport()">Pré-visualizar</button>
       </div>
     </div>
 
+<div class="card report-period-v1927">
+ <div class="report-period-fields-v1927">
+  <label>Período<select id="reportPeriodModeV1927" onchange="reportModeChangedV1927()"><option value="month">Mês</option><option value="year">Ano completo</option><option value="custom">Período personalizado</option></select></label>
+  <label id="reportMonthFieldV1927">Mês<input id="reportMonthV1927" type="month"></label>
+  <label id="reportYearFieldV1927" hidden>Ano<input id="reportYearV1927" type="number" min="1900" max="2200" step="1"></label>
+  <label id="reportStartFieldV1927" hidden>De<input id="reportStartV1927" type="date" min="1900-01-01" max="2200-12-31"></label>
+  <label id="reportEndFieldV1927" hidden>Até<input id="reportEndV1927" type="date" min="1900-01-01" max="2200-12-31"></label>
+  <button class="btn primary" type="button" onclick="applyReportPeriodV1927()">Aplicar período</button>
+ </div>
+ <p id="reportPeriodErrorV1927" role="alert" hidden></p>
+ <strong id="reportPeriodAppliedV1927" role="status" aria-live="polite"></strong>
+ <small>Encomendas: data de entrega (ou criação, se não existir entrega). Compras recebidas: data de receção. Caixa: data do movimento. Inclui o primeiro e o último dia.</small>
+</div>
     <div id="reportKpis" class="reports-kpis"></div>
 
     <div class="reports-stack-v1725" style="margin-top:14px">
@@ -5458,11 +5473,11 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 
     <div class="card reports-export-card" style="margin-top:10px">
       <div class="section-title" style="margin-top:0">Exportação de dados</div>
-      <small>CSV compatível com Excel, Numbers e contabilidade.</small>
+      <small>CSV do período aplicado, compatível com Excel, Numbers e contabilidade. Inclui todos os estados das encomendas e compras desse período.</small>
       <div class="btnrow" style="margin-top:8px">
-        <button class="btn" onclick="exportOrdersCSV()">Encomendas CSV</button>
-        <button class="btn" onclick="exportPurchasesCSV()">Compras CSV</button>
-        <button class="btn" onclick="exportCashCSV()">Caixa CSV</button>
+        <button class="btn" onclick="exportReportCSVV1927('orders')">Encomendas CSV</button>
+        <button class="btn" onclick="exportReportCSVV1927('purchases')">Compras CSV</button>
+        <button class="btn" onclick="exportReportCSVV1927('cash')">Caixa CSV</button>
       </div>
     </div>
 
@@ -6116,7 +6131,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.26';
+const APP_VERSION='1.9.27';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -12161,18 +12176,26 @@ function renderCosts(){
  const pending=db.products.filter(p=>productManufacturedV130(p)&&!productTechSheetStateV146(p).ok).length;
  const fixedRate=pricingFixedHourlyRateV1745();
  costKpis.innerHTML=[['Produtos',db.products.length,'Total registado'],['Fichas válidas',configured,'Composição operacional'],['Fichas por rever',pending,'Produção própria'],['Custos gerais',euro(fixedRate)+'/h','Rateio por hora produtiva'],['Custo médio',euro(avg),'Custo atual por produto']].map(([l,v,n])=>`<div class="card costs-kpi ${l==='Fichas por rever'&&pending?'costs-kpi-warn':''}"><span>${l}</span><strong>${v}</strong><small>${n}</small></div>`).join('');
- costMaterialsBody.innerHTML=db.stock.map(x=>{
+ renderCostTablesV1927();
+ costLaborRate.value=pricingLaborHourlyRateV1745();costLaborMinutes.value=db.settings.laborMinutes||0;costWasteRate.value=pricingGlobalWastePctV1802();const cl=document.getElementById('costPricingLaborV1745'),cf=document.getElementById('costPricingFixedV1745'),cm=document.getElementById('costPricingMarginV1745');if(cl)cl.textContent=euro(pricingLaborHourlyRateV1745())+'/h';if(cf)cf.textContent=euro(pricingFixedHourlyRateV1745())+'/h';if(cm)cm.textContent=(Number(db.settings.pricingDefaultMarginPct)||0).toLocaleString('pt-PT',{maximumFractionDigits:1})+'%';
+
+ renderProductRecipeEditor()
+}
+function renderCostTablesV1927(){
+ costMaterialsBody.innerHTML=costPageRowsV1927('materials',db.stock,x=>x.name+' '+x.unit).map(x=>{
    const meta=db.costMeta[x.name],origin=meta?.source||((Number(x.unitCost)||0)>0?'Inicial':'Por preencher');
-   return `<tr><td>${x.name}</td><td>${x.unit}</td><td>${Number(x.unitCost||0).toFixed(6)} €/${x.unit}</td><td>${Number(x.qty||0).toLocaleString('pt-PT')} ${x.unit}</td><td>${euro((Number(x.qty)||0)*(Number(x.unitCost)||0))}</td><td>${origin}</td></tr>`
+   return `<tr><td>${escapeHtml(x.name)}</td><td>${escapeHtml(x.unit)}</td><td>${Number(x.unitCost||0).toFixed(6)} €/${escapeHtml(x.unit)}</td><td>${Number(x.qty||0).toLocaleString('pt-PT')} ${escapeHtml(x.unit)}</td><td>${euro((Number(x.qty)||0)*(Number(x.unitCost)||0))}</td><td>${escapeHtml(origin)}</td></tr>`
  }).join('');
- costProductsBody.innerHTML=db.products.map(p=>{
+ if(!costMaterialsBody.children.length)costMaterialsBody.innerHTML='<tr><td colspan="6" class="empty">Sem resultados para esta pesquisa.</td></tr>';
+ costProductsBody.innerHTML=costPageRowsV1927('products',db.products,p=>p.name+' '+p.code+' '+p.category).map(p=>{
    const x=productCostBreakdownV110(p),c=x.total,profit=(Number(p.price)||0)-c,m=p.price?profit/p.price:0;
    const designation=normalizeProductAvailabilityV1244(p)==='edition'?'Edição Especial':p.category;
-   return `<tr><td>${p.name}</td><td>${designation}</td><td>${euro(x.materials)}</td><td>${euro(x.labor)}</td><td>${euro(x.fixed)}</td><td>${euro(x.other)}</td><td><strong>${euro(c)}</strong></td><td>${pricingProductMarginPctV1745(p).toLocaleString('pt-PT',{maximumFractionDigits:1})}%</td><td>${euro(p.price)}</td><td><strong>${euro(artessenciaRecommendedPriceV1251(p))}</strong></td><td>${euro(p.onlinePrice??p.price)}</td><td><strong>${euro(artessenciaRecommendedOnlinePriceV12620(p))}</strong></td><td><span class="price-health-v132"><span class="badge ${artessenciaPriceHealthV1251(p).key==='good'?'ok':artessenciaPriceHealthV1251(p).key==='loss'?'bad':'warn'}">${pct(m)}</span><small class="price-health-v1251 ${artessenciaPriceHealthV1251(p).key}">${artessenciaPriceHealthV1251(p).label}</small></span></td></tr>`
+   return `<tr><td>${escapeHtml(p.name)}</td><td>${escapeHtml(designation)}</td><td>${euro(x.materials)}</td><td>${euro(x.labor)}</td><td>${euro(x.fixed)}</td><td>${euro(x.other)}</td><td><strong>${euro(c)}</strong></td><td>${pricingProductMarginPctV1745(p).toLocaleString('pt-PT',{maximumFractionDigits:1})}%</td><td>${euro(p.price)}</td><td><strong>${euro(artessenciaRecommendedPriceV1251(p))}</strong></td><td>${euro(p.onlinePrice??p.price)}</td><td><strong>${euro(artessenciaRecommendedOnlinePriceV12620(p))}</strong></td><td><span class="price-health-v132"><span class="badge ${artessenciaPriceHealthV1251(p).key==='good'?'ok':artessenciaPriceHealthV1251(p).key==='loss'?'bad':'warn'}">${pct(m)}</span><small class="price-health-v1251 ${artessenciaPriceHealthV1251(p).key}">${artessenciaPriceHealthV1251(p).label}</small></span></td></tr>`
  }).join('');
- costLaborRate.value=pricingLaborHourlyRateV1745();costLaborMinutes.value=db.settings.laborMinutes||0;costWasteRate.value=pricingGlobalWastePctV1802();const cl=document.getElementById('costPricingLaborV1745'),cf=document.getElementById('costPricingFixedV1745'),cm=document.getElementById('costPricingMarginV1745');if(cl)cl.textContent=euro(pricingLaborHourlyRateV1745())+'/h';if(cf)cf.textContent=euro(pricingFixedHourlyRateV1745())+'/h';if(cm)cm.textContent=(Number(db.settings.pricingDefaultMarginPct)||0).toLocaleString('pt-PT',{maximumFractionDigits:1})+'%';
- costPackagingBody.innerHTML=(db.packaging||[]).map(x=>`<tr><td>${x.name}</td><td>${x.capacity} un.</td><td>${euro(x.cost)}</td><td>${euro(x.capacity?x.cost/x.capacity:0)}</td></tr>`).join('');
- renderProductRecipeEditor()
+ if(!costProductsBody.children.length)costProductsBody.innerHTML='<tr><td colspan="13" class="empty">Sem resultados para esta pesquisa.</td></tr>';
+
+ costPackagingBody.innerHTML=costPageRowsV1927('packaging',db.packaging||[],x=>x.name).map(x=>`<tr><td>${escapeHtml(x.name)}</td><td>${x.capacity} un.</td><td>${euro(x.cost)}</td><td>${euro(x.capacity?x.cost/x.capacity:0)}</td></tr>`).join('');
+ if(!costPackagingBody.children.length)costPackagingBody.innerHTML='<tr><td colspan="4" class="empty">Sem resultados para esta pesquisa.</td></tr>';
 }
 function saveCostSettings(){
  const labor=Math.max(0,Number(costLaborRate.value)||0),wastePct=Math.max(0,Math.min(100,Number(costWasteRate.value)||0));
@@ -13756,10 +13779,67 @@ function downloadCSV(name,headers,rows){const body='\ufeff'+[headers,...rows].ma
 function exportOrdersCSV(){const rows=db.orders.map(o=>{const c=calcOrder(o);return[o.id,o.created,o.delivery,o.client,o.contact,o.status,o.payment,c.qty,c.total,o.paid,c.cost,c.profit,c.margin]});downloadCSV('ArtEssencia_encomendas',['Nº','Criada','Entrega','Cliente','Contacto','Estado','Pagamento','Unidades','Total','Pago','Custo','Lucro','Margem'],rows)}
 function exportPurchasesCSV(){downloadCSV('ArtEssencia_compras',['Data encomenda','Data receção','Fornecedor','Artigo','Quantidade','Total','Custo médio','Estado','Pagamento','Notas'],db.purchases.map(p=>[p.date,p.receivedDate||'',p.supplier,p.item,p.qty,p.total,p.unitCost,purchaseIsTestVoidedV1770(p)?'Anulada - teste':(purchaseStatusV135(p)==='ordered'?'Encomendada':'Recebida'),p.method,p.note]))}
 function exportCashCSV(){downloadCSV('ArtEssencia_caixa',['Data','Tipo','Descrição','Meio','Valor','Origem'],db.cash.map(c=>[c.date,c.type,c.desc,c.method,c.value,c.source||'manual']))}
+// Report filters are independent from Dashboard and never modify business data.
+let reportSelectionV1927=null;
+function reportModeChangedV1927(){
+ const mode=document.getElementById('reportPeriodModeV1927').value;
+ for(const [id,show] of [['Month',mode==='month'],['Year',mode==='year'],['Start',mode==='custom'],['End',mode==='custom']])document.getElementById('report'+id+'FieldV1927').hidden=!show;
+}
+function buildReportPeriodV1927(mode,month,year,start,end){
+ let y,m=0,pref;
+ const validDate=v=>/^\d{4}-\d{2}-\d{2}$/.test(v)&&Number(v.slice(0,4))>=1900&&Number(v.slice(0,4))<=2200&&!Number.isNaN(Date.parse(v+'T12:00:00Z'))&&new Date(v+'T12:00:00Z').toISOString().slice(0,10)===v;
+ if(mode==='month'){
+  if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))throw new Error('Seleciona um mês válido.');
+  y=Number(month.slice(0,4));m=Number(month.slice(5));start=month+'-01';end=new Date(Date.UTC(y,m,0)).toISOString().slice(0,10);pref=month;
+ }else if(mode==='year'){
+  y=Number(year);if(!Number.isInteger(y)||y<1900||y>2200)throw new Error('Indica um ano entre 1900 e 2200.');start=y+'-01-01';end=y+'-12-31';pref=String(y);
+ }else if(mode==='custom'){y=Number(start.slice(0,4));pref=start+' a '+end}else throw new Error('Seleciona o tipo de período.');
+ if(!validDate(start)||!validDate(end))throw new Error('Preenche as duas datas com valores válidos.');
+ if(start>end)throw new Error('A data inicial não pode ser posterior à data final.');
+ return {mode,y,m,pref,start,end,matchDate:value=>{const date=String(value||'').slice(0,10);return validDate(date)&&date>=start&&date<=end}};
+}
+function reportPeriodV1927(){
+ if(!reportSelectionV1927){
+  const today=todayISO(),month=today.slice(0,7),year=today.slice(0,4);
+  reportSelectionV1927=buildReportPeriodV1927('month',month,year,'','');
+  for(const [id,value] of [['Month',month],['Year',year],['Start',reportSelectionV1927.start],['End',reportSelectionV1927.end]]){const field=document.getElementById('report'+id+'V1927');if(field)field.value=value}
+ }
+ const label=document.getElementById('reportPeriodAppliedV1927');if(label)label.textContent='Período aplicado: '+reportSelectionV1927.pref;
+ return reportSelectionV1927;
+}
+function applyReportPeriodV1927(){
+ const value=id=>document.getElementById('report'+id+'V1927').value,error=document.getElementById('reportPeriodErrorV1927');
+ try{const next=buildReportPeriodV1927(value('PeriodMode'),value('Month'),value('Year'),value('Start'),value('End'));reportSelectionV1927=next;error.hidden=true;error.textContent='';renderReports();return true}
+ catch(e){error.textContent=e.message;error.hidden=false;return false}
+}
+function exportReportCSVV1927(kind){
+ const r=reportPeriodV1927(),suffix=r.pref.replaceAll(' ','_');
+ if(kind==='orders'){const rows=db.orders.filter(o=>r.matchDate(o.delivery||o.created)).map(o=>{const c=calcOrder(o);return[o.id,o.created,o.delivery,o.client,o.contact,o.status,o.payment,c.qty,c.total,o.paid,c.cost,c.profit,c.margin]});downloadCSV('ArtEssencia_encomendas_'+suffix,['Nº','Criada','Entrega','Cliente','Contacto','Estado','Pagamento','Unidades','Total','Pago','Custo','Lucro','Margem'],rows)}
+ if(kind==='purchases')downloadCSV('ArtEssencia_compras_'+suffix,['Data encomenda','Data receção','Fornecedor','Artigo','Quantidade','Total','Custo médio','Estado','Pagamento','Notas'],db.purchases.filter(p=>r.matchDate(p.receivedDate||p.date)).map(p=>[p.date,p.receivedDate||'',p.supplier,p.item,p.qty,p.total,p.unitCost,purchaseIsTestVoidedV1770(p)?'Anulada - teste':(purchaseStatusV135(p)==='ordered'?'Encomendada':'Recebida'),p.method,p.note]));
+ if(kind==='cash')downloadCSV('ArtEssencia_caixa_'+suffix,['Data','Tipo','Descrição','Meio','Valor','Origem'],db.cash.filter(c=>r.matchDate(c.date)).map(c=>[c.date,c.type,c.desc,c.method,c.value,c.source||'manual']));
+}
+const costPagesV1927={materials:1,products:1,packaging:1};
+function showCostTabV1927(key){
+ for(const tab of document.querySelectorAll('#costs [role="tab"]')){const active=tab.id==='costTab'+key;tab.setAttribute('aria-selected',String(active));tab.tabIndex=active?0:-1;document.getElementById(tab.getAttribute('aria-controls')).hidden=!active}
+}
+function costTabKeyV1927(event,key){
+ const keys=['recipes','products','materials','packaging','pricing'],index=keys.indexOf(key);
+ const next=event.key==='ArrowRight'?keys[(index+1)%keys.length]:event.key==='ArrowLeft'?keys[(index+keys.length-1)%keys.length]:event.key==='Home'?keys[0]:event.key==='End'?keys[keys.length-1]:null;
+ if(next){event.preventDefault();showCostTabV1927(next);document.getElementById('costTab'+next).focus()}
+}
+function costListChangedV1927(kind){costPagesV1927[kind]=1;renderCostTablesV1927()}
+function costPageMoveV1927(kind,delta){costPagesV1927[kind]+=delta;renderCostTablesV1927()}
+function costPageRowsV1927(kind,rows,describe){
+ const normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+ const query=normalize(document.getElementById('costSearch'+kind)?.value),requested=Number(document.getElementById('costSize'+kind)?.value),size=[10,20,50].includes(requested)?requested:10;
+ const filtered=rows.filter(row=>normalize(describe(row)).includes(query)),pages=Math.max(1,Math.ceil(filtered.length/size)),page=Math.max(1,Math.min(costPagesV1927[kind],pages));costPagesV1927[kind]=page;
+ const start=(page-1)*size,count=document.getElementById('costCount'+kind),prev=document.getElementById('costPrev'+kind),next=document.getElementById('costNext'+kind);
+ if(count)count.textContent=filtered.length?`${start+1}–${Math.min(start+size,filtered.length)} de ${filtered.length} · Página ${page}/${pages}`:'0 resultados';if(prev)prev.disabled=page===1;if(next)next.disabled=page===pages;
+ return filtered.slice(start,start+size);
+}
+
 function reportPeriodData(){
-  const y=Number(document.getElementById('dashYear')?.value)||new Date().getFullYear(),m=Number(document.getElementById('dashMonth')?.value??0);
-  const matchDate=v=>{if(!v)return false;const d=new Date(String(v).slice(0,10)+'T12:00:00');return d.getFullYear()===y&&(m===0||d.getMonth()+1===m)};
-  const pref=m===0?String(y):y+'-'+String(m).padStart(2,'0');
+  const {y,m,pref,matchDate}=reportPeriodV1927();
   const validOrders=db.orders.filter(o=>completed(o)&&matchDate(o.delivery||o.created));
   const orders=validOrders.filter(o=>o.status==='Entregue');
   const openOrders=validOrders.filter(o=>o.status!=='Entregue');
