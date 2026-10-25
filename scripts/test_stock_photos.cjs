@@ -18,6 +18,8 @@ for(const m of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi))new vm.Scr
  await page.evaluate(()=>{
   window.photoCalls=[];window.photoFail=false;window.photoDelay=null;
   cloudUser={id:'fixture-owner'};
+  // Delayed authentication startup can clear cloudUser; keep the fake session deterministic.
+  ensureCloudSession=async()=>({id:'fixture-owner'});
   initCloudClient=()=>({storage:{from:bucket=>({
    upload:async(path,file,options)=>{photoCalls.push({bucket,path,type:file.type,options});if(photoDelay)await photoDelay;return photoFail?{error:new Error('fixture upload failure')}:{error:null}},
    getPublicUrl:path=>({data:{publicUrl:'https://fixture.invalid/storage/v1/object/public/artessencia-shop/'+path}}),
