@@ -7,7 +7,7 @@ const {chromium}=require('playwright'),http=require('node:http'),fs=require('nod
   if(path.includes('..')){res.writeHead(400).end();return}
   try{
    let body;
-   if(latest)body=path==='version.json'&&future?JSON.stringify({app:'1.9.31',channel:'artessencia-backoffice-stable'}):fs.readFileSync(path);
+   if(latest)body=path==='version.json'&&future?JSON.stringify({app:'1.9.32',channel:'artessencia-backoffice-stable'}):fs.readFileSync(path);
    else{if(!old.has(path))old.set(path,cp.execFileSync('git',['show','def53761d1286f819bb0443a13166847eba5a1cf:'+path],{maxBuffer:5*1024*1024,stdio:['ignore','pipe','ignore']}));body=old.get(path)}
    const type=path.endsWith('.html')?'text/html':path.endsWith('.js')?'application/javascript':path.endsWith('.json')?'application/json':path.endsWith('.css')?'text/css':path.endsWith('.webmanifest')?'application/manifest+json':'image/png';
    res.writeHead(200,{'Content-Type':type,'Cache-Control':'no-store','Service-Worker-Allowed':'/'}).end(body);
@@ -37,7 +37,7 @@ const {chromium}=require('playwright'),http=require('node:http'),fs=require('nod
   assert.equal(await page.evaluate(()=>APP_VERSION),'1.9.16');
   assert.equal(await page.locator('#stockName').inputValue(),'UNSAVED MATERIAL');
   await page.locator('#ae-update-available button').click();
-  await page.waitForFunction(()=>typeof APP_VERSION==='string'&&APP_VERSION==='1.9.30');
+  await page.waitForFunction(()=>typeof APP_VERSION==='string'&&APP_VERSION==='1.9.31');
   assert.deepEqual(await page.evaluate(()=>[localStorage.getItem('release-preserve'),sessionStorage.getItem('release-preserve')]),['local-value','session-value']);
   assert.equal(await page.evaluate(()=>new Promise((resolve,reject)=>{const r=indexedDB.open('release-preserve');r.onerror=()=>reject(r.error);r.onsuccess=()=>{const db=r.result,q=db.transaction('values').objectStore('values').get('key');q.onsuccess=()=>{db.close();resolve(q.result)}}})),'idb-value');
   assert.equal(await page.evaluate(()=>document.getElementById('stockImageFileV1771').hasAttribute('capture')),false);
@@ -46,7 +46,7 @@ const {chromium}=require('playwright'),http=require('node:http'),fs=require('nod
   future=true;await page.evaluate(()=>window.dispatchEvent(new Event('online')));
   await page.waitForSelector('#ae-update-available');
   assert.equal(await page.locator('#ae-update-available button').evaluate(el=>{const r=el.getBoundingClientRect();return document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)===el}),true);
-  console.log('PASS: real Chromium worker 1.9.16 → 1.9.30; unsaved form retained until explicit refresh; localStorage/sessionStorage/IndexedDB preserved; new Stock picker loaded without reinstall.');
+  console.log('PASS: real Chromium worker 1.9.16 → 1.9.31; unsaved form retained until explicit refresh; localStorage/sessionStorage/IndexedDB preserved; new Stock picker loaded without reinstall.');
   await context.close();
  }finally{await browser.close();await new Promise(r=>server.close(r))}
 })().catch(e=>{console.error(e);process.exitCode=1});
