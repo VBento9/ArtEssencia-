@@ -1,0 +1,27 @@
+#clients.ae-clients-compact .ae-clients-toolbar,#clients.ae-clients-compact .ae-clients-pages{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:12px 0}
+#clients.ae-clients-compact .ae-clients-pages span{font-size:12px;min-width:110px;text-align:center}
+#clients.ae-clients-compact .ae-clients-pages label{display:flex;align-items:center;gap:8px;margin-left:auto;font-size:12px}
+#clients.ae-clients-compact .ae-clients-pages select{width:auto;min-height:40px}
+#clients.ae-clients-compact .ae-clients-pages button:disabled{opacity:.45;cursor:not-allowed}
+#clients.ae-clients-compact .clients-form-card[hidden],#clients.ae-clients-compact .client-card[hidden]{display:none!important}
+#clients.ae-clients-compact .clients-list-card{scroll-margin-top:90px}
+#clients.ae-clients-compact .clients-form-head{display:flex;justify-content:space-between;align-items:start;gap:12px}
+#clients.ae-clients-compact .client-actions details{display:flex;flex-wrap:wrap;gap:6px}
+#clients.ae-clients-compact .client-actions summary{cursor:pointer;padding:10px;border:1px solid #dfd4c8;border-radius:10px;font-size:12px}
+#clients.ae-clients-compact .client-actions details:not([open])>button{display:none!important}
+#clients.ae-clients-compact .client-actions details>button{margin:5px 5px 0 0}
+#clients.ae-clients-compact .client-actions .btn{min-height:42px!important;font-size:12px!important}
+#clients.ae-clients-compact .client-info{overflow-wrap:anywhere}
+@media(max-width:1100px){
+ #clients.ae-clients-compact .clients-cards{grid-template-columns:minmax(0,1fr)!important}
+ #clients.ae-clients-compact .client-card-main{grid-template-columns:44px minmax(0,1fr)!important}
+ #clients.ae-clients-compact .client-metrics{grid-column:1/-1;grid-template-columns:repeat(3,minmax(0,1fr))!important}
+ #clients.ae-clients-compact .client-card-foot{grid-template-columns:minmax(0,1fr)!important}
+}
+@media(max-width:650px){
+ #clients.ae-clients-compact .clients-tools{display:grid;grid-template-columns:minmax(0,1fr)!important;width:100%}
+ #clients.ae-clients-compact .clients-tools>*{min-width:0;width:100%}
+ #clients.ae-clients-compact .client-metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #clients.ae-clients-compact .ae-clients-pages label{margin-left:0;width:100%}
+ #clients.ae-clients-compact .clients-form-head{flex-wrap:wrap}
+}

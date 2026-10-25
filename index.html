@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.30">
+<meta name="artessencia-version" content="1.9.31">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <link rel="manifest" href="manifest.webmanifest">
@@ -3443,6 +3443,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 <link rel="stylesheet" href="./products-compact-ui.css" id="ae-products-compact-styles">
 <link rel="stylesheet" href="./orders-compact-ui.css" id="ae-orders-compact-styles">
 <link rel="stylesheet" href="./product-editor-guide.css">
+<link rel="stylesheet" href="./clients-compact-ui.css">
 <link rel="stylesheet" href="./production-compact-ui.css">
 <link rel="stylesheet" href="./order-detail-compact-ui.css">
 <style id="visual-filters-compact-20261023">
@@ -6132,7 +6133,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.30';
+const APP_VERSION='1.9.31';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -9151,11 +9152,12 @@ function renderClients(){
    <span>${label}</span><strong>${value}</strong><small>${note}</small>
  </div>`).join('');
 
- const q=(document.getElementById('clientSearch')?.value||'').trim().toLowerCase();
+ const searchKey=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
+ const q=searchKey(document.getElementById('clientSearch')?.value);
  const filter=document.getElementById('clientOrderFilter')?.value||'all';
  const rows=stats.filter(x=>{
    const c=x.c||{};
-   const matchQ=!q||[c.name,c.phone,c.email,c.note||c.notes].some(v=>String(v||'').toLowerCase().includes(q));
+   const matchQ=!q||[c.name,c.phone,c.email,c.note||c.notes].some(v=>searchKey(v).includes(q));
    const matchF=filter==='all'||(filter==='with'&&x.related.length>0)||(filter==='without'&&!x.related.length);
    return matchQ&&matchF;
  });
@@ -16215,6 +16217,7 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 <script defer src="./order-detail-compact-ui.js"></script>
 <script defer src="./production-compact-ui.js"></script>
 <script defer src="./product-editor-guide.js"></script>
+<script defer src="./clients-compact-ui.js"></script>
 <script defer src="./stock-compact-ui.js" id="ae-stock-compact-script"></script>
 <script defer src="./dashboard-compact-ui.js" id="ae-dashboard-compact-script"></script>
 <script defer src="./products-compact-ui.js" id="ae-products-compact-script"></script>

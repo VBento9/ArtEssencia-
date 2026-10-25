@@ -15,6 +15,8 @@ on:
       - 'scripts/test_products_editor_browser.cjs'
       - 'scripts/test_stock_layout_browser.cjs'
       - 'stock-compact-ui.*'
+      - 'clients-compact-ui.*'
+      - 'scripts/test_clients_layout_browser.cjs'
       - 'product-editor-guide.*'
       - 'products-compact-ui.*'
       - 'order-detail-compact-ui.*'
@@ -73,3 +75,6 @@ jobs:
 
       - name: Verify responsive stock and return to list
         run: node scripts/test_stock_layout_browser.cjs
+
+      - name: Verify client list, drafts and original actions
+        run: node scripts/test_clients_layout_browser.cjs
