@@ -1,0 +1,28 @@
+#cash.ae-cash-compact .ae-cash-toolbar,#cash.ae-cash-compact .ae-cash-pages{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:12px 0}
+#cash.ae-cash-compact .ae-cash-pages span{font-size:12px;min-width:120px;text-align:center}
+#cash.ae-cash-compact .ae-cash-pages label{display:flex;align-items:center;gap:8px;margin-left:auto;font-size:12px}
+#cash.ae-cash-compact .ae-cash-pages select{width:auto;min-height:40px}
+#cash.ae-cash-compact .ae-cash-pages button:disabled{opacity:.45;cursor:not-allowed}
+#cash.ae-cash-compact .cash-form-card[hidden],#cash.ae-cash-compact #cashBody tr[hidden]{display:none!important}
+#cash.ae-cash-compact .cash-list-card{scroll-margin-top:90px}
+#cash.ae-cash-compact .cash-form-head{display:flex;justify-content:space-between;align-items:start;gap:12px;flex-wrap:wrap}
+#cash.ae-cash-compact .cash-actions .btn{min-height:40px;font-size:11px}
+#cash.ae-cash-compact .cash-tools{display:flex!important;flex-wrap:wrap;gap:8px}
+#cash.ae-cash-compact .cash-tools>*{width:auto;min-width:0;flex:1 1 160px}
+@media(max-width:650px){
+ #cash.ae-cash-compact .cash-tablewrap{overflow:visible}
+ #cash.ae-cash-compact .cash-table,#cash.ae-cash-compact .cash-table tbody{display:block;width:100%;min-width:0}
+ #cash.ae-cash-compact .cash-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+ #cash.ae-cash-compact .cash-table tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 10px;margin:10px 0;padding:12px;border:1px solid #dfd4c8;border-radius:12px;background:#fff}
+ #cash.ae-cash-compact .cash-table td{display:block;min-width:0!important;border:0;padding:7px 0;font-size:12px;overflow-wrap:anywhere}
+ #cash.ae-cash-compact .cash-table td::before{content:attr(data-cash-label);display:block;color:#796e64;font-size:10px;margin-bottom:3px}
+ #cash.ae-cash-compact .cash-table td:nth-child(3),#cash.ae-cash-compact .cash-table td:last-child,#cash.ae-cash-compact .cash-table td[colspan]{grid-column:1/-1}
+ #cash.ae-cash-compact .cash-table td:last-child::before{display:none}
+ #cash.ae-cash-compact .cash-table td strong{font-size:13px}
+ #cash.ae-cash-compact .cash-actions{grid-template-columns:repeat(3,minmax(0,1fr));min-width:0}
+ #cash.ae-cash-compact .cash-actions .btn{min-height:44px;font-size:11px;white-space:normal}
+ #cash.ae-cash-compact .cash-table .badge{font-size:10px;white-space:normal}
+ #cash.ae-cash-compact .ae-cash-pages label{margin-left:0;width:100%}
+}
+
+#cash.ae-cash-compact .ae-cash-summary-note{font-size:12px;color:#796e64;margin:10px 0}

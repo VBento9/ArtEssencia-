@@ -17,6 +17,8 @@ on:
       - 'stock-compact-ui.*'
       - 'clients-compact-ui.*'
       - 'purchases-compact-ui.*'
+      - 'cash-compact-ui.*'
+      - 'scripts/test_cash_layout_browser.cjs'
       - 'scripts/test_purchases_layout_browser.cjs'
       - 'scripts/test_clients_layout_browser.cjs'
       - 'product-editor-guide.*'
@@ -83,3 +85,6 @@ jobs:
 
       - name: Verify purchases layout and original stock/cash effects
         run: node scripts/test_purchases_layout_browser.cjs
+
+      - name: Verify cash layout, drafts and protected movements
+        run: node scripts/test_cash_layout_browser.cjs
