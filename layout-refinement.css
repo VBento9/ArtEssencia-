@@ -9,7 +9,7 @@
 #dashboard .dashboard-profit-card-v1769 em,#dashboard .dashboard-profitability-note-v1769 span{font-size:12px;line-height:1.5;color:#685247}
 #dashboard .dashboard-profitability-note-v1769 strong{font-size:13px;line-height:1.5}
 @media(max-width:650px){
- .main :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=file]),select,textarea){font-size:16px}
+ .main :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=file]),select,textarea){font-size:16px!important}
  .main :is(.ae-products-compact-bar,.ae-orders-toolbar,.ae-stock-toolbar,.ae-cash-toolbar,.ae-purchases-toolbar,.ae-clients-toolbar){display:flex;flex-wrap:wrap}
  .main :is(.ae-products-compact-bar,.ae-orders-toolbar,.ae-stock-toolbar,.ae-cash-toolbar,.ae-purchases-toolbar,.ae-clients-toolbar)>button{flex:1 1 140px}
  #products .pricing-public-mode-v1864{padding:12px}
