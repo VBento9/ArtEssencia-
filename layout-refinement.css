@@ -1,0 +1,17 @@
+/* Consistent controls across the existing compact modules; no data or navigation changes. */
+.main :is(.btn,.smallbtn){min-height:44px;line-height:1.35;white-space:normal}
+.main :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=file]),select,textarea){min-height:44px;min-width:0;max-width:100%}
+.main :is(button,a,input,select,textarea,summary):focus-visible{outline:3px solid #806047!important;outline-offset:3px}
+.main :is(.ae-products-compact-bar,.ae-orders-toolbar,.ae-stock-toolbar,.ae-cash-toolbar,.ae-purchases-toolbar,.ae-clients-toolbar,.cost-tabs-v1927){gap:8px;padding:10px;background:#fffaf5;border:1px solid #dfd2c6;border-radius:14px}
+.main :is(.ae-products-compact-bar,.ae-orders-toolbar,.ae-stock-toolbar,.ae-cash-toolbar,.ae-purchases-toolbar,.ae-clients-toolbar,.cost-tabs-v1927) button{min-height:44px;line-height:1.35;padding:10px 14px;border-radius:10px;font-size:13px}
+#products .pricing-public-mode-v1864 small,#products .pricing-public-mode-v1864 label span{font-size:12px;line-height:1.5;color:#685247}
+#dashboard .dashboard-profit-card-v1769 small{font-size:11px;line-height:1.4}
+#dashboard .dashboard-profit-card-v1769 em,#dashboard .dashboard-profitability-note-v1769 span{font-size:12px;line-height:1.5;color:#685247}
+#dashboard .dashboard-profitability-note-v1769 strong{font-size:13px;line-height:1.5}
+@media(max-width:650px){
+ .main :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=file]),select,textarea){font-size:16px}
+ .main :is(.ae-products-compact-bar,.ae-orders-toolbar,.ae-stock-toolbar,.ae-cash-toolbar,.ae-purchases-toolbar,.ae-clients-toolbar){display:flex;flex-wrap:wrap}
+ .main :is(.ae-products-compact-bar,.ae-orders-toolbar,.ae-stock-toolbar,.ae-cash-toolbar,.ae-purchases-toolbar,.ae-clients-toolbar)>button{flex:1 1 140px}
+ #products .pricing-public-mode-v1864{padding:12px}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}.main *,.sidebar *{animation:none!important;transition:none!important}}
