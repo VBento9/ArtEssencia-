@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.31">
+<meta name="artessencia-version" content="1.9.32">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <link rel="manifest" href="manifest.webmanifest">
@@ -3444,6 +3444,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 <link rel="stylesheet" href="./orders-compact-ui.css" id="ae-orders-compact-styles">
 <link rel="stylesheet" href="./product-editor-guide.css">
 <link rel="stylesheet" href="./clients-compact-ui.css">
+<link rel="stylesheet" href="./purchases-compact-ui.css">
 <link rel="stylesheet" href="./production-compact-ui.css">
 <link rel="stylesheet" href="./order-detail-compact-ui.css">
 <style id="visual-filters-compact-20261023">
@@ -4109,6 +4110,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           <option>Cartão</option>
           <option>Outro</option>
         </select>
+        <select id="purchaseStateFilterV1932" aria-label="Estado da compra" onchange="renderPurchases()"><option value="all">Todos os estados</option><option value="ordered">A receber</option><option value="received">Recebidas</option><option value="voided">Anuladas de teste</option></select>
       </div>
     </div>
 
@@ -6133,7 +6135,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.31';
+const APP_VERSION='1.9.32';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -10170,10 +10172,12 @@ function renderPurchases(){
  const q=(document.getElementById('purchaseSearch')?.value||'').trim().toLowerCase();
  const method=document.getElementById('purchaseMethodFilter')?.value||'all';
 
+ const state=document.getElementById('purchaseStateFilterV1932')?.value||'all';
  const rows=all.slice().reverse().filter(x=>{
    const matchQ=!q||String(x.supplier||'').toLowerCase().includes(q)||String(x.item||'').toLowerCase().includes(q)||String(x.note||'').toLowerCase().includes(q);
    const matchM=method==='all'||String(x.method||'')===method;
-   return matchQ&&matchM;
+   const matchState=state==='all'||(state==='voided'?purchaseIsTestVoidedV1770(x):!purchaseIsTestVoidedV1770(x)&&purchaseStatusV135(x)===state);
+   return matchQ&&matchM&&matchState;
  });
 
  const count=document.getElementById('purchaseResultCount');
@@ -16218,6 +16222,7 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 <script defer src="./production-compact-ui.js"></script>
 <script defer src="./product-editor-guide.js"></script>
 <script defer src="./clients-compact-ui.js"></script>
+<script defer src="./purchases-compact-ui.js"></script>
 <script defer src="./stock-compact-ui.js" id="ae-stock-compact-script"></script>
 <script defer src="./dashboard-compact-ui.js" id="ae-dashboard-compact-script"></script>
 <script defer src="./products-compact-ui.js" id="ae-products-compact-script"></script>
