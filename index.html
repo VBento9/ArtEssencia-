@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.34">
+<meta name="artessencia-version" content="1.9.35">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <link rel="manifest" href="manifest.webmanifest">
@@ -4182,7 +4182,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 <div class="muted" id="visualFilterCountV192" aria-live="polite"></div></div>
 <div id="visualCatalogPickerV192" class="visual-catalog-picker" style="margin-top:8px"></div><button id="visualFilterMoreV192" class="smallbtn" type="button" style="display:none;margin-top:8px" onclick="visualCatalogExpandedV192=true;renderVisualCatalogFilteredV192()">Ver todos os resultados</button><div class="section-title" style="margin-top:12px">Ordem</div><div id="visualCatalogOrderV192" class="visual-order-list"></div><div class="btnrow" style="margin-top:12px"><button class="btn primary" type="button" onclick="saveVisualCatalogV192()">Guardar rascunho</button><button class="btn" type="button" onclick="newVisualCatalogV192()">Limpar</button></div>
   </section>
-  <section><div class="card"><div class="section-title">Rascunhos guardados</div><p class="muted">Guardados apenas nesta PWA. Não são publicados automaticamente.</p></div><div id="visualCatalogListV192" class="visual-catalog-list" style="margin-top:8px"></div></section>
+  <section><div class="card"><div class="section-title">Rascunhos guardados</div><p class="muted">Incluídos no backup e sincronizados pela Cloud ao guardar. Alterações concorrentes exigem reconciliação em Cloud Sync. Não são publicados automaticamente.</p><p class="muted">Para integrar rascunhos antigos deste dispositivo, usa o botão abaixo.</p><button class="btn" type="button" onclick="syncVisualCatalogsV1935()">Integrar e sincronizar rascunhos</button><p class="muted">Consulta o estado de envio em Cloud Sync.</p></div><div id="visualCatalogListV192" class="visual-catalog-list" style="margin-top:8px"></div></section>
  </div>
 </section>
   <section id="catalogs" class="screen">
@@ -6138,7 +6138,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.34';
+const APP_VERSION='1.9.35';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -7431,8 +7431,50 @@ async function saveDeliveryZoneV197(){
 
 // ArtEssencia V1.9.2 — Catálogos Visuais integrados na PWA principal, isolados da Cloud.
 const VISUAL_CATALOG_KEY_V192='artessencia_visual_catalogs_v192';let visualCatalogOrderV192=[];
-function visualCatalogsDataV192(){try{const x=JSON.parse(localStorage.getItem(VISUAL_CATALOG_KEY_V192)||'[]');return Array.isArray(x)?x:[]}catch(e){return[]}}
-function visualCatalogsStoreV192(rows){localStorage.setItem(VISUAL_CATALOG_KEY_V192,JSON.stringify(rows||[]))}
+// Visual drafts share the existing revision-protected operational snapshot.
+// Reading is side-effect free. Keep the legacy key as an untouched recovery source.
+function visualCatalogLegacyV1935(){
+ const raw=localStorage.getItem(VISUAL_CATALOG_KEY_V192);
+ if(!raw)return [];
+ const rows=JSON.parse(raw);
+ if(!Array.isArray(rows)||rows.some(x=>!x||typeof x!=='object'||typeof x.id!=='string'||!Array.isArray(x.productIds)))throw new Error('Os rascunhos locais têm um formato inválido. Preserva o armazenamento deste dispositivo.');
+ return rows;
+}
+function visualCatalogTokenV1935(row){
+ const canonical=x=>Array.isArray(x)?x.map(canonical):x&&typeof x==='object'?Object.fromEntries(Object.keys(x).sort().map(k=>[k,canonical(x[k])])):x;
+ return JSON.stringify(canonical(row));
+}
+function visualCatalogStateValidV1935(state){return state&&typeof state==='object'&&!Array.isArray(state)&&Array.isArray(state.rows)&&state.rows.every(x=>x&&typeof x.id==='string'&&Array.isArray(x.productIds))&&Array.isArray(state.legacyImports)&&state.legacyImports.every(x=>typeof x==='string')}
+function visualCatalogStateV1935(){
+ const state=db.visualCatalogsV1935;
+ if(state!==undefined&&!visualCatalogStateValidV1935(state))throw new Error('Não foi possível ler os rascunhos sincronizados.');
+ return state||{rows:[],legacyImports:[]};
+}
+function visualCatalogsDataV192(){
+ const state=visualCatalogStateV1935(),rows=JSON.parse(JSON.stringify(state.rows)),seen=new Set(state.legacyImports);
+ for(const old of visualCatalogLegacyV1935()){
+   const token=visualCatalogTokenV1935(old);
+   if(seen.has(token))continue;
+   const same=rows.find(x=>x.id===old.id);
+   if(same&&visualCatalogTokenV1935(same)===token)continue;
+   const copy=JSON.parse(JSON.stringify(old));
+   if(same){let n=1;while(rows.some(x=>x.id===old.id+'-recovered-'+n))n++;copy.id=old.id+'-recovered-'+n;copy.title=String(old.title||'Catálogo')+' (cópia recuperada)'}
+   rows.push(copy);
+ }
+ return rows;
+}
+function visualCatalogSnapshotV1935(rows=visualCatalogsDataV192()){
+ return {rows:JSON.parse(JSON.stringify(rows)),legacyImports:[...new Set([...visualCatalogStateV1935().legacyImports,...visualCatalogLegacyV1935().map(visualCatalogTokenV1935)])]};
+}
+function visualCatalogsStoreV192(rows){
+ const state=visualCatalogSnapshotV1935(rows);
+ // Check durable local persistence before changing memory or scheduling Cloud writes.
+ localStorage.setItem(KEY,JSON.stringify({...db,visualCatalogsV1935:state}));
+ db.visualCatalogsV1935=state;
+ if(!save('visualCatalogs'))throw new Error('Rascunhos em memória; verifica o aviso de armazenamento antes de fechar.');
+}
+function syncVisualCatalogsV1935(){try{visualCatalogsStoreV192(visualCatalogsDataV192());renderVisualCatalogsV192();toast('Rascunhos guardados. Consulta o estado de sincronização na Cloud.')}catch(e){toast(e.message||'Não foi possível guardar os rascunhos')}}
+
 function visualProductIdV192(p,i=0){return String(p?.code||p?.id||('product-'+i))}
 function visualProductImageV192(p){return String(p?.shopImageUrl||p?.imageUrl||p?.image||p?.photo||'')}
 let visualCatalogExpandedV192=false,visualCatalogSelectedOnlyV192=false;
@@ -7451,9 +7493,9 @@ function visualShowSelectedV192(){visualCatalogSelectedOnlyV192=!visualCatalogSe
 function renderVisualCatalogOrderV192(){const h=document.getElementById('visualCatalogOrderV192');if(!h)return;const products=db.products||[];h.innerHTML=visualCatalogOrderV192.length?visualCatalogOrderV192.map((id,i)=>{const p=products.find((x,j)=>visualProductIdV192(x,j)===id);return '<div class="visual-order-row"><b>'+(i+1)+'</b><span>'+escapeHtml(p?.name||id)+'</span><span><button class="smallbtn" type="button" onclick="moveVisualCatalogProductV192('+i+',-1)">↑</button> <button class="smallbtn" type="button" onclick="moveVisualCatalogProductV192('+i+',1)">↓</button></span></div>'}).join(''):'<div class="muted">Seleciona produtos para definir a ordem.</div>'}
 function moveVisualCatalogProductV192(i,d){const j=i+d;if(j<0||j>=visualCatalogOrderV192.length)return;[visualCatalogOrderV192[i],visualCatalogOrderV192[j]]=[visualCatalogOrderV192[j],visualCatalogOrderV192[i]];renderVisualCatalogOrderV192()}
 function newVisualCatalogV192(){const id=document.getElementById('visualCatalogIdV192');if(!id)return;id.value='';document.getElementById('visualCatalogTitleV192').value='';document.getElementById('visualCatalogSubtitleV192').value='';document.getElementById('visualCatalogFormatV192').value='A4';document.getElementById('visualCatalogPriceV192').value='1';visualCatalogOrderV192=[];renderVisualCatalogPickerV192([]);renderVisualCatalogOrderV192();document.getElementById('visualCatalogTitleV192')?.focus()}
-function saveVisualCatalogV192(){const title=String(document.getElementById('visualCatalogTitleV192')?.value||'').trim();if(!title)return toast('Indica um título para o catálogo');visualCatalogSelectionChangedV192();if(!visualCatalogOrderV192.length)return toast('Seleciona pelo menos um produto');const id=String(document.getElementById('visualCatalogIdV192')?.value||'')||('vc-'+Date.now());const rows=visualCatalogsDataV192(),old=rows.find(x=>x.id===id),row={...old,id,title,subtitle:String(document.getElementById('visualCatalogSubtitleV192')?.value||'').trim(),format:document.getElementById('visualCatalogFormatV192')?.value||'A4',showPrice:document.getElementById('visualCatalogPriceV192')?.value!=='0',productIds:[...visualCatalogOrderV192],status:'draft',createdAt:old?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};const next=rows.filter(x=>x.id!==id);next.push(row);visualCatalogsStoreV192(next);document.getElementById('visualCatalogIdV192').value=id;renderVisualCatalogsV192();toast('Rascunho do catálogo guardado')}
+function saveVisualCatalogV192(){const title=String(document.getElementById('visualCatalogTitleV192')?.value||'').trim();if(!title)return toast('Indica um título para o catálogo');visualCatalogSelectionChangedV192();if(!visualCatalogOrderV192.length)return toast('Seleciona pelo menos um produto');const id=String(document.getElementById('visualCatalogIdV192')?.value||'')||('vc-'+Date.now());const rows=visualCatalogsDataV192(),old=rows.find(x=>x.id===id),row={...old,id,title,subtitle:String(document.getElementById('visualCatalogSubtitleV192')?.value||'').trim(),format:document.getElementById('visualCatalogFormatV192')?.value||'A4',showPrice:document.getElementById('visualCatalogPriceV192')?.value!=='0',productIds:[...visualCatalogOrderV192],status:'draft',createdAt:old?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};const next=rows.filter(x=>x.id!==id);next.push(row);try{visualCatalogsStoreV192(next)}catch(e){return toast(e.message||'Não foi possível guardar o rascunho')}document.getElementById('visualCatalogIdV192').value=id;renderVisualCatalogsV192();toast('Rascunho do catálogo guardado')}
 function editVisualCatalogV192(id){const x=visualCatalogsDataV192().find(v=>v.id===id);if(!x)return;document.getElementById('visualCatalogIdV192').value=x.id;document.getElementById('visualCatalogTitleV192').value=x.title||'';document.getElementById('visualCatalogSubtitleV192').value=x.subtitle||'';document.getElementById('visualCatalogFormatV192').value=x.format||'A4';document.getElementById('visualCatalogPriceV192').value=x.showPrice===false?'0':'1';visualCatalogOrderV192=[...(x.productIds||[])];renderVisualCatalogPickerV192(visualCatalogOrderV192);renderVisualCatalogOrderV192();document.getElementById('visualCatalogEditorV192')?.scrollIntoView({behavior:'smooth',block:'start'})}
-function deleteVisualCatalogV192(id){if(!confirm('Eliminar este rascunho de catálogo?'))return;visualCatalogsStoreV192(visualCatalogsDataV192().filter(x=>x.id!==id));renderVisualCatalogsV192();newVisualCatalogV192();toast('Rascunho eliminado')}
+function deleteVisualCatalogV192(id){if(!confirm('Eliminar este rascunho de catálogo?'))return;try{visualCatalogsStoreV192(visualCatalogsDataV192().filter(x=>x.id!==id))}catch(e){return toast(e.message||'Não foi possível eliminar o rascunho')}renderVisualCatalogsV192();newVisualCatalogV192();toast('Rascunho eliminado')}
 function loadVisualCatalogSafeImageV195(src){return new Promise((resolve,reject)=>{const im=new Image();im.crossOrigin='anonymous';im.onload=()=>resolve(im);im.onerror=()=>reject(new Error('Imagem sem acesso CORS'));im.src=src})}
 async function buildVisualCatalogPdfV194(id){const x=visualCatalogsDataV192().find(v=>v.id===id);if(!x)throw new Error('Catálogo não encontrado');const products=db.products||[],selected=x.productIds||[],chosen=selected.map(pid=>products.find((p,i)=>visualProductIdV192(p,i)===pid));if(!selected.length)throw new Error('Este catálogo não tem produtos');if(chosen.some(p=>!p))throw new Error('Alguns produtos selecionados já não estão disponíveis. Revê o catálogo antes de exportar.');const jpgs=[];for(let page=0;page<Math.ceil(chosen.length/6);page++){const canvas=document.createElement('canvas');canvas.width=1240;canvas.height=1754;const ctx=canvas.getContext('2d');await drawArtEssenciaHeader(ctx,String(x.title||'CATÁLOGO').toUpperCase(),x.subtitle||'Seleção ArtEssencia','brand-artessencia.png');const chunk=chosen.slice(page*6,page*6+6),pos=[[70,260],[630,260],[70,690],[630,690],[70,1120],[630,1120]];for(let i=0;i<chunk.length;i++){const item=chunk[i],[px,py]=pos[i],cw=540,ch=385;ctx.fillStyle='#fff';ctx.strokeStyle='#eadfdb';ctx.lineWidth=2;if(ctx.roundRect){ctx.beginPath();ctx.roundRect(px,py,cw,ch,18);ctx.fill();ctx.stroke()}else{ctx.fillRect(px,py,cw,ch);ctx.strokeRect(px,py,cw,ch)}const src=visualProductImageV192(item);if(src){let im;try{im=await loadVisualCatalogSafeImageV195(src)}catch(e){throw new Error('Não foi possível carregar a fotografia de '+String(item.name||'Produto')+'. Verifica a imagem antes de exportar.')}const iw=500,ih=285,scale=Math.min(iw/im.width,ih/im.height),dw=im.width*scale,dh=im.height*scale;ctx.drawImage(im,px+(cw-dw)/2,py+12+(ih-dh)/2,dw,dh)}else{throw new Error('O produto '+String(item.name||'Produto')+' não tem fotografia para o PDF.')}ctx.fillStyle='#5A240B';ctx.font='700 22px Arial';ctx.fillText(String(item.name||'Produto').slice(0,34),px+20,py+330);if(x.showPrice!==false){ctx.textAlign='right';ctx.font='900 23px Arial';ctx.fillStyle='#F12473';ctx.fillText(euro(item.price||0),px+cw-20,py+330);ctx.textAlign='left'}}drawCatalogFooter(ctx);jpgs.push(await new Promise((res,rej)=>canvas.toBlob(v=>v?res(v):rej(new Error('PDF')),'image/jpeg',.92)))}return jpegBlobsToPDF(jpgs,1240,1754)}
 
@@ -7534,7 +7576,7 @@ function visualCatalogFileNameV194(x){return 'ArtEssencia_'+String(x?.title||'Ca
 function downloadVisualCatalogPdfV194(id){const x=visualCatalogsDataV192().find(v=>v.id===id);if(!x)return;return downloadPdfBlob(()=>buildVisualCatalogPdfV194(id),visualCatalogFileNameV194(x))}
 function shareVisualCatalogPdfV194(id){const x=visualCatalogsDataV192().find(v=>v.id===id);if(!x)return;return sharePdfBlob(()=>buildVisualCatalogPdfV194(id),visualCatalogFileNameV194(x),'Catálogo ArtEssencia — '+(x.title||'Seleção'),'Olá! Segue o catálogo ArtEssencia '+(x.title||'')+'.')}
 function previewVisualCatalogV192(id){const x=visualCatalogsDataV192().find(v=>v.id===id);return x&&x.format&&x.format!=='A4'?previewVisualCatalogSocialV196(id):openPdfBlob(()=>buildVisualCatalogPdfV194(id))}
-function renderVisualCatalogsV192(){const h=document.getElementById('visualCatalogListV192');if(!h)return;renderVisualCatalogPickerV192(visualCatalogOrderV192);renderVisualCatalogOrderV192();const rows=visualCatalogsDataV192().sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));h.innerHTML=rows.length?rows.map(x=>'<article class="card visual-draft-card"><div style="display:flex;justify-content:space-between;gap:8px"><div><strong>'+escapeHtml(x.title||'Catálogo')+'</strong><small class="muted" style="display:block">'+escapeHtml((x.productIds||[]).length+' produto(s) · '+(x.format||'A4'))+'</small></div><span class="badge">Rascunho</span></div><div class="visual-draft-actions"><button class="btn" type="button" onclick="previewVisualCatalogV192(\''+escapeAttr(x.id)+'\')">Pré-visualizar</button>' + (x.format&&x.format!=='A4'?'<button class="btn primary" type="button" onclick="downloadVisualCatalogSocialV196(\''+escapeAttr(x.id)+'\')">Guardar imagens PNG</button>':'<button class="btn primary" type="button" onclick="shareVisualCatalogPdfV194(\''+escapeAttr(x.id)+'\')">Partilhar PDF</button><button class="btn" type="button" onclick="downloadVisualCatalogPdfV194(\''+escapeAttr(x.id)+'\')">Guardar PDF</button>')+'<button class="btn" type="button" onclick="editVisualCatalogV192(\''+escapeAttr(x.id)+'\')">Editar</button><button class="btn danger" type="button" onclick="deleteVisualCatalogV192(\''+escapeAttr(x.id)+'\')">Eliminar</button></div></article>').join(''):'<div class="card empty">Ainda não existem catálogos visuais. Cria o primeiro rascunho.</div>'}
+function renderVisualCatalogsV192(){const h=document.getElementById('visualCatalogListV192');if(!h)return;try{visualCatalogsDataV192()}catch(e){h.textContent=e.message||'Não foi possível carregar os rascunhos';return;}renderVisualCatalogPickerV192(visualCatalogOrderV192);renderVisualCatalogOrderV192();const rows=visualCatalogsDataV192().sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));h.innerHTML=rows.length?rows.map(x=>'<article class="card visual-draft-card"><div style="display:flex;justify-content:space-between;gap:8px"><div><strong>'+escapeHtml(x.title||'Catálogo')+'</strong><small class="muted" style="display:block">'+escapeHtml((x.productIds||[]).length+' produto(s) · '+(x.format||'A4'))+'</small></div><span class="badge">Rascunho</span></div><div class="visual-draft-actions"><button class="btn" type="button" onclick="previewVisualCatalogV192(\''+escapeAttr(x.id)+'\')">Pré-visualizar</button>' + (x.format&&x.format!=='A4'?'<button class="btn primary" type="button" onclick="downloadVisualCatalogSocialV196(\''+escapeAttr(x.id)+'\')">Guardar imagens PNG</button>':'<button class="btn primary" type="button" onclick="shareVisualCatalogPdfV194(\''+escapeAttr(x.id)+'\')">Partilhar PDF</button><button class="btn" type="button" onclick="downloadVisualCatalogPdfV194(\''+escapeAttr(x.id)+'\')">Guardar PDF</button>')+'<button class="btn" type="button" onclick="editVisualCatalogV192(\''+escapeAttr(x.id)+'\')">Editar</button><button class="btn danger" type="button" onclick="deleteVisualCatalogV192(\''+escapeAttr(x.id)+'\')">Eliminar</button></div></article>').join(''):'<div class="card empty">Ainda não existem catálogos visuais. Cria o primeiro rascunho.</div>'}
 
 function completed(o){return o.status!=='Cancelado'&&!o.voidedAt}
 function dashboardOrderPeriodDateV1831(o){
@@ -9508,14 +9550,14 @@ async function deleteClient(id){
 }
 function startOrderForClient(id){const c=(db.clients||[]).find(x=>x.id===id);if(!c)return;go('sale');setTimeout(()=>{saleClient.value=c.name;saleContact.value=c.phone||'';if($('saleEmail'))$('saleEmail').value=c.email||''},0)}
 function simpleHash(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}return (h>>>0).toString(16).padStart(8,'0')}
-function backupPayload(){const data=JSON.parse(JSON.stringify(db)),raw=JSON.stringify(data);return{app:'ArtEssencia',version:APP_VERSION,schema:7,exportedAt:new Date().toISOString(),checksum:simpleHash(raw),data}}
+function backupPayload(){const data=JSON.parse(JSON.stringify({...db,visualCatalogsV1935:visualCatalogSnapshotV1935()})),raw=JSON.stringify(data);return{app:'ArtEssencia',version:APP_VERSION,schema:7,exportedAt:new Date().toISOString(),checksum:simpleHash(raw),data}}
 function backupBlob(){return new Blob([JSON.stringify(backupPayload(),null,2)],{type:'application/json'})}
 function backupFileName(prefix='ArtEssencia_backup'){return `${prefix}_${todayISO()}_${new Date().toTimeString().slice(0,5).replace(':','')}.json`}
 function recordBackup(kind){const meta=JSON.parse(localStorage.getItem(BACKUP_META)||'[]');meta.unshift({at:new Date().toISOString(),kind,orders:db.orders.length,quotes:(db.quotes||[]).length,clients:(db.clients||[]).length});localStorage.setItem(BACKUP_META,JSON.stringify(meta.slice(0,10)));localStorage.setItem(LAST,new Date().toISOString());renderBackupInfo()}
 function downloadBlob(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
 function exportBackup(){downloadBlob(backupBlob(),backupFileName());recordBackup('Manual');toast('Backup criado')}
 async function shareBackup(){const file=new File([backupBlob()],backupFileName(),{type:'application/json'});try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({title:'Backup ArtEssencia',files:[file]});recordBackup('Partilhado')}else exportBackup()}catch(e){if(e.name!=='AbortError')exportBackup()}}
-function validateBackupPayload(x){const d=x&&x.data?x.data:x;if(!d||typeof d!=='object'||Array.isArray(d))return{ok:false,msg:'Estrutura inválida'};const required=['orders','stock','products'];for(const k of required)if(!Array.isArray(d[k]))return{ok:false,msg:'Falta a área '+k};const optionalArrays=['quotes','clients','purchases','cash','stockMoves','productionRuns','packaging','themedBoxes'];for(const k of optionalArrays)if(d[k]!=null&&!Array.isArray(d[k]))return{ok:false,msg:'Área '+k+' com formato inválido'};if(d.settings!=null&&(typeof d.settings!=='object'||Array.isArray(d.settings)))return{ok:false,msg:'Configurações inválidas'};if(d.orders.some(o=>!o||typeof o!=='object'||!o.id||!Array.isArray(o.items)||o.items.some(i=>!i||typeof i!=='object'||!Number.isFinite(Number(i.qty))||!Number.isFinite(Number(i.price)))))return{ok:false,msg:'Existem encomendas com estrutura inválida'};if(d.stock.some(i=>!i||typeof i!=='object'||!i.name||!Number.isFinite(Number(i.qty))))return{ok:false,msg:'Existem artigos de stock inválidos'};if(d.products.some(p=>!p||typeof p!=='object'||!p.code||!p.name||!Number.isFinite(Number(p.price))))return{ok:false,msg:'Existem produtos inválidos'};if((d.quotes||[]).some(q=>!q||typeof q!=='object'||!q.id||!Array.isArray(q.items)))return{ok:false,msg:'Existem orçamentos inválidos'};if(x&&x.data&&x.checksum&&simpleHash(JSON.stringify(d))!==x.checksum)return{ok:false,msg:'Falha de integridade: o conteúdo do backup foi alterado ou está corrompido'};const schema=Number(x?.schema||1);if(schema>7)return{ok:false,msg:'Backup criado por uma versão mais recente da app'};return{ok:true,data:d,version:x?.version||'antiga',schema,exportedAt:x?.exportedAt||'',summary:{orders:d.orders.length,quotes:(d.quotes||[]).length,clients:(d.clients||[]).length,purchases:(d.purchases||[]).length,stock:d.stock.length,production:(d.productionRuns||[]).length,cash:(d.cash||[]).length}}}
+function validateBackupPayload(x){const d=x&&x.data?x.data:x;if(!d||typeof d!=='object'||Array.isArray(d))return{ok:false,msg:'Estrutura inválida'};const required=['orders','stock','products'];for(const k of required)if(!Array.isArray(d[k]))return{ok:false,msg:'Falta a área '+k};if(d.visualCatalogsV1935!==undefined&&!visualCatalogStateValidV1935(d.visualCatalogsV1935))return{ok:false,msg:'Rascunhos de catálogos inválidos'};const optionalArrays=['quotes','clients','purchases','cash','stockMoves','productionRuns','packaging','themedBoxes'];for(const k of optionalArrays)if(d[k]!=null&&!Array.isArray(d[k]))return{ok:false,msg:'Área '+k+' com formato inválido'};if(d.settings!=null&&(typeof d.settings!=='object'||Array.isArray(d.settings)))return{ok:false,msg:'Configurações inválidas'};if(d.orders.some(o=>!o||typeof o!=='object'||!o.id||!Array.isArray(o.items)||o.items.some(i=>!i||typeof i!=='object'||!Number.isFinite(Number(i.qty))||!Number.isFinite(Number(i.price)))))return{ok:false,msg:'Existem encomendas com estrutura inválida'};if(d.stock.some(i=>!i||typeof i!=='object'||!i.name||!Number.isFinite(Number(i.qty))))return{ok:false,msg:'Existem artigos de stock inválidos'};if(d.products.some(p=>!p||typeof p!=='object'||!p.code||!p.name||!Number.isFinite(Number(p.price))))return{ok:false,msg:'Existem produtos inválidos'};if((d.quotes||[]).some(q=>!q||typeof q!=='object'||!q.id||!Array.isArray(q.items)))return{ok:false,msg:'Existem orçamentos inválidos'};if(x&&x.data&&x.checksum&&simpleHash(JSON.stringify(d))!==x.checksum)return{ok:false,msg:'Falha de integridade: o conteúdo do backup foi alterado ou está corrompido'};const schema=Number(x?.schema||1);if(schema>7)return{ok:false,msg:'Backup criado por uma versão mais recente da app'};return{ok:true,data:d,version:x?.version||'antiga',schema,exportedAt:x?.exportedAt||'',summary:{orders:d.orders.length,quotes:(d.quotes||[]).length,clients:(d.clients||[]).length,purchases:(d.purchases||[]).length,stock:d.stock.length,production:(d.productionRuns||[]).length,cash:(d.cash||[]).length}}}
 function inspectBackupFile(){const f=backupFile.files[0],el=document.getElementById('backupPreview');if(!f){el.textContent='Escolha um backup para o verificar antes da reposição.';return}const r=new FileReader();r.onload=()=>{try{const x=JSON.parse(r.result),v=validateBackupPayload(x);if(!v.ok){el.innerHTML='<strong style="color:#990000">Ficheiro inválido:</strong> '+v.msg;backupFile.dataset.valid='';return}backupFile.dataset.valid='1';backupFile.dataset.summary=JSON.stringify(v.summary);el.innerHTML=`<strong>Backup válido</strong><br>Versão: ${v.version} · schema ${v.schema}${v.exportedAt?' · '+new Date(v.exportedAt).toLocaleString('pt-PT'):''}<br>${v.summary.orders} encomendas · ${v.summary.quotes} orçamentos · ${v.summary.clients} clientes · ${v.summary.purchases} compras · ${v.summary.stock} artigos de stock.`}catch(e){backupFile.dataset.valid='';el.innerHTML='<strong style="color:#990000">Ficheiro JSON inválido.</strong>'}};r.readAsText(f)}
 function safetyBackupBeforeRestore(){const payload=backupPayload();localStorage.setItem(RESTORE_SAFETY,JSON.stringify(payload));try{downloadBlob(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),backupFileName('ArtEssencia_ANTES_RESTAURAR'))}catch(e){}recordBackup('Segurança pré-restauro');return true}
 function repairDuplicateManualOrdersV1412(d){
@@ -14892,7 +14934,7 @@ async function saveCloudStateSimple(user,localData,{force=false}={}){
 // V1.3.9 — sincronização transversal dos módulos que não têm tabela relacional própria.
 // Clientes/Produtos/Encomendas/Orçamentos continuam nas tabelas dedicadas; os restantes
 // dados operacionais são preservados no snapshot de estado para manter vários dispositivos coerentes.
-const CLOUD_OPERATIONAL_KEYS_V139=['settings','stock','purchases','cash','stockMoves','productionRuns','packaging','themedBoxes','productRecipes','costMeta','editions','shopSpecialEditions','specialEditions','special_editions'];
+const CLOUD_OPERATIONAL_KEYS_V139=['visualCatalogsV1935','settings','stock','purchases','cash','stockMoves','productionRuns','packaging','themedBoxes','productRecipes','costMeta','editions','shopSpecialEditions','specialEditions','special_editions'];
 function operationalCloudSnapshotV139(){
  const out={};
  CLOUD_OPERATIONAL_KEYS_V139.forEach(k=>{if(db[k]!==undefined)out[k]=relClone(db[k])});
@@ -14947,6 +14989,7 @@ async function operationalCloudPushStateV1858(user){
 }
 function mergeOperationalCloudSnapshotV139(remoteData){
  if(!remoteData||typeof remoteData!=='object')return false;
+ if(remoteData.visualCatalogsV1935!==undefined&&!visualCatalogStateValidV1935(remoteData.visualCatalogsV1935))throw new Error('Rascunhos Cloud inválidos; dados locais preservados');
  let changed=false;
  CLOUD_OPERATIONAL_KEYS_V139.forEach(k=>{
    if(remoteData[k]!==undefined){db[k]=relClone(remoteData[k]);changed=true}
