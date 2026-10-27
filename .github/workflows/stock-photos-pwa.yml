@@ -46,7 +46,7 @@ jobs:
       - name: Install isolated browser
         run: |
           npm install --no-save --package-lock=false --ignore-scripts @playwright/test@1.56.1 @electric-sql/pglite@0.5.11
-          npx playwright install --with-deps chromium
+          npx playwright install chromium
       - name: Check PWA update safety
         run: |
           node scripts/test_pwa_update.cjs
