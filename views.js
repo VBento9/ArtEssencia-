@@ -158,11 +158,15 @@ export async function printProductTechnicalSheet(p,materials,kitItems,products,f
     ['Margem estimada',cost.margin.toFixed(1)+'%']
   ].filter(([,v])=>v!==undefined&&v!==null&&v!=='');
   const selectedFields=format==='A5'?fields.filter(([label])=>!['Preço de venda','Custo real estimado','Margem estimada'].includes(label)):fields;
+  const candidate=p.image||p.imageUrl||p.photo||p.photo1||p.coverImage||(Array.isArray(p.images)&&p.images[0])||'';
+  const photo=typeof candidate==='string'?candidate:(candidate?.url||candidate?.src||'');
+  const safePhoto=/^(https:\/\/|data:image\/(?:png|jpeg|webp);base64,|\/[^/])/i.test(photo)?photo:'';
+  const photoHtml=safePhoto?'<img class="product-photo" src="'+esc(safePhoto)+'" alt="Fotografia do produto">':'';
   const rows=selectedFields.map(([label,value])=>'<tr><th>'+esc(label)+'</th><td>'+esc(value)+'</td></tr>').join('');
   const w=window.open('','_blank');
   if(!w){alert('O navegador bloqueou a janela de impressão. Autoriza janelas emergentes para imprimir.');return}
   w.document.open();
-  w.document.write('<!doctype html><html lang="pt-PT"><head><meta charset="utf-8"><title>Ficha técnica - '+esc(p.name||p.sku||'Produto')+'</title><style>@page{size:'+format+';margin:12mm}body{font:10pt Arial,sans-serif;color:#222}h1{font-size:16pt;margin-bottom:4mm}p{color:#555}table{width:100%;border-collapse:collapse;margin-top:8mm}th,td{padding:5px;border-bottom:1px solid #ddd;text-align:left;vertical-align:top}th{width:40%;background:#f7f7f7}button{margin:15px 0;padding:10px 18px}@media print{button{display:none}body{margin:0}}</style></head><body><h1>ArtEssencia · Ficha técnica ('+format+')</h1><p>'+esc(p.name||'Produto')+' · '+esc(p.sku||'Sem SKU')+'</p><table>'+rows+'</table><button onclick="window.print()">Imprimir / Guardar PDF</button></body></html>');
+  w.document.write('<!doctype html><html lang="pt-PT"><head><meta charset="utf-8"><title>Ficha técnica - '+esc(p.name||p.sku||'Produto')+'</title><style>@page{size:'+format+';margin:12mm}body{font:10pt Arial,sans-serif;color:#222}h1{font-size:16pt;margin-bottom:4mm}p{color:#555} .product-photo{float:right;max-width:'+(format==='A5'?'32mm':'55mm')+';max-height:'+(format==='A5'?'38mm':'65mm')+';object-fit:contain;margin:0 0 5mm 6mm}table{width:100%;border-collapse:collapse;margin-top:8mm;clear:both}th,td{padding:5px;border-bottom:1px solid #ddd;text-align:left;vertical-align:top}th{width:40%;background:#f7f7f7}button{margin:15px 0;padding:10px 18px}@media print{button{display:none}body{margin:0}}</style></head><body><h1>ArtEssencia · Ficha técnica ('+format+')</h1><p>'+esc(p.name||'Produto')+' · '+esc(p.sku||'Sem SKU')+'</p>'+photoHtml+'<table>'+rows+'</table><button onclick="window.print()">Imprimir / Guardar PDF</button></body></html>');
   w.document.close();
 }
 function productTechnicalSheet(p,materials,kitItems,products){
