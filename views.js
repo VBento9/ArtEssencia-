@@ -146,7 +146,26 @@ function orderModal(ctx,clients,products,existing={},existingItems=[]){
   }})
 }
 
-export async function productsView(ctx,opts={}){
+export async function productTechnicalSheet(p,materials,kitItems,products){
+  const cost=calcProduct(p,materials,kitItems,products);
+  const body=el('div',{class:'form-grid'});
+  const details=[
+    ['Referência / SKU',p.sku],['Produto',p.name],['Família',families[p.family]?.label],
+    ['Tipo',p.subtype],['Tipo de cera',p.waxType],['Peso aproximado',p.approximateWeight],
+    ['Dimensões',p.dimensions],['Tempo de queima',p.burnTime],
+    ['Recipiente / material',p.materialContainer],['Molde',p.moldName],
+    ['Unidades por lote',p.batchUnits],['Tempo de trabalho (min)',p.laborMinutes],
+    ['Preço de venda',euro(p.price)],['Custo real estimado',euro(cost.trueCost)],
+    ['Margem estimada',cost.margin.toFixed(1)+'%']
+  ];
+  for(const [label,value] of details){
+    if(value===undefined||value===null||value==='')continue;
+    body.append(el('div',{class:'field'},el('strong',{},label),el('div',{},String(value))));
+  }
+  body.append(el('div',{class:'notice'},'Consulta apenas de leitura. Para alterar os dados, utiliza Editar.'));
+  modal('Ficha técnica · '+(p.name||p.sku||'Produto'),body,{wide:true});
+}
+function productsView(ctx,opts={}){
   const [products,materials,kitItems]=await Promise.all(['products','materials','kitItems'].map(db.all));
   const root=el('div');
   const tabs=el('div',{class:'family-grid'});
@@ -155,7 +174,7 @@ export async function productsView(ctx,opts={}){
   const toolbar=el('div',{class:'toolbar',style:'margin-top:14px'},button('+ Novo produto',()=>productModal(ctx,products,materials),'primary'),button('Ver rentabilidade',()=>ctx.go('costs'),'ghost'));
   const search=input('search','','search',{placeholder:'Pesquisar produto / SKU…',class:'search'});toolbar.append(el('span',{class:'spacer'}),search);root.append(toolbar);
   const box=el('div');root.append(box);
-  const render=()=>{const q=search.value.toLowerCase(),family=opts.family||'';const shown=products.filter(p=>(!family||p.family===family)&&(!q||`${p.name} ${p.sku}`.toLowerCase().includes(q))).sort((a,b)=>String(a.name).localeCompare(String(b.name)));const rows=shown.map(p=>{const e=calcProduct(p,materials,kitItems,products);return [esc(p.sku||''),`${families[p.family]?.icon||'✨'} ${esc(p.name)}`,esc(p.subtype||''),euro(p.price),euro(e.trueCost),euro(e.recommended),badge(`${e.margin.toFixed(1)}%`,e.margin<Number(p.alertMarginPct??40)?'danger':e.margin<Number(p.targetMarginPct??60)?'warn':'ok'),p.published?badge('Online','info'):badge('Privado','neutral'),`<button class="btn ghost small" data-edit="${p.id}">Editar</button>`]});box.innerHTML='';const t=table(['SKU','Produto','Tipo','PVP','Custo real','PVP rec.','Margem','Loja',''],rows);t.addEventListener('click',e=>{const id=e.target.dataset.edit;if(id)productModal(ctx,products,materials,products.find(p=>p.id===id))});box.append(t)};
+  const render=()=>{const q=search.value.toLowerCase(),family=opts.family||'';const shown=products.filter(p=>(!family||p.family===family)&&(!q||`${p.name} ${p.sku}`.toLowerCase().includes(q))).sort((a,b)=>String(a.name).localeCompare(String(b.name)));const rows=shown.map(p=>{const e=calcProduct(p,materials,kitItems,products);return [esc(p.sku||''),`${families[p.family]?.icon||'✨'} ${esc(p.name)}`,esc(p.subtype||''),euro(p.price),euro(e.trueCost),euro(e.recommended),badge(`${e.margin.toFixed(1)}%`,e.margin<Number(p.alertMarginPct??40)?'danger':e.margin<Number(p.targetMarginPct??60)?'warn':'ok'),p.published?badge('Online','info'):badge('Privado','neutral'),`<button class="btn ghost small" data-sheet="${esc(p.id)}">Ver ficha</button> <button class="btn ghost small" data-edit="${esc(p.id)}">Editar</button>`]});box.innerHTML='';const t=table(['SKU','Produto','Tipo','PVP','Custo real','PVP rec.','Margem','Loja',''],rows);t.addEventListener('click',e=>{const sheetId=e.target.closest('[data-sheet]')?.dataset.sheet;if(sheetId){const p=products.find(p=>p.id===sheetId);if(p)productTechnicalSheet(p,materials,kitItems,products);return}const id=e.target.closest('[data-edit]')?.dataset.edit;if(id)productModal(ctx,products,materials,products.find(p=>p.id===id))});box.append(t)};
   search.oninput=render;render();if(opts.create)setTimeout(()=>productModal(ctx,products,materials),0);return root;
 }
 async function productModal(ctx,products,materials,existing={}){
