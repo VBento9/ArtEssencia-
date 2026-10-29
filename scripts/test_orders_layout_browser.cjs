@@ -128,6 +128,37 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
   await context.close();
  }
  await verifyTabletMenu();
+ async function verifyModuleSearch(width){
+  const {context,page}=await open(width);
+  await page.emulateMedia({reducedMotion:'reduce'});
+  const button=page.locator('#aeModuleSearch');
+  for(const [module,id] of [['orders','orderSearch'],['products','productSearch'],['stock','stockSearch'],['clients','clientSearch'],['production','prodDate']]){
+   await page.evaluate(module=>go(module),module);
+   await page.waitForFunction(id=>document.getElementById('aeModuleSearch')?.getAttribute('aria-controls')===id,id);
+   const input=page.locator('#'+id);
+   const value=await input.inputValue(),before=await page.evaluate(()=>JSON.stringify(db));
+   assert.equal(await button.evaluate(e=>e.offsetHeight>=44&&e.offsetWidth>=44&&e.scrollWidth<=e.clientWidth+2),true);
+   await button.click();
+   assert.equal(await page.evaluate(()=>document.activeElement.id),id);
+   assert.equal(await input.inputValue(),value);
+   assert.equal(await page.evaluate(()=>JSON.stringify(db)),before);
+   const rect=await input.boundingBox();assert.ok(rect.y>=0&&rect.y<1000);
+  }
+  await page.evaluate(()=>go('products'));
+  await page.locator('#aeProductsCompact').getByRole('button',{name:'Abrir editor',exact:true}).click();
+  const field=page.locator('#products .products-form-card input:not([type=hidden])').first();
+  const fieldId=await field.getAttribute('id');
+  await page.evaluate(id=>{document.getElementById(id).value='Rascunho conservado'},fieldId);
+  await page.waitForFunction(()=>document.getElementById('aeModuleSearch')?.getAttribute('aria-controls')==='productSearch');
+  await button.click();assert.equal(await page.evaluate(()=>document.activeElement.id),'productSearch');
+  await page.locator('#aeProductsCompact').getByRole('button',{name:'Abrir editor',exact:true}).click();
+  assert.equal(await page.locator('#'+fieldId).inputValue(),'Rascunho conservado');
+  await page.evaluate(()=>go('dashboard'));await page.waitForFunction(()=>document.getElementById('aeModuleSearch').hidden);
+  assert.equal(await button.isVisible(),false);
+  await context.close();
+ }
+ await verifyModuleSearch(390);await verifyModuleSearch(1000);
+
 
  console.log('PASS Chromium: desktop table/mobile cards, bounded pagination, accent search, filters/page/focus retained, disclosure preserves drafts, real edit/payment/print handlers, no writes on navigation.');
 }finally{await browser.close()}})().catch(e=>{console.error(e);process.exitCode=1});
