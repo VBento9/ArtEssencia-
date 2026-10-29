@@ -189,7 +189,7 @@ function productTechnicalSheet(p,materials,kitItems,products){
   body.append(el('div',{class:'notice'},'Consulta apenas de leitura. Para alterar os dados, utiliza Editar.'));
   modal('Ficha técnica · '+(p.name||p.sku||'Produto'),body,{wide:true});
 }
-function productsView(ctx,opts={}){
+export async function productsView(ctx,opts={}){
   const [products,materials,kitItems]=await Promise.all(['products','materials','kitItems'].map(db.all));
   const root=el('div');
   const tabs=el('div',{class:'family-grid'});
