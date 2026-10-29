@@ -14,11 +14,11 @@ new vm.Script(source,{filename:'product-technical-sheet.js'});
   await page.evaluate(()=>{
    const image='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jgAAAAABJRU5ErkJggg==';
    const product={code:'AE-TESTE-001',name:'Vela artesanal de amostra com um título comprido',
-    category:'Velas em recipiente',price:19.9,shopImageUrl:image,laborMinutes:30,
-    productionType:'wax_container',cureHours:48,productionNotes:'Aguardar a cura antes de testar a queima.',
+    category:'Coleção'+ 'X'.repeat(180),price:19.9,shopImageUrl:image,laborMinutes:30,
+    productionType:'wax_container',cureHours:48,productionNotes:'Aguardar a cura antes de testar a queima. '+ 'https://exemplo.invalid/'.repeat(20),
     qualityNotes:'Verificar superfície, pavio e acabamento.',
     publicCharacteristics:{waxType:'Cera vegetal',approximateWeight:'180 g',dimensions:'7 × 8 cm',burnTime:'25 h'}};
-   const recipe=Array.from({length:90},(_,i)=>({item:'Componente de teste '+String(i+1).padStart(3,'0'),qty:i+0.25}));
+   const recipe=Array.from({length:90},(_,i)=>({item:'Componente de teste '+String(i+1).padStart(3,'0')+(i===0?'X'.repeat(150):''),qty:i+0.25}));
    window.db={products:[product],productRecipes:{[product.code]:recipe},
     stock:recipe.map(x=>({name:x.item,unit:'g',unitCost:0.007}))};
    window.productCostBreakdownV110=()=>({materials:3.5,labor:4,fixed:1.5,other:0.75,total:9.75});
@@ -45,7 +45,18 @@ new vm.Script(source,{filename:'product-technical-sheet.js'});
    assert.match(css,new RegExp('size:'+size+' portrait'));
    assert.match(css,/counter\(pages\)/);
    assert.match(css,/table-header-group/);
+   await popup.emulateMedia({media:'print'});
+   // Match the printable width: paper width minus the CSS page margins.
+   await popup.setViewportSize({width:Math.floor((size==='A5'?130:186)*96/25.4),height:900});
+   const overflow=await popup.evaluate(()=>{
+    const sheet=document.querySelector('.ts-sheet').getBoundingClientRect();
+    return [...document.querySelectorAll('.ts-sheet *')].filter(el=>{
+     const r=el.getBoundingClientRect();return r.width&&(r.right>sheet.right+1||r.left<sheet.left-1);
+    }).map(el=>el.className||el.tagName);
+   });
+   assert.deepEqual(overflow,[],size+' content must stay within printable margins');
    const pdf=await popup.pdf({preferCSSPageSize:true,printBackground:true});
+   if(process.env.AE_PDF_OUTPUT){fs.mkdirSync(process.env.AE_PDF_OUTPUT,{recursive:true});fs.writeFileSync(process.env.AE_PDF_OUTPUT+'/'+size+'.pdf',pdf)}
    assert.equal(pdf.subarray(0,4).toString(),'%PDF');
    assert(pdf.length>4000);
    const pages=(pdf.toString('latin1').match(/\/Type\s*\/Page\b/g)||[]).length;
