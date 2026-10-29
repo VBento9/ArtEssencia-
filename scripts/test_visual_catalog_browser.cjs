@@ -6,7 +6,7 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
  await page.route('**/*',r=>new URL(r.request().url()).origin==='http://127.0.0.1:8765'?r.continue():r.abort());page.on('dialog',d=>d.accept());
  await page.goto('http://127.0.0.1:8765');await page.waitForFunction(()=>typeof visualCatalogsDataV192==='function');await page.waitForTimeout(400);
  await page.evaluate(()=>{document.getElementById('authGateV1880')?.remove();scheduleCloudPushV1860=()=>{};db.products=[{code:'P-TEST',name:'Produto fictício',price:1}];localStorage.setItem(VISUAL_CATALOG_KEY_V192,JSON.stringify([{id:'legacy-test',title:'Rascunho antigo',productIds:['P-TEST'],format:'A4'}]));go('visualCatalogs')});
- const list=page.locator('#visualCatalogListV192');await page.getByRole('button',{name:'Integrar e sincronizar rascunhos',exact:true}).click();
+ const list=page.locator('#visualCatalogListV192');await page.getByRole('button',{name:'Integrar rascunhos locais',exact:true}).click();
  assert.match(await list.innerText(),/Rascunho antigo/);
  assert.equal(await page.evaluate(()=>db.visualCatalogsV1935.rows.length),1);
  await list.getByRole('button',{name:'Editar',exact:true}).click();await page.locator('#visualCatalogTitleV192').fill('Título atualizado');await page.getByRole('button',{name:'Guardar rascunho',exact:true}).click();assert.match(await list.innerText(),/Título atualizado/);
