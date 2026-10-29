@@ -328,7 +328,7 @@ async function collectionsPanel(ctx,collections){
 function collectionModal(ctx,existing={}){const f=el('div',{class:'form-grid'}),name=input('name',existing.name||''),start=input('start',existing.startDate||'','date'),end=input('end',existing.endDate||'','date'),active=select('active',[['true','Ativa'],['false','Inativa']],String(existing.active!==false)),note=input('note',existing.note||'');f.append(field('Nome',name),field('Estado',active),field('Data início',start),field('Data fim',end),field('Nota',note,true));modal(existing.id?'Editar coleção':'Nova coleção',f,{onSave:async()=>{await db.put('collections',{...existing,id:existing.id||uid('col'),name:name.value,startDate:start.value,endDate:end.value,active:active.value==='true',note:note.value});ctx.refresh();return true}})}
 async function catalogsPanel(ctx,catalogs,products){
   const card=el('div',{class:'card'},section('Catálogos & Kits','Seleções para presentes, eventos e futura loja',[button('+ Novo catálogo',()=>catalogModal(ctx),'primary small')]));
-  card.append(table(['Nome','Tipo','Descrição','Estado'],catalogs.map(c=>[esc(c.name),esc(c.type||'Catálogo'),esc(c.description||''),badge(c.active?'Ativo':'Inativo',c.active?'ok':'neutral')])));
+  card.append(table(['Nome','Tipo','Descrição','Estado'],catalogs.filter(c=>c.kind!=='artessencia-gift-box-template').map(c=>[esc(c.name),esc(c.type||'Catálogo'),esc(c.description||''),badge(c.active?'Ativo':'Inativo',c.active?'ok':'neutral')])));
   card.append(el('div',{class:'notice',style:'margin-top:12px'},'Os Kits reais são produtos da família “Kits & Presentes” e podem usar componentes de outros produtos. Esta área gere apresentações e seleções comerciais.'));return card;
 }
 function catalogModal(ctx){const f=el('div',{class:'form-grid'}),name=input('name',''),type=select('type',[['Catálogo','Catálogo'],['Kit temático','Kit temático'],['Evento','Evento']]),desc=textarea('desc',''),active=select('active',[['true','Ativo'],['false','Inativo']],'true');f.append(field('Nome',name),field('Tipo',type),field('Descrição',desc,true),field('Estado',active));modal('Novo catálogo',f,{onSave:async()=>{await db.put('catalogs',{id:uid('cat'),name:name.value,type:type.value,description:desc.value,active:active.value==='true'});ctx.refresh();return true}})}
@@ -573,13 +573,206 @@ function visualCatalogExport(catalog,products){
   wrap.append(actions);modal('Exportar · '+(catalog.title||'Catálogo'),wrap,{wide:true});
 }
 
-export async function catalogsView(ctx,opts={}){const tab=opts.tab||'catalogs',root=el('div'),nav=el('div',{class:'subnav'});[['catalogs','Catálogos'],['themes','Temas'],['occasions','Ocasiões'],['colors','Cores'],['personalizations','Personalizações'],['pricing','Preços do Criador']].forEach(([id,l])=>nav.append(el('button',{class:tab===id?'active':'',onclick:()=>ctx.go('catalogs',{tab:id})},l)));root.append(nav);
- if(tab==='catalogs'){const products=await db.all('products'),catalogs=await db.all('catalogs');root.append(await catalogsPanel(ctx,catalogs,products))}
- if(tab==='themes')root.append(await managerCard(ctx,'themes','Temas','Ex.: Batizado, Comunhão, Natal, Botânico',[{key:'name',label:'Nome'},{key:'description',label:'Descrição',span2:true},{key:'image',label:'Imagem / URL',span2:true}]));
- if(tab==='occasions')root.append(await managerCard(ctx,'occasions','Ocasiões','Eventos e momentos em que o cliente poderá usar o criador',[{key:'name',label:'Nome'},{key:'description',label:'Descrição',span2:true}]));
- if(tab==='colors')root.append(await managerCard(ctx,'colors','Cores','Paleta disponível para peças, fitas, pigmentação e acabamento',[{key:'name',label:'Nome'},{key:'hex',label:'Cor HEX',default:'#c8a58d'},{key:'description',label:'Aplicação / notas',span2:true}]));
- if(tab==='personalizations')root.append(await managerCard(ctx,'personalizations','Personalizações adicionais','Fita, etiqueta, cartão, gravação, nome ou outra opção',[{key:'name',label:'Nome'},{key:'type',label:'Tipo',type:'select',options:[['text','Texto'],['select','Seleção'],['boolean','Sim/Não']]},{key:'extraPrice',label:'Custo extra (€)',type:'number',numeric:true,attrs:{step:.01,min:0}},{key:'charLimit',label:'Limite caracteres',type:'number',numeric:true,attrs:{min:0}},{key:'description',label:'Descrição',span2:true}]));
- if(tab==='pricing')root.append(await managerCard(ctx,'creatorPricing','Preços do Criador','Regras de preço por quantidade/tipo de trabalho',[{key:'name',label:'Regra'},{key:'minQty',label:'Qtd. mínima',type:'number',numeric:true,attrs:{min:1}},{key:'basePrice',label:'Preço base (€)',type:'number',numeric:true,attrs:{step:.01,min:0}},{key:'extraUnit',label:'Extra por unidade (€)',type:'number',numeric:true,attrs:{step:.01,min:0}},{key:'description',label:'Notas',span2:true}]));return root}
+function aeBoxPhoto(url,name){const raw=String(url||'').trim();const safe=/^https:\/\/[^\s]+$/i.test(raw)||/^data:image\/(?:png|jpeg|webp);base64,[a-z0-9+/=]+$/i.test(raw);const holder=el('div',{class:'field'});if(safe){const img=el('img',{src:raw,alt:'Fotografia da box '+(name||''),loading:'lazy'});img.style.cssText='width:100%;max-height:180px;object-fit:contain;border-radius:12px';img.onerror=()=>{holder.replaceChildren(el('div',{class:'notice'},'Fotografia indisponível'))};holder.append(img)}else holder.append(el('div',{class:'notice'},'Fotografia ainda não definida'));return holder}
+function aeBoxIntegrity(product,materials,kitItems,products,trail=new Set()){if(!product)return ['Artigo inexistente'];if(trail.has(product.id))return ['Referência circular no kit'];const next=new Set(trail);next.add(product.id);const faults=[];const recipe=Array.isArray(product.recipe)?product.recipe:[];if(product.family==='kit'){const children=kitItems.filter(k=>k.kitProductId===product.id);if(!children.length)faults.push('Kit sem componentes');for(const item of children){const child=products.find(p=>p.id===item.productId);if(!child||!Number.isFinite(Number(item.qty))||Number(item.qty)<=0||!Array.isArray(child.recipe)||!child.recipe.length||aeBoxIntegrity(child,materials,kitItems,products,next).length)faults.push('Componente de kit sem receita ou custo válido')}}else if(!recipe.length&&!Number.isFinite(Number(product.lastTrueCost))){faults.push('Sem receita ou custo comprovado')}else if(!recipe.length&&Number(product.lastTrueCost)<=0)faults.push('Custo registado não positivo');
+for(const line of recipe){const m=materials.find(x=>x.id===line.materialId);if(!m||!Number.isFinite(Number(line.qty))||Number(line.qty)<=0||m.unitCost==null||m.unitCost===''||!Number.isFinite(Number(m.unitCost))||Number(m.unitCost)<0)faults.push('Matéria-prima ou custo inválido')}return faults}
+function aeBoxStockNeed(product,qty,products,kitItems,trail=new Set()) {
+ if(!product||!Number.isFinite(Number(qty))||Number(qty)<=0)return {needs:[],errors:['Produto ou quantidade inválida']};
+ if(trail.has(product.id))return {needs:[],errors:['Referência circular no kit '+(product.name||product.id)]};
+ const visited=new Set(trail);visited.add(product.id);
+ const needs=[],errors=[];
+ const recipe=Array.isArray(product.recipe)?product.recipe:[];
+ for(const r of recipe){const units=Number(product.batchUnits);const n=Number(r.qty)*Number(qty)/(Number.isFinite(units)&&units>0?units:1);if(!r.materialId||!Number.isFinite(n)||n<=0)errors.push('Quantidade ou matéria inválida em '+product.name);else needs.push({materialId:r.materialId,qty:n})}
+ if(product.family==='kit'){
+  const children=kitItems.filter(k=>k.kitProductId===product.id);
+  if(!children.length)errors.push('Kit sem componentes: '+product.name);
+  for(const child of children){const p=products.find(x=>x.id===child.productId);const count=Number(child.qty)*Number(qty);const sub=aeBoxStockNeed(p,count,products,kitItems,visited);needs.push(...sub.needs);errors.push(...sub.errors)}
+ }else if(!recipe.length)errors.push('Produto sem receita de stock: '+product.name);
+ return {needs,errors};
+}
+function aeBoxProductionCost(product,materials,kitItems,products,trail=new Set()){
+ if(!product||trail.has(product.id))return NaN;
+ const next=new Set(trail);next.add(product.id);
+ if(product.family==='kit'){
+  const children=kitItems.filter(k=>k.kitProductId===product.id);
+  if(!children.length)return NaN;
+  let total=0;
+  for(const c of children){const child=products.find(p=>p.id===c.productId),qty=Number(c.qty),cost=aeBoxProductionCost(child,materials,kitItems,products,next);if(!Number.isFinite(qty)||qty<=0||!Number.isFinite(cost))return NaN;total+=qty*cost}
+  const own=calcProduct({...product,family:'box-cost-preview'},materials,[],products);
+  return total+own.production;
+ }
+ const errors=aeBoxIntegrity(product,materials,kitItems,products);
+ if(errors.length)return NaN;
+ const cost=calcProduct(product,materials,kitItems,products).production;
+ return Number.isFinite(cost)&&cost>=0?cost:NaN;
+}
+async function artessenciaBoxesPanel(ctx){
+ const [catalogs,products]=await Promise.all([db.all('catalogs'),db.all('products')]);
+ const boxes=catalogs.filter(c=>c.kind==='artessencia-gift-box-template');
+ const root=el('div',{class:'grid'});
+ root.append(el('div',{class:'card'},section('Boxes personalizáveis · ArtEssencia','Modelos predefinidos para a futura Loja Online. As boxes prontas do Catálogo Digital não são alteradas.'),el('div',{class:'notice info'},'Publicação desativada nesta fase. As composições ficam em rascunho até validação de custos, stock, regras de troca e integração na Loja.'),el('div',{class:'toolbar'},button('+ Criar modelo de box',()=>editArtessenciaBox(ctx,products),'primary'))));
+ const available=products.filter(p=>p.active!==false);
+ for(const box of boxes){
+  const linked=(box.components||[]).map(c=>{const p=products.find(p=>p.id===c.productId);return (p?.name||'Produto indisponível')+' × '+c.qty}).join(' · ');
+  const card=el('div',{class:'card'},aeBoxPhoto(box.image,box.name),section(box.name||'Box sem nome',box.description||'Sem descrição'),el('div',{class:'small muted'},linked||'Sem artigos'));
+  card.append(el('div',{class:'small muted'},'Estado: Rascunho privado · '+(box.components||[]).length+' componente(s)'),el('div',{class:'toolbar',style:'margin-top:12px'},button('Editar',()=>editArtessenciaBox(ctx,products,box),'secondary small'),button('Duplicar',()=>editArtessenciaBox(ctx,products,{...box,id:null,components:(box.components||[]).map(c=>({...c,alternativeProductIds:[...(c.alternativeProductIds||[])]})),name:(box.name||'Box')+' · cópia'}),'ghost small')));
+  root.append(card);
+ }
+ if(!boxes.length)root.append(el('div',{class:'empty'},'Ainda não existem modelos de boxes ArtEssencia.'));
+ return root;
+}
+async function editArtessenciaBox(ctx,products,existing={}){
+ const [materials,kitItems]=await Promise.all([db.all('materials'),db.all('kitItems')]);
+ const materialById=new Map(materials.map(m=>[m.id,m]));
+ const form=el('div',{class:'form-grid'});
+ const wizardNav=el('div',{class:'subnav field span2'});
+ const wizardPages=[el('div',{class:'form-grid field span2'}),el('div',{class:'form-grid field span2'}),el('div',{class:'form-grid field span2'}),el('div',{class:'form-grid field span2'}),el('div',{class:'form-grid field span2'})];
+ let wizardIndex=0;
+ let showWizard=n=>{wizardIndex=Math.max(0,Math.min(4,n));wizardPages.forEach((p,i)=>p.style.display=i===wizardIndex?'':'none');wizardNav.querySelectorAll('button').forEach((b,i)=>b.classList.toggle('active',i===wizardIndex))};
+ ['1 · Identidade','2 · Artigos','3 · Personalização','4 · Preço','5 · Revisão'].forEach((title,i)=>wizardNav.append(button(title,()=>showWizard(i),'ghost small')));
+ form.append(wizardNav,...wizardPages);
+
+ const name=input('name',existing.name||''),description=textarea('description',existing.description||''),image=input('image',existing.image||''),packaging=input('packaging',existing.packaging||''),preparation=input('preparation',existing.preparationDays??2,'number',{min:0,step:1}),notes=textarea('notes',existing.internalNotes||'');
+ wizardPages[0].append(field('Nome da box',name),field('Prazo de preparação (dias)',preparation),field('Descrição',description,true),field('Imagem da box / URL',image,true),field('Embalagem e dimensões',packaging,true));
+ const packagingCost=input('packagingCost',existing.packagingCost??0,'number',{min:0,step:.01}),laborCost=input('laborCost',existing.laborCost??0,'number',{min:0,step:.01}),extraCost=input('extraCost',existing.extraCost??0,'number',{min:0,step:.01}),targetMargin=input('targetMargin',existing.targetMarginPct??40,'number',{min:0,max:95,step:1}),salePrice=input('salePrice',existing.salePrice??'','number',{min:0,step:.01});
+ wizardPages[3].append(el('div',{class:'field span2'},section('Custos e preço da Box','Valores desta box, sem interferir com produtos individuais.'),field('Custo de embalagem (€)',packagingCost),field('Trabalho adicional (€)',laborCost),field('Outros custos (€)',extraCost),field('Margem-alvo (%)',targetMargin),field('PVP da box (€)',salePrice)));
+ const dedicationSupplement=input('dedicationSupplement',existing.dedicationSupplement??0,'number',{min:0,step:.01});
+ wizardPages[2].append(field('Suplemento dedicatória (€)',dedicationSupplement));
+ const components=(existing.components||[]).map(c=>({...c,alternativeProductIds:[...(c.alternativeProductIds||[])]}));
+ const dedication=el('input',{type:'checkbox'});dedication.checked=existing.allowDedication!==false;
+ const extras=el('input',{type:'checkbox'});extras.checked=!!existing.allowExtras;
+ const list=el('div',{class:'grid'});
+ const estimate=el('div',{class:'notice info'});
+ const updateEstimate=()=>{
+  const subtotal=components.reduce((sum,c)=>{const product=products.find(p=>p.id===c.productId);const price=Number(product?.price);return sum+(Number.isFinite(price)&&price>=0&&Number.isInteger(c.qty)&&c.qty>0?price*c.qty:0)},0);
+  const invalid=components.some(c=>{const p=products.find(p=>p.id===c.productId);return !p||!Number.isFinite(Number(p.price))||Number(p.price)<0||!Number.isInteger(c.qty)||c.qty<1});
+  const costs=[packagingCost,laborCost,extraCost].map(v=>Number(v.value));const extrasTotal=costs.every(v=>Number.isFinite(v)&&v>=0)?costs.reduce((a,b)=>a+b,0):NaN;
+  const missingCostData=components.filter(c=>{const p=products.find(p=>p.id===c.productId);return p&&p.family!=='kit'&&!(p.recipe||[]).length&&!(Number(p.lastTrueCost)>0)}).map(c=>products.find(p=>p.id===c.productId)?.name||'Artigo');
+  const integrityProblems=components.flatMap(c=>{const p=products.find(p=>p.id===c.productId);return aeBoxIntegrity(p,materials,kitItems,products).map(issue=>(p?.name||'Artigo')+': '+issue)});
+  const productionCost=components.reduce((total,c)=>{const p=products.find(p=>p.id===c.productId);if(!p||!Number.isInteger(c.qty)||c.qty<1)return total;const calc=aeBoxProductionCost(p,materials,kitItems,products);return total+calc*c.qty},0);
+  const baseCost=productionCost+extrasTotal;
+  const pvp=Number(salePrice.value),target=Number(targetMargin.value);
+  const margin=Number.isFinite(baseCost)&&Number.isFinite(pvp)&&pvp>0?(pvp-baseCost)/pvp*100:NaN;
+  const recommended=!integrityProblems.length&&Number.isFinite(baseCost)&&target>=0&&target<100?baseCost/(1-target/100):NaN;
+  const possibleSurcharges=components.reduce((sum,c)=>sum+Math.max(0,Number(c.qty)||0)*((c.allowFragrance?Number(c.scentSupplement||0):0)+(c.allowColor?Number(c.colorSupplement||0):0)),0)+(dedication.checked?Number(dedicationSupplement.value||0):0);
+  const provisional=Number.isFinite(extrasTotal)?subtotal+extrasTotal:NaN;
+  estimate.textContent='Referência de PVP dos artigos: '+euro(subtotal)+' · Custos adicionais declarados: '+(Number.isFinite(extrasTotal)?euro(extrasTotal):'inválidos')+' · Soma orientativa: '+(Number.isFinite(provisional)?euro(provisional):'indisponível')+(invalid?' · Corrige os artigos e quantidades.':'')+' · Suplementos possíveis se todas as opções forem escolhidas: '+euro(possibleSurcharges)+' · Custo de produção estimado: '+(Number.isFinite(baseCost)?euro(baseCost):'inválido')+' · PVP sugerido pela margem-alvo: '+(Number.isFinite(recommended)?euro(recommended):'indisponível')+' · Margem bruta estimada do PVP: '+(Number.isFinite(margin)?margin.toFixed(1)+'%':'indisponível')+'. Não inclui eventuais comissões, impostos ou custos externos não registados.'+(integrityProblems.length?' CUSTO NÃO VALIDADO: '+[...new Set(integrityProblems)].join(' · ')+'. Não utilizar o PVP sugerido.':'')+(missingCostData.length?' ATENÇÃO: ficha técnica sem receita para '+missingCostData.join(', ')+'. Rever os custos antes de aprovar o PVP.':'');
+ };
+ const renderComponents=()=>{
+  list.innerHTML='';
+  components.forEach((c,i)=>{
+   const allowed=products.filter(p=>p.active!==false||p.id===c.productId);
+   const product=select('product'+i,[['','Selecionar artigo'],...allowed.map(p=>[p.id,p.name])],c.productId||'');
+   const qty=input('qty'+i,c.qty||1,'number',{min:1,step:1});
+   const fragrance=el('input',{type:'checkbox'});fragrance.checked=!!c.allowFragrance;fragrance.onchange=()=>{c.allowFragrance=fragrance.checked;updateEstimate()};
+   const color=el('input',{type:'checkbox'});color.checked=!!c.allowColor;color.onchange=()=>{c.allowColor=color.checked;updateEstimate()};
+   const replace=el('input',{type:'checkbox'});replace.checked=!!c.allowReplace;replace.onchange=()=>c.allowReplace=replace.checked;
+   const scentExtra=input('scentExtra'+i,c.scentSupplement??0,'number',{min:0,step:.01}),colorExtra=input('colorExtra'+i,c.colorSupplement??0,'number',{min:0,step:.01});
+   scentExtra.oninput=()=>{c.scentSupplement=Number(scentExtra.value);updateEstimate()};colorExtra.oninput=()=>{c.colorSupplement=Number(colorExtra.value);updateEstimate()};
+   const deltaPreview=el('div',{class:'notice info'});
+   const simulation=select('replacementSimulation'+i,[['','Simular composição original'],...(c.alternativeProductIds||[]).map(id=>{const p=products.find(p=>p.id===id);return [id,p?.name||'Alternativa indisponível']})]);
+   simulation.dataset.boxSimulation='1';
+   const updateSimulationOptions=()=>{const chosen=simulation.value;simulation.innerHTML='';for(const [id,label] of [['','Simular composição original'],...(c.alternativeProductIds||[]).map(id=>{const p=products.find(p=>p.id===id);return [id,p?.name||'Alternativa indisponível']})]){const opt=document.createElement('option');opt.value=id;opt.textContent=label;simulation.append(opt)}simulation.value=(c.alternativeProductIds||[]).includes(chosen)?chosen:'';renderDelta()};
+   const renderDelta=()=>{const base=products.find(p=>p.id===c.productId);const b=Number(base?.price);const choices=(c.alternativeProductIds||[]).map(id=>products.find(p=>p.id===id)).filter(Boolean);const chosen=products.find(p=>p.id===simulation.value);const rawDelta=chosen&&Number.isFinite(Number(chosen.price))&&Number.isFinite(b)?Math.round((Number(chosen.price)-b)*100)*Math.max(1,Number(c.qty)||1)/100:0;const simulatedTotal=Math.round((Number(salePrice.value||0)+rawDelta)*100)/100;deltaPreview.textContent='Simulação do PVP: '+euro(Number(salePrice.value||0))+' + diferença '+euro(rawDelta)+' = '+(simulatedTotal>=0?euro(simulatedTotal):'inválido (negativo)')+'. '+(!choices.length?'Sem alternativas selecionadas.':choices.map(p=>{const a=Number(p.price);return p.name+': '+(Number.isFinite(a)&&Number.isFinite(b)?((a-b)>=0?'+':'')+euro(a-b)+' por unidade; total '+euro((a-b)*Math.max(1,Number(c.qty)||1)):'PVP em falta')}).join(' · '))+' · Diferenças informativas; não são aplicadas ao PVP da box nesta fase.'};
+   simulation.onchange=renderDelta;
+   const alternatives=el('div',{class:'field span2'},el('label',{},'Alternativas autorizadas para este artigo'));const selected=new Set(c.alternativeProductIds||[]);
+   const renderAlternatives=()=>{alternatives.querySelectorAll('label.chip').forEach(n=>n.remove());for(const p of products.filter(p=>p.active!==false&&p.id!==c.productId)){const cb=el('input',{type:'checkbox'});cb.checked=selected.has(p.id);cb.onchange=()=>{cb.checked?selected.add(p.id):selected.delete(p.id);c.alternativeProductIds=[...selected];updateSimulationOptions()};alternatives.append(el('label',{class:'chip'},cb,' ',p.name))}};
+   replace.onchange=()=>{c.allowReplace=replace.checked;alternatives.style.display=replace.checked?'':'none'};alternatives.style.display=replace.checked?'':'none';renderAlternatives();updateSimulationOptions();
+   product.onchange=()=>{c.productId=product.value;selected.delete(product.value);c.alternativeProductIds=[...selected];renderAlternatives();renderDelta();updateEstimate()};qty.oninput=()=>{c.qty=Number(qty.value);renderDelta();updateEstimate()};
+   list.append(el('div',{class:'card'},el('div',{class:'form-grid'},field('Artigo',product),field('Quantidade',qty),field('Permitir trocar fragrância',fragrance),field('Permitir escolher cor',color),field('Suplemento fragrância (€)',scentExtra),field('Suplemento cor (€)',colorExtra),field('Permitir substituição autorizada',replace),alternatives,simulation,deltaPreview),el('div',{class:'toolbar'},button('Remover artigo',()=>{components.splice(i,1);renderComponents()},'danger small'))));
+  });
+  updateEstimate();
+ };
+ renderComponents();
+ [packagingCost,laborCost,extraCost,targetMargin,salePrice].forEach(v=>v.addEventListener('input',()=>{updateEstimate();list.querySelectorAll('[data-box-simulation]').forEach(n=>n.dispatchEvent(new Event('change')))}));
+ const wrap=el('div',{class:'field span2'},el('label',{},'Composição-base e opções por artigo'),list,estimate,button('+ Adicionar artigo',()=>{components.push({productId:'',qty:1,allowFragrance:false,allowColor:false,allowReplace:false});renderComponents()},'ghost small'));
+ wizardPages[1].append(el('div',{class:'field span2'},section('Composição da Box','Escolhe os artigos predefinidos e as substituições que autorizas.'),wrap));
+ wizardPages[2].append(el('div',{class:'field span2'},section('Personalização ArtEssencia','Configura dedicatórias e opções específicas desta box.'),field('Permitir dedicatória',dedication),field('Permitir artigos extra',extras),field('Notas internas',notes,true)));
+ wizardPages[1].append(el('div',{class:'toolbar'},button('Seguinte: Personalização',()=>showWizard(2),'secondary small')));
+ wizardPages[2].append(el('div',{class:'toolbar'},button('Seguinte: Preços',()=>showWizard(3),'secondary small')));
+ const review=el('div',{class:'card field span2'});
+ const updateReview=()=>{
+  review.innerHTML='';
+  review.append(section('Revisão da Box','Resumo interno. A box não será publicada automaticamente.'),el('div',{class:'small'},'Nome: '+(name.value.trim()||'Por definir')),el('div',{class:'small'},'Artigos: '+(components.map(c=>{const p=products.find(x=>x.id===c.productId);return (p?.name||'Por selecionar')+' × '+c.qty}).join(' · ')||'Nenhum')),el('div',{class:'small'},'Personalizações: '+components.filter(c=>c.allowColor||c.allowFragrance||c.allowReplace).length+' artigo(s) com opções'),el('div',{class:'small'},'Dedicatória: '+(dedication.checked?'permitida':'não permitida')),el('div',{class:'small'},'PVP base: '+euro(Number(salePrice.value||0))),el('div',{class:'small muted'},'Estado após guardar: rascunho privado'));
+ };
+ wizardPages[3].append(el('div',{class:'toolbar'},button('Seguinte: Revisão',()=>showWizard(4),'secondary small')));
+ wizardPages[4].append(review);
+ const showWizardBase=showWizard;
+ showWizard=n=>{showWizardBase(n);if(wizardIndex===4)updateReview()};
+ showWizard(0);
+ dedicationSupplement.addEventListener('input',updateEstimate);dedication.addEventListener('change',updateEstimate);
+ modal(existing.id?'Editar box ArtEssencia':'Nova box ArtEssencia',form,{wide:true,onSave:async()=>{
+  if(!name.value.trim()){alert('Indica o nome da box.');return false}
+  if(!components.length||components.some(c=>!c.productId||!Number.isInteger(c.qty)||c.qty<1)){alert('Adiciona artigos e quantidades válidos.');return false}
+  const ids=new Set(products.map(p=>p.id));if(components.some(c=>!ids.has(c.productId))){alert('Existe um artigo indisponível.');return false}
+  if(components.some(c=>products.find(p=>p.id===c.productId)?.active===false)){alert('Os modelos novos só podem conter artigos ativos.');return false}
+  if(components.some(c=>!Array.isArray(c.alternativeProductIds)&&c.allowReplace)){alert('As alternativas da box são inválidas.');return false}
+  if(components.some(c=>c.allowReplace&&(c.alternativeProductIds||[]).length!==new Set(c.alternativeProductIds||[]).size)){alert('Existem alternativas duplicadas.');return false}
+  if(components.some(c=>!Number.isFinite(Number(products.find(p=>p.id===c.productId)?.price))||Number(products.find(p=>p.id===c.productId)?.price)<0)){alert('Corrige o PVP dos artigos antes de guardar o modelo.');return false}
+  if(components.some(c=>[c.scentSupplement,c.colorSupplement].some(x=>x!==undefined&&(!Number.isFinite(Number(x))||Number(x)<0)))){alert('Corrige os suplementos de personalização.');return false}
+  if(!Number.isFinite(Number(dedicationSupplement.value))||Number(dedicationSupplement.value)<0){alert('Suplemento da dedicatória inválido.');return false}
+  if(components.some(c=>c.allowReplace&&(!(c.alternativeProductIds||[]).length||(c.alternativeProductIds||[]).some(id=>id===c.productId||!products.some(p=>p.id===id&&p.active!==false))))){alert('Escolhe alternativas válidas e ativas para os artigos que permitem substituição.');return false}
+  if(components.some(c=>c.allowReplace&&(c.alternativeProductIds||[]).some(id=>!Number.isFinite(Number(products.find(p=>p.id===id)?.price))||Number(products.find(p=>p.id===id)?.price)<0))){alert('Existem alternativas sem PVP válido.');return false}
+  for(const c of components){if(!c.allowReplace)c.alternativeProductIds=[]}
+  if(extras.checked){alert('A seleção de artigos extra só poderá ser ativada quando existir uma lista de artigos autorizados.');return false}
+  const integrityWarnings=components.flatMap(c=>{const p=products.find(p=>p.id===c.productId);return aeBoxIntegrity(p,materials,kitItems,products).map(issue=>(p?.name||'Artigo')+': '+issue)});if(integrityWarnings.length&&!confirm('Custos não validados:\\n'+[...new Set(integrityWarnings)].join('\\n')+'\\nGuardar apenas como rascunho sem PVP validado?'))return false;
+  const stockWarnings=[];
+  const baseNeeds=new Map();
+  for(const c of components){const p=products.find(p=>p.id===c.productId);if(!p)continue;const result=aeBoxStockNeed(p,c.qty,products,kitItems);stockWarnings.push(...result.errors);for(const line of result.needs){baseNeeds.set(line.materialId,(baseNeeds.get(line.materialId)||0)+Number(line.qty))}}
+  const checkNeeds=(needs,context)=>{for(const [id,qty] of needs){const mat=materialById.get(id);if(!mat||!id||!Number.isFinite(qty)||qty<0||!Number.isFinite(Number(mat.stock))||Number(mat.stock)<qty)stockWarnings.push(context+': '+(mat?.name||id||'matéria desconhecida')+' (necessário '+qty+', disponível '+(mat?.stock??'n/d')+')')}};
+  checkNeeds(baseNeeds,'Composição-base');
+  for(const c of components.filter(c=>c.allowReplace)){const original=products.find(p=>p.id===c.productId);for(const id of (c.alternativeProductIds||[])){const alternative=products.find(p=>p.id===id);if(!alternative||!original)continue;const scenario=new Map(baseNeeds);const originalNeed=aeBoxStockNeed(original,c.qty,products,kitItems),alternativeNeed=aeBoxStockNeed(alternative,c.qty,products,kitItems);stockWarnings.push(...originalNeed.errors,...alternativeNeed.errors);for(const line of originalNeed.needs)scenario.set(line.materialId,(scenario.get(line.materialId)||0)-Number(line.qty));for(const line of alternativeNeed.needs)scenario.set(line.materialId,(scenario.get(line.materialId)||0)+Number(line.qty));checkNeeds(scenario,'Alternativa '+alternative.name)}}
+  if(stockWarnings.length&&!confirm('Aviso de stock (modelo privado):\n'+[...new Set(stockWarnings)].join('\n')+'\nGuardar rascunho mesmo assim?'))return false;
+  if(!Number.isInteger(Number(preparation.value))||Number(preparation.value)<0){alert('Define um prazo de preparação válido, em dias inteiros.');return false}
+  const financial=[packagingCost,laborCost,extraCost,salePrice].map(v=>Number(v.value));if(financial.some(v=>!Number.isFinite(v)||v<0)||salePrice.value.trim()===''){alert('Indica um PVP válido e custos adicionais não negativos.');return false}
+  const margin=Number(targetMargin.value);if(!Number.isFinite(margin)||margin<0||margin>95){alert('A margem-alvo deve estar entre 0% e 95%.');return false}
+  await db.put('catalogs',{...existing,id:existing.id||uid('bx'),kind:'artessencia-gift-box-template',name:name.value.trim(),description:description.value,image:image.value,packaging:packaging.value,preparationDays:Math.max(0,Math.floor(Number(preparation.value)||0)),packagingCost:financial[0],laborCost:financial[1],extraCost:financial[2],targetMarginPct:margin,salePrice:financial[3],pricingStatus:integrityWarnings.length?'cost-incomplete':'manual-unverified',components,allowDedication:dedication.checked,dedicationSupplement:Number(dedicationSupplement.value),allowExtras:extras.checked,internalNotes:notes.value,active:false,published:false,updatedAt:new Date().toISOString()});
+  toast('Modelo guardado como rascunho privado.');ctx.refresh();return true;
+ }});
+}
+export async function catalogsView(ctx,opts={}){
+ const root=el('div',{class:'grid'}),tab=opts.tab||'boxes';
+ const hero=el('div',{class:'card'},section('Boxes & Presentes · ArtEssencia','Cria uma oferta com composição predefinida. Define apenas as opções que o cliente poderá personalizar na futura Loja Online.'));
+ hero.append(el('div',{class:'notice info'},'As boxes prontas do Catálogo Digital continuam independentes. Estes modelos são rascunhos privados e não são enviados para a Loja.'));
+ root.append(hero);
+ const nav=el('div',{class:'subnav'});
+ [['boxes','As minhas Boxes'],['composition','Composição & artigos'],['customize','Personalizações'],['prices','Custos & PVP'],['preview','Pré-visualização'],['settings','Definições']].forEach(([id,label])=>nav.append(el('button',{class:tab===id?'active':'',onclick:()=>ctx.go('catalogs',{tab:id})},label)));
+ root.append(nav);
+ if(tab==='boxes')root.append(await artessenciaBoxesPanel(ctx));
+ else if(tab==='composition'||tab==='customize'||tab==='prices'){
+  const [catalogs,products]=await Promise.all([db.all('catalogs'),db.all('products')]);
+  const boxes=catalogs.filter(c=>c.kind==='artessencia-gift-box-template');
+  const explanations={
+   composition:['Composição das Boxes','Edita os artigos e quantidades de cada box, sem alterar os produtos de origem.'],
+   customize:['Personalização controlada','Define por box que fragrâncias, cores, dedicatórias e substituições são permitidas.'],
+   prices:['Custos e preços por Box','Consulta e edita os custos adicionais, a margem-alvo e o PVP próprio de cada box.']
+  };
+  const [title,subtitle]=explanations[tab];
+  const card=el('div',{class:'card'},section(title,subtitle));
+  if(!boxes.length)card.append(el('div',{class:'empty'},'Cria primeiro um modelo em «As minhas Boxes».'));
+  for(const box of boxes){
+   const n=(box.components||[]).length;
+   const detail=tab==='composition'?n+' artigo(s) na composição':tab==='customize'?(box.components||[]).filter(c=>c.allowColor||c.allowFragrance||c.allowReplace).length+' artigo(s) com personalização':euro(box.salePrice||0)+' · PVP configurado';
+   card.append(el('div',{class:'creator-item'},el('strong',{},box.name||'Box'),el('div',{class:'small muted'},detail),el('div',{class:'toolbar'},button('Editar esta box',()=>editArtessenciaBox(ctx,products,box),'primary small'))));
+  }
+  root.append(card);
+ }else if(tab==='preview'){
+  const boxes=(await db.all('catalogs')).filter(c=>c.kind==='artessencia-gift-box-template');
+  const card=el('div',{class:'card'},section('Pré-visualização interna','Representação simplificada. Não publica nem cria encomendas.'));
+  for(const box of boxes){
+   const item=el('div',{class:'creator-item'});
+   item.append(aeBoxPhoto(box.image,box.name));
+   item.append(el('strong',{},box.name||'Box'));
+   item.append(el('p',{},box.description||'Sem descrição'));
+   const pricing=box.pricingStatus==='cost-incomplete'?'Custos incompletos':'PVP não validado';
+   item.append(el('div',{class:'small muted'},(box.components||[]).length+' artigos · PVP base '+euro(box.salePrice||0)+' · Rascunho privado · '+pricing));
+   card.append(item);
+  }
+  if(!boxes.length)card.append(el('div',{class:'empty'},'Ainda não há modelos para pré-visualizar.'));
+  root.append(card);
+ }else if(tab==='settings'){const card=el('div',{class:'card'},section('Definições ArtEssencia','As opções comuns continuam disponíveis sem a estrutura antiga da DONART.'));card.append(el('div',{class:'toolbar'},button('Cores disponíveis',()=>ctx.go('catalogs',{tab:'settings',setting:'colors'}),'ghost small'),button('Opções de personalização',()=>ctx.go('catalogs',{tab:'settings',setting:'personalizations'}),'ghost small')));root.append(card);if(opts.setting==='colors')root.append(await managerCard(ctx,'colors','Cores disponíveis','Cores aplicáveis aos artigos ArtEssencia',[{key:'name',label:'Nome'},{key:'hex',label:'Cor HEX',default:'#c8a58d'},{key:'description',label:'Notas',span2:true}]));if(opts.setting==='personalizations')root.append(await managerCard(ctx,'personalizations','Opções reutilizáveis','Fitas, cartões, dedicatórias e acabamentos',[{key:'name',label:'Nome'},{key:'type',label:'Tipo',type:'select',options:[['text','Texto'],['select','Seleção'],['boolean','Sim/Não']]},{key:'extraPrice',label:'Suplemento (€)',type:'number',numeric:true,attrs:{step:.01,min:0}},{key:'description',label:'Descrição',span2:true}]));}
+ return root;
+}
 
 export async function specialEditionsView(ctx){const [collections,products]=await Promise.all(['collections','products'].map(db.all));const root=el('div',{class:'grid'});root.append(el('div',{class:'toolbar'},button('+ Nova edição especial',()=>specialEditionModal(ctx,products),'primary')));const grid=el('div',{class:'creator-grid'});for(const c of collections){const count=(c.productIds||[]).length;grid.append(el('div',{class:'creator-item'},el('div',{class:'creator-item-head'},el('div',{},el('strong',{},c.name),el('div',{class:'small muted'},`${fmt(c.startDate)} → ${fmt(c.endDate)} · ${count} produto(s)`)),el('span',{html:badge(c.active!==false?'Ativa':'Inativa',c.active!==false?'ok':'neutral')})),c.featured?el('div',{class:'notice warn',style:'margin-top:8px'},'Destaque principal da homepage'):null,el('div',{class:'toolbar',style:'margin-top:8px'},button('Editar',()=>specialEditionModal(ctx,products,c),'ghost small'),button('Eliminar',async()=>{if(confirm('Eliminar edição?')){await db.del('collections',c.id);ctx.refresh()}},'danger small'))))}if(!collections.length)grid.append(el('div',{class:'empty'},'Ainda sem edições especiais.'));root.append(grid);return root}
 function specialEditionModal(ctx,products,existing={}){const f=el('div',{class:'form-grid'}),name=input('name',existing.name||''),start=input('start',existing.startDate||'','date'),end=input('end',existing.endDate||'','date'),active=select('active',[['true','Ativa'],['false','Inativa']],String(existing.active!==false)),featured=select('featured',[['false','Não'],['true','Sim — topo da homepage']],String(!!existing.featured)),heroTitle=input('heroTitle',existing.heroTitle||''),heroText=textarea('heroText',existing.heroText||''),heroImage=input('heroImage',existing.heroImage||'');const picks=el('div',{class:'chip-row'}),selected=new Set(existing.productIds||[]);for(const p of products.filter(p=>p.active!==false)){const cb=el('input',{type:'checkbox',value:p.id});cb.checked=selected.has(p.id);cb.onchange=()=>cb.checked?selected.add(p.id):selected.delete(p.id);picks.append(el('label',{class:'chip'},cb,' ',p.name))}f.append(field('Nome da edição',name),field('Estado',active),field('Data início',start),field('Data fim',end),field('Topo homepage',featured),field('Título do hero',heroTitle),field('Texto hero',heroText,true),field('Imagem / URL',heroImage,true),field('Produtos da edição',picks,true));modal(existing.id?'Editar edição':'Nova edição especial',f,{wide:true,onSave:async()=>{await db.put('collections',{...existing,id:existing.id||uid('col'),name:name.value,startDate:start.value,endDate:end.value,active:active.value==='true',featured:featured.value==='true',heroTitle:heroTitle.value,heroText:heroText.value,heroImage:heroImage.value,productIds:[...selected],updatedAt:new Date().toISOString()});ctx.refresh();return true}})}
