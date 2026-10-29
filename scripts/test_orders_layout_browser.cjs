@@ -43,8 +43,38 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
  assert.equal(await page.evaluate(()=>JSON.stringify(db.orders)===beforeSorting&&sortWrites===0),true);
  assert.deepEqual(errors,[]);await context.close();
  const mobile=await open(390);assert.ok(await mobile.page.locator('#ordersCards').isVisible());assert.equal(await mobile.page.locator('#ordersTableWrap').isVisible(),false);
- await mobile.page.getByLabel('Ordenar encomendas ativas',{exact:true}).selectOption('due');assert.ok(await mobile.page.locator('#ordersSortV1916').evaluate(e=>e.getBoundingClientRect().height>=44));
+ await mobile.page.getByLabel('Ordenar encomendas ativas',{exact:true}).selectOption('due');await mobile.page.waitForFunction(()=>document.getElementById('ordersSortV1916')?.getBoundingClientRect().height>=44);assert.ok(await mobile.page.locator('#ordersSortV1916').evaluate(e=>e.getBoundingClientRect().height>=44));
  const card=mobile.page.locator('#ordersCards article').first();assert.equal(await card.getByRole('button',{name:'WhatsApp',exact:true}).isVisible(),false);await card.locator('summary').click();assert.equal(await card.getByRole('button',{name:'WhatsApp',exact:true}).isVisible(),true);
  await card.getByRole('button',{name:'Abrir encomenda',exact:true}).click();await mobile.page.locator('#orderDetail > .ae-order-detail-layout').waitFor();assert.equal(await mobile.page.locator('#orderDialog').evaluate(e=>e.scrollWidth<=e.clientWidth+2),true);await mobile.context.close();
+ async function verifyMaterials(width){
+  const {context,page}=await open(width);
+  await page.evaluate(()=>{
+   const wax='Cera <img src=x onerror=alert(1)> '+ 'X'.repeat(100);
+   db.products=[{code:'MAT',name:'Vela fixture',manufactured:true},{code:'NO-RECIPE',name:'Sem receita',manufactured:true},{code:'RESALE',name:'Revenda',manufactured:false}];
+   db.productRecipes={MAT:[{item:wax,qty:999}]};
+   db.stock=[{name:wax,qty:100,unit:'g'},{name:'Caixa fixture',qty:5,unit:'un'},{name:'Stock inválido',qty:'erro',unit:'g'}];
+   const o={id:'MAT-ORDER',client:'Fixture',status:'Confirmada',delivery:'2026-11-01',box:'Caixa fixture',boxes:1,items:[{code:'MAT',name:'Vela fixture',qty:3,price:10},{code:'NO-RECIPE',name:'Sem receita',qty:1,price:1},{code:'UNKNOWN',name:'Não encontrado',qty:1,price:1},{code:'RESALE',name:'Revenda',qty:1,price:1}],technicalSnapshotV1757:{lines:[{index:0,code:'MAT',materialsCaptured:true,materials:[{item:wax,qtyPerUnit:20,unit:'g'},{item:'Material ausente',qtyPerUnit:1,unit:'g'},{item:'Stock inválido',qtyPerUnit:2,unit:'g'}]}]}};
+   const other={id:'OTHER',status:'Confirmada',delivery:'2026-10-31',items:[{code:'MAT',qty:1}],technicalSnapshotV1757:{lines:[{index:0,code:'MAT',materialsCaptured:true,materials:[{item:wax,qtyPerUnit:50,unit:'g'}]}]}};
+   db.orders=[o,other];db.productionRuns=[];db.stockMoves=[];window.materialsBefore=JSON.stringify(db);window.materialWrites=0;save=()=>{materialWrites++};showOrder(o.id);
+  });
+  const details=page.locator('.ae-order-materials');await details.waitFor();assert.equal(await details.getAttribute('open'),null);
+  await details.locator('summary').click();await details.locator('.ae-material-row').first().waitFor();
+  assert.equal(await details.locator('.ae-material-row').count(),4);
+  const wax=details.locator('.ae-material-row').first();
+  assert.deepEqual(await wax.locator('dd').allTextContents(),['60 g','100 g','50 g','50 g']);assert.match(await wax.innerText(),/Em falta: 10 g/);
+  assert.match(await details.innerText(),/Sem receita/);assert.match(await details.innerText(),/Não encontrado/);assert.match(await details.innerText(),/Material não encontrado no Stock/);assert.match(await details.innerText(),/Stock inválido: verifica/);
+  assert.equal(await details.locator('img,script').count(),0);
+  assert.deepEqual(await details.locator('.ae-material-row').last().locator('dd').allTextContents(),['1 un','5 un','0 un','5 un']);
+  await details.locator('summary').click();await details.locator('summary').click();
+  assert.equal(await page.evaluate(()=>JSON.stringify(db)===materialsBefore&&materialWrites===0),true);
+  assert.equal(await page.locator('#orderDialog').evaluate(e=>e.scrollWidth<=e.clientWidth+2),true);
+  if(process.env.AE_MATERIAL_SCREENSHOTS){await details.locator('.ae-material-values').first().scrollIntoViewIfNeeded();await page.screenshot({path:'/tmp/ae-order-materials-'+width+'.png'})}
+  // Reopening recomputes the consultation; the saved recipe remains unchanged.
+  await details.locator('summary').click();await page.evaluate(()=>{db.stock[0].qty=150});await details.locator('summary').click();await page.waitForFunction(()=>document.querySelectorAll('.ae-material-row dd')[1]?.textContent==='150 g');
+  assert.deepEqual(await wax.locator('dd').allTextContents(),['60 g','150 g','50 g','100 g']);
+  await page.evaluate(()=>{db.productionRuns=[{id:'RUN',orders:['MAT-ORDER']}];showOrder('MAT-ORDER')});await page.locator('#orderDetail > .ae-order-detail-layout').waitFor();assert.equal(await page.locator('.ae-order-materials').count(),0);
+  await context.close();
+ }
+ await verifyMaterials(1000);await verifyMaterials(390);
  console.log('PASS Chromium: desktop table/mobile cards, bounded pagination, accent search, filters/page/focus retained, disclosure preserves drafts, real edit/payment/print handlers, no writes on navigation.');
 }finally{await browser.close()}})().catch(e=>{console.error(e);process.exitCode=1});

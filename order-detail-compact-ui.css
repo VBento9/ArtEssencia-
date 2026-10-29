@@ -10,3 +10,16 @@
 #orderDetail .ae-order-detail-section[open]{padding-bottom:12px}
 #orderDetail .ae-order-detail-primary .section-title{margin-top:12px}
 @media(max-width:650px){#orderDialog{width:96%!important;max-height:94dvh;border-radius:14px!important}#orderDialog>.card{padding:12px}#orderDetail .totalbox{grid-template-columns:repeat(2,minmax(0,1fr))}#orderDetail .cart-row{grid-template-columns:minmax(0,1fr) 60px 74px!important;gap:7px}#orderDetail .cart-row>.danger{grid-column:1/-1;justify-self:end}#orderDetail .ae-order-detail-tools .btn{width:100%}}
+
+#orderDetail .ae-order-materials>summary{min-height:44px;box-sizing:border-box}
+#orderDetail .ae-material-list{display:grid;gap:8px}
+#orderDetail .ae-material-row{border-top:1px solid #e4d8ca;padding:10px 0;min-width:0;overflow-wrap:anywhere}
+#orderDetail .ae-material-values{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:8px 0}
+#orderDetail .ae-material-values dt{font-size:11px;color:#756b63}
+#orderDetail .ae-material-values dd{margin:3px 0 0;font-size:13px;font-weight:600}
+#orderDetail .ae-material-warning{color:#8b3d1e;background:#fff4e8;padding:8px;border-radius:6px;font-size:12px;overflow-wrap:anywhere}
+#orderDetail .ae-material-note{font-size:12px;color:#756b63;line-height:1.45;overflow-wrap:anywhere}
+@media(max-width:650px){#orderDetail .ae-material-values{grid-template-columns:repeat(2,minmax(0,1fr))}}
+#orderDetail .cart-row>span{min-width:0;overflow-wrap:anywhere}
+#orderDetail .cart-row>.danger{min-height:44px}
+@media(min-width:651px){#orderDetail .cart-row:has(>.danger){grid-template-columns:minmax(0,1fr) 90px 100px 96px!important}#orderDetail .cart-row>.danger{padding:8px;min-width:0}}
