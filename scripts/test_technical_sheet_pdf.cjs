@@ -38,7 +38,7 @@ new vm.Script(source,{filename:'product-technical-sheet.js'});
    await popup.waitForFunction(()=>document.title.includes('ArtEssencia_FichaTecnica_')&&!!document.querySelector('.ts-table tbody tr'));
    const content=await popup.locator('body').innerText();
    const css=await popup.locator('style').innerText();
-   assert.match(content,/Composição por unidade/i);
+   assert.match(content,/COMPOSIÇÃO/i);
    assert.equal(content.includes('Custos e rentabilidade'),expectedCost);
    assert.equal(content.includes('Margem estimada'),expectedCost);
    assert.equal(await popup.locator('.ts-table th').count(),expectedCost?3:2);
