@@ -1,1 +1,46 @@
 #products .ae-products-compact-bar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}#products .ae-products-compact-bar button{border:1px solid #d8c9ba;border-radius:10px;padding:10px 14px;background:#fff;color:inherit;cursor:pointer;font:inherit}#products .ae-products-compact-bar button[aria-pressed=true]{background:#785743;color:#fff}#products .products-form-card[hidden],#products .products-list-card[hidden],#products .products-filter-group-v1853[hidden]{display:none!important}@media(max-width:700px){#products .ae-products-compact-bar button{flex:1 1 auto;font-size:12px}}
+/* Touch targets and action hierarchy in the existing Products cards/editor. */
+#products .product-card-foot{display:grid;gap:10px;align-items:start}
+#products .product-card-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:100%}
+#products .product-card-actions>.btn{min-height:44px;min-width:44px;white-space:normal;overflow-wrap:anywhere;line-height:1.3;padding:10px 12px;margin:0}
+#products .product-secondary-actions{grid-column:1/-1;min-width:0}
+#products .product-secondary-actions summary{min-height:44px;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;border:1px solid #dfd2c5;border-radius:9px;font-size:12px;background:#faf7f2;list-style:none}
+#products .product-secondary-actions summary::after{content:'⌄'}
+#products .product-secondary-actions[open] summary::after{content:'⌃'}
+#products .product-secondary-menu{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding-top:10px}
+#products .product-secondary-menu .btn{min-height:44px;white-space:normal;line-height:1.3;margin:0;padding:10px}
+#products .product-card-img{height:auto;min-height:0;max-height:140px;object-fit:contain;align-self:start;background:#f8f3ec}
+#products .product-card-top h3{overflow-wrap:anywhere;line-height:1.25}
+#products .product-card-body>p{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#products .products-form-card .btn,#products .ae-products-compact-bar button,#products .product-editor-nav-v1762 button{min-height:44px;min-width:44px;white-space:normal;line-height:1.3}
+#products .products-form-card input:not([type=checkbox]):not([type=radio]),#products .products-form-card select{min-height:44px}
+#products :is(button,summary):focus-visible{outline:3px solid #9e7958;outline-offset:2px}
+@media(max-width:700px){
+ #products .products-cards{grid-template-columns:minmax(0,1fr)}
+ #products .product-card{grid-template-columns:76px minmax(0,1fr)}
+ #products .product-card-img{width:76px;max-height:100px;margin-top:12px}
+ #products .product-card-body{min-width:0;padding:12px}
+ #products .product-card-top{display:block}
+ #products .product-card-top>div:last-child{justify-content:flex-start!important;margin-top:7px}
+ #products .product-card-metrics{gap:6px}
+ #products .product-card-actions{gap:10px}
+ #products .ae-products-compact-bar{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+ #products .ae-products-compact-bar button:last-child{grid-column:1/-1}
+}
+@media(max-width:359px){#products .product-card{grid-template-columns:56px minmax(0,1fr)}#products .product-card-img{width:56px}#products .product-secondary-menu{grid-template-columns:1fr}}
+
+#products .product-card-actions>.btn,#products .product-secondary-menu .btn{font-size:13px}
+#products .product-card-top h3{font-size:16px}
+#products .product-card-top small{font-size:11px}
+#products .product-card-metrics small,#products .product-card-foot>span{font-size:11px}
+#products .product-card-metrics strong{font-size:15px}
+@media(max-width:700px){
+ #products .product-card{padding:12px;grid-template-columns:64px minmax(0,1fr);gap:10px;min-width:0}
+ #products .product-card-body{display:contents}
+ #products .product-card-img{width:64px;max-height:92px;margin:0;border-radius:8px}
+ #products .product-card-body>div,#products .product-card-body>p{grid-column:1/-1}
+ #products .product-card-body>.product-card-top{grid-column:2}
+ #products .product-card-foot{width:100%;min-width:0}
+ #products .product-card-actions{width:100%}
+}
+#products .product-card-foot{grid-template-columns:minmax(0,1fr);justify-content:stretch}

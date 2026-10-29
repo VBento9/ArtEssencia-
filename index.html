@@ -5337,7 +5337,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
             <option value="today">Hoje</option>
             <option value="7">Últimos 7 dias</option>
             <option value="30" selected>Últimos 30 dias</option>
-            <option value="month">Mês atual</option>
+            <option value="month">Mês atual</option><option value="quarter">Trimestre atual</option><option value="year">Ano atual</option>
             <option value="custom">Personalizado</option>
           </select>
         </div>
@@ -5431,8 +5431,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 
 <div class="card report-period-v1927">
  <div class="report-period-fields-v1927">
-  <label>Período<select id="reportPeriodModeV1927" onchange="reportModeChangedV1927()"><option value="month">Mês</option><option value="year">Ano completo</option><option value="custom">Período personalizado</option></select></label>
+  <label>Período<select id="reportPeriodModeV1927" onchange="reportModeChangedV1927()"><option value="month">Mês</option><option value="quarter">Trimestre</option><option value="year">Ano completo</option><option value="custom">Período personalizado</option></select></label>
   <label id="reportMonthFieldV1927">Mês<input id="reportMonthV1927" type="month"></label>
+  <label id="reportQuarterFieldV1938" hidden>Trimestre<select id="reportQuarterV1938"><option value="1">1.º · Jan–Mar</option><option value="2">2.º · Abr–Jun</option><option value="3">3.º · Jul–Set</option><option value="4">4.º · Out–Dez</option></select></label>
   <label id="reportYearFieldV1927" hidden>Ano<input id="reportYearV1927" type="number" min="1900" max="2200" step="1"></label>
   <label id="reportStartFieldV1927" hidden>De<input id="reportStartV1927" type="date" min="1900-01-01" max="2200-12-31"></label>
   <label id="reportEndFieldV1927" hidden>Até<input id="reportEndV1927" type="date" min="1900-01-01" max="2200-12-31"></label>
@@ -6138,7 +6139,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.37';
+const APP_VERSION='1.9.38';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -8983,11 +8984,11 @@ function refreshStockSelectors(){
  if(document.getElementById('moveStockItem'))moveStockItem.innerHTML=opts;if(document.getElementById('purchaseItem'))purchaseItem.innerHTML=opts
 }
 function moveStock(){
- const n=moveStockItem.value,q=Number(moveStockQty.value),t=moveStockType.value,note=String(moveStockNote.value||'').trim();
- if(!n||!Number.isFinite(q)||q<0||(t!=='adjust'&&q<=0)){setMoveStockStateV145('error','Movimento inválido',t==='adjust'?'Selecione o artigo e indique um valor igual ou superior a zero.':'Selecione o artigo e indique uma quantidade superior a zero.');return toast('Confirma o artigo e a quantidade')}
+ const n=moveStockItem.value,raw=String(moveStockQty.value??'').trim(),q=Number(raw),t=moveStockType.value,note=String(moveStockNote.value||'').trim();
+ if(!n||!raw||!['in','out','waste','adjust'].includes(t)||!Number.isFinite(q)||q<0||(t!=='adjust'&&q<=0)){setMoveStockStateV145('error','Movimento inválido',t==='adjust'?'Selecione o artigo e indique um valor igual ou superior a zero.':'Selecione o artigo e indique uma quantidade superior a zero.');return toast('Confirma o artigo e a quantidade')}
  const x=db.stock.find(s=>s.name===n);if(!x)return;
  if(['out','waste','adjust'].includes(t)&&!note){setMoveStockStateV145('error','Falta o motivo','Indique a razão da saída, desperdício ou acerto.');return toast('Indique o motivo do movimento')}
- const before=Number(x.qty)||0;if(['out','waste'].includes(t)&&q>before){setMoveStockStateV145('error','Stock insuficiente','Disponível: '+before.toLocaleString('pt-PT')+' '+x.unit);return toast('Stock insuficiente: disponível '+before+' '+x.unit)}
+ const before=Number(x.qty);if(!Number.isFinite(before)||before<0){setMoveStockStateV145('error','Stock inválido','Confirma a quantidade atual antes de registar um movimento.');return toast('Quantidade atual de stock inválida')}if(['out','waste'].includes(t)&&q>before){setMoveStockStateV145('error','Stock insuficiente','Disponível: '+before.toLocaleString('pt-PT')+' '+x.unit);return toast('Stock insuficiente: disponível '+before+' '+x.unit)}
  const after=t==='in'?before+q:t==='adjust'?q:before-q;x.qty=after;
  db.stockMoves.push({date:new Date().toISOString(),item:n,type:t,qty:q,note,beforeQty:before,afterQty:after,delta:after-before});
  save();moveStockQty.value='';moveStockNote.value='';setMoveStockStateV145('saved','Movimento registado',n+' · '+before.toLocaleString('pt-PT')+' → '+after.toLocaleString('pt-PT')+' '+x.unit);toast('Movimento registado')
@@ -12016,7 +12017,7 @@ function renderProducts(){
        </div>
        <div class="product-card-foot">
          <span>${marginOk?'Margem dentro do objetivo':'Margem abaixo do mínimo'}</span>
-         <div class="product-card-actions"><button class="btn" type="button" onclick="openProductTechnicalSheetV1936(decodeURIComponent('${productArgV147(p.code)}'))">Ver ficha</button><button class="btn" onclick="editProduct(decodeURIComponent('${productArgV147(p.code)}'))">${productArchivedV1803(p)?'Ver/Editar':'Editar'}</button>${productArchivedV1803(p)?`<button class="btn primary" onclick="reactivateProductV1803(decodeURIComponent('${productArgV147(p.code)}'))">Reativar</button>`:`<button class="btn" onclick="archiveProductV1803(decodeURIComponent('${productArgV147(p.code)}'))">Arquivar</button><button class="btn danger" title="Elimina definitivamente apenas se não existir em encomendas ou orçamentos" onclick="deleteProduct(decodeURIComponent('${productArgV147(p.code)}'))">Apagar definitivamente</button>`}</div>
+         <div class="product-card-actions"><button class="btn primary" type="button" onclick="openProductTechnicalSheetV1936(decodeURIComponent('${productArgV147(p.code).replace(/'/g,"%27")}'))">Ver ficha</button><button class="btn" onclick="editProduct(decodeURIComponent('${productArgV147(p.code).replace(/'/g,"%27")}'))">${productArchivedV1803(p)?'Ver/Editar':'Editar'}</button><details class="product-secondary-actions"><summary>Mais ações</summary><div class="product-secondary-menu">${productArchivedV1803(p)?`<button class="btn primary" onclick="reactivateProductV1803(decodeURIComponent('${productArgV147(p.code).replace(/'/g,"%27")}'))">Reativar</button>`:`<button class="btn" onclick="archiveProductV1803(decodeURIComponent('${productArgV147(p.code).replace(/'/g,"%27")}'))">Arquivar</button><button class="btn danger" title="Elimina definitivamente apenas se não existir em encomendas ou orçamentos" onclick="deleteProduct(decodeURIComponent('${productArgV147(p.code).replace(/'/g,"%27")}'))">Apagar definitivamente</button>`}</div></details></div>
        </div>
      </div>
    </div>`;
@@ -13855,14 +13856,18 @@ function exportCashCSV(){downloadCSV('ArtEssencia_caixa',['Data','Tipo','Descri�
 let reportSelectionV1927=null;
 function reportModeChangedV1927(){
  const mode=document.getElementById('reportPeriodModeV1927').value;
- for(const [id,show] of [['Month',mode==='month'],['Year',mode==='year'],['Start',mode==='custom'],['End',mode==='custom']])document.getElementById('report'+id+'FieldV1927').hidden=!show;
+ const quarter=document.getElementById('reportQuarterFieldV1938');if(quarter)quarter.hidden=mode!=='quarter';
+ for(const [id,show] of [['Month',mode==='month'],['Year',mode==='year'||mode==='quarter'],['Start',mode==='custom'],['End',mode==='custom']])document.getElementById('report'+id+'FieldV1927').hidden=!show;
 }
-function buildReportPeriodV1927(mode,month,year,start,end){
+function buildReportPeriodV1927(mode,month,year,start,end,quarter){
  let y,m=0,pref;
  const validDate=v=>/^\d{4}-\d{2}-\d{2}$/.test(v)&&Number(v.slice(0,4))>=1900&&Number(v.slice(0,4))<=2200&&!Number.isNaN(Date.parse(v+'T12:00:00Z'))&&new Date(v+'T12:00:00Z').toISOString().slice(0,10)===v;
  if(mode==='month'){
   if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))throw new Error('Seleciona um mês válido.');
   y=Number(month.slice(0,4));m=Number(month.slice(5));start=month+'-01';end=new Date(Date.UTC(y,m,0)).toISOString().slice(0,10);pref=month;
+ }else if(mode==='quarter'){
+  y=Number(year);const q=Number(quarter);if(!Number.isInteger(y)||y<1900||y>2200||!Number.isInteger(q)||q<1||q>4)throw new Error('Seleciona um ano e trimestre válidos.');
+  start=y+'-'+String((q-1)*3+1).padStart(2,'0')+'-01';end=new Date(Date.UTC(y,q*3,0)).toISOString().slice(0,10);pref=y+' · '+q+'.º trimestre';
  }else if(mode==='year'){
   y=Number(year);if(!Number.isInteger(y)||y<1900||y>2200)throw new Error('Indica um ano entre 1900 e 2200.');start=y+'-01-01';end=y+'-12-31';pref=String(y);
  }else if(mode==='custom'){y=Number(start.slice(0,4));pref=start+' a '+end}else throw new Error('Seleciona o tipo de período.');
@@ -13881,7 +13886,7 @@ function reportPeriodV1927(){
 }
 function applyReportPeriodV1927(){
  const value=id=>document.getElementById('report'+id+'V1927').value,error=document.getElementById('reportPeriodErrorV1927');
- try{const next=buildReportPeriodV1927(value('PeriodMode'),value('Month'),value('Year'),value('Start'),value('End'));reportSelectionV1927=next;error.hidden=true;error.textContent='';renderReports();return true}
+ try{const next=buildReportPeriodV1927(value('PeriodMode'),value('Month'),value('Year'),value('Start'),value('End'),document.getElementById('reportQuarterV1938')?.value);reportSelectionV1927=next;error.hidden=true;error.textContent='';renderReports();return true}
  catch(e){error.textContent=e.message;error.hidden=false;return false}
 }
 function exportReportCSVV1927(kind){
@@ -14225,6 +14230,7 @@ function quoteConversion(){const qs=db.quotes||[],decided=qs.filter(q=>q.orderId
 
 let digitalStatsStateV1795={source:'shop',data:null,loading:false,error:'',updatedAt:null};
 let digitalStatsAutoRefreshV1907=null;
+let digitalStatsRequestV1938=0;
 function startDigitalStatsAutoRefreshV1907(){
  if(digitalStatsAutoRefreshV1907)return;
  digitalStatsAutoRefreshV1907=setInterval(()=>{
@@ -14247,6 +14253,8 @@ function digitalStatsRangeV1795(){
  else if(period==='7')from.setDate(from.getDate()-6);
  else if(period==='30')from.setDate(from.getDate()-29);
  else if(period==='month')from.setDate(1);
+ else if(period==='quarter'){from.setMonth(Math.floor(from.getMonth()/3)*3,1)}
+ else if(period==='year'){from.setMonth(0,1)}
  else if(period==='custom'){
   const f=document.getElementById('digitalStatsFromV1795')?.value||'',t=document.getElementById('digitalStatsToV1795')?.value||'';
   return {from:f,to:t}
@@ -14258,10 +14266,11 @@ function digitalStatsPeriodChangedV1795(){
  const fw=document.getElementById('digitalStatsFromWrapV1795'),tw=document.getElementById('digitalStatsToWrapV1795');
  if(fw)fw.style.display=custom?'block':'none';
  if(tw)tw.style.display=custom?'block':'none';
- if(!custom)loadDigitalStatsV1795(false)
+ if(custom){digitalStatsRequestV1938++;digitalStatsStateV1795.loading=false;digitalStatsStateV1795.data=null;digitalStatsStateV1795.updatedAt=null;digitalStatsStateV1795.error='Seleciona as datas e clica Atualizar.';renderDigitalStatsV1795()}else loadDigitalStatsV1795(false)
 }
 function setDigitalStatsSourceV1795(source){
  digitalStatsStateV1795.source=source==='catalog'?'catalog':'shop';
+ digitalStatsStateV1795.data=null;digitalStatsStateV1795.updatedAt=null;
  renderDigitalStatsV1795();
  loadDigitalStatsV1795(false)
 }
@@ -14306,10 +14315,11 @@ function renderDigitalStatsV1795(){
  const products=Array.isArray(st.data.top_products)?st.data.top_products:[];
  p.innerHTML=products.length?products.map((x,i)=>'<div class="report-product"><span class="report-rank">'+(i+1)+'</span><div><strong>'+escapeHtml(x.name||x.product_id||'Produto')+'</strong><small>'+Number(x.views||0)+' visualizações'+(shop?' · '+Number(x.cart_adds||0)+' carrinho':' · '+Number(x.contacts||0)+' contactos')+'</small></div><strong>'+Number(x.views||0)+'</strong></div>').join(''):'<div class="empty">Sem visualizações de produtos neste período</div>';
  const daily=Array.isArray(st.data.daily)?st.data.daily:[];
- d.innerHTML=daily.length?daily.map(x=>'<div class="report-line"><span>'+escapeHtml(String(x.day||''))+'</span><strong>'+Number(x.visitors||x.visits||0)+' visitantes · '+Number(x.visits||0)+' sessões · '+Number(x.product_views||0)+' produtos'+(shop?' · '+Number(x.orders||0)+' encomendas':' · '+Number(x.campaign_clicks||0)+' coleções · '+Number(x.favorites||0)+' favoritos')+'</strong></div>').join(''):'<div class="empty">Sem atividade neste período</div>'
+ d.innerHTML=daily.length?daily.map(x=>'<div class="report-line"><span>'+escapeHtml(String(x.day||''))+'</span><strong>'+(x.visitors==null?'—':Number(x.visitors))+' visitantes · '+Number(x.visits||0)+' visitas · '+Number(x.product_views||0)+' produtos'+(shop?' · '+Number(x.orders||0)+' encomendas':' · '+Number(x.campaign_clicks||0)+' coleções · '+Number(x.favorites||0)+' favoritos')+'</strong></div>').join(''):'<div class="empty">Sem atividade neste período</div>'
 }
 async function loadDigitalStatsV1795(showToast=false){
- const range=digitalStatsRangeV1795();
+ const request=++digitalStatsRequestV1938,source=digitalStatsStateV1795.source,range=digitalStatsRangeV1795();
+ digitalStatsStateV1795.loading=false;
  if(!range.from||!range.to){
   digitalStatsStateV1795.error='Seleciona as datas inicial e final.';
   digitalStatsStateV1795.data=null;
@@ -14322,25 +14332,26 @@ async function loadDigitalStatsV1795(showToast=false){
   renderDigitalStatsV1795();
   return
  }
- digitalStatsStateV1795.loading=true;digitalStatsStateV1795.error='';renderDigitalStatsV1795();
+ digitalStatsStateV1795.loading=true;digitalStatsStateV1795.error='';digitalStatsStateV1795.data=null;digitalStatsStateV1795.updatedAt=null;renderDigitalStatsV1795();
  try{
   const u=cloudUser||await ensureCloudSession();
   if(!u||!cloudClient)throw new Error('Liga primeiro o Backoffice à Cloud para consultar as estatísticas.');
   const {data,error}=await cloudClient.rpc('artessencia_analytics_summary_v1',{
-   p_source:digitalStatsStateV1795.source,
+   p_source:source,
    p_from:range.from,
    p_to:range.to
   });
+  if(request!==digitalStatsRequestV1938)return;
   if(error)throw new Error(supabaseDetailedError(error));
   digitalStatsStateV1795.data=data||{};
   digitalStatsStateV1795.updatedAt=new Date();
   if(showToast)toast('Estatísticas atualizadas')
  }catch(e){
+  if(request!==digitalStatsRequestV1938)return;
   digitalStatsStateV1795.data=null;
   digitalStatsStateV1795.error='Não foi possível carregar as estatísticas: '+String(e?.message||e)
  }finally{
-  digitalStatsStateV1795.loading=false;
-  renderDigitalStatsV1795()
+  if(request===digitalStatsRequestV1938){digitalStatsStateV1795.loading=false;renderDigitalStatsV1795()}
  }
 }
 

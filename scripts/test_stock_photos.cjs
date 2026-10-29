@@ -14,7 +14,7 @@ for(const m of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi))new vm.Scr
  await page.goto('http://127.0.0.1:8765');
  await page.waitForFunction(()=>typeof loadStock==='function'&&typeof initStockImagePickerV1925==='function');
  assert.deepEqual(errors,[]);
- assert.equal(await page.evaluate(()=>APP_VERSION),'1.9.37');
+ assert.equal(await page.evaluate(()=>APP_VERSION),JSON.parse(fs.readFileSync('version.json','utf8')).app);
  await page.evaluate(()=>{
   window.photoCalls=[];window.photoFail=false;window.photoDelay=null;
   cloudUser={id:'fixture-owner'};
