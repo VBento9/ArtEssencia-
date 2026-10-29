@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.35">
+<meta name="artessencia-version" content="1.9.36">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <link rel="manifest" href="manifest.webmanifest">
@@ -6138,7 +6138,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.35';
+const APP_VERSION='1.9.36';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -12016,7 +12016,7 @@ function renderProducts(){
        </div>
        <div class="product-card-foot">
          <span>${marginOk?'Margem dentro do objetivo':'Margem abaixo do mínimo'}</span>
-         <div class="product-card-actions"><button class="btn" onclick="editProduct(decodeURIComponent('${productArgV147(p.code)}'))">${productArchivedV1803(p)?'Ver/Editar':'Editar'}</button>${productArchivedV1803(p)?`<button class="btn primary" onclick="reactivateProductV1803(decodeURIComponent('${productArgV147(p.code)}'))">Reativar</button>`:`<button class="btn" onclick="archiveProductV1803(decodeURIComponent('${productArgV147(p.code)}'))">Arquivar</button><button class="btn danger" title="Elimina definitivamente apenas se não existir em encomendas ou orçamentos" onclick="deleteProduct(decodeURIComponent('${productArgV147(p.code)}'))">Apagar definitivamente</button>`}</div>
+         <div class="product-card-actions"><button class="btn" type="button" onclick="openProductTechnicalSheetV1936(decodeURIComponent('${productArgV147(p.code)}'))">Ver ficha</button><button class="btn" onclick="editProduct(decodeURIComponent('${productArgV147(p.code)}'))">${productArchivedV1803(p)?'Ver/Editar':'Editar'}</button>${productArchivedV1803(p)?`<button class="btn primary" onclick="reactivateProductV1803(decodeURIComponent('${productArgV147(p.code)}'))">Reativar</button>`:`<button class="btn" onclick="archiveProductV1803(decodeURIComponent('${productArgV147(p.code)}'))">Arquivar</button><button class="btn danger" title="Elimina definitivamente apenas se não existir em encomendas ou orçamentos" onclick="deleteProduct(decodeURIComponent('${productArgV147(p.code)}'))">Apagar definitivamente</button>`}</div>
        </div>
      </div>
    </div>`;
@@ -16273,6 +16273,7 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 <script defer src="./stock-compact-ui.js" id="ae-stock-compact-script"></script>
 <script defer src="./dashboard-compact-ui.js" id="ae-dashboard-compact-script"></script>
 <script defer src="./products-compact-ui.js" id="ae-products-compact-script"></script>
+<script defer src="./product-technical-sheet.js"></script>
 <script defer src="./orders-compact-ui.js" id="ae-orders-compact-script"></script>
 </body></html>
 
