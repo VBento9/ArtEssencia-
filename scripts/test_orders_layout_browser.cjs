@@ -102,5 +102,32 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
   await context.close();
  }
  await verifyDashboard(1000);await verifyDashboard(390);
+ async function verifyTabletMenu(){
+  const {context,page}=await open(1000);
+  const toggle=page.locator('#aeTabletMenu');
+  await toggle.waitFor();
+  await page.locator('#orderSearch').fill('alvaro');
+  const before=await page.evaluate(()=>JSON.stringify(db));
+  const initialWidth=await page.locator('.main').evaluate(e=>e.getBoundingClientRect().width);
+  assert.equal(await toggle.evaluate(e=>e.offsetHeight>=44&&e.offsetWidth>=44),true);
+  await toggle.click();assert.equal(await toggle.getAttribute('aria-expanded'),'false');
+  assert.equal(await page.locator('.sidebar').isVisible(),false);
+  assert.ok(await page.locator('.main').evaluate(e=>e.getBoundingClientRect().width)>initialWidth+100);
+  assert.equal(await page.locator('#orderSearch').inputValue(),'alvaro');
+  await toggle.click();assert.equal(await toggle.getAttribute('aria-expanded'),'true');
+  assert.equal(await page.locator('.sidebar').isVisible(),true);
+  await toggle.click();await page.setViewportSize({width:390,height:844});
+  await page.waitForFunction(()=>!document.body.classList.contains('ae-tablet-menu-collapsed'));
+  assert.equal(await toggle.isVisible(),false);assert.equal(await page.locator('.ae-ux-quickbar').isVisible(),true);
+  await page.setViewportSize({width:800,height:1000});await toggle.waitFor();
+  assert.equal(await toggle.getAttribute('aria-expanded'),'true');
+  await toggle.click();await page.setViewportSize({width:1400,height:1000});
+  await page.waitForFunction(()=>!document.body.classList.contains('ae-tablet-menu-collapsed'));
+  assert.equal(await toggle.isVisible(),false);assert.equal(await page.locator('.sidebar').isVisible(),true);
+  assert.equal(await page.evaluate(()=>JSON.stringify(db)),before);
+  await context.close();
+ }
+ await verifyTabletMenu();
+
  console.log('PASS Chromium: desktop table/mobile cards, bounded pagination, accent search, filters/page/focus retained, disclosure preserves drafts, real edit/payment/print handlers, no writes on navigation.');
 }finally{await browser.close()}})().catch(e=>{console.error(e);process.exitCode=1});
