@@ -20,6 +20,7 @@ on:
       - 'scripts/test_orders_layout_browser.cjs'
       - 'scripts/test_products_editor_browser.cjs'
       - 'scripts/test_stock_layout_browser.cjs'
+      - 'tablet-navigation.*'
       - 'stock-compact-ui.*'
       - 'clients-compact-ui.*'
       - 'purchases-compact-ui.*'

@@ -1,0 +1,8 @@
+#aeTabletMenu{display:none;min-height:44px;min-width:44px;width:fit-content;max-width:100%;margin-top:8px;white-space:normal;overflow-wrap:anywhere;font-size:13px;padding:10px 14px}
+#aeTabletMenu[hidden]{display:none!important}
+@media(min-width:651px) and (max-width:1250px){
+ #aeTabletMenu{display:block}
+ body.ae-tablet-menu-collapsed .app{grid-template-columns:0 minmax(0,1fr)!important}
+ body.ae-tablet-menu-collapsed .sidebar{visibility:hidden;width:0;min-width:0;padding:0!important;border:0!important;overflow:hidden!important}
+}
+@media print{#aeTabletMenu{display:none!important}}
