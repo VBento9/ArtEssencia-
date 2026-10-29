@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.46">
+<meta name="artessencia-version" content="1.9.47">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <link rel="manifest" href="manifest.webmanifest">
@@ -5355,6 +5355,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
     </div>
 
     <div id="digitalStatsKpisV1795" class="reports-kpis" style="margin-top:14px"></div>
+    <div id="digitalStatsInternalSummaryV1947" class="card" style="margin-top:10px" aria-live="polite" hidden></div>
 
     <section class="card" id="launchCampaignCardV1813" style="margin-top:14px">
       <div class="reports-section-head-v1725"><div><div class="section-title" style="margin:0">Campanha de lançamento · configuração e resultados</div><small>Configuração do desafio, códigos atribuídos e utilização omnicanal. A comunicação Push continua no módulo Campanhas.</small></div><div class="btnrow" style="margin:0"><button class="btn" type="button" onclick="loadLaunchConfigV1813(true)">Atualizar campanha</button><button class="btn" type="button" onclick="loadLaunchStatsV1813(true)">Atualizar participantes</button></div></div>
@@ -6142,7 +6143,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.46';
+const APP_VERSION='1.9.47';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -14386,9 +14387,10 @@ function renderDigitalStatsV1795(){
  if(cb)cb.className='btn '+(!shop?'primary':'');
  const status=document.getElementById('digitalStatsStatusV1795');
  if(status){const stamp=st.updatedAt?' · Atualizado às '+st.updatedAt.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'}):'';status.textContent=st.loading?'A carregar estatísticas…':st.error?st.error:(st.data?(shop?'Dados da Loja':'Dados do Catálogo')+stamp:'A aguardar dados.')}
- const k=document.getElementById('digitalStatsKpisV1795'),p=document.getElementById('digitalStatsProductsV1795'),d=document.getElementById('digitalStatsDailyV1795');
+ const k=document.getElementById('digitalStatsKpisV1795'),p=document.getElementById('digitalStatsProductsV1795'),d=document.getElementById('digitalStatsDailyV1795'),internal=document.getElementById('digitalStatsInternalSummaryV1947');
  if(!k||!p||!d)return;
  if(!st.data){
+  if(internal){internal.hidden=true;internal.textContent=''}
   k.innerHTML='';
   p.innerHTML='<div class="empty">'+(st.loading?'A carregar…':st.error?'Não foi possível carregar os dados.':'Sem dados carregados.')+'</div>';
   d.innerHTML='<div class="empty">'+(st.loading?'A carregar…':'Sem dados carregados.')+'</div>';
@@ -14417,6 +14419,17 @@ function renderDigitalStatsV1795(){
   ['Interações',interestActions,'Ações úteis, excluindo simples entradas']
  ];
  k.innerHTML=rows.map(([label,value,note])=>'<div class="card report-kpi"><span>'+escapeHtml(label)+'</span><strong>'+escapeHtml(String(value))+'</strong><small>'+escapeHtml(note)+'</small></div>').join('');
+ if(internal){
+  const excludedVisitors=Math.max(0,Number(t.internal_visitors)||0),excludedSessions=Math.max(0,Number(t.internal_sessions)||0),excludedEvents=Math.max(0,Number(t.internal_events)||0);
+  internal.hidden=false;
+  internal.innerHTML='<div class="section-title" style="margin:0 0 6px">Exclusão de tráfego interno</div>'+
+    '<div class="reports-kpis">'+[
+      ['Identificadores internos',excludedVisitors],
+      ['Sessões excluídas',excludedSessions],
+      ['Eventos excluídos',excludedEvents]
+    ].map(([label,value])=>'<div class="report-kpi"><span>'+escapeHtml(label)+'</span><strong>'+escapeHtml(String(value))+'</strong></div>').join('')+'</div>'+
+    '<small class="muted" style="display:block;margin-top:9px">Os totais acima já excluem visitantes identificados na Cloud ou eventos marcados como internos. Não é possível reconhecer automaticamente todos os dispositivos internos; apenas os previamente identificados. O histórico não foi eliminado.</small>';
+ }
  const products=Array.isArray(st.data.top_products)?st.data.top_products:[];
  p.innerHTML=products.length?products.map((x,i)=>'<div class="report-product"><span class="report-rank">'+(i+1)+'</span><div><strong>'+escapeHtml(x.name||x.product_id||'Produto')+'</strong><small>'+Number(x.views||0)+' visualizações'+(shop?' · '+Number(x.cart_adds||0)+' carrinho':' · '+Number(x.contacts||0)+' contactos')+'</small></div><strong>'+Number(x.views||0)+'</strong></div>').join(''):'<div class="empty">Sem visualizações de produtos neste período</div>';
  const daily=Array.isArray(st.data.daily)?st.data.daily:[];
