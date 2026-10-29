@@ -1,0 +1,24 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const html=fs.readFileSync('index.html','utf8');
+const fields=new Map(),field=id=>{if(!fields.has(id))fields.set(id,{value:'',hidden:false,style:{},textContent:'',innerHTML:''});return fields.get(id)};
+const pending=[];let writes=0;
+const c={document:{getElementById:field,addEventListener(){}},setInterval:()=>1,Date,Number,String,Math,Map,JSON,db:{stock:[{name:'wax',qty:20,unit:'g'}],stockMoves:[]},save:()=>writes++,setMoveStockStateV145(){},toast(){},cloudUser:{id:'fixture'},cloudClient:{rpc:(_name,args)=>new Promise(resolve=>pending.push({args,resolve}))},supabaseDetailedError:e=>e.message,escapeHtml:String,pct:x=>x+'%',todayISO:()=> '2026-10-29'};
+vm.createContext(c);
+vm.runInContext(html.slice(html.indexOf('// Report filters are independent'),html.indexOf('function pdfAscii(')),c);
+for(const [q,start,end] of [[1,'2024-01-01','2024-03-31'],[2,'2024-04-01','2024-06-30'],[3,'2024-07-01','2024-09-30'],[4,'2024-10-01','2024-12-31']]){const r=c.buildReportPeriodV1927('quarter','','2024','','',q);assert.equal(r.start,start);assert.equal(r.end,end);assert(r.matchDate(start));assert(r.matchDate(end));assert(!r.matchDate('2025-01-01'))}assert.throws(()=>c.buildReportPeriodV1927('quarter','','2024','','',5));
+vm.runInContext(html.slice(html.indexOf('function moveStock(){'),html.indexOf('function formatUnitCostV145(')),c);
+for(const id of ['moveStockItem','moveStockQty','moveStockType','moveStockNote'])c[id]=field(id);
+c.moveStockItem.value='wax';c.moveStockType.value='adjust';c.moveStockNote.value='fixture';c.moveStockQty.value='';c.moveStock();assert.equal(writes,0);assert.equal(c.db.stock[0].qty,20);
+c.moveStockQty.value='0';c.moveStock();assert.equal(writes,1);assert.equal(c.db.stock[0].qty,0);
+c.moveStockNote.value='fixture';c.db.stock[0].qty=20;c.moveStockQty.value='21';c.moveStockType.value='out';c.moveStock();assert.equal(writes,1);c.moveStockQty.value='5';c.moveStock();assert.equal(c.db.stock[0].qty,15);assert.equal(c.db.stockMoves.length,2);
+c.db.stock[0].qty='invalid';c.moveStockType.value='in';c.moveStock();assert.equal(writes,2);
+vm.runInContext(html.slice(html.indexOf('let digitalStatsStateV1795='),html.indexOf('function renderReports(){')),c);
+field('digitalStatsPeriodV1795').value='30';
+const state=()=>vm.runInContext('digitalStatsStateV1795',c);
+(async()=>{
+ const old=c.loadDigitalStatsV1795();state().source='catalog';const latest=c.loadDigitalStatsV1795();assert.equal(pending[0].args.p_source,'shop');assert.equal(pending[1].args.p_source,'catalog');
+ pending[1].resolve({data:{totals:{visitors:7}}});await latest;pending[0].resolve({data:{totals:{visitors:99}}});await old;assert.equal(state().data.totals.visitors,7);
+ const older=c.loadDigitalStatsV1795(),newer=c.loadDigitalStatsV1795();pending[2].resolve({error:{message:'stale failure'}});await older;assert.equal(state().loading,true);pending[3].resolve({data:{totals:{visitors:8}}});await newer;assert.equal(state().error,'');assert.equal(state().data.totals.visitors,8);
+ const inFlight=c.loadDigitalStatsV1795();field('digitalStatsPeriodV1795').value='custom';c.digitalStatsPeriodChangedV1795();pending[4].resolve({data:{totals:{visitors:66}}});await inFlight;assert.equal(state().data,null);assert.equal(state().loading,false);
+ console.log('PASS: quarterly inclusive ranges; blank stock adjustments blocked, explicit zero allowed, insufficient/corrupt stock guarded; late analytics success/error and custom-period changes cannot overwrite latest selection.');
+})().catch(e=>{console.error(e);process.exitCode=1});
