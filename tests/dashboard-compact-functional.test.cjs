@@ -34,3 +34,14 @@ test('gráfico permanece no DOM ao abrir e recolher',()=>{
  d.querySelector('.ae-dash-analysis-toggle').click();assert.equal(card.hidden,false);
  assert.equal(d.querySelector('#trendChart'),chart);dom.window.close();
 });
+
+test('abre a encomenda exata após redesenhar a lista, sem handlers inline',()=>{
+ const {dom,d}=start(),calls=[];
+ dom.window.showOrder=id=>calls.push(['detail',id]);dom.window.dashboardDailyOpen=id=>calls.push(['daily',id]);dom.window.dashboardGoProduction=id=>calls.push(['production',id]);
+ const id="AE'\"<&";
+ const add=(parent,key)=>{const button=d.createElement('button');button.dataset[key]=id;const child=d.createElement('span');child.textContent='Abrir';button.append(child);parent.replaceChildren(button);child.click()};
+ add(d.querySelector('#pendingOrders'),'dashboardOrder');add(d.querySelector('#pendingOrders'),'dashboardOrder');
+ const daily=d.createElement('div');daily.id='dashboardTodayList';d.querySelector('#dashboard').append(daily);
+ add(daily,'dashboardOrder');add(daily,'dashboardProduction');
+ assert.deepEqual(calls,[['detail',id],['detail',id],['daily',id],['production',id]]);dom.window.close();
+});
