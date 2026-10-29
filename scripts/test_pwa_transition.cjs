@@ -36,7 +36,8 @@ const {chromium}=require('playwright'),http=require('node:http'),fs=require('nod
   await page.waitForSelector('#ae-update-available',{timeout:30000});
   assert.equal(await page.evaluate(()=>APP_VERSION),'1.9.38');
   assert.equal(await page.locator('#stockName').inputValue(),'UNSAVED MATERIAL');
-  await page.locator('#ae-update-available button').click();
+  // The worker may initiate a second navigation; assert the resulting version explicitly.
+  await page.locator('#ae-update-available button').click({noWaitAfter:true});
   await page.waitForFunction(()=>typeof APP_VERSION==='string'&&APP_VERSION==='1.9.39');
   assert.deepEqual(await page.evaluate(()=>[localStorage.getItem('release-preserve'),sessionStorage.getItem('release-preserve')]),['local-value','session-value']);
   assert.equal(await page.evaluate(()=>new Promise((resolve,reject)=>{const r=indexedDB.open('release-preserve');r.onerror=()=>reject(r.error);r.onsuccess=()=>{const db=r.result,q=db.transaction('values').objectStore('values').get('key');q.onsuccess=()=>{db.close();resolve(q.result)}}})),'idb-value');
