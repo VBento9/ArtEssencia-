@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.43">
+<meta name="artessencia-version" content="1.9.44">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <link rel="manifest" href="manifest.webmanifest">
@@ -4185,7 +4185,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 <div class="muted" id="visualFilterCountV192" aria-live="polite"></div></div>
 <div id="visualCatalogPickerV192" class="visual-catalog-picker" style="margin-top:8px"></div><button id="visualFilterMoreV192" class="smallbtn" type="button" style="display:none;margin-top:8px" onclick="visualCatalogExpandedV192=true;renderVisualCatalogFilteredV192()">Ver todos os resultados</button><div class="section-title" style="margin-top:12px">Ordem</div><div id="visualCatalogOrderV192" class="visual-order-list"></div><div class="btnrow" style="margin-top:12px"><button class="btn primary" type="button" onclick="saveVisualCatalogV192()">Guardar rascunho</button><button class="btn" type="button" onclick="newVisualCatalogV192()">Limpar</button></div>
   </section>
-  <section><div class="card"><div class="section-title">Rascunhos guardados</div><p class="muted">Incluídos no backup e sincronizados pela Cloud ao guardar. Alterações concorrentes exigem reconciliação em Cloud Sync. Não são publicados automaticamente.</p><p class="muted">Para integrar rascunhos antigos deste dispositivo, usa o botão abaixo.</p><button class="btn" type="button" onclick="syncVisualCatalogsV1935()">Integrar e sincronizar rascunhos</button><p class="muted">Consulta o estado de envio em Cloud Sync.</p></div><div id="visualCatalogListV192" class="visual-catalog-list" style="margin-top:8px"></div></section>
+  <section><div class="card"><div class="section-title">Rascunhos guardados</div><p class="muted">Incluídos no backup e sincronizados pela Cloud ao guardar. Alterações concorrentes exigem reconciliação em Cloud Sync. Não são publicados automaticamente.</p><p class="muted">Para integrar rascunhos antigos deste dispositivo, usa o botão abaixo.</p><button class="btn" type="button" onclick="syncVisualCatalogsV1935()">Integrar rascunhos locais</button> <button class="btn primary" type="button" onclick="refreshVisualCatalogsFromCloudV1944(false)">Atualizar da Cloud</button><p id="visualCatalogCloudStatusV1944" class="muted" role="status" aria-live="polite">Os rascunhos da Cloud serão consultados quando a aplicação estiver ativa.</p><p class="muted">O envio de alterações continua disponível em Cloud Sync.</p></div><div id="visualCatalogListV192" class="visual-catalog-list" style="margin-top:8px"></div></section>
  </div>
 </section>
   <section id="catalogs" class="screen">
@@ -6142,7 +6142,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.43';
+const APP_VERSION='1.9.44';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -7478,6 +7478,86 @@ function visualCatalogsStoreV192(rows){
  if(!save('visualCatalogs'))throw new Error('Rascunhos em memória; verifica o aviso de armazenamento antes de fechar.');
 }
 function syncVisualCatalogsV1935(){try{visualCatalogsStoreV192(visualCatalogsDataV192());renderVisualCatalogsV192();toast('Rascunhos guardados. Consulta o estado de sincronização na Cloud.')}catch(e){toast(e.message||'Não foi possível guardar os rascunhos')}}
+
+const VISUAL_CATALOG_CLOUD_READ_V1944='artessencia_visual_catalog_cloud_read_v1944';
+let visualCatalogCloudReadBusyV1944=false,visualCatalogCloudLastReadMsV1944=0;
+function visualCatalogCloudMessageV1944(message){
+ const el=document.getElementById('visualCatalogCloudStatusV1944');
+ if(el)el.textContent=message;
+}
+function integrateVisualCatalogCloudRowV1944(row,silent=true){
+ const remote=row?.data?.visualCatalogsV1935;
+ if(!visualCatalogStateValidV1935(remote))return false;
+ if(productionBlockedV1926()||hasRestorePendingV12645())return false;
+ const revision=Number(row.revision||0);
+ const knownRevision=Number(cloudMeta().remoteRevision||0);
+ if(revision&&knownRevision&&revision<knownRevision)return false;
+ // Unlike a full Cloud pull, this read never updates the global base revision.
+ // That prevents unrelated pending stock, order or settings writes from being silently overwritten.
+ const pending=!!(cloudMeta().dirty||cloudMeta().conflict||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending);
+ const local=visualCatalogStateV1935();
+ let next,added=0,conflicts=0;
+ if(pending){
+   // Local drafts remain authoritative while there are unsent edits.
+   // Bring in missing remote catalogs without replacing any local catalog by the same ID.
+   const byId=new Map(local.rows.map(item=>[item.id,item]));
+   const rows=relClone(local.rows);
+   for(const catalog of remote.rows){
+     const existing=byId.get(catalog.id);
+     if(!existing){rows.push(relClone(catalog));byId.set(catalog.id,catalog);added++}
+     else if(visualCatalogTokenV1935(existing)!==visualCatalogTokenV1935(catalog))conflicts++;
+   }
+   next={rows,legacyImports:[...new Set([...local.legacyImports,...remote.legacyImports])]};
+ }else{
+   // No pending local edits: remote snapshot is authoritative, including explicit deletions.
+   next=relClone(remote);
+ }
+ const changed=visualCatalogTokenV1935(next)!==visualCatalogTokenV1935(local);
+ if(changed){
+   // Persist first; keep existing local memory untouched on quota/storage failure.
+   localStorage.setItem(KEY,JSON.stringify({...db,visualCatalogsV1935:next}));
+   db.visualCatalogsV1935=next;
+   renderVisualCatalogsV192();
+ }
+ const summary='Cloud: '+remote.rows.length+' catálogo(s) · '+new Date().toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});
+ if(pending){
+   visualCatalogCloudMessageV1944(summary+' · alterações locais pendentes'+(conflicts?' · '+conflicts+' edição(ões) por reconciliar':''));
+ }else{
+   visualCatalogCloudMessageV1944(summary+' · lista atualizada');
+ }
+ if(changed)cloudLogMsg('Catálogos visuais recebidos da Cloud · '+(pending?added+' novo(s) preservando alterações locais':'lista atualizada'));
+ if(!silent)toast(pending?'Catálogos consultados; alterações locais pendentes na Cloud Sync':'Catálogos visuais atualizados da Cloud');
+ return true;
+}
+async function refreshVisualCatalogsFromCloudV1944(silent=false){
+ if(visualCatalogCloudReadBusyV1944)return false;
+ if(silent&&Date.now()-visualCatalogCloudLastReadMsV1944<12000)return false;
+ if(productionBlockedV1926()||hasRestorePendingV12645()||navigator.onLine===false){
+   if(!silent)visualCatalogCloudMessageV1944('Sem ligação ou operação pendente. Rascunhos locais preservados.');
+   return false;
+ }
+ visualCatalogCloudReadBusyV1944=true;
+ try{
+   const user=cloudUser||await ensureCloudSession();
+   if(!user||!cloudClient){
+     if(!silent)visualCatalogCloudMessageV1944('Inicia sessão na Cloud para consultar os outros dispositivos.');
+     return false;
+   }
+   const row=await fetchCloudRow(user,{retries:1,delay:180});
+   if(!row?.data?.visualCatalogsV1935){
+     if(!silent)visualCatalogCloudMessageV1944('Ainda não existem catálogos visuais guardados na Cloud.');
+     return false;
+   }
+   const applied=integrateVisualCatalogCloudRowV1944(row,silent);
+   if(applied)visualCatalogCloudLastReadMsV1944=Date.now();
+   return applied;
+ }catch(e){
+   cloudLogMsg('Receção de catálogos visuais adiada: '+cloudErrText(e));
+   if(!silent)visualCatalogCloudMessageV1944('Não foi possível consultar a Cloud. Rascunhos locais preservados.');
+   return false;
+ }finally{visualCatalogCloudReadBusyV1944=false}
+}
+
 
 function visualProductIdV192(p,i=0){return String(p?.code||p?.id||('product-'+i))}
 function visualProductImageV192(p){return String(p?.shopImageUrl||p?.imageUrl||p?.image||p?.photo||'')}
@@ -14732,6 +14812,11 @@ async function subscribeCloud(){
    if(!row||!row.data||typeof row.data!=='object')return;
    if(row.device_id&&String(row.device_id)===String(getDeviceId()))return;
    if(cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'){
+     // Receive missing visual drafts independently; never replace unsent local edits.
+     if(!cloudBusy&&!cloudPushRunning){
+       try{integrateVisualCatalogCloudRowV1944(row,true)}
+       catch(e){cloudLogMsg('Catálogos visuais remotos preservados para consulta: '+cloudErrText(e))}
+     }
      cloudLogMsg('Alteração operacional recebida de outro dispositivo, mas adiada por existirem alterações locais');
      return
    }
@@ -15274,8 +15359,8 @@ async function cloudResolveConflict(choice){
 function getDeviceId(){let id=localStorage.getItem(DEVICE_KEY);if(!id){id='DEV-'+Math.random().toString(36).slice(2,8)+'-'+Date.now().toString(36);localStorage.setItem(DEVICE_KEY,id)}return id}
 window.addEventListener('online',()=>{renderCloudUI();if(!hasRestorePendingV12645()&&cloudStartupDone&&(cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending))scheduleCloudPushV1860(700)});window.addEventListener('offline',renderCloudUI);
 function flushCloudIfDirty(){try{clearTimeout(cloudPushTimer);/* pagehide não espera fetch; a alteração já está segura no localStorage e dirty=true */}catch(e){}}
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&cloudStartupDone){const pending=cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending;if(pending&&!cloudMeta().conflict&&!hasRestorePendingV12645())scheduleCloudPushV1860(250);else if(!cloudBusy&&!cloudPushRunning)setTimeout(()=>cloudPullNow(false),150);setTimeout(()=>checkNewOnlineOrdersV12624(),900)}});
-window.addEventListener('pageshow',()=>{if(cloudStartupDone&&(cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending)&&!cloudMeta().conflict&&!hasRestorePendingV12645())scheduleCloudPushV1860(300)});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&cloudStartupDone){const pending=cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending;if(pending&&!cloudMeta().conflict&&!hasRestorePendingV12645())scheduleCloudPushV1860(250);else if(!cloudBusy&&!cloudPushRunning)setTimeout(()=>cloudPullNow(false),150);refreshVisualCatalogsFromCloudV1944(true);setTimeout(()=>checkNewOnlineOrdersV12624(),900)}});
+window.addEventListener('pageshow',()=>{if(cloudStartupDone){if((cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending)&&!cloudMeta().conflict&&!hasRestorePendingV12645())scheduleCloudPushV1860(300);refreshVisualCatalogsFromCloudV1944(true)}});
 async function cloudHydrateStartup(){
  return relationalHydrateCore(true)
 }
@@ -15304,6 +15389,7 @@ async function cloudStartup(){
  }
  try{if(db?.aprecoImportV1753?.completedAt&&!db?.aprecoOrganizationV1761?.completedAt)organizeAprecoProductsV1761(false);else renderAprecoOrganizationV1761()}catch(e){console.error('organização Apreço V1.7.61',e)}
  await subscribeCloud();
+ await refreshVisualCatalogsFromCloudV1944(true);
  await publishPublicTechnicalProfilesV12815(false);
  startOrderNotificationPollingV12624();startEmailNotificationPollingV1710();
  renderOrderNotificationsV12624();
