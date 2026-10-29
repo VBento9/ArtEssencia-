@@ -21,6 +21,7 @@ on:
       - 'scripts/test_products_editor_browser.cjs'
       - 'scripts/test_stock_layout_browser.cjs'
       - 'tablet-navigation.*'
+      - 'module-search-shortcut.*'
       - 'stock-compact-ui.*'
       - 'clients-compact-ui.*'
       - 'purchases-compact-ui.*'
