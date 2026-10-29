@@ -3536,7 +3536,6 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <button class="btn primary dashboard-update" onclick="renderDashboard()">Atualizar</button>
       </div>
     </div>
-    <div class="grid4 dashboard-kpis" id="kpis"></div>
 
     <div class="dashboard-section-head"><div><span>HOJE</span><h3>Centro de controlo diário</h3></div></div>
     <p class="ae-ux-daily-guide">Começa pelas tarefas urgentes, confirma as encomendas em curso e verifica as próximas entregas.</p>
@@ -3549,6 +3548,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       </div>
       <div class="dashboard-today-list" id="dashboardTodayList"></div>
     </div>
+
+    <div class="dashboard-section-head"><div><span>INDICADORES</span><h3>Resumo do negócio</h3></div></div>
+    <div class="grid4 dashboard-kpis" id="kpis"></div>
 
     <div id="setupNotice" class="card" style="margin-top:12px;border:2px solid #F6246D">
 <strong>Configuração inicial</strong>
@@ -6140,7 +6142,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.41';
+const APP_VERSION='1.9.42';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -7824,25 +7826,25 @@ function renderDashboardDaily(){
  list.innerHTML=upcoming.length?upcoming.map(o=>{
    const c=calcOrder(o);
    const due=Math.max(0,(Number(c.total)||0)-(Number(o.paid)||0));
-   const safeId=String(o.id).replaceAll("'","\\'");
+   const safeId=escapeAttr(o.id);
    const productionAction=['Confirmada','Em produção','Produção','Confirmado'].includes(o.status)
-     ? `<button type="button" class="dashboard-mini-btn production" onclick="event.stopPropagation();dashboardGoProduction('${safeId}')">Produção</button>`
+     ? `<button type="button" class="dashboard-mini-btn production" data-dashboard-production="${safeId}">Produção</button>`
      : '';
    const openLabel=o.status==='Pronta'?'Finalizar':'Abrir';
    const pr=o.delivery===today
      ? `<span class="dashboard-priority today">HOJE</span>`
      : o.delivery===tomorrow
        ? `<span class="dashboard-priority tomorrow">AMANHÃ</span>`
-       : `<span class="dashboard-priority later">${o.delivery}</span>`;
-   return `<div class="dashboard-today-row" onclick="dashboardDailyOpen('${safeId}')">
-     <div class="dashboard-today-id">${o.id}${o.source==='online_store'?' · ONLINE':''}<br>${pr}</div>
-     <div class="dashboard-today-client"><b>${o.client||'Cliente'}</b><small>${due>.001?'Falta '+euro(due):'Pagamento OK'}</small></div>
-     <div class="dashboard-today-date">${o.delivery}</div>
+       : `<span class="dashboard-priority later">${escapeHtml(o.delivery)}</span>`;
+   return `<div class="dashboard-today-row" data-dashboard-order="${safeId}">
+     <div class="dashboard-today-id">${escapeHtml(o.id)}${o.source==='online_store'?' · ONLINE':''}<br>${pr}</div>
+     <div class="dashboard-today-client"><b>${escapeHtml(o.client||'Cliente')}</b><small>${due>.001?'Falta '+euro(due):'Pagamento OK'}</small></div>
+     <div class="dashboard-today-date">${escapeHtml(o.delivery)}</div>
      <div class="dashboard-today-total">${euro(c.total)}</div>
-     <span class="badge ${o.status==='Pronta'?'ok':o.status==='Em produção'?'warn':''} dashboard-today-status">${o.status}</span>
+     <span class="badge ${o.status==='Pronta'?'ok':o.status==='Em produção'?'warn':''} dashboard-today-status">${escapeHtml(o.status)}</span>
      <div class="dashboard-today-actions">
        ${productionAction}
-       <button type="button" class="dashboard-mini-btn primary" onclick="event.stopPropagation();dashboardDailyOpen('${safeId}')">${openLabel}</button>
+       <button type="button" class="dashboard-mini-btn primary" data-dashboard-order="${safeId}">${openLabel}</button>
      </div>
    </div>`
  }).join(''):`<div class="dashboard-today-empty">Sem entregas pendentes a partir de hoje.</div>`;
@@ -7970,7 +7972,7 @@ function renderDashboard(){
  document.getElementById('kpis').innerHTML=kpiData.map(([icon,l,v,state])=>`<button class="card kpi dashboard-kpi-card ${state}" type="button" onclick="dashboardKpiGo('${l}')"><div class="dashboard-kpi-icon">${icon}</div><div><div class="label">${l}</div><div class="value">${v}</div></div><span class="dashboard-kpi-arrow">›</span></button>`).join('');renderSmartAlertsV1810();
  const rows=filteredOrders().filter(o=>o.status!=='Entregue').slice(-8).reverse();
  renderDashboardProfitabilityV1769(d.profitability);
- document.getElementById('pendingOrders').innerHTML=rows.length?rows.map(o=>{const c=calcOrder(o);return`<tr><td>${o.id}${o.source==='online_store'?'<br><span class="badge ok">ONLINE</span>':''}</td><td>${o.client||'—'}</td><td>${o.delivery||'—'}</td><td>${euro(c.total)}</td><td>${euro(o.paid)}</td><td><span class="badge warn">${o.status}</span></td></tr>`}).join(''):`<tr><td colspan="6" class="empty">Sem encomendas pendentes</td></tr>`;renderDashboardDaily();renderReceivables();renderQuotePipeline();renderTrend()
+ document.getElementById('pendingOrders').innerHTML=rows.length?rows.map(o=>{const c=calcOrder(o);return`<tr><td><button type="button" class="btn dashboard-order-open" data-dashboard-order="${escapeAttr(o.id)}" aria-label="Abrir encomenda ${escapeAttr(o.id)}">${escapeHtml(o.id)}</button>${o.source==='online_store'?'<br><span class="badge ok">ONLINE</span>':''}</td><td>${escapeHtml(o.client||'—')}</td><td>${escapeHtml(o.delivery||'—')}</td><td>${euro(c.total)}</td><td>${euro(o.paid)}</td><td><span class="badge warn">${escapeHtml(o.status)}</span></td></tr>`}).join(''):`<tr><td colspan="6" class="empty">Sem encomendas pendentes</td></tr>`;renderDashboardDaily();renderReceivables();renderQuotePipeline();renderTrend()
 }
 function renderCart(){const el=document.getElementById('cart');if(!el)return;el.innerHTML=cart.length?cart.map((x,i)=>`<div class="cart-row sale-cart-row-v1754"><div class="sale-cart-product-v1754"><strong>${escapeHtml(x.name||'Produto')}</strong><small>${escapeHtml(x.category||'')}</small></div><label class="sale-cart-mini-field-v1754"><span>Qtd.</span><input type="number" min="1" step="1" value="${Number(x.qty)||1}" onchange="cart[${i}].qty=Math.max(1,+this.value||1);renderCart();renderPicker()"></label><label class="sale-cart-mini-field-v1754"><span>Preço/un.</span><input type="number" min="0" step="0.01" value="${Number(x.price)||0}" onchange="cart[${i}].price=Math.max(0,+this.value||0);renderCart();renderPicker()"></label><strong class="sale-cart-line-total-v1754">${euro((Number(x.qty)||0)*(Number(x.price)||0))}</strong><button type="button" class="btn danger sale-cart-remove-v1754" aria-label="Remover ${escapeAttr(x.name||'produto')}" onclick="cart.splice(${i},1);renderCart();renderPicker()">×</button></div>`).join(''):'<div class="empty">Escolhe um produto à esquerda. O carrinho fica sempre visível nesta área.</div>';const q=cart.reduce((s,x)=>s+(Number(x.qty)||0),0),t=cart.reduce((s,x)=>s+(Number(x.qty)||0)*(Number(x.price)||0),0),final=saleFinalTotalV1813(),c=cart.reduce((s,x)=>s+(Number(x.qty)||0)*(Number(x.cost)||0),0),p=final-c;$('cartQty').textContent=q;$('cartTotal').textContent=euro(t);$('cartProfit').textContent=euro(p);$('cartMargin').textContent=pct(final?p/final:0);renderSalePromoV1813()}
 function clearSale(){cart=[];$('saleClient').value='';$('saleContact').value='';if($('saleEmail'))$('saleEmail').value='';$('salePaid').value=0;if($('saleNotes'))$('saleNotes').value='';clearSalePromoV1813();const st=document.getElementById('saleSelectionStatusV1754');if(st)st.textContent='Nenhum produto selecionado';renderCart();renderPicker()}

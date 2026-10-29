@@ -76,5 +76,31 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
   await context.close();
  }
  await verifyMaterials(1000);await verifyMaterials(390);
+ async function verifyDashboard(width){
+  const {context,page}=await open(width);
+  await page.evaluate(()=>{
+   const date=todayISO(),base={client:'Cliente <b>fixture</b> & Cia',delivery:date,created:date,items:[{name:'Fixture',qty:1,price:12,cost:2}],paid:0,box:'',boxes:0};
+   db.orders=[{...base,id:"DASH'01",status:'Confirmada'},{...base,id:'DONE',status:'Entregue'},{...base,id:'VOID',status:'Cancelado'}];
+   db.productionRuns=[];db.stock=[];db.quotes=[];document.getElementById('dashYear').value=date.slice(0,4);document.getElementById('dashMonth').value='0';go('dashboard');renderDashboard();window.dashBefore=JSON.stringify(db);window.dashWrites=0;save=()=>{dashWrites++};
+  });
+  await page.locator('#pendingOrders .dashboard-order-open').waitFor();
+  await page.waitForFunction(()=>document.querySelector('#pendingOrders .dashboard-order-open')?.getBoundingClientRect().height>=44);
+  assert.equal(await page.locator('#dashboardTodayList').evaluate(e=>e.scrollWidth<=e.clientWidth+2),true);
+  if(process.env.AE_DASH_SCREENSHOTS)await page.locator('.dashboard-today-card').screenshot({path:'/tmp/ae-dashboard-'+width+'.png'});
+  assert.equal(await page.locator('#pendingOrders tr').count(),1);
+  assert.equal(await page.locator('#pendingOrders td').nth(1).textContent(),'Cliente <b>fixture</b> & Cia');
+  assert.equal(await page.locator('#pendingOrders td:nth-child(2) b,#dashboardTodayList .dashboard-today-client b b').count(),0);
+  assert.equal(await page.evaluate(()=>{const k=document.getElementById('kpis');return ['dashboardOpsStrip','dashboardDaily','dashboardTodayList'].every(id=>!!(document.getElementById(id).compareDocumentPosition(k)&Node.DOCUMENT_POSITION_FOLLOWING))}),true);
+  const pending=page.locator('#pendingOrders .dashboard-order-open');assert.equal(await pending.getAttribute('data-dashboard-order'),"DASH'01");
+  await pending.click();await page.locator('#orderDialog[open]').waitFor();assert.equal(await page.locator('#orderDetail').getAttribute('data-order-id'),"DASH'01");assert.equal(await page.locator('#dashboard').evaluate(e=>e.classList.contains('active')),true);
+  await page.locator('#orderDialog').getByRole('button',{name:'Fechar',exact:true}).click();
+  await page.evaluate(()=>renderDashboard());
+  await page.locator('#dashboardTodayList button[data-dashboard-order]').click();await page.locator('#orderDialog[open]').waitFor();assert.equal(await page.locator('#orderDetail').getAttribute('data-order-id'),"DASH'01");
+  await page.locator('#orderDialog').getByRole('button',{name:'Fechar',exact:true}).click();await page.evaluate(()=>go('dashboard'));
+  await page.locator('#dashboardTodayList [data-dashboard-production]').click();await page.waitForFunction(()=>document.querySelector('#production.active')&&document.getElementById('prodDate').value===todayISO());
+  assert.equal(await page.evaluate(()=>JSON.stringify(db)===dashBefore&&dashWrites===0),true);
+  await context.close();
+ }
+ await verifyDashboard(1000);await verifyDashboard(390);
  console.log('PASS Chromium: desktop table/mobile cards, bounded pagination, accent search, filters/page/focus retained, disclosure preserves drafts, real edit/payment/print handlers, no writes on navigation.');
 }finally{await browser.close()}})().catch(e=>{console.error(e);process.exitCode=1});

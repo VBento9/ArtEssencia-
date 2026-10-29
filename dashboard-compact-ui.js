@@ -4,6 +4,16 @@
 function init(){
  const dash=document.getElementById('dashboard');
  if(!dash||document.getElementById('aeDashCompact'))return;
+ // IDs are carried as HTML data, never interpolated into JavaScript handlers.
+ dash.addEventListener('click',event=>{
+   const production=event.target.closest('[data-dashboard-production]');
+   const open=event.target.closest('[data-dashboard-order]');
+   const target=production||open;if(!target||!dash.contains(target))return;
+   event.stopPropagation();
+   if(production)dashboardGoProduction(production.dataset.dashboardProduction);
+   else if(target.closest('#dashboardTodayList'))dashboardDailyOpen(target.dataset.dashboardOrder);
+   else showOrder(target.dataset.dashboardOrder);
+ });
  const bodyIds=['pendingOrders','receivablesBody','quotePipelineBody'];
  const blocks=bodyIds.map(id=>{
    const body=document.getElementById(id),wrap=body?.closest('.tablewrap'),heading=wrap?.previousElementSibling;
