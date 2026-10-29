@@ -18,3 +18,5 @@
 #orders .order-card-grid{gap:8px}
 #orders .order-card-head{padding:9px 12px}
 @media(max-width:650px){#orders .ae-orders-list-nav{gap:8px}#orders .ae-orders-list-nav>.ae-orders-pagination{flex-basis:100%;margin:0}#orders .ae-orders-list-nav>.btn{flex:1}#orders .ae-orders-pagination .btn{padding:9px;min-height:40px}#orders .order-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#orders .order-client b{font-size:15px}}
+
+#orders .orders-sort-control-v1940{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:12px}#orders #ordersSortV1916{min-height:44px;max-width:100%;font-size:14px}@media(max-width:700px){#orders .orders-sort-control-v1940{flex:1 1 100%}}

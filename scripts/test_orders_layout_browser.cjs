@@ -25,8 +25,25 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
  await page.locator('[data-orders-next]').first().click();assert.equal(await page.locator('#ordersBody tr').count(),5);assert.equal(await page.locator('[data-orders-next]').first().isEnabled(),false);
  await page.locator('#orderSearch').fill('sem-correspondencia');assert.match(await page.locator('#ordersBody').innerText(),/Sem encomendas/);await page.locator('#ordersClearFiltersV1915').click();assert.equal(await page.locator('#ordersBody tr').count(),10);
  await page.locator('#ordersHistoryTabV1882').click();assert.equal(await page.locator('#ordersBody tr').count(),1);assert.match(await page.locator('#ordersBody').innerText(),/HISTORY/);await page.locator('#ordersActiveTabV1882').click();assert.equal(await page.locator('#ordersBody tr').count(),10);
+ // Priority sorting must reset pagination, put missing dates last and never save.
+ await page.evaluate(()=>{
+  db.orders.filter(o=>o.id!=='HISTORY').forEach((o,i)=>{o.delivery=i===0?'2026-10-30':i===1?'2026-10-30':i===2?'2026-02-30':i===3?'':'2026-11-01';o.deliveryTime=i===0?'10:00':i===1?'09:00':''});
+  window.beforeSorting=JSON.stringify(db.orders);window.sortWrites=0;save=()=>{window.sortWrites++};renderOrders();
+ });
+ await page.locator('[data-orders-next]').first().click();
+ await page.getByLabel('Ordenar encomendas ativas',{exact:true}).selectOption('due');
+ assert.match(await page.locator('[data-orders-page-count]').first().innerText(),/1–10 de 25/);
+ assert.deepEqual(await page.locator('#ordersBody [data-order-open]').evaluateAll(es=>es.slice(0,2).map(e=>e.dataset.orderOpen)),['FIX-01','FIX-00']);
+ await page.locator('[data-orders-next]').first().click();await page.locator('[data-orders-next]').first().click();
+ const lastIds=await page.locator('#ordersBody [data-order-open]').evaluateAll(es=>es.map(e=>e.dataset.orderOpen));
+ assert.deepEqual(lastIds.slice(-2),['FIX-03','FIX-02']);
+ await page.locator('#ordersHistoryTabV1882').click();assert.equal(await page.locator('#ordersSortV1916').isDisabled(),true);assert.match(await page.locator('#ordersBody').innerText(),/HISTORY/);
+ await page.locator('#ordersActiveTabV1882').click();await page.locator('#ordersClearFiltersV1915').click();assert.equal(await page.locator('#ordersSortV1916').inputValue(),'recent');
+ assert.equal(await page.locator('#ordersBody [data-order-open]').first().getAttribute('data-order-open'),'FIX-24');
+ assert.equal(await page.evaluate(()=>JSON.stringify(db.orders)===beforeSorting&&sortWrites===0),true);
  assert.deepEqual(errors,[]);await context.close();
  const mobile=await open(390);assert.ok(await mobile.page.locator('#ordersCards').isVisible());assert.equal(await mobile.page.locator('#ordersTableWrap').isVisible(),false);
+ await mobile.page.getByLabel('Ordenar encomendas ativas',{exact:true}).selectOption('due');assert.ok(await mobile.page.locator('#ordersSortV1916').evaluate(e=>e.getBoundingClientRect().height>=44));
  const card=mobile.page.locator('#ordersCards article').first();assert.equal(await card.getByRole('button',{name:'WhatsApp',exact:true}).isVisible(),false);await card.locator('summary').click();assert.equal(await card.getByRole('button',{name:'WhatsApp',exact:true}).isVisible(),true);
  await card.getByRole('button',{name:'Abrir encomenda',exact:true}).click();await mobile.page.locator('#orderDetail > .ae-order-detail-layout').waitFor();assert.equal(await mobile.page.locator('#orderDialog').evaluate(e=>e.scrollWidth<=e.clientWidth+2),true);await mobile.context.close();
  console.log('PASS Chromium: desktop table/mobile cards, bounded pagination, accent search, filters/page/focus retained, disclosure preserves drafts, real edit/payment/print handlers, no writes on navigation.');
