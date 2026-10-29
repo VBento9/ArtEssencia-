@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.37">
+<meta name="artessencia-version" content="1.9.43">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <link rel="manifest" href="manifest.webmanifest">
@@ -6142,7 +6142,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.42';
+const APP_VERSION='1.9.43';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -7708,7 +7708,7 @@ function ensureClientsFromOrders(){
    if(!o.client||o.clientDeleted)return;
    const phone=customerPhoneKey(o.contact),mail=String(o.email||'').trim().toLowerCase(),name=String(o.client).trim(),nn=normText(name);
    let c=clientByPhoneThenEmailV1713(o.contact,o.email);
-   if(!c&&!phone&&!mail)c=db.clients.find(x=>normText(x.name)===nn);
+   if(!c&&!phone&&!mail)c=db.clients.find(x=>!isQuarantinedProductClient(x)&&normText(x.name)===nn);
    if(!c){c={id:uid('CLI'),name,phone:o.contact||'',email:o.email||'',notes:'',created:o.created||todayISO(),source:o.source==='online_store'?'online_store':'order'};db.clients.push(c)}
    else{if(!c.name&&name)c.name=name;if(!c.phone&&o.contact)c.phone=o.contact;if(!c.email&&o.email)c.email=o.email;if(o.source==='online_store'&&c.source!=='manual')c.source='online_store'}
    o.clientId=c.id
@@ -7718,14 +7718,14 @@ function upsertClientFromOrder(name,contact,email=''){
  name=String(name||'').trim();if(!name)return null;db.clients=db.clients||[];
  const phone=customerPhoneKey(contact),mail=String(email||'').trim().toLowerCase(),nn=normText(name);
  let c=clientByPhoneThenEmailV1713(contact,email);
- if(!c&&!phone&&!mail)c=db.clients.find(x=>normText(x.name)===nn);
+ if(!c&&!phone&&!mail)c=db.clients.find(x=>!isQuarantinedProductClient(x)&&normText(x.name)===nn);
  if(c){if(!c.name)c.name=name;if(!c.phone&&contact)c.phone=contact;if(!c.email&&mail)c.email=mail;return c.id}
  c={id:uid('CLI'),name,phone:contact||'',email:mail,notes:'',created:todayISO(),source:'order'};db.clients.push(c);return c.id
 }
-function renderClientSuggestions(){ensureClientsFromOrders();const rows=(db.clients||[]).slice().filter(c=>String(c.name||'').trim()).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'pt'));const d=document.getElementById('clientSuggestions');if(d)d.innerHTML=rows.map(c=>`<option value="${String(c.name).replace(/"/g,'&quot;')}">${[c.phone,c.email].filter(Boolean).join(' · ')}</option>`).join('')}
-function clientByUniqueName(value){const n=normText(value),rows=(db.clients||[]).filter(x=>normText(x.name)===n);return rows.length===1?rows[0]:null}
+function renderClientSuggestions(){ensureClientsFromOrders();const rows=(db.clients||[]).slice().filter(c=>!isQuarantinedProductClient(c)&&String(c.name||'').trim()).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'pt'));const d=document.getElementById('clientSuggestions');if(d)d.innerHTML=rows.map(c=>`<option value="${String(c.name).replace(/"/g,'&quot;')}">${[c.phone,c.email].filter(Boolean).join(' · ')}</option>`).join('')}
+function clientByUniqueName(value){const n=normText(value),rows=(db.clients||[]).filter(x=>!isQuarantinedProductClient(x)&&normText(x.name)===n);return rows.length===1?rows[0]:null}
 function fillClientContact(){const c=clientByUniqueName(document.getElementById('saleClient')?.value);if(!c)return;const p=document.getElementById('saleContact'),e=document.getElementById('saleEmail');if(p&&!p.value)p.value=c.phone||'';if(e&&!e.value)e.value=c.email||''}
-function saleClientMatchesV1756(value){ensureClientsFromOrders();const q=normText(value||'');let rows=(db.clients||[]).filter(c=>String(c.name||'').trim());if(q)rows=rows.filter(c=>normText(c.name).includes(q)||normText(c.phone).includes(q)||normText(c.email).includes(q));return rows.sort((a,b)=>{const an=normText(a.name),bn=normText(b.name),ap=q&&an.startsWith(q)?0:1,bp=q&&bn.startsWith(q)?0:1;return ap-bp||String(a.name||'').localeCompare(String(b.name||''),'pt')}).slice(0,8)}
+function saleClientMatchesV1756(value){ensureClientsFromOrders();const q=normText(value||'');let rows=(db.clients||[]).filter(c=>!isQuarantinedProductClient(c)&&String(c.name||'').trim());if(q)rows=rows.filter(c=>normText(c.name).includes(q)||normText(c.phone).includes(q)||normText(c.email).includes(q));return rows.sort((a,b)=>{const an=normText(a.name),bn=normText(b.name),ap=q&&an.startsWith(q)?0:1,bp=q&&bn.startsWith(q)?0:1;return ap-bp||String(a.name||'').localeCompare(String(b.name||''),'pt')}).slice(0,8)}
 function renderSaleClientMatchesV1756(){const input=document.getElementById('saleClient'),box=document.getElementById('saleClientMatchesV1756');if(!input||!box)return;const rows=saleClientMatchesV1756(input.value);if(!rows.length){box.innerHTML=input.value.trim()?'<div class="sale-client-match-empty-v1756">Sem clientes correspondentes</div>':'';box.classList.toggle('hidden',!input.value.trim());return}box.innerHTML=rows.map(c=>`<button type="button" class="sale-client-match-v1756" onmousedown="event.preventDefault()" onclick="chooseSaleClientV1756('${String(c.id||'').replace(/'/g,"\\'")}')"><strong>${escapeHtml(c.name||'Cliente')}</strong><small>${escapeHtml([c.phone,c.email].filter(Boolean).join(' · ')||'Sem contacto')}</small></button>`).join('');box.classList.remove('hidden')}
 function handleSaleClientInputV1756(){fillClientContact();renderSaleClientMatchesV1756()}
 function chooseSaleClientV1756(id){const c=(db.clients||[]).find(x=>String(x.id||'')===String(id));if(!c)return;const n=document.getElementById('saleClient'),p=document.getElementById('saleContact'),e=document.getElementById('saleEmail'),box=document.getElementById('saleClientMatchesV1756');if(n)n.value=c.name||'';if(p)p.value=c.phone||'';if(e)e.value=c.email||'';if(box)box.classList.add('hidden');invalidateSalePromoIfContextChangedV1813()}
@@ -9169,12 +9169,23 @@ function mergeDuplicateClients(){
 }
 // Display-only quarantine for seven confirmed product records misfiled as clients.
 // Do not mutate db.clients: local unsynced records and backups must remain intact.
-const CLIENT_PRODUCT_QUARANTINE_IDS=new Set(["a6c6d526-005e-4d0f-8fa6-382844dad173","568ddbd9-143a-4b78-895c-cecea06c00e8","7f4efa67-39c9-4cfc-b85e-826bee4b13b4","ac08e4e4-30d6-4838-8479-ba40529a4d5c","fe980aa7-d8bb-4d17-b96f-3f75fad2d479","44bd7990-6812-4c4d-9aec-46f77e490631","4b89f5e1-ae1b-4aae-9faf-56e00a8a02f2"]);
-const CLIENT_PRODUCT_QUARANTINE_NAMES=new Set(["anjo a dormir “pera”","bola de natal","carro & árvore","coleção essência iii - jardim secreto","flores natalícias","lembrancinhas frasco de vidro","tesouro do bosque"]);
+const CLIENT_PRODUCT_QUARANTINE_IDS=new Set(["a6c6d526-005e-4d0f-8fa6-382844dad173","568ddbd9-143a-4b78-895c-cecea06c00e8","7f4efa67-39c9-4cfc-b85e-826bee4b13b4","ac08e4e4-30d6-4838-8479-ba40529a4d5c","fe980aa7-d8bb-4d17-b96f-3f75fad2d479","44bd7990-6812-4c4d-9aec-46f77e490631","4b89f5e1-ae1b-4aae-9faf-56e00a8a02f2","04bcaa77-dbe7-42a2-a406-2f587e790209"]);
+const CLIENT_PRODUCT_QUARANTINE_NAMES=new Set(["anjo a dormir “pera”","bola de natal","carro & árvore","coleção essência iii - jardim secreto","flores natalícias","lembrancinhas frasco de vidro","tesouro do bosque","barco com flores"]);
 function isQuarantinedProductClient(c){
- if(CLIENT_PRODUCT_QUARANTINE_IDS.has(String(c?.id||'')))return true;
- const name=String(c?.name||'').trim().toLocaleLowerCase('pt-PT');
- return CLIENT_PRODUCT_QUARANTINE_NAMES.has(name)&&!String(c?.phone||'').trim()&&!String(c?.email||'').trim();
+ if(!c)return false;
+ if(CLIENT_PRODUCT_QUARANTINE_IDS.has(String(c.id||'')))return true;
+ const name=String(c.name||'').trim().toLocaleLowerCase('pt-PT');
+ const withoutContact=!String(c.phone||'').trim()&&!String(c.email||'').trim();
+ if(!withoutContact)return false;
+ if(CLIENT_PRODUCT_QUARANTINE_NAMES.has(name))return true;
+ // Stop new product-shaped records from appearing as clients without deleting data.
+ const code=String(c.code||'').trim();
+ const looksLikeProduct=!!code&&(c.price!==undefined||c.onlinePrice!==undefined||c.shopVisible!==undefined);
+ if(!looksLikeProduct)return false;
+ return (db.products||[]).some(p=>
+   (code&&String(p?.code||'').trim()===code)||
+   (name&&String(p?.name||'').trim().toLocaleLowerCase('pt-PT')===name)
+ );
 }
 function renderClients(){
  ensureRecordIds();
@@ -15313,8 +15324,8 @@ function relUuid(obj){
 function relDate(v){return /^\d{4}-\d{2}-\d{2}$/.test(v||'')?v:todayISO()}
 function relDue(v){return /^\d{4}-\d{2}-\d{2}$/.test(v||'')?v+'T12:00:00Z':null}
 function relClientRid(appClientId,name){
- const c=(db.clients||[]).find(x=>x.id===appClientId)||
-         (db.clients||[]).find(x=>normText(x.name)===normText(name||''));
+ const c=(db.clients||[]).find(x=>!isQuarantinedProductClient(x)&&x.id===appClientId)||
+         (db.clients||[]).find(x=>!isQuarantinedProductClient(x)&&normText(x.name)===normText(name||''));
  return c?relUuid(c):null
 }
 function relClone(x){return JSON.parse(JSON.stringify(x))}
@@ -15696,7 +15707,7 @@ async function relationalSyncCore(showToast=false){
      relFetchAll(REL_TABLES.clients),relFetchAll(REL_TABLES.products),relFetchAll(REL_TABLES.orders),relFetchAll(REL_TABLES.quotes)
    ]);
 
-   const clientRows=(db.clients||[]).map(c=>({
+   const clientRows=(db.clients||[]).filter(c=>!isQuarantinedProductClient(c)).map(c=>({
      id:relUuid(c),user_id:u.id,name:c.name||'',phone:c.phone||null,email:c.email||null,notes:c.notes||null,
      data:relClone(c),updated_at:new Date().toISOString()
    }));
