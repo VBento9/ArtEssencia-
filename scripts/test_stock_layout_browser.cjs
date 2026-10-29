@@ -22,6 +22,14 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
  assert.equal(await rows.first().evaluate(e=>getComputedStyle(e).display),width<650?'grid':'table-row');
  if(width<650){assert.equal(await page.locator('.stock-tablewrap').evaluate(e=>e.scrollWidth<=e.clientWidth+2),true);assert.equal(await rows.first().locator('td').nth(1).getAttribute('data-stock-label'),'Disponível')}
  await page.locator('#stockSearch').fill('Fixture 44');assert.equal(await rows.count(),1);assert.match(await rows.first().innerText(),/Fixture 44/);await page.locator('#stockSearch').fill('inexistente');assert.match(await page.locator('#stockBody').innerText(),/Nenhum artigo/);
+ await page.locator('#stockSearch').fill('');
+ await page.evaluate(()=>{db.stock[0].qty=0;db.stock[1].qty=5;db.stock[2].qty=10;db.stock[3].qty=-1;window.beforeReplenish=JSON.stringify(db.stock);window.filterWrites=0;save=()=>{window.filterWrites++};renderStock()});
+ await page.getByLabel('Estado do stock',{exact:true}).selectOption('replenish');assert.equal(await rows.count(),4);assert.match(await controls.locator('.ae-stock-pages span').innerText(),/1–4 de 4/);
+ await page.locator('#stockSearch').fill('Fixture 01');assert.equal(await rows.count(),1);await page.locator('#stockSearch').fill('');
+ await page.getByLabel('Estado do stock',{exact:true}).selectOption('low');assert.equal(await rows.count(),2);
+ await page.getByLabel('Estado do stock',{exact:true}).selectOption('out');assert.equal(await rows.count(),2);
+ await page.getByLabel('Estado do stock',{exact:true}).selectOption('all');assert.equal(await rows.count(),10);
+ assert.equal(await page.evaluate(()=>JSON.stringify(db.stock)===beforeReplenish&&filterWrites===0),true);
  await context.close();
  }
  console.log('PASS: desktop table/mobile cards, page size and filters, preserved page/draft/file/preview, original save and history, no data changes from navigation.');

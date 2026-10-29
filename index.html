@@ -3656,7 +3656,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div class="field orders-period-v1882"><label>De</label><input id="orderDateFromV1882" type="date" onchange="renderOrders()"></div>
         <div class="field orders-period-v1882"><label>Até</label><input id="orderDateToV1882" type="date" onchange="renderOrders()"></div>
         <div class="field"><label>Vista</label><div class="orders-view-switch"><button id="ordersCardsBtn" class="active" onclick="setOrdersView('cards')">▦ Cartões</button><button id="ordersTableBtn" onclick="setOrdersView('table')">☷ Tabela</button></div></div>
-        <div class="orders-filter-utility-v1915"><button type="button" class="btn" id="ordersClearFiltersV1915" onclick="clearOrderFiltersV1915()" disabled>Limpar filtros</button><small id="ordersResultsV1915" role="status" aria-live="polite">—</small></div>
+        <div class="orders-filter-utility-v1915"><label class="orders-sort-control-v1940" for="ordersSortV1916">Ordenar encomendas ativas<select id="ordersSortV1916" aria-label="Ordenar encomendas ativas" onchange="renderOrders()"><option value="recent">Mais recentes</option><option value="due">Entrega mais próxima</option></select></label><button type="button" class="btn" id="ordersClearFiltersV1915" onclick="clearOrderFiltersV1915()" disabled>Limpar filtros</button><small id="ordersResultsV1915" role="status" aria-live="polite">—</small></div>
         <div class="orders-new-wrap-v1728"><button class="btn primary orders-new" onclick="go('sale')">＋ Nova encomenda</button></div>
       </div>
     </div>
@@ -3939,8 +3939,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       </div>
       <div class="stock-tools">
         <input id="stockSearch" placeholder="Pesquisar artigo…" oninput="renderStock()">
-        <select id="stockStateFilter" onchange="renderStock()">
+        <select id="stockStateFilter" aria-label="Estado do stock" onchange="renderStock()">
           <option value="all">Todos</option>
+          <option value="replenish">A repor (sem stock + baixo)</option>
           <option value="out">Sem stock</option>
           <option value="low">Stock baixo</option>
           <option value="ok">Stock OK</option>
@@ -6139,7 +6140,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.39';
+const APP_VERSION='1.9.40';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -8174,8 +8175,16 @@ function viewOrderProductionV1915(id){
  }
 }
 function clearOrderFiltersV1915(){
+ const sort=document.getElementById('ordersSortV1916');if(sort)sort.value='recent';
  for(const id of ['orderSearch','orderFilter','orderDateFromV1882','orderDateToV1882']){const el=document.getElementById(id);if(el)el.value='';}
  renderOrders();
+}
+// A consulta ordena uma cópia; nunca altera a ordem ou os dados guardados.
+function orderDeliverySortKeyV1940(o){
+ const day=String(o.delivery||'').slice(0,10),date=new Date(day+'T00:00:00Z');
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||!Number.isFinite(date.getTime())||date.toISOString().slice(0,10)!==day)return '9999-12-31T99:99';
+ const time=String(o.deliveryTime||'');
+ return day+'T'+(/^([01]\d|2[0-3]):[0-5]\d$/.test(time)?time:'99:99');
 }
 function orderAttentionLabelV1915(o){
  if(o.status==='Pedido')return 'Por confirmar';
@@ -8197,9 +8206,12 @@ function renderOrders(){
    const d=orderFilterDateV1882(o);
    return (!q||hay.includes(q))&&(!f||o.status===f)&&(!from||d>=from)&&(!to||d<=to)
  }).slice().reverse();
+ const sortControl=document.getElementById('ordersSortV1916'),sortMode=sortControl?.value||'recent';
+ if(sortControl)sortControl.disabled=ordersModeV1882==='history';
+ if(sortMode==='due'&&ordersModeV1882==='active')rows.sort((a,b)=>orderDeliverySortKeyV1940(a).localeCompare(orderDeliverySortKeyV1940(b)));
  const filtersActive=Boolean(q||f||from||to);
  const clearBtn=document.getElementById('ordersClearFiltersV1915'),results=document.getElementById('ordersResultsV1915');
- if(clearBtn)clearBtn.disabled=!filtersActive;
+ if(clearBtn)clearBtn.disabled=!filtersActive&&sortMode==='recent';
  if(results)results.textContent=rows.length+' de '+base.length+' encomendas'+(filtersActive?' · filtros ativos':'');
 
  const activeCount=document.getElementById('ordersActiveCountV1882'),historyCount=document.getElementById('ordersHistoryCountV1882');
@@ -8226,7 +8238,7 @@ function renderOrders(){
    const counts=Object.fromEntries(statuses.map(s=>[s,(db.orders||[]).filter(o=>o.status===s).length]));
    flow.innerHTML=statuses.map((s,i)=>`<button class="orders-flow-step ${orderStatusClass(s)} ${f===s?'selected':''}" onclick="orderFilter.value='${s}';renderOrders()"><span>${i+1}</span><div><b>${s}</b><small>${counts[s]} encomenda${counts[s]===1?'':'s'}</small></div></button>`).join('')+`<button class="orders-flow-clear ${!f?'selected':''}" onclick="orderFilter.value='';renderOrders()">Todas</button>`;
  }
- const pageRows=orderPageRowsV1928(rows,JSON.stringify([ordersModeV1882,q,f,from,to,document.getElementById('ordersPageSizeV1928')?.value]));
+ const pageRows=orderPageRowsV1928(rows,JSON.stringify([ordersModeV1882,q,f,from,to,sortMode,document.getElementById('ordersPageSizeV1928')?.value]));
  const cards=document.getElementById('ordersCards');
  if(cards){
    cards.innerHTML=rows.length?pageRows.map(o=>{
@@ -9018,7 +9030,7 @@ function renderStock(){
  const rows=all.map((x,i)=>({x,i})).filter(({x})=>{
    const qty=Number(x.qty)||0,min=Number(x.min)||0;
    const st=qty<=0?'out':qty<=min?'low':'ok';
-   return (!q||String(x.name||'').toLowerCase().includes(q)||String(x.unit||'').toLowerCase().includes(q))&&(state==='all'||state===st);
+   return (!q||String(x.name||'').toLowerCase().includes(q)||String(x.unit||'').toLowerCase().includes(q))&&(state==='all'||state===st||(state==='replenish'&&(st==='out'||st==='low')));
  });
 
  const count=document.getElementById('stockResultCount');
