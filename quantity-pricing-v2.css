@@ -146,3 +146,24 @@
 #quantityPricing .aeq-box-costs dt{font-size:11px}
 #quantityPricing .aeq-box-costs dd{font-size:12px;font-weight:700;margin:0}
 @media(max-width:450px){#quantityPricing .aeq-box-costs>div{grid-template-columns:1fr}}
+
+/* 1.9.60 — propostas comerciais com dados para cliente separados da técnica */
+#quantityPricing .aeq-offer-fields-v24{border:1px solid #e5d6c2;border-radius:9px;margin:10px 0;padding:9px 11px;background:#fffdf8}
+#quantityPricing .aeq-offer-fields-v24>summary{font-weight:700;font-size:12px;color:#5b4535;cursor:pointer}
+#quantityPricing .aeq-offer-grid-v24{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0}
+#quantityPricing .aeq-offer-grid-v24 label{display:grid;gap:5px;min-width:0;font-size:11px;font-weight:600;color:#534233}
+#quantityPricing .aeq-offer-grid-v24 input,
+#quantityPricing .aeq-offer-grid-v24 textarea{width:100%;max-width:100%;box-sizing:border-box;min-width:0;font:inherit;font-size:13px;border:1px solid #d8c9b7;border-radius:7px;padding:9px}
+#quantityPricing .aeq-offer-grid-v24 label:last-child{grid-column:1/-1}
+#quantityPricing .aeq-offer-fields-v24>small{font-size:11px;line-height:1.4;color:#746355}
+#quantityPricing .aeq-offer-actions-v24{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+#quantityPricing .aeq-offer-actions-v24 button{min-height:40px}
+#quantityPricing .aeq-offer-privacy-v24{font-size:11px;line-height:1.4;color:#716050;margin-top:9px}
+#quantityPricing #aeQProposalText{min-height:145px;white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:560px){
+ #quantityPricing .aeq-offer-grid-v24{grid-template-columns:minmax(0,1fr)}
+ #quantityPricing .aeq-offer-grid-v24 label:last-child{grid-column:auto}
+ #quantityPricing .aeq-offer-actions-v24{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+ #quantityPricing .aeq-offer-actions-v24 button{width:100%;white-space:normal;overflow-wrap:anywhere}
+ #quantityPricing .aeq-offer-actions-v24 button:last-child{grid-column:1/-1}
+}
