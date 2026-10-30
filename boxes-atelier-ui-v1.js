@@ -63,6 +63,35 @@ function proposal(){
  'Valor de referência dos artigos: '+money(selectedTotal(custom,false)),
  'Preço final, stock e prazo sujeitos a confirmação da ArtEssencia.'].filter(Boolean).join('\n');
 }
+async function buildCustomBoxPdfV1(){
+ const proposalText=proposal();
+ const pages=[],W=1240,H=1754;
+ let canvas,ctx,y;
+ async function start(){
+  canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;
+  ctx=canvas.getContext('2d');if(!ctx)throw new Error('PDF indisponível');
+  await drawArtEssenciaHeader(ctx,'BOX PERSONALIZADA','Proposta não vinculativa · '+new Date().toLocaleDateString('pt-PT'));
+  y=235;
+ }
+ async function finish(){
+  drawCatalogFooter(ctx);
+  const blob=await new Promise((ok,no)=>canvas.toBlob(file=>file?ok(file):no(new Error('Erro ao gerar PDF')),'image/jpeg',0.9));
+  pages.push(blob);
+ }
+ await start();
+ for(const textLine of proposalText.split('\n')){
+  ctx.font='21px Arial';ctx.fillStyle='#49382e';
+  const lines=textLine?wrapCanvasText(ctx,textLine,1040):[''];
+  for(const line of lines){
+   if(y+48>1570){await finish();await start();}
+   ctx.fillText(line,90,y);y+=38;
+  }
+  y+=12;
+ }
+ await finish();
+ return jpegBlobsToPDF(pages,W,H);
+}
+
 function customerLink(items){
  const url=new URL('https://catalogo.artessenciatlier.pt/boxes.html');
  items.filter(x=>{const p=match(x.code);return p&&p.shopVisible&&p.publicReleasePendingV1803!==true;}).slice(0,30).forEach(x=>url.searchParams.append('produto',x.code));
@@ -115,7 +144,7 @@ function install(){
  customPane.innerHTML='<div class="ae-hub-heading"><h3>Criar Box personalizada</h3><p>Proposta não vinculativa; artigos e custos vêm dos Produtos. A confirmação de stock, embalagem e prazo é feita pela ArtEssencia.</p></div>'+
  '<div class="ae-custom-grid"><label>Título da Box<input id="aeCustomTitleV1" placeholder="Ex.: Presente especial"></label><label>Embalagem<select id="aeCustomPackagingV1"></select></label><label>Nome / dedicatória<input id="aeCustomNameV1" maxlength="120" placeholder="Opcional"></label><label>Preferências de cor, aroma e observações<textarea id="aeCustomNotesV1" rows="3" maxlength="400"></textarea></label></div>'+
  '<div id="aeCustomProductsV1"></div><p id="aeCustomTotalV1" class="ae-box-estimate"></p><div class="ae-custom-actions">'+
- '<button type="button" class="btn" data-action="copy">Copiar proposta</button><button type="button" class="btn primary" data-action="whatsapp">Enviar por WhatsApp</button><button type="button" class="btn" data-action="client">Copiar ligação para o cliente escolher</button><a class="btn" href="https://catalogo.artessenciatlier.pt/boxes.html" target="_blank" rel="noopener">Abrir configurador do cliente</a></div>';
+ '<button type="button" class="btn" data-action="copy">Copiar proposta</button><button type="button" class="btn primary" data-action="whatsapp">Enviar por WhatsApp</button><button type="button" class="btn" data-action="pdf">Ver proposta PDF</button><button type="button" class="btn" data-action="sendpdf">Enviar PDF</button><button type="button" class="btn" data-action="client">Copiar ligação para o cliente escolher</button><a class="btn" href="https://catalogo.artessenciatlier.pt/boxes.html" target="_blank" rel="noopener">Abrir configurador do cliente</a></div>';
  const docs=document.createElement('div');docs.id='aeHubPanel_pdf';docs.className='ae-hub-panel';
  docs.innerHTML='<div class="ae-hub-heading"><h3>Catálogos para clientes</h3><p>Escolhe entre produtos gerais e boxes existentes. PDFs são gerados a partir dos dados do Backoffice.</p></div>';
  docs.append(pdf);
@@ -159,6 +188,8 @@ function install(){
     if(b.dataset.action==='copy')copy(proposal());
     if(b.dataset.action==='whatsapp'){const p=phone();if(!p)throw Error('Define o contacto telefónico da ArtEssencia em Definições.');window.open('https://wa.me/'+p+'?text='+encodeURIComponent(proposal()),'_blank','noopener');}
     if(b.dataset.action==='client')copy(customerLink(custom));
+    if(b.dataset.action==='pdf')openPdfBlob(buildCustomBoxPdfV1);
+    if(b.dataset.action==='sendpdf')sharePdfBlob(buildCustomBoxPdfV1,'ArtEssencia_Proposta_Box_Personalizada.pdf','Proposta de Box ArtEssencia',proposal());
    }catch(error){toast(error.message);}
   }
  });
