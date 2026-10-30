@@ -11,7 +11,7 @@
   const baseline=window.quantityPricingSnapshotV1751;
   const originalRefresh=window.refreshQuantityPricingV1750;
   const originalRender=window.renderQuantityPricingV1750;
-  let busy=false,lastSaved=null,historyLoadedAt=0;
+  let busy=false,lastSaved=null,historyLoadedAt=0,currentCommercialOffer=null;
   if(typeof baseline!=='function'||typeof originalRefresh!=='function'||typeof originalRender!=='function')return;
   function safeText(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   function priceFor(cost,percent,mode) {
@@ -93,6 +93,7 @@
     installProductFinderV22();
     installQuickQuantitiesV22();
     installBoxV23();
+    installCommercialV24();
   }
 
   // V2.1 — disposição compacta: os elementos existentes são movidos, não recriados.
@@ -519,6 +520,140 @@
   window.refreshQuantityPricingV1750=function(){originalRefresh();renderEnhanced();};
   window.quantityPricingSnapshotV1751=function(){return compute();};
   window.renderQuantityPricingV1750=function(){addUI();fillBoxesV23();originalRender();renderEnhanced();};
+
+  // V2.4 — projeção de dados permitidos ao cliente. Não exportar o payload técnico.
+  const plainOfferV24=(value,max=500)=>String(value??'').replace(/[\u0000-\u001f\u007f]+/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
+  function makeCommercialOfferV24(snapshot,label,form={}){
+    const quantity=Number(snapshot?.units),unit=Number(snapshot?.finalUnit),total=Number(snapshot?.finalTotal);
+    const unitCents=Math.round(unit*100),totalCents=Math.round(total*100);
+    if(!Number.isInteger(quantity)||quantity<1||quantity>10000||
+       !Number.isSafeInteger(unitCents)||unitCents<=0||!Number.isSafeInteger(totalCents)||
+       unitCents*quantity!==totalCents)throw Error('O preço unitário e o total não coincidem. Confirma os valores antes da proposta.');
+    const kind=snapshot.mode==='box'?'Box':snapshot.mode==='product'?'Produto':'Conjunto personalizado';
+    const item=plainOfferV24(snapshot.mode==='box'?snapshot.boxName:snapshot.productName,120)||
+      plainOfferV24(label,120)||'Artigos artesanais';
+    const validity=plainOfferV24(form.validUntil,10);
+    if(validity&&!/^\d{4}-\d{2}-\d{2}$/.test(validity))throw Error('Data de validade inválida.');
+    if(validity){
+      const expiry=new Date(validity+'T23:59:59');
+      if(!Number.isFinite(expiry.getTime())||expiry<new Date()||
+         expiry.getFullYear()+'-'+String(expiry.getMonth()+1).padStart(2,'0')+'-'+String(expiry.getDate()).padStart(2,'0')!==validity)
+        throw Error('A validade da proposta deve ser uma data futura.');
+    }
+    return {
+      schema:'artessencia_commercial_offer_v1',kind,item,
+      reference:plainOfferV24(label,120)||item,quantity,
+      unitCents,totalCents,currency:'EUR',
+      customer:plainOfferV24(form.customer,120),
+      validUntil:validity,
+      leadTime:plainOfferV24(form.leadTime,180),
+      conditions:plainOfferV24(form.conditions,500)
+    };
+  }
+  function offerFromStoredV24(row){
+    if(!row||row.kind!=='proposal'||!row.payload)return null;
+    // Lista branca: a estrutura enviada nunca inclui custos, margens, receitas, stock ou dados Cloud.
+    const p=row.payload,prior=p.customerOffer;
+    const offer=makeCommercialOfferV24(p,row.label||'',{
+      customer:prior?.customer||'',
+      validUntil:'',
+      leadTime:prior?.leadTime||'',
+      conditions:prior?.conditions||''
+    });
+    const rawValidity=plainOfferV24(prior?.validUntil,10);
+    if(/^\d{4}-\d{2}-\d{2}$/.test(rawValidity))offer.validUntil=rawValidity;
+    offer.reference=plainOfferV24(prior?.reference||row.label,120);
+    return offer;
+  }
+  function customerTextV24(offer){
+    if(!offer)return '';
+    const euros=cents=>euroV2(Number(cents)/100);
+    const expiry=offer.validUntil?new Date(offer.validUntil+'T12:00:00').toLocaleDateString('pt-PT'):'A confirmar';
+    return [
+      'ARTESSENCIA — PROPOSTA COMERCIAL',
+      offer.reference?'Referência: '+offer.reference:'',
+      offer.customer?'Destinatário: '+offer.customer:'',
+      offer.kind+': '+offer.item,
+      'Quantidade: '+offer.quantity+' unidades',
+      'Preço por unidade: '+euros(offer.unitCents),
+      'Total proposto: '+euros(offer.totalCents),
+      'Validade da proposta: '+expiry,
+      offer.leadTime?'Prazo previsto: '+offer.leadTime:'',
+      offer.conditions?'Condições: '+offer.conditions:'',
+      'Valores e disponibilidade sujeitos a confirmação pela ArtEssencia.',
+      'A aceitação da proposta não confirma uma encomenda nem constitui pagamento.'
+    ].filter(Boolean).join('\n');
+  }
+  function displayCommercialV24(offer){
+    currentCommercialOffer=offer;
+    const textarea=$('aeQProposalText'),text=customerTextV24(offer);
+    if(textarea)textarea.value=text;
+    for(const id of ['aeQCopy','aeQPrintV24','aeQWhatsAppV24']){
+      const button=$(id);if(button)button.disabled=!offer;
+    }
+    const status=$('aeQOfferPrivacyV24');if(status)status.textContent=offer?
+      'Documento para cliente: apenas artigos, quantidades, preços e condições comerciais. Sem custos internos.':
+      'Guarda uma proposta aprovada ou consulta uma proposta anterior para disponibilizar o texto.';
+  }
+  function currentOfferFieldsV24(){
+    return {
+      customer:$('aeQOfferClientV24')?.value||'',
+      validUntil:$('aeQOfferExpiryV24')?.value||'',
+      leadTime:$('aeQOfferLeadV24')?.value||'',
+      conditions:$('aeQOfferConditionsV24')?.value||''
+    };
+  }
+  function printableOfferV24(){
+    if(!currentCommercialOffer)return state('Seleciona uma proposta guardada antes de imprimir.');
+    const win=window.open('','_blank','width=780,height=920');
+    if(!win){state('A impressão foi bloqueada pelo navegador. Usa Copiar proposta.');return;}
+    try{
+      win.opener=null;
+      const content=customerTextV24(currentCommercialOffer).split('\n');
+      const rows=content.map((line,i)=>i===0?
+        '<h1>'+safeText(line)+'</h1>':
+        '<p>'+safeText(line)+'</p>').join('');
+      win.document.open();
+      win.document.write('<!doctype html><html lang="pt-PT"><head><meta charset="utf-8"><title>Proposta comercial ArtEssencia</title>'+
+        '<style>@page{size:A4;margin:18mm}body{font-family:Arial,sans-serif;color:#48362b;line-height:1.5;max-width:780px;margin:32px auto;padding:0 18px}'+
+        'h1{font-family:Georgia,serif;font-size:23px;border-bottom:2px solid #a78b6a;padding-bottom:12px}p{font-size:13px;margin:9px 0;overflow-wrap:anywhere}'+
+        'p:nth-of-type(5){font-size:16px;font-weight:bold}p:last-child{margin-top:25px;font-size:11px;color:#806e5f}</style></head><body>'+rows+'</body></html>');
+      win.document.close();win.focus();win.print();
+    }catch(error){state('Não foi possível imprimir: '+(error?.message||String(error)));}
+  }
+  function whatsappOfferV24(){
+    if(!currentCommercialOffer)return state('Seleciona uma proposta guardada antes de partilhar.');
+    const text=customerTextV24(currentCommercialOffer);
+    const url='https://wa.me/?text='+encodeURIComponent(text);
+    const opened=window.open(url,'_blank','noopener,noreferrer');
+    if(!opened)state('Se o WhatsApp não abrir, copia a proposta e envia-a manualmente.');
+  }
+  function installCommercialV24(){
+    const panel=$('aeQHistory')?.closest('.aeq-panel'),approval=$('aeQApproval')?.closest('label');
+    if(!panel||!approval||$('aeQOfferClientV24'))return;
+    const details=document.createElement('details');details.className='aeq-offer-fields-v24';
+    details.innerHTML='<summary>Personalizar condições da proposta ao cliente</summary>'+
+      '<div class="aeq-offer-grid-v24">'+
+      '<label>Nome do cliente (opcional)<input id="aeQOfferClientV24" maxlength="120" autocomplete="off" placeholder="Destinatário"></label>'+
+      '<label>Válida até (opcional)<input id="aeQOfferExpiryV24" type="date"></label>'+
+      '<label>Prazo previsto (opcional)<input id="aeQOfferLeadV24" maxlength="180" placeholder="Ex.: A confirmar após aceitação"></label>'+
+      '<label>Condições comerciais (opcional)<textarea id="aeQOfferConditionsV24" rows="2" maxlength="500" placeholder="Ex.: Transporte sob orçamento separado"></textarea></label>'+
+      '</div><small>Estas condições serão fixadas na nova proposta. Não modificam simulações anteriores.</small>';
+    approval.before(details);
+    const copy=$('aeQCopy');if(copy){
+      const actions=document.createElement('div');actions.className='aeq-offer-actions-v24';
+      copy.before(actions);actions.append(copy);
+      const print=document.createElement('button');print.type='button';
+      print.className='btn';print.id='aeQPrintV24';print.textContent='Imprimir / PDF';
+      print.addEventListener('click',printableOfferV24);actions.append(print);
+      const whatsapp=document.createElement('button');whatsapp.type='button';
+      whatsapp.className='btn';whatsapp.id='aeQWhatsAppV24';whatsapp.textContent='Abrir WhatsApp';
+      whatsapp.addEventListener('click',whatsappOfferV24);actions.append(whatsapp);
+    }
+    const note=document.createElement('p');note.id='aeQOfferPrivacyV24';
+    note.className='aeq-offer-privacy-v24';panel.append(note);
+    displayCommercialV24(null);
+  }
   function session() {
     if(typeof cloudClient==='undefined'||!cloudClient||typeof ensureCloudSession!=='function')throw new Error('É necessária uma sessão Cloud autenticada.');
     return ensureCloudSession();
@@ -539,7 +674,8 @@
         if(!lastSaved||lastSaved.signature!==sign)throw new Error('Guarda primeiro esta versão da simulação na Cloud.');
       }
       const label=($('aeQLabel')?.value||now.productName||'Lote personalizado').trim().slice(0,120)||'Simulação';
-      const payload=proposal?Object.assign({},lastSaved.payload,{approvedAt:new Date().toISOString()}):Object.assign({},now,{createdAt:new Date().toISOString()});
+      const offer=proposal?makeCommercialOfferV24(lastSaved.payload,label,currentOfferFieldsV24()):null;
+      const payload=proposal?Object.assign({},lastSaved.payload,{approvedAt:new Date().toISOString(),customerOffer:offer}):Object.assign({},now,{createdAt:new Date().toISOString()});
       state(proposal?'A guardar proposta em rascunho…':'A guardar simulação…');
       const row={user_id:u.id,kind:proposal?'proposal':'simulation',status:'draft',
         label:proposal?'Proposta — '+label:label,payload};
@@ -550,13 +686,7 @@
         lastSaved={id:data.simulation_id,signature:sign,payload};
         state('Simulação guardada na Cloud em '+new Date(data.created_at).toLocaleString('pt-PT')+'.');
       }else{
-        const price=euroV2(payload.finalTotal);
-        const txt='ARTESSENCIA — PROPOSTA COMERCIAL (rascunho)\n'+
-          label+'\n'+payload.units+' unidades · '+euroV2(payload.finalUnit)+' por unidade.\n'+
-          'Total proposto: '+price+'.\n'+
-          'Valores sujeitos a confirmação de disponibilidade, prazo e condições comerciais.\n'+
-          'Esta proposta não constitui encomenda nem reserva de produtos.';
-        if($('aeQProposalText'))$('aeQProposalText').value=txt;
+        displayCommercialV24(offer);
         state('Proposta '+data.simulation_id.slice(0,8)+' criada como rascunho privado na Cloud. Não foi enviada nem convertida em encomenda.');
       }
       await loadHistory(true);
@@ -592,7 +722,11 @@
   function consultSnapshot(row) {
     const s=row?.payload,el=$('aeQHistoryDetail');
     if(!el)return;
-    if(!s||!Array.isArray(s.materials)){el.textContent='O registo guardado está incompleto.';return;}
+    if(!s||!Array.isArray(s.materials)){el.textContent='O registo guardado está incompleto.';displayCommercialV24(null);return;}
+    if(row.kind==='proposal'){
+      try{displayCommercialV24(offerFromStoredV24(row));}
+      catch(error){displayCommercialV24(null);state('A proposta antiga tem valores inconsistentes e não pode ser partilhada.');}
+    }else displayCommercialV24(null);
     // Ler o cenário original; nunca aplicar silenciosamente os custos atuais do Stock.
     const rows=[
       ...(s.mode==='box'?[['Box',String(s.boxName||'—')],['Revisão',String(s.boxRevision||'—')],['Custo da revisão por Box',euroV2(s.boxCostComponents?.total||0)]]:[]),
