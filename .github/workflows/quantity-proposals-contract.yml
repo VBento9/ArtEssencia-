@@ -1,0 +1,26 @@
+name: Propostas comerciais — contratos isolados
+on:
+  pull_request:
+    paths:
+      - 'quantity-pricing-v2.js'
+      - 'sql/quantity_proposal_tracking_v1.sql'
+      - 'tests/quantity-proposals-contract.test.cjs'
+      - '.github/workflows/quantity-proposals-contract.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  proposals-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Contract without customer or stock data
+        run: node --test tests/quantity-proposals-contract.test.cjs
