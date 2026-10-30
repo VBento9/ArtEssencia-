@@ -35,6 +35,13 @@ function techCostV2(items,settings){
  return {materials,labor,energy,indirect,total:materials+labor+energy+indirect,incomplete:joint&&!(Number(tech.materialsCost)>0)};
 }
 window.aeBoxTechDraftV2=techDraftV2;
+window.aeBoxCostSnapshotV4=(items,tech,basePackaging,decorationCost,price)=>{
+ const breakdown=techCostV2(items,tech);
+ const physical=(db.packaging||[]).find(p=>p.name===basePackaging);
+ const packaging=(Number(physical?.cost)||0)+(Number(decorationCost)||0);
+ const total=breakdown.total+packaging;
+ return {breakdown,packaging,total,price:Number(price)||0,profit:(Number(price)||0)-total,capturedAt:new Date().toISOString(),estimated:true};
+};
 let originRequestIdV4='';
 window.aeBoxOriginRequestV4=()=>originRequestIdV4;
 function previewPredefined(){
@@ -176,13 +183,14 @@ function aeBoxPrintTechnicalV3(format){
  const full=format==='A4';
  const escape=safe;
  const tech=box.technicalV2||{};
- const breakdown=techCostV2(box.items||[],tech);
+ const savedSnapshot=box.technicalRevisionV4?.snapshot;
+ const breakdown=savedSnapshot?.breakdown||techCostV2(box.items||[],tech);
  const physical=(db.packaging||[]).find(p=>p.name===box.basePackaging);
- const packaging=(Number(physical?.cost)||0)+(Number(box.decorationCost)||0);
- const total=breakdown.total+packaging;
+ const packaging=savedSnapshot?.packaging??((Number(physical?.cost)||0)+(Number(box.decorationCost)||0));
+ const total=savedSnapshot?.total??(breakdown.total+packaging);
  const title='Ficha técnica · '+escape(box.name);
  const info=[
-  ['Referência',box.id],['Tipo de produção',tech.mode==='joint'?'Produção conjunta':'Montagem de produtos acabados'],
+  ['Referência',box.id],['Versão da ficha técnica',String(box.technicalRevisionV4?.version||1)],['Tipo de produção',tech.mode==='joint'?'Produção conjunta':'Montagem de produtos acabados'],
   ['Capacidade',String(box.capacity||1)+' unidades'],
   ['Cera',String(Number(tech.waxG)||0)+' g'],
   ['Fragrância',String(Number(tech.fragranceG)||0)+' g'],
@@ -198,7 +206,7 @@ function aeBoxPrintTechnicalV3(format){
  const photo=/^https:\/\//.test(src)||/^data:image\/(png|jpeg|webp);base64,/i.test(src)?'<img class="photo" src="'+escape(src)+'" alt="Foto da Box">':'';
  const finance=full?'<h2>Custos internos</h2><table><tbody>'+
   [['Matérias-primas',breakdown.materials],['Mão de obra',breakdown.labor],['Energia',breakdown.energy],['Outros custos',breakdown.indirect],['Caixa e decoração',packaging],['Custo total estimado',total],['Preço de venda',Number(box.price)||0],['Lucro bruto',Number(box.price||0)-total]].map(([key,v])=>'<tr><td>'+escape(key)+'</td><td>'+money(v)+'</td></tr>').join('')+
- '</tbody></table><p class="note">Os valores são estimativas. Confirmar preços de materiais e mão de obra antes de produzir.</p>':'';
+ '</tbody></table><p class="note">Os custos guardados correspondem à versão da ficha técnica e são estimativas. Confirmar materiais, disponibilidade e mão de obra antes de produzir.</p>':'';
  const markup='<!doctype html><html lang="pt-PT"><head><meta charset="utf-8"><title>'+title+'</title>'+
  '<style>@page{size:'+format+';margin:12mm}*{box-sizing:border-box}body{font:11px Arial,sans-serif;color:#392f28;margin:0;overflow-wrap:anywhere}header{display:flex;gap:12px;align-items:start;border-bottom:2px solid #745a42;padding-bottom:11px}h1{font:24px Georgia,serif;margin:0}h2{font-size:15px;margin:19px 0 8px;color:#674c37}.photo{height:100px;width:100px;object-fit:cover;border-radius:8px;flex-shrink:0}.meta{color:#766960}.fields{display:grid;grid-template-columns:1fr 1fr;gap:6px 20px}.field{border-bottom:1px solid #e7ddd0;padding:5px 0;break-inside:avoid}.field strong{display:block;font-size:10px;color:#766758}table{width:100%;border-collapse:collapse}th,td{padding:6px;border-bottom:1px solid #ddd;text-align:left}td:last-child{text-align:right}.note{white-space:pre-wrap;line-height:1.5}.toolbar{padding:10px;background:#f0e7d9;margin-bottom:14px}.toolbar button{border:0;border-radius:8px;padding:9px 15px;background:#584535;color:white;font-weight:bold;cursor:pointer}@media print{.toolbar{display:none!important}h2{break-after:avoid}tr,.field{break-inside:avoid}}@media screen{body{max-width:800px;margin:auto;padding:15px}}</style></head><body>'+
  '<div class="toolbar"><button id="print" type="button">Imprimir / Guardar PDF</button> · Formato '+format+'</div>'+
