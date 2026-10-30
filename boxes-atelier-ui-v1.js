@@ -183,37 +183,72 @@ function install(){
  legacy.innerHTML='<summary style="padding:15px;cursor:pointer;font-weight:700;background:#fff;border:1px solid #dfd2c6;border-radius:12px">Mostrar configuração técnica antiga (compatibilidade)</summary>';
  legacy.append(creator);advanced.append(legacy);
  const requestsPane=document.createElement('div');requestsPane.id='aeHubPanel_requests';requestsPane.className='ae-hub-panel';
- requestsPane.innerHTML='<div class="ae-hub-heading"><h3>Pedidos de Boxes personalizadas</h3><p>Pedidos recebidos no Catálogo Digital e na Loja. Orçamentos sujeitos à tua aprovação, sem encomenda nem alteração de stock.</p><button class="btn" type="button" id="aeRefreshBoxRequests">Atualizar pedidos</button></div><div id="aeBoxRequestList" class="ae-box-items">A consultar Cloud…</div>';
+ requestsPane.innerHTML='<div class="ae-hub-heading"><h3>Pedidos de Boxes personalizadas</h3><p>Pedidos recebidos no Catálogo Digital e na Loja. Define custos, envia uma ligação privada com validade e aguarda a resposta. A aceitação não cria automaticamente encomendas nem altera stock.</p><button class="btn" type="button" id="aeRefreshBoxRequests">Atualizar pedidos</button></div><div id="aeBoxRequestList" class="ae-box-items">A consultar Cloud…</div>';
  hub.append(ready,customPane,requestsPane,docs,advanced);
  $('aeRefreshBoxRequests').addEventListener('click',loadBoxRequestsV2);
  requestsPane.addEventListener('click',async ev=>{
  const button=ev.target.closest('[data-box-request-action]');if(!button)return;
- const id=button.dataset.id, action=button.dataset.boxRequestAction, record=requestsCache.find(x=>x.request_id===id);
+ const id=button.dataset.id,action=button.dataset.boxRequestAction;
+ const record=requestsCache.find(x=>x.request_id===id);
  if(!record)return;
- if(action==='reply'){
-  const total=Number(record.quoted_total);if(!Number.isFinite(total)||total<=0){toast('Indica primeiro um valor válido');return;}
-  const message=['Olá '+record.customer_name+',','Segue o orçamento para a tua Box ArtEssencia.','Valor proposto: '+money(total),record.quote_message||'','O pedido fica sujeito a confirmação de disponibilidade e pagamento.'].filter(Boolean).join('\n');
-  const phone=String(record.phone||'').replace(/\D/g,'').replace(/^00/,'');
-  if(!phone){toast('O pedido não tem telefone');return;}
-  const number=phone.length===9?'351'+phone:phone;
-  window.open('https://wa.me/'+number+'?text='+encodeURIComponent(message),'_blank','noopener');
+ const row=button.closest('[data-request-row]');
+ if(action==='reply'||action==='copylink'){
+  if(!['quoted','sent'].includes(record.status)||!record.response_token||!record.quote_valid_until||new Date(record.quote_valid_until)<=new Date()){toast('Prepara um orçamento válido antes de enviar.');return;}
+  const url='https://catalogo.artessenciatlier.pt/proposta-box.html#proposta='+encodeURIComponent(record.response_token);
+  if(action==='copylink'){await copy(url);return;}
+  const number=String(record.phone||'').replace(/\D/g,'').replace(/^00/,'');
+  if(number.length!==9&&number.length<11){toast('Contacto inválido. Usa Copiar ligação para enviar por outro canal.');return;}
+  const normalized=number.length===9?'351'+number:number;
+  const msg=['Olá '+record.customer_name+',','O orçamento da tua Box ArtEssencia está disponível.',
+   'Valor final proposto: '+money(record.quoted_total),
+   'Válido até: '+new Date(record.quote_valid_until).toLocaleDateString('pt-PT',{timeZone:'Europe/Lisbon'}),
+   record.quote_message||'','Podes consultar, aceitar ou pedir alterações nesta ligação privada:',url,
+   'A aceitação não constitui pagamento nem confirma a encomenda.'].filter(Boolean).join('\n');
+  window.open('https://wa.me/'+normalized+'?text='+encodeURIComponent(msg),'_blank','noopener,noreferrer');
+  toast('WhatsApp aberto. Marca como enviado apenas depois de confirmares o envio.');
   return;
  }
- if(action==='quote'||action==='review'){
-  const row=button.closest('[data-request-row]');
-  const total=action==='quote'?Number(row.querySelector('[data-box-total]').value):null;
-  const note=action==='quote'?row.querySelector('[data-box-note]').value.trim():'';
-  if(action==='quote'&&(!Number.isFinite(total)||total<=0||total>100000)){toast('Indica um preço válido');return;}
-  button.disabled=true;
-  try{
-   const {c}=await publicClient();
-   const changes=action==='quote'?{status:'quoted',quoted_total:total,quote_message:note,quoted_at:new Date().toISOString(),updated_at:new Date().toISOString()}:{status:'reviewing',updated_at:new Date().toISOString()};
-   const {error}=await c.from('artessencia_box_requests_v1').update(changes).eq('request_id',id);
+ button.disabled=true;
+ try{
+  const {c}=await publicClient();
+  if(action==='quote'){
+   const total=Number(row.querySelector('[data-box-total]')?.value);
+   const note=row.querySelector('[data-box-note]')?.value.trim()||'';
+   const validDays=Number(row.querySelector('[data-box-validity]')?.value);
+   if(!Number.isFinite(total)||total<=0||total>100000||!Number.isInteger(validDays)||validDays<1||validDays>30)throw Error('Indica um preço válido e validade entre 1 e 30 dias.');
+   if(!confirm('Emitir uma nova versão de orçamento? A ligação anterior deixará de ser válida.'))return;
+   const {data,error}=await c.rpc('artessencia_owner_quote_box_v1',{
+    p_request_id:id,p_amount:total,p_message:note,p_valid_days:validDays
+   });
    if(error)throw error;
-   await loadBoxRequestsV2();toast(action==='quote'?'Valor do orçamento guardado. Envia agora a resposta ao cliente.':'Pedido em análise');
-  }catch(error){toast(error.message||'Erro Cloud')}finally{button.disabled=false;}
- }
- });
+   if(!data?.ok)throw Error('Não foi possível guardar o orçamento');
+   await loadBoxRequestsV2();toast('Versão '+data.version+' guardada. A proposta está pronta para enviar.');
+   return;
+  }
+  if(action==='marksent'){
+   if(record.status!=='quoted')throw Error('O orçamento já não está pendente de envio.');
+   if(!confirm('Confirmas que enviaste a ligação de orçamento ao cliente?'))return;
+   const {data,error}=await c.from('artessencia_box_requests_v1')
+    .update({status:'sent',sent_at:new Date().toISOString(),updated_at:new Date().toISOString()})
+    .eq('request_id',id).eq('status','quoted').eq('quote_version',record.quote_version)
+    .select('request_id');
+   if(error)throw error;
+   if(data?.length!==1)throw Error('O estado do pedido mudou. Atualiza a listagem.');
+   await loadBoxRequestsV2();toast('Envio registado.');
+   return;
+  }
+  if(action==='review'){
+   if(!['new','reviewing','revision_requested'].includes(record.status))throw Error('Não é possível alterar para análise uma proposta já enviada ou decidida.');
+   const {data,error}=await c.from('artessencia_box_requests_v1')
+    .update({status:'reviewing',updated_at:new Date().toISOString()})
+    .eq('request_id',id).eq('status',record.status).select('request_id');
+   if(error)throw error;
+   if(data?.length!==1)throw Error('O pedido foi atualizado noutro dispositivo.');
+   await loadBoxRequestsV2();toast('Pedido em análise.');
+   return;
+  }
+ }catch(error){toast(error.message||'Não foi possível atualizar o pedido')}finally{button.disabled=false;}
+});
 
  hub.querySelectorAll('[data-ae-tab]').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.aeTab)));
  renderPredefinedExtras();
@@ -284,22 +319,53 @@ async function loadBoxRequestsV2(){
  const root=$('aeBoxRequestList');if(!root)return;
  try{
   const {c}=await publicClient();
-  const {data,error}=await c.from('artessencia_box_requests_v1').select('*').in('status',['new','reviewing','quoted']).order('created_at',{ascending:false}).limit(100);
-  if(error)throw error;
-  requestsCache=Array.isArray(data)?data:[];
+  const [reqs,hist]=await Promise.all([
+    c.from('artessencia_box_requests_v1').select('*')
+     .in('status',['new','reviewing','quoted','sent','accepted','declined','revision_requested'])
+     .order('created_at',{ascending:false}).limit(100),
+    c.from('artessencia_box_quote_history_v1')
+     .select('request_id,quote_version,event_type,created_at')
+     .order('created_at',{ascending:false}).limit(250)
+  ]);
+  if(reqs.error)throw reqs.error;
+  requestsCache=Array.isArray(reqs.data)?reqs.data:[];
+  const history=hist.error?[]:(hist.data||[]);
+  const labels={new:'Novo',reviewing:'Em análise',quoted:'Orçamento preparado',sent:'Proposta enviada',accepted:'Aceite pelo cliente',declined:'Recusado',revision_requested:'Alterações solicitadas'};
   root.innerHTML=requestsCache.length?requestsCache.map(r=>{
    const items=Array.isArray(r.items)?r.items:[];
    const prefs=r.preferences&&typeof r.preferences==='object'?r.preferences:{};
-   const describe=Object.entries(prefs).filter(([k,v])=>v!=null&&String(v).trim()).map(([k,v])=>'<small>'+safe(k)+': '+safe(v)+'</small>').join('');
+   const details=Object.entries(prefs).filter(([k,v])=>v!==null&&v!==undefined&&String(v).trim())
+    .map(([k,v])=>'<small>'+safe(k)+': '+safe(typeof v==='object'?JSON.stringify(v):v)+'</small>').join('');
+   const canQuote=['new','reviewing','quoted','sent','revision_requested'].includes(r.status);
+   const canSend=['quoted','sent'].includes(r.status)&&r.response_token&&r.quote_valid_until&&new Date(r.quote_valid_until)>new Date();
+   const previous=history.filter(h=>h.request_id===r.request_id).slice(0,8)
+    .map(h=>'v'+safe(h.quote_version)+' · '+safe(h.event_type)+' · '+safe(new Date(h.created_at).toLocaleDateString('pt-PT'))).join(' | ');
+   const metadata='<b>'+safe(r.customer_name)+'</b><small>'+safe(r.phone)+' · '+safe(r.email||'Sem email')+' · '+safe(r.source)+'</small>'+
+    '<small>'+safe(r.created_at?.slice(0,16)||'')+' · '+safe(labels[r.status]||r.status)+'</small>';
    return '<article data-request-row="'+safe(r.request_id)+'" class="card" style="padding:14px;margin:10px 0">'+
-    '<b>'+safe(r.customer_name)+'</b><small>'+safe(r.created_at?.slice(0,16)||'')+' · '+safe(r.source)+' · '+safe(r.status)+'</small>'+
-    '<p>'+items.map(x=>safe(x.qty)+' × '+safe(x.code)).join(' · ')+'</p><div>'+describe+'</div>'+
-    '<div class="ae-custom-grid"><label>Preço final (€)<input data-box-total type="number" step=".01" min=".01" value="'+safe(r.quoted_total??'')+'"></label>'+
-    '<label>Observações para cliente<textarea data-box-note rows="2">'+safe(r.quote_message||'')+'</textarea></label></div>'+
-    '<div class="ae-custom-actions"><button class="btn" data-box-request-action="review" data-id="'+safe(r.request_id)+'">Em análise</button><button class="btn primary" data-box-request-action="quote" data-id="'+safe(r.request_id)+'">Guardar orçamento</button>'+
-    (r.status==='quoted'?'<button class="btn" data-box-request-action="reply" data-id="'+safe(r.request_id)+'">Responder WhatsApp</button>':'')+'</div></article>';
-  }).join(''):'<div class="soft-note">Sem pedidos de Boxes por tratar.</div>';
- }catch(e){root.textContent='Não foi possível carregar pedidos. Confirma a ligação Cloud.';}
+    metadata+'<p>'+items.map(x=>safe(x.qty)+' × '+safe(x.name||x.code)).join(' · ')+'</p>'+
+    '<div>'+details+'</div>'+
+    (r.customer_note?'<p class="ae-box-estimate">Mensagem do cliente: '+safe(r.customer_note)+'</p>':'')+
+    '<div class="ae-custom-grid"><label>Orçamento final (€)<input data-box-total type="number" step=".01" min=".01" max="100000" value="'+safe(r.quoted_total??'')+'" '+(canQuote?'':'disabled')+'></label>'+
+    '<label>Validade (dias)<input data-box-validity type="number" min="1" max="30" step="1" value="7" '+(canQuote?'':'disabled')+'></label>'+
+    '<label style="grid-column:1/-1">Condições e observações para o cliente<textarea data-box-note rows="2" maxlength="1600" '+(canQuote?'':'disabled')+'>'+safe(r.quote_message||'')+'</textarea></label></div>'+
+    (r.quoted_total?'<small>Proposta v'+safe(r.quote_version)+' · '+money(r.quoted_total)+
+     (r.quote_valid_until?' · Até '+safe(new Date(r.quote_valid_until).toLocaleDateString('pt-PT')):'')+'</small>':'')+
+    '<div class="ae-custom-actions">'+
+     (['new','reviewing','revision_requested'].includes(r.status)?'<button class="btn" data-box-request-action="review" data-id="'+safe(r.request_id)+'">Em análise</button>':'')+
+     (canQuote?'<button class="btn primary" data-box-request-action="quote" data-id="'+safe(r.request_id)+'">Guardar orçamento</button>':'')+
+     (canSend?'<button class="btn" data-box-request-action="reply" data-id="'+safe(r.request_id)+'">Enviar WhatsApp</button>'+
+      '<button class="btn" data-box-request-action="copylink" data-id="'+safe(r.request_id)+'">Copiar ligação privada</button>':'')+
+     (r.status==='quoted'?'<button class="btn" data-box-request-action="marksent" data-id="'+safe(r.request_id)+'">Marcar enviado</button>':'')+
+    '</div>'+
+    (previous?'<small class="muted">Histórico: '+previous+'</small>':'')+
+    (r.status==='accepted'?'<p class="ae-box-estimate">Aceite: a conversão em encomenda depende da confirmação interna; o stock permanece inalterado.</p>':'')+
+    '</article>';
+  }).join(''):'<div class="soft-note">Sem pedidos de Boxes. Quando um cliente enviar uma proposta, aparecerá aqui.</div>';
+ }catch(error){
+  console.warn('Pedidos de Boxes',error);
+  root.textContent='Não foi possível carregar os pedidos. Confirma a sessão e a ligação Cloud.';
+ }
 }
 
 let publicRows=new Map();
