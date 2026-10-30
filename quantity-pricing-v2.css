@@ -167,3 +167,14 @@
  #quantityPricing .aeq-offer-actions-v24 button{width:100%;white-space:normal;overflow-wrap:anywhere}
  #quantityPricing .aeq-offer-actions-v24 button:last-child{grid-column:1/-1}
 }
+
+/* Propostas 1.9.61 — gestão compacta do estado comercial */
+#quantityPricing .aeq-status-panel-v25{width:100%;margin-top:8px;border-top:1px solid #e6d9c9;padding-top:7px}
+#quantityPricing .aeq-status-panel-v25>summary{cursor:pointer;color:#654c36;font-size:12px;font-weight:700}
+#quantityPricing .aeq-status-history-v25{font-size:11px;color:#695849;line-height:1.4}
+#quantityPricing .aeq-status-history-v25 p{font-size:11px;margin:4px 0}
+#quantityPricing .aeq-status-actions-v25{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}
+#quantityPricing .aeq-status-actions-v25 select,#quantityPricing .aeq-status-actions-v25 textarea{max-width:100%;min-width:0;width:100%;box-sizing:border-box}
+#quantityPricing .aeq-status-actions-v25 textarea,#quantityPricing .aeq-status-actions-v25 button{grid-column:1/-1}
+#quantityPricing .aeq-history-row{flex-wrap:wrap}
+@media(max-width:520px){#quantityPricing .aeq-status-actions-v25{grid-template-columns:minmax(0,1fr)}}

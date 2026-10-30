@@ -654,6 +654,98 @@
     note.className='aeq-offer-privacy-v24';panel.append(note);
     displayCommercialV24(null);
   }
+
+  // V2.5 — gestão de decisões comerciais. A escrita só funciona com a migração RLS aplicada.
+  const EVENTS_V25='artessencia_quantity_proposal_events_v1';
+  let eventsAvailableV25=false,eventsByProposalV25=new Map(),eventBusyV25=false;
+  const EVENT_LABEL_V25={sent:'Enviada',accepted:'Aceite',declined:'Recusada',cancelled:'Cancelada'};
+  const EVENT_CHANNEL_V25={whatsapp:'WhatsApp',email:'Email',phone:'Telefone',in_person:'Presencial',other:'Outro'};
+  function proposalStatusV25(row){
+    const events=eventsByProposalV25.get(row.simulation_id)||[];
+    const event=events[events.length-1];
+    if(event)return {value:event.event_type,label:EVENT_LABEL_V25[event.event_type]||event.event_type};
+    if(row.payload?.customerOffer?.validUntil){
+      const expiry=new Date(row.payload.customerOffer.validUntil+'T23:59:59');
+      if(Number.isFinite(expiry.getTime())&&expiry.getTime()<Date.now())return {value:'expired',label:'Validade terminada'};
+    }
+    return {value:'draft',label:'Rascunho'};
+  }
+  async function loadProposalEventsV25(userId,ids){
+    eventsAvailableV25=false;eventsByProposalV25=new Map();
+    if(!ids.length){eventsAvailableV25=true;return;}
+    const {data,error}=await cloudClient.from(EVENTS_V25)
+      .select('event_id,proposal_id,event_type,channel,note,created_at')
+      .eq('user_id',userId).in('proposal_id',ids)
+      .order('created_at',{ascending:true}).limit(200);
+    if(error){state('Histórico das decisões indisponível. Não é possível alterar estados até corrigir a ligação Cloud.');return;}
+    eventsAvailableV25=true;
+    (data||[]).forEach(e=>{
+      if(!eventsByProposalV25.has(e.proposal_id))eventsByProposalV25.set(e.proposal_id,[]);
+      eventsByProposalV25.get(e.proposal_id).push(e);
+    });
+  }
+  function manageProposalV25(row,holder){
+    const status=proposalStatusV25(row);
+    const panel=document.createElement('details');panel.className='aeq-status-panel-v25';
+    const summary=document.createElement('summary');summary.textContent='Estado: '+status.label+' · Gerir';panel.append(summary);
+    const history=document.createElement('div');history.className='aeq-status-history-v25';
+    const existing=eventsByProposalV25.get(row.simulation_id)||[];
+    history.textContent=existing.length?'Histórico de decisões':'Sem decisões registadas';
+    existing.forEach(e=>{
+      const line=document.createElement('p');
+      line.textContent=new Date(e.created_at).toLocaleString('pt-PT')+
+        ' · '+(EVENT_LABEL_V25[e.event_type]||e.event_type)+
+        ' · '+(EVENT_CHANNEL_V25[e.channel]||e.channel)+
+        (e.note?' · '+e.note:'');
+      history.append(line);
+    });
+    panel.append(history);
+    if(!eventsAvailableV25){
+      const note=document.createElement('p');note.textContent='A gestão de estados necessita da migração Cloud autorizada.';panel.append(note);
+      holder.append(panel);return;
+    }
+    const available=status.value==='draft'?['sent','cancelled']:
+      status.value==='sent'?['accepted','declined','cancelled']:[];
+    if(available.length){
+      const actions=document.createElement('div');actions.className='aeq-status-actions-v25';
+      const select=document.createElement('select');select.setAttribute('aria-label','Nova decisão');
+      available.forEach(v=>{const option=document.createElement('option');option.value=v;option.textContent=EVENT_LABEL_V25[v];select.append(option);});
+      const channel=document.createElement('select');channel.setAttribute('aria-label','Canal de confirmação');
+      Object.entries(EVENT_CHANNEL_V25).forEach(([key,label])=>{
+        const option=document.createElement('option');option.value=key;option.textContent=label;channel.append(option);
+      });
+      const note=document.createElement('textarea');note.rows=2;note.maxLength=500;
+      note.placeholder='Referência da comunicação ou confirmação do cliente';
+      note.setAttribute('aria-label','Justificação ou evidência');
+      const submit=document.createElement('button');submit.type='button';submit.className='btn';submit.textContent='Registar decisão';
+      submit.addEventListener('click',async()=>{
+        const target=select.value,noteValue=note.value.trim();
+        if(eventBusyV25)return;
+        if(target!=='cancelled'&&noteValue.length<5)return state('Indica como foi confirmada a decisão (mínimo 5 caracteres).');
+        const question=target==='accepted'?
+          'Registar a aceitação do cliente? Isto NÃO cria encomenda nem reserva stock.':
+          'Registar '+(EVENT_LABEL_V25[target]||target).toLowerCase()+'? O evento ficará no histórico sem possibilidade de alteração.';
+        if(!confirm(question))return;
+        eventBusyV25=true;submit.disabled=true;
+        try{
+          const user=await session();
+          if(!user?.id)throw Error('Sessão Cloud inválida.');
+          const payload={proposal_id:row.simulation_id,user_id:user.id,event_type:target,channel:channel.value,note:noteValue};
+          const {error}=await cloudClient.from(EVENTS_V25).insert(payload);
+          if(error)throw error;
+          state('Decisão registada na Cloud. Nenhuma encomenda ou movimento de stock foi criado.');
+          await loadHistory(true);
+        }catch(e){state('Não foi possível registar a decisão: '+(e?.message||String(e)));}
+        finally{eventBusyV25=false;submit.disabled=false;}
+      });
+      actions.append(select,channel,note,submit);panel.append(actions);
+    }else{
+      const note=document.createElement('p');
+      note.textContent='Decisão final: para alterar o resultado, cria uma nova proposta comercial.';
+      panel.append(note);
+    }
+    holder.append(panel);
+  }
   function session() {
     if(typeof cloudClient==='undefined'||!cloudClient||typeof ensureCloudSession!=='function')throw new Error('É necessária uma sessão Cloud autenticada.');
     return ensureCloudSession();
@@ -707,6 +799,8 @@
       el.replaceChildren();
       if(!data?.length){el.textContent='Ainda não existem simulações guardadas na Cloud.';return;}
       historyVisible=6;
+      const proposalIds=(data||[]).filter(r=>r.kind==='proposal').map(r=>r.simulation_id);
+      await loadProposalEventsV25(u.id,proposalIds);
       data.forEach(row=>{
         const wrap=document.createElement('div');wrap.className='aeq-history-row';
         const info=document.createElement('span');
@@ -714,7 +808,7 @@
           new Date(row.created_at).toLocaleString('pt-PT')+' · '+euroV2(row.payload?.finalTotal);
         const btn=document.createElement('button');btn.className='btn';btn.type='button';
         btn.textContent='Consultar';btn.onclick=()=>consultSnapshot(row);
-        wrap.append(info,btn);el.append(wrap);
+        wrap.append(info,btn);if(row.kind==='proposal')manageProposalV25(row,wrap);el.append(wrap);
       });
       updateHistoryPaging();
     } catch(e) {state('Histórico Cloud indisponível: '+(e?.message||e));}
