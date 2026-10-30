@@ -126,11 +126,28 @@ function renderPredefinedExtras(){
  const name=$('themeBoxName');if(name)name.placeholder='Ex.: Box Natal — Doces & Aromas';
  ['themeBoxPrice','themeBoxBasePackaging','themeBoxDecorationCost'].forEach(id=>$(id)?.addEventListener('change',previewPredefined));
  const original=window.editThemedBox;
- if(typeof original==='function')window.editThemedBox=function(id){original(id);const b=(db.themedBoxes||[]).find(x=>String(x.id)===String(id));loadExisting(b);showTab('ready')};
+ if(typeof original==='function')window.editThemedBox=function(id){original(id);const b=(db.themedBoxes||[]).find(x=>String(x.id)===String(id));loadExisting(b);loadTechV2(b);showTab('ready')};
  const clear=window.clearThemedBoxForm;
  if(typeof clear==='function')window.clearThemedBoxForm=function(){clear();selected=[];drawPicker('aeBoxProductsV1',selected,true);previewPredefined()};
- loadExisting(null);
+ const tech=document.createElement('div');tech.className='ae-box-composition';
+ tech.innerHTML='<h3>Ficha técnica própria da Box</h3><p class="muted">Produção conjunta não soma novamente a cera e a mão de obra das fichas individuais.</p><div class="ae-custom-grid">'+
+ '<label>Tipo de produção<select id="aeBoxMode"><option value="finished">Montar produtos acabados</option><option value="joint">Produção conjunta / receita própria</option></select></label>'+
+ '<label>Cera total (g)<input id="aeBoxWax" type="number" step=".1" min="0"></label>'+
+ '<label>Fragrância total (g)<input id="aeBoxFragrance" type="number" step=".1" min="0"></label>'+
+ '<label>Custo das matérias-primas adicionais ou receita própria (€)<input id="aeBoxMaterials" type="number" step=".01" min="0"></label>'+
+ '<label>Produção conjunta (min)<input id="aeBoxProduction" type="number" min="0"></label>'+
+ '<label>Montagem (min)<input id="aeBoxAssembly" type="number" min="0"></label>'+
+ '<label>Embalagem (min)<input id="aeBoxPacking" type="number" min="0"></label>'+
+ '<label>Energia adicional (€)<input id="aeBoxEnergy" type="number" min="0" step=".01"></label>'+
+ '<label>Outros custos (€)<input id="aeBoxOther" type="number" min="0" step=".01"></label>'+
+ '<label>Instruções de fabrico<textarea id="aeBoxTechNotes" rows="3"></textarea></label></div><div id="aeBoxTechSummary" class="ae-box-estimate"></div>';
+ editor.append(tech);
+ tech.addEventListener('input',()=>{previewPredefined();showTechSummaryV2()});
+ tech.addEventListener('change',()=>{previewPredefined();showTechSummaryV2()});
+ loadExisting(null);loadTechV2(null);
 }
+function loadTechV2(b){const x=b?.technicalV2||{},keys={aeBoxMode:x.mode||'finished',aeBoxWax:x.waxG||0,aeBoxFragrance:x.fragranceG||0,aeBoxMaterials:x.materialsCost||0,aeBoxProduction:x.productionMinutes||0,aeBoxAssembly:x.assemblyMinutes||0,aeBoxPacking:x.packagingMinutes||0,aeBoxEnergy:x.energyCost||0,aeBoxOther:x.otherCost||0,aeBoxTechNotes:x.notes||''};Object.entries(keys).forEach(([k,v])=>{const el=document.getElementById(k);if(el)el.value=v});showTechSummaryV2()}
+function showTechSummaryV2(){const el=document.getElementById('aeBoxTechSummary');if(!el)return;const x=techCostV2(composition(),techDraftV2());el.innerHTML='<b>Fabrico: '+money(x.total)+'</b><span>Materiais: '+money(x.materials)+' · Trabalho: '+money(x.labor)+' · Energia: '+money(x.energy)+' · Outros: '+money(x.indirect)+'</span><small>'+(x.incomplete?'Preenche o custo das matérias-primas para produção conjunta.':'Estimativa sem embalagem física e decoração, adicionadas no total da Box.')+'</small>'}
 function install(){
  const screen=$('catalogs');if(!screen||$(ID))return;
  const dashboard=screen.querySelector('.catalog-dashboard');
