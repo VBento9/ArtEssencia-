@@ -15232,7 +15232,7 @@ function finalizeCloudCleanV1739(syncStartedMs,showToast=false){
 }
 
 async function cloudPushNow(showToast=true){
- if(productionBlockedV1926())return false;
+ if(productionBlockedV1926()||cloudMeta().conflict)return false;
  const syncStartedMs=Date.now();
  if(hasRestorePendingV12645()){
    cloudLogMsg('Envio automático bloqueado: existe um restauro pendente de reconciliação');
@@ -15273,8 +15273,8 @@ async function cloudPushNow(showToast=true){
    if(showToast)toast('Não foi possível validar a revisão Cloud');
    return false
  }
- await syncPendingOrdersOnly(false);
- const ok=await relationalSyncCore(false);
+ if(!await syncPendingOrdersOnly(false))return false;
+  const ok=await relationalSyncCore(false);
  if(ok){
    const u=cloudUser||await ensureCloudSession();
    if(!u){
@@ -15522,6 +15522,7 @@ async function syncSingleOrderToCloud(order){
  if(!u||!cloudClient)throw new Error('Cloud sem sessão');
  if(!navigator.onLine)throw new Error('Sem internet');
  if(!order)throw new Error('Encomenda inválida');
+ const {stripRelSyncMetadataV1950,writeRelationalRowsCasV1950}=await import('./relational-cas-v1950.mjs');
 
  // Regra V12.3.0:
  // 1 public_id = 1 row_id. Antes de gerar UUID, procurar sempre o public_id na Cloud.
@@ -15536,10 +15537,17 @@ async function syncSingleOrderToCloud(order){
    const clientRow={
      id:clientRid,user_id:u.id,name:client.name||order.client||'',
      phone:client.phone||order.contact||null,email:client.email||order.email||null,
-     notes:client.notes||null,data:relClone(client),updated_at:new Date().toISOString()
+     notes:client.notes||null,data:stripRelSyncMetadataV1950(client),updated_at:new Date().toISOString()
    };
-   const {error:clientError}=await cloudClient.from(REL_TABLES.clients).upsert(clientRow,{onConflict:'id'});
-   if(clientError)throw clientError;
+   if(isQuarantinedProductClient(client))throw new Error('Registo de produto associado indevidamente a cliente.');
+   const {data:remoteClient,error:clientReadError}=await cloudClient.from(REL_TABLES.clients)
+     .select('*').eq('user_id',u.id).eq('id',clientRid).maybeSingle();
+   if(clientReadError)throw clientReadError;
+   await writeRelationalRowsCasV1950({
+     client:cloudClient,table:REL_TABLES.clients,rows:[clientRow],
+     remoteRows:remoteClient?[remoteClient]:[],localRows:[client],userId:u.id,
+     stringify:stableStringify,onAck:()=>localStorage.setItem(KEY,JSON.stringify(db))
+   });
  }
 
  const buildRow=()=>{
@@ -15548,24 +15556,19 @@ async function syncSingleOrderToCloud(order){
      id:order._rid,user_id:u.id,client_id:clientRid,
      status:order.status||'Pedido',order_date:relDate(order.created),due_at:relDue(order.delivery),
      subtotal:Number.isFinite(Number(order.subtotal))?Math.max(0,Number(order.subtotal)):Number(c.total)||0,total:Number(c.total)||0,notes:order.notes||null,
-     data:relClone(order),updated_at:new Date().toISOString()
+     data:stripRelSyncMetadataV1950(order),updated_at:new Date().toISOString()
    }
  };
 
- let row=buildRow();
- let {error}=await cloudClient.from(REL_TABLES.orders).upsert(row,{onConflict:'id'});
-
- // Proteção adicional: se a constraint de public_id bloquear um UUID antigo/local,
- // ligar a encomenda à row já existente e atualizar ESSA row em vez de criar outra.
- if(error&&String(error.code||'')==='23505'&&order.id){
-   const existing=await bindOrderRidFromCloud(order,u);
-   if(existing?.id){
-     row=buildRow();
-     const retry=await cloudClient.from(REL_TABLES.orders).upsert(row,{onConflict:'id'});
-     error=retry.error
-   }
- }
- if(error)throw error;
+ const row=buildRow();
+ const {data:remoteOrder,error:orderReadError}=await cloudClient.from(REL_TABLES.orders)
+   .select('*').eq('user_id',u.id).eq('id',order._rid).maybeSingle();
+ if(orderReadError)throw orderReadError;
+ await writeRelationalRowsCasV1950({
+   client:cloudClient,table:REL_TABLES.orders,rows:[row],
+   remoteRows:remoteOrder?[remoteOrder]:[],localRows:[order],userId:u.id,
+   stringify:stableStringify,onAck:()=>localStorage.setItem(KEY,JSON.stringify(db))
+ });
 
  relShadowRememberOrder(order);
  relClearOrderPending(order);
@@ -15587,7 +15590,9 @@ async function syncOrderBusinessStateV1757(order,reason='atualização'){
   return true;
  }catch(e){
   localStorage.setItem(REL_DIRTY,'1');
-  setCloudMeta({dirty:true,verified:false,conflict:false});
+  const conflict=String(e?.message||'').includes('CONFLITO_RELACIONAL_V1950');
+   setCloudMeta({dirty:true,verified:false,conflict:conflict||cloudMeta().conflict});
+   if(conflict)cloudConflict={type:'relational',order:order?.id||''};
   cloudLogMsg('Sincronização do ciclo da encomenda pendente · '+(order?.id||'')+' · '+cloudErrText(e));
   renderCloudUI();
   scheduleRelationalSync();
@@ -15646,8 +15651,11 @@ async function syncPendingOrdersOnly(showToast=false){
      ok++;
    }catch(e){
      localStorage.setItem(REL_DIRTY,'1');
-     setCloudMeta({dirty:true,verified:false,conflict:false});
+     const conflict=String(e?.message||'').includes('CONFLITO_RELACIONAL_V1950');
+     setCloudMeta({dirty:true,verified:false,conflict:conflict||cloudMeta().conflict});
+     if(conflict)cloudConflict={type:'relational',order:order.id||''};
      cloudLogMsg('Falha ao sincronizar '+(order.id||'encomenda')+': '+cloudErrText(e));
+     if(conflict)break;
    }
  }
  if(showToast)toast(ok===rows.length?'Encomendas sincronizadas':`${ok}/${rows.length} encomenda(s) sincronizada(s)`);
@@ -15907,7 +15915,9 @@ async function relationalSyncCore(showToast=false){
    return true
  }catch(e){
    localStorage.setItem(REL_DIRTY,'1');
-   setCloudMeta({dirty:true,conflict:false,verified:false});
+   const conflict=String(e?.message||'').includes('CONFLITO_RELACIONAL_V1950');
+   setCloudMeta({dirty:true,conflict:conflict||cloudMeta().conflict,verified:false});
+   if(conflict)cloudConflict={type:'relational',reason:'write'};
    cloudLogMsg('Falha V10 ao guardar: '+cloudErrText(e));
    if(showToast)toast('Falha V10 — dados mantidos no dispositivo');
    return false
@@ -15924,14 +15934,16 @@ async function relationalHydrateCore(initial=false){
  const u=cloudUser||await ensureCloudSession();
  if(!u)return false;
  const ownBusy=!cloudBusy;
+ let hydrationBackupV1950=null;
  if(ownBusy){cloudBusy=true;renderCloudUI()}
  try{
-   const {tagHydratedRowV1950}=await import('./relational-cas-v1950.mjs');
+   const {tagHydratedRowV1950,stripRelSyncMetadataV1950}=await import('./relational-cas-v1950.mjs');
    const [clients,products,orders,quotes]=await Promise.all([
      relFetchAll(REL_TABLES.clients),relFetchAll(REL_TABLES.products),relFetchAll(REL_TABLES.orders),relFetchAll(REL_TABLES.quotes)
    ]);
 
    if(productionBlockedV1926())return false;
+   hydrationBackupV1950=relClone(db);
    cloudApplying=true;
    try{
      const localClients=(db.clients||[]).slice();
@@ -16075,7 +16087,10 @@ async function relationalHydrateCore(initial=false){
    }
    return true
  }catch(e){
-   setCloudMeta({verified:false,conflict:false});
+   if(hydrationBackupV1950)db=hydrationBackupV1950;
+   const conflict=String(e?.message||'').includes('CONFLITO_RECECAO_V1950');
+   setCloudMeta({dirty:conflict||cloudMeta().dirty,verified:false,conflict:conflict||cloudMeta().conflict});
+   if(conflict)cloudConflict={type:'relational',reason:'hydrate'};
    cloudLogMsg('Falha ao restaurar Cloud: '+cloudErrText(e));
    return false
  }finally{
