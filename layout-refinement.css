@@ -15,3 +15,46 @@
  #products .pricing-public-mode-v1864{padding:12px}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}.main *,.sidebar *{animation:none!important;transition:none!important}}
+
+/* Catálogo Digital > Categorias técnicas: cartões em colunas, campos verticais. */
+#technicalCategoriesCardV1863 > .form-grid{
+ display:grid;
+ grid-template-columns:minmax(0,1.5fr) minmax(200px,1fr) auto;
+ gap:12px;
+ align-items:end;
+}
+#technicalCategoriesCardV1863 > .form-grid > .field.span2{grid-column:auto}
+#technicalCategoriesCardV1863 > .form-grid > .field:last-child > label{display:none}
+#technicalCategoriesCardV1863 > .form-grid > .field:last-child > .btn{width:100%}
+#technicalCategoriesListV1863{
+ display:grid;
+ grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));
+ gap:12px;
+ align-items:stretch;
+}
+#technicalCategoriesListV1863 > .card{
+ margin:0!important;
+ padding:14px!important;
+ display:flex;
+ flex-direction:column;
+ min-width:0;
+ border-radius:14px;
+}
+#technicalCategoriesListV1863 > .card > .form-grid{
+ display:grid;
+ grid-template-columns:minmax(0,1fr)!important;
+ gap:10px;
+}
+#technicalCategoriesListV1863 > .card > .form-grid > .field.span2{grid-column:1/-1}
+#technicalCategoriesListV1863 > .card .field{min-width:0}
+#technicalCategoriesListV1863 > .card .field > label{margin-bottom:5px}
+#technicalCategoriesListV1863 > .card .btnrow{
+ display:flex;
+ margin-top:auto;
+ padding-top:12px;
+}
+#technicalCategoriesListV1863 > .card .btnrow > button{width:100%;margin:0}
+@media(max-width:650px){
+ #technicalCategoriesCardV1863 > .form-grid{grid-template-columns:minmax(0,1fr)}
+ #technicalCategoriesListV1863{grid-template-columns:minmax(0,1fr)}
+}
