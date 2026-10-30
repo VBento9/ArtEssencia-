@@ -310,6 +310,31 @@ function install(){
  button.disabled=true;
  try{
   const {c}=await publicClient();
+  if(action==='convert'){
+   if(record.status!=='accepted'||boxOrderLinksV1.has(id)||!boxConversionAvailableV1)throw Error('Proposta já convertida ou indisponível. Atualiza a lista.');
+   if(navigator.onLine===false||cloudBusy||cloudPushRunning||cloudHydrating||!cloudStartupDone||cloudPushPending||
+      cloudMeta().dirty||cloudMeta().conflict||localStorage.getItem(REL_DIRTY)==='1'||relOrderPendingSet().size>0)
+     throw Error('Existem alterações por sincronizar. Conclui a Cloud Sync antes de converter.');
+   if(typeof productionBlockedV1926==='function'&&productionBlockedV1926())throw Error('Existe uma produção por confirmar.');
+   const readiness=boxConversionReadinessV5(record);
+   if(readiness.compatible.length!==1||readiness.warnings.length)throw Error('A ficha técnica e a proposta não estão compatíveis.');
+   const box=readiness.compatible[0],delivery=row.querySelector('[data-box-convert-delivery]')?.value;
+   if(!/^\d{4}-\d{2}-\d{2}$/.test(delivery||''))throw Error('Escolhe a data de entrega.');
+   const minDate=new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Lisbon'});
+   if(delivery<minDate)throw Error('A data de entrega não pode estar no passado.');
+   if(!confirm('Criar encomenda real para '+record.customer_name+' no valor de '+money(record.quoted_total)+'? Entrega: '+delivery+'. Sem pagamento ou desconto de stock.'))return;
+   const {data,error}=await c.rpc('artessencia_owner_convert_box_v1',{
+     p_request_id:id,p_box_id:String(box.id),
+     p_expected_box_version:Number(box.technicalRevisionV4.version),p_delivery_date:delivery
+   });
+   if(error)throw error;
+   if(!data?.ok||!data?.order_id||!data?.public_order_id)throw Error('A Cloud não confirmou a encomenda. Consulta a listagem antes de repetir.');
+   boxOrderLinksV1.set(id,{request_id:id,order_id:data.order_id,public_order_id:data.public_order_id});
+   try{await loadBoxRequestsV2();await relationalHydrateCore(true);renderAll();}
+   catch(refreshError){console.warn('Encomenda confirmada, mas atualização local pendente',refreshError);}
+   toast((data.already_converted?'Encomenda já existente: ':'Encomenda criada na Cloud: ')+data.public_order_id);
+   return;
+  }
   if(action==='quote'){
    const total=Number(row.querySelector('[data-box-total]')?.value);
    const note=row.querySelector('[data-box-note]')?.value.trim()||'';
@@ -432,23 +457,31 @@ function boxConversionReadinessV5(request){
  if(!boxes.length)warnings.push('Não existe ficha técnica associada ao pedido.');
  if(boxes.length&&!compatible.length)warnings.push('Revê a composição, versão técnica e preço da ficha.');
  if(compatible.length>1)warnings.push('Mais de uma ficha corresponde ao pedido; elimina a ambiguidade.');
- warnings.push('Conversão em encomenda desativada até existir uma operação Cloud atómica e idempotente.');
+ if(request.status!=='accepted')warnings.push('A proposta ainda não foi aceite.');
+ if(!Number.isFinite(value)||value<=0)warnings.push('Preço de orçamento inválido.');
  return {compatible,warnings};
 }
 
 let requestsCache=[];
+let boxOrderLinksV1=new Map();
+let boxConversionAvailableV1=false;
 async function loadBoxRequestsV2(){
  const root=$('aeBoxRequestList');if(!root)return;
  try{
   const {c}=await publicClient();
-  const [reqs,hist]=await Promise.all([
+  const [reqs,hist,links]=await Promise.all([
     c.from('artessencia_box_requests_v1').select('*')
      .in('status',['new','reviewing','quoted','sent','accepted','declined','revision_requested'])
      .order('created_at',{ascending:false}).limit(100),
     c.from('artessencia_box_quote_history_v1')
      .select('request_id,quote_version,event_type,created_at')
+     .order('created_at',{ascending:false}).limit(250),
+    c.from('artessencia_box_order_links_v1')
+     .select('request_id,public_order_id,order_id,box_id,technical_version')
      .order('created_at',{ascending:false}).limit(250)
   ]);
+  boxConversionAvailableV1=!links.error;
+  boxOrderLinksV1=new Map((links.error?[]:links.data||[]).map(x=>[x.request_id,x]));
   if(reqs.error)throw reqs.error;
   requestsCache=Array.isArray(reqs.data)?reqs.data:[];
   const history=hist.error?[]:(hist.data||[]);
@@ -460,10 +493,16 @@ async function loadBoxRequestsV2(){
     .map(([k,v])=>'<small>'+safe(k)+': '+safe(typeof v==='object'?JSON.stringify(v):v)+'</small>').join('');
    const canQuote=['new','reviewing','quoted','sent','revision_requested'].includes(r.status);
     const readiness=boxConversionReadinessV5(r);
+    const linkedOrder=boxOrderLinksV1.get(r.request_id);
+    const canConvert=r.status==='accepted'&&!linkedOrder&&boxConversionAvailableV1&&readiness.compatible.length===1&&readiness.warnings.length===0;
+    const dateMin=new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Lisbon'});
     const conversionNote=r.status==='accepted'
       ?'<div class="ae-box-estimate"><b>Preparação da encomenda</b><small>Fichas técnicas compatíveis: '+readiness.compatible.length+'</small>'+
-      readiness.warnings.map(w=>'<small>• '+safe(w)+'</small>').join('')+
-      '<small>Sem movimentação de stock, registo de pagamento ou criação de encomenda.</small></div>':'';
+      (linkedOrder?'<small>Encomenda '+safe(linkedOrder.public_order_id)+' já associada. Sem desconto de stock na conversão.</small>':
+       (!boxConversionAvailableV1?'<small>Operação Cloud ainda não ativada.</small>':'')+
+       readiness.warnings.map(w=>'<small>• '+safe(w)+'</small>').join('')+
+       (canConvert?'<label>Data prevista de entrega<input data-box-convert-delivery type="date" min="'+dateMin+'" required></label><button type="button" class="btn primary" data-box-request-action="convert" data-id="'+safe(r.request_id)+'">Converter em encomenda</button>':'')+
+       '<small>A conversão exige confirmação manual; não recebe pagamento nem reserva stock.</small>')+'</div>':'';
    const canSend=['quoted','sent'].includes(r.status)&&r.response_token&&r.quote_valid_until&&new Date(r.quote_valid_until)>new Date();
    const previous=history.filter(h=>h.request_id===r.request_id).slice(0,8)
     .map(h=>'v'+safe(h.quote_version)+' · '+safe(h.event_type)+' · '+safe(new Date(h.created_at).toLocaleDateString('pt-PT'))).join(' | ');
