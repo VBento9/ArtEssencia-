@@ -20,6 +20,7 @@
     return typeof batchPriceRoundV1743==='function'?batchPriceRoundV1743(raw):Math.ceil((raw-1e-9)*100)/100;
   }
   function compute(units) {
+    if($('qtyPricingModeV1750')?.value==='box')return computeBoxV23(units);
     const b=baseline(),q=Math.max(1,Math.min(10000,Math.round(Number(units)||b.units||1)));
     const ratio=q/Math.max(1,b.units||1);
     const setupMinutes=numberV2('aeQSetupMin',100000);
@@ -91,6 +92,7 @@
     organiseCompactUI();
     installProductFinderV22();
     installQuickQuantitiesV22();
+    installBoxV23();
   }
 
   // V2.1 — disposição compacta: os elementos existentes são movidos, não recriados.
@@ -313,6 +315,7 @@
     if(!Number.isFinite(s.costTotal)||s.costTotal<=0)problems.push('O custo total precisa de ser positivo.');
     const noCost=(s.materials||[]).filter(m=>Number(m.totalQty)>0&&!(Number(m.unitCost)>0));
     if(noCost.length)problems.push('Matérias-primas sem custo: '+noCost.slice(0,3).map(m=>String(m.item||'sem identificação')).join(', ')+(noCost.length>3?'…':'')+'.');
+    if(s.mode==='box'&&!s.boxSourceValid)problems.push(s.boxError||'Box com ficha técnica inválida.');
     if(!Number.isFinite(s.finalUnit)||s.finalUnit<=0)problems.push('Define um preço final por unidade válido.');
     return problems;
   }
@@ -323,12 +326,144 @@
       button.setAttribute('aria-pressed',String(selected));
     });
   }
+
+  // Fonte Box: usa os custos de uma revisão imutável, sem somar novamente
+  // os materiais, embalagem ou mão de obra dos produtos integrantes.
+  function boxSourceV23(){
+    const id=String($('aeQBoxSelectV23')?.value||'');
+    const b=(db?.themedBoxes||[]).find(x=>String(x.id)===id);
+    const r=b?.technicalRevisionV4,s=r?.snapshot,d=s?.breakdown;
+    const fail=reason=>({valid:false,box:b,reason});
+    if(!b)return fail('Escolhe uma Box guardada.');
+    if(!b.items?.length||!s||!d)return fail('Guarda primeiro a composição e ficha técnica da Box.');
+    if(r.fingerprint!==JSON.stringify({items:b.items,technicalV2:b.technicalV2,basePackaging:b.basePackaging,decorationCost:b.decorationCost,price:b.price}))
+      return fail('Ficha alterada depois da última revisão. Guarda a Box.');
+    const a=[d.materials,d.labor,d.energy,d.indirect,s.packaging,s.total].map(Number);
+    if(d.incomplete||a.some(n=>!Number.isFinite(n)||n<0)||a[5]<=0)return fail('A ficha tem custos incompletos ou inválidos.');
+    if(Math.abs(a.slice(0,5).reduce((v,n)=>v+n,0)-a[5])>.03)return fail('Os custos e o total da ficha não coincidem.');
+    return {valid:true,box:b,revision:Number(r.version)||1,components:{materials:a[0],labor:a[1],energy:a[2],indirect:a[3],packaging:a[4],total:a[5]}};
+  }
+  function computeBoxV23(units){
+    const x=boxSourceV23(),q=Math.max(1,Math.min(10000,Math.round(Number(units)||Number($('qtyPricingUnitsV1750')?.value)||1)));
+    const c=x.valid?x.components:{materials:0,labor:0,energy:0,indirect:0,packaging:0,total:0};
+    const setup=numberV2('aeQSetupMin',100000),extraPack=numberV2('aeQPackaging'),wastePct=numberV2('aeQWaste',100);
+    const materialsCost=c.materials*q,wasteCost=materialsCost*wastePct/100;
+    const laborCost=c.labor*q+pricingLaborHourlyRateV1745()*setup/60;
+    const fixedCost=(c.energy+c.indirect)*q+pricingFixedHourlyRateV1745()*setup/60;
+    const packagingCost=(c.packaging+extraPack)*q,otherCost=numberV2('qtyPricingOtherLotV1750');
+    const costTotal=materialsCost+wasteCost+laborCost+fixedCost+packagingCost+otherCost,costUnit=costTotal/q;
+    const marginMode=$('aeQMarginMode')?.value==='markup'?'markup':'margin';
+    const marginPct=Math.min(marginMode==='margin'?95:1000,numberV2('qtyPricingMarginV1750',1000));
+    const recommendedUnit=x.valid?priceFor(costUnit,marginPct,marginMode):0;
+    const discountPct=numberV2('qtyPricingDiscountV1750',100),raw=String($('qtyPricingManualUnitV1750')?.value||'').trim();
+    const finalUnit=raw?numberV2('qtyPricingManualUnitV1750'):Math.round((recommendedUnit*(1-discountPct/100)+Number.EPSILON)*100)/100;
+    const finalTotal=finalUnit*q,profit=finalTotal-costTotal;
+    return {version:APP_VERSION,createdAt:new Date().toISOString(),pricingEngine:'quantity_box_revision_v23',
+      mode:'box',productCode:'',productName:'',
+      boxId:x.valid?String(x.box.id):'',boxName:x.valid?String(x.box.name):'',
+      boxRevision:x.valid?x.revision:null,boxSourceValid:x.valid,boxError:x.valid?'':x.reason,
+      boxCostComponents:x.valid?c:null,
+      boxItems:x.valid?x.box.items.map(i=>({code:String(i.code),qty:Number(i.qty)||0})):[],
+      units:q,materials:[],materialsCost,minutesPerUnit:0,efficiencyPct:0,totalMinutes:setup,
+      laborCost,fixedCost,otherCost,setupMinutes:setup,packagingPerUnit:extraPack,
+      packagingCost,wastePct,wasteCost,costTotal,costUnit,marginMode,marginPct,recommendedUnit,
+      recommendedTotal:recommendedUnit*q,discountPct,finalUnit,finalTotal,profit,
+      marginReal:finalTotal>0?profit/finalTotal:0,markupReal:costTotal>0?profit/costTotal:0,
+      manualPrice:!!raw,otherCostMode:'fixed'};
+  }
+  function fillBoxesV23(){
+    const sel=$('aeQBoxSelectV23');if(!sel)return;
+    const previous=sel.value;sel.replaceChildren();
+    const first=document.createElement('option');first.value='';first.textContent='Selecionar Box guardada…';sel.append(first);
+    const boxes=(db?.themedBoxes||[]).filter(x=>x?.id&&x?.name).slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),'pt-PT'));
+    boxes.forEach(box=>{const o=document.createElement('option');o.value=box.id;
+      o.textContent=String(box.name)+' · rev. '+String(box.technicalRevisionV4?.version||'—');sel.append(o);});
+    sel.value=boxes.some(x=>String(x.id)===previous)?previous:'';
+  }
+  function boxUIV23(s){
+    const isBox=$('qtyPricingModeV1750')?.value==='box';
+    if($('aeQBoxFieldV23'))$('aeQBoxFieldV23').hidden=!isBox;
+    if($('aeQBoxNoteV23'))$('aeQBoxNoteV23').hidden=!isBox;
+    const materials=$('quantityPricing')?.querySelector('[data-aeq-panel="materials"] .quantity-pricing-card-v1750');
+    if(materials)materials.style.display=isBox?'none':'';
+    const boxMaterials=$('aeQBoxMaterialsV23');if(boxMaterials)boxMaterials.hidden=!isBox;
+    ['qtyPricingMinutesUnitV1750','qtyPricingEfficiencyV1750','qtyPricingTotalMinutesV1750']
+      .forEach(id=>{const field=$(id)?.closest('.field');if(field)field.style.display=isBox?'none':'';});
+    const other=$('qtyPricingOtherLotV1750')?.closest('.field')?.querySelector('label');
+    if(other)other.textContent=isBox?'Outros custos EXTRA do lote':'Outros custos do lote';
+    if(!isBox||!s)return;
+    const source=boxSourceV23();
+    if(boxMaterials){boxMaterials.replaceChildren();
+      const label=document.createElement('strong');label.textContent=source.valid?
+        String(source.box.name)+' · revisão '+source.revision:source.reason;boxMaterials.append(label);
+      if(source.valid){const desc=document.createElement('p');
+       desc.textContent='Custos guardados por Box; não são somados novamente a partir do Stock. Atualiza a ficha da Box quando os custos mudarem.';
+       boxMaterials.append(desc);
+       const lines=document.createElement('dl');lines.className='aeq-box-costs';
+       [['Produtos e matérias-primas',source.components.materials],['Trabalho',source.components.labor],
+        ['Energia',source.components.energy],['Outros custos',source.components.indirect],
+        ['Embalagem',source.components.packaging],['Total por Box',source.components.total]].forEach(([name,value])=>{
+         const row=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd');
+         dt.textContent=name;dd.textContent=euroV2(value);row.append(dt,dd);lines.append(row);});
+       boxMaterials.append(lines);}
+    }
+    const ref=$('qtyPricingProductReferenceV1750');
+    if(ref){ref.replaceChildren();const strong=document.createElement('strong');
+      strong.textContent=source.valid?source.box.name+' · rev. '+source.revision:source.reason;ref.append(strong);}
+    const info=$('aeQExplanation');
+    if(info)info.textContent='Base: '+s.units+' × '+euroV2(source.valid?source.components.total:0)+
+      ' por Box + preparação fixa '+euroV2((pricingLaborHourlyRateV1745()+pricingFixedHourlyRateV1745())*s.setupMinutes/60)+
+      ' + embalagem EXTRA '+euroV2(s.packagingPerUnit*s.units)+' + desperdício EXTRA '+euroV2(s.wasteCost)+
+      ' + outros custos de lote '+euroV2(s.otherCost)+' = '+euroV2(s.costTotal)+'.';
+    if(!source.valid){const warning=$('aeQDataIssues');if(warning){warning.hidden=false;warning.textContent=source.reason;}}
+  }
+  function installBoxV23(){
+    const root=$('quantityPricing'),mode=$('qtyPricingModeV1750');
+    if(!root||!mode||$('aeQBoxFieldV23'))return;
+    const opt=document.createElement('option');opt.value='box';opt.textContent='Box predefinida';mode.append(opt);
+    const field=document.createElement('div');field.className='field';field.id='aeQBoxFieldV23';
+    field.innerHTML='<label for="aeQBoxSelectV23">Box guardada</label><select id="aeQBoxSelectV23"></select>';
+    field.hidden=true;root.querySelector('.quantity-pricing-base-grid-v1750')?.append(field);
+    const note=document.createElement('p');note.id='aeQBoxNoteV23';note.className='aeq-box-note';note.hidden=true;
+    note.textContent='A ficha da Box já inclui produção, cera e embalagem. Insere apenas custos adicionais específicos deste lote.';
+    root.querySelector('.quantity-pricing-base-grid-v1750')?.after(note);
+    const data=document.createElement('div');data.id='aeQBoxMaterialsV23';data.className='aeq-panel';data.hidden=true;
+    root.querySelector('[data-aeq-panel="materials"]')?.append(data);
+    fillBoxesV23();
+    $('aeQBoxSelectV23')?.addEventListener('change',()=>{
+      const b=boxSourceV23().box,margin=$('qtyPricingMarginV1750');
+      if(b&&margin)margin.value=String(Number.isFinite(Number(b.targetMarginPct))?b.targetMarginPct:35);
+      window.refreshQuantityPricingV1750();
+    });
+  }
+  const priorModeV23=window.quantityPricingModeChangedV1750;
+  if(typeof priorModeV23==='function')window.quantityPricingModeChangedV1750=function(){
+    const box=$('qtyPricingModeV1750')?.value==='box';priorModeV23();
+    if(box){
+      const margin=$('qtyPricingMarginV1750'),source=boxSourceV23().box;
+      if(margin)margin.value=String(Number.isFinite(Number(source?.targetMarginPct))?source.targetMarginPct:35);
+      for(const id of ['qtyPricingMinutesUnitV1750','qtyPricingEfficiencyV1750',
+        'qtyPricingTotalMinutesV1750','qtyPricingDiscountV1750','qtyPricingManualUnitV1750','qtyPricingOtherLotV1750']){
+        const el=$(id);if(el)el.value=['qtyPricingMinutesUnitV1750','qtyPricingEfficiencyV1750','qtyPricingOtherLotV1750'].includes(id)?'0':'';
+      }
+      if($('qtyPricingOtherLotV1750'))$('qtyPricingOtherLotV1750').dataset.manual='1';
+    }
+    window.refreshQuantityPricingV1750();
+  };
+  window.aeBoxQuantityOpenV23=function(id){
+    if(!(db?.themedBoxes||[]).some(b=>String(b.id)===String(id)))return;
+    if(typeof go==='function')go('quantityPricing');
+    installBoxV23();fillBoxesV23();
+    const mode=$('qtyPricingModeV1750'),box=$('aeQBoxSelectV23');
+    if(mode)mode.value='box';if(box)box.value=String(id);
+    window.quantityPricingModeChangedV1750();
+  };
   window.quantityPricingMarginMethodV2=function(){const input=$('qtyPricingMarginV1750');if(input)input.max=$('aeQMarginMode')?.value==='markup'?'1000':'95';window.refreshQuantityPricingV1750();};
   function state(message) {const el=$('aeQCloudState');if(el)el.textContent=message;}
   function signature(s) {
     return JSON.stringify([s.mode,s.productCode,s.units,s.materials,s.minutesPerUnit,
       s.efficiencyPct,s.totalMinutes,s.otherCost,s.setupMinutes,s.packagingCost,s.wasteCost,
-      s.marginMode,s.marginPct,s.discountPct,s.finalUnit,s.finalTotal]);
+      s.marginMode,s.marginPct,s.discountPct,s.finalUnit,s.finalTotal,s.boxId,s.boxRevision,s.boxCostComponents,s.boxItems]);
   }
   function renderEnhanced() {
     if(!$('quantityPricing'))return;addUI();
@@ -379,10 +514,11 @@
       const n=compute(q),highlight=q===s.units?' class="aeq-current"':'';
       return '<tr'+highlight+'><td><button type="button" class="aeq-tier-choose" data-aeq-choose-qty="'+q+'" aria-label="Simular '+q+' unidades">'+q+' un.</button></td><td>'+euroV2(n.costTotal)+'</td><td>'+euroV2(n.costUnit)+'</td><td>'+euroV2(n.recommendedUnit)+'</td><td>'+euroV2(n.profit)+'</td><td>'+pctV2(n.marginReal*100)+'</td></tr>';
     }).join('');
+    boxUIV23(s);
   }
   window.refreshQuantityPricingV1750=function(){originalRefresh();renderEnhanced();};
   window.quantityPricingSnapshotV1751=function(){return compute();};
-  window.renderQuantityPricingV1750=function(){addUI();originalRender();renderEnhanced();};
+  window.renderQuantityPricingV1750=function(){addUI();fillBoxesV23();originalRender();renderEnhanced();};
   function session() {
     if(typeof cloudClient==='undefined'||!cloudClient||typeof ensureCloudSession!=='function')throw new Error('É necessária uma sessão Cloud autenticada.');
     return ensureCloudSession();
@@ -459,6 +595,7 @@
     if(!s||!Array.isArray(s.materials)){el.textContent='O registo guardado está incompleto.';return;}
     // Ler o cenário original; nunca aplicar silenciosamente os custos atuais do Stock.
     const rows=[
+      ...(s.mode==='box'?[['Box',String(s.boxName||'—')],['Revisão',String(s.boxRevision||'—')],['Custo da revisão por Box',euroV2(s.boxCostComponents?.total||0)]]:[]),
       ['Unidades',String(s.units||'—')],
       ['Custo total guardado',euroV2(s.costTotal)],
       ['Custo unitário guardado',euroV2(s.costUnit)],

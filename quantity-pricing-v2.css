@@ -134,3 +134,15 @@
  #quantityPricing .aeq-quick-quantities{gap:3px}
  #quantityPricing .aeq-quick-quantity{min-height:28px;padding:3px 4px}
 }
+
+/* 1.9.59 — precificação por revisão da ficha técnica da Box */
+#quantityPricing #aeQBoxFieldV23[hidden],#quantityPricing #aeQBoxNoteV23[hidden],
+#quantityPricing #aeQBoxMaterialsV23[hidden]{display:none!important}
+#quantityPricing .aeq-box-note{font-size:11px;line-height:1.45;margin:8px 0;
+ padding:9px;border:1px solid #e2d3c2;border-radius:9px;background:#fff9ef}
+#quantityPricing #aeQBoxMaterialsV23>strong{display:block;font-size:13px}
+#quantityPricing .aeq-box-costs>div{display:grid;grid-template-columns:minmax(0,1fr) auto;
+ padding:6px 0;gap:8px;border-bottom:1px solid #ebdfd2}
+#quantityPricing .aeq-box-costs dt{font-size:11px}
+#quantityPricing .aeq-box-costs dd{font-size:12px;font-weight:700;margin:0}
+@media(max-width:450px){#quantityPricing .aeq-box-costs>div{grid-template-columns:1fr}}
