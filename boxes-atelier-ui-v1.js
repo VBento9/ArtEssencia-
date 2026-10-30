@@ -219,7 +219,8 @@ function renderPublicationButtonsV1(){
   ui.innerHTML='<small>Publicação independente: '+(inCatalog?'Catálogo ativo':'Catálogo não publicado')+' · '+(inShop?'Loja ativa':'Loja não publicada')+'</small>'+
    '<div><button type="button" class="btn" data-ae-publish="catalog" data-ae-boxid="'+safe(box.id)+'">'+(inCatalog?'Retirar do Catálogo':'Publicar no Catálogo')+'</button>'+
    '<button type="button" class="btn" data-ae-publish="shop" data-ae-boxid="'+safe(box.id)+'">'+(inShop?'Retirar da Loja':'Publicar na Loja')+'</button>'+
-   (inCatalog?'<button type="button" class="btn" data-ae-publish="link" data-ae-boxid="'+safe(box.id)+'">Copiar ligação</button>':'')+'</div>';
+   (inCatalog?'<button type="button" class="btn" data-ae-publish="link" data-ae-boxid="'+safe(box.id)+'">Copiar ligação</button>':'')+
+   ((inCatalog||inShop)?'<button type="button" class="btn" data-ae-publish="refresh" data-ae-boxid="'+safe(box.id)+'">Atualizar ficha pública</button>':'')+'</div>';
  });
 }
 async function uploadBoxImageV1(c,u,box){
@@ -246,14 +247,16 @@ async function aePublishBoxV1(id,channel){
  const {c,u}=await publicClient();
  const {data:prev,error:lookupError}=await c.from('artessencia_boxes_public_v1').select('*').eq('id',id).maybeSingle();
  if(lookupError)throw lookupError;
+ const refresh=channel==='refresh';
  const field=channel==='catalog'?'visible_catalog':'visible_shop';
- const next=!(prev?.active!==false&&prev?.[field]===true);
+ const next=refresh||!(prev?.active!==false&&prev?.[field]===true);
+ if(refresh&&!(prev?.visible_catalog||prev?.visible_shop))throw new Error('Esta Box ainda não tem uma publicação a atualizar');
  if(next){
   if(box.active===false)throw new Error('A Box está oculta no Backoffice');
   if(!Array.isArray(box.items)||!box.items.length)throw new Error('Guarda primeiro a composição da Box com os produtos incluídos');
   if(!text(box.name)||!text(box.image))throw new Error('A Box precisa de nome e imagem');
   if(Number(box.price)<=0)throw new Error('Define um PVP válido antes de publicar');
-  if(!confirm('Publicar "'+box.name+'" em '+(field==='visible_catalog'?'Catálogo Digital':'Loja')+'? O público poderá consultar e pedir informações, mas não efetuar encomendas por este configurador.'))return;
+  if(!confirm(refresh?'Atualizar os detalhes públicos da Box "'+box.name+'" nos canais já publicados?':'Publicar "'+box.name+'" em '+(field==='visible_catalog'?'Catálogo Digital':'Loja')+'? O público poderá consultar e pedir informações, mas não efetuar encomendas por este configurador.'))return;
  }else{
   if(!confirm('Retirar "'+box.name+'" de '+(field==='visible_catalog'?'Catálogo Digital':'Loja')+'?'))return;
  }
@@ -271,11 +274,11 @@ async function aePublishBoxV1(id,channel){
   visible_shop:prev?.visible_shop===true,
   updated_at:new Date().toISOString()
  };
- base[field]=next;
+ if(!refresh)base[field]=next;
  const {error}=await c.from('artessencia_boxes_public_v1').upsert(base,{onConflict:'id'});
  if(error)throw error;
  await reloadPublicBoxesV1();
- toast(next?'Box publicada com sucesso':'Box retirada do canal selecionado');
+ toast(refresh?'Ficha pública atualizada':(next?'Box publicada com sucesso':'Box retirada do canal selecionado'));
 }
 window.aeBoxesRenderPublicV1=renderPublicationButtonsV1;
 
