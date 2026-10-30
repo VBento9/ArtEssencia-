@@ -35,6 +35,8 @@ function techCostV2(items,settings){
  return {materials,labor,energy,indirect,total:materials+labor+energy+indirect,incomplete:joint&&!(Number(tech.materialsCost)>0)};
 }
 window.aeBoxTechDraftV2=techDraftV2;
+let originRequestIdV4='';
+window.aeBoxOriginRequestV4=()=>originRequestIdV4;
 function previewPredefined(){
  const id=text($('themeBoxId')?.value);
  const existing=(db.themedBoxes||[]).find(x=>x.id===id);
@@ -143,9 +145,9 @@ function renderPredefinedExtras(){
  const name=$('themeBoxName');if(name)name.placeholder='Ex.: Box Natal — Doces & Aromas';
  ['themeBoxPrice','themeBoxBasePackaging','themeBoxDecorationCost'].forEach(id=>$(id)?.addEventListener('change',previewPredefined));
  const original=window.editThemedBox;
- if(typeof original==='function')window.editThemedBox=function(id){original(id);const b=(db.themedBoxes||[]).find(x=>String(x.id)===String(id));loadExisting(b);loadTechV2(b);showTab('ready')};
+ if(typeof original==='function')window.editThemedBox=function(id){original(id);const b=(db.themedBoxes||[]).find(x=>String(x.id)===String(id));loadExisting(b);loadTechV2(b);originRequestIdV4=text(b?.originRequestId||'');showTab('ready')};
  const clear=window.clearThemedBoxForm;
- if(typeof clear==='function')window.clearThemedBoxForm=function(){clear();selected=[];drawPicker('aeBoxProductsV1',selected,true);loadTechV2(null);previewPredefined()};
+ if(typeof clear==='function')window.clearThemedBoxForm=function(){clear();selected=[];originRequestIdV4='';drawPicker('aeBoxProductsV1',selected,true);loadTechV2(null);previewPredefined()};
  const tech=document.createElement('div');tech.className='ae-box-composition';
  tech.innerHTML='<h3>Ficha técnica própria da Box</h3><p class="muted">Produção conjunta não soma novamente a cera e a mão de obra das fichas individuais.</p><div class="ae-custom-grid">'+
  '<label>Tipo de produção<select id="aeBoxMode"><option value="finished">Montar produtos acabados</option><option value="joint">Produção conjunta / receita própria</option></select></label>'+
@@ -256,6 +258,31 @@ function install(){
  const record=requestsCache.find(x=>x.request_id===id);
  if(!record)return;
  const row=button.closest('[data-request-row]');
+ if(action==='prepare'){
+  const items=Array.isArray(record.items)?record.items:[];
+  const available=items.map(x=>({code:String(x.code||''),qty:Math.max(1,Number(x.qty)||1)}))
+    .filter(x=>match(x.code));
+  if(available.length!==items.length || !available.length){
+   toast('A composição contém produtos que já não estão disponíveis no Backoffice. Confirma os artigos antes de criar a ficha.');
+   return;
+  }
+  if(!confirm('Criar uma ficha de Box privada a partir deste pedido? A Box não será publicada.'))return;
+  clearThemedBoxForm();
+  selected=available;
+  originRequestIdV4=id;
+  $('themeBoxId').value='';
+  $('themeBoxName').value='Box personalizada · '+id.slice(0,8);
+  $('themeBoxCapacity').value=available.reduce((n,x)=>n+x.qty,0);
+  $('themeBoxPrice').value=record.quoted_total||0;
+  $('themeBoxActive').value='0';
+  $('themeBoxDesc').value='';
+  drawPicker('aeBoxProductsV1',selected,true);
+  loadTechV2(null);
+  showTab('ready');
+  $('themeBoxName')?.focus();
+  toast('Ficha privada preparada. Define a receita, o tempo de trabalho e guarda a Box.');
+  return;
+ }
  if(action==='reply'||action==='copylink'){
   if(!['quoted','sent'].includes(record.status)||!record.response_token||!record.quote_valid_until||new Date(record.quote_valid_until)<=new Date()){toast('Prepara um orçamento válido antes de enviar.');return;}
   const url='https://catalogo.artessenciatlier.pt/proposta-box.html#proposta='+encodeURIComponent(record.response_token);
@@ -417,6 +444,7 @@ async function loadBoxRequestsV2(){
      (r.quote_valid_until?' · Até '+safe(new Date(r.quote_valid_until).toLocaleDateString('pt-PT')):'')+'</small>':'')+
     '<div class="ae-custom-actions">'+
      (['new','reviewing','revision_requested'].includes(r.status)?'<button class="btn" data-box-request-action="review" data-id="'+safe(r.request_id)+'">Em análise</button>':'')+
+     '<button class="btn" data-box-request-action="prepare" data-id="'+safe(r.request_id)+'">Criar ficha técnica da Box</button>'+
      (canQuote?'<button class="btn primary" data-box-request-action="quote" data-id="'+safe(r.request_id)+'">Guardar orçamento</button>':'')+
      (canSend?'<button class="btn" data-box-request-action="reply" data-id="'+safe(r.request_id)+'">Enviar WhatsApp</button>'+
       '<button class="btn" data-box-request-action="copylink" data-id="'+safe(r.request_id)+'">Copiar ligação privada</button>':'')+

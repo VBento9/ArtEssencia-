@@ -12439,7 +12439,7 @@ async function saveThemedBox(){
  const f=themeBoxImage.files?.[0];
  if(f){try{image=await compressImageFile(f)}catch(e){return toast('Não foi possível processar a imagem')}}
  if(!image)return toast('Adicione uma imagem da caixa');
- const obj={id,name,capacity,basePackaging,decorationCost,price,description,image,active,items:typeof window.aeBoxItemsDraftV1==='function'?window.aeBoxItemsDraftV1():existing?.items||[],technicalV2:typeof window.aeBoxTechDraftV2==='function'?window.aeBoxTechDraftV2():existing?.technicalV2||null,updatedAt:new Date().toISOString()};
+ const obj={id,name,capacity,basePackaging,decorationCost,price,description,image,active,items:typeof window.aeBoxItemsDraftV1==='function'?window.aeBoxItemsDraftV1():existing?.items||[],technicalV2:typeof window.aeBoxTechDraftV2==='function'?window.aeBoxTechDraftV2():existing?.technicalV2||null,originRequestId:typeof window.aeBoxOriginRequestV4==='function'?(window.aeBoxOriginRequestV4()||existing?.originRequestId||null):(existing?.originRequestId||null),updatedAt:new Date().toISOString()};
  if(existing)Object.assign(existing,obj);else{db.themedBoxes=db.themedBoxes||[];db.themedBoxes.push(obj)}
  save();clearThemedBoxForm();renderSettingsThemedBoxesSummary();toast('Conjunto personalizado guardado')
 }
