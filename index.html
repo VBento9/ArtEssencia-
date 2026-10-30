@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.49">
+<meta name="artessencia-version" content="1.9.50">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <link rel="manifest" href="manifest.webmanifest">
@@ -4462,7 +4462,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         </div>
         <span id="catalogAppearanceStatusV1864" class="badge">Cloud</span>
       </div>
-      <div class="form-grid" style="margin-top:10px">
+      <div class="field" style="margin-top:12px"><label for="catalogBackgroundPresetV1950">Fundo por ocasião</label><select id="catalogBackgroundPresetV1950" onchange="selectCatalogBackgroundPresetV1950(this.value)"><option value="imagem">A minha imagem</option></select></div>
+      <div id="catalogBackgroundPresetsGridV1950" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:10px"></div>
+      <div class="form-grid" style="margin-top:10px"><div class="field"><label>Cor inicial (personalizado)</label><input id="catalogBackgroundColor1V1950" type="color" value="#fffaf5" onchange="customCatalogBackgroundV1950()"></div><div class="field"><label>Cor final (personalizado)</label><input id="catalogBackgroundColor2V1950" type="color" value="#d9bca5" onchange="customCatalogBackgroundV1950()"></div>
         <div class="field span2"><label>Imagem de fundo</label><input id="catalogBackgroundImageV1864" readonly placeholder="Sem imagem personalizada"></div>
         <div class="field"><label>Posição</label><select id="catalogBackgroundPositionV1864" onchange="previewCatalogBackgroundV1864()"><option value="center">Centro</option><option value="center top">Topo</option><option value="center bottom">Fundo</option><option value="left center">Esquerda</option><option value="right center">Direita</option></select></div>
         <div class="field"><label>Intensidade</label><input id="catalogBackgroundStrengthV1864" type="range" min="5" max="55" step="5" value="20" oninput="previewCatalogBackgroundV1864()"><small id="catalogBackgroundStrengthLabelV1864" class="muted">20%</small></div>
@@ -6143,7 +6145,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.49';
+const APP_VERSION='1.9.50';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -13395,21 +13397,28 @@ async function savePublicChannelStatusV1785(channel){
  }catch(e){console.error(e);cloudLogMsg('Falha ao guardar estado público '+channel+': '+cloudErrText(e));toast('Não foi possível guardar o estado público')}
 }
 let catalogAppearanceV1864={backgroundImage:'',backgroundPosition:'center',backgroundStrength:20};
+function renderCatalogBackgroundPresetsV1950(){
+ const api=window.ArtEssenciaCatalogBackgrounds,grid=document.getElementById('catalogBackgroundPresetsGridV1950'),sel=document.getElementById('catalogBackgroundPresetV1950');
+ if(!api||!grid||!sel)return;
+ sel.innerHTML='<option value="imagem">A minha imagem</option>'+api.entries.map(t=>'<option value="'+t.id+'">'+t.name+'</option>').join('');
+ grid.innerHTML=api.entries.map(t=>'<button type="button" data-catalog-preset="'+t.id+'" onclick="selectCatalogBackgroundPresetV1950(this.dataset.catalogPreset)" style="min-height:86px;padding:9px;border:1px solid #b9a99c;border-radius:12px;background:'+t.background+';color:#382c29;cursor:pointer"><span style="display:block;font-size:22px">'+t.icon+'</span><strong>'+t.name+'</strong></button>').join('');
+}
+function selectCatalogBackgroundPresetV1950(id){const el=document.getElementById('catalogBackgroundPresetV1950'),api=window.ArtEssenciaCatalogBackgrounds;if(el)el.value=id;if(api?.map[id]&&id!=='personalizado'){document.getElementById('catalogBackgroundColor1V1950').value=api.map[id].a;document.getElementById('catalogBackgroundColor2V1950').value=api.map[id].b;}previewCatalogBackgroundV1864()}
+function customCatalogBackgroundV1950(){const el=document.getElementById('catalogBackgroundPresetV1950');if(el)el.value='personalizado';previewCatalogBackgroundV1864()}
+
 function fillCatalogAppearanceV1864(x={}){
  catalogAppearanceV1864={backgroundImage:String(x.catalogBackgroundImage||''),backgroundPosition:String(x.catalogBackgroundPosition||'center'),backgroundStrength:Math.max(5,Math.min(55,Number(x.catalogBackgroundStrength)||20))};
  const img=document.getElementById('catalogBackgroundImageV1864'),pos=document.getElementById('catalogBackgroundPositionV1864'),str=document.getElementById('catalogBackgroundStrengthV1864');
- if(img)img.value=catalogAppearanceV1864.backgroundImage;if(pos)pos.value=catalogAppearanceV1864.backgroundPosition;if(str)str.value=String(catalogAppearanceV1864.backgroundStrength);previewCatalogBackgroundV1864()
+ renderCatalogBackgroundPresetsV1950();if(img)img.value=catalogAppearanceV1864.backgroundImage;if(pos)pos.value=catalogAppearanceV1864.backgroundPosition;if(str)str.value=String(catalogAppearanceV1864.backgroundStrength);const preset=document.getElementById('catalogBackgroundPresetV1950'),api=window.ArtEssenciaCatalogBackgrounds;if(preset)preset.value=x.catalogBackgroundPreset||'imagem';document.getElementById('catalogBackgroundColor1V1950').value=api?.validColor(x.catalogBackgroundColor1)||api?.map[preset?.value]?.a||'#fffaf5';document.getElementById('catalogBackgroundColor2V1950').value=api?.validColor(x.catalogBackgroundColor2)||api?.map[preset?.value]?.b||'#d9bca5';previewCatalogBackgroundV1864()
 }
 function catalogAppearanceFormV1864(){return{
  catalogBackgroundImage:String(document.getElementById('catalogBackgroundImageV1864')?.value||'').trim(),
  catalogBackgroundPosition:String(document.getElementById('catalogBackgroundPositionV1864')?.value||'center'),
- catalogBackgroundStrength:Math.max(5,Math.min(55,Number(document.getElementById('catalogBackgroundStrengthV1864')?.value)||20))
+ catalogBackgroundStrength:Math.max(5,Math.min(55,Number(document.getElementById('catalogBackgroundStrengthV1864')?.value)||20)),catalogBackgroundPreset:String(document.getElementById('catalogBackgroundPresetV1950')?.value||'imagem'),catalogBackgroundColor1:document.getElementById('catalogBackgroundColor1V1950')?.value||'#fffaf5',catalogBackgroundColor2:document.getElementById('catalogBackgroundColor2V1950')?.value||'#d9bca5'
 }}
 function previewCatalogBackgroundV1864(){
  const x=catalogAppearanceFormV1864(),box=document.getElementById('catalogBackgroundPreviewV1864'),label=document.getElementById('catalogBackgroundStrengthLabelV1864');if(label)label.textContent=x.catalogBackgroundStrength+'%';if(!box)return;
- const alpha=Math.max(.45,Math.min(.95,1-x.catalogBackgroundStrength/100));
- box.style.backgroundImage=x.catalogBackgroundImage?'linear-gradient(rgba(255,250,245,'+alpha+'),rgba(255,250,245,'+alpha+')),url('+JSON.stringify(x.catalogBackgroundImage)+')':'none';
- box.style.backgroundPosition=x.catalogBackgroundPosition;box.style.backgroundSize='cover'
+ const theme=window.ArtEssenciaCatalogBackgrounds?.resolve(x),alpha=Math.max(.45,Math.min(.95,1-x.catalogBackgroundStrength/100));const image=theme?.mode==='imagem'?theme.image:'';box.style.backgroundImage=image?'linear-gradient(rgba(255,250,245,'+alpha+'),rgba(255,250,245,'+alpha+')),url('+JSON.stringify(image)+')':theme?.background||'none';box.style.backgroundPosition=x.catalogBackgroundPosition;box.style.backgroundSize='cover';for(const el of document.querySelectorAll('[data-catalog-preset]')){const active=el.dataset.catalogPreset===x.catalogBackgroundPreset;el.style.outline=active?'3px solid #5a240b':'';el.setAttribute('aria-pressed',String(active))}
 }
 async function loadCatalogAppearanceV1864(){
  try{const c=initCloudClient(),u=cloudUser||await ensureCloudSession();if(!c||!u)throw new Error('Cloud desligada');const q=await c.from('artessencia_shop_settings').select('data').eq('user_id',u.id).maybeSingle();if(q.error)throw q.error;fillCatalogAppearanceV1864(q.data?.data?.homepage||{});const st=document.getElementById('catalogAppearanceStatusV1864');if(st){st.textContent='Atualizado';st.className='badge ok'};return true}catch(e){const st=document.getElementById('catalogAppearanceStatusV1864');if(st){st.textContent='Por carregar';st.className='badge warn'};return false}
@@ -13420,7 +13429,7 @@ async function persistCatalogAppearanceV1864(patch){
 async function saveCatalogAppearanceV1864(){try{const x=catalogAppearanceFormV1864();await persistCatalogAppearanceV1864(x);catalogAppearanceV1864=x;const st=document.getElementById('catalogAppearanceStatusV1864');if(st){st.textContent='Guardado';st.className='badge ok'};toast('Aparência do Catálogo guardada')}catch(e){toast('Erro ao guardar aparência: '+cloudErrText(e))}}
 async function uploadCatalogBackgroundV1864(){
  const file=document.getElementById('catalogBackgroundFileV1864')?.files?.[0];if(!file)return toast('Escolhe primeiro uma imagem');if(file.size>8*1024*1024)return toast('Imagem demasiado grande (máx. 8 MB)');
- try{const c=initCloudClient(),u=cloudUser||await ensureCloudSession();if(!c||!u)throw new Error('Liga primeiro a Cloud');const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg',path=`${u.id}/catalog/background-${Date.now()}.${ext}`;toast('A carregar fundo do Catálogo…');const up=await c.storage.from('artessencia-shop').upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type});if(up.error)throw up.error;const {data}=c.storage.from('artessencia-shop').getPublicUrl(path),url=data?.publicUrl||'';if(!url)throw new Error('URL pública indisponível');document.getElementById('catalogBackgroundImageV1864').value=url;document.getElementById('catalogBackgroundFileV1864').value='';previewCatalogBackgroundV1864();await persistCatalogAppearanceV1864(catalogAppearanceFormV1864());toast('Fundo do Catálogo carregado e publicado')}catch(e){toast('Erro no fundo do Catálogo: '+cloudErrText(e))}
+ try{const c=initCloudClient(),u=cloudUser||await ensureCloudSession();if(!c||!u)throw new Error('Liga primeiro a Cloud');const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg',path=`${u.id}/catalog/background-${Date.now()}.${ext}`;toast('A carregar fundo do Catálogo…');const up=await c.storage.from('artessencia-shop').upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type});if(up.error)throw up.error;const {data}=c.storage.from('artessencia-shop').getPublicUrl(path),url=data?.publicUrl||'';if(!url)throw new Error('URL pública indisponível');document.getElementById('catalogBackgroundImageV1864').value=url;document.getElementById('catalogBackgroundFileV1864').value='';selectCatalogBackgroundPresetV1950('imagem');previewCatalogBackgroundV1864();await persistCatalogAppearanceV1864(catalogAppearanceFormV1864());toast('Fundo do Catálogo carregado e publicado')}catch(e){toast('Erro no fundo do Catálogo: '+cloudErrText(e))}
 }
 async function removeCatalogBackgroundV1864(){const el=document.getElementById('catalogBackgroundImageV1864');if(el)el.value='';previewCatalogBackgroundV1864();try{await persistCatalogAppearanceV1864(catalogAppearanceFormV1864());toast('Fundo personalizado removido')}catch(e){toast('Erro ao remover fundo: '+cloudErrText(e))}}
 
@@ -16425,6 +16434,7 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 
 
 
+<script src="catalog-background-presets.js"></script>
 <script src="pwa-update.js"></script>
 <script defer src="./order-detail-compact-ui.js"></script>
 <script defer src="./production-compact-ui.js"></script>
