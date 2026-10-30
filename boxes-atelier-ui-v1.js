@@ -39,7 +39,7 @@ function previewPredefined(){
 function loadExisting(b){selected=Array.isArray(b?.items)?b.items.map(x=>({code:text(x.code),qty:Number(x.qty)||1})).filter(x=>x.code):[];drawPicker('aeBoxProductsV1',selected,true);previewPredefined();}
 function showTab(tab){
  const hub=$(ID);if(!hub)return;
- const names=['ready','custom','pdf','advanced'];
+ const names=['ready','custom','requests','pdf','advanced'];
  activeTab=names.includes(tab)?tab:'ready';
  names.forEach(n=>{
   const panel=$('aeHubPanel_'+n);if(panel)panel.hidden=n!==activeTab;
@@ -49,6 +49,7 @@ function showTab(tab){
  if(activeTab==='ready'){drawPicker('aeBoxProductsV1',selected,true);previewPredefined();}
  if(activeTab==='ready')reloadPublicBoxesV1();
  if(activeTab==='custom')drawCustom();
+ if(activeTab==='requests')loadBoxRequestsV2();
 }
 function phone(){let n=text(db?.settings?.businessPhone).replace(/\D/g,'');if(n.startsWith('00'))n=n.slice(2);return n.length===9?'351'+n:n;}
 function proposal(){
@@ -132,7 +133,7 @@ function install(){
  const hub=document.createElement('section');hub.id=ID;
  hub.innerHTML='<div class="ae-hub-intro"><div><h2>Boxes ArtEssencia</h2><p>Cria, combina e partilha boxes com artigos reais. Nenhuma alteração publica automaticamente produtos.</p></div></div>'+
  '<div class="ae-hub-tabs" role="tablist" aria-label="Secções de Boxes">'+
- [['ready','Boxes pré-definidas'],['custom','Criar Box personalizada'],['pdf','Catálogos para clientes'],['advanced','Regras e opções']].map(([id,name])=>'<button type="button" role="tab" class="btn" data-ae-tab="'+id+'">'+name+'</button>').join('')+
+ [['ready','Boxes pré-definidas'],['custom','Criar Box personalizada'],['requests','Pedidos de clientes'],['pdf','Catálogos para clientes'],['advanced','Regras e opções']].map(([id,name])=>'<button type="button" role="tab" class="btn" data-ae-tab="'+id+'">'+name+'</button>').join('')+
  '</div>';
  dashboard.insertAdjacentElement('afterend',hub);
  hub.querySelector('.ae-hub-tabs').before(summary);
@@ -153,7 +154,39 @@ function install(){
  const legacy=document.createElement('details');legacy.className='ae-creator-legacy-v1';
  legacy.innerHTML='<summary style="padding:15px;cursor:pointer;font-weight:700;background:#fff;border:1px solid #dfd2c6;border-radius:12px">Mostrar configuração técnica antiga (compatibilidade)</summary>';
  legacy.append(creator);advanced.append(legacy);
- hub.append(ready,customPane,docs,advanced);
+ const requestsPane=document.createElement('div');requestsPane.id='aeHubPanel_requests';requestsPane.className='ae-hub-panel';
+ requestsPane.innerHTML='<div class="ae-hub-heading"><h3>Pedidos de Boxes personalizadas</h3><p>Pedidos recebidos no Catálogo Digital e na Loja. Orçamentos sujeitos à tua aprovação, sem encomenda nem alteração de stock.</p><button class="btn" type="button" id="aeRefreshBoxRequests">Atualizar pedidos</button></div><div id="aeBoxRequestList" class="ae-box-items">A consultar Cloud…</div>';
+ hub.append(ready,customPane,requestsPane,docs,advanced);
+ $('aeRefreshBoxRequests').addEventListener('click',loadBoxRequestsV2);
+ requestsPane.addEventListener('click',async ev=>{
+ const button=ev.target.closest('[data-box-request-action]');if(!button)return;
+ const id=button.dataset.id, action=button.dataset.boxRequestAction, record=requestsCache.find(x=>x.request_id===id);
+ if(!record)return;
+ if(action==='reply'){
+  const total=Number(record.quoted_total);if(!Number.isFinite(total)||total<=0){toast('Indica primeiro um valor válido');return;}
+  const message=['Olá '+record.customer_name+',','Segue o orçamento para a tua Box ArtEssencia.','Valor proposto: '+money(total),record.quote_message||'','O pedido fica sujeito a confirmação de disponibilidade e pagamento.'].filter(Boolean).join('\n');
+  const phone=String(record.phone||'').replace(/\D/g,'').replace(/^00/,'');
+  if(!phone){toast('O pedido não tem telefone');return;}
+  const number=phone.length===9?'351'+phone:phone;
+  window.open('https://wa.me/'+number+'?text='+encodeURIComponent(message),'_blank','noopener');
+  return;
+ }
+ if(action==='quote'||action==='review'){
+  const row=button.closest('[data-request-row]');
+  const total=action==='quote'?Number(row.querySelector('[data-box-total]').value):null;
+  const note=action==='quote'?row.querySelector('[data-box-note]').value.trim():'';
+  if(action==='quote'&&(!Number.isFinite(total)||total<=0||total>100000)){toast('Indica um preço válido');return;}
+  button.disabled=true;
+  try{
+   const {c}=await publicClient();
+   const changes=action==='quote'?{status:'quoted',quoted_total:total,quote_message:note,quoted_at:new Date().toISOString(),updated_at:new Date().toISOString()}:{status:'reviewing',updated_at:new Date().toISOString()};
+   const {error}=await c.from('artessencia_box_requests_v1').update(changes).eq('request_id',id);
+   if(error)throw error;
+   await loadBoxRequestsV2();toast(action==='quote'?'Valor do orçamento guardado. Envia agora a resposta ao cliente.':'Pedido em análise');
+  }catch(error){toast(error.message||'Erro Cloud')}finally{button.disabled=false;}
+ }
+ });
+
  hub.querySelectorAll('[data-ae-tab]').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.aeTab)));
  renderPredefinedExtras();
  $('aeNewBoxV1')?.addEventListener('click',()=>{clearThemedBoxForm();showTab('ready');$('themeBoxName')?.focus();});
@@ -216,6 +249,29 @@ function install(){
   save();publicRows.delete(String(id));renderPublicationButtonsV1();toast('Box apagada');
  };
  showTab('ready');
+}
+
+let requestsCache=[];
+async function loadBoxRequestsV2(){
+ const root=$('aeBoxRequestList');if(!root)return;
+ try{
+  const {c}=await publicClient();
+  const {data,error}=await c.from('artessencia_box_requests_v1').select('*').in('status',['new','reviewing','quoted']).order('created_at',{ascending:false}).limit(100);
+  if(error)throw error;
+  requestsCache=Array.isArray(data)?data:[];
+  root.innerHTML=requestsCache.length?requestsCache.map(r=>{
+   const items=Array.isArray(r.items)?r.items:[];
+   const prefs=r.preferences&&typeof r.preferences==='object'?r.preferences:{};
+   const describe=Object.entries(prefs).filter(([k,v])=>v!=null&&String(v).trim()).map(([k,v])=>'<small>'+safe(k)+': '+safe(v)+'</small>').join('');
+   return '<article data-request-row="'+safe(r.request_id)+'" class="card" style="padding:14px;margin:10px 0">'+
+    '<b>'+safe(r.customer_name)+'</b><small>'+safe(r.created_at?.slice(0,16)||'')+' · '+safe(r.source)+' · '+safe(r.status)+'</small>'+
+    '<p>'+items.map(x=>safe(x.qty)+' × '+safe(x.code)).join(' · ')+'</p><div>'+describe+'</div>'+
+    '<div class="ae-custom-grid"><label>Preço final (€)<input data-box-total type="number" step=".01" min=".01" value="'+safe(r.quoted_total??'')+'"></label>'+
+    '<label>Observações para cliente<textarea data-box-note rows="2">'+safe(r.quote_message||'')+'</textarea></label></div>'+
+    '<div class="ae-custom-actions"><button class="btn" data-box-request-action="review" data-id="'+safe(r.request_id)+'">Em análise</button><button class="btn primary" data-box-request-action="quote" data-id="'+safe(r.request_id)+'">Guardar orçamento</button>'+
+    (r.status==='quoted'?'<button class="btn" data-box-request-action="reply" data-id="'+safe(r.request_id)+'">Responder WhatsApp</button>':'')+'</div></article>';
+  }).join(''):'<div class="soft-note">Sem pedidos de Boxes por tratar.</div>';
+ }catch(e){root.textContent='Não foi possível carregar pedidos. Confirma a ligação Cloud.';}
 }
 
 let publicRows=new Map();
