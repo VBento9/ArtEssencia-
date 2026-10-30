@@ -24,13 +24,24 @@ function drawPicker(target,rows,editMode){
  '<div class="ae-box-items">'+(rows.length?rows.map((x,i)=>{const p=match(x.code);return '<div class="ae-box-line" data-line="'+i+'"><span><b>'+safe(p?.name||x.code)+'</b><small>'+safe(x.code)+'</small></span><label>Qtd.<input data-aebox-qty="'+i+'" type="number" min="1" max="1000" value="'+x.qty+'"></label><button type="button" class="btn" data-aebox-remove="'+i+'" aria-label="Retirar '+safe(p?.name||x.code)+'">Retirar</button></div>'}).join(''):'<div class="soft-note">Ainda não adicionaste artigos.</div>')+'</div>'+
  '<div class="ae-box-totals"><span>'+rows.reduce((s,r)=>s+r.qty,0)+' peça(s)</span><span>Custo de produtos: '+money(selectedTotal(rows,true))+'</span><span>PVP dos artigos: '+money(selectedTotal(rows,false))+'</span></div>';
 }
+function techDraftV2(){const num=id=>Math.max(0,Number(document.getElementById(id)?.value)||0);return {mode:document.getElementById('aeBoxMode')?.value||'finished',waxG:num('aeBoxWax'),fragranceG:num('aeBoxFragrance'),materialsCost:num('aeBoxMaterials'),productionMinutes:num('aeBoxProduction'),assemblyMinutes:num('aeBoxAssembly'),packagingMinutes:num('aeBoxPacking'),energyCost:num('aeBoxEnergy'),otherCost:num('aeBoxOther'),notes:document.getElementById('aeBoxTechNotes')?.value||''};}
+function techCostV2(items,settings){
+ const tech=settings||techDraftV2(),joint=tech.mode==='joint';
+ let materials=0,labor=0,energy=0,indirect=0;
+ if(!joint)for(const item of items){const p=match(item.code);if(!p)continue;const b=productCostBreakdownV110(p),q=Number(item.qty)||1;materials+=(Number(b.materials)||0)*q;labor+=(Number(b.labor)||0)*q+(Number(b.editionLabor)||0)*q;energy+=(Number(b.energy)||0)*q;indirect+=(Number(b.fixed)||0)*q+(Number(b.other)||0)*q+(Number(b.waste)||0)*q;}
+ const rate=pricingLaborHourlyRateV1745();
+ labor+=rate*((Number(tech.productionMinutes)||0)+(Number(tech.assemblyMinutes)||0)+(Number(tech.packagingMinutes)||0))/60;
+ materials+=Number(tech.materialsCost)||0;energy+=Number(tech.energyCost)||0;indirect+=Number(tech.otherCost)||0;
+ return {materials,labor,energy,indirect,total:materials+labor+energy+indirect,incomplete:joint&&!(Number(tech.materialsCost)>0)};
+}
+window.aeBoxTechDraftV2=techDraftV2;
 function previewPredefined(){
  const id=text($('themeBoxId')?.value);
  const existing=(db.themedBoxes||[]).find(x=>x.id===id);
  const base=(db.packaging||[]).find(x=>x.name===$('themeBoxBasePackaging')?.value);
  const packaging=Number(base?.cost)||0,extra=Number($('themeBoxDecorationCost')?.value)||0;
  const price=Number($('themeBoxPrice')?.value)||0;
- const cost=selectedTotal(composition(),true)+packaging+extra;
+ const cost=techCostV2(composition(),techDraftV2()).total+packaging+extra;
  const diff=price-cost;
  const info=$('aeBoxEstimateV1');
  if(info)info.innerHTML='<b>Estimativa da Box</b><div>Custo dos produtos: '+money(selectedTotal(composition(),true))+'</div><div>Caixa física e decoração: '+money(packaging+extra)+'</div><div>Preço definido: '+money(price)+'</div><strong>Diferença estimada: '+money(diff)+'</strong><small>Sem prometer disponibilidade, não substitui o custo detalhado de Produção.</small>'+
