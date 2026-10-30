@@ -1,0 +1,38 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {planRelationalWriteV1950,tagHydratedRowV1950,stripRelSyncMetadataV1950,writeRelationalRowsCasV1950,assertCanHydrateV1950,hasUnsentLocalRowsV1950} from '../relational-cas-v1950.mjs';
+const stable=x=>JSON.stringify(x,(_,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.fromEntries(Object.keys(v).sort().map(k=>[k,v[k]])):v);
+const local=()=>({_rid:'r1',id:'C1',name:'Maria'}),remote=(name='Maria',t='t1')=>({id:'r1',updated_at:t,data:{_rid:'r1',id:'C1',name}});
+test('untouched local row is never pushed over newer remote',()=>{const l=local();tagHydratedRowV1950(l,remote(),stable);assert.equal(planRelationalWriteV1950(l,remote('Nova','t2'),stable).action,'skip')});
+test('changed local row uses previous remote timestamp',()=>{const l=local();tagHydratedRowV1950(l,remote(),stable);l.name='Outra';assert.equal(planRelationalWriteV1950(l,remote(),stable).action,'update');assert.equal(planRelationalWriteV1950(l,remote('Nova','t2'),stable).reason,'remote_changed')});
+test('legacy snapshots cannot overwrite rows without baseline',()=>{assert.equal(planRelationalWriteV1950({...local(),name:'Antigo'},remote(),stable).reason,'missing_baseline');assert.equal(planRelationalWriteV1950(local(),remote(),stable).action,'adopt');assert.equal(planRelationalWriteV1950(local(),null,stable).action,'insert')});
+test('metadata is not written into canonical data',()=>{const l=local();tagHydratedRowV1950(l,remote(),stable);assert.deepEqual(stripRelSyncMetadataV1950(l),local())});
+test('conflict aborts before requesting a database write',async()=>{const l=local();tagHydratedRowV1950(l,remote(),stable);l.name='Outra';let calls=0;await assert.rejects(writeRelationalRowsCasV1950({client:{from(){calls++;throw Error('unexpected write')}},table:'clients',rows:[{id:'r1'}],remoteRows:[remote('Nova','t2')],localRows:[l],userId:'owner',stringify:stable}),/CONFLITO/);assert.equal(calls,0)});
+test('update uses optimistic updated_at predicate',async()=>{const l=local();tagHydratedRowV1950(l,remote(),stable);l.name='Outra';let filters=[];const q={update(){return this},eq(k,v){filters.push([k,v]);return this},select(){return this},maybeSingle:async()=>({data:{id:'r1',updated_at:'t2'},error:null})};await writeRelationalRowsCasV1950({client:{from(){return q}},table:'clients',rows:[{id:'r1',data:{_rid:'r1',id:'C1',name:'Outra'}}],remoteRows:[remote()],localRows:[l],userId:'owner',stringify:stable});assert.ok(filters.some(([k,v])=>k==='updated_at'&&v==='t1'));assert.equal(l._relSyncUpdatedAtV1950,'t2')});
+
+test('dirty local record cannot be overwritten by Cloud hydration',()=>{
+ const l=local();tagHydratedRowV1950(l,remote(),stable);l.name='Alterado';
+ assert.throws(()=>assertCanHydrateV1950(l,local(),{dirty:true,stringify:stable,kind:'cliente',id:'r1'}),/CONFLITO_RECECAO_V1950/);
+});
+test('unchanged local record accepts newer remote hydration',()=>{
+ const l=local();tagHydratedRowV1950(l,remote(),stable);
+ assert.equal(assertCanHydrateV1950(l,{...local(),name:'Atualizado'},{dirty:true,stringify:stable}),true);
+});
+test('legacy dirty row without baseline is not silently discarded',()=>{
+ assert.throws(()=>assertCanHydrateV1950(local(),{...local(),name:'Atualizado'},{dirty:true,stringify:stable}),/CONFLITO_RECECAO_V1950/);
+});
+test('new insert cannot duplicate a product or order logical ID',async()=>{
+ for(const [table,key,value] of [['artessencia_v1_products','code','P1'],['artessencia_v1_orders','id','AS-2026-0001']]){
+  let n=0;
+  await assert.rejects(writeRelationalRowsCasV1950({client:{from(){n++;throw Error('UNEXPECTED INSERT')}},table,
+   rows:[{id:'new',data:{[key]:value}}],remoteRows:[{id:'old',data:{[key]:value}}],
+   localRows:[{_rid:'new'}],userId:'owner',stringify:stable}),/identificador lógico duplicado/);
+  assert.equal(n,0);
+ }
+});
+
+test('local records absent from Cloud remain dirty rather than being declared synchronized',()=>{
+ assert.equal(hasUnsentLocalRowsV1950([{_rid:'new',id:'C2'}],[], 'id'),true);
+ assert.equal(hasUnsentLocalRowsV1950([{_rid:'r1',id:'C1'}],[{id:'r1',data:{id:'C1'}}], 'id'),false);
+ assert.equal(hasUnsentLocalRowsV1950([{code:'P-new'}],[{id:'p1',data:{code:'P-old'}}], 'code'),true);
+});
