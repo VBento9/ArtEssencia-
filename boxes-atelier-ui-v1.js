@@ -47,6 +47,7 @@ function showTab(tab){
   if(btn){btn.classList.toggle('primary',n===activeTab);btn.setAttribute('aria-selected',String(n===activeTab));}
  });
  if(activeTab==='ready'){drawPicker('aeBoxProductsV1',selected,true);previewPredefined();}
+ if(activeTab==='ready')reloadPublicBoxesV1();
  if(activeTab==='custom')drawCustom();
 }
 function phone(){let n=text(db?.settings?.businessPhone).replace(/\D/g,'');if(n.startsWith('00'))n=n.slice(2);return n.length===9?'351'+n:n;}
@@ -143,6 +144,13 @@ function install(){
    arr.splice(Number(b.dataset.aeboxRemove),1);
    if(holder.id==='aeBoxProductsV1'){drawPicker(holder.id,arr,true);previewPredefined();}else drawCustom();return;
   }
+  if(b.dataset.aePublish){
+   b.disabled=true;
+   aePublishBoxV1(b.dataset.aeBoxid,b.dataset.aePublish)
+    .catch(error=>{console.error(error);toast(error.message||'Erro ao atualizar a Box pública')})
+    .finally(()=>{b.disabled=false;});
+   return;
+  }
   if(b.dataset.action){
    try{
     if(b.dataset.action==='copy')copy(proposal());
@@ -160,8 +168,117 @@ function install(){
  });
  window.aeBoxItemsDraftV1=()=>composition();
  window.aeBoxesShowTabV1=showTab;
+ // A eliminação de uma Box publicada é precedida da retirada segura dos canais públicos.
+ const oldDelete=window.deleteThemedBox;
+ window.deleteThemedBox=async function(id){
+  const box=(db.themedBoxes||[]).find(x=>String(x.id)===String(id));if(!box)return;
+  if(!confirm('Apagar a Box "'+box.name+'"? A versão pública será também retirada.'))return;
+  try{
+   const {c}=await publicClient();
+   const {error}=await c.from('artessencia_boxes_public_v1').delete().eq('id',String(id));
+   if(error)throw error;
+  }catch(error){toast('Não foi possível confirmar a retirada pública. A Box foi preservada.');return;}
+  db.themedBoxes=db.themedBoxes.filter(x=>String(x.id)!==String(id));
+  save();publicRows.delete(String(id));renderPublicationButtonsV1();toast('Box apagada');
+ };
  showTab('ready');
 }
+
+let publicRows=new Map();
+let publicLoading=false;
+async function publicClient(){
+ const c=initCloudClient();
+ const u=cloudUser||await ensureCloudSession();
+ if(!c||!u)throw new Error('Inicia sessão na Cloud para publicar Boxes.');
+ return {c,u};
+}
+async function reloadPublicBoxesV1(){
+ if(publicLoading)return;
+ publicLoading=true;
+ try{
+  const {c}=await publicClient();
+  const {data,error}=await c.from('artessencia_boxes_public_v1')
+     .select('id,visible_catalog,visible_shop,active');
+  if(error)throw error;
+  publicRows=new Map((data||[]).map(row=>[String(row.id),row]));
+  renderPublicationButtonsV1();
+ }catch(error){console.warn('Boxes públicas indisponíveis:',error.message);renderPublicationButtonsV1();}
+ finally{publicLoading=false;}
+}
+function renderPublicationButtonsV1(){
+ const cards=$('themedBoxesGrid')?.querySelectorAll('.catalog-pro-card')||[];
+ (db.themedBoxes||[]).forEach((box,i)=>{
+  const card=cards[i];
+  const parent=card?.querySelector('.body');
+  if(!parent)return;
+  let ui=parent.querySelector('.ae-box-publish-v1');
+  if(!ui){ui=document.createElement('div');ui.className='ae-box-publish-v1';parent.appendChild(ui);}
+  const remote=publicRows.get(String(box.id))||{};
+  const inCatalog=remote.active!==false && remote.visible_catalog===true;
+  const inShop=remote.active!==false && remote.visible_shop===true;
+  ui.innerHTML='<small>Publicação independente: '+(inCatalog?'Catálogo ativo':'Catálogo não publicado')+' · '+(inShop?'Loja ativa':'Loja não publicada')+'</small>'+
+   '<div><button type="button" class="btn" data-ae-publish="catalog" data-ae-boxid="'+safe(box.id)+'">'+(inCatalog?'Retirar do Catálogo':'Publicar no Catálogo')+'</button>'+
+   '<button type="button" class="btn" data-ae-publish="shop" data-ae-boxid="'+safe(box.id)+'">'+(inShop?'Retirar da Loja':'Publicar na Loja')+'</button>'+
+   (inCatalog?'<button type="button" class="btn" data-ae-publish="link" data-ae-boxid="'+safe(box.id)+'">Copiar ligação</button>':'')+'</div>';
+ });
+}
+async function uploadBoxImageV1(c,u,box){
+ const url=text(box.image);
+ if(/^https:\/\//.test(url))return url;
+ if(!url.startsWith('data:image/'))throw new Error('Esta Box necessita de uma fotografia válida');
+ const data=await fetch(url);
+ const blob=await data.blob();
+ if(!blob.type.startsWith('image/')||blob.size>5*1024*1024)throw new Error('Fotografia inválida ou demasiado grande');
+ const path=u.id+'/boxes/'+String(box.id).replace(/[^a-zA-Z0-9_-]/g,'_')+'-'+Date.now()+'.jpg';
+ const uploaded=await c.storage.from('artessencia-shop').upload(path,blob,{cacheControl:'3600',upsert:false,contentType:blob.type||'image/jpeg'});
+ if(uploaded.error)throw uploaded.error;
+ const p=c.storage.from('artessencia-shop').getPublicUrl(path)?.data?.publicUrl;
+ if(!p)throw new Error('A imagem foi carregada, mas a URL pública está indisponível');
+ return p;
+}
+async function aePublishBoxV1(id,channel){
+ const box=(db.themedBoxes||[]).find(x=>String(x.id)===String(id));
+ if(!box)throw new Error('Box não encontrada');
+ if(channel==='link'){
+  const address='https://catalogo.artessenciatlier.pt/boxes.html?box='+encodeURIComponent(id);
+  await copy(address);return;
+ }
+ const {c,u}=await publicClient();
+ const {data:prev,error:lookupError}=await c.from('artessencia_boxes_public_v1').select('*').eq('id',id).maybeSingle();
+ if(lookupError)throw lookupError;
+ const field=channel==='catalog'?'visible_catalog':'visible_shop';
+ const next=!(prev?.active!==false&&prev?.[field]===true);
+ if(next){
+  if(box.active===false)throw new Error('A Box está oculta no Backoffice');
+  if(!Array.isArray(box.items)||!box.items.length)throw new Error('Guarda primeiro a composição da Box com os produtos incluídos');
+  if(!text(box.name)||!text(box.image))throw new Error('A Box precisa de nome e imagem');
+  if(Number(box.price)<=0)throw new Error('Define um PVP válido antes de publicar');
+  if(!confirm('Publicar "'+box.name+'" em '+(field==='visible_catalog'?'Catálogo Digital':'Loja')+'? O público poderá consultar e pedir informações, mas não efetuar encomendas por este configurador.'))return;
+ }else{
+  if(!confirm('Retirar "'+box.name+'" de '+(field==='visible_catalog'?'Catálogo Digital':'Loja')+'?'))return;
+ }
+ let img=prev?.image_url||'';
+ if(next)img=await uploadBoxImageV1(c,u,box);
+ const base={
+  id:String(box.id),title:String(box.name).slice(0,120),
+  description:String(box.description||''),image_url:img,
+  price:Number(box.price)||0,price_mode:'fixed',capacity:Number(box.capacity)||1,
+  items:Array.isArray(box.items)?box.items.map(x=>{
+    const p=match(x.code);return {code:String(x.code),name:String(p?.name||x.code),qty:Number(x.qty)||1};
+  }):[],
+  active:box.active!==false,
+  visible_catalog:prev?.visible_catalog===true,
+  visible_shop:prev?.visible_shop===true,
+  updated_at:new Date().toISOString()
+ };
+ base[field]=next;
+ const {error}=await c.from('artessencia_boxes_public_v1').upsert(base,{onConflict:'id'});
+ if(error)throw error;
+ await reloadPublicBoxesV1();
+ toast(next?'Box publicada com sucesso':'Box retirada do canal selecionado');
+}
+window.aeBoxesRenderPublicV1=renderPublicationButtonsV1;
+
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
 (()=>{const s=document.createElement('style');s.textContent="#aeBoxesHubV1{margin-top:12px}#aeBoxesHubV1 .ae-hub-intro{padding:16px 18px;background:#fffaf5;border:1px solid #ded2c1;border-radius:16px}#aeBoxesHubV1 h2,#aeBoxesHubV1 h3{font:600 22px Georgia,serif;margin:0 0 6px}#aeBoxesHubV1 h3{font-size:19px}#aeBoxesHubV1 p{line-height:1.55;margin:4px 0 12px}#aeBoxesHubV1 .ae-hub-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}#aeBoxesHubV1 .ae-hub-tabs .btn{flex:1 1 170px;min-height:46px}#aeBoxesHubV1 .ae-hub-panel[hidden]{display:none!important}#aeBoxesHubV1 .ae-hub-panel{display:grid;gap:12px}#aeBoxesHubV1 .ae-hub-heading{border:1px solid #ded2c1;border-radius:14px;background:#fff;padding:15px}#aeBoxesHubV1 .ae-hub-heading .btn{margin-top:6px}#aeBoxesHubV1 .ae-hub-heading p{font-size:13px;color:#6d6158}#aeBoxesHubV1 .ae-box-composition{margin-top:14px;padding:14px;border:1px solid #dfd2c6;border-radius:14px;background:#fffaf5}#aeBoxesHubV1 .ae-box-pick-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:5px;margin:10px 0}#aeBoxesHubV1 .ae-box-pick-head small{color:#78695c}#aeBoxesHubV1 .ae-box-add{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}#aeBoxesHubV1 .ae-box-add select{min-width:0;flex:1 1 210px}#aeBoxesHubV1 .ae-box-line{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #e5dace}#aeBoxesHubV1 .ae-box-line>span{flex:1;min-width:0;overflow-wrap:anywhere}#aeBoxesHubV1 .ae-box-line small{display:block;color:#86796b}#aeBoxesHubV1 .ae-box-line label{font-size:12px;width:70px}#aeBoxesHubV1 .ae-box-line input{width:100%;min-width:0}#aeBoxesHubV1 .ae-box-totals{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px;font-size:12px;font-weight:600}#aeBoxesHubV1 .ae-box-totals span{padding:6px 8px;border:1px solid #dfd2c6;border-radius:9px}#aeBoxesHubV1 .ae-box-estimate{padding:12px;margin-top:10px;background:#f2e9dc;border:1px solid #ddcdb9;border-radius:13px;display:grid;gap:6px;font-size:13px}#aeBoxesHubV1 .ae-box-estimate small{color:#706153}#aeBoxesHubV1 .ae-custom-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;background:#fff;padding:14px;border-radius:13px}#aeBoxesHubV1 .ae-custom-grid label{display:grid;gap:6px;font-size:13px}#aeBoxesHubV1 .ae-custom-grid label:last-child{grid-column:1/-1}#aeBoxesHubV1 .ae-custom-grid input,#aeBoxesHubV1 .ae-custom-grid textarea,#aeBoxesHubV1 .ae-custom-grid select{width:100%;min-width:0}#aeBoxesHubV1 .ae-custom-actions{display:flex;flex-wrap:wrap;gap:8px}#aeBoxesHubV1 .ae-custom-actions>*{flex:1 1 170px;display:inline-flex;align-items:center;justify-content:center}#aeBoxesHubV1 .ae-box-items{max-height:470px;overflow:auto}#aeBoxesHubV1 .ae-hub-panel > .catalog-grid{margin:0}#aeBoxesHubV1 .ae-hub-panel .catalog-creator-card{margin:0}@media(max-width:650px){#aeBoxesHubV1 .ae-hub-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}#aeBoxesHubV1 .ae-hub-tabs .btn{font-size:12px;min-width:0}#aeBoxesHubV1 .ae-custom-grid{grid-template-columns:minmax(0,1fr)}#aeBoxesHubV1 .ae-box-line{flex-wrap:wrap}#aeBoxesHubV1 .ae-box-line>span{flex:1 1 100%}}";document.head.appendChild(s)})();
