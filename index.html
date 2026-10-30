@@ -12434,7 +12434,7 @@ async function saveThemedBox(){
  const f=themeBoxImage.files?.[0];
  if(f){try{image=await compressImageFile(f)}catch(e){return toast('Não foi possível processar a imagem')}}
  if(!image)return toast('Adicione uma imagem da caixa');
- const obj={id,name,capacity,basePackaging,decorationCost,price,description,image,active,updatedAt:new Date().toISOString()};
+ const obj={id,name,capacity,basePackaging,decorationCost,price,description,image,active,items:typeof window.aeBoxItemsDraftV1==='function'?window.aeBoxItemsDraftV1():existing?.items||[],updatedAt:new Date().toISOString()};
  if(existing)Object.assign(existing,obj);else{db.themedBoxes=db.themedBoxes||[];db.themedBoxes.push(obj)}
  save();clearThemedBoxForm();renderSettingsThemedBoxesSummary();toast('Conjunto personalizado guardado')
 }
@@ -13832,6 +13832,7 @@ function renderCatalogs(){
    </div>`;
  }).join(''):'<div class="card empty">Ainda não existem conjuntos temáticos. Adiciona o primeiro com fotografia e preço.</div>';
  renderSettingsThemedBoxesSummary();
+ if(typeof window.aeBoxesRenderPublicV1==='function')window.aeBoxesRenderPublicV1();
 }
 
 function loadCanvasImage(src){return new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=src})}
@@ -16448,6 +16449,7 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 <script defer src="./product-technical-sheet.js"></script>
 <script defer src="./orders-compact-ui.js" id="ae-orders-compact-script"></script>
 <script defer src="./catalog-pdf-manager-v2.js"></script>
+<script defer src="./boxes-atelier-ui-v1.js"></script>
 </body></html>
 
 <style id="artessencia-v1-overrides">
