@@ -535,10 +535,10 @@
     const validity=plainOfferV24(form.validUntil,10);
     if(validity&&!/^\d{4}-\d{2}-\d{2}$/.test(validity))throw Error('Data de validade inválida.');
     if(validity){
-      const expiry=new Date(validity+'T23:59:59');
-      if(!Number.isFinite(expiry.getTime())||expiry<new Date()||
-         expiry.getFullYear()+'-'+String(expiry.getMonth()+1).padStart(2,'0')+'-'+String(expiry.getDate()).padStart(2,'0')!==validity)
-        throw Error('A validade da proposta deve ser uma data futura.');
+      const expiry=new Date(validity+'T12:00:00Z');
+      if(!Number.isFinite(expiry.getTime())||expiry.toISOString().slice(0,10)!==validity||
+         validity<todayLisbonV25())
+        throw Error('A validade da proposta deve ser uma data válida e não anterior à data de hoje em Portugal.');
     }
     return {
       schema:'artessencia_commercial_offer_v1',kind,item,
@@ -660,32 +660,46 @@
   let eventsAvailableV25=false,eventsByProposalV25=new Map(),eventBusyV25=false;
   const EVENT_LABEL_V25={sent:'Enviada',accepted:'Aceite',declined:'Recusada',cancelled:'Cancelada'};
   const EVENT_CHANNEL_V25={whatsapp:'WhatsApp',email:'Email',phone:'Telefone',in_person:'Presencial',other:'Outro'};
+  function todayLisbonV25(){
+    const parts=new Intl.DateTimeFormat('en-GB',{
+      timeZone:'Europe/Lisbon',year:'numeric',month:'2-digit',day:'2-digit'
+    }).formatToParts(new Date());
+    const date=Object.fromEntries(parts.map(p=>[p.type,p.value]));
+    return date.year+'-'+date.month+'-'+date.day;
+  }
   function proposalStatusV25(row){
     const events=eventsByProposalV25.get(row.simulation_id)||[];
     const last=events[events.length-1]?.event_type;
     if(['accepted','declined','cancelled'].includes(last))
       return {value:last,label:EVENT_LABEL_V25[last]};
-    const date=String(row.payload?.customerOffer?.validUntil||'');
-    if(/^\d{4}-\d{2}-\d{2}$/.test(date)){
-      const expiry=new Date(date+'T23:59:59');
-      if(Number.isFinite(expiry.getTime())&&expiry.getTime()<Date.now())
-        return {value:'expired',label:'Validade terminada'+(last==='sent'?' (enviada)':'')};
-    }
+    const validity=String(row.payload?.customerOffer?.validUntil||'');
+    if(/^\d{4}-\d{2}-\d{2}$/.test(validity)&&validity<todayLisbonV25())
+      return {value:'expired',wasSent:last==='sent',label:'Validade terminada'+(last==='sent'?' (enviada)':'')};
     return last==='sent'?{value:'sent',label:'Enviada'}:{value:'draft',label:'Rascunho'};
   }
   async function loadProposalEventsV25(userId,ids){
     eventsAvailableV25=false;eventsByProposalV25=new Map();
     if(!ids.length){eventsAvailableV25=true;return;}
-    const {data,error}=await cloudClient.from(EVENTS_V25)
-      .select('event_id,proposal_id,event_type,channel,note,created_at')
-      .eq('user_id',userId).in('proposal_id',ids)
-      .order('created_at',{ascending:true}).limit(200);
-    if(error){state('Histórico das decisões indisponível. Não é possível alterar estados até corrigir a ligação Cloud.');return;}
+    // Consultas por grupos: cada proposta comporta no máximo dois eventos
+    // (envio e decisão final). Nunca truncar silenciosamente o estado.
+    for(let i=0;i<ids.length;i+=12){
+      const subset=ids.slice(i,i+12);
+      const {data,error}=await cloudClient.from(EVENTS_V25)
+        .select('event_id,proposal_id,event_type,channel,note,created_at')
+        .eq('user_id',userId).in('proposal_id',subset)
+        .order('created_at',{ascending:true})
+        .order('event_id',{ascending:true}).limit(100);
+      if(error||!Array.isArray(data)||data.length>=100){
+        eventsByProposalV25=new Map();
+        state('Histórico comercial indisponível ou incompleto. Estados bloqueados até a Cloud responder corretamente.');
+        return;
+      }
+      data.forEach(event=>{
+        if(!eventsByProposalV25.has(event.proposal_id))eventsByProposalV25.set(event.proposal_id,[]);
+        eventsByProposalV25.get(event.proposal_id).push(event);
+      });
+    }
     eventsAvailableV25=true;
-    (data||[]).forEach(e=>{
-      if(!eventsByProposalV25.has(e.proposal_id))eventsByProposalV25.set(e.proposal_id,[]);
-      eventsByProposalV25.get(e.proposal_id).push(e);
-    });
   }
   function manageProposalV25(row,holder){
     const status=proposalStatusV25(row);
@@ -709,7 +723,7 @@
     }
     const available=status.value==='draft'?['sent','cancelled']:
       status.value==='sent'?['accepted','declined','cancelled']:
-      status.value==='expired'?['cancelled']:[];
+      status.value==='expired'?(status.wasSent?['declined','cancelled']:['cancelled']):[];
     if(available.length){
       const actions=document.createElement('div');actions.className='aeq-status-actions-v25';
       const select=document.createElement('select');select.setAttribute('aria-label','Nova decisão');
