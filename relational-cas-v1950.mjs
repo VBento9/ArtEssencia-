@@ -26,6 +26,19 @@ export function planRelationalWriteV1950(local,remote,stringify) {
  if((local[SYNC_STAMP]??null)!==(remote.updated_at??null))return {action:'conflict',reason:'remote_changed'};
  return {action:'update'};
 }
+export function assertCanHydrateV1950(local,incoming,{dirty=false,stringify,kind='registo',id=''}={}){
+ if(!local||!incoming||typeof stringify!=='function')throw Error('Receção sem contexto.');
+ const current=stringify(stripRelSyncMetadataV1950(local)),target=stringify(stripRelSyncMetadataV1950(incoming)),baseline=local[SYNC_BASE];
+ if(baseline!==undefined&&current!==baseline&&current!==target)throw Error('CONFLITO_RECECAO_V1950: alterações locais não enviadas em '+kind+' '+id);
+ if(baseline===undefined&&dirty&&current!==target)throw Error('CONFLITO_RECECAO_V1950: registo local sem versão em '+kind+' '+id);
+ return true;
+}
+export function assertNoLogicalDuplicateV1950(table,row,remoteRows){
+ const key=table.endsWith('_products')?'code':'id';
+ const value=String(row?.data?.[key]??'').trim();
+ if(value&&remoteRows.some(r=>r.id!==row.id&&String(r?.data?.[key]??'').trim()===value))
+  throw Error('CONFLITO_RELACIONAL_V1950: identificador lógico duplicado em '+table+': '+value);
+}
 export async function writeRelationalRowsCasV1950({client,table,rows,remoteRows,localRows,userId,stringify,onAck}) {
  if(!client||!table||!userId||!Array.isArray(rows)||!Array.isArray(remoteRows)||!Array.isArray(localRows))throw Error('Sincronização relacional sem contexto.');
  const remotes=new Map(remoteRows.map(r=>[r.id,r])),locals=new Map(localRows.map(r=>[r._rid,r]));
@@ -35,6 +48,7 @@ export async function writeRelationalRowsCasV1950({client,table,rows,remoteRows,
   if(!local)throw Error('Registo local sem identidade: '+row.id);
   const plan=planRelationalWriteV1950(local,remote,stringify);
   if(plan.action==='conflict')throw Error('CONFLITO_RELACIONAL_V1950: '+table+' '+row.id+' ('+plan.reason+'). Atualiza a Cloud e revê o registo.');
+  if(plan.action==='insert')assertNoLogicalDuplicateV1950(table,row,remoteRows);
   if(plan.action==='skip'){counts.skipped++;continue;}
   if(plan.action==='adopt'){tagHydratedRowV1950(local,remote,stringify);onAck?.();counts.adopted++;continue;}
   const query=plan.action==='insert'

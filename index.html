@@ -15937,7 +15937,7 @@ async function relationalHydrateCore(initial=false){
  let hydrationBackupV1950=null;
  if(ownBusy){cloudBusy=true;renderCloudUI()}
  try{
-   const {tagHydratedRowV1950,stripRelSyncMetadataV1950}=await import('./relational-cas-v1950.mjs');
+   const {tagHydratedRowV1950,assertCanHydrateV1950}=await import('./relational-cas-v1950.mjs');
    const [clients,products,orders,quotes]=await Promise.all([
      relFetchAll(REL_TABLES.clients),relFetchAll(REL_TABLES.products),relFetchAll(REL_TABLES.orders),relFetchAll(REL_TABLES.quotes)
    ]);
@@ -15978,12 +15978,7 @@ async function relationalHydrateCore(initial=false){
 
          if(target){
            // Do not silently overwrite unsent local changes during Cloud hydration.
-           const current=stableStringify(stripRelSyncMetadataV1950(target));
-           const baseline=target._relSyncFingerprintV1950;
-           if(baseline!==undefined && current!==baseline && current!==stableStringify(base))
-             throw new Error('CONFLITO_RECECAO_V1950: alterações locais não enviadas em '+kind+' '+r.id);
-           if(baseline===undefined && localStorage.getItem(REL_DIRTY)==='1' && current!==stableStringify(base))
-             throw new Error('CONFLITO_RECECAO_V1950: snapshot local sem revisão em '+kind+' '+r.id);
+           assertCanHydrateV1950(target,base,{dirty:localStorage.getItem(REL_DIRTY)==='1',stringify:stableStringify,kind,id:r.id});
            Object.assign(target,base);
            tagHydratedRowV1950(target,r,stableStringify);
          }else{

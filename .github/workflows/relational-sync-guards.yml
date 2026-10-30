@@ -1,0 +1,26 @@
+name: Backoffice relational concurrency guards
+on:
+  push:
+    branches:
+      - feature/mobile-relational-cas-v1950-20261030
+  pull_request:
+    paths:
+      - 'relational-cas-v1950.mjs'
+      - 'index.html'
+      - 'tests/relational-*.test.mjs'
+      - '.github/workflows/relational-sync-guards.yml'
+permissions:
+  contents: read
+jobs:
+  concurrency-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check module syntax
+        run: node --check relational-cas-v1950.mjs
+      - name: Run isolated concurrency tests
+        run: node --test tests/relational-cas-v1950.test.mjs tests/relational-writer-coverage.test.mjs
