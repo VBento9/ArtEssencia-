@@ -413,6 +413,29 @@ function install(){
  showTab('ready');
 }
 
+
+function boxConversionReadinessV5(request){
+ const boxes=(db.themedBoxes||[]).filter(b=>String(b.originRequestId||'')===String(request.request_id));
+ const value=Number(request.quoted_total);
+ const compatible=boxes.filter(b=>{
+   const products=Array.isArray(request.items)?request.items:[];
+   const selected=Array.isArray(b.items)?b.items:[];
+   return b.active===false&&b.technicalV2?.mode==='finished'
+     &&Number(b.technicalRevisionV4?.version)>=1
+     &&Number(b.technicalRevisionV4?.snapshot?.total)>0
+     &&Number.isFinite(value)&&value>0
+     &&Math.round(Number(b.price)*100)===Math.round(value*100)
+     &&products.length>0&&products.length===selected.length
+     &&products.every(x=>selected.filter(y=>String(x.code)===String(y.code)&&Number(x.qty)===Number(y.qty)).length===1);
+ });
+ const warnings=[];
+ if(!boxes.length)warnings.push('Não existe ficha técnica associada ao pedido.');
+ if(boxes.length&&!compatible.length)warnings.push('Revê a composição, versão técnica e preço da ficha.');
+ if(compatible.length>1)warnings.push('Mais de uma ficha corresponde ao pedido; elimina a ambiguidade.');
+ warnings.push('Conversão em encomenda desativada até existir uma operação Cloud atómica e idempotente.');
+ return {compatible,warnings};
+}
+
 let requestsCache=[];
 async function loadBoxRequestsV2(){
  const root=$('aeBoxRequestList');if(!root)return;
@@ -436,6 +459,11 @@ async function loadBoxRequestsV2(){
    const details=Object.entries(prefs).filter(([k,v])=>v!==null&&v!==undefined&&String(v).trim())
     .map(([k,v])=>'<small>'+safe(k)+': '+safe(typeof v==='object'?JSON.stringify(v):v)+'</small>').join('');
    const canQuote=['new','reviewing','quoted','sent','revision_requested'].includes(r.status);
+    const readiness=boxConversionReadinessV5(r);
+    const conversionNote=r.status==='accepted'
+      ?'<div class="ae-box-estimate"><b>Preparação da encomenda</b><small>Fichas técnicas compatíveis: '+readiness.compatible.length+'</small>'+
+      readiness.warnings.map(w=>'<small>• '+safe(w)+'</small>').join('')+
+      '<small>Sem movimentação de stock, registo de pagamento ou criação de encomenda.</small></div>':'';
    const canSend=['quoted','sent'].includes(r.status)&&r.response_token&&r.quote_valid_until&&new Date(r.quote_valid_until)>new Date();
    const previous=history.filter(h=>h.request_id===r.request_id).slice(0,8)
     .map(h=>'v'+safe(h.quote_version)+' · '+safe(h.event_type)+' · '+safe(new Date(h.created_at).toLocaleDateString('pt-PT'))).join(' | ');
@@ -459,7 +487,7 @@ async function loadBoxRequestsV2(){
      (r.status==='quoted'?'<button class="btn" data-box-request-action="marksent" data-id="'+safe(r.request_id)+'">Marcar enviado</button>':'')+
     '</div>'+
     (previous?'<small class="muted">Histórico: '+previous+'</small>':'')+
-    (r.status==='accepted'?'<p class="ae-box-estimate">Aceite: a conversão em encomenda depende da confirmação interna; o stock permanece inalterado.</p>':'')+
+    conversionNote+
     '</article>';
   }).join(''):'<div class="soft-note">Sem pedidos de Boxes. Quando um cliente enviar uma proposta, aparecerá aqui.</div>';
  }catch(error){
