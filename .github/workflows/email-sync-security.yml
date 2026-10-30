@@ -1,0 +1,25 @@
+name: Seguranca de sincronizacao IMAP
+on:
+  pull_request:
+    paths:
+      - 'api/email-sync.js'
+      - 'tests/email-sync-security.test.mjs'
+      - '.github/workflows/email-sync-security.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  email-sync-security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Testes isolados sem acesso a emails
+        run: node --test tests/email-sync-security.test.mjs

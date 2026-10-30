@@ -5,6 +5,11 @@ import { TextDecoder } from 'node:util';
 const SUPABASE_URL = 'https://ihtsonqnnlrxvorfrarl.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_bBAzr698eotgn-QCq0kKWQ_szVceK5x';
 
+// Intervalo minimo por instancia (nao substitui um limite global).
+const MIN_SYNC_INTERVAL_MS = 120000;
+let lastSuccessfulSyncAt = 0;
+let syncInFlight = null;
+
 const env = (name, fallback = '') =>
   process.env[name] || fallback;
 
@@ -925,12 +930,15 @@ async function syncImap(token) {
     );
   }
 
+  if (!useStarttls) throw new Error('IMAP_TLS_REQUIRED');
+
   let socket =
     net.connect({
       host,
       port
     });
 
+  try {
   socket.setTimeout(
     15000,
     () =>
@@ -1103,14 +1111,7 @@ async function syncImap(token) {
       errors.push({
         uid,
 
-        error:
-          String(
-            error?.message ||
-            error
-          ).slice(
-            0,
-            300
-          )
+        error: 'MESSAGE_SYNC_FAILED'
       });
     }
   }
@@ -1138,12 +1139,17 @@ async function syncImap(token) {
       ),
     errors
   };
+  } finally {
+    try { socket.destroy(); } catch {}
+  }
 }
 
 export default async function handler(
   req,
   res
 ) {
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
   if (
     req.method !== 'POST'
   ) {
@@ -1174,10 +1180,21 @@ export default async function handler(
         });
     }
 
-    const result =
-      await syncImap(
-        bearerToken(req)
-      );
+    if (syncInFlight) {
+      return res.status(200).json({ok:true,skipped:'in_progress',processed:0,linked:0,checked:0,pending:0,errors:[]});
+    }
+    const elapsed = Date.now() - lastSuccessfulSyncAt;
+    if (lastSuccessfulSyncAt && elapsed < MIN_SYNC_INTERVAL_MS) {
+      return res.status(200).json({ok:true,skipped:'cooldown',processed:0,linked:0,checked:0,pending:0,errors:[],retry_after_seconds:Math.ceil((MIN_SYNC_INTERVAL_MS-elapsed)/1000)});
+    }
+    let result;
+    syncInFlight = syncImap(bearerToken(req));
+    try {
+      result = await syncInFlight;
+      lastSuccessfulSyncAt = Date.now();
+    } finally {
+      syncInFlight = null;
+    }
 
     console.log(
       '[ARTESSENCIA EMAIL SYNC]',
@@ -1191,21 +1208,7 @@ export default async function handler(
         ...result
       });
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        ok: false,
-        error:
-          'IMAP_SYNC_FAILED',
-
-        detail:
-          String(
-            error?.message ||
-            error
-          ).slice(
-            0,
-            500
-          )
-      });
+    console.error('[ARTESSENCIA EMAIL SYNC FAILED]', /MISSING_IMAP_PASSWORD|IMAP_TLS_REQUIRED/.test(String(error?.message||'')) ? 'CONFIGURATION' : 'REMOTE_SYNC');
+    return res.status(500).json({ok:false,error:'IMAP_SYNC_FAILED'});
   }
 }
