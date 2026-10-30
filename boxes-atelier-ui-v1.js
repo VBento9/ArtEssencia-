@@ -39,14 +39,31 @@ function previewPredefined(){
  const id=text($('themeBoxId')?.value);
  const existing=(db.themedBoxes||[]).find(x=>x.id===id);
  const base=(db.packaging||[]).find(x=>x.name===$('themeBoxBasePackaging')?.value);
- const packaging=Number(base?.cost)||0,extra=Number($('themeBoxDecorationCost')?.value)||0;
+ const packaging=Number(base?.cost)||0;
+ const decoration=Number($('themeBoxDecorationCost')?.value)||0;
  const price=Number($('themeBoxPrice')?.value)||0;
- const cost=techCostV2(composition(),techDraftV2()).total+packaging+extra;
- const diff=price-cost;
+ const tech=techDraftV2();
+ const breakdown=techCostV2(composition(),tech);
+ const cost=breakdown.total+packaging+decoration;
+ const complete=!breakdown.incomplete && composition().length>0;
+ const profit=price-cost;
+ const margin=price>0?profit/price*100:0;
  const info=$('aeBoxEstimateV1');
- if(info)info.innerHTML='<b>Estimativa da Box</b><div>Custo dos produtos: '+money(selectedTotal(composition(),true))+'</div><div>Caixa física e decoração: '+money(packaging+extra)+'</div><div>Preço definido: '+money(price)+'</div><strong>Diferença estimada: '+money(diff)+'</strong><small>Sem prometer disponibilidade, não substitui o custo detalhado de Produção.</small>'+
- (existing?'<small>Esta composição fica associada à Box guardada.</small>':'<small>Guarda a Box para associar a composição.</small>');
+ if(!info)return;
+ info.innerHTML='<b>Estimativa da Box — '+(tech.mode==='joint'?'Produção conjunta':'Montagem de produtos acabados')+'</b>'+
+  '<div>Matérias-primas: '+money(breakdown.materials)+'</div>'+
+  '<div>Mão de obra: '+money(breakdown.labor)+'</div>'+
+  '<div>Energia: '+money(breakdown.energy)+'</div>'+
+  '<div>Outros custos de fabrico: '+money(breakdown.indirect)+'</div>'+
+  '<div>Caixa física e decoração: '+money(packaging+decoration)+'</div>'+
+  '<strong>Custo estimado: '+(complete?money(cost):'Por completar')+'</strong>'+
+  '<div>PVP definido: '+money(price)+'</div>'+
+  (complete?'<strong>Lucro bruto estimado: '+money(profit)+' · Margem: '+margin.toLocaleString('pt-PT',{maximumFractionDigits:1})+'%</strong>':
+   '<small>Estimativa incompleta: adiciona produtos e, na produção conjunta, o custo total das matérias-primas.</small>')+
+  '<small>As gramas de cera e fragrância são parâmetros da receita e não são cobradas novamente à parte. Na produção conjunta, o campo de matérias-primas deve incluir estes materiais e respetivos desperdícios.</small>'+
+  (existing?'<small>Composição associada à Box guardada.</small>':'<small>Guarda a Box para associar os dados de fabrico.</small>');
 }
+
 function loadExisting(b){selected=Array.isArray(b?.items)?b.items.map(x=>({code:text(x.code),qty:Number(x.qty)||1})).filter(x=>x.code):[];drawPicker('aeBoxProductsV1',selected,true);previewPredefined();}
 function showTab(tab){
  const hub=$(ID);if(!hub)return;
@@ -128,7 +145,7 @@ function renderPredefinedExtras(){
  const original=window.editThemedBox;
  if(typeof original==='function')window.editThemedBox=function(id){original(id);const b=(db.themedBoxes||[]).find(x=>String(x.id)===String(id));loadExisting(b);loadTechV2(b);showTab('ready')};
  const clear=window.clearThemedBoxForm;
- if(typeof clear==='function')window.clearThemedBoxForm=function(){clear();selected=[];drawPicker('aeBoxProductsV1',selected,true);previewPredefined()};
+ if(typeof clear==='function')window.clearThemedBoxForm=function(){clear();selected=[];drawPicker('aeBoxProductsV1',selected,true);loadTechV2(null);previewPredefined()};
  const tech=document.createElement('div');tech.className='ae-box-composition';
  tech.innerHTML='<h3>Ficha técnica própria da Box</h3><p class="muted">Produção conjunta não soma novamente a cera e a mão de obra das fichas individuais.</p><div class="ae-custom-grid">'+
  '<label>Tipo de produção<select id="aeBoxMode"><option value="finished">Montar produtos acabados</option><option value="joint">Produção conjunta / receita própria</option></select></label>'+
@@ -142,11 +159,58 @@ function renderPredefinedExtras(){
  '<label>Outros custos (€)<input id="aeBoxOther" type="number" min="0" step=".01"></label>'+
  '<label>Instruções de fabrico<textarea id="aeBoxTechNotes" rows="3"></textarea></label></div><div id="aeBoxTechSummary" class="ae-box-estimate"></div>';
  editor.append(tech);
+ const tools=document.createElement('div');tools.className='ae-custom-actions';tools.innerHTML='<button type="button" class="btn" data-ae-techprint="A5">Imprimir ficha de produção (A5)</button><button type="button" class="btn" data-ae-techprint="A4">Imprimir ficha com custos (A4)</button>';
+ tech.append(tools);
+ tools.querySelectorAll('[data-ae-techprint]').forEach(button=>button.addEventListener('click',()=>aeBoxPrintTechnicalV3(button.dataset.aeTechprint)));
  tech.addEventListener('input',()=>{previewPredefined();showTechSummaryV2()});
  tech.addEventListener('change',()=>{previewPredefined();showTechSummaryV2()});
  loadExisting(null);loadTechV2(null);
 }
-function loadTechV2(b){const x=b?.technicalV2||{},keys={aeBoxMode:x.mode||'finished',aeBoxWax:x.waxG||0,aeBoxFragrance:x.fragranceG||0,aeBoxMaterials:x.materialsCost||0,aeBoxProduction:x.productionMinutes||0,aeBoxAssembly:x.assemblyMinutes||0,aeBoxPacking:x.packagingMinutes||0,aeBoxEnergy:x.energyCost||0,aeBoxOther:x.otherCost||0,aeBoxTechNotes:x.notes||''};Object.entries(keys).forEach(([k,v])=>{const el=document.getElementById(k);if(el)el.value=v});showTechSummaryV2()}
+function loadTechV2(b){const x=b?.technicalV2||{},keys={aeBoxMode:x.mode||'finished',aeBoxWax:x.waxG||0,aeBoxFragrance:x.fragranceG||0,aeBoxMaterials:x.materialsCost||0,aeBoxProduction:x.productionMinutes||0,aeBoxAssembly:x.assemblyMinutes||0,aeBoxPacking:x.packagingMinutes||0,aeBoxEnergy:x.energyCost||0,aeBoxOther:x.otherCost||0,aeBoxTechNotes:x.notes||''};Object.entries(keys).forEach(([k,v])=>{const el=document.getElementById(k);if(el)el.value=v});showTechSummaryV2();previewPredefined()}
+function aeBoxPrintTechnicalV3(format){
+ const boxId=text($('themeBoxId')?.value);
+ const box=(db.themedBoxes||[]).find(x=>String(x.id)===boxId);
+ if(!box){toast('Guarda a Box antes de imprimir a ficha técnica.');return;}
+ const full=format==='A4';
+ const escape=safe;
+ const tech=box.technicalV2||{};
+ const breakdown=techCostV2(box.items||[],tech);
+ const physical=(db.packaging||[]).find(p=>p.name===box.basePackaging);
+ const packaging=(Number(physical?.cost)||0)+(Number(box.decorationCost)||0);
+ const total=breakdown.total+packaging;
+ const title='Ficha técnica · '+escape(box.name);
+ const info=[
+  ['Referência',box.id],['Tipo de produção',tech.mode==='joint'?'Produção conjunta':'Montagem de produtos acabados'],
+  ['Capacidade',String(box.capacity||1)+' unidades'],
+  ['Cera',String(Number(tech.waxG)||0)+' g'],
+  ['Fragrância',String(Number(tech.fragranceG)||0)+' g'],
+  ['Produção',String(Number(tech.productionMinutes)||0)+' min'],
+  ['Montagem',String(Number(tech.assemblyMinutes)||0)+' min'],
+  ['Embalagem',String(Number(tech.packagingMinutes)||0)+' min'],
+  ['Apresentação física',box.basePackaging||'Por definir']
+ ];
+ const items=(box.items||[]).map(x=>{
+  const p=match(x.code);return {qty:Math.max(1,Number(x.qty)||1),name:p?.name||x.code,code:x.code};
+ });
+ const src=String(box.image||'');
+ const photo=/^https:\/\//.test(src)||/^data:image\/(png|jpeg|webp);base64,/i.test(src)?'<img class="photo" src="'+escape(src)+'" alt="Foto da Box">':'';
+ const finance=full?'<h2>Custos internos</h2><table><tbody>'+
+  [['Matérias-primas',breakdown.materials],['Mão de obra',breakdown.labor],['Energia',breakdown.energy],['Outros custos',breakdown.indirect],['Caixa e decoração',packaging],['Custo total estimado',total],['Preço de venda',Number(box.price)||0],['Lucro bruto',Number(box.price||0)-total]].map(([key,v])=>'<tr><td>'+escape(key)+'</td><td>'+money(v)+'</td></tr>').join('')+
+ '</tbody></table><p class="note">Os valores são estimativas. Confirmar preços de materiais e mão de obra antes de produzir.</p>':'';
+ const markup='<!doctype html><html lang="pt-PT"><head><meta charset="utf-8"><title>'+title+'</title>'+
+ '<style>@page{size:'+format+';margin:12mm}*{box-sizing:border-box}body{font:11px Arial,sans-serif;color:#392f28;margin:0;overflow-wrap:anywhere}header{display:flex;gap:12px;align-items:start;border-bottom:2px solid #745a42;padding-bottom:11px}h1{font:24px Georgia,serif;margin:0}h2{font-size:15px;margin:19px 0 8px;color:#674c37}.photo{height:100px;width:100px;object-fit:cover;border-radius:8px;flex-shrink:0}.meta{color:#766960}.fields{display:grid;grid-template-columns:1fr 1fr;gap:6px 20px}.field{border-bottom:1px solid #e7ddd0;padding:5px 0;break-inside:avoid}.field strong{display:block;font-size:10px;color:#766758}table{width:100%;border-collapse:collapse}th,td{padding:6px;border-bottom:1px solid #ddd;text-align:left}td:last-child{text-align:right}.note{white-space:pre-wrap;line-height:1.5}.toolbar{padding:10px;background:#f0e7d9;margin-bottom:14px}.toolbar button{border:0;border-radius:8px;padding:9px 15px;background:#584535;color:white;font-weight:bold;cursor:pointer}@media print{.toolbar{display:none!important}h2{break-after:avoid}tr,.field{break-inside:avoid}}@media screen{body{max-width:800px;margin:auto;padding:15px}}</style></head><body>'+
+ '<div class="toolbar"><button id="print" type="button">Imprimir / Guardar PDF</button> · Formato '+format+'</div>'+
+ '<header>'+photo+'<div><h1>'+title+'</h1><p class="meta">ArtEssencia · Ficha técnica interna · '+escape(new Date().toLocaleDateString('pt-PT'))+'</p></div></header>'+
+ '<h2>Parâmetros de fabrico</h2><section class="fields">'+info.map(([k,v])=>'<div class="field"><strong>'+escape(k)+'</strong>'+escape(v)+'</div>').join('')+'</section>'+
+ '<h2>Produtos incluídos</h2><table><thead><tr><th>Artigo</th><th>Quantidade</th></tr></thead><tbody>'+
+ items.map(item=>'<tr><td>'+escape(item.name)+' ('+escape(item.code)+')</td><td>'+item.qty+'</td></tr>').join('')+'</tbody></table>'+
+ (tech.notes?'<h2>Instruções de fabrico</h2><div class="note">'+escape(tech.notes)+'</div>':'')+finance+
+ '<script>document.getElementById("print").addEventListener("click",function(){window.focus();window.print()});</script></body></html>';
+ const w=window.open('','_blank');
+ if(!w){toast('Abre o Backoffice no navegador e permite janelas para imprimir a ficha.');return;}
+ w.opener=null;w.document.open();w.document.write(markup);w.document.close();
+}
+
 function showTechSummaryV2(){const el=document.getElementById('aeBoxTechSummary');if(!el)return;const x=techCostV2(composition(),techDraftV2());el.innerHTML='<b>Fabrico: '+money(x.total)+'</b><span>Materiais: '+money(x.materials)+' · Trabalho: '+money(x.labor)+' · Energia: '+money(x.energy)+' · Outros: '+money(x.indirect)+'</span><small>'+(x.incomplete?'Preenche o custo das matérias-primas para produção conjunta.':'Estimativa sem embalagem física e decoração, adicionadas no total da Box.')+'</small>'}
 function install(){
  const screen=$('catalogs');if(!screen||$(ID))return;
