@@ -36,3 +36,8 @@
  #quantityPricing .aeq-history-row{align-items:flex-start;}
  #quantityPricing .quantity-pricing-results-v1750{grid-template-columns:repeat(2,minmax(0,1fr));}
 }
+#quantityPricing .aeq-snapshot{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0;}
+#quantityPricing .aeq-snapshot>div{border:1px solid #e5d9ca;border-radius:9px;padding:10px;overflow-wrap:anywhere;}
+#quantityPricing .aeq-snapshot dt{font-size:11px;color:#77695a;}
+#quantityPricing .aeq-snapshot dd{margin:5px 0 0;font-weight:700;}
+@media(max-width:560px){#quantityPricing .aeq-snapshot{grid-template-columns:minmax(0,1fr)}}

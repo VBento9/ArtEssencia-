@@ -15,6 +15,7 @@
   if(typeof baseline!=='function'||typeof originalRefresh!=='function'||typeof originalRender!=='function')return;
   function safeText(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   function priceFor(cost,percent,mode) {
+    if (!Number.isFinite(cost)||cost<0||!Number.isFinite(percent)) return NaN;
     const raw=mode==='markup'?cost*(1+percent/100):cost/(1-percent/100);
     return typeof batchPriceRoundV1743==='function'?batchPriceRoundV1743(raw):Math.ceil((raw-1e-9)*100)/100;
   }
@@ -39,7 +40,7 @@
     const recommendedUnit=priceFor(unitCost,target,mode);
     const discount=Math.min(100,numberV2('qtyPricingDiscountV1750',100));
     const manualRaw=String($('qtyPricingManualUnitV1750')?.value??'').trim();
-    const finalUnit=manualRaw===''?recommendedUnit*(1-discount/100):numberV2('qtyPricingManualUnitV1750');
+    const finalUnit=manualRaw===''?Math.round((recommendedUnit*(1-discount/100)+Number.EPSILON)*100)/100:numberV2('qtyPricingManualUnitV1750');
     const finalTotal=finalUnit*q,profit=finalTotal-costTotal;
     const rows=b.materials.map(r=>Object.assign({},r,{totalQty:r.totalQty*ratio,cost:r.cost*ratio}));
     return Object.assign({},b,{
@@ -57,6 +58,7 @@
   function format(id,value) {const n=$(id);if(n)n.textContent=euroV2(value);}
   function addUI() {
     const root=$('quantityPricing');if(!root||$('aeQSetupMin'))return;
+    const unitsInput=$('qtyPricingUnitsV1750');if(unitsInput)unitsInput.max='10000';
     const grid=root.querySelector('.quantity-pricing-cost-grid-v1750');
     if(!grid)return;
     const newFields='<div class="field"><label>Preparação fixa do lote (min)</label><input id="aeQSetupMin" type="number" min="0" step="1" value="0" oninput="refreshQuantityPricingV1750()"><small>Preparação, limpeza e afinação, paga uma única vez por lote.</small></div>'+
@@ -64,7 +66,7 @@
       '<div class="field"><label>Desperdício sobre materiais (%)</label><input id="aeQWaste" type="number" inputmode="decimal" min="0" max="100" step="0.5" value="0" oninput="refreshQuantityPricingV1750()"><small>Aplicado apenas às matérias-primas do lote.</small></div>';
     grid.insertAdjacentHTML('afterbegin',newFields);
     const margin=$('qtyPricingMarginV1750')?.closest('.field');
-    margin?.insertAdjacentHTML('beforeend','<label class="aeq-sub-label" for="aeQMarginMode">Método de margem</label><select id="aeQMarginMode" onchange="refreshQuantityPricingV1750()"><option value="margin">Margem sobre o preço de venda</option><option value="markup">Acréscimo sobre o custo (markup)</option></select><small>40% de margem ≠ 40% de acréscimo.</small>');
+    margin?.insertAdjacentHTML('beforeend','<label class="aeq-sub-label" for="aeQMarginMode">Método de margem</label><select id="aeQMarginMode" onchange="quantityPricingMarginMethodV2()"><option value="margin">Margem sobre o preço de venda</option><option value="markup">Acréscimo sobre o custo (markup)</option></select><small>40% de margem ≠ 40% de acréscimo.</small>');
     const results=root.querySelector('.quantity-pricing-results-v1750');
     results?.insertAdjacentHTML('beforeend',
       '<div><span>Preparação fixa (incluída na mão de obra/custos gerais)</span><strong id="aeQSetupCost">0,00 €</strong></div>'+
@@ -75,7 +77,7 @@
     warning?.insertAdjacentHTML('afterend',
       '<div class="aeq-panel"><h3>Como é formado o preço</h3><div id="aeQExplanation" aria-live="polite"></div></div>'+
       '<div class="aeq-panel"><h3>Comparar quantidades</h3><p>10, 25, 50, 100 unidades e a quantidade escolhida. Materiais e tempo por unidade mantêm-se proporcionais; a preparação fixa dilui-se pelo lote.</p><div class="aeq-table-scroll"><table><thead><tr><th>Unidades</th><th>Custo do lote</th><th>Custo / un.</th><th>PVP / un.</th><th>Lucro final</th><th>Margem final</th></tr></thead><tbody id="aeQTiers"></tbody></table></div></div>'+
-      '<div class="aeq-panel"><h3>Histórico Cloud e propostas comerciais</h3><div class="aeq-actions"><label>Referência da simulação<input id="aeQLabel" maxlength="120" placeholder="Ex.: Lembranças casamento"></label><button class="btn primary" type="button" id="aeQSave">Guardar simulação na Cloud</button><button class="btn" type="button" id="aeQReload">Atualizar histórico</button></div><label class="aeq-check"><input type="checkbox" id="aeQApproval"> Confirmei materiais, custos, margens e condições comerciais.</label><button class="btn" type="button" id="aeQProposal">Preparar proposta comercial (rascunho)</button><p id="aeQCloudState" role="status" aria-live="polite">Os rascunhos são gravados na Cloud; nenhum pedido ou stock é alterado.</p><div id="aeQHistory"></div><label class="aeq-proposal-label">Texto da proposta para copiar<textarea id="aeQProposalText" rows="5" readonly></textarea></label><button class="btn" type="button" id="aeQCopy">Copiar proposta</button></div>');
+      '<div class="aeq-panel"><h3>Histórico Cloud e propostas comerciais</h3><div class="aeq-actions"><label>Referência da simulação<input id="aeQLabel" maxlength="120" placeholder="Ex.: Lembranças casamento"></label><button class="btn primary" type="button" id="aeQSave">Guardar simulação na Cloud</button><button class="btn" type="button" id="aeQReload">Atualizar histórico</button></div><label class="aeq-check"><input type="checkbox" id="aeQApproval"> Confirmei materiais, custos, margens e condições comerciais.</label><button class="btn" type="button" id="aeQProposal">Preparar proposta comercial (rascunho)</button><p id="aeQCloudState" role="status" aria-live="polite">Os rascunhos são gravados na Cloud; nenhum pedido ou stock é alterado.</p><div id="aeQHistory"></div><div id="aeQHistoryDetail" aria-live="polite"></div><label class="aeq-proposal-label">Texto da proposta para copiar<textarea id="aeQProposalText" rows="5" readonly></textarea></label><button class="btn" type="button" id="aeQCopy">Copiar proposta</button></div>');
     const convert=root.querySelector('.quantity-pricing-convert-v1751');
     if(convert)convert.remove(); // Não transportar diretamente uma simulação para encomenda.
     $('aeQSave')?.addEventListener('click',()=>saveSimulation(false));
@@ -87,6 +89,7 @@
       try{await navigator.clipboard.writeText(str);state('Texto da proposta copiado.')}catch(e){state('Seleciona e copia o texto manualmente.')}
     });
   }
+  window.quantityPricingMarginMethodV2=function(){const input=$('qtyPricingMarginV1750');if(input)input.max=$('aeQMarginMode')?.value==='markup'?'1000':'95';window.refreshQuantityPricingV1750();};
   function state(message) {const el=$('aeQCloudState');if(el)el.textContent=message;}
   function signature(s) {
     return JSON.stringify([s.mode,s.productCode,s.units,s.materials,s.minutesPerUnit,
@@ -128,6 +131,7 @@
         'Margem efetiva após desconto: '+pctV2(s.marginReal*100)+'. Simulação sem efeitos no stock, fichas técnicas ou encomendas.';
     }
     const tiers=[...new Set([10,25,50,100,s.units])].sort((a,b)=>a-b);
+    const priceInput=$('qtyPricingMarginV1750');if(priceInput)priceInput.max=s.marginMode==='markup'?'1000':'95';
     const table=$('aeQTiers');
     if(table)table.innerHTML=tiers.map(q=>{
       const n=compute(q),highlight=q===s.units?' class="aeq-current"':'';
@@ -147,7 +151,10 @@
       if(navigator.onLine===false)throw new Error('Sem ligação à Internet. Não foi gravado.');
       const u=await session();if(!u?.id)throw new Error('Inicia sessão na Cloud.');
       const now=compute(),sign=signature(now);
-      if(!Number.isFinite(now.costTotal)||now.units<1||now.finalUnit<=0)throw new Error('Indica custos e um preço final válidos.');
+      if(!Number.isFinite(now.costTotal)||now.costTotal<=0||now.units<1||now.finalUnit<=0)throw new Error('Indica custos positivos e um preço final válido.');
+      const entered=Number($('qtyPricingUnitsV1750')?.value);
+      if(!Number.isInteger(entered)||entered<1||entered>10000||entered!==now.units)throw new Error('Indica uma quantidade inteira entre 1 e 10 000 unidades.');
+      if(now.materials.some(m=>Number(m.totalQty)>0&&!(Number(m.unitCost)>0)))throw new Error('Existem materiais sem custo unitário válido no Stock. Corrige a ficha de custos antes de guardar.');
       if(proposal) {
         if(!$('aeQApproval')?.checked)throw new Error('Confirma a validação dos custos antes de preparar a proposta.');
         if(!lastSaved||lastSaved.signature!==sign)throw new Error('Guarda primeiro esta versão da simulação na Cloud.');
@@ -196,36 +203,34 @@
         info.textContent=(row.kind==='proposal'?'Proposta · ':'Simulação · ')+row.label+' · '+
           new Date(row.created_at).toLocaleString('pt-PT')+' · '+euroV2(row.payload?.finalTotal);
         const btn=document.createElement('button');btn.className='btn';btn.type='button';
-        btn.textContent='Consultar';btn.onclick=()=>restore(row);
+        btn.textContent='Consultar';btn.onclick=()=>consultSnapshot(row);
         wrap.append(info,btn);el.append(wrap);
       });
     } catch(e) {state('Histórico Cloud indisponível: '+(e?.message||e));}
   }
-  function restore(row) {
-    const s=row?.payload;if(!s||!Array.isArray(s.materials)||!(s.units>0))return state('Registo incompleto; consulta indisponível.');
-    const mode=$('qtyPricingModeV1750');if(mode)mode.value=s.mode==='custom'?'custom':'product';
-    const qty=$('qtyPricingUnitsV1750');if(qty)qty.value=String(s.units);
-    const sel=$('qtyPricingProductV1750');if(sel&&s.productCode)sel.value=s.productCode;
-    quantityPricingProductCodeV1750=s.productCode||'';
-    quantityPricingRowsV1750=s.materials.map((r,i)=>({
-      id:'QPH-'+i,item:r.item,perUnit:Number(r.perUnit)||0,totalQty:Number(r.totalQty)||0,manual:true
-    }));
-    const values={
-      qtyPricingMinutesUnitV1750:s.minutesPerUnit,qtyPricingEfficiencyV1750:s.efficiencyPct,
-      qtyPricingTotalMinutesV1750:s.totalMinutes-s.setupMinutes,
-      qtyPricingOtherLotV1750:s.otherCost,qtyPricingDiscountV1750:s.discountPct,
-      qtyPricingManualUnitV1750:s.manualPrice?s.finalUnit:'',
-      qtyPricingMarginV1750:s.marginPct,aeQSetupMin:s.setupMinutes,
-      aeQPackaging:s.packagingPerUnit,aeQWaste:s.wastePct,aeQMarginMode:s.marginMode
-    };
-    Object.entries(values).forEach(([key,value])=>{if($(key))$(key).value=value??'';});
-    const other=$('qtyPricingOtherLotV1750');if(other){if(s.otherCostMode==='fixed')other.dataset.manual='1';else delete other.dataset.manual;}
-    if($('aeQLabel'))$('aeQLabel').value=row.label.replace(/^Proposta — /,'');
-    if($('aeQApproval'))$('aeQApproval').checked=false;
-    if(typeof renderQuantityPricingMaterialsV1750==='function')renderQuantityPricingMaterialsV1750();
-    window.refreshQuantityPricingV1750();
-    lastSaved=row.kind==='simulation'?{id:row.simulation_id,signature:signature(compute()),payload:s}:null;
-    state('Registo Cloud consultado. Alterações só criam uma nova simulação; não alteram a anterior.');
+  function consultSnapshot(row) {
+    const s=row?.payload,el=$('aeQHistoryDetail');
+    if(!el)return;
+    if(!s||!Array.isArray(s.materials)){el.textContent='O registo guardado está incompleto.';return;}
+    // Ler o cenário original; nunca aplicar silenciosamente os custos atuais do Stock.
+    const rows=[
+      ['Unidades',String(s.units||'—')],
+      ['Custo total guardado',euroV2(s.costTotal)],
+      ['Custo unitário guardado',euroV2(s.costUnit)],
+      ['Preço recomendado à data',euroV2(s.recommendedUnit)],
+      ['Preço final por unidade',euroV2(s.finalUnit)],
+      ['Preço comercial total',euroV2(s.finalTotal)],
+      ['Lucro previsto à data',euroV2(s.profit)],
+      ['Margem efetiva à data',pctV2((Number(s.marginReal)||0)*100)]
+    ];
+    el.innerHTML='<div class="aeq-panel"><h3>'+safeText(row.label)+'</h3>'+
+      '<p>Consulta do registo original em '+safeText(new Date(row.created_at).toLocaleString('pt-PT'))+
+      '. Os custos de materiais, taxas de trabalho e valores registados não são recalculados.</p>'+
+      '<dl class="aeq-snapshot">'+rows.map(([name,value])=>'<div><dt>'+safeText(name)+
+        '</dt><dd>'+safeText(value)+'</dd></div>').join('')+'</dl>'+
+      '<details><summary>Materiais e custos registados</summary><ul>'+
+      s.materials.map(m=>'<li>'+safeText(m.item)+': '+safeText(m.totalQty)+' '+
+        safeText(m.unit)+' · '+euroV2(m.cost)+'</li>').join('')+'</ul></details></div>';
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',addUI,{once:true});
   else addUI();
