@@ -15965,6 +15965,13 @@ async function relationalHydrateCore(initial=false){
                : {...d,_rid:r.id,id:d.id||('ORC-'+r.id.slice(0,8)),status:d.status||r.status||'Rascunho',created:d.created||(r.quote_date||todayISO())};
 
          if(target){
+           // Do not silently overwrite unsent local changes during Cloud hydration.
+           const current=stableStringify(stripRelSyncMetadataV1950(target));
+           const baseline=target._relSyncFingerprintV1950;
+           if(baseline!==undefined && current!==baseline && current!==stableStringify(base))
+             throw new Error('CONFLITO_RECECAO_V1950: alterações locais não enviadas em '+kind+' '+r.id);
+           if(baseline===undefined && localStorage.getItem(REL_DIRTY)==='1' && current!==stableStringify(base))
+             throw new Error('CONFLITO_RECECAO_V1950: snapshot local sem revisão em '+kind+' '+r.id);
            Object.assign(target,base);
            tagHydratedRowV1950(target,r,stableStringify);
          }else{
