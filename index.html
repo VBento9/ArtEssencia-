@@ -12433,12 +12433,13 @@ async function saveThemedBox(){
  const parts=typeof window.aeBoxItemsDraftV1==='function'?window.aeBoxItemsDraftV1():[];
  const totalUnits=parts.reduce((n,x)=>n+Math.max(0,Number(x.qty)||0),0);
  if(totalUnits>capacity)return toast('A composição excede a capacidade da caixa. Ajusta os artigos ou a capacidade.');
+ if(typeof window.aeBoxTechDraftV2==='function'){const t=window.aeBoxTechDraftV2();if(t.mode==='joint' && t.materialsCost<=0)return toast('Na produção conjunta, preenche o custo real de matérias-primas da Box.');}
 
  let existing=(db.themedBoxes||[]).find(x=>x.id===id),image=existing?.image||'';
  const f=themeBoxImage.files?.[0];
  if(f){try{image=await compressImageFile(f)}catch(e){return toast('Não foi possível processar a imagem')}}
  if(!image)return toast('Adicione uma imagem da caixa');
- const obj={id,name,capacity,basePackaging,decorationCost,price,description,image,active,items:typeof window.aeBoxItemsDraftV1==='function'?window.aeBoxItemsDraftV1():existing?.items||[],updatedAt:new Date().toISOString()};
+ const obj={id,name,capacity,basePackaging,decorationCost,price,description,image,active,items:typeof window.aeBoxItemsDraftV1==='function'?window.aeBoxItemsDraftV1():existing?.items||[],technicalV2:typeof window.aeBoxTechDraftV2==='function'?window.aeBoxTechDraftV2():existing?.technicalV2||null,updatedAt:new Date().toISOString()};
  if(existing)Object.assign(existing,obj);else{db.themedBoxes=db.themedBoxes||[];db.themedBoxes.push(obj)}
  save();clearThemedBoxForm();renderSettingsThemedBoxesSummary();toast('Conjunto personalizado guardado')
 }
