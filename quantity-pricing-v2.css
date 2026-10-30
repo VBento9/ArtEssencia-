@@ -100,3 +100,37 @@
 @media(max-width:365px){
  #quantityPricing .quantity-pricing-base-grid-v1750{grid-template-columns:minmax(0,1fr)!important}
 }
+
+/* 1.9.58 — operações rápidas sem ampliar a área inicial */
+#quantityPricing .aeq-product-search-toggle{
+ display:inline-flex;align-items:center;justify-content:center;margin-top:6px;
+ min-height:30px;padding:4px 9px;border-radius:7px;border:1px solid #d9cbbb;
+ background:#fffaf3;color:#654e3b;font-size:11px;font-weight:700;cursor:pointer;
+}
+#quantityPricing .aeq-product-finder{margin-top:7px;min-width:0;max-width:100%}
+#quantityPricing .aeq-product-finder[hidden]{display:none!important}
+#quantityPricing .aeq-product-finder>label{display:block;font-size:11px;font-weight:700;margin-bottom:5px}
+#quantityPricing .aeq-product-finder>input{width:100%;box-sizing:border-box;min-width:0;min-height:37px}
+#quantityPricing .aeq-product-finder>small{display:block;font-size:10px;margin-top:4px}
+#quantityPricing .aeq-product-found{display:grid;gap:3px;max-height:224px;overflow-y:auto;margin-top:5px}
+#quantityPricing .aeq-product-choice{display:block;text-align:left;white-space:normal;overflow-wrap:anywhere;
+ padding:7px 8px;border:1px solid #e4d9ca;border-radius:7px;background:#fffdf9;
+ font:inherit;font-size:11px;line-height:1.35;color:#483a2f;cursor:pointer}
+#quantityPricing .aeq-product-choice:hover,#quantityPricing .aeq-product-choice:focus-visible{background:#f4ebdd}
+#quantityPricing .aeq-quick-quantities{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:6px}
+#quantityPricing .aeq-quick-quantity{flex:1 0 auto;min-width:34px;min-height:28px;padding:4px 6px;
+ border:1px solid #ded0bf;border-radius:6px;background:#fffaf4;color:#63503e;font-size:11px;font-weight:700;cursor:pointer}
+#quantityPricing .aeq-quick-quantity.active{background:#594337;color:#fff;border-color:#594337}
+#quantityPricing .aeq-tier-choose{border:1px solid #d5c5b2;border-radius:6px;padding:5px 8px;
+ background:#fffdf9;color:#62472f;font:inherit;font-size:11px;font-weight:700;cursor:pointer}
+#quantityPricing .aeq-tier-choose:hover,#quantityPricing .aeq-tier-choose:focus-visible{background:#efe2d2}
+#quantityPricing .aeq-current .aeq-tier-choose{background:#5f463e;color:#fff}
+#quantityPricing .aeq-data-issues{margin-top:8px;padding:8px 10px;border:1px solid #d8a398;
+ background:#fff2ed;border-radius:8px;color:#8a3427;font-size:11px;line-height:1.4;overflow-wrap:anywhere}
+#quantityPricing .aeq-data-issues[hidden]{display:none!important}
+@media(max-width:560px){
+ #quantityPricing .aeq-product-finder{margin-top:5px}
+ #quantityPricing .aeq-product-choice{min-height:34px}
+ #quantityPricing .aeq-quick-quantities{gap:3px}
+ #quantityPricing .aeq-quick-quantity{min-height:28px;padding:3px 4px}
+}

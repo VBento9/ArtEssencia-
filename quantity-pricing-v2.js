@@ -89,6 +89,8 @@
       try{await navigator.clipboard.writeText(str);state('Texto da proposta copiado.')}catch(e){state('Seleciona e copia o texto manualmente.')}
     });
     organiseCompactUI();
+    installProductFinderV22();
+    installQuickQuantitiesV22();
   }
 
   // V2.1 — disposição compacta: os elementos existentes são movidos, não recriados.
@@ -163,6 +165,9 @@
       '</div><div class="aeq-summary-profit">Lucro estimado do lote: <strong id="aeqSummaryProfit">—</strong></div>';
     baseCard.after(summary);
     if(warning)summary.append(warning);
+    const issues=document.createElement('div');issues.id='aeQDataIssues';
+    issues.className='aeq-data-issues';issues.setAttribute('role','status');issues.hidden=true;
+    summary.append(issues);
     // A listagem longa de cálculos fica atrás de uma expansão voluntária.
     const breakdown=document.createElement('details');breakdown.className='aeq-breakdown';
     breakdown.innerHTML='<summary>Ver cálculo completo e discriminação de custos</summary>';
@@ -199,6 +204,125 @@
     root.dataset.aeqCompact='1';
     showCompactTab(activeCompactTab);
   }
+
+  // V2.2 — seletor de produtos pesquisável e escolha rápida de escalões.
+  // Os controlos originais e a ficha técnica continuam a ser a fonte dos cálculos.
+  function selectQuantityV22(q){
+    const value=Number(q),input=$('qtyPricingUnitsV1750');
+    if(!input||!Number.isInteger(value)||value<1||value>10000)return;
+    input.value=String(value);
+    if(typeof quantityPricingUnitsChangedV1750==='function')quantityPricingUnitsChangedV1750();
+    else window.refreshQuantityPricingV1750();
+  }
+  function normalizeSearchV22(value){
+    return String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
+  }
+  function installProductFinderV22(){
+    const root=$('quantityPricing'),field=$('qtyPricingProductFieldV1750'),selector=$('qtyPricingProductV1750');
+    if(!root||!field||!selector||$('aeQProductFinder'))return;
+    const toggle=document.createElement('button');
+    toggle.type='button';toggle.className='aeq-product-search-toggle';
+    toggle.textContent='Pesquisar produto';toggle.setAttribute('aria-expanded','false');
+    toggle.setAttribute('aria-controls','aeQProductFinder');
+    const area=document.createElement('div');area.id='aeQProductFinder';
+    area.className='aeq-product-finder';area.hidden=true;
+    const label=document.createElement('label');label.htmlFor='aeQProductQuery';
+    label.textContent='Pesquisar por nome ou código';
+    const input=document.createElement('input');input.id='aeQProductQuery';
+    input.type='search';input.autocomplete='off';
+    input.placeholder='Escreve para procurar…';
+    const options=document.createElement('div');options.className='aeq-product-found';
+    options.setAttribute('aria-label','Resultados da pesquisa');
+    const status=document.createElement('small');status.id='aeQSearchStatus';
+    area.append(label,input,status,options);
+    field.append(toggle,area);
+    const close=()=>{
+      area.hidden=true;toggle.setAttribute('aria-expanded','false');
+      toggle.textContent='Pesquisar produto';input.value='';
+      options.replaceChildren();status.textContent='';
+    };
+    function search(){
+      options.replaceChildren();
+      const query=normalizeSearchV22(input.value);
+      if(query.length<2){status.textContent='Escreve pelo menos 2 caracteres.';return;}
+      const list=(Array.isArray(db?.products)?db.products:[])
+        .filter(p=>(typeof productUsableV1803!=='function'||productUsableV1803(p))&&p?.code)
+        .filter(p=>normalizeSearchV22(p.name).includes(query)||normalizeSearchV22(p.code).includes(query))
+        .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'pt-PT'));
+      status.textContent=list.length?list.length+' produto(s) encontrado(s).':'Nenhum produto encontrado.';
+      list.slice(0,7).forEach(p=>{
+        const button=document.createElement('button');button.type='button';
+        button.className='aeq-product-choice';
+        button.textContent=String(p.name||p.code)+' · '+String(p.code);
+        button.addEventListener('click',()=>{
+          // O seletor continua a determinar o produto; não se escreve na ficha técnica.
+          const mode=$('qtyPricingModeV1750');
+          if(mode&&mode.value!=='product'){
+            mode.value='product';
+            if(typeof quantityPricingModeChangedV1750==='function')quantityPricingModeChangedV1750();
+          }
+          const current=$('qtyPricingProductV1750');if(!current)return;
+          current.value=String(p.code);
+          if(current.value!==String(p.code)){
+            status.textContent='O produto já não está disponível. Atualiza a lista.';
+            return;
+          }
+          if(typeof loadQuantityPricingProductV1750==='function')loadQuantityPricingProductV1750(true);
+          close();
+        });
+        options.append(button);
+      });
+      if(list.length>7){
+        const note=document.createElement('small');
+        note.textContent='Refina a pesquisa para ver os restantes resultados.';
+        options.append(note);
+      }
+    }
+    toggle.addEventListener('click',()=>{
+      if(area.hidden){
+        area.hidden=false;toggle.setAttribute('aria-expanded','true');
+        toggle.textContent='Fechar pesquisa';search();input.focus();
+      }else close();
+    });
+    input.addEventListener('input',search);
+    input.addEventListener('keydown',e=>{if(e.key==='Escape'){close();toggle.focus();}});
+  }
+  function installQuickQuantitiesV22(){
+    const units=$('qtyPricingUnitsV1750');
+    if(!units||$('aeQQuickQuantities'))return;
+    const group=document.createElement('div');
+    group.id='aeQQuickQuantities';group.className='aeq-quick-quantities';
+    group.setAttribute('aria-label','Quantidades rápidas');
+    [10,25,50,100].forEach(q=>{
+      const b=document.createElement('button');b.type='button';b.dataset.aeqQuick=String(q);
+      b.className='aeq-quick-quantity';b.textContent=String(q);
+      b.setAttribute('aria-label','Simular '+q+' unidades');
+      b.addEventListener('click',()=>selectQuantityV22(q));
+      group.append(b);
+    });
+    units.closest('.field')?.append(group);
+    $('aeQTiers')?.addEventListener('click',event=>{
+      const btn=event.target.closest('button[data-aeq-choose-qty]');
+      if(!btn)return;selectQuantityV22(btn.dataset.aeqChooseQty);
+    });
+  }
+  function priceDataIssuesV22(s){
+    const problems=[];
+    const units=Number($('qtyPricingUnitsV1750')?.value);
+    if(!Number.isInteger(units)||units<1||units>10000)problems.push('Quantidade inválida (1 a 10 000).');
+    if(!Number.isFinite(s.costTotal)||s.costTotal<=0)problems.push('O custo total precisa de ser positivo.');
+    const noCost=(s.materials||[]).filter(m=>Number(m.totalQty)>0&&!(Number(m.unitCost)>0));
+    if(noCost.length)problems.push('Matérias-primas sem custo: '+noCost.slice(0,3).map(m=>String(m.item||'sem identificação')).join(', ')+(noCost.length>3?'…':'')+'.');
+    if(!Number.isFinite(s.finalUnit)||s.finalUnit<=0)problems.push('Define um preço final por unidade válido.');
+    return problems;
+  }
+  function refreshQuickQuantitiesV22(s){
+    document.querySelectorAll('#aeQQuickQuantities [data-aeq-quick]').forEach(button=>{
+      const selected=Number(button.dataset.aeqQuick)===s.units;
+      button.classList.toggle('active',selected);
+      button.setAttribute('aria-pressed',String(selected));
+    });
+  }
   window.quantityPricingMarginMethodV2=function(){const input=$('qtyPricingMarginV1750');if(input)input.max=$('aeQMarginMode')?.value==='markup'?'1000':'95';window.refreshQuantityPricingV1750();};
   function state(message) {const el=$('aeQCloudState');if(el)el.textContent=message;}
   function signature(s) {
@@ -228,6 +352,9 @@
     const aeqMargin=$('aeqSummaryMargin');if(aeqMargin)aeqMargin.textContent=pctV2(s.marginReal*100);
     const aeqSummary=$('quantityPricing')?.querySelector('.aeq-main-summary');
     if(aeqSummary)aeqSummary.classList.toggle('aeq-negative',s.finalTotal+1e-9<s.costTotal);
+    refreshQuickQuantitiesV22(s);
+    const errors=priceDataIssuesV22(s),notice=$('aeQDataIssues');
+    if(notice){notice.hidden=!errors.length;notice.textContent=errors.length?'Dados por completar: '+errors.join(' '):'';}
     const tm=$('qtyPricingResultTimeV1750');if(tm)tm.textContent=Math.round(s.totalMinutes).toLocaleString('pt-PT')+' min';
     const mar=$('qtyPricingResultMarginV1750');if(mar)mar.textContent=pctV2(s.marginReal*100);
     const mark=$('aeQMarkupReal');if(mark)mark.textContent=pctV2(s.markupReal*100);
@@ -250,7 +377,7 @@
     const table=$('aeQTiers');
     if(table)table.innerHTML=tiers.map(q=>{
       const n=compute(q),highlight=q===s.units?' class="aeq-current"':'';
-      return '<tr'+highlight+'><td>'+q+'</td><td>'+euroV2(n.costTotal)+'</td><td>'+euroV2(n.costUnit)+'</td><td>'+euroV2(n.recommendedUnit)+'</td><td>'+euroV2(n.profit)+'</td><td>'+pctV2(n.marginReal*100)+'</td></tr>';
+      return '<tr'+highlight+'><td><button type="button" class="aeq-tier-choose" data-aeq-choose-qty="'+q+'" aria-label="Simular '+q+' unidades">'+q+' un.</button></td><td>'+euroV2(n.costTotal)+'</td><td>'+euroV2(n.costUnit)+'</td><td>'+euroV2(n.recommendedUnit)+'</td><td>'+euroV2(n.profit)+'</td><td>'+pctV2(n.marginReal*100)+'</td></tr>';
     }).join('');
   }
   window.refreshQuantityPricingV1750=function(){originalRefresh();renderEnhanced();};
@@ -266,7 +393,8 @@
       if(navigator.onLine===false)throw new Error('Sem ligação à Internet. Não foi gravado.');
       const u=await session();if(!u?.id)throw new Error('Inicia sessão na Cloud.');
       const now=compute(),sign=signature(now);
-      if(!Number.isFinite(now.costTotal)||now.costTotal<=0||now.units<1||now.finalUnit<=0)throw new Error('Indica custos positivos e um preço final válido.');
+      const issues=priceDataIssuesV22(now);
+      if(issues.length)throw new Error(issues.join(' '));
       const entered=Number($('qtyPricingUnitsV1750')?.value);
       if(!Number.isInteger(entered)||entered<1||entered>10000||entered!==now.units)throw new Error('Indica uma quantidade inteira entre 1 e 10 000 unidades.');
       if(now.materials.some(m=>Number(m.totalQty)>0&&!(Number(m.unitCost)>0)))throw new Error('Existem materiais sem custo unitário válido no Stock. Corrige a ficha de custos antes de guardar.');
