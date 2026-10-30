@@ -41,3 +41,62 @@
 #quantityPricing .aeq-snapshot dt{font-size:11px;color:#77695a;}
 #quantityPricing .aeq-snapshot dd{margin:5px 0 0;font-weight:700;}
 @media(max-width:560px){#quantityPricing .aeq-snapshot{grid-template-columns:minmax(0,1fr)}}
+
+/* 1.9.57 — compactação progressiva sem eliminar campos ou resultados */
+#quantityPricing{max-width:100%;min-width:0;overflow-x:clip}
+#quantityPricing .quantity-pricing-hero-v1750{padding:10px 12px!important;margin-bottom:8px}
+#quantityPricing .quantity-pricing-hero-v1750 small{font-size:11px;line-height:1.3}
+#quantityPricing .quantity-pricing-card-v1750{margin-top:8px!important;padding:12px!important;min-width:0}
+#quantityPricing .quantity-pricing-section-v1750{padding-bottom:6px;margin-bottom:8px}
+#quantityPricing .quantity-pricing-base-grid-v1750{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#quantityPricing .quantity-pricing-base-grid-v1750 .field{padding:8px!important}
+#quantityPricing .quantity-pricing-base-grid-v1750 input,
+#quantityPricing .quantity-pricing-base-grid-v1750 select{min-height:38px}
+#quantityPricing .aeq-main-summary{margin:8px 0;border:1px solid #dbcab5;border-radius:12px;padding:10px;background:#f7f1e8;min-width:0}
+#quantityPricing .aeq-main-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+#quantityPricing .aeq-main-summary-grid>div{min-width:0;padding:8px;border:1px solid #e3d8cc;border-radius:9px;background:#fffdf9}
+#quantityPricing .aeq-main-summary small{display:block;font-size:10px;line-height:1.3;color:#756555}
+#quantityPricing .aeq-main-summary strong{display:block;font-size:17px;color:#453121;margin-top:4px;overflow-wrap:anywhere}
+#quantityPricing .aeq-summary-profit{font-size:12px;display:flex;justify-content:space-between;gap:8px;align-items:center;margin:8px 2px 0}
+#quantityPricing .aeq-summary-profit strong{font-size:14px;margin:0}
+#quantityPricing .aeq-main-summary .quantity-pricing-warning-v1750{margin:8px 0 0!important;padding:7px 9px!important;font-size:11px;line-height:1.4}
+#quantityPricing .aeq-main-summary.aeq-negative{border-color:#db988e}
+#quantityPricing .aeq-tab-shell{margin-top:8px;min-width:0}
+#quantityPricing .aeq-tab-nav{display:flex;gap:5px;overflow-x:auto;max-width:100%;padding:2px 1px 8px;scrollbar-width:thin}
+#quantityPricing .aeq-tab{flex:1 0 auto;min-width:0;min-height:40px;padding:8px 11px;border:1px solid #d9cbbb;border-radius:9px;background:#fffdf9;color:#594537;font:inherit;font-size:12px;font-weight:700;white-space:nowrap;cursor:pointer}
+#quantityPricing .aeq-tab[aria-selected="true"]{background:#5f463e;color:#fff;border-color:#5f463e}
+#quantityPricing .aeq-tab:focus-visible{outline:2px solid #9e7751;outline-offset:2px}
+#quantityPricing .aeq-tab-panel{min-width:0;animation:none}
+#quantityPricing [data-aeq-panel][hidden],#quantityPricing .aeq-history-row[hidden],#quantityPricing #aeQMoreHistory[hidden]{display:none!important}
+#quantityPricing .aeq-tab-panel>.quantity-pricing-card-v1750,
+#quantityPricing .aeq-tab-panel>.aeq-panel{margin-top:0!important}
+#quantityPricing .aeq-breakdown>summary,
+#quantityPricing .aeq-manual-price>summary,
+#quantityPricing .aeq-margin-help>summary{cursor:pointer;list-style-position:inside;color:#664c37;font-weight:700;font-size:12px;padding:8px 3px}
+#quantityPricing .aeq-breakdown,#quantityPricing .aeq-manual-price,#quantityPricing .aeq-margin-help{min-width:0;margin:4px 0}
+#quantityPricing .aeq-breakdown>.quantity-pricing-card-v1750{margin-top:8px!important}
+#quantityPricing .aeq-breakdown .quantity-pricing-results-v1750{grid-template-columns:repeat(4,minmax(0,1fr))}
+#quantityPricing .aeq-more-history{margin:8px auto;display:block}
+#quantityPricing .aeq-tab-panel>.aeq-panel>p{margin:4px 0 9px}
+@media(max-width:800px){
+ #quantityPricing .quantity-pricing-base-grid-v1750{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #quantityPricing .aeq-main-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #quantityPricing .aeq-tab{flex:0 0 auto}
+ #quantityPricing .aeq-breakdown .quantity-pricing-results-v1750{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:560px){
+ #quantityPricing .quantity-pricing-base-grid-v1750{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}
+ #quantityPricing .quantity-pricing-base-grid-v1750 .field{padding:6px!important}
+ #quantityPricing .quantity-pricing-base-grid-v1750 .field label{font-size:10px}
+ #quantityPricing .quantity-pricing-base-grid-v1750 .field small{font-size:10px;line-height:1.3}
+ #quantityPricing .aeq-main-summary strong{font-size:15px}
+ #quantityPricing .aeq-main-summary-grid>div{padding:7px}
+ #quantityPricing .aeq-main-summary .quantity-pricing-warning-v1750{font-size:10px}
+ #quantityPricing .aeq-tab-nav{margin-inline:-2px}
+ #quantityPricing .aeq-tab{font-size:11px;padding:7px 10px;min-height:38px}
+ #quantityPricing .aeq-summary-profit{font-size:11px}
+ #quantityPricing .aeq-history-row{padding:8px 0}
+}
+@media(max-width:365px){
+ #quantityPricing .quantity-pricing-base-grid-v1750{grid-template-columns:minmax(0,1fr)!important}
+}
