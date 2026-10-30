@@ -12430,6 +12430,10 @@ async function saveThemedBox(){
  description=themeBoxDesc.value.trim(),
  active=themeBoxActive.value==='1';
  if(!name)return toast('Indique o nome do conjunto personalizado');
+ const parts=typeof window.aeBoxItemsDraftV1==='function'?window.aeBoxItemsDraftV1():[];
+ const totalUnits=parts.reduce((n,x)=>n+Math.max(0,Number(x.qty)||0),0);
+ if(totalUnits>capacity)return toast('A composição excede a capacidade da caixa. Ajusta os artigos ou a capacidade.');
+
  let existing=(db.themedBoxes||[]).find(x=>x.id===id),image=existing?.image||'';
  const f=themeBoxImage.files?.[0];
  if(f){try{image=await compressImageFile(f)}catch(e){return toast('Não foi possível processar a imagem')}}
@@ -13840,23 +13844,59 @@ async function drawArtEssenciaHeader(ctx,title,subtitle,logoSource='logo-artesse
 function drawCatalogFooter(ctx){ctx.fillStyle='#fff4cc';ctx.fillRect(70,1640,1100,70);ctx.fillStyle='#5A240B';ctx.font='18px Arial';ctx.textAlign='left';const contact=(db.settings.businessPhone||'').trim();ctx.fillText(contact?'Encomendas / MB Way: '+contact:'ArtEssencia Ateliê Artesanal',90,1683);ctx.textAlign='right';ctx.fillText('Preços sujeitos a confirmação de disponibilidade.',1150,1683);ctx.textAlign='left'}
 async function buildMenuPdfBlob(){const canvas=document.createElement('canvas');canvas.width=1240;canvas.height=1754;const ctx=canvas.getContext('2d');await drawArtEssenciaHeader(ctx,'CATÁLOGO','Produtos e preços');const catalogProducts=(db.products||[]).filter(productUsableV1803),cats=['Velas em molde','Velas em recipiente','Wax melts',...Array.from(new Set(catalogProducts.map(p=>p.category))).filter(x=>!['Velas em molde','Velas em recipiente','Wax melts'].includes(x))];let y=235;for(const cat of cats){const items=catalogProducts.filter(p=>p.category===cat);if(!items.length)continue;ctx.fillStyle=cat==='Velas em molde'?'#F12473':cat==='Velas em recipiente'?'#11ADB5':cat==='Wax melts'?'#93469C':'#FFB21A';ctx.fillRect(70,y,1100,48);ctx.fillStyle='#fff';ctx.font='900 23px Arial';ctx.fillText(cat.toUpperCase(),92,y+32);y+=68;for(const p of items){ctx.fillStyle='#5A240B';ctx.font='700 25px Arial';ctx.fillText(p.name,90,y);ctx.textAlign='right';ctx.fillStyle='#F12473';ctx.font='900 27px Arial';ctx.fillText(euro(p.price),1145,y);ctx.textAlign='left';ctx.strokeStyle='#f0ded2';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(90,y+18);ctx.lineTo(1145,y+18);ctx.stroke();y+=54;if(y>1560)break}y+=15;if(y>1560)break}drawCatalogFooter(ctx);const jpg=await new Promise((res,rej)=>canvas.toBlob(b=>b?res(b):rej(new Error('PDF')),'image/jpeg',.92));return jpegBlobToPDF(jpg,canvas.width,canvas.height)}
 async function buildThemedBoxesPdfBlob(){
- const boxes=(db.themedBoxes||[]).filter(b=>b.active!==false);if(!boxes.length)throw new Error('Sem conjuntos temáticos visíveis');
- const jpgs=[],positions=[[70,235],[630,235],[70,890],[630,890]];
- for(let page=0;page<Math.ceil(boxes.length/4);page++){
-  const canvas=document.createElement('canvas');canvas.width=1240;canvas.height=1754;const ctx=canvas.getContext('2d');
-  await drawArtEssenciaHeader(ctx,'CAIXAS TEMÁTICAS',`Escolhe a apresentação para o teu momento · página ${page+1}`);
-  const chunk=boxes.slice(page*4,page*4+4);
-  for(let i=0;i<chunk.length;i++){
-   const b=chunk[i],[x,y]=positions[i],w=540,h=595;ctx.fillStyle='#fff';ctx.strokeStyle='#f0ded2';ctx.lineWidth=2;
-   if(ctx.roundRect){ctx.beginPath();ctx.roundRect(x,y,w,h,22);ctx.fill();ctx.stroke()}else{ctx.fillRect(x,y,w,h);ctx.strokeRect(x,y,w,h)}
-   try{const im=await loadCanvasImage(b.image);const boxW=500,boxH=340,scale=Math.min(boxW/im.width,boxH/im.height),dw=im.width*scale,dh=im.height*scale;ctx.drawImage(im,x+(w-dw)/2,y+20+(boxH-dh)/2,dw,dh)}catch(e){}
-   ctx.fillStyle='#5A240B';ctx.font='900 28px Arial';ctx.fillText(b.name,x+25,y+395);ctx.fillStyle='#806b62';ctx.font='18px Arial';ctx.fillText(`${Number(b.capacity)||0} peças artesanais`,x+25,y+430);
-   ctx.fillStyle='#F12473';ctx.font='900 32px Arial';ctx.textAlign='right';ctx.fillText(euro(b.price),x+w-25,y+430);ctx.textAlign='left';
-   if(b.description){ctx.fillStyle='#6b5b55';ctx.font='18px Arial';let yy=y+470;for(const ln of wrapCanvasText(ctx,b.description,w-50).slice(0,3)){ctx.fillText(ln,x+25,yy);yy+=25}}
+ const boxes=(db.themedBoxes||[]).filter(b=>b.active!==false);
+ if(!boxes.length)throw new Error('Sem Boxes disponíveis para PDF');
+ const pages=[],pageW=1240,pageH=1754,perPage=12;
+ for(const box of boxes){
+  const contents=(Array.isArray(box.items)?box.items:[])
+    .filter(x=>String(x?.code||'').trim())
+    .map(x=>{
+      const p=(db.products||[]).find(p=>String(p.code||'')===String(x.code||''));
+      return {name:String(p?.name||x.name||x.code),qty:Math.max(1,Number(x.qty)||1)};
+    });
+  const chunks=contents.length?Math.ceil(contents.length/perPage):1;
+  for(let page=0;page<chunks;page++){
+   const canvas=document.createElement('canvas');canvas.width=pageW;canvas.height=pageH;
+   const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Não foi possível criar página PDF');
+   await drawArtEssenciaHeader(ctx,'BOXES ARTESSENCIA','Conjuntos artesanais · página '+(pages.length+1));
+   ctx.fillStyle='#faf4ed';ctx.fillRect(75,230,1090,470);
+   if(box.image){
+    try{
+     const im=await loadCanvasImage(box.image),width=560,height=440;
+     const factor=Math.min(width/im.width,height/im.height);
+     const dw=im.width*factor,dh=im.height*factor;
+     ctx.drawImage(im,90+(width-dw)/2,245+(height-dh)/2,dw,dh);
+    }catch(error){}
+   }
+   ctx.fillStyle='#49382e';ctx.font='bold 34px Arial';
+   const title=String(box.name||'Box ArtEssencia');
+   const label=title.length>29?title.slice(0,28)+'…':title;
+   ctx.fillText(label,685,325);
+   ctx.fillStyle='#725843';ctx.font='bold 33px Arial';ctx.fillText(euro(box.price),685,390);
+   ctx.fillStyle='#746759';ctx.font='22px Arial';
+   ctx.fillText(Math.max(1,Number(box.capacity)||1)+' peças · capacidade máxima',685,440);
+   ctx.font='19px Arial';let dy=505;
+   for(const line of wrapCanvasText(ctx,String(box.description||''),460).slice(0,5)){
+    ctx.fillText(line,685,dy);dy+=28;
+   }
+   ctx.fillStyle='#49382e';ctx.font='bold 27px Arial';
+   ctx.fillText('Produtos incluídos',90,775);
+   ctx.font='19px Arial';ctx.fillStyle='#746759';
+   if(!contents.length)ctx.fillText('A composição será confirmada pela ArtEssencia.',90,830);
+   for(const [index,item] of contents.slice(page*perPage,(page+1)*perPage).entries()){
+    const yy=825+index*59;
+    ctx.fillStyle=index%2===0?'#fbf6f0':'#fffdf9';ctx.fillRect(80,yy-35,1080,53);
+    ctx.fillStyle='#49382e';ctx.font='bold 21px Arial';
+    let name=item.name;
+    while(name.length>3&&ctx.measureText(name).width>850)name=name.slice(0,-2);
+    ctx.fillText(item.qty+' × '+(name===item.name?name:name+'…'),105,yy);
+   }
+   drawCatalogFooter(ctx);
+   const jpeg=await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('Falha ao converter página PDF')),'image/jpeg',0.89));
+   pages.push(jpeg);
   }
-  drawCatalogFooter(ctx);jpgs.push(await new Promise((res,rej)=>canvas.toBlob(b=>b?res(b):rej(new Error('PDF')),'image/jpeg',.92)));
  }
- return jpegBlobsToPDF(jpgs,1240,1754)
+ return jpegBlobsToPDF(pages,pageW,pageH);
 }
 
 async function openPdfBlob(builder){const w=window.open('about:blank','_blank');try{const blob=await builder(),u=URL.createObjectURL(blob);if(w)w.location.href=u;else window.location.href=u;setTimeout(()=>URL.revokeObjectURL(u),120000)}catch(e){if(w)w.close();toast(e.message||'Não foi possível gerar o PDF')}}
