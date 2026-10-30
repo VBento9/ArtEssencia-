@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.58">
+<meta name="artessencia-version" content="1.9.59">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <link rel="manifest" href="manifest.webmanifest">
@@ -6145,7 +6145,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.58';
+const APP_VERSION='1.9.59';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -12444,10 +12444,12 @@ async function saveThemedBox(){
  const originRequestId=typeof window.aeBoxOriginRequestV4==='function'?(window.aeBoxOriginRequestV4()||existing?.originRequestId||null):(existing?.originRequestId||null);
  const fingerprint=JSON.stringify({items,technicalV2,basePackaging,decorationCost,price});
  const prior=existing?.technicalRevisionV4;
- const changed=!prior||prior.fingerprint!==fingerprint;
+ const snapshot=typeof window.aeBoxCostSnapshotV4==='function'?window.aeBoxCostSnapshotV4(items,technicalV2,basePackaging,decorationCost,price):prior?.snapshot||null;
+ // Uma alteração dos custos cria revisão nova, sem considerar o capturedAt variável.
+ const signature=s=>JSON.stringify(s?{breakdown:s.breakdown,packaging:s.packaging,total:s.total,price:s.price}:null);
+ const changed=!prior||prior.fingerprint!==fingerprint||signature(prior.snapshot)!==signature(snapshot);
  const history=Array.isArray(existing?.technicalHistoryV4)?existing.technicalHistoryV4.slice(-9):[];
  if(changed&&prior)history.push({version:prior.version,capturedAt:prior.capturedAt,snapshot:prior.snapshot,items:existing.items,technicalV2:existing.technicalV2});
- const snapshot=typeof window.aeBoxCostSnapshotV4==='function'?window.aeBoxCostSnapshotV4(items,technicalV2,basePackaging,decorationCost,price):prior?.snapshot||null;
  const technicalRevisionV4={version:changed?Math.max(1,Number(prior?.version||0)+1):(prior.version||1),capturedAt:changed?new Date().toISOString():prior.capturedAt,fingerprint,snapshot};
  const marginRaw=String(document.getElementById('aeReadyMarginPctV1')?.value??existing?.targetMarginPct??'35').trim().replace(',','.');
  const targetMarginPct=Number(marginRaw);

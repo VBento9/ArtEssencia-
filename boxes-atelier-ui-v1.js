@@ -418,6 +418,11 @@ function install(){
  pack.innerHTML='<option value="">Embalagem a confirmar</option>'+(db.packaging||[]).map(x=>'<option value="'+safe(x.name)+'">'+safe(x.name)+'</option>').join('');
  hub.addEventListener('click',ev=>{
   const b=ev.target.closest('button');if(!b)return;
+  if(b.dataset.aeQuantityBox){
+   if(typeof window.aeBoxQuantityOpenV23==='function')window.aeBoxQuantityOpenV23(b.dataset.aeQuantityBox);
+   else toast('Precificação de Boxes indisponível.');
+   return;
+  }
   if(b.dataset.aePriceApply){
    const n=Number(b.dataset.suggested);
    if(!Number.isFinite(n)||n<=0)return toast('Completa os custos e a margem antes de aplicar o preço.');
@@ -570,6 +575,11 @@ function renderPublicationButtonsV1(){
   const card=cards[i];
   const parent=card?.querySelector('.body');
   if(!parent)return;
+  const actions=card.querySelector('.catalog-pro-foot .btnrow');
+  if(actions&&!actions.querySelector('[data-ae-quantity-box]')){
+   const button=document.createElement('button');button.type='button';button.className='btn';
+   button.dataset.aeQuantityBox=String(box.id);button.textContent='Simular quantidades';actions.append(button);
+  }
   let ui=parent.querySelector('.ae-box-publish-v1');
   if(!ui){ui=document.createElement('div');ui.className='ae-box-publish-v1';parent.appendChild(ui);}
   const remote=publicRows.get(String(box.id))||{};
