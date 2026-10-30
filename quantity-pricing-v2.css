@@ -1,0 +1,38 @@
+/* Precificação em quantidade V2 — responsivo sem alterar outros módulos */
+#quantityPricing .quantity-pricing-base-grid-v1750,
+#quantityPricing .quantity-pricing-cost-grid-v1750 {grid-template-columns:repeat(3,minmax(0,1fr));}
+#quantityPricing .field,#quantityPricing .field input,#quantityPricing .field select {min-width:0;max-width:100%;}
+#quantityPricing .aeq-sub-label {display:block;margin-top:8px;}
+#quantityPricing .aeq-panel{margin-top:12px;padding:14px;background:#fffdf9;border:1px solid #e5d9ca;border-radius:12px;min-width:0;overflow-wrap:anywhere;}
+#quantityPricing .aeq-panel h3{font-size:15px;margin:0 0 8px;color:#503a2e;}
+#quantityPricing .aeq-panel p{font-size:12px;color:#706050;line-height:1.5;}
+#quantityPricing .aeq-table-scroll{width:100%;max-width:100%;overflow-x:auto;}
+#quantityPricing .aeq-table-scroll table{width:100%;min-width:650px;border-collapse:collapse;}
+#quantityPricing .aeq-table-scroll th,#quantityPricing .aeq-table-scroll td{padding:9px;text-align:right;font-size:12px;border-bottom:1px solid #eee3d6;white-space:nowrap;}
+#quantityPricing .aeq-table-scroll th:first-child,#quantityPricing .aeq-table-scroll td:first-child{text-align:left;}
+#quantityPricing .aeq-current{background:#f3ebdd;font-weight:700;}
+#quantityPricing .aeq-actions{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;}
+#quantityPricing .aeq-actions label{min-width:180px;flex:1;display:grid;gap:5px;font-size:12px;}
+#quantityPricing .aeq-actions input{width:100%;max-width:100%;box-sizing:border-box;}
+#quantityPricing .aeq-check{display:flex;align-items:flex-start;gap:8px;margin:12px 0;font-size:12px;line-height:1.4;}
+#quantityPricing .aeq-check input{width:auto;flex:0 0 auto;}
+#quantityPricing .aeq-history-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px solid #eae2d6;font-size:12px;min-width:0;overflow-wrap:anywhere;}
+#quantityPricing .aeq-history-row span{min-width:0;flex:1;}
+#quantityPricing .aeq-history-row button{flex:0 0 auto;}
+#quantityPricing .aeq-proposal-label{display:grid;gap:6px;margin-top:12px;font-size:12px;}
+#quantityPricing #aeQProposalText{box-sizing:border-box;width:100%;max-width:100%;}
+#quantityPricing #aeQCloudState{font-size:12px;overflow-wrap:anywhere;}
+@media(max-width:800px){
+ #quantityPricing .quantity-pricing-base-grid-v1750,
+ #quantityPricing .quantity-pricing-cost-grid-v1750{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media(max-width:560px){
+ #quantityPricing .quantity-pricing-base-grid-v1750,
+ #quantityPricing .quantity-pricing-cost-grid-v1750{grid-template-columns:minmax(0,1fr);}
+ #quantityPricing .quantity-pricing-card-v1750{padding:12px!important;}
+ #quantityPricing .aeq-panel{padding:10px;}
+ #quantityPricing .aeq-actions{flex-direction:column;align-items:stretch;}
+ #quantityPricing .aeq-actions label,#quantityPricing .aeq-actions button{width:100%;min-width:0;}
+ #quantityPricing .aeq-history-row{align-items:flex-start;}
+ #quantityPricing .quantity-pricing-results-v1750{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
