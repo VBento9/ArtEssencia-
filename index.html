@@ -7652,8 +7652,7 @@ async function previewVisualCatalogSocialV196(id){
   const zipUrl=URL.createObjectURL(await visualCatalogZipV197(entries));
   const escapeText=v=>String(v||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   w.document.open();
-  w.document.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Catálogo visual</title><style>body{background:#eee9e5;margin:0;font:16px Arial}header{position:sticky;top:0;background:white;padding:12px;text-align:center}article{max-width:540px;margin:15px auto 24px;background:white}img{display:block;width:100%;height:auto}aside{display:flex;justify-content:space-between;padding:12px}a{color:#5a240b;font-weight:bold}</style></head><body><header>'+escapeText(x.title)+' — '+urls.length+' página(s). <a href="'+zipUrl+'" download="'+escapeText(base)+'.zip">Guardar todas (ZIP)</a> · Desliza para ver todas.</header>'+urls.map((url,n)=>'<article><aside><b>Página '+(n+1)+' de '+urls.length+'</b><a href="'+url+'" download="'+escapeText(base)+'_'+x.format+'_'+(n+1)+'.png">Guardar PNG</a></aside><img src="'+url+'" alt="Página '+(n+1)+'"></article>').join('')+'<script defer src="./catalog-pdf-manager-v2.js"></script>
-</body></html>');
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Catálogo visual</title><style>body{background:#eee9e5;margin:0;font:16px Arial}header{position:sticky;top:0;background:white;padding:12px;text-align:center}article{max-width:540px;margin:15px auto 24px;background:white}img{display:block;width:100%;height:auto}aside{display:flex;justify-content:space-between;padding:12px}a{color:#5a240b;font-weight:bold}</style></head><body><header>'+escapeText(x.title)+' — '+urls.length+' página(s). <a href="'+zipUrl+'" download="'+escapeText(base)+'.zip">Guardar todas (ZIP)</a> · Desliza para ver todas.</header>'+urls.map((url,n)=>'<article><aside><b>Página '+(n+1)+' de '+urls.length+'</b><a href="'+url+'" download="'+escapeText(base)+'_'+x.format+'_'+(n+1)+'.png">Guardar PNG</a></aside><img src="'+url+'" alt="Página '+(n+1)+'"></article>').join('')+'</body></html>');
   w.document.close();
   w.addEventListener('pagehide',()=>{urls.forEach(url=>URL.revokeObjectURL(url));URL.revokeObjectURL(zipUrl)},{once:true});
  }catch(e){if(w)w.close();toast(e.message||'Erro ao abrir catálogo')}
@@ -16448,6 +16447,7 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 <script defer src="./products-compact-ui.js" id="ae-products-compact-script"></script>
 <script defer src="./product-technical-sheet.js"></script>
 <script defer src="./orders-compact-ui.js" id="ae-orders-compact-script"></script>
+<script defer src="./catalog-pdf-manager-v2.js"></script>
 </body></html>
 
 <style id="artessencia-v1-overrides">
