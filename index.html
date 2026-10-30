@@ -15829,27 +15829,27 @@ async function relationalSyncCore(showToast=false){
    (db.clients||[]).forEach(relUuid);(db.products||[]).forEach(relUuid);db.orders.forEach(relUuid);(db.quotes||[]).forEach(relUuid);
    localStorage.setItem(KEY,JSON.stringify(db));
 
+   const {stripRelSyncMetadataV1950,writeRelationalRowsCasV1950}=await import('./relational-cas-v1950.mjs');
+   const syncGuardedV1950=(table,rows,remoteRows,localRows)=>writeRelationalRowsCasV1950({client:cloudClient,table,rows,remoteRows,localRows,userId:u.id,stringify:stableStringify,onAck:()=>localStorage.setItem(KEY,JSON.stringify(db))});
    const [remoteClients,remoteProducts,remoteOrders,remoteQuotes]=await Promise.all([
      relFetchAll(REL_TABLES.clients),relFetchAll(REL_TABLES.products),relFetchAll(REL_TABLES.orders),relFetchAll(REL_TABLES.quotes)
    ]);
 
    const clientRows=(db.clients||[]).filter(c=>!isQuarantinedProductClient(c)).map(c=>({
      id:relUuid(c),user_id:u.id,name:c.name||'',phone:c.phone||null,email:c.email||null,notes:c.notes||null,
-     data:relClone(c),updated_at:new Date().toISOString()
+     data:stripRelSyncMetadataV1950(c),updated_at:new Date().toISOString()
    }));
    if(clientRows.length){
-     const {error}=await cloudClient.from(REL_TABLES.clients).upsert(clientRows,{onConflict:'id'});
-     if(error)throw error
+     await syncGuardedV1950(REL_TABLES.clients,clientRows,remoteClients,(db.clients||[]).filter(c=>!isQuarantinedProductClient(c)));
    }
 
    const productRows=(db.products||[]).map(p=>({
      id:relUuid(p),user_id:u.id,name:p.name||'',category:p.category||null,
      price:Number(p.onlinePrice)>0?Number(p.onlinePrice):(Number(p.price)||0),cost:Number(calculatedProductCost(p))||0,active:!productArchivedV1803(p),
-     data:relClone(p),updated_at:new Date().toISOString()
+     data:stripRelSyncMetadataV1950(p),updated_at:new Date().toISOString()
    }));
    if(productRows.length){
-     const {error}=await cloudClient.from(REL_TABLES.products).upsert(productRows,{onConflict:'id'});
-     if(error)throw error
+     await syncGuardedV1950(REL_TABLES.products,productRows,remoteProducts,(db.products||[]));
    }
    // O Backoffice principal só conclui a sincronização depois de confirmar
    // as características públicas de todos os produtos na Cloud.
@@ -15868,12 +15868,11 @@ async function relationalSyncCore(showToast=false){
        id:relUuid(o),user_id:u.id,client_id:relClientRid(o.clientId,o.client),
        status:o.status||'Pedido',order_date:relDate(o.created),due_at:relDue(o.delivery),
        subtotal:Number(cc.total)||0,total:Number(cc.total)||0,notes:o.notes||null,
-       data:relClone(o),updated_at:new Date().toISOString()
+       data:stripRelSyncMetadataV1950(o),updated_at:new Date().toISOString()
      }
    });
    if(orderRows.length){
-     const {error}=await cloudClient.from(REL_TABLES.orders).upsert(orderRows,{onConflict:'id'});
-     if(error)throw error;
+     await syncGuardedV1950(REL_TABLES.orders,orderRows,remoteOrders,ordersToSync);
      ordersToSync.forEach(o=>{relShadowRememberOrder(o);relClearOrderPending(o)})
    }
 
@@ -15883,12 +15882,11 @@ async function relationalSyncCore(showToast=false){
        id:relUuid(q),user_id:u.id,client_id:relClientRid(q.clientId,q.client),
        status:q.status||'Rascunho',quote_date:relDate(q.created),valid_until:q.validUntil||null,
        subtotal:Number(qc.total)||0,total:Number(qc.total)||0,notes:q.notes||null,
-       data:relClone(q),updated_at:new Date().toISOString()
+       data:stripRelSyncMetadataV1950(q),updated_at:new Date().toISOString()
      }
    });
    if(quoteRows.length){
-     const {error}=await cloudClient.from(REL_TABLES.quotes).upsert(quoteRows,{onConflict:'id'});
-     if(error)throw error
+     await syncGuardedV1950(REL_TABLES.quotes,quoteRows,remoteQuotes,(db.quotes||[]));
    }
 
    // V10.0.5: nunca apagar linhas remotas apenas porque não apareceram num snapshot local.
@@ -15928,6 +15926,7 @@ async function relationalHydrateCore(initial=false){
  const ownBusy=!cloudBusy;
  if(ownBusy){cloudBusy=true;renderCloudUI()}
  try{
+   const {tagHydratedRowV1950}=await import('./relational-cas-v1950.mjs');
    const [clients,products,orders,quotes]=await Promise.all([
      relFetchAll(REL_TABLES.clients),relFetchAll(REL_TABLES.products),relFetchAll(REL_TABLES.orders),relFetchAll(REL_TABLES.quotes)
    ]);
@@ -15966,8 +15965,10 @@ async function relationalHydrateCore(initial=false){
                : {...d,_rid:r.id,id:d.id||('ORC-'+r.id.slice(0,8)),status:d.status||r.status||'Rascunho',created:d.created||(r.quote_date||todayISO())};
 
          if(target){
-           Object.assign(target,base)
+           Object.assign(target,base);
+           tagHydratedRowV1950(target,r,stableStringify);
          }else{
+           tagHydratedRowV1950(base,r,stableStringify);
            merged.push(base);
            byRid.set(r.id,base);
            const baseKey=kind==='product'?base.code:base.id;
