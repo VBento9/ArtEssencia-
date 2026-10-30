@@ -662,13 +662,16 @@
   const EVENT_CHANNEL_V25={whatsapp:'WhatsApp',email:'Email',phone:'Telefone',in_person:'Presencial',other:'Outro'};
   function proposalStatusV25(row){
     const events=eventsByProposalV25.get(row.simulation_id)||[];
-    const event=events[events.length-1];
-    if(event)return {value:event.event_type,label:EVENT_LABEL_V25[event.event_type]||event.event_type};
-    if(row.payload?.customerOffer?.validUntil){
-      const expiry=new Date(row.payload.customerOffer.validUntil+'T23:59:59');
-      if(Number.isFinite(expiry.getTime())&&expiry.getTime()<Date.now())return {value:'expired',label:'Validade terminada'};
+    const last=events[events.length-1]?.event_type;
+    if(['accepted','declined','cancelled'].includes(last))
+      return {value:last,label:EVENT_LABEL_V25[last]};
+    const date=String(row.payload?.customerOffer?.validUntil||'');
+    if(/^\d{4}-\d{2}-\d{2}$/.test(date)){
+      const expiry=new Date(date+'T23:59:59');
+      if(Number.isFinite(expiry.getTime())&&expiry.getTime()<Date.now())
+        return {value:'expired',label:'Validade terminada'+(last==='sent'?' (enviada)':'')};
     }
-    return {value:'draft',label:'Rascunho'};
+    return last==='sent'?{value:'sent',label:'Enviada'}:{value:'draft',label:'Rascunho'};
   }
   async function loadProposalEventsV25(userId,ids){
     eventsAvailableV25=false;eventsByProposalV25=new Map();
@@ -705,7 +708,8 @@
       holder.append(panel);return;
     }
     const available=status.value==='draft'?['sent','cancelled']:
-      status.value==='sent'?['accepted','declined','cancelled']:[];
+      status.value==='sent'?['accepted','declined','cancelled']:
+      status.value==='expired'?['cancelled']:[];
     if(available.length){
       const actions=document.createElement('div');actions.className='aeq-status-actions-v25';
       const select=document.createElement('select');select.setAttribute('aria-label','Nova decisão');
@@ -717,6 +721,11 @@
       const note=document.createElement('textarea');note.rows=2;note.maxLength=500;
       note.placeholder='Referência da comunicação ou confirmação do cliente';
       note.setAttribute('aria-label','Justificação ou evidência');
+      if(status.value==='expired'){
+        const expiryNote=document.createElement('p');expiryNote.className='aeq-status-expired-v25';
+        expiryNote.textContent='A validade terminou. Só é permitido cancelar esta proposta; para novo orçamento, cria outra simulação.';
+        actions.append(expiryNote);
+      }
       const submit=document.createElement('button');submit.type='button';submit.className='btn';submit.textContent='Registar decisão';
       submit.addEventListener('click',async()=>{
         const target=select.value,noteValue=note.value.trim();
