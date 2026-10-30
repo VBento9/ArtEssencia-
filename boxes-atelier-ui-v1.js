@@ -12,6 +12,23 @@ let selected=[], custom=[], activeTab='ready';
 function products(){return (Array.isArray(db?.products)?db.products:[]).filter(p=>usable(p)&&productKey(p)&&text(p.name)).sort((a,b)=>text(a.name).localeCompare(text(b.name),'pt-PT'))}
 function match(code){return (db?.products||[]).find(p=>productKey(p)===code)}
 function composition(){return selected.map(x=>({code:String(x.code),qty:Math.max(1,Math.min(1000,Number(x.qty)||1))})).filter(x=>match(x.code))}
+function aeMarginValueV1(id){
+ const raw=String($(id)?.value??'').trim().replace(',','.');
+ const val=Number(raw);
+ return raw!==''&&Number.isFinite(val)&&val>=0&&val<=95?val:null;
+}
+function aeSuggestedPriceV1(cost,margin){
+ return cost>0&&Number.isFinite(cost)&&margin!==null?Math.ceil((cost/(1-margin/100)-1e-9)*100)/100:null;
+}
+function aeActualMarginV1(cost,price){return price>0?(price-cost)/price*100:null;}
+function aeMissingProductCostsV1(rows){
+ if(typeof productCostBreakdownV110!=='function')return rows.map(x=>text(x.code));
+ return rows.filter(x=>{
+  const p=match(x.code),c=p?Number(productCostBreakdownV110(p)?.total):NaN;
+  return !Number.isFinite(c)||c<=0;
+ }).map(x=>text(match(x.code)?.name||x.code));
+}
+function aeCostRowV1(label,value){return '<div class="ae-box-cost-row"><span>'+safe(label)+'</span><strong>'+money(value)+'</strong></div>';}
 function selectedTotal(rows,cost=false){return rows.reduce((sum,x)=>{const p=match(x.code);if(!p)return sum;const n=cost?(typeof calculatedProductCost==='function'?Number(calculatedProductCost(p))||0:Number(p.cost)||0):(Number(p.onlinePrice)>0?Number(p.onlinePrice):Number(p.price)||0);return sum+n*x.qty},0)}
 function drawPicker(target,rows,editMode){
  const h=$(target);if(!h)return;
@@ -45,32 +62,35 @@ window.aeBoxCostSnapshotV4=(items,tech,basePackaging,decorationCost,price)=>{
 let originRequestIdV4='';
 window.aeBoxOriginRequestV4=()=>originRequestIdV4;
 function previewPredefined(){
- const id=text($('themeBoxId')?.value);
- const existing=(db.themedBoxes||[]).find(x=>x.id===id);
- const base=(db.packaging||[]).find(x=>x.name===$('themeBoxBasePackaging')?.value);
- const packaging=Number(base?.cost)||0;
- const decoration=Number($('themeBoxDecorationCost')?.value)||0;
- const price=Number($('themeBoxPrice')?.value)||0;
- const tech=techDraftV2();
- const breakdown=techCostV2(composition(),tech);
- const cost=breakdown.total+packaging+decoration;
- const complete=!breakdown.incomplete && composition().length>0;
- const profit=price-cost;
- const margin=price>0?profit/price*100:0;
- const info=$('aeBoxEstimateV1');
- if(!info)return;
- info.innerHTML='<b>Estimativa da Box — '+(tech.mode==='joint'?'Produção conjunta':'Montagem de produtos acabados')+'</b>'+
-  '<div>Matérias-primas: '+money(breakdown.materials)+'</div>'+
-  '<div>Mão de obra: '+money(breakdown.labor)+'</div>'+
-  '<div>Energia: '+money(breakdown.energy)+'</div>'+
-  '<div>Outros custos de fabrico: '+money(breakdown.indirect)+'</div>'+
-  '<div>Caixa física e decoração: '+money(packaging+decoration)+'</div>'+
-  '<strong>Custo estimado: '+(complete?money(cost):'Por completar')+'</strong>'+
-  '<div>PVP definido: '+money(price)+'</div>'+
-  (complete?'<strong>Lucro bruto estimado: '+money(profit)+' · Margem: '+margin.toLocaleString('pt-PT',{maximumFractionDigits:1})+'%</strong>':
-   '<small>Estimativa incompleta: adiciona produtos e, na produção conjunta, o custo total das matérias-primas.</small>')+
-  '<small>As gramas de cera e fragrância são parâmetros da receita e não são cobradas novamente à parte. Na produção conjunta, o campo de matérias-primas deve incluir estes materiais e respetivos desperdícios.</small>'+
-  (existing?'<small>Composição associada à Box guardada.</small>':'<small>Guarda a Box para associar os dados de fabrico.</small>');
+ const id=text($('themeBoxId')?.value),existing=(db.themedBoxes||[]).find(x=>x.id===id);
+ const packaging=Math.max(0,Number((db.packaging||[]).find(x=>x.name===$('themeBoxBasePackaging')?.value)?.cost)||0);
+ const decoration=Math.max(0,Number($('themeBoxDecorationCost')?.value)||0);
+ const price=Number($('themeBoxPrice')?.value)||0,tech=techDraftV2(),items=composition();
+ const breakdown=techCostV2(items,tech),cost=breakdown.total+packaging+decoration;
+ const missing=tech.mode==='joint'?[]:aeMissingProductCostsV1(items);
+ const complete=items.length>0&&!breakdown.incomplete&&cost>0&&Number.isFinite(cost)&&!missing.length;
+ const margin=aeMarginValueV1('aeReadyMarginPctV1'),suggested=complete?aeSuggestedPriceV1(cost,margin):null;
+ const info=$('aeBoxEstimateV1');if(!info)return;
+ const actual=aeActualMarginV1(cost,price);
+ info.innerHTML='<b>Simulador de custo e preço · '+(tech.mode==='joint'?'Produção conjunta':'Montagem de produtos acabados')+'</b>'+
+  '<div class="ae-box-cost-lines">'+aeCostRowV1('Matérias-primas e produtos',breakdown.materials)+
+   aeCostRowV1('Mão de obra de produção e montagem',breakdown.labor)+
+   aeCostRowV1('Energia',breakdown.energy)+aeCostRowV1('Outros custos e desperdício',breakdown.indirect)+
+   aeCostRowV1('Caixa física',packaging)+aeCostRowV1('Decoração',decoration)+'</div>'+
+  '<div class="ae-box-cost-total"><span>Custo total estimado</span><strong>'+(complete?money(cost):'Por completar')+'</strong></div>'+
+  '<div class="ae-box-cost-total"><span>PVP sugerido para '+(margin===null?'margem inválida':margin.toLocaleString('pt-PT')+'% de margem')+'</span><strong>'+(suggested===null?'—':money(suggested))+'</strong></div>'+
+  '<div class="ae-box-cost-row"><span>PVP atualmente definido</span><strong>'+(price>0?money(price):'Por definir')+'</strong></div>'+
+  (complete&&price>0?'<div class="ae-box-cost-row"><span>Lucro bruto com PVP atual</span><strong>'+money(price-cost)+'</strong></div>'+
+  '<div class="ae-box-cost-row"><span>Margem efetiva</span><strong>'+actual.toLocaleString('pt-PT',{maximumFractionDigits:1})+'%</strong></div>':'')+
+  (missing.length?'<small class="ae-box-cost-warning">Custos em falta: '+safe(missing.join(', '))+'. Completa as fichas técnicas desses produtos.</small>':'')+
+  (!items.length?'<small class="ae-box-cost-warning">Adiciona produtos à Box.</small>':'')+
+  (breakdown.incomplete?'<small class="ae-box-cost-warning">Na produção conjunta, insere o custo total da receita própria.</small>':'')+
+  (margin===null?'<small class="ae-box-cost-warning">A margem tem de estar entre 0% e 95%.</small>':'')+
+  '<small>Fórmula: preço sugerido = custo total ÷ (1 − margem/100). A margem incide sobre o preço de venda, não é um acréscimo ao custo.</small>'+
+  '<small>Na montagem somam-se os custos técnicos dos produtos mais os extras da Box. Na produção conjunta, o custo da receita é introduzido diretamente para não duplicar cera e mão de obra.</small>'+
+  (existing?'<small>O preço da Box guardada só muda se aplicares o preço sugerido e guardares novamente.</small>':'');
+ const apply=$('aeReadyApplyPriceV1');
+ if(apply){apply.disabled=suggested===null;apply.dataset.suggested=suggested===null?'':String(suggested);}
 }
 
 function loadExisting(b){selected=Array.isArray(b?.items)?b.items.map(x=>({code:text(x.code),qty:Number(x.qty)||1})).filter(x=>x.code):[];drawPicker('aeBoxProductsV1',selected,true);previewPredefined();}
@@ -98,8 +118,8 @@ function proposal(){
  return ['Olá! Gostaria de pedir informações sobre uma Box ArtEssencia.',title,'',lines,'','Apresentação: '+(box||'Por definir'),
  dedication?'Nome/mensagem: '+dedication:'',
  notes?'Preferências: '+notes:'',
- 'Valor de referência dos artigos: '+money(selectedTotal(custom,false)),
- 'Preço final, stock e prazo sujeitos a confirmação da ArtEssencia.'].filter(Boolean).join('\n');
+ aeCustomEstimateV1().quote!==null?'Preço indicativo proposto: '+money(aeCustomEstimateV1().quote):'Preço final sujeito a orçamento da ArtEssencia',
+ 'Stock, embalagem e prazo sujeitos a confirmação da ArtEssencia.'].filter(Boolean).join('\n');
 }
 async function buildCustomBoxPdfV1(){
  const proposalText=proposal();
@@ -139,22 +159,57 @@ function copy(v){
  if(navigator.clipboard?.writeText)return navigator.clipboard.writeText(v).then(()=>toast('Copiado'));
  const node=document.createElement('textarea');node.value=v;node.style.position='fixed';node.style.opacity='0';document.body.append(node);node.select();document.execCommand('copy');node.remove();toast('Copiado');
 }
-function drawCustom(){
- drawPicker('aeCustomProductsV1',custom,false);
- $('aeCustomTotalV1').textContent='Referência de preço dos artigos: '+money(selectedTotal(custom,false))+' · Sujeito a orçamento final';
+function aeCustomEstimateV1(){
+ const pk=$('aeCustomPackagingV1')?.value||'';
+ const packaging=Math.max(0,Number((db.packaging||[]).find(x=>x.name===pk)?.cost)||0);
+ const assembly=Math.max(0,Number($('aeCustomAssemblyV1')?.value)||0);
+ const extras=Math.max(0,Number($('aeCustomMaterialsV1')?.value)||0);
+ const others=Math.max(0,Number($('aeCustomOtherV1')?.value)||0);
+ const breakdown=techCostV2(custom,{mode:'finished',materialsCost:extras,
+   productionMinutes:0,assemblyMinutes:assembly,packagingMinutes:0,energyCost:0,otherCost:others});
+ const cost=breakdown.total+packaging,missing=aeMissingProductCostsV1(custom);
+ const complete=custom.length>0&&missing.length===0&&cost>0&&Number.isFinite(cost);
+ const margin=aeMarginValueV1('aeCustomMarginPctV1');
+ const suggested=complete?aeSuggestedPriceV1(cost,margin):null;
+ const quoteRaw=String($('aeCustomQuotePriceV1')?.value??'').trim().replace(',','.');
+ const quote=quoteRaw!==''&&Number(quoteRaw)>0&&Number.isFinite(Number(quoteRaw))?Number(quoteRaw):null;
+ return {breakdown,packaging,assembly,extras,others,cost,missing,complete,margin,suggested,quote};
 }
+function renderCustomEstimateV1(){
+ const v=aeCustomEstimateV1(),el=$('aeCustomTotalV1');if(!el)return;
+ el.innerHTML='<b>Como se calcula o preço da Box personalizada</b>'+
+ '<div class="ae-box-cost-lines">'+aeCostRowV1('Matérias-primas dos artigos e extras',v.breakdown.materials)+
+ aeCostRowV1('Mão de obra dos artigos e montagem',v.breakdown.labor)+
+ aeCostRowV1('Energia dos artigos',v.breakdown.energy)+
+ aeCostRowV1('Outros custos dos artigos e extras',v.breakdown.indirect)+
+ aeCostRowV1('Embalagem escolhida',v.packaging)+'</div>'+
+ '<div class="ae-box-cost-total"><span>Custo total estimado</span><strong>'+(v.complete?money(v.cost):'Por completar')+'</strong></div>'+
+ '<div class="ae-box-cost-total"><span>Preço sugerido ('+(v.margin===null?'margem inválida':v.margin.toLocaleString('pt-PT')+'% de margem')+')</span><strong>'+(v.suggested===null?'—':money(v.suggested))+'</strong></div>'+
+ (v.complete&&v.quote!==null?'<div class="ae-box-cost-row"><span>Lucro com o preço proposto</span><strong>'+money(v.quote-v.cost)+'</strong></div>'+
+ '<div class="ae-box-cost-row"><span>Margem efetiva do preço proposto</span><strong>'+aeActualMarginV1(v.cost,v.quote).toLocaleString('pt-PT',{maximumFractionDigits:1})+'%</strong></div>':'')+
+ (v.missing.length?'<small class="ae-box-cost-warning">Custos técnicos em falta: '+safe(v.missing.join(', '))+'.</small>':'')+
+ (!custom.length?'<small class="ae-box-cost-warning">Seleciona os artigos para calcular o custo.</small>':'')+
+ (v.margin===null?'<small class="ae-box-cost-warning">Introduz uma margem entre 0% e 95%.</small>':'')+
+ '<small>Preço sugerido = custo total ÷ (1 − margem/100). Inclui custo de fabrico dos artigos, embalagem, materiais extra e tempo de montagem.</small>'+
+ '<small>Este simulador calcula montagem de produtos acabados. Se a Box tiver uma receita produzida em conjunto, prepara uma ficha técnica própria em Boxes pré-definidas ou a partir de um pedido.</small>'+
+ '<small>O preço indicativo só aparece na proposta enviada se estiver preenchido; não é uma encomenda confirmada.</small>';
+ const apply=$('aeCustomApplyPriceV1');
+ if(apply){apply.disabled=v.suggested===null;apply.dataset.suggested=v.suggested===null?'':String(v.suggested);}
+}
+function drawCustom(){drawPicker('aeCustomProductsV1',custom,false);renderCustomEstimateV1();}
+
 function renderPredefinedExtras(){
  const editor=document.querySelector('#catalogs .catalog-editor-card');
  if(!editor||$('aeBoxProductsV1'))return;
  const box=document.createElement('div');
- box.innerHTML='<div class="ae-box-composition"><h3>Composição da Box</h3><p class="muted">Escolhe produtos e quantidades. Não cria produtos nem encomendas adicionais.</p><div id="aeBoxProductsV1"></div><div id="aeBoxEstimateV1" class="ae-box-estimate"></div></div>';
+ box.innerHTML='<div class="ae-box-composition"><h3>Composição da Box</h3><p class="muted">Escolhe produtos e quantidades. Não cria produtos nem encomendas adicionais.</p><div id="aeBoxProductsV1"></div><div class="ae-box-margin-editor"><label>Margem de lucro pretendida (%)<input id="aeReadyMarginPctV1" type="number" inputmode="decimal" min="0" max="95" step="0.5" value="35"></label><button type="button" class="btn" id="aeReadyApplyPriceV1" data-ae-price-apply="ready">Aplicar preço sugerido ao PVP</button></div><div id="aeBoxEstimateV1" class="ae-box-estimate" aria-live="polite"></div></div>';
  editor.append(box);
  const name=$('themeBoxName');if(name)name.placeholder='Ex.: Box Natal — Doces & Aromas';
- ['themeBoxPrice','themeBoxBasePackaging','themeBoxDecorationCost'].forEach(id=>$(id)?.addEventListener('change',previewPredefined));
+ ['themeBoxPrice','themeBoxBasePackaging','themeBoxDecorationCost','aeReadyMarginPctV1'].forEach(id=>{$(id)?.addEventListener('input',previewPredefined);$(id)?.addEventListener('change',previewPredefined)});
  const original=window.editThemedBox;
- if(typeof original==='function')window.editThemedBox=function(id){original(id);const b=(db.themedBoxes||[]).find(x=>String(x.id)===String(id));loadExisting(b);loadTechV2(b);originRequestIdV4=text(b?.originRequestId||'');showTab('ready')};
+ if(typeof original==='function')window.editThemedBox=function(id){original(id);const b=(db.themedBoxes||[]).find(x=>String(x.id)===String(id));const m=$('aeReadyMarginPctV1');if(m)m.value=b?.targetMarginPct!=null&&Number.isFinite(Number(b.targetMarginPct))?String(b.targetMarginPct):'35';loadExisting(b);loadTechV2(b);originRequestIdV4=text(b?.originRequestId||'');showTab('ready')};
  const clear=window.clearThemedBoxForm;
- if(typeof clear==='function')window.clearThemedBoxForm=function(){clear();selected=[];originRequestIdV4='';drawPicker('aeBoxProductsV1',selected,true);loadTechV2(null);previewPredefined()};
+ if(typeof clear==='function')window.clearThemedBoxForm=function(){clear();selected=[];originRequestIdV4='';const m=$('aeReadyMarginPctV1');if(m)m.value='35';drawPicker('aeBoxProductsV1',selected,true);loadTechV2(null);previewPredefined()};
  const tech=document.createElement('div');tech.className='ae-box-composition';
  tech.innerHTML='<h3>Ficha técnica própria da Box</h3><p class="muted">Produção conjunta não soma novamente a cera e a mão de obra das fichas individuais.</p><div class="ae-custom-grid">'+
  '<label>Tipo de produção<select id="aeBoxMode"><option value="finished">Montar produtos acabados</option><option value="joint">Produção conjunta / receita própria</option></select></label>'+
@@ -244,9 +299,16 @@ function install(){
  ready.innerHTML='<div class="ae-hub-heading"><h3>Boxes pré-definidas</h3><p>Define a composição, embalagem, fotografia e preço. Depois de guardar, utiliza os botões de publicação de cada Box para escolher Catálogo Digital, Loja ou ambos.</p><button type="button" class="btn" id="aeNewBoxV1">+ Nova Box</button></div>';
  ready.append(editor,heading,list);
  const customPane=document.createElement('div');customPane.id='aeHubPanel_custom';customPane.className='ae-hub-panel';
- customPane.innerHTML='<div class="ae-hub-heading"><h3>Criar Box personalizada</h3><p>Proposta não vinculativa; artigos e custos vêm dos Produtos. A confirmação de stock, embalagem e prazo é feita pela ArtEssencia.</p></div>'+
+ customPane.innerHTML='<div class="ae-hub-heading"><h3>Criar Box personalizada</h3><p>Escolhe os produtos, introduz os custos adicionais e o tempo de montagem, e define a margem de lucro pretendida. O preço sugerido é calculado automaticamente.</p></div>'+
  '<div class="ae-custom-grid"><label>Título da Box<input id="aeCustomTitleV1" placeholder="Ex.: Presente especial"></label><label>Embalagem<select id="aeCustomPackagingV1"></select></label><label>Nome / dedicatória<input id="aeCustomNameV1" maxlength="120" placeholder="Opcional"></label><label>Preferências de cor, aroma e observações<textarea id="aeCustomNotesV1" rows="3" maxlength="400"></textarea></label></div>'+
- '<div id="aeCustomProductsV1"></div><p id="aeCustomTotalV1" class="ae-box-estimate"></p><div class="ae-custom-actions">'+
+ '<div id="aeCustomProductsV1"></div><div class="ae-box-composition"><h3>Custos e margem desta Box</h3><p class="muted">Os custos dos artigos vêm das fichas técnicas. Introduz apenas os extras específicos desta Box.</p><div class="ae-custom-grid">'+
+ '<label>Materiais extra / decoração (€)<input id="aeCustomMaterialsV1" type="number" inputmode="decimal" min="0" step="0.01" value="0"></label>'+
+ '<label>Tempo de montagem adicional (min)<input id="aeCustomAssemblyV1" type="number" inputmode="numeric" min="0" step="1" value="0"></label>'+
+ '<label>Outros custos (€)<input id="aeCustomOtherV1" type="number" inputmode="decimal" min="0" step="0.01" value="0"></label>'+
+ '<label>Margem de lucro pretendida (%)<input id="aeCustomMarginPctV1" type="number" inputmode="decimal" min="0" max="95" step="0.5" value="35"></label>'+
+ '<label>Preço indicativo a propor (€)<input id="aeCustomQuotePriceV1" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Opcional"></label></div>'+
+ '<div class="ae-box-margin-editor"><button type="button" class="btn" id="aeCustomApplyPriceV1" data-ae-price-apply="custom">Aplicar preço sugerido à proposta</button></div>'+
+ '<div id="aeCustomTotalV1" class="ae-box-estimate" aria-live="polite"></div></div><div class="ae-custom-actions">'+
  '<button type="button" class="btn" data-action="copy">Copiar proposta</button><button type="button" class="btn primary" data-action="whatsapp">Enviar por WhatsApp</button><button type="button" class="btn" data-action="pdf">Ver proposta PDF</button><button type="button" class="btn" data-action="sendpdf">Enviar PDF</button><button type="button" class="btn" data-action="client">Copiar ligação para o cliente escolher</button><a class="btn" href="https://catalogo.artessenciatlier.pt/boxes.html" target="_blank" rel="noopener">Abrir configurador do cliente</a></div>';
  const docs=document.createElement('div');docs.id='aeHubPanel_pdf';docs.className='ae-hub-panel';
  docs.innerHTML='<div class="ae-hub-heading"><h3>Catálogos para clientes</h3><p>Escolhe entre produtos gerais e boxes existentes. PDFs são gerados a partir dos dados do Backoffice.</p></div>';
@@ -356,6 +418,15 @@ function install(){
  pack.innerHTML='<option value="">Embalagem a confirmar</option>'+(db.packaging||[]).map(x=>'<option value="'+safe(x.name)+'">'+safe(x.name)+'</option>').join('');
  hub.addEventListener('click',ev=>{
   const b=ev.target.closest('button');if(!b)return;
+  if(b.dataset.aePriceApply){
+   const n=Number(b.dataset.suggested);
+   if(!Number.isFinite(n)||n<=0)return toast('Completa os custos e a margem antes de aplicar o preço.');
+   const output=b.dataset.aePriceApply==='ready'?$('themeBoxPrice'):$('aeCustomQuotePriceV1');
+   if(!output)return;
+   output.value=n.toFixed(2);
+   if(b.dataset.aePriceApply==='ready')previewPredefined();else renderCustomEstimateV1();
+   toast('Preço sugerido preenchido. Confirma antes de guardar ou partilhar.');return;
+  }
   const target=b.dataset.target;
   if(b.dataset.aebox==='add'&&target){
    const s=$(target+'Add');if(!s?.value)return;
@@ -389,12 +460,14 @@ function install(){
   }
  });
  hub.addEventListener('input',ev=>{
+  if(['aeCustomPackagingV1','aeCustomMaterialsV1','aeCustomAssemblyV1','aeCustomOtherV1','aeCustomMarginPctV1','aeCustomQuotePriceV1'].includes(ev.target.id)){renderCustomEstimateV1();return;}
   if(ev.target.dataset.aeboxQty===undefined)return;
   const holder=ev.target.closest('.ae-box-items')?.parentElement;
   const arr=holder?.id==='aeBoxProductsV1'?selected:custom;
   const idx=Number(ev.target.dataset.aeboxQty);if(arr[idx])arr[idx].qty=Math.max(1,Math.min(1000,Number(ev.target.value)||1));
-  if(holder?.id==='aeBoxProductsV1')previewPredefined();else $('aeCustomTotalV1').textContent='Referência de preço dos artigos: '+money(selectedTotal(custom,false));
+  if(holder?.id==='aeBoxProductsV1')previewPredefined();else renderCustomEstimateV1();
  });
+ hub.addEventListener('change',ev=>{if(ev.target.id==='aeCustomPackagingV1')renderCustomEstimateV1()});
  window.aeBoxItemsDraftV1=()=>composition();
  window.aeBoxesShowTabV1=showTab;
  // A eliminação de uma Box publicada é precedida da retirada segura dos canais públicos.
@@ -572,3 +645,4 @@ window.aeBoxesRenderPublicV1=renderPublicationButtonsV1;
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
 (()=>{const s=document.createElement('style');s.textContent="#aeBoxesHubV1{margin-top:12px}#aeBoxesHubV1 .ae-hub-intro{padding:16px 18px;background:#fffaf5;border:1px solid #ded2c1;border-radius:16px}#aeBoxesHubV1 h2,#aeBoxesHubV1 h3{font:600 22px Georgia,serif;margin:0 0 6px}#aeBoxesHubV1 h3{font-size:19px}#aeBoxesHubV1 p{line-height:1.55;margin:4px 0 12px}#aeBoxesHubV1 .ae-hub-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}#aeBoxesHubV1 .ae-hub-tabs .btn{flex:1 1 170px;min-height:46px}#aeBoxesHubV1 .ae-hub-panel[hidden]{display:none!important}#aeBoxesHubV1 .ae-hub-panel{display:grid;gap:12px}#aeBoxesHubV1 .ae-hub-heading{border:1px solid #ded2c1;border-radius:14px;background:#fff;padding:15px}#aeBoxesHubV1 .ae-hub-heading .btn{margin-top:6px}#aeBoxesHubV1 .ae-hub-heading p{font-size:13px;color:#6d6158}#aeBoxesHubV1 .ae-box-composition{margin-top:14px;padding:14px;border:1px solid #dfd2c6;border-radius:14px;background:#fffaf5}#aeBoxesHubV1 .ae-box-pick-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:5px;margin:10px 0}#aeBoxesHubV1 .ae-box-pick-head small{color:#78695c}#aeBoxesHubV1 .ae-box-add{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}#aeBoxesHubV1 .ae-box-add select{min-width:0;flex:1 1 210px}#aeBoxesHubV1 .ae-box-line{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #e5dace}#aeBoxesHubV1 .ae-box-line>span{flex:1;min-width:0;overflow-wrap:anywhere}#aeBoxesHubV1 .ae-box-line small{display:block;color:#86796b}#aeBoxesHubV1 .ae-box-line label{font-size:12px;width:70px}#aeBoxesHubV1 .ae-box-line input{width:100%;min-width:0}#aeBoxesHubV1 .ae-box-totals{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px;font-size:12px;font-weight:600}#aeBoxesHubV1 .ae-box-totals span{padding:6px 8px;border:1px solid #dfd2c6;border-radius:9px}#aeBoxesHubV1 .ae-box-estimate{padding:12px;margin-top:10px;background:#f2e9dc;border:1px solid #ddcdb9;border-radius:13px;display:grid;gap:6px;font-size:13px}#aeBoxesHubV1 .ae-box-estimate small{color:#706153}#aeBoxesHubV1 .ae-custom-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;background:#fff;padding:14px;border-radius:13px}#aeBoxesHubV1 .ae-custom-grid label{display:grid;gap:6px;font-size:13px}#aeBoxesHubV1 .ae-custom-grid label:last-child{grid-column:1/-1}#aeBoxesHubV1 .ae-custom-grid input,#aeBoxesHubV1 .ae-custom-grid textarea,#aeBoxesHubV1 .ae-custom-grid select{width:100%;min-width:0}#aeBoxesHubV1 .ae-custom-actions{display:flex;flex-wrap:wrap;gap:8px}#aeBoxesHubV1 .ae-custom-actions>*{flex:1 1 170px;display:inline-flex;align-items:center;justify-content:center}#aeBoxesHubV1 .ae-box-items{max-height:470px;overflow:auto}#aeBoxesHubV1 .ae-hub-panel > .catalog-grid{margin:0}#aeBoxesHubV1 .ae-hub-panel .catalog-creator-card{margin:0}@media(max-width:650px){#aeBoxesHubV1 .ae-hub-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}#aeBoxesHubV1 .ae-hub-tabs .btn{font-size:12px;min-width:0}#aeBoxesHubV1 .ae-custom-grid{grid-template-columns:minmax(0,1fr)}#aeBoxesHubV1 .ae-box-line{flex-wrap:wrap}#aeBoxesHubV1 .ae-box-line>span{flex:1 1 100%}}";document.head.appendChild(s)})();
+(()=>{const st=document.createElement('style');st.id='aeBoxesPricingResponsiveV1';st.textContent="\n#aeBoxesHubV1,#aeBoxesHubV1 *{box-sizing:border-box}\n#aeBoxesHubV1,#aeBoxesHubV1 .ae-hub-panel,#aeBoxesHubV1 .ae-hub-heading,\n#aeBoxesHubV1 .ae-box-composition,#aeBoxesHubV1 .ae-custom-grid,\n#aeBoxesHubV1 .ae-box-estimate,#aeBoxesHubV1 .ae-box-items,\n#aeBoxesHubV1 .catalog-editor-card,#aeBoxesHubV1 .catalog-grid,\n#aeBoxesHubV1 .catalog-saved-head{min-width:0;max-width:100%;overflow-wrap:anywhere}\n#aeBoxesHubV1 .ae-hub-intro p,#aeBoxesHubV1 .ae-hub-heading p,\n#aeBoxesHubV1 .ae-box-composition p{overflow-wrap:anywhere;white-space:normal}\n#aeBoxesHubV1 .ae-box-add select,#aeBoxesHubV1 .ae-custom-grid input,\n#aeBoxesHubV1 .ae-custom-grid textarea,#aeBoxesHubV1 .ae-custom-grid select,\n#aeBoxesHubV1 .ae-box-margin-editor input,#aeBoxesHubV1 .ae-box-line input{\nwidth:100%;min-width:0;max-width:100%;font-size:16px}\n#aeBoxesHubV1 .ae-custom-grid label{min-width:0;max-width:100%;overflow-wrap:anywhere}\n#aeBoxesHubV1 .ae-box-margin-editor{display:flex;flex-wrap:wrap;gap:10px;align-items:end;\nmargin:14px 0;padding:12px;border:1px solid #dfd2c6;border-radius:12px;background:#fff}\n#aeBoxesHubV1 .ae-box-margin-editor label{flex:1 1 190px;min-width:0;display:grid;gap:6px;font-size:13px}\n#aeBoxesHubV1 .ae-box-margin-editor button{flex:1 1 190px;min-width:0;white-space:normal;min-height:44px}\n#aeBoxesHubV1 .ae-box-cost-lines{display:grid;gap:4px;padding:8px 0;border-bottom:1px solid #ddd0bd}\n#aeBoxesHubV1 .ae-box-cost-row,#aeBoxesHubV1 .ae-box-cost-total{\ndisplay:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:start;\npadding:6px 0;overflow-wrap:anywhere}\n#aeBoxesHubV1 .ae-box-cost-row strong,#aeBoxesHubV1 .ae-box-cost-total strong{\nwhite-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}\n#aeBoxesHubV1 .ae-box-cost-total{font-size:15px;border-bottom:1px solid #d8cab8;padding:12px 0}\n#aeBoxesHubV1 .ae-box-cost-warning{color:#8b4323;font-weight:600}\n#aeBoxesHubV1 .ae-box-estimate small{display:block;line-height:1.5}\n#aeBoxesHubV1 .ae-hub-tabs button,#aeBoxesHubV1 .ae-custom-actions .btn{\nwhite-space:normal;overflow-wrap:anywhere;min-width:0;max-width:100%}\n@media(max-width:650px){\n#aeBoxesHubV1 .ae-hub-tabs{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}\n#aeBoxesHubV1 .ae-hub-tabs button{font-size:12px;line-height:1.35;padding:10px 7px;min-height:48px}\n#aeBoxesHubV1 .ae-custom-grid{grid-template-columns:minmax(0,1fr)!important;gap:10px}\n#aeBoxesHubV1 .ae-custom-grid label:last-child{grid-column:auto!important}\n#aeBoxesHubV1 .ae-box-add{display:grid;grid-template-columns:minmax(0,1fr)}\n#aeBoxesHubV1 .ae-box-line{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}\n#aeBoxesHubV1 .ae-box-line>span{grid-column:1/-1;min-width:0}\n#aeBoxesHubV1 .ae-box-line label{width:100%;min-width:0}\n#aeBoxesHubV1 .ae-custom-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}\n#aeBoxesHubV1 .ae-custom-actions>*{width:100%;min-width:0;justify-content:center;min-height:44px}\n#aeBoxesHubV1 .ae-box-margin-editor{display:grid;grid-template-columns:minmax(0,1fr)}\n#aeBoxesHubV1 .ae-box-cost-row,#aeBoxesHubV1 .ae-box-cost-total{gap:6px}\n#aeBoxesHubV1 .ae-box-cost-row strong,#aeBoxesHubV1 .ae-box-cost-total strong{white-space:normal}\n}\n@media(max-width:355px){\n#aeBoxesHubV1 .ae-hub-tabs{grid-template-columns:minmax(0,1fr)}\n#aeBoxesHubV1 .ae-box-cost-row,#aeBoxesHubV1 .ae-box-cost-total{grid-template-columns:minmax(0,1fr)}\n#aeBoxesHubV1 .ae-box-cost-row strong,#aeBoxesHubV1 .ae-box-cost-total strong{text-align:left}\n}";document.head.appendChild(st);})();
