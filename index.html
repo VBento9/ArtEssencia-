@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.48">
+<meta name="artessencia-version" content="1.9.49">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <link rel="manifest" href="manifest.webmanifest">
@@ -6143,7 +6143,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.48';
+const APP_VERSION='1.9.49';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -14824,25 +14824,24 @@ async function subscribeCloud(){
    const row=payload?.eventType==='DELETE'?payload?.old:payload?.new;
    if(!row||!row.data||typeof row.data!=='object')return;
    if(row.device_id&&String(row.device_id)===String(getDeviceId()))return;
-   if(cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'){
-     // Receive missing visual drafts independently; never replace unsent local edits.
-     if(!cloudBusy&&!cloudPushRunning){
+   if(operationalLocalPendingV1949()||cloudBusy){
+     // Realtime must never replace unsent edits, a restore or an in-flight Cloud operation.
+     if(!cloudBusy&&!cloudPushRunning&&!cloudHydrating&&!hasRestorePendingV12645()){
        try{integrateVisualCatalogCloudRowV1944(row,true)}
        catch(e){cloudLogMsg('Catálogos visuais remotos preservados para consulta: '+cloudErrText(e))}
      }
-     cloudLogMsg('Alteração operacional recebida de outro dispositivo, mas adiada por existirem alterações locais');
+     cloudLogMsg('Alteração operacional de outro dispositivo adiada: existem alterações ou operações locais pendentes');
      return
    }
    const incomingRev=Number(row.revision||0);
    const knownRev=Number(cloudMeta().remoteRevision||0);
    if(incomingRev&&knownRev&&incomingRev<knownRev)return;
    if(productionBlockedV1926())return false;
- const changed=mergeOperationalCloudSnapshotV139(row.data);
+   let changed=false;
+   try{changed=applyOperationalCloudRowSafelyV1949(row)}
+   catch(error){cloudLogMsg('Atualização operacional não aplicada: '+cloudErrText(error));return}
    if(changed){
-     cloudApplying=true;
-     try{localStorage.setItem(KEY,JSON.stringify(db))}finally{cloudApplying=false}
-     saveConfirmedShadow(row);
-     setCloudMeta({remoteRevision:incomingRev||knownRev,baseRevision:incomingRev||knownRev,lastCloudAt:row.updated_at||null,verified:true,lastSync:new Date().toISOString(),conflict:false});
+     setCloudMeta({lastSync:new Date().toISOString(),conflict:false});
      cloudLogMsg('Dados operacionais atualizados automaticamente a partir de outro dispositivo');
      renderAll()
    }
@@ -15138,19 +15137,47 @@ async function pushOperationalCloudStateV139(user,{force=false}={}){
  const payload={...operationalCloudSnapshotV139(),_meta:{appVersion:APP_VERSION,schema:7,updatedAt:new Date().toISOString()}};
  return await saveCloudStateSimple(user,payload,{force})
 }
-async function pullOperationalCloudStateV139(user){
+function operationalLocalPendingV1949(){
+ const meta=cloudMeta();
+ return !!(meta.dirty||meta.conflict||cloudConflict||cloudPushPending||cloudPushRunning||cloudHydrating||
+   localStorage.getItem(REL_DIRTY)==='1'||hasRestorePendingV12645());
+}
+function applyOperationalCloudRowSafelyV1949(row,{force=false}={}){
+ if(!row?.data||typeof row.data!=='object'||productionBlockedV1926())return false;
+ if(!force&&operationalLocalPendingV1949())return false;
+ const revision=Number(row.revision||0);
+ const meta=cloudMeta(),known=Math.max(Number(meta.remoteRevision||0),Number(meta.baseRevision||0));
+ if(!force&&revision>0&&known>0&&revision<known)return false;
+ // Keep local memory intact until the remote state has been durably written.
+ // In case of quota/storage failure, restore it without confirming a Cloud revision.
+ const previous=relClone(db);
+ let changed=false;
+ cloudApplying=true;
+ try{
+   changed=mergeOperationalCloudSnapshotV139(row.data);
+   if(changed)localStorage.setItem(KEY,JSON.stringify(db));
+ }catch(error){
+   db=previous;
+   throw error
+ }finally{cloudApplying=false}
+ if(changed){
+   saveConfirmedShadow(row);
+   setCloudMeta({remoteRevision:revision,baseRevision:revision,lastCloudAt:row.updated_at||null,verified:true});
+ }
+ return changed
+}
+async function pullOperationalCloudStateV139(user,{force=false}={}){
  if(productionBlockedV1926())return false;
+ if(!force&&operationalLocalPendingV1949()){cloudLogMsg('Receção operacional adiada: alterações locais pendentes');return false}
  const row=await fetchCloudRowAuthoritative(user);
  if(!row?.data||typeof row.data!=='object')return false;
- if(productionBlockedV1926())return false;
- const changed=mergeOperationalCloudSnapshotV139(row.data);
- if(changed){
-   cloudApplying=true;
-   try{localStorage.setItem(KEY,JSON.stringify(db))}finally{cloudApplying=false}
-   saveConfirmedShadow(row);
-   setCloudMeta({remoteRevision:Number(row.revision||0),baseRevision:Number(row.revision||0),lastCloudAt:row.updated_at||null,verified:true});
-   cloudLogMsg('Dados operacionais recebidos · stock, compras, caixa, produção e configuração');
+ // A user can save a catalog while the request is in flight. Recheck at apply time.
+ if(productionBlockedV1926()||(!force&&operationalLocalPendingV1949())){
+   cloudLogMsg('Resposta Cloud adiada: dados locais alterados durante a consulta');
+   return false
  }
+ const changed=applyOperationalCloudRowSafelyV1949(row,{force});
+ if(changed)cloudLogMsg('Dados operacionais recebidos · catálogos, stock, compras, caixa, produção e configuração');
  return changed
 }
 
@@ -15313,7 +15340,7 @@ async function cloudPullNow(force=false){
  }
  if(cloudMeta().dirty&&!force){cloudLogMsg('Receção V10 adiada: existem alterações locais');return false}
  const u=cloudUser||await ensureCloudSession();
- if(u){try{await pullOperationalCloudStateV139(u)}catch(e){cloudLogMsg('Não foi possível receber dados operacionais: '+cloudErrText(e));if(force)toast('Aviso: Stock/Configuração não puderam ser atualizados')}}
+ if(u){try{await pullOperationalCloudStateV139(u,{force})}catch(e){cloudLogMsg('Não foi possível receber dados operacionais: '+cloudErrText(e));if(force)toast('Aviso: Stock/Configuração não puderam ser atualizados')}}
  const ok1=await relationalHydrateCore(force);
  if(!ok1)return false;
  await cloudSleep(250);
@@ -15341,7 +15368,7 @@ async function cloudResolveConflict(choice){
    setCloudMeta({conflict:false});
    cloudConflict=null;
    const u=cloudUser||await ensureCloudSession();
-   if(u){try{await pullOperationalCloudStateV139(u)}catch(e){cloudLogMsg('Falha ao aplicar dados operacionais da Cloud: '+cloudErrText(e));return false}}
+   if(u){try{await pullOperationalCloudStateV139(u,{force:true})}catch(e){cloudLogMsg('Falha ao aplicar dados operacionais da Cloud: '+cloudErrText(e));return false}}
    return relationalHydrateCore(true)
  }
  if(choice==='local'){
