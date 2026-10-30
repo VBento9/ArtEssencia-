@@ -88,6 +88,116 @@
       if(!str)return state('Ainda não existe texto de proposta.');
       try{await navigator.clipboard.writeText(str);state('Texto da proposta copiado.')}catch(e){state('Seleciona e copia o texto manualmente.')}
     });
+    organiseCompactUI();
+  }
+
+  // V2.1 — disposição compacta: os elementos existentes são movidos, não recriados.
+  // Inputs, event listeners, IDs e cálculos mantêm-se inalterados.
+  let activeCompactTab='tiers',historyVisible=6;
+  const compactTabs=[
+    ['materials','Materiais'],
+    ['costs','Custos'],
+    ['tiers','Escalões'],
+    ['details','Detalhes'],
+    ['history','Guardar']
+  ];
+  function showCompactTab(tab,focus=false){
+    const root=$('quantityPricing');if(!root?.dataset.aeqCompact||!compactTabs.some(x=>x[0]===tab))return;
+    activeCompactTab=tab;
+    root.querySelectorAll('[data-aeq-tab]').forEach(btn=>{
+      const selected=btn.dataset.aeqTab===tab;
+      btn.setAttribute('aria-selected',String(selected));btn.tabIndex=selected?0:-1;
+      if(selected&&focus)btn.focus({preventScroll:true});
+    });
+    root.querySelectorAll('[data-aeq-panel]').forEach(panel=>{
+      panel.hidden=panel.dataset.aeqPanel!==tab;
+    });
+    if(tab==='history'&&Date.now()-historyLoadedAt>60000)loadHistory(false);
+  }
+  function updateHistoryPaging(){
+    const root=$('quantityPricing'),list=$('aeQHistory'),more=$('aeQMoreHistory');
+    if(!root?.dataset.aeqCompact||!list||!more)return;
+    const rows=[...list.querySelectorAll('.aeq-history-row')];
+    rows.forEach((row,i)=>{row.hidden=i>=historyVisible;});
+    more.hidden=rows.length<=historyVisible;
+    more.textContent='Mostrar mais ('+Math.min(6,Math.max(0,rows.length-historyVisible))+')';
+  }
+  function organiseCompactUI(){
+    const root=$('quantityPricing');
+    if(!root||root.dataset.aeqCompact==='1'||!$('aeQSetupMin'))return;
+    const cards=[...root.children].filter(el=>el.classList.contains('quantity-pricing-card-v1750'));
+    if(cards.length!==4)return;
+    const [baseCard,materialsCard,costsCard,resultsCard]=cards;
+    const explanation=$('aeQExplanation')?.closest('.aeq-panel');
+    const tiers=$('aeQTiers')?.closest('.aeq-panel');
+    const history=$('aeQHistory')?.closest('.aeq-panel');
+    if(!explanation||!tiers||!history)return;
+    // O desconto é frequentemente usado: colocá-lo junto da margem e quantidade.
+    const baseGrid=baseCard.querySelector('.quantity-pricing-base-grid-v1750');
+    const discount=$('qtyPricingDiscountV1750')?.closest('.field');
+    if(baseGrid&&discount)baseGrid.append(discount);
+    const manualPrice=$('qtyPricingManualUnitV1750')?.closest('.field');
+    if(baseGrid&&manualPrice){
+      const holder=document.createElement('details');holder.className='aeq-manual-price';
+      holder.innerHTML='<summary>Definir preço final manual (opcional)</summary>';
+      holder.append(manualPrice);baseCard.append(holder);
+    }
+    // O painel financeiro original continua a ser atualizado pelo motor.
+    const guide=baseCard.querySelector('.pricing-margin-guide-v1772');
+    if(guide){
+      const help=document.createElement('details');help.className='aeq-margin-help';
+      help.innerHTML='<summary>Referências de margem</summary>';
+      help.append(guide);baseCard.append(help);
+    }
+    const ref=$('qtyPricingProductReferenceV1750');
+    if(ref)resultsCard.append(ref);
+    const warning=$('qtyPricingWarningV1750');
+    const summary=document.createElement('section');
+    summary.className='aeq-main-summary';
+    summary.setAttribute('aria-label','Resumo de precificação');
+    summary.innerHTML='<div class="aeq-main-summary-grid">'+
+      '<div><small>Custo por unidade</small><strong id="aeqSummaryCost">—</strong></div>'+
+      '<div><small>PVP sugerido</small><strong id="aeqSummaryPrice">—</strong></div>'+
+      '<div><small>Total final</small><strong id="aeqSummaryTotal">—</strong></div>'+
+      '<div><small>Margem efetiva</small><strong id="aeqSummaryMargin">—</strong></div>'+
+      '</div><div class="aeq-summary-profit">Lucro estimado do lote: <strong id="aeqSummaryProfit">—</strong></div>';
+    baseCard.after(summary);
+    if(warning)summary.append(warning);
+    // A listagem longa de cálculos fica atrás de uma expansão voluntária.
+    const breakdown=document.createElement('details');breakdown.className='aeq-breakdown';
+    breakdown.innerHTML='<summary>Ver cálculo completo e discriminação de custos</summary>';
+    breakdown.append(resultsCard);breakdown.append(explanation);
+    const tabShell=document.createElement('div');tabShell.className='aeq-tab-shell';
+    const nav=document.createElement('div');nav.className='aeq-tab-nav';nav.setAttribute('role','tablist');
+    nav.setAttribute('aria-label','Secções da precificação');
+    const panels=document.createElement('div');panels.className='aeq-tab-panels';
+    const contents={materials:[materialsCard],costs:[costsCard],tiers:[tiers],details:[breakdown],history:[history]};
+    compactTabs.forEach(([id,label])=>{
+      const button=document.createElement('button');button.type='button';
+      button.className='aeq-tab';button.dataset.aeqTab=id;button.id='aeq-tab-'+id;
+      button.textContent=label;button.setAttribute('role','tab');button.setAttribute('aria-controls','aeq-panel-'+id);
+      button.addEventListener('click',()=>showCompactTab(id));
+      button.addEventListener('keydown',event=>{
+        if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+        event.preventDefault();
+        const ix=compactTabs.findIndex(t=>t[0]===id);
+        const next=event.key==='Home'?0:event.key==='End'?compactTabs.length-1:
+          (ix+(event.key==='ArrowLeft'?-1:1)+compactTabs.length)%compactTabs.length;
+        showCompactTab(compactTabs[next][0],true);
+      });
+      nav.append(button);
+      const panel=document.createElement('section');panel.dataset.aeqPanel=id;
+      panel.id='aeq-panel-'+id;panel.className='aeq-tab-panel';
+      panel.setAttribute('role','tabpanel');panel.setAttribute('aria-labelledby',button.id);
+      contents[id].forEach(content=>panel.append(content));panels.append(panel);
+    });
+    tabShell.append(nav,panels);summary.after(tabShell);
+    const more=document.createElement('button');more.type='button';more.className='btn aeq-more-history';
+    more.id='aeQMoreHistory';more.hidden=true;
+    more.addEventListener('click',()=>{historyVisible+=6;updateHistoryPaging();});
+    $('aeQHistory')?.after(more);
+    root.dataset.aeqCompact='1';
+    showCompactTab(activeCompactTab);
   }
   window.quantityPricingMarginMethodV2=function(){const input=$('qtyPricingMarginV1750');if(input)input.max=$('aeQMarginMode')?.value==='markup'?'1000':'95';window.refreshQuantityPricingV1750();};
   function state(message) {const el=$('aeQCloudState');if(el)el.textContent=message;}
@@ -113,6 +223,11 @@
     format('qtyPricingResultProfitV1750',s.profit);
     format('aeQWasteCost',s.wasteCost);format('aeQPackagingCost',s.packagingCost);
     format('aeQSetupCost',(pricingLaborHourlyRateV1745()+pricingFixedHourlyRateV1745())*s.setupMinutes/60);
+    format('aeqSummaryCost',s.costUnit);format('aeqSummaryPrice',s.recommendedUnit);
+    format('aeqSummaryTotal',s.finalTotal);format('aeqSummaryProfit',s.profit);
+    const aeqMargin=$('aeqSummaryMargin');if(aeqMargin)aeqMargin.textContent=pctV2(s.marginReal*100);
+    const aeqSummary=$('quantityPricing')?.querySelector('.aeq-main-summary');
+    if(aeqSummary)aeqSummary.classList.toggle('aeq-negative',s.finalTotal+1e-9<s.costTotal);
     const tm=$('qtyPricingResultTimeV1750');if(tm)tm.textContent=Math.round(s.totalMinutes).toLocaleString('pt-PT')+' min';
     const mar=$('qtyPricingResultMarginV1750');if(mar)mar.textContent=pctV2(s.marginReal*100);
     const mark=$('aeQMarkupReal');if(mark)mark.textContent=pctV2(s.markupReal*100);
@@ -140,7 +255,7 @@
   }
   window.refreshQuantityPricingV1750=function(){originalRefresh();renderEnhanced();};
   window.quantityPricingSnapshotV1751=function(){return compute();};
-  window.renderQuantityPricingV1750=function(){addUI();originalRender();renderEnhanced();if(Date.now()-historyLoadedAt>60000)loadHistory(false);};
+  window.renderQuantityPricingV1750=function(){addUI();originalRender();renderEnhanced();};
   function session() {
     if(typeof cloudClient==='undefined'||!cloudClient||typeof ensureCloudSession!=='function')throw new Error('É necessária uma sessão Cloud autenticada.');
     return ensureCloudSession();
@@ -197,6 +312,7 @@
       const el=$('aeQHistory');if(!el)return;
       el.replaceChildren();
       if(!data?.length){el.textContent='Ainda não existem simulações guardadas na Cloud.';return;}
+      historyVisible=6;
       data.forEach(row=>{
         const wrap=document.createElement('div');wrap.className='aeq-history-row';
         const info=document.createElement('span');
@@ -206,6 +322,7 @@
         btn.textContent='Consultar';btn.onclick=()=>consultSnapshot(row);
         wrap.append(info,btn);el.append(wrap);
       });
+      updateHistoryPaging();
     } catch(e) {state('Histórico Cloud indisponível: '+(e?.message||e));}
   }
   function consultSnapshot(row) {
