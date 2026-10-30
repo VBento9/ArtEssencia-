@@ -106,9 +106,10 @@ function install(){
  [['ready','Boxes pré-definidas'],['custom','Criar Box personalizada'],['pdf','Catálogos para clientes'],['advanced','Regras e opções']].map(([id,name])=>'<button type="button" role="tab" class="btn" data-ae-tab="'+id+'">'+name+'</button>').join('')+
  '</div>';
  dashboard.insertAdjacentElement('afterend',hub);
+ hub.querySelector('.ae-hub-tabs').before(summary);
  summary.style.marginTop='12px';
  const ready=document.createElement('div');ready.id='aeHubPanel_ready';ready.className='ae-hub-panel';
- ready.innerHTML='<div class="ae-hub-heading"><h3>Boxes pré-definidas</h3><p>Define a composição, embalagem, fotografia e preço. Para apresentar uma Box no Catálogo Digital ou na Loja, cria a respetiva ficha pública em Produtos e publica-a pelo processo habitual.</p><button type="button" class="btn" id="aeNewBoxV1">+ Nova Box</button></div>';
+ ready.innerHTML='<div class="ae-hub-heading"><h3>Boxes pré-definidas</h3><p>Define a composição, embalagem, fotografia e preço. Depois de guardar, utiliza os botões de publicação de cada Box para escolher Catálogo Digital, Loja ou ambos.</p><button type="button" class="btn" id="aeNewBoxV1">+ Nova Box</button></div>';
  ready.append(editor,heading,list);
  const customPane=document.createElement('div');customPane.id='aeHubPanel_custom';customPane.className='ae-hub-panel';
  customPane.innerHTML='<div class="ae-hub-heading"><h3>Criar Box personalizada</h3><p>Proposta não vinculativa; artigos e custos vêm dos Produtos. A confirmação de stock, embalagem e prazo é feita pela ArtEssencia.</p></div>'+
@@ -120,7 +121,9 @@ function install(){
  docs.append(pdf);
  const advanced=document.createElement('div');advanced.id='aeHubPanel_advanced';advanced.className='ae-hub-panel';
  advanced.innerHTML='<div class="ae-hub-heading"><h3>Regras e opções de personalização</h3><p>Opções técnicas do criador atual, preservadas para compatibilidade com a Loja. A ativação não reabre a Loja.</p></div>';
- advanced.append(creator);
+ const legacy=document.createElement('details');legacy.className='ae-creator-legacy-v1';
+ legacy.innerHTML='<summary style="padding:15px;cursor:pointer;font-weight:700;background:#fff;border:1px solid #dfd2c6;border-radius:12px">Mostrar configuração técnica antiga (compatibilidade)</summary>';
+ legacy.append(creator);advanced.append(legacy);
  hub.append(ready,customPane,docs,advanced);
  hub.querySelectorAll('[data-ae-tab]').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.aeTab)));
  renderPredefinedExtras();
@@ -185,6 +188,7 @@ function install(){
 }
 
 let publicRows=new Map();
+let publicVerified=false;
 let publicLoading=false;
 async function publicClient(){
  const c=initCloudClient();
@@ -201,8 +205,9 @@ async function reloadPublicBoxesV1(){
      .select('id,visible_catalog,visible_shop,active');
   if(error)throw error;
   publicRows=new Map((data||[]).map(row=>[String(row.id),row]));
+  publicVerified=true;
   renderPublicationButtonsV1();
- }catch(error){console.warn('Boxes públicas indisponíveis:',error.message);renderPublicationButtonsV1();}
+ }catch(error){publicVerified=false;console.warn('Boxes públicas indisponíveis:',error.message);renderPublicationButtonsV1();}
  finally{publicLoading=false;}
 }
 function renderPublicationButtonsV1(){
@@ -216,6 +221,7 @@ function renderPublicationButtonsV1(){
   const remote=publicRows.get(String(box.id))||{};
   const inCatalog=remote.active!==false && remote.visible_catalog===true;
   const inShop=remote.active!==false && remote.visible_shop===true;
+  if(!publicVerified){ui.innerHTML='<small>Estado da publicação não confirmado. Liga a Cloud e abre novamente esta secção.</small>';return;}
   ui.innerHTML='<small>Publicação independente: '+(inCatalog?'Catálogo ativo':'Catálogo não publicado')+' · '+(inShop?'Loja ativa':'Loja não publicada')+'</small>'+
    '<div><button type="button" class="btn" data-ae-publish="catalog" data-ae-boxid="'+safe(box.id)+'">'+(inCatalog?'Retirar do Catálogo':'Publicar no Catálogo')+'</button>'+
    '<button type="button" class="btn" data-ae-publish="shop" data-ae-boxid="'+safe(box.id)+'">'+(inShop?'Retirar da Loja':'Publicar na Loja')+'</button>'+
