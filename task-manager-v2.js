@@ -182,7 +182,7 @@ function top(){
  header.append(left,side);root.append(header);
  const stats=node('div','ae-tm-kpis');
  const list=tasks(),pending=list.filter(t=>t.status!=='concluida'),now=today();
- const counts=[['Em atraso',pending.filter(t=>t.due_date&&t.due_date<now).length],['Hoje',pending.filter(t=>t.due_date===now).length],['Próximos 7 dias',pending.filter(t=>t.due_date>now&&t.due_date<=shift(now,7)).length],['Concluídas',list.length-pending.length]];
+ const counts=[['Em atraso',pending.filter(t=>t.due_date&&t.due_date<now).length],['Hoje',pending.filter(t=>(t.planned_date||t.due_date)===now).length],['Próximos 7 dias',pending.filter(t=>(t.planned_date||t.due_date)>now&&(t.planned_date||t.due_date)<=shift(now,7)).length],['Concluídas',list.length-pending.length]];
  counts.forEach(([label,n],i)=>{const card=node('div','ae-tm-kpi'+(i===0&&n?' is-late':''));card.append(node('strong','',n),node('small','',label));stats.append(card)});
  root.append(stats);
  const tabbar=node('div','ae-tm-tabs');tabbar.setAttribute('role','tablist');
@@ -259,8 +259,15 @@ function taskCard(task){
  more.append(menu);side.append(more);
  line.append(side);return line;
 }
-function sorted(list){return list.sort((a,b)=>(a.due_date||'9999').localeCompare(b.due_date||'9999')
-  ||(priorityWeight[a.priority]??1)-(priorityWeight[b.priority]??1)||String(a.title).localeCompare(String(b.title),'pt-PT'))}
+function sorted(list){
+ return list.sort((a,b)=>{
+  const now=today(),urgent=x=>x.due_date&&x.due_date<now?0:x.status==='em_curso'?1:2;
+  const planned=x=>x.planned_date||x.due_date||'9999';
+  return urgent(a)-urgent(b)||(priorityWeight[a.priority]??1)-(priorityWeight[b.priority]??1)
+   ||planned(a).localeCompare(planned(b))||(a.due_date||'9999').localeCompare(b.due_date||'9999')
+   ||String(a.title).localeCompare(String(b.title),'pt-PT');
+ });
+}
 function taskList(list,empty){
  const all=sorted(list.filter(t=>!filterText||String(t.title+' '+(t.category||'')+' '+(t.details||'')).toLocaleLowerCase('pt-PT').includes(filterText)));
  if(!all.length){body.append(node('p','ae-tm-empty',empty));return}
@@ -280,10 +287,14 @@ function currentView(){
  if(screen==='today'){
   body.append(node('h3','','Prioridades de hoje'));
   body.append(node('p','ae-tm-subtext','Verifica primeiro os atrasos e os trabalhos com prazo para hoje. No resto da semana, dá prioridade a tarefas curtas de gestão.'));
-  body.append(q);taskList(uncompleted.filter(t=>t.status==='em_curso'||(t.due_date&&t.due_date<=date)),'Não há tarefas em curso, pendentes ou atrasadas para hoje.');
+  const focus=uncompleted.filter(t=>t.status==='em_curso'||(t.due_date&&t.due_date<=date)||((t.planned_date||t.due_date)&&((t.planned_date||t.due_date)<=date)));
+ const minutes=focus.reduce((sum,t)=>sum+Math.max(0,Number(t.estimate_min)||0),0);
+ const weekend=[0,1].includes(dt(date).getUTCDay());
+ body.append(node('p','ae-tm-subtext',focus.length+' tarefa(s) a acompanhar · '+minutes+' minutos previstos. '+(weekend?'Dia de atelier: dá prioridade à produção e criação.':'Dia de gestão: verifica pedidos, prazos e bloqueios; reserva a produção para domingo/segunda.')));
+ body.append(q);taskList(focus,'Não há tarefas em curso, pendentes ou atrasadas para hoje.');
  }else if(screen==='week'){
   body.append(node('h3','','Próximos sete dias'));
-  body.append(q);taskList(uncompleted.filter(t=>t.due_date&&t.due_date>=date&&t.due_date<=shift(date,7)),'Sem tarefas com prazo nesta semana.');
+  body.append(q);taskList(uncompleted.filter(t=>{const plan=t.planned_date||t.due_date;return (plan&&plan>=date&&plan<=shift(date,7))||(t.due_date&&t.due_date>=date&&t.due_date<=shift(date,7))}),'Sem tarefas planeadas ou com prazo nesta semana.');
  }else if(screen==='done'){
   body.append(node('h3','','Histórico concluído'));
   body.append(q);taskList(tasks().filter(t=>t.status==='concluida').sort((a,b)=>String(b.completed_at||'').localeCompare(String(a.completed_at||''))),'Ainda não existem tarefas concluídas.');
