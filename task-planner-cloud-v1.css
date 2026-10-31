@@ -1,0 +1,26 @@
+/* ArtEssencia — Planeamento Cloud: compacto, responsivo e isolado do Dashboard. */
+#aeTasksCloudV1{margin:0 0 15px;max-width:100%}
+#aeTasksCloudV1 *{box-sizing:border-box}
+#aeTasksCloudToggleV1{width:100%;text-align:left;min-height:46px;border:1px solid #d9caba;border-radius:10px;background:#f7f1ea;color:#5c4436;font-weight:700;padding:11px 15px;cursor:pointer}
+.ae-task-panel{border:1px solid #e0d6ca;border-radius:0 0 11px 11px;padding:12px;background:#fff;color:#30291f}
+.ae-task-head,.ae-task-toolbar,.ae-task-paging{display:flex;gap:9px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:10px}
+.ae-task-summary{font-size:13px;color:#655246;margin:4px 0 10px}
+.ae-task-alert{padding:9px;border-radius:7px;background:#fff4e5;color:#783d1d;overflow-wrap:anywhere}
+.ae-task-hint{font-size:13px;color:#6a625a}
+.ae-task-toolbar input,.ae-task-toolbar select,.ae-task-new input,.ae-task-new select,.ae-task-actions select{min-width:0;min-height:38px;font:inherit;color:#30291f;background:#fff;border:1px solid #cfc7bf;border-radius:7px;padding:6px 9px}
+.ae-task-toolbar input{flex:1 1 150px}
+.ae-task-row{display:flex;gap:12px;align-items:center;justify-content:space-between;border-bottom:1px solid #eee7df;padding:10px 0}
+.ae-task-info{flex:1 1 180px;min-width:0;overflow-wrap:anywhere}
+.ae-task-info strong{display:block;font-size:14px}
+.ae-task-info small{display:block;color:#756a60;font-size:11px;margin-top:4px}
+.ae-task-info p{font-size:12px;margin:5px 0 0}
+.ae-task-row.is-done .ae-task-info strong{text-decoration:line-through;color:#79736d}
+.ae-task-actions{display:flex;gap:6px;align-items:center;flex:0 0 auto}
+.ae-task-panel .btn{font-size:12px;min-height:36px}
+.ae-task-paging{margin-top:12px}
+.ae-task-paging small{color:#6b6259}
+.ae-task-new{border-top:1px solid #e4dad0;margin-top:14px;padding-top:13px}
+.ae-task-new strong{display:block;margin-bottom:8px}
+.ae-task-new-fields{display:grid;grid-template-columns:minmax(150px,2fr) minmax(130px,1fr) minmax(120px,1fr) minmax(100px,1fr);gap:7px;margin-bottom:9px}
+@media(max-width:700px){.ae-task-row{flex-direction:column;align-items:stretch}.ae-task-actions{align-self:flex-start;flex-wrap:wrap}.ae-task-new-fields{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.ae-task-new-fields input:first-child{grid-column:span 2}}
+@media(max-width:360px){.ae-task-new-fields{grid-template-columns:1fr}.ae-task-new-fields input:first-child{grid-column:auto}.ae-task-actions{width:100%}.ae-task-actions select{flex:1}}
