@@ -70,3 +70,22 @@
   #specialEditions .special-editor-card-v1734 .special-editor-actions-v1734 .btn{min-height:42px!important;font-size:11px!important}
 }
 @media(prefers-reduced-motion:reduce){#specialEditions .special-compact-tabs-v1962{scroll-behavior:auto}}
+/* 1.9.63 — continuidade: navegação e foco no editor sem scroll excessivo. */
+#specialEditions .special-editor-card-v1734{scroll-margin-top:76px}
+#specialEditions .special-compact-tabs-v1962{scroll-margin-top:76px}
+#specialEditions .special-step-nav-v1963{min-height:42px!important;padding:9px 12px!important;font-size:11px!important}
+#specialEditions .special-step-nav-v1963[hidden]{display:none!important}
+#specialEditions .special-clear-filters-v1963{min-height:40px!important;font-size:11px!important;white-space:nowrap}
+#specialEditions .special-picker-tools-v1962{grid-template-columns:minmax(0,1.5fr) minmax(140px,1fr) auto auto}
+@media(max-width:900px){
+  #specialEditions .special-picker-tools-v1962{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #specialEditions .special-only-selected-v1962{grid-column:auto}
+  #specialEditions .special-clear-filters-v1963{width:100%}
+}
+@media(max-width:680px){
+  #specialEditions .special-picker-tools-v1962{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #specialEditions .special-picker-search-v1962,#specialEditions .special-picker-category-v1962,#specialEditions .special-picker-status-v1962{grid-column:1/-1}
+  #specialEditions .special-editor-actions-v1734{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  #specialEditions .special-editor-actions-v1734 .btn{width:100%;min-width:0;white-space:normal}
+  #specialEditions .special-step-nav-v1963{min-width:0}
+}

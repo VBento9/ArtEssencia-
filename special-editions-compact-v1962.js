@@ -37,7 +37,7 @@
         quantity.textContent = '0';
         button.append(quantity);
       }
-      button.addEventListener('click', () => setStep(step.id));
+      button.addEventListener('click', () => setStep(step.id, true));
       tabs.append(button);
     }
     head.after(tabs);
@@ -55,14 +55,50 @@
     const status = document.getElementById('specialPickerStatusV1962');
     const count = document.getElementById('specialCompactCountV1962');
     let onlySelected = false;
+    const actions = editor.querySelector('.special-editor-actions-v1734');
+    let previousButton = null;
+    let nextButton = null;
+    if (actions) {
+      previousButton = document.createElement('button');
+      previousButton.type = 'button';
+      previousButton.className = 'btn special-step-nav-v1963';
+      previousButton.textContent = 'Anterior';
+      previousButton.addEventListener('click', () => {
+        const current = steps.findIndex(step => step.id === editor.dataset.specialStepV1962);
+        setStep(steps[Math.max(0, current - 1)].id, true);
+      });
+      nextButton = document.createElement('button');
+      nextButton.type = 'button';
+      nextButton.className = 'btn special-step-nav-v1963';
+      nextButton.addEventListener('click', () => {
+        const current = steps.findIndex(step => step.id === editor.dataset.specialStepV1962);
+        setStep(steps[Math.min(steps.length - 1, current + 1)].id, true);
+      });
+      actions.prepend(previousButton, nextButton);
+    }
 
-    function setStep(id) {
+    const clearFiltersButton = document.createElement('button');
+    clearFiltersButton.type = 'button';
+    clearFiltersButton.className = 'btn special-clear-filters-v1963';
+    clearFiltersButton.textContent = 'Limpar filtros';
+    tools.insertBefore(clearFiltersButton, status);
+
+    function setStep(id, scroll = false) {
       if (!steps.some(s => s.id === id)) return;
       editor.dataset.specialStepV1962 = id;
       tabs.querySelectorAll('button[data-step]').forEach(button => {
         const active = button.dataset.step === id;
         button.classList.toggle('active', active);
         button.setAttribute('aria-selected', String(active));
+      });
+      if (previousButton) previousButton.hidden = id === 'dados';
+      if (nextButton) {
+        nextButton.hidden = id === 'produtos';
+        nextButton.textContent = id === 'dados' ? 'Seguinte: Tema e capa' : 'Seguinte: Produtos';
+      }
+      if (scroll) tabs.scrollIntoView({
+        behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+        block: 'start'
       });
     }
 
@@ -130,6 +166,7 @@
       applyFilters();
     }
 
+    clearFiltersButton.addEventListener('click', resetFilters);
     search.addEventListener('input', applyFilters);
     category.addEventListener('change', applyFilters);
     onlyButton.addEventListener('click', () => {
