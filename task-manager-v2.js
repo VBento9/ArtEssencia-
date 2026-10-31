@@ -43,6 +43,51 @@ async function getAll(user){
 function objects(){return rows.map(r=>({...r.data,id:r.record_id})).filter(r=>r.id)}
 function tasks(){return objects().filter(r=>r.kind!=='recurring_rule'&&r.kind!=='planning_settings')}
 function rules(){return objects().filter(r=>r.kind==='recurring_rule')}
+function dependencyState(task){
+ const id=String(task?.depends_on_id||'');
+ if(!id)return {blocking:false,previous:null,label:''};
+ const previous=tasks().find(t=>t.id===id)||null;
+ if(!previous)return {blocking:true,previous:null,label:'Tarefa anterior indisponível'};
+ return {blocking:previous.status!=='concluida',previous,label:previous.title||'Tarefa anterior'};
+}
+function createsDependencyCycle(taskId,candidateId){
+ if(!taskId||!candidateId)return false;
+ const seen=new Set([String(taskId)]);
+ let current=String(candidateId);
+ for(let i=0;current&&i<5000;i++){
+  if(seen.has(current))return true;
+  seen.add(current);
+  const entry=tasks().find(t=>t.id===current);
+  if(!entry)return false;
+  current=String(entry.depends_on_id||'');
+ }
+ return !!current;
+}
+function candidateDependencies(edited){
+ const records=tasks().filter(t=>!t.origin_rule_id&&t.id!==edited?.id&&!createsDependencyCycle(edited?.id,t.id))
+  .sort((a,b)=>String(a.title||'').localeCompare(String(b.title||''),'pt-PT')).slice(0,250);
+ const options=[['','Nenhuma — pode começar sem outra tarefa'],...records.map(t=>[t.id,(t.title||'Sem título').slice(0,70)+(t.status==='concluida'?' ✓':'')])];
+ if(edited?.depends_on_id&&!records.some(t=>t.id===edited.depends_on_id))options.push([edited.depends_on_id,'Ligação indisponível — selecionar outra']);
+ return options;
+}
+function suggestedAtelierDate(task){
+ if(!task||task.status==='concluida'||task.origin_rule_id||!['Criação','Produção'].includes(task.category))return null;
+ const cfg=rows.find(r=>r.record_id==='ae-capacity-settings-v1')?.data?.minutes||{};
+ const length=Math.max(0,Math.min(600,Number(task.estimate_min)||0));
+ if(!length)return null;
+ for(let i=0;i<28;i++){
+  const date=shift(today(),i),dow=dt(date).getUTCDay();
+  if(dow!==0&&dow!==1)continue;
+  if(valid(task.due_date)&&date>task.due_date)break;
+  if(date===(task.planned_date||task.due_date))continue;
+  const available=Number(cfg[String(dow)]??240);
+  if(!Number.isFinite(available)||available<length)continue;
+  const used=tasks().filter(t=>t.id!==task.id&&t.status!=='concluida'&&(t.planned_date||t.due_date)===date)
+   .reduce((sum,t)=>sum+Math.max(0,Math.min(600,Number(t.estimate_min)||0)),0);
+  if(used+length<=available)return date;
+ }
+ return null;
+}
 function occurrences(rule){return tasks().filter(t=>t.origin_rule_id===rule.id).sort((a,b)=>String(b.occurrence_date||b.due_date||'').localeCompare(String(a.occurrence_date||a.due_date||'')))}
 function nextOccurrence(anchor,freq,after){
  if(!valid(anchor)||!valid(after))return null;
@@ -214,7 +259,8 @@ function taskForm(){
  const estimate=input('Minutos estimados',String(formEdit?.estimate_min??15),'number');estimate.input.min='0';estimate.input.max='600';
  const related=choice('Edição especial',[['','Sem ligação'],...editions.map(ed=>[ed.id,ed.name])],formEdit?.edition_id||'');
  const notes=input('Notas',formEdit?.details||'');
- const fields=node('div','ae-tm-form-grid');[name,date,planned,category,pri,estimate,related,notes].forEach(x=>fields.append(x.wrap));
+ const depends=choice('Tarefa anterior obrigatória',candidateDependencies(formEdit),formEdit?.depends_on_id||'');
+ const fields=node('div','ae-tm-form-grid');[name,date,planned,category,pri,estimate,related,depends,notes].forEach(x=>fields.append(x.wrap));
  form.append(fields);
  const actions=node('div','ae-tm-actions');
  actions.append(button('Cancelar',()=>{newFormOpen=false;formEdit=null;render()}));
@@ -222,10 +268,11 @@ function taskForm(){
  form.onsubmit=event=>{
   event.preventDefault();const title=name.input.value.trim();if(!title)return;
   if(date.input.value&&planned.input.value&&planned.input.value>date.input.value&&!window.confirm('A execução está prevista para depois do prazo final. Guardar mesmo assim?'))return;
+  if(depends.input.value&&createsDependencyCycle(formEdit?.id,depends.input.value))return window.alert('Não é possível criar uma dependência circular.');
   const data={...formEdit,id:formEdit?.id||uid(),kind:'task',title,
    category:category.input.value,priority:pri.input.value,due_date:date.input.value||null,planned_date:planned.input.value||null,
    estimate_min:Math.max(0,Math.min(600,Number(estimate.input.value)||0)),
-   edition_id:related.input.value||null,details:notes.input.value.trim().slice(0,600),
+   edition_id:related.input.value||null,depends_on_id:depends.input.value||null,details:notes.input.value.trim().slice(0,600),
    status:formEdit?.status||'pendente',createdAt:formEdit?.createdAt||new Date().toISOString()};
   mutate(async user=>{await upsert(user,data);newFormOpen=false;formEdit=null});
  };
@@ -259,6 +306,8 @@ function taskDetails(){
   ['Área',task.category||'Gestão'],['Origem',origin]
  ];
  if(ed)fields.push(['Edição associada',ed.name]);
+ const required=dependencyState(task);
+ if(task.depends_on_id)fields.push(['Depende de',required.label+(required.blocking?' — por concluir':' — concluída')]);
  if(task.completed_at)fields.push(['Concluída em',new Date(task.completed_at).toLocaleDateString('pt-PT')]);
  const grid=node('div','ae-tm-detail-grid');
  for(const [name,value] of fields){
@@ -270,11 +319,12 @@ function taskDetails(){
  notes.append(node('strong','','Instruções e notas'));
  notes.append(node('p','',String(task.details||'Sem instruções adicionais.')));
  detail.append(notes);
+ if(required.blocking)detail.append(node('p','ae-tm-dependency-warning','Bloqueada: conclui primeiro «'+required.label+'».'));
  const actions=node('div','ae-tm-detail-actions');
- if(task.status==='pendente'){
+ if(task.status==='pendente'&&!required.blocking){
   actions.append(button('Iniciar tarefa',()=>mutate(user=>upsert(user,{...task,status:'em_curso'})),'primary'));
  }
- if(task.status!=='concluida'){
+ if(task.status!=='concluida'&&!required.blocking){
   actions.append(button('✓ Marcar como concluída',()=>mutate(user=>upsert(user,{...task,status:'concluida',completed_at:new Date().toISOString()}))));
  }else{
   actions.append(button('Reabrir tarefa',()=>mutate(user=>upsert(user,{...task,status:'pendente',completed_at:null}))));
@@ -296,6 +346,16 @@ function taskDetails(){
   };
   detail.append(schedule);
  }
+ const suggestion=suggestedAtelierDate(task);
+ if(suggestion&&!required.blocking){
+  const proposal=node('div','ae-tm-replan-suggestion');
+  proposal.append(node('span','','Sugestão: executar em '+pretty(suggestion)+', dentro da capacidade estimada e antes do prazo.'));
+  proposal.append(button('Aplicar sugestão',()=>{
+   if(!window.confirm('Agendar «'+task.title+'» para '+pretty(suggestion)+'? O prazo final mantém-se.'))return;
+   mutate(user=>upsert(user,{...task,planned_date:suggestion}));
+  }));
+  detail.append(proposal);
+ }
  if(task.origin_rule_id)detail.append(node('p','ae-tm-subtext','Esta tarefa pertence a uma rotina. A rotina só gera a ocorrência seguinte após a conclusão da atual, quando a Cloud for atualizada.'));
  return detail;
 }
@@ -311,6 +371,8 @@ function taskCard(task){
   task.estimate_min?task.estimate_min+' min':'',
   task.origin_rule_id?'Rotina':task.source==='edition-plan'?'Plano de edição':'Pontual'].filter(Boolean).join(' · ');
  content.append(meta);
+ const required=dependencyState(task);
+ if(required.blocking&&task.status!=='concluida')content.append(node('small','ae-tm-dependency-warning','Aguarda: '+required.label));
  if(task.due_date&&task.due_date<today()&&task.status!=='concluida')
   content.append(node('small','ae-tm-overdue','Prazo ultrapassado'));
  line.append(content);
@@ -318,13 +380,13 @@ function taskCard(task){
  side.append(node('span','ae-tm-priority '+(task.priority||'normal'),
   task.priority==='alta'?'Alta':task.priority==='baixa'?'Baixa':'Normal'));
  side.append(button('Ver detalhes',()=>showTaskDetails(task),'ae-tm-view'));
- if(task.status==='pendente')side.append(button('Iniciar',()=>mutate(user=>upsert(user,{...task,status:'em_curso'}))));
- else if(task.status==='em_curso')side.append(button('✓ Concluir',()=>mutate(user=>upsert(user,{...task,status:'concluida',completed_at:new Date().toISOString()}))));
+ if(task.status==='pendente'&&!required.blocking)side.append(button('Iniciar',()=>mutate(user=>upsert(user,{...task,status:'em_curso'}))));
+ else if(task.status==='em_curso'&&!required.blocking)side.append(button('✓ Concluir',()=>mutate(user=>upsert(user,{...task,status:'concluida',completed_at:new Date().toISOString()}))));
  else side.append(node('span','ae-tm-done-mark','✓ Concluída'));
  const more=node('details','ae-tm-more');more.append(node('summary','','•••'));
  const menu=node('div','ae-tm-more-menu');
  menu.append(button('Editar',()=>{formEdit=task;newFormOpen=true;detailTaskId=null;render()}));
- if(task.status==='pendente')menu.append(button('Concluir diretamente',()=>mutate(user=>upsert(user,{...task,status:'concluida',completed_at:new Date().toISOString()}))));
+ if(task.status==='pendente'&&!required.blocking)menu.append(button('Concluir diretamente',()=>mutate(user=>upsert(user,{...task,status:'concluida',completed_at:new Date().toISOString()}))));
  if(task.status==='concluida')menu.append(button('Reabrir',()=>mutate(user=>upsert(user,{...task,status:'pendente',completed_at:null}))));
  menu.append(button('Eliminar tarefa',()=>{
   if(!window.confirm('Eliminar esta tarefa? Esta ação não elimina a rotina associada.'))return;
@@ -337,7 +399,8 @@ function sorted(list){
  return list.sort((a,b)=>{
   const now=today(),urgent=x=>x.due_date&&x.due_date<now?0:x.status==='em_curso'?1:2;
   const planned=x=>x.planned_date||x.due_date||'9999';
-  return urgent(a)-urgent(b)||(priorityWeight[a.priority]??1)-(priorityWeight[b.priority]??1)
+  const blocked=Number(dependencyState(a).blocking)-Number(dependencyState(b).blocking);
+  return blocked||urgent(a)-urgent(b)||(priorityWeight[a.priority]??1)-(priorityWeight[b.priority]??1)
    ||planned(a).localeCompare(planned(b))
    ||(Number(a.planning_order)||999)-(Number(b.planning_order)||999)
    ||(a.due_date||'9999').localeCompare(b.due_date||'9999')

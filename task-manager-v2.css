@@ -115,3 +115,8 @@
  #aeTaskManagerV2 .ae-tm-detail-actions .btn{flex:1 1 140px}
  #aeTaskManagerV2 .ae-tm-task-buttons .btn{min-height:40px}
 }
+
+/* Tarefas dependentes e reagendamento sugerido — apresentação compacta */
+#aeTaskManagerV2 .ae-tm-dependency-warning{display:block;color:#934321;background:#fff2e9;border-radius:7px;padding:7px 9px;font-size:11px;font-weight:650;margin:5px 0;overflow-wrap:anywhere}
+#aeTaskManagerV2 .ae-tm-replan-suggestion{display:flex;align-items:center;gap:9px;justify-content:space-between;flex-wrap:wrap;margin:10px 0;padding:9px;border:1px solid #ddd1bd;border-radius:8px;background:#faf7f0;font-size:12px}
+#aeTaskManagerV2 .ae-tm-replan-suggestion span{flex:1 1 160px}
