@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.66">
+<meta name="artessencia-version" content="1.9.67">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <link rel="manifest" href="manifest.webmanifest">
@@ -6145,7 +6145,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.66';
+const APP_VERSION='1.9.67';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -14518,7 +14518,7 @@ async function loadDigitalStatsV1795(showToast=false){
   renderDigitalStatsV1795();
   return
  }
- digitalStatsStateV1795.loading=true;digitalStatsStateV1795.error='';digitalStatsStateV1795.data=null;digitalStatsStateV1795.updatedAt=null;renderDigitalStatsV1795();
+ digitalStatsStateV1795.loading=true;digitalStatsStateV1795.error='';digitalStatsStateV1795.data=null;digitalStatsStateV1795.updatedAt=null;renderDigitalStatsV1795();document.dispatchEvent(new CustomEvent('ae:digital-stats-start'));
  try{
   const u=cloudUser||await ensureCloudSession();
   if(!u||!cloudClient)throw new Error('Liga primeiro o Backoffice à Cloud para consultar as estatísticas.');
@@ -14531,6 +14531,7 @@ async function loadDigitalStatsV1795(showToast=false){
   if(error)throw new Error(supabaseDetailedError(error));
   digitalStatsStateV1795.data=data||{};
   digitalStatsStateV1795.updatedAt=new Date();
+  document.dispatchEvent(new CustomEvent('ae:digital-stats-loaded',{detail:{source,from:range.from,to:range.to}}));
   if(showToast)toast('Estatísticas atualizadas')
  }catch(e){
   if(request!==digitalStatsRequestV1938)return;
@@ -16880,5 +16881,7 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 <script src="quote-history-compact-v1965.js" defer></script>
 <link rel="stylesheet" href="digital-stats-decisions-v1966.css">
 <script src="digital-stats-decisions-v1966.js" defer></script>
+<link rel="stylesheet" href="digital-stats-compare-v1967.css">
+<script src="digital-stats-compare-v1967.js" defer></script>
 <link rel="stylesheet" href="module-search-shortcut.css">
 <script src="module-search-shortcut.js"></script>
