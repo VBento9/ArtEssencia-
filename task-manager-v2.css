@@ -1,0 +1,89 @@
+/* Gestor de tarefas ArtEssencia V2: compacto, isolado, mobile-first */
+#aeTaskManagerV2{margin:0 0 14px;max-width:100%;color:#46372d;--tm-line:#e8dfd5;--tm-paper:#fff;--tm-sub:#756759;font-size:13px}
+#aeTaskManagerV2 *{box-sizing:border-box}
+#aeTaskManagerV2 .ae-tm-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;background:#f8f2ec;border:1px solid #e5d7c9;border-radius:12px 12px 0 0}
+#aeTaskManagerV2 .ae-tm-heading{display:flex;flex-direction:column;gap:3px}
+#aeTaskManagerV2 .ae-tm-heading strong{font:700 16px/1.2 Georgia,serif}
+#aeTaskManagerV2 .ae-tm-heading small{font-size:11px;color:var(--tm-sub)}
+#aeTaskManagerV2 .ae-tm-head-actions{display:flex;gap:7px;flex-wrap:wrap}
+#aeTaskManagerV2 button{cursor:pointer}
+#aeTaskManagerV2 .btn{font-size:12px;min-height:36px;line-height:1.3;white-space:normal}
+#aeTaskManagerV2 .ae-tm-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;padding:10px 12px;border:1px solid var(--tm-line);border-top:0}
+#aeTaskManagerV2 .ae-tm-kpi{display:flex;flex-direction:column;gap:2px;padding:8px 10px;border-radius:9px;background:#f8f6f3}
+#aeTaskManagerV2 .ae-tm-kpi strong{font-size:21px;line-height:1.2;font-weight:800;color:#3c3028}
+#aeTaskManagerV2 .ae-tm-kpi small{font-size:10px;color:var(--tm-sub)}
+#aeTaskManagerV2 .ae-tm-kpi.is-late{background:#fff1eb}.ae-tm-kpi.is-late strong{color:#963e20}
+#aeTaskManagerV2 .ae-tm-tabs{display:flex;gap:5px;overflow-x:auto;scrollbar-width:thin;padding:8px 10px;border:1px solid var(--tm-line);border-top:0;background:#fff}
+#aeTaskManagerV2 .ae-tm-tab{flex:1 0 auto;min-height:34px;padding:7px 9px;border-radius:7px;border:1px solid transparent;background:#f5f1ed;font-size:12px;font-weight:700;color:#6b5748}
+#aeTaskManagerV2 .ae-tm-tab.active{background:#685040;color:#fff}
+#aeTaskManagerV2 .ae-tm-main{padding:12px;border:1px solid var(--tm-line);border-top:0;background:var(--tm-paper)}
+#aeTaskManagerV2 .ae-tm-main h3{font-size:14px;margin:0 0 8px;color:#4b372a}
+#aeTaskManagerV2 .ae-tm-subtext{font-size:12px;color:var(--tm-sub);margin:5px 0 12px;line-height:1.45}
+#aeTaskManagerV2 .ae-tm-info{background:#f8f1dc;padding:8px;border-radius:6px;font-size:12px;margin:0 0 9px;overflow-wrap:anywhere}
+#aeTaskManagerV2 .ae-tm-list{display:grid;gap:7px}
+#aeTaskManagerV2 .ae-tm-task{min-width:0;display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid #ebe2d8;border-radius:8px;background:#fff}
+#aeTaskManagerV2 .ae-tm-task.done{background:#f6f7f4}
+#aeTaskManagerV2 .ae-tm-task.done strong{text-decoration:line-through;text-decoration-color:#9f988e;color:#746f67}
+#aeTaskManagerV2 .ae-tm-task-content{display:grid;gap:4px;min-width:0;flex:1;overflow-wrap:anywhere}
+#aeTaskManagerV2 .ae-tm-task-content strong{font-size:13px;line-height:1.4}
+#aeTaskManagerV2 .ae-tm-task-content small{font-size:10px;color:var(--tm-sub);line-height:1.35}
+#aeTaskManagerV2 .ae-tm-task-content p{margin:0;font-size:11px;color:#66594e}
+#aeTaskManagerV2 .ae-tm-task-buttons{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+#aeTaskManagerV2 .ae-tm-priority{display:inline-block;white-space:nowrap;border-radius:999px;padding:3px 6px;font-size:10px;font-weight:700;background:#eee9e3;color:#66594f}
+#aeTaskManagerV2 .ae-tm-priority.alta{background:#ffeadc;color:#8d431b}
+#aeTaskManagerV2 .ae-tm-priority.baixa{background:#eff1ef;color:#53645a}
+#aeTaskManagerV2 .ae-tm-more{position:relative}
+#aeTaskManagerV2 .ae-tm-more>summary{list-style:none;cursor:pointer;border:1px solid #dad0c7;padding:6px 9px;border-radius:7px;min-height:36px}
+#aeTaskManagerV2 .ae-tm-more>summary::-webkit-details-marker{display:none}
+#aeTaskManagerV2 .ae-tm-more-menu{position:absolute;z-index:5;right:0;top:calc(100% + 4px);min-width:130px;background:white;border:1px solid #e8ddd3;box-shadow:0 5px 15px #3927191f;border-radius:8px;padding:7px;display:grid;gap:6px}
+#aeTaskManagerV2 .ae-tm-danger{color:#983b2c!important;border-color:#d9a49d!important;background:#fff8f7!important}
+#aeTaskManagerV2 .ae-tm-search{width:100%;min-height:38px;margin:0 0 10px;padding:8px 10px;border:1px solid #d8cdc3;border-radius:7px;background:#fff;color:#46382e}
+#aeTaskManagerV2 .ae-tm-pagination{display:flex;align-items:center;gap:10px;margin-top:10px;justify-content:flex-end}
+#aeTaskManagerV2 .ae-tm-pagination small{margin-right:auto;color:var(--tm-sub)}
+#aeTaskManagerV2 .ae-tm-empty{font-size:12px;color:#756b62;padding:11px;margin:0;background:#f9f7f3;border-radius:7px}
+#aeTaskManagerV2 .ae-tm-form{border:1px solid #e0d4c7;background:#faf6f1;border-radius:8px;padding:12px;display:grid;gap:10px;margin:0 0 12px}
+#aeTaskManagerV2 .ae-tm-form>strong{font-size:13px}
+#aeTaskManagerV2 .ae-tm-form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#aeTaskManagerV2 .ae-tm-field{display:grid;gap:4px;min-width:0;font-size:11px;color:#67564a}
+#aeTaskManagerV2 .ae-tm-field>input,#aeTaskManagerV2 .ae-tm-field>select{width:100%;min-width:0;min-height:38px;padding:7px;border:1px solid #d5c8bc;border-radius:7px;background:white;color:#47382e;font-size:12px}
+#aeTaskManagerV2 .ae-tm-actions{display:flex;justify-content:flex-end;gap:7px}
+#aeTaskManagerV2 .ae-tm-footer{padding:9px 12px;border:1px solid var(--tm-line);border-top:0;border-radius:0 0 12px 12px;font-size:10px;color:var(--tm-sub);background:#faf8f5}
+#aeTaskManagerV2 .ae-tm-footer>details{margin-top:6px}
+#aeTaskManagerV2 .ae-tm-footer summary{cursor:pointer;font-weight:700;font-size:12px}
+#aeTaskManagerV2 .ae-tm-footer p{line-height:1.5;margin:6px 0}
+#aeTaskManagerV2 .ae-tm-calendar-top{display:flex;align-items:center;gap:7px;justify-content:space-between;margin-bottom:8px}
+#aeTaskManagerV2 .ae-tm-calendar-top strong{text-transform:capitalize;font-size:13px}
+#aeTaskManagerV2 .ae-tm-month{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:11px}
+#aeTaskManagerV2 .ae-tm-weekday{text-align:center;font-size:10px;font-weight:700;color:#77675a}
+#aeTaskManagerV2 .ae-tm-day{border:1px solid #eee4db;border-radius:7px;min-height:39px;font-size:11px;background:#fcfaf7;padding:4px;min-width:0}
+#aeTaskManagerV2 .ae-tm-day.today{border-color:#85634a;font-weight:700}
+#aeTaskManagerV2 .ae-tm-day.selected{background:#705340;color:#fff}
+#aeTaskManagerV2 .ae-tm-day.outside{opacity:.48}
+#aeTaskManagerV2 .ae-tm-calendar-detail{border-top:1px solid var(--tm-line);padding-top:10px;display:grid;gap:7px}
+#aeTaskManagerV2 .ae-tm-calendar-detail h3{margin:0}
+#aeTaskManagerV2 .ae-tm-edition{display:flex;align-items:center;justify-content:space-between;gap:8px;border-radius:6px;padding:8px;background:#f9f3ed;font-size:11px}
+#aeTaskManagerV2 .ae-tm-edition-planning{margin-top:12px;border-top:1px solid var(--tm-line);padding-top:8px}
+#aeTaskManagerV2 .ae-tm-edition-planning>summary{cursor:pointer;font-weight:700}
+#aeTaskManagerV2 .ae-tm-edition-planning>div{display:grid;gap:7px;padding-top:8px}
+#aeTaskManagerV2 .ae-tm-rule-list{display:grid;gap:6px;margin:0 0 13px}
+#aeTaskManagerV2 .ae-tm-rule{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px;border:1px solid var(--tm-line);border-radius:7px}
+#aeTaskManagerV2 .ae-tm-rule-info{display:grid;gap:4px;min-width:0}
+#aeTaskManagerV2 .ae-tm-rule-info strong{font-size:12px}
+#aeTaskManagerV2 .ae-tm-rule-info small{font-size:10px;color:var(--tm-sub)}
+#aeTaskManagerV2 .ae-tm-rule-actions{display:flex;gap:6px;flex-wrap:wrap}
+#aeTaskManagerV2.busy{opacity:.83;pointer-events:none}
+@media(max-width:850px){#aeTaskManagerV2 .ae-tm-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){
+ #aeTaskManagerV2 .ae-tm-header{flex-wrap:wrap}
+ #aeTaskManagerV2 .ae-tm-head-actions{width:100%}
+ #aeTaskManagerV2 .ae-tm-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #aeTaskManagerV2 .ae-tm-task{align-items:flex-start;flex-wrap:wrap}
+ #aeTaskManagerV2 .ae-tm-task-buttons{width:100%;justify-content:flex-end}
+ #aeTaskManagerV2 .ae-tm-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #aeTaskManagerV2 .ae-tm-tab{font-size:11px;min-height:40px}
+ #aeTaskManagerV2 .ae-tm-month{gap:3px}
+ #aeTaskManagerV2 .ae-tm-day{font-size:10px;padding:2px;min-height:40px}
+ #aeTaskManagerV2 .ae-tm-edition{flex-wrap:wrap}
+ #aeTaskManagerV2 .ae-tm-rule{flex-wrap:wrap}
+ #aeTaskManagerV2 .ae-tm-rule-actions{width:100%;justify-content:flex-end}
+}
