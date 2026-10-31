@@ -8,6 +8,47 @@ const pick=(values,val)=>{const s=el('select','ae-task-select');for(const [v,l] 
 const statuses=[['pendente','Pendente'],['em_curso','Em curso'],['concluida','Concluída']];
 const categories=['Produção','Criação','Gestão','Marketing','Comercial','Segurança'];
 let tasks=[],expanded=false,filter='ativas',search='',page=0,updating=false,loaded=false,notice='';
+let weekOffset=0, dayFilter=null;
+function localISO(){
+ const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Lisbon',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+ const obj=Object.fromEntries(parts.filter(x=>x.type!=='literal').map(x=>[x.type,x.value]));
+ return obj.year+'-'+obj.month+'-'+obj.day;
+}
+function moveDay(iso,days){const d=new Date(iso+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10);}
+function weekBase(){const today=localISO(),weekday=new Date(today+'T12:00:00Z').getUTCDay();return moveDay(today,-((weekday+6)%7)+weekOffset*7);}
+function renderCalendar(area){
+ const today=localISO(),active=taskItems().filter(x=>x.status!=='concluida');
+ const late=active.filter(x=>x.due_date&&x.due_date<today).length;
+ const now=active.filter(x=>x.due_date===today).length;
+ const soon=active.filter(x=>x.due_date>today&&x.due_date<=moveDay(today,7)).length;
+ const stats=el('div','ae-tasks-alert-line');
+ stats.append(el('span','','Atrasadas: '+late),el('span','','Hoje: '+now),el('span','','Próximos 7 dias: '+soon));
+ if(late)stats.classList.add('has-overdue');
+ area.append(stats);
+ const panel=el('div','ae-week-panel');
+ const nav=el('div','ae-week-nav');
+ nav.append(btn('←',()=>{weekOffset--;dayFilter=null;page=0;render();}));
+ nav.append(el('strong','','Semana de '+new Date(weekBase()+'T12:00:00Z').toLocaleDateString('pt-PT',{timeZone:'UTC',day:'numeric',month:'short'})));
+ nav.append(btn('Hoje',()=>{weekOffset=0;dayFilter=null;page=0;render();}));
+ nav.append(btn('→',()=>{weekOffset++;dayFilter=null;page=0;render();}));
+ panel.append(nav);
+ const days=el('div','ae-week-days'),base=weekBase();
+ for(let i=0;i<7;i++){
+  const iso=moveDay(base,i),date=new Date(iso+'T12:00:00Z');
+  const count=active.filter(t=>t.due_date===iso).length;
+  const button=btn(date.toLocaleDateString('pt-PT',{timeZone:'UTC',weekday:'short'})+' '+date.getUTCDate()+' · '+count,
+   ()=>{dayFilter=dayFilter===iso?null:iso;page=0;render();});
+  button.classList.add('ae-week-day');
+  if(iso===today)button.classList.add('is-today');
+  if(dayFilter===iso){button.classList.add('is-selected');button.setAttribute('aria-pressed','true');}
+  else button.setAttribute('aria-pressed','false');
+  button.setAttribute('aria-label','Filtrar tarefas de '+date.toLocaleDateString('pt-PT',{timeZone:'UTC'}));
+  days.append(button);
+ }
+ panel.append(days);
+ if(dayFilter)panel.append(btn('Limpar filtro do dia',()=>{dayFilter=null;page=0;render();}));
+ area.append(panel);
+}
 const taskItems=()=>tasks.filter(t=>t.kind!=='recurring_rule');
 function client(){if(typeof cloudClient==='undefined'||!cloudClient?.auth?.getSession||!cloudClient?.from)throw Error('Liga a sessão Cloud no Backoffice para sincronizar tarefas.');return cloudClient;}
 async function currentUser(){
@@ -19,13 +60,20 @@ async function refresh(){
  const seq=++refresh.sequence;
  try{
   const userId=await currentUser();
-  const {data,error}=await client().from('artessencia_cloud_records')
-   .select('record_id,data,server_updated_at')
-   .eq('entity',ENTITY).eq('user_id',userId).is('deleted_at',null)
-   .order('server_updated_at',{ascending:false}).limit(500);
-  if(error)throw error;
+  const rows=[];
+  for(let offset=0;offset<5000;offset+=250){
+   const {data,error}=await client().from('artessencia_cloud_records')
+    .select('record_id,data,server_updated_at')
+    .eq('entity',ENTITY).eq('user_id',userId).is('deleted_at',null)
+    .order('server_updated_at',{ascending:false}).order('record_id',{ascending:true})
+    .range(offset,offset+249);
+   if(error)throw error;
+   rows.push(...(data||[]));
+   if(!data||data.length<250)break;
+   if(offset===4750)throw Error('Limite de 5000 tarefas atingido; contactar suporte.');
+  }
   if(seq!==refresh.sequence)return;
-  tasks=(Array.isArray(data)?data:[]).filter(x=>x.data&&typeof x.data==='object')
+  tasks=rows.filter(x=>x.data&&typeof x.data==='object')
    .map(x=>({...x.data,id:String(x.record_id)}));
   loaded=true;notice='';render();
  }catch(error){if(seq!==refresh.sequence)return;loaded=false;notice=String(error?.message||error);render();}
@@ -60,13 +108,14 @@ function render(){
  const title=el('div','ae-task-head');title.append(el('strong','','Tarefas sincronizadas na Cloud'),btn('Atualizar',refresh));area.append(title);
  if(notice)area.append(el('p','ae-task-alert',notice));
  if(!loaded){area.append(el('p','ae-task-hint','Inicia sessão na Cloud e utiliza Atualizar para carregar as tarefas.'));return;}
- area.append(countSummary());
+ area.append(countSummary());renderCalendar(area);
  const toolbar=el('div','ae-task-toolbar');
  const options=[['ativas','Por concluir'],['todas','Todas'],['concluidas','Concluídas']];
  const filtering=pick(options,filter);filtering.setAttribute('aria-label','Filtrar tarefas');filtering.addEventListener('change',()=>{filter=filtering.value;page=0;render();});
  const q=el('input','ae-task-search');q.type='search';q.placeholder='Pesquisar tarefas';q.value=search;q.setAttribute('aria-label','Pesquisar tarefas');q.addEventListener('change',()=>{search=q.value.trim().toLocaleLowerCase('pt-PT');page=0;render();});
  toolbar.append(filtering,q);area.append(toolbar);
  const list=taskItems().filter(t=>{
+  if(dayFilter&&t.due_date!==dayFilter)return false;
   if(filter==='ativas'&&t.status==='concluida')return false;
   if(filter==='concluidas'&&t.status!=='concluida')return false;
   return !search||(String(t.title)+' '+String(t.category)+' '+String(t.details||'')).toLocaleLowerCase('pt-PT').includes(search);
