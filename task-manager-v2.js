@@ -2,7 +2,7 @@
 (()=>{'use strict';
 const ENTITY='operational_tasks_v1',TABLE='artessencia_cloud_records',ROOT='aeTaskManagerV2';
 const PAGE=6,TZ='Europe/Lisbon';
-const sections=[['today','Hoje'],['week','Semana'],['calendar','Calendário'],['done','Concluídas'],['rules','Rotinas']];
+const sections=[['today','Hoje'],['week','Semana'],['calendar','Calendário'],['done','Concluídas'],['rules','Rotinas'],['capacity','Capacidade']];
 const statuses=[['pendente','Pendente'],['em_curso','Em curso'],['concluida','Concluída']];
 const priorities=[['alta','Alta'],['normal','Normal'],['baixa','Baixa']];
 const categories=['Gestão','Comercial','Produção','Criação','Marketing','Segurança'];
@@ -41,7 +41,7 @@ async function getAll(user){
  throw Error('Limite de registos excedido; não foram efetuadas alterações.');
 }
 function objects(){return rows.map(r=>({...r.data,id:r.record_id})).filter(r=>r.id)}
-function tasks(){return objects().filter(r=>r.kind!=='recurring_rule')}
+function tasks(){return objects().filter(r=>r.kind!=='recurring_rule'&&r.kind!=='planning_settings')}
 function rules(){return objects().filter(r=>r.kind==='recurring_rule')}
 function occurrences(rule){return tasks().filter(t=>t.origin_rule_id===rule.id).sort((a,b)=>String(b.occurrence_date||b.due_date||'').localeCompare(String(a.occurrence_date||a.due_date||'')))}
 function nextOccurrence(anchor,freq,after){
@@ -207,21 +207,23 @@ function taskForm(){
  const form=node('form','ae-tm-form');
  form.append(node('strong','',' '+(formEdit?'Editar tarefa':'Nova tarefa')));
  const name=input('O que fazer?',formEdit?.title,'text',true);name.input.maxLength=160;
- const date=input('Prazo',formEdit?.due_date||today(),'date');
+ const date=input('Prazo final',formEdit?.due_date||today(),'date');
+ const planned=input('Data prevista de execução',formEdit?.planned_date||formEdit?.due_date||today(),'date');
  const category=choice('Área',categories.map(c=>[c,c]),formEdit?.category||'Gestão');
  const pri=choice('Prioridade',priorities,formEdit?.priority||'normal');
  const estimate=input('Minutos estimados',String(formEdit?.estimate_min??15),'number');estimate.input.min='0';estimate.input.max='600';
  const related=choice('Edição especial',[['','Sem ligação'],...editions.map(ed=>[ed.id,ed.name])],formEdit?.edition_id||'');
  const notes=input('Notas',formEdit?.details||'');
- const fields=node('div','ae-tm-form-grid');[name,date,category,pri,estimate,related,notes].forEach(x=>fields.append(x.wrap));
+ const fields=node('div','ae-tm-form-grid');[name,date,planned,category,pri,estimate,related,notes].forEach(x=>fields.append(x.wrap));
  form.append(fields);
  const actions=node('div','ae-tm-actions');
  actions.append(button('Cancelar',()=>{newFormOpen=false;formEdit=null;render()}));
  const save=node('button','btn primary','Guardar tarefa');save.type='submit';actions.append(save);form.append(actions);
  form.onsubmit=event=>{
   event.preventDefault();const title=name.input.value.trim();if(!title)return;
+  if(date.input.value&&planned.input.value&&planned.input.value>date.input.value&&!window.confirm('A execução está prevista para depois do prazo final. Guardar mesmo assim?'))return;
   const data={...formEdit,id:formEdit?.id||uid(),kind:'task',title,
-   category:category.input.value,priority:pri.input.value,due_date:date.input.value||null,
+   category:category.input.value,priority:pri.input.value,due_date:date.input.value||null,planned_date:planned.input.value||null,
    estimate_min:Math.max(0,Math.min(600,Number(estimate.input.value)||0)),
    edition_id:related.input.value||null,details:notes.input.value.trim().slice(0,600),
    status:formEdit?.status||'pendente',createdAt:formEdit?.createdAt||new Date().toISOString()};
@@ -235,7 +237,7 @@ function taskCard(task){
  const title=node('strong','',task.title||'Tarefa sem título');content.append(title);
  const meta=node('small','');
  const ed=editions.find(e=>e.id===task.edition_id);
- meta.textContent=[pretty(task.due_date),task.category||'Gestão',ed?'Edição: '+ed.name:'',
+ meta.textContent=['Execução: '+pretty(task.planned_date||task.due_date),task.planned_date&&task.planned_date!==task.due_date?'Prazo: '+pretty(task.due_date):'',task.category||'Gestão',ed?'Edição: '+ed.name:'',
   task.estimate_min?task.estimate_min+' min':'',task.origin_rule_id?'Recorrente':''].filter(Boolean).join(' · ');
  content.append(meta);
  if(task.details)content.append(node('p','',task.details));
@@ -286,7 +288,9 @@ function currentView(){
   body.append(node('h3','','Histórico concluído'));
   body.append(q);taskList(tasks().filter(t=>t.status==='concluida').sort((a,b)=>String(b.completed_at||'').localeCompare(String(a.completed_at||''))),'Ainda não existem tarefas concluídas.');
  }else if(screen==='calendar')renderCalendar();
- else renderRules();
+ else if(screen==='rules')renderRules();
+ else if(typeof window.aeTaskCapacityV1==='function')window.aeTaskCapacityV1({body,tasks:tasks(),rows,upsert,mutate,today,dt,shift,pretty,valid,node,button});
+ else body.append(node('p','ae-tm-empty','O painel de capacidade não está disponível.'));
 }
 function renderCalendar(){
  const head=node('div','ae-tm-calendar-top');
@@ -299,7 +303,7 @@ function renderCalendar(){
  const d=dt(calendarMonth),offset=(d.getUTCDay()+6)%7,last=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0,12)).getUTCDate();
  for(let i=0;i<Math.ceil((offset+last)/7)*7;i++){
   const date=shift(calendarMonth,i-offset),inMonth=date.slice(0,7)===calendarMonth.slice(0,7);
-  const due=tasks().filter(t=>t.due_date===date&&t.status!=='concluida').length;
+  const due=tasks().filter(t=>(t.planned_date||t.due_date)===date&&t.status!=='concluida').length;
   const editionStart=editions.filter(e=>e.start===date);
   const b=button(String(dt(date).getUTCDate())+(due?' · '+due:'')+(editionStart.length?' ✦':''),()=>{daySelected=date;render()});
   b.className='ae-tm-day'+(!inMonth?' outside':'')+(daySelected===date?' selected':'')+(date===today()?' today':'');
@@ -316,7 +320,7 @@ function renderCalendar(){
   bar.append(button('Abrir edição',()=>{if(typeof go==='function')go('specialEditions')}));
   detail.append(bar);
  }
- const selected=tasks().filter(t=>t.due_date===daySelected);
+ const selected=tasks().filter(t=>(t.planned_date||t.due_date)===daySelected);
  if(selected.length)selected.slice(0,5).forEach(t=>detail.append(taskCard(t)));
  else detail.append(node('p','ae-tm-empty','Sem tarefas neste dia.'));
  if(selected.length>5)detail.append(node('small','','Mais '+(selected.length-5)+' tarefas. Usa a vista Semana para consultar.'));
@@ -447,5 +451,6 @@ function start(){
   watcher.observe(document.body,{childList:true,subtree:true});
  }
 }
+import('./task-capacity-v1.js').then(()=>{if(!document.getElementById('aeTaskCapacityStyles')){const link=document.createElement('link');link.id='aeTaskCapacityStyles';link.rel='stylesheet';link.href='/task-capacity-v1.css';document.head.append(link)}if(screen==='capacity')render()}).catch(e=>console.warn('Capacidade indisponível',e));
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
