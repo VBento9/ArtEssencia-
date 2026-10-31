@@ -12,6 +12,17 @@
   }
   return !!next&&next!==installed;
  }
+
+ function showVersionInHeader(){
+  const heading=document.querySelector('.page-heading');
+  if(!heading||document.getElementById('ae-visible-app-version'))return;
+  const info=document.createElement('small');
+  info.id='ae-visible-app-version';
+  info.setAttribute('aria-label','Versão atual do Backoffice');
+  info.textContent='Versão instalada: '+(running||'por identificar');
+  Object.assign(info.style,{display:'block',fontSize:'11px',lineHeight:'1.3',marginTop:'4px',letterSpacing:'normal',color:'#796656'});
+  heading.append(info);
+ }
  function closeOffer(){
   document.getElementById('ae-update-available')?.remove();
   updateBanner=null;latestVersion='';
@@ -103,22 +114,27 @@
    const version=await response.json();
    if(version?.channel!=='artessencia-backoffice-stable'||typeof version.app!=='string')return;
    if(version.app===running){
+    try{if(sessionStorage.getItem(EXPECTED_KEY)===running)sessionStorage.removeItem(EXPECTED_KEY)}catch(_){}
     closeOffer();
     return;
    }
    // Não anunciar retrocessos da Vercel como uma nova atualização.
    if(!isNewer(version.app,running)){closeOffer();return}
-   // Depois de tentar atualizar esta versão, não repetir o mesmo aviso
-   // indefinidamente caso um navegador continue a servir o HTML antigo.
+   // Nunca esconder silenciosamente uma atualização que não ficou instalada.
    let attempted='';
    try{attempted=sessionStorage.getItem(EXPECTED_KEY)||''}catch(_){}
-   if(attempted===version.app){closeOffer();return}
    offerUpdate(version.app);
+   if(attempted===version.app){
+    bannerMessage('A atualização anterior não foi concluída. Continua na versão '+running+'; tenta atualizar novamente após confirmar a sincronização Cloud.');
+    const retry=updateBanner?.querySelector('button');
+    if(retry)retry.textContent='Tentar novamente';
+   }
   }catch(error){console.warn('Verificação de atualização adiada:',error)}
   finally{checking=false}
  }
 
  showInstalledNotice();
+ showVersionInHeader();
  if('serviceWorker'in navigator&&location.protocol.startsWith('http')){
   navigator.serviceWorker.addEventListener('controllerchange',check);
   navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'}).then(reg=>{registration=reg;check()}).catch(error=>{console.warn(error);check()});
