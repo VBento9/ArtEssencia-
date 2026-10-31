@@ -1,0 +1,35 @@
+/* Consultor IA integrado nas Estatísticas Digitais do Backoffice ArtEssencia */
+#digitalStats .ae-advisor-panel{padding:12px;border:1px solid #e6d9d0;background:#fff;border-radius:13px}
+#digitalStats .ae-advisor-head{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+#digitalStats .ae-advisor-head h3{font-size:15px;margin:0 0 4px;color:#493127}
+#digitalStats .ae-advisor-head p{font-size:11px;line-height:1.5;color:#746057;margin:0}
+#digitalStats .ae-advisor-head button{flex-shrink:0}
+#digitalStats .ae-advisor-status{margin:12px 0;font-size:11px;color:#705747;line-height:1.5}
+#digitalStats .ae-advisor-diagnosis{background:#fcfaf8;border:1px solid #eaded6;border-radius:10px;padding:12px}
+#digitalStats .ae-advisor-diagnosis strong{font-size:12px;color:#493127}
+#digitalStats .ae-advisor-diagnosis p{font-size:11px;line-height:1.6;margin:6px 0 0}
+#digitalStats .ae-advisor-subheading{font-size:13px;margin:16px 0 10px}
+#digitalStats .ae-advisor-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+#digitalStats .ae-advisor-action{border:1px solid #e9ded7;border-radius:11px;padding:12px;min-width:0;display:flex;flex-direction:column;gap:8px}
+#digitalStats .ae-advisor-action-heading{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:8px}
+#digitalStats .ae-advisor-action-heading strong{font-size:12px;max-width:100%;overflow-wrap:anywhere}
+#digitalStats .ae-advisor-priority{font-size:9px;font-weight:800;padding:5px 7px;border-radius:7px;background:#f5eee9;color:#6e5240}
+#digitalStats .ae-advisor-priority.high{background:#f9eee6;color:#99512d}
+#digitalStats .ae-advisor-priority.low{background:#eeeae5;color:#706458}
+#digitalStats .ae-advisor-action p{font-size:11px;line-height:1.55;margin:0;overflow-wrap:anywhere}
+#digitalStats .ae-advisor-evidence{color:#746057}
+#digitalStats .ae-advisor-metric{background:#f7f3ef;border-radius:8px;padding:9px;color:#6c5346}
+#digitalStats .ae-advisor-reviewed{align-self:flex-start;font-size:10px;margin-top:auto}
+#digitalStats .ae-advisor-action.reviewed{border-color:#b9c5ae}
+#digitalStats .ae-advisor-limitations{font-size:10px;line-height:1.5;color:#79655a;margin-top:12px}
+#digitalStats .ae-advisor-footer{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-top:12px}
+#digitalStats .ae-advisor-footer small{font-size:10px;color:#8b776c}
+#digitalStats .ae-advisor-method{margin-top:14px;border-top:1px solid #eee4de;padding-top:10px}
+#digitalStats .ae-advisor-method summary{font-size:11px;font-weight:700;cursor:pointer;color:#6e5143}
+#digitalStats .ae-advisor-method p{font-size:10px;line-height:1.5;color:#79655a}
+@media(max-width:700px){
+ #digitalStats .ae-advisor-list{grid-template-columns:1fr}
+ #digitalStats .ae-advisor-head{align-items:stretch}
+ #digitalStats .ae-advisor-head button{width:100%;min-height:44px}
+ #digitalStats .ae-advisor-panel{padding:10px}
+}

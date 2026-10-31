@@ -185,3 +185,20 @@ function setup(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup,{once:true});
 else setup();
 })();
+
+
+/* ArtEssencia — carregar Consultor IA integrado (v1.9.68) */
+(function(){
+ 'use strict';
+ function setupAdvisor(){
+  if(document.getElementById('aeAdvisorScriptV1968'))return;
+  const css=document.createElement('link');
+  css.rel='stylesheet';css.href='/digital-insights-advisor-v1968.css';css.id='aeAdvisorStylesV1968';
+  document.head.append(css);
+  const script=document.createElement('script');
+  script.src='/digital-insights-advisor-v1968.js';script.id='aeAdvisorScriptV1968';
+  document.head.append(script);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setupAdvisor,{once:true});
+ else setupAdvisor();
+})();
