@@ -25,7 +25,7 @@ const pretty=date=>valid(date)?dt(date).toLocaleDateString('pt-PT',{timeZone:'UT
 const uid=()=>globalThis.crypto?.randomUUID?.()||('tm-'+Date.now()+'-'+Math.random().toString(36).slice(2));
 const priorityWeight={alta:0,normal:1,baixa:2};
 let rows=[],screen='today',daySelected=today(),calendarMonth=today().slice(0,7)+'-01',page=0;
-let loaded=false,busy=false,refreshing=null,message='',filterText='',newFormOpen=false,formEdit=null;
+let loaded=false,busy=false,refreshing=null,message='',filterText='',newFormOpen=false,formEdit=null,detailTaskId=null,weekSelected=null;
 let editions=[],fetchEditions=false,root=null,body=null,toolbar=null;
 function client(){if(typeof cloudClient==='undefined'||!cloudClient?.from)throw Error('É necessária uma sessão Cloud no Backoffice.');return cloudClient}
 async function session(){const {data,error}=await client().auth.getSession();if(error||!data?.session?.user?.id)throw Error('Inicia sessão na Cloud.');return data.session.user.id}
@@ -231,27 +231,101 @@ function taskForm(){
  };
  return form;
 }
+function showTaskDetails(task){
+ detailTaskId=task.id;
+ newFormOpen=false;formEdit=null;
+ render();
+ root?.querySelector('.ae-tm-detail')?.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function taskDetails(){
+ const task=tasks().find(t=>t.id===detailTaskId);
+ if(!task){detailTaskId=null;return null;}
+ const detail=node('section','ae-tm-detail');
+ detail.setAttribute('role','region');
+ detail.setAttribute('aria-label','Detalhes da tarefa');
+ const heading=node('div','ae-tm-detail-head');
+ const label=node('div','ae-tm-detail-heading');
+ label.append(node('small','','DETALHES DA TAREFA'),node('h3','',task.title||'Sem título'));
+ heading.append(label,button('Fechar ×',()=>{detailTaskId=null;render()}));
+ detail.append(heading);
+ const ed=editions.find(e=>e.id===task.edition_id);
+ const origin=task.origin_rule_id?'Tarefa recorrente':task.source==='edition-plan'?'Plano de edição':'Tarefa pontual';
+ const status=statuses.find(([v])=>v===task.status)?.[1]||'Pendente';
+ const fields=[
+  ['Estado',status],['Prioridade',priorities.find(([v])=>v===task.priority)?.[1]||'Normal'],
+  ['Execução prevista',pretty(task.planned_date||task.due_date)],
+  ['Prazo final',pretty(task.due_date)],
+  ['Duração estimada',Math.max(0,Number(task.estimate_min)||0)+' min'],
+  ['Área',task.category||'Gestão'],['Origem',origin]
+ ];
+ if(ed)fields.push(['Edição associada',ed.name]);
+ if(task.completed_at)fields.push(['Concluída em',new Date(task.completed_at).toLocaleDateString('pt-PT')]);
+ const grid=node('div','ae-tm-detail-grid');
+ for(const [name,value] of fields){
+  const cell=node('div','ae-tm-detail-field');
+  cell.append(node('small','',name),node('strong','',value));grid.append(cell);
+ }
+ detail.append(grid);
+ const notes=node('div','ae-tm-detail-notes');
+ notes.append(node('strong','','Instruções e notas'));
+ notes.append(node('p','',String(task.details||'Sem instruções adicionais.')));
+ detail.append(notes);
+ const actions=node('div','ae-tm-detail-actions');
+ if(task.status==='pendente'){
+  actions.append(button('Iniciar tarefa',()=>mutate(user=>upsert(user,{...task,status:'em_curso'})),'primary'));
+ }
+ if(task.status!=='concluida'){
+  actions.append(button('✓ Marcar como concluída',()=>mutate(user=>upsert(user,{...task,status:'concluida',completed_at:new Date().toISOString()}))));
+ }else{
+  actions.append(button('Reabrir tarefa',()=>mutate(user=>upsert(user,{...task,status:'pendente',completed_at:null}))));
+ }
+ actions.append(button('Editar',()=>{formEdit=task;newFormOpen=true;detailTaskId=null;render()}));
+ detail.append(actions);
+ if(task.status!=='concluida'&&!task.origin_rule_id){
+  const schedule=node('form','ae-tm-replan');
+  const date=input('Reagendar execução (mantém o prazo final)',task.planned_date||task.due_date||today(),'date');
+  date.input.required=true;
+  const submit=node('button','btn','Guardar nova data');submit.type='submit';
+  schedule.append(date.wrap,submit);
+  schedule.onsubmit=event=>{
+   event.preventDefault();const chosen=date.input.value;
+   if(!valid(chosen))return;
+   if(valid(task.due_date)&&chosen>task.due_date&&
+    !window.confirm('A data prevista fica depois do prazo final. Queres continuar?'))return;
+   mutate(user=>upsert(user,{...task,planned_date:chosen}));
+  };
+  detail.append(schedule);
+ }
+ if(task.origin_rule_id)detail.append(node('p','ae-tm-subtext','Esta tarefa pertence a uma rotina. A rotina só gera a ocorrência seguinte após a conclusão da atual, quando a Cloud for atualizada.'));
+ return detail;
+}
 function taskCard(task){
  const line=node('article','ae-tm-task'+(task.status==='concluida'?' done':''));
  const content=node('div','ae-tm-task-content');
  const title=node('strong','',task.title||'Tarefa sem título');content.append(title);
  const meta=node('small','');
  const ed=editions.find(e=>e.id===task.edition_id);
- meta.textContent=['Execução: '+pretty(task.planned_date||task.due_date),task.planned_date&&task.planned_date!==task.due_date?'Prazo: '+pretty(task.due_date):'',task.category||'Gestão',ed?'Edição: '+ed.name:'',
-  task.estimate_min?task.estimate_min+' min':'',task.origin_rule_id?'Recorrente':''].filter(Boolean).join(' · ');
+ meta.textContent=['Execução: '+pretty(task.planned_date||task.due_date),
+  task.planned_date&&task.planned_date!==task.due_date?'Prazo: '+pretty(task.due_date):'',
+  task.category||'Gestão',ed?'Edição: '+ed.name:'',
+  task.estimate_min?task.estimate_min+' min':'',
+  task.origin_rule_id?'Rotina':task.source==='edition-plan'?'Plano de edição':'Pontual'].filter(Boolean).join(' · ');
  content.append(meta);
- if(task.details)content.append(node('p','',task.details));
+ if(task.due_date&&task.due_date<today()&&task.status!=='concluida')
+  content.append(node('small','ae-tm-overdue','Prazo ultrapassado'));
  line.append(content);
  const side=node('div','ae-tm-task-buttons');
- const pill=node('span','ae-tm-priority '+(task.priority||'normal'),task.priority==='alta'?'Alta':task.priority==='baixa'?'Baixa':'Normal');
- side.append(pill);
- const update=button(task.status==='concluida'?'Reabrir':'✓ Concluir',()=>mutate(user=>upsert(user,{...task,status:task.status==='concluida'?'pendente':'concluida',
-  completed_at:task.status==='concluida'?null:new Date().toISOString()})));
- side.append(update);
+ side.append(node('span','ae-tm-priority '+(task.priority||'normal'),
+  task.priority==='alta'?'Alta':task.priority==='baixa'?'Baixa':'Normal'));
+ side.append(button('Ver detalhes',()=>showTaskDetails(task),'ae-tm-view'));
+ if(task.status==='pendente')side.append(button('Iniciar',()=>mutate(user=>upsert(user,{...task,status:'em_curso'}))));
+ else if(task.status==='em_curso')side.append(button('✓ Concluir',()=>mutate(user=>upsert(user,{...task,status:'concluida',completed_at:new Date().toISOString()}))));
+ else side.append(node('span','ae-tm-done-mark','✓ Concluída'));
  const more=node('details','ae-tm-more');more.append(node('summary','','•••'));
  const menu=node('div','ae-tm-more-menu');
- menu.append(button('Editar',()=>{formEdit=task;newFormOpen=true;render()}));
- if(task.status==='pendente')menu.append(button('Iniciar',()=>mutate(user=>upsert(user,{...task,status:'em_curso'}))));
+ menu.append(button('Editar',()=>{formEdit=task;newFormOpen=true;detailTaskId=null;render()}));
+ if(task.status==='pendente')menu.append(button('Concluir diretamente',()=>mutate(user=>upsert(user,{...task,status:'concluida',completed_at:new Date().toISOString()}))));
+ if(task.status==='concluida')menu.append(button('Reabrir',()=>mutate(user=>upsert(user,{...task,status:'pendente',completed_at:null}))));
  menu.append(button('Eliminar tarefa',()=>{
   if(!window.confirm('Eliminar esta tarefa? Esta ação não elimina a rotina associada.'))return;
   mutate(user=>archive(user,task.id));
@@ -264,7 +338,9 @@ function sorted(list){
   const now=today(),urgent=x=>x.due_date&&x.due_date<now?0:x.status==='em_curso'?1:2;
   const planned=x=>x.planned_date||x.due_date||'9999';
   return urgent(a)-urgent(b)||(priorityWeight[a.priority]??1)-(priorityWeight[b.priority]??1)
-   ||planned(a).localeCompare(planned(b))||(a.due_date||'9999').localeCompare(b.due_date||'9999')
+   ||planned(a).localeCompare(planned(b))
+   ||(Number(a.planning_order)||999)-(Number(b.planning_order)||999)
+   ||(a.due_date||'9999').localeCompare(b.due_date||'9999')
    ||String(a.title).localeCompare(String(b.title),'pt-PT');
  });
 }
@@ -293,8 +369,29 @@ function currentView(){
  body.append(node('p','ae-tm-subtext',focus.length+' tarefa(s) a acompanhar · '+minutes+' minutos previstos. '+(weekend?'Dia de atelier: dá prioridade à produção e criação.':'Dia de gestão: verifica pedidos, prazos e bloqueios; reserva a produção para domingo/segunda.')));
  body.append(q);taskList(focus,'Não há tarefas em curso, pendentes ou atrasadas para hoje.');
  }else if(screen==='week'){
-  body.append(node('h3','','Próximos sete dias'));
-  body.append(q);taskList(uncompleted.filter(t=>{const plan=t.planned_date||t.due_date;return (plan&&plan>=date&&plan<=shift(date,7))||(t.due_date&&t.due_date>=date&&t.due_date<=shift(date,7))}),'Sem tarefas planeadas ou com prazo nesta semana.');
+  body.append(node('h3','','Agenda dos próximos sete dias'));
+  body.append(node('p','ae-tm-subtext','Escolhe um dia para veres as tarefas por prioridade e pela ordem de execução. A capacidade é uma estimativa, não uma obrigação de cumprir todas as tarefas.'));
+  const range=Array.from({length:8},(_,i)=>shift(date,i));
+  const weekTasks=uncompleted.filter(t=>{const plan=t.planned_date||t.due_date;return plan&&plan>=date&&plan<=shift(date,7)});
+  if(!weekSelected||!range.includes(weekSelected)||(!weekTasks.some(t=>(t.planned_date||t.due_date)===weekSelected)&&weekSelected===date)){
+   weekSelected=range.find(d=>weekTasks.some(t=>(t.planned_date||t.due_date)===d))||date;
+  }
+  const days=node('div','ae-tm-week-select');
+  for(const d of range){
+   const subset=weekTasks.filter(t=>(t.planned_date||t.due_date)===d);
+   const minutes=subset.reduce((n,t)=>n+Math.max(0,Number(t.estimate_min)||0),0);
+   const name=dt(d).toLocaleDateString('pt-PT',{timeZone:'UTC',weekday:'short',day:'numeric',month:'short'});
+   const btn=button(name+' · '+subset.length+' tarefas · '+minutes+' min',()=>{weekSelected=d;page=0;detailTaskId=null;render()});
+   btn.className='ae-tm-week-choice'+(weekSelected===d?' active':'');
+   btn.setAttribute('aria-pressed',String(weekSelected===d));
+   days.append(btn);
+  }
+  body.append(days);
+  const chosen=weekTasks.filter(t=>(t.planned_date||t.due_date)===weekSelected);
+  const duration=chosen.reduce((n,t)=>n+Math.max(0,Number(t.estimate_min)||0),0);
+  body.append(node('h3','',dt(weekSelected).toLocaleDateString('pt-PT',{timeZone:'UTC',weekday:'long',day:'numeric',month:'long'})+' · '+duration+' minutos'));
+  body.append(q);
+  taskList(chosen,'Não existem tarefas planeadas para este dia.');
  }else if(screen==='done'){
   body.append(node('h3','','Histórico concluído'));
   body.append(q);taskList(tasks().filter(t=>t.status==='concluida').sort((a,b)=>String(b.completed_at||'').localeCompare(String(a.completed_at||''))),'Ainda não existem tarefas concluídas.');
@@ -433,6 +530,7 @@ function render(){
  if(!loaded){body.append(node('p','ae-tm-empty',message||'A ligar à Cloud para carregar as tarefas…'));return;}
  if(message)body.append(node('p','ae-tm-info',message));
  if(newFormOpen)body.append(taskForm());
+ if(detailTaskId){const detail=taskDetails();if(detail)body.append(detail)}
  currentView();
  root.classList.toggle('busy',busy);
 }
