@@ -61,3 +61,9 @@ function init(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
+
+/* Planeamento Cloud: carregamento progressivo no Dashboard existente. */
+if(!document.getElementById('aeTasksCloudScriptV1')){
+ const script=document.createElement('script');script.id='aeTasksCloudScriptV1';
+ script.src='/task-planner-cloud-v1.js';script.defer=true;document.head.append(script);
+}
