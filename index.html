@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.62">
+<meta name="artessencia-version" content="1.9.63">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <link rel="manifest" href="manifest.webmanifest">
@@ -6145,7 +6145,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.62';
+const APP_VERSION='1.9.63';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -13126,6 +13126,7 @@ function clearSpecialEditionForm(){
  }
  const a=document.getElementById('specialEditionActive');if(a)a.value='1';const ft=document.getElementById('specialEditionFeatured');if(ft)ft.value='0';const ce=document.getElementById('specialEditionCatalogEnabled');if(ce)ce.value='1';const cp=document.getElementById('specialEditionCatalogPriority');if(cp)cp.value='0';
  const o=document.getElementById('specialEditionOrder');if(o)o.value='0';
+ for(const [id,value] of [['specialEditionHeroTitle',''],['specialEditionHeroCta','Ver coleção'],['specialEditionHeroPosition','center']]){const field=document.getElementById(id);if(field)field.value=value;}
  const f=document.getElementById('specialEditionImageFile');if(f)f.value='';const vf=document.getElementById('specialEditionVideoFile');if(vf)vf.value='';
  setSpecialEditionPreview('');setSpecialEditionVideoPreview('');
  renderSpecialEditionProductPicker([]);
@@ -13743,7 +13744,7 @@ function editSpecialEdition(id){
  setSpecialEditionPreview(d.imageUrl||d.image_url||'');
  setSpecialEditionVideoPreview(d.videoUrl||d.video_url||'');
  refreshSpecialEditionEditorVisual();
- window.scrollTo({top:0,behavior:'smooth'});
+ document.querySelector('#specialEditions .special-editor-card-v1734')?.scrollIntoView({behavior:'smooth',block:'start'});
 }
 async function saveSpecialEdition(){
  const c=initCloudClient();if(!c)return toast('Liga primeiro a Cloud');
