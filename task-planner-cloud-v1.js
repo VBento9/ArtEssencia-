@@ -8,6 +8,7 @@ const pick=(values,val)=>{const s=el('select','ae-task-select');for(const [v,l] 
 const statuses=[['pendente','Pendente'],['em_curso','Em curso'],['concluida','Concluída']];
 const categories=['Produção','Criação','Gestão','Marketing','Comercial','Segurança'];
 let tasks=[],expanded=false,filter='ativas',search='',page=0,updating=false,loaded=false,notice='';
+const taskItems=()=>tasks.filter(t=>t.kind!=='recurring_rule');
 function client(){if(typeof cloudClient==='undefined'||!cloudClient?.auth?.getSession||!cloudClient?.from)throw Error('Liga a sessão Cloud no Backoffice para sincronizar tarefas.');return cloudClient;}
 async function currentUser(){
  const {data,error}=await client().auth.getSession();
@@ -42,17 +43,17 @@ async function save(task){
    client_updated_at:now,deleted_at:null,device_id:'backoffice-task-planner'
   },{onConflict:'user_id,entity,record_id'});
   if(error)throw error;
-  updating=false;await refresh();
+  updating=false;await refresh();document.dispatchEvent(new CustomEvent('ae-task-saved'));
  }catch(error){updating=false;notice='Não foi possível guardar: '+String(error?.message||error);render();}
 }
 function btn(label,fn,cls){const b=el('button','btn '+(cls||''),label);b.type='button';b.disabled=updating;b.addEventListener('click',fn);return b;}
 function countSummary(){
- const done=tasks.filter(t=>t.status==='concluida').length;
- return el('p','ae-task-summary',tasks.length+' tarefas · '+(tasks.length-done)+' por concluir · '+done+' concluídas');
+ const items=taskItems(),done=items.filter(t=>t.status==='concluida').length;
+ return el('p','ae-task-summary',items.length+' tarefas · '+(items.length-done)+' por concluir · '+done+' concluídas');
 }
 function render(){
  const area=$('aeTasksCloudContentV1'),toggle=$('aeTasksCloudToggleV1');if(!area||!toggle)return;
- toggle.textContent=expanded?'Recolher tarefas':'Planeamento e tarefas'+(loaded?' ('+tasks.filter(t=>t.status!=='concluida').length+')':'');
+ toggle.textContent=expanded?'Recolher tarefas':'Planeamento e tarefas'+(loaded?' ('+taskItems().filter(t=>t.status!=='concluida').length+')':'');
  toggle.setAttribute('aria-expanded',String(expanded));
  area.hidden=!expanded;if(!expanded)return;
  area.replaceChildren();
@@ -65,7 +66,7 @@ function render(){
  const filtering=pick(options,filter);filtering.setAttribute('aria-label','Filtrar tarefas');filtering.addEventListener('change',()=>{filter=filtering.value;page=0;render();});
  const q=el('input','ae-task-search');q.type='search';q.placeholder='Pesquisar tarefas';q.value=search;q.setAttribute('aria-label','Pesquisar tarefas');q.addEventListener('change',()=>{search=q.value.trim().toLocaleLowerCase('pt-PT');page=0;render();});
  toolbar.append(filtering,q);area.append(toolbar);
- const list=tasks.filter(t=>{
+ const list=taskItems().filter(t=>{
   if(filter==='ativas'&&t.status==='concluida')return false;
   if(filter==='concluidas'&&t.status!=='concluida')return false;
   return !search||(String(t.title)+' '+String(t.category)+' '+String(t.details||'')).toLocaleLowerCase('pt-PT').includes(search);
@@ -122,7 +123,10 @@ function init(){
  const content=el('div','ae-task-panel');content.id='aeTasksCloudContentV1';content.hidden=true;
  panel.append(toggle,content);root.prepend(panel);render();
  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&expanded)refresh();});
+ document.addEventListener('ae-task-refresh',()=>{if(expanded)refresh();});
 }
 const style=document.createElement('link');style.rel='stylesheet';style.href='/task-planner-cloud-v1.css';style.id='aeTaskStylesV1';if(!$(style.id))document.head.append(style);
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
+/* Rotinas Cloud: módulo complementar, carregado pelo planeamento existente. */
+import('./task-recurring-cloud-v1.js').catch(e=>console.warn('Rotinas indisponíveis',e));
