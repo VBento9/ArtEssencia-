@@ -1,0 +1,47 @@
+#digitalStats .ds-dashboard-v1966{margin:10px 0;padding:12px;background:#fff;border:1px solid #eaded6;border-radius:14px}
+#digitalStats .ds-dashboard-heading-v1966{display:flex;justify-content:space-between;margin-bottom:9px}
+#digitalStats .ds-dashboard-heading-v1966 strong{display:block;font-size:14px}
+#digitalStats .ds-dashboard-heading-v1966 small{display:block;color:#806e64;font-size:10px}
+#digitalStats .ds-insight-kpis-v1966{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+#digitalStats .ds-insight-kpi-v1966{display:grid;gap:3px;padding:10px;border:1px solid #e9ded7;border-radius:10px;background:#fcfaf8;min-width:0}
+#digitalStats .ds-insight-kpi-v1966 span{font-size:10px;color:#746057;font-weight:800}
+#digitalStats .ds-insight-kpi-v1966 strong{font-size:18px;color:#493127;font-variant-numeric:tabular-nums}
+#digitalStats .ds-insight-kpi-v1966 small{font-size:9px;color:#857269}
+#digitalStats .ds-summary-v1966{margin-top:10px}
+#digitalStats .ds-summary-head-v1966{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:8px}
+#digitalStats .ds-summary-head-v1966 strong{font-size:12px}
+#digitalStats .ds-summary-head-v1966 small{font-size:10px;color:#8a776e}
+#digitalStats .ds-summary-list-v1966{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+#digitalStats .ds-takeaway-v1966{padding:10px;border:1px solid #eadfd9;border-radius:10px;display:grid;gap:4px}
+#digitalStats .ds-takeaway-v1966 strong{font-size:11px}
+#digitalStats .ds-takeaway-v1966 span{font-size:10px;line-height:1.45;color:#745d52}
+#digitalStats .ds-method-v1966{font-size:10px;line-height:1.5;color:#816e65;margin:10px 0 0}
+#digitalStats .ds-navigation-v1966{display:flex;gap:6px;overflow-x:auto;position:sticky;top:0;background:#fffdfa;z-index:6;padding:9px 2px;margin:10px 0;scroll-margin-top:65px}
+#digitalStats .ds-tab-v1966{font-size:11px;font-weight:800;padding:10px 12px;min-height:40px;white-space:nowrap;border-radius:9px;border:1px solid #e2d5ce;background:white;color:#624c40}
+#digitalStats .ds-tab-v1966.selected{background:#6c4838;color:#fff}
+#digitalStats .ds-panel-v1966[hidden]{display:none!important}
+#digitalStats .ds-compact-content-v1966{background:#fff;border:1px solid #e6d9d0;padding:12px;border-radius:13px}
+#digitalStats .ds-details-v1966{margin-top:9px;border:1px solid #e8ddd7;border-radius:10px;background:#fff}
+#digitalStats .ds-details-v1966>summary{padding:12px;cursor:pointer;font-size:11px;font-weight:800;color:#624b40}
+#digitalStats .ds-details-v1966>div,#digitalStats .ds-details-v1966>section{margin:9px}
+#digitalStats #launchCampaignCardV1813{margin-top:0!important}
+#digitalStats .ds-ranked-list-v1966{display:grid;gap:10px}
+#digitalStats .ds-ranked-item-v1966{display:grid;grid-template-columns:25px minmax(0,1fr) auto;gap:9px;align-items:center}
+#digitalStats .ds-rank-v1966{font-size:12px;font-weight:900;color:#6d5243}
+#digitalStats .ds-ranked-main-v1966{min-width:0}
+#digitalStats .ds-ranked-main-v1966 strong{font-size:11px;overflow-wrap:anywhere}
+#digitalStats .ds-ranked-main-v1966 small{display:block;font-size:10px;color:#827065;margin-top:3px}
+#digitalStats .ds-sample-v1966{font-size:9px;color:#877365}
+#digitalStats .ds-bar-track-v1966{height:6px;border-radius:5px;background:#eee4de;margin-top:5px;overflow:hidden}
+#digitalStats .ds-bar-track-v1966 span{display:block;height:100%;border-radius:5px;background:#a97d64}
+#digitalStats .ds-trend-head-v1966{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:11px}
+#digitalStats .ds-trend-head-v1966 select{min-height:35px;margin-left:6px;border-radius:8px}
+#digitalStats .ds-day-bars-v1966{display:flex;gap:5px;height:180px;overflow-x:auto;align-items:end;padding:10px 0 0}
+#digitalStats .ds-day-v1966{display:grid;grid-template-rows:20px 115px 25px;gap:3px;align-items:end;min-width:23px;flex:1}
+#digitalStats .ds-day-count-v1966{text-align:center;font-size:9px;color:#745b50}
+#digitalStats .ds-day-bar-shell-v1966{height:115px;display:flex;align-items:end;background:#f8f3ef;border-radius:5px}
+#digitalStats .ds-day-bar-shell-v1966 i{display:block;width:100%;background:#a57d63;border-radius:5px 5px 0 0}
+#digitalStats .ds-day-v1966 small{text-align:center;font-size:9px;color:#7a695e}
+#digitalStats .ds-state-v1966{font-size:11px;color:#79675b}
+@media(max-width:900px){#digitalStats .ds-insight-kpis-v1966{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){#digitalStats .ds-summary-list-v1966{grid-template-columns:1fr}#digitalStats .ds-dashboard-v1966{padding:9px}#digitalStats .ds-sample-v1966{max-width:78px;text-align:right}#digitalStats .ds-ranked-item-v1966{grid-template-columns:18px minmax(0,1fr) 78px}}
