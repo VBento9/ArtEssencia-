@@ -70,6 +70,11 @@
   if(busy)return;
   const st=state(),r=range();
   if(!usableData(st)){status.textContent='Atualiza primeiro as Estatísticas Digitais, com uma fonte e período válidos.';return}
+  const currentKey=st.source+'|'+r.from+'|'+r.to;
+  if(latest&&createdFor===currentKey&&Date.now()-new Date(latest.generatedAt||0).getTime()<10*60*1000){
+   status.textContent='Já foi gerado um plano para este período. Consulta as sugestões existentes; podes repetir a análise após 10 minutos.';
+   return;
+  }
   if(!navigator.onLine){status.textContent='É necessária ligação à Internet para consultar a IA.';return}
   busy=true;button.disabled=true;button.textContent='A analisar…';status.textContent='A analisar os indicadores agregados do período selecionado.';
   try{
