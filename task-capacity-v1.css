@@ -1,0 +1,21 @@
+
+/* ArtEssencia — capacidade operacional compacta */
+#aeTaskManagerV2 .ae-cap-config{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;padding:10px;border:1px solid #e8ded4;border-radius:9px;background:#faf7f3;margin-bottom:12px}
+#aeTaskManagerV2 .ae-cap-field{display:grid;gap:5px;font-size:11px;color:#695c51;min-width:0}
+#aeTaskManagerV2 .ae-cap-field input{width:100%;min-width:0;min-height:38px;border:1px solid #d7c9bb;border-radius:7px;padding:7px;background:#fff;color:#42342c}
+#aeTaskManagerV2 .ae-cap-config .btn{grid-column:1/-1;justify-self:end}
+#aeTaskManagerV2 .ae-tm-capacity-summary{font-size:12px;font-weight:600;margin:8px 0;color:#665143}
+#aeTaskManagerV2 .ae-cap-days{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}
+#aeTaskManagerV2 .ae-cap-day{border:1px solid #e9dfd5;border-radius:8px;background:#fcfaf7;padding:10px;min-width:0}
+#aeTaskManagerV2 .ae-cap-day.overloaded{background:#fff5ef;border-color:#e5bba1}
+#aeTaskManagerV2 .ae-cap-day-head{display:flex;justify-content:space-between;gap:7px;flex-wrap:wrap;font-size:11px;margin-bottom:7px}
+#aeTaskManagerV2 .ae-cap-day-head strong{text-transform:capitalize}
+#aeTaskManagerV2 .ae-cap-day-head small{color:#75695e}
+#aeTaskManagerV2 .ae-cap-track{height:7px;background:#e8e1d9;overflow:hidden;border-radius:8px}
+#aeTaskManagerV2 .ae-cap-fill{display:block;height:100%;background:#856c55;border-radius:8px}
+#aeTaskManagerV2 .ae-cap-day.overloaded .ae-cap-fill{background:#b35a38}
+#aeTaskManagerV2 .ae-cap-warning{display:block;margin-top:6px;color:#963a26}
+#aeTaskManagerV2 .ae-cap-suggestions{border-top:1px solid #e7ddd3;padding-top:12px;display:grid;gap:8px}
+#aeTaskManagerV2 .ae-cap-suggestions>strong{font-size:13px}
+#aeTaskManagerV2 .ae-cap-proposal{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #e8ded5;border-radius:8px;padding:8px 10px;font-size:11px}
+@media(max-width:650px){#aeTaskManagerV2 .ae-cap-config{grid-template-columns:repeat(2,minmax(0,1fr))}#aeTaskManagerV2 .ae-cap-days{grid-template-columns:1fr}#aeTaskManagerV2 .ae-cap-proposal{flex-wrap:wrap}#aeTaskManagerV2 .ae-cap-proposal .btn{margin-left:auto}}
