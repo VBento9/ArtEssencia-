@@ -1,0 +1,70 @@
+/* ArtEssencia 1.9.64 — gestão de Edições Especiais sem página longa */
+#specialEditions .special-editor-card-v1734[hidden] {display:none!important}
+#specialEditions .special-editions-grid-pro > .special-edition-card[hidden] {display:none!important}
+#specialEditions .special-saved-head-v1734 {
+  margin:16px 0 9px!important;display:flex;align-items:center;flex-wrap:wrap;
+  justify-content:space-between;gap:10px;
+}
+#specialEditions .special-saved-head-v1734 .section-title {margin:0!important}
+#specialEditions .special-saved-resume-v1964 {
+  min-height:38px!important;padding:8px 11px!important;font-size:11px!important;margin-left:8px;
+}
+#specialEditions .special-saved-resume-v1964[hidden] {display:none!important}
+#specialEditions .special-saved-filters-v1964 {
+  display:grid;grid-template-columns:minmax(0,1.5fr) minmax(140px,1fr) auto;
+  gap:10px;align-items:end;background:#fffdfb;border:1px solid #eadfd9;
+  border-radius:12px;padding:11px;margin:0 0 10px;
+}
+#specialEditions .special-saved-filters-v1964 label {display:grid;gap:5px;min-width:0}
+#specialEditions .special-saved-filters-v1964 label span {
+  font-size:11px;font-weight:800;color:#705b50;
+}
+#specialEditions .special-saved-filters-v1964 input,
+#specialEditions .special-saved-filters-v1964 select {
+  width:100%;min-height:40px;min-width:0;padding:8px 10px;border-radius:9px;
+  border:1px solid #dac9bf;background:#fff;color:#3f3029;font-size:12px;
+}
+#specialEditions .special-saved-result-v1964 {font-size:11px;color:#765f53;font-weight:700;padding-bottom:10px}
+#specialEditions .special-editions-grid-pro {margin-top:0;gap:9px}
+#specialEditions .special-pro-card {
+  grid-template-columns:105px minmax(0,1fr)!important;
+  min-width:0;min-height:0!important;
+}
+#specialEditions .special-pro-cover {width:105px;min-height:150px!important;height:100%}
+#specialEditions .special-pro-card .special-edition-body {padding:10px 12px}
+#specialEditions .special-pro-card h3 {font-size:13px;line-height:1.25;margin:6px 0}
+#specialEditions .special-edition-meta {font-size:10px;line-height:1.3}
+#specialEditions .special-pro-metrics small {font-size:9px}
+#specialEditions .special-pro-metrics strong {font-size:11px}
+#specialEditions .special-pro-dates {font-size:10px}
+#specialEditions .special-pro-foot > span {font-size:9px}
+#specialEditions .special-pro-foot .btn {min-height:34px;padding:7px 9px!important;font-size:10px!important}
+#specialEditions .special-saved-footer-v1964 {display:flex;justify-content:center;padding:11px 0 16px}
+#specialEditions .special-saved-more-v1964 {min-height:42px!important;font-size:11px!important}
+#specialEditions .special-saved-more-v1964[hidden] {display:none!important}
+#specialEditions .special-saved-empty-v1964 {
+  padding:14px;margin:9px 0;background:#fffdfb;border:1px dashed #d9c9bf;
+  border-radius:10px;font-size:12px;text-align:center;color:#7b6559;
+}
+#specialEditions .special-saved-empty-v1964[hidden] {display:none!important}
+#specialEditions .special-editor-card-v1734 {scroll-margin-top:78px;margin-top:4px}
+#specialEditions .special-editor-head {flex-wrap:wrap}
+#specialEditions .special-editor-close-v1964 {
+  min-height:38px!important;padding:8px 11px!important;font-size:11px!important;
+  margin-left:auto;
+}
+#specialEditions .special-saved-head-v1734 {scroll-margin-top:72px}
+@media(max-width:680px) {
+  #specialEditions .special-saved-filters-v1964 {grid-template-columns:1fr 1fr;gap:8px}
+  #specialEditions .special-saved-search-v1964,
+  #specialEditions .special-saved-result-v1964 {grid-column:1/-1}
+  #specialEditions .special-saved-result-v1964 {padding:0}
+  #specialEditions .special-pro-card {grid-template-columns:84px minmax(0,1fr)!important}
+  #specialEditions .special-pro-cover {width:84px;min-height:140px!important}
+  #specialEditions .special-pro-card .special-edition-body {padding:9px}
+  #specialEditions .special-pro-metrics {gap:3px}
+  #specialEditions .special-pro-metrics > div {padding:4px}
+  #specialEditions .special-pro-foot {flex-wrap:wrap}
+  #specialEditions .special-pro-foot .btn {min-height:36px}
+  #specialEditions .special-editor-close-v1964 {width:100%;margin-left:0}
+}
