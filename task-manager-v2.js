@@ -66,16 +66,38 @@ function nextOccurrence(anchor,freq,after){
 }
 async function upsert(user,record,unique=false){
  const now=new Date().toISOString(),payload={...record,updatedAt:now};
- const {error}=await client().from(TABLE).upsert({
+ const existing=rows.find(r=>r.record_id===record.id);
+ // Optimistic concurrency: a stale device cannot overwrite another device's edit.
+ if(existing&&!unique){
+  const {data,error}=await client().from(TABLE).update({
+   data:payload,client_updated_at:now,device_id:'task-manager-v2'
+  }).eq('user_id',user).eq('entity',ENTITY).eq('record_id',record.id)
+   .eq('client_updated_at',existing.client_updated_at).is('deleted_at',null).select('record_id');
+  if(error)throw error;
+  if(!Array.isArray(data)||data.length!==1){
+   await refresh();
+   throw Error('Esta tarefa foi alterada noutro dispositivo. A lista foi atualizada; revê a alteração antes de guardar.');
+  }
+  return;
+ }
+ const {data,error}=await client().from(TABLE).upsert({
   user_id:user,entity:ENTITY,record_id:record.id,data:payload,client_updated_at:now,
   deleted_at:null,device_id:'task-manager-v2'
- },{onConflict:'user_id,entity,record_id',ignoreDuplicates:unique});
+ },{onConflict:'user_id,entity,record_id',ignoreDuplicates:unique}).select('record_id');
  if(error)throw error;
+ if(!unique&&(!Array.isArray(data)||data.length!==1))throw Error('A Cloud não confirmou a gravação.');
 }
 async function archive(user,id){
+ const current=rows.find(r=>r.record_id===id);
+ if(!current)throw Error('Tarefa não encontrada. Atualiza a lista antes de eliminar.');
  const {data,error}=await client().from(TABLE).update({deleted_at:new Date().toISOString(),device_id:'task-manager-v2'})
- .eq('user_id',user).eq('entity',ENTITY).eq('record_id',id).is('deleted_at',null).select('record_id');
- if(error)throw error;if(!Array.isArray(data)||data.length!==1)throw Error('A Cloud não confirmou a eliminação.');
+ .eq('user_id',user).eq('entity',ENTITY).eq('record_id',id)
+ .eq('client_updated_at',current.client_updated_at)
+ .is('deleted_at',null).select('record_id');
+ if(error)throw error;
+ if(!Array.isArray(data)||data.length!==1){
+  await refresh();throw Error('Não foi possível eliminar: o registo foi alterado noutro dispositivo.');
+ }
 }
 async function seedDaily(user){
  let changed=false,ids=new Set(rows.map(r=>r.record_id));
@@ -250,7 +272,7 @@ function currentView(){
  if(screen==='today'){
   body.append(node('h3','','Prioridades de hoje'));
   body.append(node('p','ae-tm-subtext','Verifica primeiro os atrasos e os trabalhos com prazo para hoje. No resto da semana, dá prioridade a tarefas curtas de gestão.'));
-  body.append(q);taskList(uncompleted.filter(t=>t.due_date&&t.due_date<=date),'Não há tarefas pendentes ou atrasadas para hoje.');
+  body.append(q);taskList(uncompleted.filter(t=>t.status==='em_curso'||(t.due_date&&t.due_date<=date)),'Não há tarefas em curso, pendentes ou atrasadas para hoje.');
  }else if(screen==='week'){
   body.append(node('h3','','Próximos sete dias'));
   body.append(q);taskList(uncompleted.filter(t=>t.due_date&&t.due_date>=date&&t.due_date<=shift(date,7)),'Sem tarefas com prazo nesta semana.');
@@ -302,19 +324,32 @@ function lastAtelierDay(date){
  return week===0||week===1?date:shift(date,-(week-1));
 }
 async function createEditionPlan(ed){
- if(!ed.start)return;
- if(!window.confirm('Criar quatro tarefas de preparação para «'+ed.name+'», com prazos ajustados para domingo/segunda-feira? Não serão publicadas alterações à edição.'))return;
- const steps=[[-21,'Definir produtos e capacidade de produção','Criação'],
-  [-14,'Validar custos, fichas técnicas e materiais','Gestão'],
-  [-7,'Preparar fotografia, textos e catálogo','Marketing'],
-  [-1,'Rever publicação e confirmar disponibilidade','Comercial']];
+ if(!valid(ed.start))return;
+ const steps=[[-21,'Definir produtos e capacidade de produção','Criação',90],
+  [-14,'Validar custos, fichas técnicas e materiais','Gestão',45],
+  [-7,'Preparar fotografia, textos e catálogo','Marketing',60],
+  [-1,'Rever publicação e confirmar disponibilidade','Comercial',20]];
+ const planned=steps.map(([days,title,category,estimate_min])=>({
+  days,title,category,estimate_min,
+  due_date:category==='Criação'||category==='Produção'?
+   lastAtelierDay(shift(ed.start,days)):shift(ed.start,days)
+ })).filter(step=>step.due_date>=today());
+ const skipped=steps.length-planned.length;
+ if(!planned.length){
+  message='A edição «'+ed.name+'» não tem etapas de preparação futuras. Não foram criadas tarefas atrasadas.';
+  render();return;
+ }
+ const prompt='Criar '+planned.length+' tarefa(s) para «'+ed.name+'»?'
+  +(skipped?' '+skipped+' etapa(s) com prazo passado serão ignoradas.':'')
+  +' As edições, os produtos e os preços não serão alterados.';
+ if(!window.confirm(prompt))return;
  await mutate(async user=>{
-  for(const [days,title,category] of steps){
-   const planned=lastAtelierDay(shift(ed.start,days));
-   const id='ae-edition-'+encodeURIComponent(ed.id).slice(0,110)+'-'+(21+days);
-   await upsert(user,{id,kind:'task',title:title+' — '+ed.name,
-    category,priority:'alta',due_date:planned,edition_id:ed.id,
-    status:'pendente',source:'edition-plan',estimate_min:30,createdAt:new Date().toISOString()},true);
+  for(const step of planned){
+   const id='ae-edition-'+encodeURIComponent(ed.id).slice(0,110)+'-'+(21+step.days);
+   await upsert(user,{id,kind:'task',title:step.title+' — '+ed.name,
+    category:step.category,priority:'alta',due_date:step.due_date,edition_id:ed.id,
+    status:'pendente',source:'edition-plan',estimate_min:step.estimate_min,
+    createdAt:new Date().toISOString()},true);
   }
  });
 }
@@ -322,7 +357,7 @@ function renderEditionPlanning(){
  const detail=node('details','ae-tm-edition-planning');
  detail.append(node('summary','','Planeamento ligado às edições especiais'));
  const wrap=node('div');
- wrap.append(node('p','ae-tm-subtext','Lê apenas datas de publicação das edições existentes. Podes gerar um plano de preparação; nenhuma edição ou preço é alterado. As tarefas de produção são colocadas em domingos ou segundas-feiras.'));
+ wrap.append(node('p','ae-tm-subtext','Mostra datas reais das edições. O plano é opcional e só cria tarefas futuras: criação no domingo/segunda-feira, preparação comercial e marketing com prazos próprios. Nunca publica a edição ou modifica preços.'));
  if(!editions.length)wrap.append(node('p','ae-tm-empty','Ainda não foram carregadas edições com datas.'));
  for(const ed of editions.filter(x=>x.active).slice(0,12)){
   const row=node('div','ae-tm-edition');
