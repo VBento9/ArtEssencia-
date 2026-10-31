@@ -4,6 +4,18 @@
  try{if(typeof APP_VERSION==='string')running=APP_VERSION}catch(_){}
  let registration=null,checking=false,latestVersion='',updateBanner=null;
  const EXPECTED_KEY='artessencia_pwa_expected_version_v1948';
+ function isNewer(next,installed){
+  const a=String(next||'').split('.').map(Number),b=String(installed||'').split('.').map(Number);
+  if(a.length===3&&b.length===3&&a.every(Number.isInteger)&&b.every(Number.isInteger)){
+   for(let i=0;i<3;i++){if(a[i]!==b[i])return a[i]>b[i]}
+   return false;
+  }
+  return !!next&&next!==installed;
+ }
+ function closeOffer(){
+  document.getElementById('ae-update-available')?.remove();
+  updateBanner=null;latestVersion='';
+ }
 
  function syncPending(){
   try{
@@ -90,7 +102,18 @@
    if(!response.ok)return;
    const version=await response.json();
    if(version?.channel!=='artessencia-backoffice-stable'||typeof version.app!=='string')return;
-   if(version.app!==running)offerUpdate(version.app);
+   if(version.app===running){
+    closeOffer();
+    return;
+   }
+   // Não anunciar retrocessos da Vercel como uma nova atualização.
+   if(!isNewer(version.app,running)){closeOffer();return}
+   // Depois de tentar atualizar esta versão, não repetir o mesmo aviso
+   // indefinidamente caso um navegador continue a servir o HTML antigo.
+   let attempted='';
+   try{attempted=sessionStorage.getItem(EXPECTED_KEY)||''}catch(_){}
+   if(attempted===version.app){closeOffer();return}
+   offerUpdate(version.app);
   }catch(error){console.warn('Verificação de atualização adiada:',error)}
   finally{checking=false}
  }
