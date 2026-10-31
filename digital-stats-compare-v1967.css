@@ -1,0 +1,22 @@
+#digitalStats .ds-comparison-v1967,#digitalStats .ds-launch-v1967{background:#fff;border:1px solid #e7d9cf;border-radius:12px;padding:12px;margin:10px 0}
+#digitalStats .ds-cmp-title-v1967{display:flex;align-items:center;justify-content:space-between;gap:10px}
+#digitalStats .ds-cmp-title-v1967 strong,#digitalStats .ds-launch-v1967>strong{font-size:12px}
+#digitalStats .ds-cmp-title-v1967 small{display:block;font-size:10px;color:#80695d}
+#digitalStats .ds-cmp-note-v1967{font-size:10px;color:#776255;line-height:1.5;margin:10px 0}
+#digitalStats .ds-cmp-kpis-v1967{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+#digitalStats .ds-cmp-metric-v1967{display:grid;gap:4px;padding:10px;border:1px solid #e9ded6;border-radius:10px;min-width:0}
+#digitalStats .ds-cmp-metric-v1967 span,#digitalStats .ds-launch-comparison-v1967 span{font-size:10px;color:#705b4e}
+#digitalStats .ds-cmp-metric-v1967 strong,#digitalStats .ds-launch-comparison-v1967 strong{font-size:18px}
+#digitalStats .ds-cmp-metric-v1967 small,#digitalStats .ds-launch-comparison-v1967 small{font-size:10px;color:#7b6458}
+#digitalStats .ds-cmp-product-v1967{display:flex;justify-content:space-between;gap:10px;padding:8px;border-bottom:1px solid #eee5df}
+#digitalStats .ds-cmp-product-v1967 strong{font-size:11px;overflow-wrap:anywhere}
+#digitalStats .ds-cmp-product-v1967 small{font-size:10px;color:#775e50}
+#digitalStats .ds-launch-fields-v1967{display:grid;grid-template-columns:minmax(0,2fr) 1fr 1fr auto;gap:8px;align-items:end}
+#digitalStats .ds-launch-fields-v1967 label{display:grid;gap:5px;font-size:10px;font-weight:800;min-width:0}
+#digitalStats .ds-launch-fields-v1967 input,#digitalStats .ds-launch-fields-v1967 select{width:100%;min-width:0;min-height:40px;border:1px solid #ddd0c7;border-radius:8px;padding:8px;background:white}
+#digitalStats .ds-launch-fields-v1967 button{min-height:40px}
+#digitalStats .ds-launch-results-v1967{margin-top:12px;font-size:11px}
+#digitalStats .ds-launch-comparison-v1967{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+#digitalStats .ds-launch-comparison-v1967>div{display:grid;gap:5px;padding:10px;border:1px solid #e6dad1;border-radius:10px}
+@media(max-width:850px){#digitalStats .ds-cmp-kpis-v1967{grid-template-columns:repeat(2,minmax(0,1fr))}#digitalStats .ds-launch-fields-v1967{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){#digitalStats .ds-launch-comparison-v1967{grid-template-columns:1fr}#digitalStats .ds-cmp-product-v1967{display:grid}}
