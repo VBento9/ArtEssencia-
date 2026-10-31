@@ -146,8 +146,14 @@ async function refresh(){
 }
 async function mutate(fn){
  if(busy)return;busy=true;render();
- try{const user=await session();await fn(user);await refresh();message='Alteração guardada na Cloud.';}
- catch(e){message='Não foi possível guardar: '+String(e.message||e);}
+ try{
+  // Uma leitura iniciada antes da gravação nunca deve substituir o estado recém-gravado.
+  if(refreshing)await refreshing;
+  const user=await session();
+  await fn(user);
+  await refresh();
+  message='Alteração guardada na Cloud.';
+ }catch(e){message='Não foi possível guardar: '+String(e.message||e);}
  finally{busy=false;render()}
 }
 function readEditions(){
@@ -420,8 +426,19 @@ function mount(){
  const dash=$('dashboard');if(!dash)return;
  const shell=node('div','ae-task-shell');dash.prepend(shell);root=shell;root.id=ROOT; if(!document.getElementById('aeTaskManagerV2Styles')){const style=document.createElement('link');style.id='aeTaskManagerV2Styles';style.rel='stylesheet';style.href='/task-manager-v2.css';document.head.append(style)}
  render();refresh();updateEditions();
- document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
- window.addEventListener('online',refresh);
+ // Atualiza ao regressar ao Dashboard noutro dispositivo sem exigir fechar a PWA.
+ let lastPull=0;
+ function refreshOnReturn(){
+  if(!dash.classList.contains('active')||busy||refreshing)return;
+  if(Date.now()-lastPull<20000)return;
+  lastPull=Date.now();
+  refresh();
+ }
+ new MutationObserver(refreshOnReturn).observe(dash,{attributes:true,attributeFilter:['class']});
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshOnReturn()});
+ window.addEventListener('online',refreshOnReturn);
+ window.addEventListener('pageshow',refreshOnReturn);
+ window.addEventListener('focus',refreshOnReturn);
 }
 function start(){
  if($('dashboard'))mount();
