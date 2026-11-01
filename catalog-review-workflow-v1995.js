@@ -74,8 +74,9 @@ function render(){
   var actions=value(p.code)?'<button class="btn ghost" type="button" data-review-action="edit" data-code="'+esc(p.code)+'">'+(a.kind==='pending'?'Completar dados':'Editar')+'</button>'+
    (a.kind==='reviewed'?'<button class="btn ghost" type="button" data-review-action="reset" data-code="'+esc(p.code)+'">Reabrir revisão</button>':
     a.kind==='ready'?'<button class="btn primary" type="button" data-review-action="approve" data-code="'+esc(p.code)+'">Confirmar revisão</button>':'')
-   :'<span class="ae-review-action-hint">Sem código: utiliza «Mostrar lista completa» para corrigir.</span>';
-  return '<article class="ae-review-item"><div class="ae-review-item-info"><strong>'+esc(p.name||'Produto sem nome')+'</strong>'+
+   :'<span class="ae-review-action-hint">Sem código: utiliza «Lista de produtos» para regularizar.</span>';
+  var code=value(p.code);
+  return '<article class="ae-review-item'+(code?' ae-review-clickable':'')+'"'+(code?' data-review-code="'+esc(code)+'" tabindex="0" aria-label="Abrir editor do produto '+esc(p.name||code)+'"':'')+'><div class="ae-review-item-info"><strong>'+esc(p.name||'Produto sem nome')+'</strong>'+
    '<small>'+esc(p.code||'Sem código')+' · '+esc(p.category||'Sem categoria técnica')+'</small>'+
    '<small>'+esc(category||'Por classificar')+'</small>'+
    '<span class="ae-review-status" data-kind="'+esc(a.kind)+'">'+esc(labelOf(a))+(a.changed?' · Alterado após revisão':'')+'</span>'+
@@ -88,10 +89,23 @@ function render(){
 }
 function alertUser(message){if(typeof toast==='function')toast(message);else window.alert(message)}
 function edit(code){
- var button=el('aeProductsCompact')&&el('aeProductsCompact').querySelectorAll('button')[1];
- if(button)button.click();
- if(typeof editProduct==='function')editProduct(code);
- else alertUser('Abre o editor de Produtos para tratar este produto.');
+ var product=rows().find(p=>value(p.code)===value(code));
+ if(!product){alertUser('Produto não encontrado. Atualiza a revisão e tenta novamente.');return}
+ if(typeof editProduct!=='function'){alertUser('O editor de Produtos não está disponível.');return}
+ // O modo compacto esconde o formulário. Abrir primeiro o editor existente,
+ // sem passar pela lista geral nem criar um segundo formulário de produtos.
+ var compact=el('aeProductsCompact');
+ var openButton=compact&&Array.from(compact.querySelectorAll('button')).find(b=>value(b.textContent)==='Abrir editor');
+ if(openButton)openButton.click();
+ else{
+  var fallback=el('products')?.querySelector('.products-form-card');
+  if(fallback)fallback.hidden=false;
+ }
+ editProduct(code);
+ var form=el('products')?.querySelector('.products-form-card');
+ if(form&&typeof window.requestAnimationFrame==='function'){
+  window.requestAnimationFrame(()=>{if(!form.hidden)form.scrollIntoView({block:'start',behavior:'auto'})});
+ }
 }
 function mark(code,approve){
  var p=rows().find(x=>String(x.code)===code);if(!p)return;
@@ -140,6 +154,11 @@ function init(){
  if(hero)hero.insertAdjacentElement('afterend',nav);else list.parentNode.insertBefore(nav,list);
  var listNav=el('aeProductsListNav1997'),reviewNav=el('aeProductsReviewNav1997');
  function setMode(reviewing){
+  // Quem regressa da edição à revisão precisa que o módulo compacto volte a
+  // mostrar a listagem. Não descartar nem gravar alterações automaticamente.
+  var compact=el('aeProductsCompact');
+  var showListButton=compact&&Array.from(compact.querySelectorAll('button')).find(b=>value(b.textContent)==='Ver catálogo');
+  if(list.hidden&&showListButton)showListButton.click();
   list.classList.toggle('ae-review-focus1995',reviewing);
   listNav.setAttribute('aria-pressed',String(!reviewing));
   reviewNav.setAttribute('aria-pressed',String(reviewing));
@@ -159,11 +178,21 @@ function init(){
  el('aeReviewNext1995').onclick=()=>{page++;render()};
  el('aeReviewRefresh1995').onclick=render;
  el('aeReviewRows1995').addEventListener('click',e=>{
-  var btn=e.target.closest('button[data-review-action]');if(!btn)return;
-  var code=btn.dataset.code,action=btn.dataset.reviewAction;
-  if(action==='edit')edit(code);
-  if(action==='approve')mark(code,true);
-  if(action==='reset')mark(code,false);
+  var btn=e.target.closest('button[data-review-action]');
+  if(btn){
+   var code=btn.dataset.code,action=btn.dataset.reviewAction;
+   if(action==='edit')edit(code);
+   if(action==='approve')mark(code,true);
+   if(action==='reset')mark(code,false);
+   return;
+  }
+  var card=e.target.closest('.ae-review-clickable[data-review-code]');
+  if(card)edit(card.dataset.reviewCode);
+ });
+ el('aeReviewRows1995').addEventListener('keydown',e=>{
+  if((e.key!=='Enter'&&e.key!==' ')||e.target.closest('button'))return;
+  var card=e.target.closest('.ae-review-clickable[data-review-code]');
+  if(card&&e.target===card){e.preventDefault();edit(card.dataset.reviewCode)}
  });
  var cards=el('productsCards');if(cards){
   var scheduled=false;

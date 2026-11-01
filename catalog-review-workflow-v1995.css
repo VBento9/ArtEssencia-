@@ -53,3 +53,9 @@
 #products .products-list-card.ae-review-focus1995>#aeReviewWorkflow1995{display:block}
 @media(max-width:650px){#products .ae-products-views1997{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 #products .ae-products-views1997 .btn{min-width:0;width:100%;padding:8px;overflow-wrap:anywhere}}
+
+/* 1.9.98 — abrir diretamente o editor pelo cartão de revisão. */
+#products .ae-review-clickable{cursor:pointer;touch-action:manipulation;transition:border-color .12s,box-shadow .12s}
+#products .ae-review-clickable:hover{border-color:#9e8168;box-shadow:0 2px 8px rgba(60,40,20,.08)}
+#products .ae-review-clickable:focus-visible{outline:3px solid #8b6651;outline-offset:3px}
+#products .ae-review-clickable .ae-review-item-info{cursor:pointer}
