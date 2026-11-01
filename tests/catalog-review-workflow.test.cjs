@@ -94,3 +94,30 @@ test('a revisão usa via unitária com proteção contra conflitos remotos',()=>
  assert.match(source,/eq\('updated_at',remote\.updated_at\)/);
  assert.match(source,/Revisão sincronizada na Cloud para este produto/);
 });
+
+test('sincronização unitária não invoca gravação geral de produtos',async()=>{
+ const window={confirm:()=>true},document={readyState:'loading',addEventListener(){}};
+ const p={_rid:'prod-1',code:'EX-2',name:'Vela',category:'Vela',catalogGroupV191:'vela',
+  catalogSubgroupV191:'religiosa',shopDescription:'Descrição',shopImageUrl:'https://example.invalid/photo',
+  manufactured:false,price:10};
+ let writes=0,updates=0,stored=0;
+ const remote=JSON.parse(JSON.stringify(p));
+ const chain={select(){return this},eq(){return this},update(row){updates++;this.changed=row;return this},
+  maybeSingle(){return Promise.resolve(updates?{data:{id:'prod-1'}}:{data:{id:'prod-1',user_id:'u1',updated_at:'before',data:remote}})}};
+ const ctx={window,document,db:{products:[p],productRecipes:{}},navigator:{onLine:true},
+  localStorage:{setItem(){stored++}},KEY:'fixture',save(){writes++;return true},
+  cloudMeta:()=>({dirty:false,conflict:false}),cloudUser:{id:'u1'},
+  cloudClient:{from(table){assert.equal(table,'artessencia_v1_products');return chain}},
+  REL_TABLES:{products:'artessencia_v1_products'},toast(){},
+  catalogFamilyV191:()=>({subs:[['religiosa','Religiosa']]})};
+ const instrumented=source.replace("if(document.readyState==='loading')",
+  "window.__reviewTest={mark,assessment};\nif(document.readyState==='loading')");
+ const isolated=instrumented.replace(/  render\(\);\n  alertUser\(approve\?/,
+  "  alertUser(approve?").replace(/    render\(\);alertUser\('Revisão sincronizada/,
+  "    alertUser('Revisão sincronizada");
+ vm.runInNewContext(isolated,ctx);
+ await window.__reviewTest.mark('EX-2',true);
+ assert.equal(updates,1);assert.equal(writes,0);assert.equal(stored,1);
+ assert.equal(p.catalogReviewV1995.status,'reviewed');
+ assert.equal(window.__reviewTest.assessment(p).kind,'reviewed');
+});
