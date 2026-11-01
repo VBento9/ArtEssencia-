@@ -107,7 +107,43 @@ function edit(code){
   window.requestAnimationFrame(()=>{if(!form.hidden)form.scrollIntoView({block:'start',behavior:'auto'})});
  }
 }
-function mark(code,approve){
+var reviewSyncBusy=false;
+function reviewCleanSnapshot(p){
+ var copy=JSON.parse(JSON.stringify(p));
+ delete copy.catalogReviewV1995;
+ delete copy.updatedAt;
+ return JSON.stringify(copy);
+}
+// Fast path restrito: atualizar UM registo relacional só quando a Cloud e o
+// dispositivo concordam com o produto. Nunca sobrescrever alterações remotas.
+async function syncOneReview(p,review){
+ if(reviewSyncBusy||typeof cloudMeta!=='function'||cloudMeta().dirty||cloudMeta().conflict||
+    typeof cloudBusy!=='undefined'&&cloudBusy||typeof cloudPushRunning!=='undefined'&&cloudPushRunning||
+    typeof cloudStartupDone!=='undefined'&&!cloudStartupDone||
+    typeof cloudHydrating!=='undefined'&&cloudHydrating||
+    typeof hasRestorePendingV12645==='function'&&hasRestorePendingV12645()||
+    !navigator.onLine||!p._rid||typeof cloudClient==='undefined'||!cloudClient)return false;
+ var user=typeof cloudUser!=='undefined'&&cloudUser?cloudUser:
+   typeof ensureCloudSession==='function'?await ensureCloudSession():null;
+ if(!user)return false;
+ reviewSyncBusy=true;
+ try{
+  var table=typeof REL_TABLES!=='undefined'?REL_TABLES.products:'artessencia_v1_products';
+  var lookup=await cloudClient.from(table).select('id,user_id,updated_at,data').eq('id',p._rid).eq('user_id',user.id).maybeSingle();
+  if(lookup.error||!lookup.data||!lookup.data.data)throw Error('Leitura da revisão indisponível');
+  var remote=lookup.data;
+  if(String(remote.data.code)!==String(p.code)||reviewCleanSnapshot(remote.data)!==reviewCleanSnapshot(p))
+   throw Error('O produto tem alterações diferentes entre a Cloud e este dispositivo.');
+  if(!remote.updated_at)throw Error('Versão remota não disponível');
+  var current={...remote.data,catalogReviewV1995:review,updatedAt:review.reviewedAt||new Date().toISOString()};
+  var update=await cloudClient.from(table).update({data:current,updated_at:new Date().toISOString()})
+   .eq('id',remote.id).eq('user_id',user.id).eq('updated_at',remote.updated_at)
+   .select('id,updated_at').maybeSingle();
+  if(update.error||!update.data)throw Error('O produto foi alterado durante a confirmação. Atualiza antes de repetir.');
+  return current;
+ }finally{reviewSyncBusy=false}
+}
+async function mark(code,approve){
  var p=rows().find(x=>String(x.code)===code);if(!p)return;
  var status=assessment(p);
  if(approve&&status.lack.length){alertUser('Ainda faltam campos: '+status.lack.join(', '));return}
@@ -118,16 +154,27 @@ function mark(code,approve){
   'Reabrir a revisão de "'+String(p.name||code)+'"?'))return;
  var previous=p.catalogReviewV1995,previousTime=p.updatedAt;
  var at=new Date().toISOString();
- p.catalogReviewV1995=approve?{status:'reviewed',reviewedAt:at,fingerprint:fingerprint(p)}:{status:'pending',reviewedAt:null,fingerprint:null};
- p.updatedAt=at;
+ var desired=approve?{status:'reviewed',reviewedAt:at,fingerprint:fingerprint(p)}:{status:'pending',reviewedAt:null,fingerprint:null};
  try{
+  // Uma confirmação isolada não deve enviar produtos, clientes, encomendas e loja.
+  // Se houver alterações locais por enviar, conserva o percurso de sincronização geral.
+  if(typeof cloudMeta==='function'&&!cloudMeta().dirty&&navigator.onLine&&p._rid){
+   var remote=await syncOneReview(p,desired);
+   if(remote){
+    p.catalogReviewV1995=desired;p.updatedAt=remote.updatedAt;
+    try{localStorage.setItem(KEY,JSON.stringify(db))}
+    catch(e){alertUser('Revisão guardada na Cloud, mas falhou a cópia local. Recarrega a partir da Cloud.');return}
+    render();alertUser('Revisão sincronizada na Cloud para este produto.');return
+   }
+  }
+  p.catalogReviewV1995=desired;p.updatedAt=at;
   if(typeof save!=='function')throw Error('Gravação indisponível');
   if(save('products')!==true)throw Error('Falha ao guardar no armazenamento local. A revisão não foi confirmada.');
   render();
   alertUser(approve?'Revisão atualizada localmente. Confirma a sincronização Cloud.':'Revisão reaberta localmente. Confirma a sincronização Cloud.');
  }catch(e){
   p.catalogReviewV1995=previous;p.updatedAt=previousTime;
-  alertUser('Não foi possível guardar a revisão: '+String(e.message||e));
+  alertUser('Revisão não confirmada: '+String(e.message||e));
  }
 }
 function init(){

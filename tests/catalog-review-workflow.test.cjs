@@ -86,3 +86,11 @@ test('clicar no cartão de revisão e Enter abrem editor sem passar pela lista g
  assert.match(source,/edit\(card\.dataset\.reviewCode\)/);
  assert.match(source,/value\(b\.textContent\)==='Abrir editor'/);
 });
+
+test('a revisão usa via unitária com proteção contra conflitos remotos',()=>{
+ assert.match(source,/async function syncOneReview\(/);
+ assert.match(source,/cloudMeta\(\)\.dirty/);
+ assert.match(source,/reviewCleanSnapshot\(remote\.data\)!==reviewCleanSnapshot\(p\)/);
+ assert.match(source,/eq\('updated_at',remote\.updated_at\)/);
+ assert.match(source,/Revisão sincronizada na Cloud para este produto/);
+});
