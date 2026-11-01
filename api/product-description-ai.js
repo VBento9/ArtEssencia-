@@ -6,6 +6,15 @@ const SUPABASE_URL='https://ihtsonqnnlrxvorfrarl.supabase.co';
 const SUPABASE_KEY='sb_publishable_bBAzr698eotgn-QCq0kKWQ_szVceK5x';
 const PHOTO_PATH='/storage/v1/object/public/artessencia-shop/';
 const STYLES=new Set(['detail','theme','atmosphere','gift','short']);
+const PROPOSAL_SCHEMA={
+ type:'object',additionalProperties:false,
+ properties:{
+  description:{type:'string'},
+  visualDetails:{type:'string'},
+  reviewNotes:{type:'string'}
+ },
+ required:['description','visualDetails','reviewNotes']
+};
 
 function json(res,status,data){
  res.status(status).setHeader('Content-Type','application/json; charset=utf-8');
@@ -97,7 +106,8 @@ export default async function handler(req,res){
   'Se um detalhe não for claramente reconhecível, omite-o e assinala a incerteza em reviewNotes; não inventes.',
   'Só afirma que o produto integra uma coleção se esse nome estiver em editionNames; seasonalTags representam tema, não inscrição confirmada em coleção.',
   'Usa o nome e a categoria fornecidos. Evita a expressão "vela em molde" na descrição pública: prefere "vela artesanal" ou "vela decorativa".',
-  'description deve ter cerca de 50–95 palavras, salvo estilo short (20–45), e identificar a peça e 2–4 pormenores concretos quando visíveis.',
+  'description deve ter cerca de 50–95 palavras, salvo estilo short (20–45). Identifica a peça e destaca até 4 pormenores realmente visíveis, sem inventar pormenores para cumprir uma contagem.',
+  'Dá prioridade ao que torna esta peça diferente de outras. Se a forma ou tema estiverem visíveis, descreve-os concretamente em vez de usares adjetivos vagos. Não repitas o nome do produto desnecessariamente.',
   'O estilo detail descreve a forma; theme relaciona símbolos com o tema registado; atmosphere descreve apenas a aparência; gift destaca a apresentação; short é breve.',
   'Não incluas hashtags, preços, promoções, afirmações de disponibilidade nem chamadas de compra.',
   'O texto será revisto e aprovado por uma pessoa antes de ser guardado. Não tentes publicar, alterar dados ou executar qualquer ação.',
@@ -117,7 +127,9 @@ export default async function handler(req,res){
     model:process.env.OPENAI_PRODUCT_DESCRIPTION_MODEL||process.env.OPENAI_SOCIAL_MODEL||'gpt-5.5',
     instructions,
     input:[{role:'user',content}],
-    max_output_tokens:1100
+    store:false,
+    text:{format:{type:'json_schema',name:'artessencia_photo_description',strict:true,schema:PROPOSAL_SCHEMA}},
+    max_output_tokens:1800
    })
   });
   const answer=await response.json().catch(()=>({}));
@@ -125,9 +137,13 @@ export default async function handler(req,res){
    console.error('product description AI upstream',response.status,clean(answer?.error?.type,80));
    return json(res,502,{ok:false,error:'Não foi possível analisar as fotografias.'});
   }
+  if(answer?.status!=='completed'){
+   console.error('product description AI incomplete',clean(answer?.status,40),clean(answer?.incomplete_details?.reason,80));
+   return json(res,502,{ok:false,error:'A análise não ficou concluída. Tenta novamente.'});
+  }
   let parsed;
   try{parsed=JSON.parse(outputText(answer).trim())}
-  catch{return json(res,502,{ok:false,error:'A IA devolveu uma resposta inválida.'})}
+  catch{return json(res,502,{ok:false,error:'A análise não devolveu uma proposta utilizável. Tenta novamente.'})}
   let proposal;
   try{proposal=resultProposal(parsed)}
   catch(e){return json(res,502,{ok:false,error:clean(e.message,140)})}
