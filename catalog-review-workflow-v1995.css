@@ -45,3 +45,11 @@
 #products .products-list-card:not(.ae-review-focus1995) #aeReviewWorkflow1995 .ae-review-rows,
 #products .products-list-card:not(.ae-review-focus1995) #aeReviewWorkflow1995 .ae-review-pagination,
 #products .products-list-card:not(.ae-review-focus1995) #aeReviewWorkflow1995 .ae-review-note {display:none!important}
+
+/* V1.9.97 — navegação permanente entre cartões e revisão. */
+#products .ae-products-views1997{display:flex;flex-wrap:wrap;gap:8px;padding:10px 0 2px}
+#products .ae-products-views1997 .btn{flex:1 1 150px;min-height:46px;font-size:12px;white-space:normal;padding:9px 12px}
+#products .products-list-card:not(.ae-review-focus1995)>#aeReviewWorkflow1995{display:none!important}
+#products .products-list-card.ae-review-focus1995>#aeReviewWorkflow1995{display:block}
+@media(max-width:650px){#products .ae-products-views1997{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#products .ae-products-views1997 .btn{min-width:0;width:100%;padding:8px;overflow-wrap:anywhere}}
