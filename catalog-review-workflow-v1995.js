@@ -8,7 +8,7 @@ var PAGE=12,view='pending',page=0,search='';
 var el=id=>document.getElementById(id);
 var esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 var value=v=>String(v==null?'':v).trim();
-var rows=()=>typeof db==='undefined'||!Array.isArray(db.products)?[]:db.products.filter(p=>p&&p.code);
+var rows=()=>typeof db==='undefined'||!Array.isArray(db.products)?[]:db.products.filter(p=>p&&typeof p==='object');
 var family=p=>typeof catalogFamilyV191==='function'?catalogFamilyV191(p.catalogGroupV191):null;
 function missing(p){
  var lack=[];
@@ -19,21 +19,24 @@ function missing(p){
  if(!f)lack.push('Família comercial');
  else if(Array.isArray(f.subs)&&f.subs.length&&!f.subs.some(s=>String(s[0])===value(p.catalogSubgroupV191)))lack.push('Subcategoria');
  if(!value(p.shopDescription))lack.push('Descrição pública');
- if(![p.shopImageUrl,p.imageUrl,p.image,p.photo,p.coverImage].some(value)&&!(Array.isArray(p.images)&&p.images.some(v=>value(typeof v==='string'?v:v&&v.url))))lack.push('Fotografia');
- if(p.manufactured===true){
+ if(!value(p.shopImageUrl))lack.push('Fotografia principal');
+ if(p.manufactured!==false){
   var recipe=typeof db==='undefined'?null:db.productRecipes&&db.productRecipes[p.code];
   if(!(Array.isArray(recipe)&&recipe.length)&&!(Array.isArray(p.recipe)&&p.recipe.length))lack.push('Composição técnica');
   if(!value(p.productionNotes))lack.push('Instruções de produção');
   if(!value(p.qualityNotes))lack.push('Controlo de qualidade');
  }
- if((p.published===true||p.shopPublished===true)&&!(Number(p.price)>0))lack.push('Preço de venda');
+ if(Array.isArray(p.tagsV1753)&&p.tagsV1753.includes('Por rever'))lack.push('Marcado «Por rever»');
+ if(p.aprecoNeedsReviewV1753===true)lack.push('Revisão de importação');
+ if(p.shopVisible===true&&!['from','quote'].includes(p.publicPriceMode)&&!(Number(p.onlinePrice)>0||Number(p.price)>0))lack.push('Preço de venda');
  return lack;
 }
 function fingerprint(p){
  var recipe=typeof db==='undefined'?null:db.productRecipes&&db.productRecipes[p.code];
  var fields=[p.code,p.name,p.category,p.catalogGroupV191,p.catalogSubgroupV191,p.shopDescription,
   p.shopImageUrl,p.imageUrl,p.image,p.photo,p.coverImage,p.images,p.price,p.published,p.shopPublished,
-  p.manufactured,p.productionType,p.productionNotes,p.qualityNotes,p.recipe,recipe,p.publicCharacteristics];
+  p.manufactured,p.productionType,p.productionNotes,p.qualityNotes,p.recipe,recipe,p.publicCharacteristics,
+  p.shopVisible,p.onlinePrice,p.publicPriceMode,p.tagsV1753,p.aprecoNeedsReviewV1753];
  var s=JSON.stringify(fields),h=2166136261;
  for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}
  return (h>>>0).toString(36);
@@ -62,21 +65,22 @@ function render(){
  el('aeReviewBar1995').setAttribute('aria-valuenow',String(percent));
  var shown=all.filter(a=>(view==='all'||a.kind===view)&&
   [a.p.name,a.p.code,a.p.category,a.p.catalogGroupV191,a.p.catalogSubgroupV191].join(' ').toLocaleLowerCase('pt-PT').includes(search.toLocaleLowerCase('pt-PT')));
- shown.sort((a,b)=>a.p.name.localeCompare(b.p.name,'pt'));
+ shown.sort((a,b)=>String(a.p.name||'').localeCompare(String(b.p.name||''),'pt'));
  var totalPages=Math.max(1,Math.ceil(shown.length/PAGE));
  page=Math.min(page,totalPages-1);
  var slice=shown.slice(page*PAGE,(page+1)*PAGE);
  el('aeReviewRows1995').innerHTML=slice.length?slice.map(a=>{
   var p=a.p,category=typeof catalogBreadcrumbV191==='function'?catalogBreadcrumbV191(p):p.catalogGroupV191;
+  var actions=value(p.code)?'<button class="btn ghost" type="button" data-review-action="edit" data-code="'+esc(p.code)+'">'+(a.kind==='pending'?'Completar dados':'Editar')+'</button>'+
+   (a.kind==='reviewed'?'<button class="btn ghost" type="button" data-review-action="reset" data-code="'+esc(p.code)+'">Reabrir revisão</button>':
+    a.kind==='ready'?'<button class="btn primary" type="button" data-review-action="approve" data-code="'+esc(p.code)+'">Confirmar revisão</button>':'')
+   :'<span class="ae-review-action-hint">Sem código: utiliza «Mostrar lista completa» para corrigir.</span>';
   return '<article class="ae-review-item"><div class="ae-review-item-info"><strong>'+esc(p.name||'Produto sem nome')+'</strong>'+
-   '<small>'+esc(p.code)+' · '+esc(p.category||'Sem categoria técnica')+'</small>'+
+   '<small>'+esc(p.code||'Sem código')+' · '+esc(p.category||'Sem categoria técnica')+'</small>'+
    '<small>'+esc(category||'Por classificar')+'</small>'+
    '<span class="ae-review-status" data-kind="'+esc(a.kind)+'">'+esc(labelOf(a))+(a.changed?' · Alterado após revisão':'')+'</span>'+
    (a.lack.length?'<div class="ae-review-missing"><b>Falta tratar:</b> '+a.lack.map(esc).join(' · ')+'</div>':'')+'</div>'+
-   '<div class="ae-review-item-actions"><button class="btn ghost" type="button" data-review-action="edit" data-code="'+esc(p.code)+'">'+(a.kind==='pending'?'Completar dados':'Editar')+'</button>'+
-   (a.kind==='reviewed'?'<button class="btn ghost" type="button" data-review-action="reset" data-code="'+esc(p.code)+'">Reabrir revisão</button>':
-   a.kind==='ready'?'<button class="btn primary" type="button" data-review-action="approve" data-code="'+esc(p.code)+'">Confirmar revisão</button>':'')+
-   '</div></article>';
+   '<div class="ae-review-item-actions">'+actions+'</div></article>';
  }).join(''):'<p class="ae-review-empty">Não existem produtos neste estado com esta pesquisa.</p>';
  el('aeReviewPage1995').textContent='Página '+(page+1)+' de '+totalPages+' · '+shown.length+' produto(s)';
  el('aeReviewPrev1995').disabled=page<=0;
@@ -94,6 +98,7 @@ function mark(code,approve){
  var status=assessment(p);
  if(approve&&status.lack.length){alertUser('Ainda faltam campos: '+status.lack.join(', '));return}
  if(typeof cloudBusy!=='undefined'&&cloudBusy){alertUser('Sincronização Cloud em curso. Tenta novamente.');return}
+ if(typeof cloudMeta==='function'&&cloudMeta().conflict){alertUser('Existe um conflito Cloud por resolver. Resolve-o antes de confirmar revisões.');return}
  if(!window.confirm(approve?
   'Confirmar a revisão de "'+String(p.name||code)+'"?\n\nEsta operação é interna. Não publica o produto nem altera o preço.':
   'Reabrir a revisão de "'+String(p.name||code)+'"?'))return;
@@ -103,8 +108,7 @@ function mark(code,approve){
  p.updatedAt=at;
  try{
   if(typeof save!=='function')throw Error('Gravação indisponível');
-  var result=save('products');
-  if(result&&typeof result.catch==='function')result.catch(e=>alertUser('Erro de gravação: '+String(e.message||e)));
+  if(save('products')!==true)throw Error('Falha ao guardar no armazenamento local. A revisão não foi confirmada.');
   render();
   alertUser(approve?'Revisão atualizada localmente. Confirma a sincronização Cloud.':'Revisão reaberta localmente. Confirma a sincronização Cloud.');
  }catch(e){
