@@ -6,19 +6,42 @@ function installTechnicalNotesDefaults(editor){
  if(!process||!prod||!quality)return;
  const fields=[prod,quality],last=['',''],manual=[false,false];
  const editing=()=>typeof editingProductCodeV147!=='undefined'&&!!editingProductCodeV147;
- function seed(force=false){
+ function seed(){
+  // Os valores dos produtos existentes, mesmo vazios, nunca recebem sugestões automaticamente.
   if(editing())return;
   const texts=aeTechNotesModels[process.value]||aeTechNotesModels.other;
-  fields.forEach((field,i)=>{if(!manual[i]&&(force||!field.value||field.value===last[i])){field.value=texts[i];last[i]=texts[i]}});
+  fields.forEach((field,i)=>{
+   if(manual[i])return;
+   // Atualiza apenas um valor gerado automaticamente ou um campo ainda vazio.
+   if(!field.value.trim()||field.value===last[i]){
+    field.value=texts[i];
+    last[i]=texts[i];
+   }
+  });
+ }
+ function onNewSession(){
+  if(editing())return;
+  // O Backoffice limpa os campos antes de colocar o editor em modo «Novo produto».
+  // Uma nova sessão liberta as edições manuais da sessão anterior.
+  if(fields.every(field=>!field.value.trim())){
+   manual.fill(false);
+   last.fill('');
+  }
+  seed();
  }
  fields.forEach((field,i)=>field.addEventListener('input',()=>{manual[i]=true}));
- editor.addEventListener('change',event=>{if(['prodCat','prodProductionTypeV130'].includes(event.target?.id))seed()});
+ editor.addEventListener('change',event=>{
+  if(['prodCat','prodProductionTypeV130'].includes(event.target?.id))seed();
+ });
  const title=document.getElementById('productEditorTitleV145');
- if(title)new MutationObserver(()=>{
-  if(editing())return;
-  if(fields.every(field=>!field.value)){manual.fill(false);last.fill('');seed(true)}
- }).observe(title,{childList:true,subtree:true,characterData:true});
- seed();
+ if(title)new MutationObserver(onNewSession).observe(title,{childList:true,subtree:true,characterData:true});
+ // Recupera o preenchimento se outro módulo tiver limpo o novo rascunho sem alterar o título.
+ const nav=editor.querySelector('.product-editor-nav-v1762');
+ if(nav)nav.addEventListener('click',event=>{
+  if(event.target.closest('[data-product-panel-btn="production"]'))seed();
+ });
+ window.addEventListener('pageshow',seed);
+ onNewSession();
 }
 function init(){
  const root=document.getElementById('products'),editor=root?.querySelector('.products-form-card'),nav=editor?.querySelector('.product-editor-nav-v1762');
