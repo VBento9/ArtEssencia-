@@ -72,31 +72,37 @@ async function dataImage(src){
  */
 function fitA4OnSinglePageV1983(win){
  const sheet=win.document.querySelector('.ts-sheet');if(!sheet)return;
- const targetHeight=(297-9-13-8)*96/25.4;
+ // Área útil A4 com margem de segurança para motores de impressão distintos.
+ const targetHeight=269*96/25.4;
  sheet.classList.add('ts-a4');
- // Igualar a largura de medição à folha de impressão, independente do ecrã.
  sheet.style.width='190mm';
  sheet.style.maxWidth='none';
- let chosen='compact',found=false;
+ sheet.style.setProperty('--ts-a4-extra-space','0px');
+ sheet.style.setProperty('--ts-a4-zoom','1');
+ let chosen='compact',scale=1,found=false;
  for(const candidate of ['roomy','balanced','compact']){
   sheet.dataset.a4Layout=candidate;
-  sheet.style.setProperty('--ts-a4-extra-space','0px');
-  if(Number.isFinite(sheet.scrollHeight)&&sheet.scrollHeight<=targetHeight){
-   chosen=candidate;found=true;break;
+  const height=sheet.getBoundingClientRect().height;
+  if(height>0 && Number.isFinite(height)){
+   if(height<=targetHeight){chosen=candidate;found=true;break;}
+   if(candidate==='compact'){
+    // Pequenos excessos não devem criar uma segunda página quase vazia.
+    const required=Math.floor((targetHeight/height)*100)/100;
+    if(required>=0.80){chosen=candidate;scale=required;found=true;}
+   }
   }
  }
  sheet.dataset.a4Layout=chosen;
- if(found){
+ sheet.style.setProperty('--ts-a4-zoom',String(scale));
+ if(found&&scale===1){
   const blocks=sheet.querySelectorAll(':scope > .ts-block').length||1;
-  const spare=Math.max(0,targetHeight-sheet.scrollHeight);
-  // Margens adicionais distribuem o conteúdo verticalmente sem criar texto fictício.
-  const gap=Math.min(48,Math.floor(spare/Math.max(2,blocks+1)*0.75));
+  const spare=Math.max(0,targetHeight-sheet.getBoundingClientRect().height);
+  const gap=Math.min(25,Math.floor(spare/Math.max(2,blocks+1)*0.55));
   sheet.style.setProperty('--ts-a4-extra-space',gap+'px');
-  if(sheet.scrollHeight>targetHeight)sheet.style.setProperty('--ts-a4-extra-space','0px');
- }else{
-  sheet.style.setProperty('--ts-a4-extra-space','0px');
+  if(sheet.getBoundingClientRect().height>targetHeight)sheet.style.setProperty('--ts-a4-extra-space','0px');
+ }else if(!found){
   const warning=win.document.createElement('p');warning.className='ts-warn';
-  warning.textContent='A ficha excede uma folha A4: serão utilizadas páginas adicionais para preservar a legibilidade e toda a informação.';
+  warning.textContent='Esta ficha contém informação demasiado extensa para caber numa A4 de forma legível; serão utilizadas páginas adicionais, sem omitir dados.';
   win.document.querySelector('.ts-tools')?.append(warning);
  }
  sheet.style.removeProperty('width');
@@ -157,7 +163,7 @@ function printSheet(code,format){
   '.ts-a4[data-a4-layout="compact"] .ts-note-item{margin:6px 0}',
   '.ts-a4[data-a4-layout="compact"] .ts-table th,.ts-a4[data-a4-layout="compact"] .ts-table td{padding:4px 6px}',
   '.ts-a4[data-a4-layout="compact"] .ts-finance .ts-grid{grid-template-columns:repeat(4,minmax(0,1fr))}',
-  '@media print{.ts-sheet.ts-a4{width:190mm!important;max-width:100%!important;zoom:1}.ts-a4 .ts-note-item{break-inside:auto}}'
+  '@media print{.ts-sheet.ts-a4{width:190mm!important;max-width:none!important;zoom:var(--ts-a4-zoom,1)}.ts-a4 .ts-note-item{break-inside:auto}}'
  ].join(''):'';
 
  const css='@page{size:'+size+' portrait;margin:'+(full?'9mm 9mm 13mm':'10mm 9mm 15mm')+';'+
