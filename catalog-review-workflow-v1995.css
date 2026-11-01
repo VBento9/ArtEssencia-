@@ -32,3 +32,9 @@
 .ae-review-note{font-size:11px;color:var(--muted,#716052);margin:10px 0 0;line-height:1.45}
 .ae-review-empty{font-size:12px;text-align:center;padding:20px;color:#746354}
 @media(max-width:650px){.ae-review-item{grid-template-columns:1fr}.ae-review-item-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.ae-review-item-actions .btn{width:100%;margin:0;padding:8px}.ae-review-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.ae-review-tabs button{min-width:0}.ae-review-head{align-items:start}.ae-review-head .btn{font-size:11px}}
+/* Vista de trabalho por revisão: evita apresentar novamente a listagem integral. */
+#products .products-list-card.ae-review-focus1995 > :not(#aeReviewWorkflow1995){display:none!important}
+#products #aeReviewWorkflow1995{grid-column:1/-1;max-width:100%}
+#products .ae-review-head-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+#products .ae-review-head-actions .btn{min-height:44px}
+@media(max-width:650px){#products .ae-review-head{flex-direction:column}#products .ae-review-head-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}#products .ae-review-head-actions .btn{min-width:0;white-space:normal;font-size:11px}}
