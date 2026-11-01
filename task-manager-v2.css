@@ -120,3 +120,20 @@
 #aeTaskManagerV2 .ae-tm-dependency-warning{display:block;color:#934321;background:#fff2e9;border-radius:7px;padding:7px 9px;font-size:11px;font-weight:650;margin:5px 0;overflow-wrap:anywhere}
 #aeTaskManagerV2 .ae-tm-replan-suggestion{display:flex;align-items:center;gap:9px;justify-content:space-between;flex-wrap:wrap;margin:10px 0;padding:9px;border:1px solid #ddd1bd;border-radius:8px;background:#faf7f0;font-size:12px}
 #aeTaskManagerV2 .ae-tm-replan-suggestion span{flex:1 1 160px}
+
+/* Calendário anual das edições — compacto, integrado no gestor de tarefas */
+#aeTaskManagerV2 .ae-season-heading{display:flex;gap:8px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+#aeTaskManagerV2 .ae-season-heading h3{margin:0}
+#aeTaskManagerV2 .ae-season-tools{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:12px 0}
+#aeTaskManagerV2 .ae-season-tools .btn{min-height:38px}
+#aeTaskManagerV2 .ae-season-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0 15px}
+#aeTaskManagerV2 .ae-season-card{min-width:0;display:grid;align-content:start;gap:7px;border:1px solid #dfd2c5;border-radius:10px;padding:11px;background:#fff}
+#aeTaskManagerV2 .ae-season-card.is-linked{border-color:#b4b399;background:#fcfbf6}
+#aeTaskManagerV2 .ae-season-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap}
+#aeTaskManagerV2 .ae-season-card-head strong{font-size:13px;overflow-wrap:anywhere}
+#aeTaskManagerV2 .ae-season-type{display:inline-block;border:1px solid #dfd2c5;border-radius:99px;padding:3px 8px;font-size:10px;color:#755840;white-space:nowrap}
+#aeTaskManagerV2 .ae-season-card p{margin:0;font-size:12px;line-height:1.4;overflow-wrap:anywhere}
+#aeTaskManagerV2 .ae-season-card small{font-size:11px;color:#75695e}
+#aeTaskManagerV2 .ae-season-card .btn{justify-self:start;min-height:36px}
+#aeTaskManagerV2 .ae-season-notice{padding:9px;border-radius:8px;background:#f7f2e9;font-size:12px;margin:8px 0}
+@media(max-width:680px){#aeTaskManagerV2 .ae-season-grid{grid-template-columns:1fr}#aeTaskManagerV2 .ae-season-tools .btn{flex:1 1 auto}}
