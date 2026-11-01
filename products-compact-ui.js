@@ -10,9 +10,12 @@ function init(){
  const bar=document.createElement('div');bar.id='aeProductsCompact';bar.className='ae-products-compact-bar';
  const make=(label)=>{const el=document.createElement('button');el.type='button';el.textContent=label;return el};
  const showList=make('Ver catálogo'),showForm=make('Abrir editor'),filterButton=make('Filtros avançados');
- bar.append(showList,showForm,filterButton);
- const summary=document.getElementById('productsSummary');
- (summary||hero).after(bar);
+ bar.append(showList,showForm);
+ const searchActions=root.querySelector('.products-search-actions-v1101');
+ if(searchActions)searchActions.prepend(filterButton);
+ else bar.append(filterButton);
+ filterButton.setAttribute('aria-controls','productsStateFiltersV1101');
+ hero.before(bar);
  let active='list',advanced=false;
  function select(which){
    active=which;form.hidden=which!=='editor';list.hidden=which!=='list';

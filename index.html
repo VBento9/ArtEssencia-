@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.100">
+<meta name="artessencia-version" content="1.9.101">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -5595,13 +5595,16 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <small>Gere velas, sabonetes, peças decorativas, preços e publicação no Catálogo Digital; a futura Loja reutilizará os mesmos produtos.</small>
       </div>
       <div class="products-tools products-tools-v1853">
-        <div class="products-search-v1853">
+        <div class="products-search-row-v1101">
+          <div class="products-search-v1853">
           <label for="productSearch">Pesquisar produtos</label>
-          <input id="productSearch" placeholder="Nome, código, tipo, grupo ou coleção…" oninput="renderProducts()">
+          <input id="productSearch" type="search" placeholder="Nome, código, tipo, grupo ou coleção…" autocomplete="off" oninput="renderProducts()">
+          </div>
+          <div class="products-search-actions-v1101"><button type="button" class="btn ghost products-clear-filters-v1853" onclick="resetProductFiltersV1853()">Limpar filtros</button></div>
         </div>
-        <div class="products-filter-group-v1853">
+        <div class="products-filter-group-v1853 products-classification-v1101">
           <div class="products-filter-title-v1853">Classificação</div>
-          <select id="productCategoryFilter" onchange="renderProducts()" aria-label="Filtrar por tipo de produto">
+          <label class="products-filter-field-v1101"><span>Tipo de produto</span><select id="productCategoryFilter" onchange="renderProducts()" aria-label="Filtrar por tipo de produto">
             <option value="all">Todos os tipos</option>
             <option value="Velas em molde">Velas decorativas / em molde</option>
             <option value="Velas em recipiente">Velas em recipiente</option>
@@ -5610,26 +5613,25 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
             <option value="Resina e Jesmonite">Resina e Jesmonite</option>
             <option value="Personalizados">Personalizados</option>
             <option value="Outros produtos artesanais">Outros produtos artesanais</option>
-          </select>
-                    <select id="productCatalogGroupFilterV191" onchange="updateCatalogSubFilterV191();renderProducts()" aria-label="Filtrar por família comercial"><option value="all">Todas as famílias comerciais</option></select>
-          <select id="productCatalogSubFilterV191" onchange="renderProducts()" aria-label="Filtrar por subcategoria comercial" disabled><option value="all">Todas as subcategorias</option></select>
+          </select></label>
+                    <label class="products-filter-field-v1101"><span>Família comercial</span><select id="productCatalogGroupFilterV191" onchange="updateCatalogSubFilterV191();renderProducts()" aria-label="Filtrar por família comercial"><option value="all">Todas as famílias comerciais</option></select></label>
+          <label class="products-filter-field-v1101"><span>Subcategoria</span><select id="productCatalogSubFilterV191" onchange="renderProducts()" aria-label="Filtrar por subcategoria comercial" disabled><option value="all">Todas as subcategorias</option></select></label>
           <small id="catalogClassificationProgressV191" class="catalog-classification-info-v191" aria-live="polite"></small>
-          <select id="productTagFilterV1753" onchange="renderProducts()" aria-label="Filtrar por grupo ou utilização"><option value="all">Todos os grupos / utilizações</option></select>
-          <select id="productSeasonFilterV1761" onchange="renderProducts()" aria-label="Filtrar por sazonalidade"><option value="all">Todas as sazonalidades</option></select>
-          <select id="productCollectionFilterV1752" onchange="renderProducts()" aria-label="Filtrar por coleção ou tema"><option value="all">Todas as coleções / temas</option><option value="none">Sem coleção</option></select>
+          <label class="products-filter-field-v1101"><span>Grupo / utilização</span><select id="productTagFilterV1753" onchange="renderProducts()" aria-label="Filtrar por grupo ou utilização"><option value="all">Todos os grupos / utilizações</option></select></label>
+          <label class="products-filter-field-v1101"><span>Sazonalidade</span><select id="productSeasonFilterV1761" onchange="renderProducts()" aria-label="Filtrar por sazonalidade"><option value="all">Todas as sazonalidades</option></select></label>
+          <label class="products-filter-field-v1101"><span>Coleção / tema</span><select id="productCollectionFilterV1752" onchange="renderProducts()" aria-label="Filtrar por coleção ou tema"><option value="all">Todas as coleções / temas</option><option value="none">Sem coleção</option></select></label>
         </div>
-        <div class="products-filter-group-v1853">
+        <div class="products-filter-group-v1853 products-state-v1101" id="productsStateFiltersV1101">
           <div class="products-filter-title-v1853">Estado e publicação</div>
-          <select id="productArchiveFilterV1803" onchange="renderProducts()" aria-label="Filtrar por estado do produto">
+          <label class="products-filter-field-v1101"><span>Estado do produto</span><select id="productArchiveFilterV1803" onchange="renderProducts()" aria-label="Filtrar por estado do produto">
             <option value="active">Estado: ativos</option><option value="archived">Estado: arquivados</option><option value="archived-public">Arquivados com inconsistência pública</option><option value="all">Estado: todos</option>
-          </select>
-          <select id="productShopFilter" onchange="renderProducts()" aria-label="Filtrar por publicação"><option value="all">Publicação: todos</option><option value="published">Publicados</option><option value="hidden">Ocultos</option></select>
-          <select id="productMixFilter" onchange="renderProducts()" aria-label="Filtrar por conjuntos"><option value="all">Conjuntos: todos</option><option value="enabled">Conjuntos: disponíveis</option><option value="disabled">Conjuntos: indisponíveis</option></select>
-          <select id="productCompletenessFilterV1762" onchange="renderProducts()" aria-label="Filtrar pelo estado de preenchimento">
+          </select></label>
+          <label class="products-filter-field-v1101"><span>Catálogo e loja</span><select id="productShopFilter" onchange="renderProducts()" aria-label="Filtrar por publicação"><option value="all">Publicação: todos</option><option value="published">Publicados</option><option value="hidden">Ocultos</option></select></label>
+          <label class="products-filter-field-v1101"><span>Conjuntos</span><select id="productMixFilter" onchange="renderProducts()" aria-label="Filtrar por conjuntos"><option value="all">Conjuntos: todos</option><option value="enabled">Conjuntos: disponíveis</option><option value="disabled">Conjuntos: indisponíveis</option></select></label>
+          <label class="products-filter-field-v1101"><span>Preenchimento</span><select id="productCompletenessFilterV1762" onchange="renderProducts()" aria-label="Filtrar pelo estado de preenchimento">
             <option value="all">Preenchimento: todos</option><option value="ready">Prontos para publicar</option><option value="photo">Sem fotografia</option><option value="tech">Sem Ficha Técnica</option><option value="description">Sem descrição pública</option><option value="price">Sem PVP</option><option value="review">Por rever</option>
-          </select>
+          </select></label>
         </div>
-        <button type="button" class="btn ghost products-clear-filters-v1853" onclick="resetProductFiltersV1853()">Limpar filtros</button>
       </div>
     </div>
 
@@ -6184,7 +6186,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.100';
+const APP_VERSION='1.9.101';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
