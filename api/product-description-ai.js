@@ -110,6 +110,7 @@ export default async function handler(req,res){
   'Dá prioridade ao que torna esta peça diferente de outras. Se a forma ou tema estiverem visíveis, descreve-os concretamente em vez de usares adjetivos vagos. Não repitas o nome do produto desnecessariamente.',
   'O estilo detail descreve a forma; theme relaciona símbolos com o tema registado; atmosphere descreve apenas a aparência; gift destaca a apresentação; short é breve.',
   'Não incluas hashtags, preços, promoções, afirmações de disponibilidade nem chamadas de compra.',
+  'Nunca enuncies cores, tonalidades, fragrâncias ou aromas específicos na descrição comercial; os mesmos são variantes configuráveis cuja disponibilidade se confirma à parte. A imagem pode mostrar um exemplar sem limitar a escolha do cliente. Não enumeres listas parciais de variantes.' ,
   'O texto será revisto e aprovado por uma pessoa antes de ser guardado. Não tentes publicar, alterar dados ou executar qualquer ação.',
   'Devolve exclusivamente JSON com description, visualDetails e reviewNotes, todos strings. visualDetails resume o que observaste; reviewNotes indica incertezas e dados a confirmar.'
  ].join(' ');
