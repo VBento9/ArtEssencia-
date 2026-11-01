@@ -1,0 +1,40 @@
+/* Estado de revisão: interface compacta, isolada da lista e do editor originais. */
+#aeReviewWorkflow1995{background:var(--card,#fffaf4);border:1px solid var(--line,#dfd1c2);border-radius:14px;padding:15px;margin-bottom:16px;min-width:0}
+#aeReviewWorkflow1995 *{box-sizing:border-box}
+.ae-review-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.ae-review-head h3{margin:0;color:var(--text,#503727);font-size:16px}
+.ae-review-head p{margin:5px 0 0;font-size:12px;line-height:1.4;color:var(--muted,#766457)}
+.ae-review-head .btn{min-height:44px}
+.ae-review-progress{margin:11px 0}
+.ae-review-progress-caption{font-size:12px;font-weight:700;margin-bottom:6px}
+.ae-review-track{height:7px;background:#eadfd2;border-radius:9px;overflow:hidden}
+.ae-review-track span{display:block;background:#806249;height:100%;width:0;transition:width .2s}
+.ae-review-tabs{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}
+.ae-review-tabs button{border:1px solid #d6c4b1;border-radius:9px;padding:9px 11px;min-height:44px;background:#fff;color:#49392d;font:600 12px inherit;cursor:pointer}
+.ae-review-tabs button[aria-pressed="true"]{background:#72523d;color:#fff;border-color:#72523d}
+.ae-review-search-label{display:block;font-size:12px;font-weight:700;margin-bottom:10px}
+.ae-review-search-label input{display:block;width:100%;min-width:0;min-height:43px;border:1px solid #dbcbbb;border-radius:9px;padding:10px;font:inherit;margin-top:6px;background:#fff;color:#382d25}
+.ae-review-rows{display:grid;gap:8px}
+.ae-review-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:11px;background:#fff;border:1px solid #e6dbd0;border-radius:10px;min-width:0;align-items:center}
+.ae-review-item-info{min-width:0;display:grid;gap:3px}
+.ae-review-item-info strong{font-size:13px;overflow-wrap:anywhere}
+.ae-review-item-info small{font-size:11px;color:#746558;overflow-wrap:anywhere}
+.ae-review-status{justify-self:start;font-size:10px;font-weight:750;padding:4px 7px;border-radius:7px;background:#f7ebdc;color:#75502b}
+.ae-review-status[data-kind="ready"]{background:#e7eff8;color:#335875}
+.ae-review-status[data-kind="reviewed"]{background:#e5f1e6;color:#30643d}
+.ae-review-missing{font-size:11px;color:#8b4a2b;margin-top:4px;overflow-wrap:anywhere}
+.ae-review-missing b{font-weight:700}
+.ae-review-item-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.ae-review-item-actions .btn{min-height:44px;white-space:normal;font-size:11px}
+.ae-review-pagination{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px}
+.ae-review-pagination .btn{min-height:44px}
+#aeReviewPage1995{font-size:11px;text-align:center}
+.ae-review-note{font-size:11px;color:var(--muted,#716052);margin:10px 0 0;line-height:1.45}
+.ae-review-empty{font-size:12px;text-align:center;padding:20px;color:#746354}
+@media(max-width:650px){.ae-review-item{grid-template-columns:1fr}.ae-review-item-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.ae-review-item-actions .btn{width:100%;margin:0;padding:8px}.ae-review-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.ae-review-tabs button{min-width:0}.ae-review-head{align-items:start}.ae-review-head .btn{font-size:11px}}
+/* Vista de trabalho por revisão: evita apresentar novamente a listagem integral. */
+#products .products-list-card.ae-review-focus1995 > :not(#aeReviewWorkflow1995){display:none!important}
+#products #aeReviewWorkflow1995{grid-column:1/-1;max-width:100%}
+#products .ae-review-head-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+#products .ae-review-head-actions .btn{min-height:44px}
+@media(max-width:650px){#products .ae-review-head{flex-direction:column}#products .ae-review-head-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}#products .ae-review-head-actions .btn{min-width:0;white-space:normal;font-size:11px}}

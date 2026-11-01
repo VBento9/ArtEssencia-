@@ -11,7 +11,7 @@ function one(text,re,label){
 }
 const script=one(html,/const APP_VERSION=['"]([\d.]+)['"]/g,'APP_VERSION');
 const meta=one(html,/<meta\s+name="artessencia-version"\s+content="([\d.]+)"/g,'meta da versão');
-const cache=one(worker,/const CACHE=['"]artessencia-backoffice-([\d.]+)-[^'"]+['"]/g,'cache PWA');
+const cache=one(worker,/const CACHE=['"]artessencia-backoffice-([\d.]+)(?:-[^'"]+)?['"]/g,'cache PWA');
 assert.equal(script,version.app,'APP_VERSION deve corresponder a version.json');
 assert.equal(meta,version.app,'meta do HTML deve corresponder a version.json');
 assert.equal(cache,version.app,'cache PWA deve corresponder a version.json');

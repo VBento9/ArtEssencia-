@@ -64,3 +64,9 @@ function init(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
+
+/* Módulo de revisão isolado: mantém a classificação em lote intacta. */
+(function(){
+ var css=document.createElement('link');css.rel='stylesheet';css.href='/catalog-review-workflow-v1995.css';document.head.appendChild(css);
+ var script=document.createElement('script');script.src='/catalog-review-workflow-v1995.js';document.head.appendChild(script);
+})();

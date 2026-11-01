@@ -1,0 +1,27 @@
+name: Produtos — revisão e versões PWA
+on:
+  pull_request:
+    paths:
+      - 'catalog-review-workflow-v1995.js'
+      - 'catalog-review-workflow-v1995.css'
+      - 'catalog-classification-bulk-v192.js'
+      - 'tests/catalog-review-workflow.test.cjs'
+      - 'index.html'
+      - 'version.json'
+      - 'sw.js'
+      - '.github/workflows/catalog-review.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Testar estados e gravação com dados fictícios
+        run: node --test tests/catalog-review-workflow.test.cjs
+      - name: Verificar alinhamento de versão PWA
+        run: node scripts/check_pwa_release_versions.cjs

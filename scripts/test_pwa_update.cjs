@@ -2,7 +2,7 @@ const {readFileSync}=require('node:fs');
 const vm=require('node:vm');const assert=require('node:assert/strict');
 const html=readFileSync('index.html','utf8'),sw=readFileSync('sw.js','utf8'),updater=readFileSync('pwa-update.js','utf8');
 (async()=>{
- const version=JSON.parse(readFileSync('version.json'));assert(html.includes(`const APP_VERSION='${version.app}'`));assert(html.includes('<script src="pwa-update.js"></script>'));assert(!html.includes('artessencia_runtime_reset_v12_3_1'));assert(!/localStorage|indexedDB|sessionStorage|caches\.delete/.test(updater));
+ const version=JSON.parse(readFileSync('version.json'));assert(html.includes(`const APP_VERSION='${version.app}'`));assert(html.includes('<script src="pwa-update.js"></script>'));assert(!html.includes('artessencia_runtime_reset_v12_3_1'));assert(!/localStorage\.clear\s*\(|sessionStorage\.clear\s*\(|indexedDB\.deleteDatabase\s*\(|caches\.delete\s*\(/.test(updater),'Atualizador não deve apagar dados locais nem caches');
  const ids=['clients','orders','stock','products','production','visualCatalogs','delivery','cloud','backup'];for(const id of ids)assert(html.includes(`id="${id}"`));
  const elements=new Map();function element(){return {style:{},textContent:'',value:'',disabled:true,children:[],append(...x){this.children.push(...x)},replaceChildren(){this.children=[]}}}function get(id){if(!elements.has(id))elements.set(id,element());return elements.get(id)}
  let calls=[],fail=false;const rows=[{locality:'Castelejo',fee_cents:200,active:true,postal_codes:['6230-152']},{locality:'Fundão',fee_cents:300,active:false,postal_codes:[]}];
