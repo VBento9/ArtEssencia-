@@ -26,12 +26,14 @@ function setup(persist=true){
 test('o produto completo exige confirmação humana',()=>{
  const {p,api}=setup();assert.equal(api.assessment(p).kind,'ready');
 });
-test('confirmação regista estado no próprio produto e chama persistência',()=>{
- const {p,api,writes}=setup();api.mark('EX-1',true);
- assert.equal(api.assessment(p).kind,'reviewed');assert.equal(writes(),1);
+test('sem ligação Cloud a revisão não inicia gravação integral',async()=>{
+ const {p,api,writes}=setup();await api.mark('EX-1',true);
+ assert.equal(api.assessment(p).kind,'ready');assert.equal(writes(),0);
 });
-test('alterações posteriores invalidam a revisão, mesmo com campos preenchidos',()=>{
- const {p,api}=setup();api.mark('EX-1',true);
+test('alterações posteriores invalidam uma revisão confirmada',()=>{
+ const {p,api}=setup();
+ p.catalogReviewV1995={status:'reviewed',fingerprint:api.fingerprint(p)};
+ assert.equal(api.assessment(p).kind,'reviewed');
  p.shopDescription='Outro texto';assert.equal(api.assessment(p).kind,'ready');
 });
 test('falta de família, subcategoria ou receita origina pendência',()=>{
@@ -56,9 +58,9 @@ test('interface mantém acesso à listagem antiga e ao editor',()=>{
  assert.doesNotMatch(source,/list\.classList\.add\('ae-review-focus1995'\)/);
 });
 
-test('falha de gravação não mantém revisão confirmada em memória',()=>{
- const {p,api,writes}=setup(false);api.mark('EX-1',true);
- assert.equal(api.assessment(p).kind,'ready');assert.equal(writes(),1);
+test('sem Cloud nem modo de gravação geral não altera revisão',async()=>{
+ const {p,api,writes}=setup(false);await api.mark('EX-1',true);
+ assert.equal(api.assessment(p).kind,'ready');assert.equal(writes(),0);
 });
 test('peças antigas sem flag manufactured exigem ficha de composição',()=>{
  const {p,db,api}=setup();delete p.manufactured;db.productRecipes={};
@@ -85,4 +87,47 @@ test('clicar no cartão de revisão e Enter abrem editor sem passar pela lista g
  assert.match(source,/addEventListener\('keydown'/);
  assert.match(source,/edit\(card\.dataset\.reviewCode\)/);
  assert.match(source,/value\(b\.textContent\)==='Abrir editor'/);
+});
+
+test('a revisão usa via unitária com proteção contra conflitos remotos',()=>{
+ assert.match(source,/async function syncOneReview\(/);
+ assert.doesNotMatch(source,/cloudMeta\(\)\.dirty\|\|/);
+ assert.doesNotMatch(source,/save\('products'\)/);
+ assert.match(source,/reviewCleanSnapshot\(remote\.data\)!==reviewCleanSnapshot\(p\)/);
+ assert.match(source,/eq\('updated_at',remote\.updated_at\)/);
+ assert.match(source,/Revisão sincronizada na Cloud para este produto/);
+});
+
+test('sincronização unitária não invoca gravação geral de produtos',async()=>{
+ const window={confirm:()=>true},document={readyState:'loading',addEventListener(){},getElementById(){return null}};
+ const p={_rid:'prod-1',code:'EX-2',name:'Vela',category:'Vela',catalogGroupV191:'vela',
+  catalogSubgroupV191:'religiosa',shopDescription:'Descrição',shopImageUrl:'https://example.invalid/photo',
+  manufactured:false,price:10};
+ let writes=0,updates=0,stored=0;
+ const remote=JSON.parse(JSON.stringify(p));
+ const chain={select(){return this},eq(){return this},update(row){updates++;this.changed=row;return this},
+  maybeSingle(){return Promise.resolve(updates?{data:{id:'prod-1'}}:{data:{id:'prod-1',user_id:'u1',updated_at:'before',data:remote}})}};
+ const ctx={window,document,db:{products:[p],productRecipes:{}},navigator:{onLine:true},
+  localStorage:{setItem(){stored++}},KEY:'fixture',save(){writes++;return true},
+  cloudMeta:()=>({dirty:false,conflict:false}),cloudUser:{id:'u1'},
+  cloudClient:{from(table){assert.equal(table,'artessencia_v1_products');return chain}},
+  REL_TABLES:{products:'artessencia_v1_products'},toast(){},
+  catalogFamilyV191:()=>({subs:[['religiosa','Religiosa']]})};
+ const instrumented=source.replace("if(document.readyState==='loading')",
+  "window.__reviewTest={mark,assessment};\nif(document.readyState==='loading')");
+ const isolated=instrumented.replace(/  render\(\);\n  alertUser\(approve\?/,
+  "  alertUser(approve?").replace(/    render\(\);alertUser\('Revisão sincronizada/,
+  "    alertUser('Revisão sincronizada");
+ vm.runInNewContext(isolated,ctx);
+ await window.__reviewTest.mark('EX-2',true);
+ assert.equal(updates,1);assert.equal(writes,0);assert.equal(stored,1);
+ assert.equal(p.catalogReviewV1995.status,'reviewed');
+ assert.equal(window.__reviewTest.assessment(p).kind,'reviewed');
+});
+
+test('só a navegação para a lista reinicia filtros quando não há cartões',()=>{
+ assert.match(source,/function ensureListResults\(\)/);
+ assert.match(source,/productArchiveFilterV1803/);
+ assert.match(source,/if\(!cards\.querySelector\('\.product-card'\)\)/);
+ assert.match(source,/showListButton\.click\(\)/);
 });

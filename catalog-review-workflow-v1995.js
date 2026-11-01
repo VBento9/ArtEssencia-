@@ -107,9 +107,57 @@ function edit(code){
   window.requestAnimationFrame(()=>{if(!form.hidden)form.scrollIntoView({block:'start',behavior:'auto'})});
  }
 }
-function mark(code,approve){
+var reviewSyncBusy=false;
+function reviewCleanSnapshot(p){
+ var copy=JSON.parse(JSON.stringify(p));
+ delete copy.catalogReviewV1995;
+ delete copy.updatedAt;
+ // Os objetos JSONB podem chegar da Cloud com as propriedades em ordem
+ // diferente. Comparar conteúdo, não a ordem de serialização.
+ function stable(value){
+  if(Array.isArray(value))return value.map(stable);
+  if(value&&typeof value==='object'){
+   var result={};
+   Object.keys(value).sort().forEach(key=>{result[key]=stable(value[key])});
+   return result
+  }
+  return value
+ }
+ return JSON.stringify(stable(copy));
+}
+// Fast path restrito: atualizar UM registo relacional só quando a Cloud e o
+// dispositivo concordam com o produto. Nunca sobrescrever alterações remotas.
+async function syncOneReview(p,review){
+ if(reviewSyncBusy||typeof cloudMeta!=='function'||cloudMeta().conflict||
+    typeof cloudBusy!=='undefined'&&cloudBusy||typeof cloudPushRunning!=='undefined'&&cloudPushRunning||
+    typeof cloudStartupDone!=='undefined'&&!cloudStartupDone||
+    typeof cloudHydrating!=='undefined'&&cloudHydrating||
+    typeof hasRestorePendingV12645==='function'&&hasRestorePendingV12645()||
+    !navigator.onLine||!p._rid||typeof cloudClient==='undefined'||!cloudClient)return false;
+ var user=typeof cloudUser!=='undefined'&&cloudUser?cloudUser:
+   typeof ensureCloudSession==='function'?await ensureCloudSession():null;
+ if(!user)return false;
+ reviewSyncBusy=true;
+ try{
+  var table=typeof REL_TABLES!=='undefined'?REL_TABLES.products:'artessencia_v1_products';
+  var lookup=await cloudClient.from(table).select('id,user_id,updated_at,data').eq('id',p._rid).eq('user_id',user.id).maybeSingle();
+  if(lookup.error||!lookup.data||!lookup.data.data)throw Error('Leitura da revisão indisponível');
+  var remote=lookup.data;
+  if(String(remote.data.code)!==String(p.code)||reviewCleanSnapshot(remote.data)!==reviewCleanSnapshot(p))
+   throw Error('O produto tem alterações diferentes entre a Cloud e este dispositivo.');
+  if(!remote.updated_at)throw Error('Versão remota não disponível');
+  var current={...remote.data,catalogReviewV1995:review,updatedAt:review.reviewedAt||new Date().toISOString()};
+  var update=await cloudClient.from(table).update({data:current,updated_at:new Date().toISOString()})
+   .eq('id',remote.id).eq('user_id',user.id).eq('updated_at',remote.updated_at)
+   .select('id,updated_at').maybeSingle();
+  if(update.error||!update.data)throw Error('O produto foi alterado durante a confirmação. Atualiza antes de repetir.');
+  return current;
+ }finally{reviewSyncBusy=false}
+}
+async function mark(code,approve){
  var p=rows().find(x=>String(x.code)===code);if(!p)return;
  var status=assessment(p);
+ if(reviewSyncBusy){alertUser('Outra revisão está a sincronizar. Confirma novamente após terminar.');return}
  if(approve&&status.lack.length){alertUser('Ainda faltam campos: '+status.lack.join(', '));return}
  if(typeof cloudBusy!=='undefined'&&cloudBusy){alertUser('Sincronização Cloud em curso. Tenta novamente.');return}
  if(typeof cloudMeta==='function'&&cloudMeta().conflict){alertUser('Existe um conflito Cloud por resolver. Resolve-o antes de confirmar revisões.');return}
@@ -118,16 +166,21 @@ function mark(code,approve){
   'Reabrir a revisão de "'+String(p.name||code)+'"?'))return;
  var previous=p.catalogReviewV1995,previousTime=p.updatedAt;
  var at=new Date().toISOString();
- p.catalogReviewV1995=approve?{status:'reviewed',reviewedAt:at,fingerprint:fingerprint(p)}:{status:'pending',reviewedAt:null,fingerprint:null};
- p.updatedAt=at;
+ var desired=approve?{status:'reviewed',reviewedAt:at,fingerprint:fingerprint(p)}:{status:'pending',reviewedAt:null,fingerprint:null};
  try{
-  if(typeof save!=='function')throw Error('Gravação indisponível');
-  if(save('products')!==true)throw Error('Falha ao guardar no armazenamento local. A revisão não foi confirmada.');
+  // A revisão é uma operação Cloud individual. Nunca iniciar um envio geral
+  // de todos os Produtos/Encomendas/Clientes apenas por confirmar um cartão.
+  // Dirty global não impede uma atualização protegida por comparação do produto.
+  var remote=await syncOneReview(p,desired);
+  if(!remote)throw Error('Cloud ocupada, indisponível ou produto ainda sem registo sincronizado. A revisão não foi gravada; não foi iniciada uma sincronização geral.');
+  p.catalogReviewV1995=desired;p.updatedAt=remote.updatedAt;
+  try{localStorage.setItem(KEY,JSON.stringify(db))}
+  catch(e){alertUser('Revisão guardada na Cloud, mas falhou a cópia local. Reabre o Backoffice quando a Cloud estiver estável.');return}
   render();
-  alertUser(approve?'Revisão atualizada localmente. Confirma a sincronização Cloud.':'Revisão reaberta localmente. Confirma a sincronização Cloud.');
+  alertUser('Revisão sincronizada na Cloud para este produto.');
  }catch(e){
   p.catalogReviewV1995=previous;p.updatedAt=previousTime;
-  alertUser('Não foi possível guardar a revisão: '+String(e.message||e));
+  alertUser('Revisão não confirmada: '+String(e.message||e));
  }
 }
 function init(){
@@ -154,11 +207,12 @@ function init(){
  if(hero)hero.insertAdjacentElement('afterend',nav);else list.parentNode.insertBefore(nav,list);
  var listNav=el('aeProductsListNav1997'),reviewNav=el('aeProductsReviewNav1997');
  function setMode(reviewing){
-  // Quem regressa da edição à revisão precisa que o módulo compacto volte a
-  // mostrar a listagem. Não descartar nem gravar alterações automaticamente.
+  // Os separadores desta vista e o módulo compacto têm de mostrar a MESMA
+  // listagem. Caso contrário a navegação assinala "Lista" mas a lista está hidden.
   var compact=el('aeProductsCompact');
   var showListButton=compact&&Array.from(compact.querySelectorAll('button')).find(b=>value(b.textContent)==='Ver catálogo');
-  if(list.hidden&&showListButton)showListButton.click();
+  if(showListButton&&(list.hidden||showListButton.getAttribute('aria-pressed')!=='true'))showListButton.click();
+  else if(list.hidden)list.hidden=false;
   list.classList.toggle('ae-review-focus1995',reviewing);
   listNav.setAttribute('aria-pressed',String(!reviewing));
   reviewNav.setAttribute('aria-pressed',String(reviewing));
@@ -168,7 +222,31 @@ function init(){
   reviewNav.classList.toggle('ghost',!reviewing);
   if(reviewing)render();
  }
- listNav.onclick=function(){setMode(false);if(list.scrollIntoView)list.scrollIntoView({block:'start'});};
+ function ensureListResults(){
+  // A revisão inclui arquivados; a lista tradicional tem filtros adicionais.
+  // Um filtro antigo pode esconder tudo apesar de existirem produtos no dispositivo.
+  if(typeof renderProducts==='function')renderProducts();
+  var cards=el('productsCards');
+  if(!cards||cards.querySelector('.product-card')||!rows().length)return;
+  var ids=['productSearch','productCategoryFilter','productCatalogGroupFilterV191',
+   'productCatalogSubFilterV191','productCollectionFilterV1752','productTagFilterV1753',
+   'productSeasonFilterV1761','productArchiveFilterV1803','productShopFilter',
+   'productMixFilter','productTechnicalFilterV1288','productCompletenessFilterV1762'];
+  ids.forEach(id=>{
+   var input=el(id);if(!input)return;
+   if(input.tagName==='INPUT')input.value='';
+   else if(input.options){
+    var target='all';
+    if(Array.from(input.options).some(o=>o.value===target))input.value=target;
+   }
+  });
+  if(typeof renderProducts==='function')renderProducts();
+  if(!cards.querySelector('.product-card')){
+   var count=el('productsResultCount');
+   if(count)count.textContent='Sem resultados na listagem. Verifica a sincronização; nenhum dado foi apagado.';
+  }
+ }
+ listNav.onclick=function(){setMode(false);ensureListResults();if(list.scrollIntoView)list.scrollIntoView({block:'start'});};
  reviewNav.onclick=function(){setMode(true);if(root.scrollIntoView)root.scrollIntoView({block:'start'});};
  el('aeReviewToggle1995').onclick=function(){setMode(false);if(list.scrollIntoView)list.scrollIntoView({block:'start'});};
  setMode(false);
