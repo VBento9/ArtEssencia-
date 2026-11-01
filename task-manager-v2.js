@@ -509,8 +509,8 @@ async function createEditionPlan(ed){
  if(!valid(ed.start)){message='Define primeiro uma data válida de início da edição.';render();return;}
  // Os identificadores antigos são preservados para não duplicar as quatro etapas existentes.
  const steps=[
-  {key:'preparacao-35',days:-35,title:'Definir produtos, capacidade e quantidades',category:'Criação',estimate_min:90},
-  {key:'materiais-28',days:-28,title:'Conferir materiais, stock e custos',category:'Gestão',estimate_min:45},
+  {key:'preparacao-35',days:-35,title:'Definir conceito, produtos e objetivos comerciais',category:'Criação',estimate_min:90},
+  {key:'materiais-28',days:-28,title:'Verificar materiais em falta e prazos de fornecedores',category:'Gestão',estimate_min:45},
   {key:'0',days:-21,title:'Definir produtos e capacidade de produção',category:'Criação',estimate_min:90},
   {key:'7',days:-14,title:'Validar custos, fichas técnicas e materiais',category:'Gestão',estimate_min:45},
   {key:'14',days:-7,title:'Preparar fotografia, textos e catálogo',category:'Marketing',estimate_min:60},
