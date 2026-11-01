@@ -105,8 +105,10 @@ function fitA4OnSinglePageV1983(win){
   warning.textContent='Esta ficha contém informação demasiado extensa para caber numa A4 de forma legível; serão utilizadas páginas adicionais, sem omitir dados.';
   win.document.querySelector('.ts-tools')?.append(warning);
  }
- sheet.style.removeProperty('width');
- sheet.style.removeProperty('max-width');
+ // Manter as dimensões com que a ficha foi medida até ao diálogo de impressão.
+ // Remover a largura nesta fase fazia o conteúdo voltar a fluir e podia criar uma 2.ª página.
+ sheet.style.width='190mm';
+ sheet.style.maxWidth='none';
 }
 
 function printSheet(code,format){
@@ -163,7 +165,7 @@ function printSheet(code,format){
   '.ts-a4[data-a4-layout="compact"] .ts-note-item{margin:6px 0}',
   '.ts-a4[data-a4-layout="compact"] .ts-table th,.ts-a4[data-a4-layout="compact"] .ts-table td{padding:4px 6px}',
   '.ts-a4[data-a4-layout="compact"] .ts-finance .ts-grid{grid-template-columns:repeat(4,minmax(0,1fr))}',
-  '@media print{.ts-sheet.ts-a4{width:190mm!important;max-width:none!important;zoom:var(--ts-a4-zoom,1)}.ts-a4 .ts-note-item{break-inside:auto}}'
+  '@media print{.ts-sheet.ts-a4{width:190mm!important;max-width:none!important;zoom:var(--ts-a4-zoom,1)}.ts-a4 .ts-note-item{break-inside:auto}}@media screen{.ts-sheet.ts-a4{margin-left:auto;margin-right:auto}}'
  ].join(''):'';
 
  const css='@page{size:'+size+' portrait;margin:'+(full?'9mm 9mm 13mm':'10mm 9mm 15mm')+';'+
