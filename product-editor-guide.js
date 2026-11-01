@@ -12,7 +12,15 @@ function init(){
  const photoButton=document.createElement('button');photoButton.type='button';photoButton.dataset.productPanelBtn='photos';
  photoButton.innerHTML='<b>2</b><span>Fotografias</span><small>Imagem e galeria</small>';
  photoButton.addEventListener('click',()=>showProductPanelV1762('photos'));nav.append(photoButton);
- const bridge=document.getElementById('prodTechSheetBridge');if(bridge)panel('production').prepend(bridge);
+ // O botão deve estar disponível no passo 3 mesmo antes do primeiro render.
+ const bridge=document.getElementById('prodTechSheetBridge');
+ if(bridge){
+  const production=panel('production');
+  if(bridge.parentElement!==production)production.prepend(bridge);
+  bridge.style.removeProperty('display');
+  const action=bridge.querySelector('#prodTechSheetBtn');
+  if(action){action.classList.remove('ghost');action.classList.add('primary');action.type='button'}
+ }
  const status=document.getElementById('productPublicStatusV1850');if(status)panel('public').prepend(status);
  const steps={identity:['Identificação','Nome, tipo e disponibilidade.'],photos:['Fotografias','Escolhe uma fotografia, confirma a pré-visualização e carrega-a para a Cloud antes de guardar.'],production:['Ficha técnica','Consulta a composição e os parâmetros de produção.'],pricing:['Preços','Confirma os custos, a margem e o preço de venda.'],public:['Publicação','Revê a descrição, a personalização e os canais de publicação.']};
  Object.entries(steps).forEach(([key,data],i)=>{
@@ -30,6 +38,10 @@ function init(){
   const key=nav.querySelector('[data-product-panel-btn].active')?.dataset.productPanelBtn||'identity';
   const data=steps[key]||steps.identity;heading.textContent=data[0];hint.textContent=data[1];
  }
+ nav.addEventListener('click',event=>{
+  if(event.target.closest('[data-product-panel-btn="production"]')&&typeof refreshProductTechSheetBridgeV1250==='function')
+   refreshProductTechSheetBridgeV1250();
+ });
  nav.addEventListener('keydown',event=>{
   const buttons=[...nav.querySelectorAll('[data-product-panel-btn]')],index=buttons.indexOf(event.target);
   if(index<0||!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
