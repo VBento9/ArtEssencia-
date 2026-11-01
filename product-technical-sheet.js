@@ -1,4 +1,4 @@
-/* ArtEssencia 1.9.39 — fichas técnicas de consulta, sem escrita de dados. */
+/* ArtEssencia 1.9.83 — fichas técnicas de consulta, sem escrita de dados. */
 (function productSheetAddon(){
 'use strict';
 const clean=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -66,6 +66,26 @@ async function dataImage(src){
  if(!/^image\/(png|jpeg|webp)$/i.test(blob.type)||blob.size>10000000)throw Error('Formato de imagem');
  return await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result||''));r.onerror=()=>reject(Error('Fotografia'));r.readAsDataURL(blob)});
 }
+
+/* A4: ajustar apenas fichas que ultrapassam a altura imprimível. */
+function fitA4OnSinglePageV1983(win){
+ const sheet=win.document.querySelector('.ts-sheet');if(!sheet)return;
+ // Área útil A4: 297mm menos margens superior/inferior e folga de 5mm.
+ const targetHeight=(297-9-13-5)*96/25.4;
+ sheet.style.width='192mm';sheet.style.maxWidth='none';
+ const contentHeight=sheet.scrollHeight;
+ sheet.style.removeProperty('width');sheet.style.removeProperty('max-width');
+ if(!Number.isFinite(contentHeight)||contentHeight<=targetHeight)return;
+ const wanted=Math.min(1,Math.floor(targetHeight/contentHeight*100)/100);
+ const minScale=0.80;
+ sheet.style.setProperty('--ts-a4-zoom',String(Math.max(minScale,wanted)));
+ if(wanted<minScale){
+  const note=win.document.createElement('p');note.className='ts-warn';
+  note.textContent='Esta ficha contém demasiada informação para caber numa única página A4 legível. Poderá ocupar páginas adicionais sem cortar conteúdo.';
+  win.document.querySelector('.ts-tools')?.append(note);
+ }
+}
+
 function printSheet(code,format){
  return (async()=>{
  const s=snapshot(code);if(!s)return;
@@ -78,7 +98,40 @@ function printSheet(code,format){
  if(img){try{img=await dataImage(img)}catch(_){embedFailed=true}}
  if(win.closed)return;
  const fileName='ArtEssencia_FichaTecnica_'+String(s.p.code||'Produto').replace(/[^a-zA-Z0-9_-]/g,'_')+'_'+size;
- const css='@page{size:'+size+' portrait;margin:'+(full?'13mm 12mm 18mm':'10mm 9mm 15mm')+';'+
+
+ const compactA4=full?[
+  '.ts-sheet{line-height:1.18}',
+  '.ts-masthead{gap:7px;padding-bottom:5px;border-bottom-width:1px}',
+  '.ts-identity{gap:7px}',
+  '.ts-head{margin-top:7px;gap:8px}',
+  '.ts-head h2{font-size:18px;margin:3px 0 5px}',
+  '.ts-photo{width:82px;height:82px;padding:3px}',
+  '.ts-monogram{width:31px;height:31px}',
+  '.ts-brand{font-size:16px}',
+  '.ts-tags{gap:4px}',
+  '.ts-tag{padding:2px 5px;font-size:8px}',
+  '.ts-meta{margin-top:5px;padding-top:4px;gap:6px;font-size:8px}',
+  '.ts-block{margin-top:8px}',
+  '.ts-section-head{margin-bottom:5px;padding-bottom:3px}',
+  '.ts-section-head h3{font-size:10px}',
+  '.ts-section-head span{font-size:8px}',
+  '.ts-grid{grid-template-columns:repeat(3,minmax(0,1fr));column-gap:9px;row-gap:5px}',
+  '.ts-field small{font-size:8px;margin-bottom:1px}',
+  '.ts-field strong{font-size:9.4px;line-height:1.2}',
+  '.ts-table{font-size:9px}',
+  '.ts-table th,.ts-table td{padding:3px 5px}',
+  '.ts-table th{font-size:8px}',
+  '.ts-note-item{margin:5px 0}',
+  '.ts-note-item b{font-size:9px}',
+  '.ts-note{font-size:9px;line-height:1.25;margin-top:2px}',
+  '.ts-finance{padding:6px 8px}',
+  '.ts-finance .ts-grid{grid-template-columns:repeat(4,minmax(0,1fr));column-gap:8px;row-gap:5px}',
+  '.ts-finance .ts-highlight{padding-top:3px}',
+  '.ts-finance .ts-highlight strong{font-size:10px}',
+  '.ts-legend{font-size:8px;margin:3px 0 0}',
+  '@media print{.ts-sheet{width:192mm!important;max-width:none!important;zoom:var(--ts-a4-zoom,1)}}'
+ ].join(''):'';
+ const css='@page{size:'+size+' portrait;margin:'+(full?'9mm 9mm 13mm':'10mm 9mm 15mm')+';'+
   '@bottom-left{content:"ARTESSENCIA  ·  FICHA TÉCNICA";font:8px Arial,sans-serif;color:#806e61}'+
   '@bottom-right{content:"PÁG. " counter(page) " / " counter(pages);font:8px Arial,sans-serif;color:#806e61}}'+
   'html,body{margin:0;padding:0}body{font:11px Arial,sans-serif;color:#322820;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
@@ -91,7 +144,7 @@ function printSheet(code,format){
   '.ts-field,.ts-finance,.ts-masthead{break-inside:avoid;page-break-inside:avoid}'+
   '.ts-table thead{display:table-header-group}.ts-table tbody tr{break-inside:avoid;page-break-inside:avoid}'+
   '.ts-head{break-inside:avoid}body{overflow:visible}}'+
-  '@media screen{.ts-tools{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px;background:#f4eee8;margin-bottom:16px;border-radius:8px}.ts-tools button{padding:9px 15px;border-radius:7px;border:0;background:#684b3b;color:white;cursor:pointer}.ts-sheet{max-width:'+(full?'760':'520')+'px;margin:auto}}';
+  '@media screen{.ts-tools{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px;background:#f4eee8;margin-bottom:16px;border-radius:8px}.ts-tools button{padding:9px 15px;border-radius:7px;border:0;background:#684b3b;color:white;cursor:pointer}.ts-sheet{max-width:'+(full?'760':'520')+'px;margin:auto}}'+compactA4;
  const fallback=embedFailed?'<p class="ts-warn" id="ts-warning">Fotografia externa não incorporada. A verificar carregamento…</p>':'';
  const html='<!doctype html><html lang="pt-PT"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+clean(fileName)+'</title><style>'+css+'</style></head><body><div class="ts-tools"><div><b>Pré-visualização '+size+'</b><small> · Para guardar em PDF, escolhe “Guardar como PDF” na impressão.</small></div><button id="ts-print-action" type="button" disabled>Imprimir / Guardar PDF</button></div>'+fallback+markup(s,full,img)+'</body></html>';
  win.document.open();win.document.write(html);win.document.close();
@@ -102,7 +155,7 @@ function printSheet(code,format){
   try{if(!image.complete)await Promise.race([image.decode(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Tempo de imagem excedido')),6000))]);if(!image.naturalWidth)throw new Error('Imagem vazia')}
   catch(_){image.remove();const note=win.document.getElementById('ts-warning')||win.document.createElement('p');note.className='ts-warn';note.textContent='Fotografia indisponível. A impressão pode continuar sem imagem.';if(!note.parentNode)win.document.body.prepend(note);}
  }
- if(!win.closed){printButton.disabled=false;printButton.click()}
+ if(!win.closed){if(full)fitA4OnSinglePageV1983(win);printButton.disabled=false;printButton.click()}
  })();
 }
 function openSheet(code){
