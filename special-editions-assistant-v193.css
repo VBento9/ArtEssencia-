@@ -1,0 +1,16 @@
+/* Edições Especiais — preenchimento assistido compacto; respeita os separadores existentes */
+#specialEditions .ae-edition-hints-v193{margin:10px 0 13px;padding:10px 12px;border:1px solid #d5c3b4;border-radius:11px;background:#fbf7f1;max-width:100%;min-width:0}
+#specialEditions .ae-edition-hints-v193>summary{font-size:12px;font-weight:800;color:#654635;cursor:pointer;list-style:disclosure-closed}
+#specialEditions .ae-edition-hints-v193[open]>summary{list-style:disclosure-open}
+#specialEditions .ae-edition-hints-body-v193{display:grid;gap:10px;margin-top:11px}
+#specialEditions .ae-edition-hints-controls-v193{display:grid;grid-template-columns:minmax(0,2fr) minmax(90px,1fr);gap:8px}
+#specialEditions .ae-edition-hints-controls-v193 label{display:grid;gap:5px;min-width:0;font-size:11px;font-weight:700;color:#604a3c}
+#specialEditions .ae-edition-hints-controls-v193 select{min-width:0;width:100%;font-size:12px;max-width:100%;border:1px solid #d4c4b8;border-radius:8px;min-height:40px;padding:6px;background:white}
+#specialEditions .ae-edition-hints-preview-v193{display:grid;gap:5px;padding:10px;background:#fff;border:1px solid #e6dacf;border-radius:8px}
+#specialEditions .ae-edition-hints-preview-v193 p{margin:0!important;font-size:11px;line-height:1.45;overflow-wrap:anywhere}
+#specialEditions .ae-edition-hints-buttons-v193{display:flex;gap:6px;flex-wrap:wrap}
+#specialEditions .ae-edition-hints-buttons-v193 .btn{min-height:40px;white-space:normal;text-align:center;flex:1 1 140px}
+#specialEditions .ae-edition-hints-buttons-v193 .btn:disabled{opacity:.5}
+#specialEditions .ae-edition-hints-status-v193{font-size:11px;color:#654c3b;margin:0!important}
+#specialEditions .ae-edition-hints-body-v193>small{font-size:10px;line-height:1.45;color:#826e5f}
+@media(max-width:560px){#specialEditions .ae-edition-hints-controls-v193{grid-template-columns:minmax(0,1fr) 92px}#specialEditions .ae-edition-hints-buttons-v193{display:grid;grid-template-columns:1fr}#specialEditions .ae-edition-hints-buttons-v193 .btn{width:100%}}
