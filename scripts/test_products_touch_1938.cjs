@@ -6,6 +6,8 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
  await context.route('**/*',r=>new URL(r.request().url()).origin==='http://127.0.0.1:8765'?r.continue():r.abort());
  const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('http://127.0.0.1:8765');await page.waitForFunction(()=>typeof openProductTechnicalSheetV1936==='function');
  await page.evaluate(()=>{document.getElementById('authGateV1880')?.remove();scheduleCloudPushV1860=()=>{};db.products=[{code:"FIX'QUOTE",name:'Vela de teste com nome comprido',category:'Velas em recipiente',price:12,laborMinutes:5,manufactured:true,publicCharacteristics:{waxType:'Soja',approximateWeight:'90 g'},shopImageUrl:''}];db.stock=[{name:'Cera fixture',unit:'g',qty:500,unitCost:.01}];db.productRecipes={"FIX'QUOTE":[{item:'Cera fixture',qty:90}]};go('products');window.before=JSON.stringify(db);window.actionCalls=[];archiveProductV1803=code=>actionCalls.push(['archive',code]);deleteProduct=code=>actionCalls.push(['delete',code]);});
+ // O painel de revisão recolhe a lista integral; abrir a lista para validar os botões históricos.
+ await page.locator('#aeReviewToggle1995').click();
  const card=page.locator('#productsCards .product-card');
  assert.equal(await card.getByRole('button',{name:'Arquivar',exact:true}).isVisible(),false);
  const targets=card.locator('.product-card-actions>.btn,summary');
