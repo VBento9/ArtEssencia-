@@ -2,9 +2,20 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.90">
+<meta name="artessencia-version" content="1.9.91">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
+<style id="catalog-classification-v191">
+.product-browse-actions-v191{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:8px 0}
+.product-browse-actions-v191 button{flex:0 0 auto;white-space:normal}
+.product-browse-actions-v191 small{flex:1 1 190px}
+.product-theme-tags-v191{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:5px 0}
+.product-theme-tags-v191 button{font:inherit;font-size:12px;border:1px solid #d5c7b4;border-radius:16px;padding:7px 10px;background:#faf7f2;color:#44372b;cursor:pointer}
+#products .product-browse-field-v191 select{max-width:100%;min-width:0}
+#products .catalog-classification-info-v191{display:block;font-size:11px;color:#756654;align-self:center}
+#products .product-catalog-label-v191{display:block;margin-top:4px;color:#74604d}
+@media(max-width:650px){.product-browse-actions-v191 button{width:100%}.product-theme-tags-v191 button{min-height:36px}.catalog-classification-info-v191{width:100%}}
+</style>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <title>ArtEssencia Backoffice</title>
@@ -5598,6 +5609,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
             <option value="Personalizados">Personalizados</option>
             <option value="Outros produtos artesanais">Outros produtos artesanais</option>
           </select>
+                    <select id="productCatalogGroupFilterV191" onchange="updateCatalogSubFilterV191();renderProducts()" aria-label="Filtrar por família comercial"><option value="all">Todas as famílias comerciais</option></select>
+          <select id="productCatalogSubFilterV191" onchange="renderProducts()" aria-label="Filtrar por subcategoria comercial" disabled><option value="all">Todas as subcategorias</option></select>
+          <small id="catalogClassificationProgressV191" class="catalog-classification-info-v191" aria-live="polite"></small>
           <select id="productTagFilterV1753" onchange="renderProducts()" aria-label="Filtrar por grupo ou utilização"><option value="all">Todos os grupos / utilizações</option></select>
           <select id="productSeasonFilterV1761" onchange="renderProducts()" aria-label="Filtrar por sazonalidade"><option value="all">Todas as sazonalidades</option></select>
           <select id="productCollectionFilterV1752" onchange="renderProducts()" aria-label="Filtrar por coleção ou tema"><option value="all">Todas as coleções / temas</option><option value="none">Sem coleção</option></select>
@@ -5691,8 +5705,12 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div class="field span2 product-name-v1726"><label>Nome</label><input id="prodName" placeholder="Nome do produto"></div>
         <div class="field product-code-field-v147"><label>Código</label><input id="prodCode" maxlength="40" placeholder="Automático se ficar vazio"><small>Identidade interna; fica protegida depois da criação.</small></div>
         <div class="field" id="prodCategoryField"><label>Tipo / família do produto</label><select id="prodCat" onchange="syncProductionTypeFromCategoryV130()"><option value="Velas em molde">Velas decorativas / em molde</option><option value="Velas em recipiente">Velas em recipiente</option><option value="Wax melts">Wax melts</option><option value="Sabonetes">Sabonetes</option><option value="Resina e Jesmonite">Resina e Jesmonite</option><option value="Personalizados">Personalizados</option><option value="Outros produtos artesanais">Outros produtos artesanais</option></select><small class="mix-help">Define o tipo físico do produto. Ex.: uma vela decorativa pode depois pertencer simultaneamente a Natal, Páscoa ou outra coleção.</small></div>
+                <div class="field product-browse-field-v191"><label for="prodCatalogGroupV191">Família comercial no Catálogo Geral</label><select id="prodCatalogGroupV191" onchange="updateCatalogSubgroupsV191()"><option value="">Por classificar — escolher família</option></select><small>Organização da montra; não altera produção, preços nem categoria técnica.</small></div>
+        <div class="field product-browse-field-v191"><label for="prodCatalogSubgroupV191">Subcategoria comercial</label><select id="prodCatalogSubgroupV191" disabled><option value="">Seleciona primeiro a família</option></select><small>Ex.: Velas decorativas → Religiosas / Figuras humanas.</small></div>
+        <div class="field span2 product-browse-actions-v191"><button type="button" class="btn" onclick="suggestCatalogFamilyV191()">Sugerir pela categoria técnica</button><small id="catalogClassificationHintV191">A associação a temas e Edições Especiais é independente.</small></div>
         <div class="field span2" id="prodTagsFieldV1753"><label>Grupos / etiquetas para pesquisa</label><input id="prodTagsV1753" placeholder="Ex.: Lembrancinhas, Decoração, Molde / decorativa"><small class="mix-help">Podes usar várias etiquetas separadas por vírgulas. Servem apenas para organização e filtros; não alteram a Ficha Técnica nem a precificação.</small></div>
         <div class="field span2" id="prodSeasonFieldV1761"><label>Sazonalidade / família temática</label><input id="prodSeasonTagsV1761" placeholder="Ex.: Natal, Outono, Páscoa, Halloween"><small class="mix-help">Usa uma ou mais famílias temáticas separadas por vírgulas. É apenas classificação interna para pesquisa e filtros; não publica nem associa automaticamente o produto a uma Edição Especial.</small></div>
+                <div class="field span2"><small><strong>Adicionar tema rapidamente</strong> — sem criar Edições Especiais:</small><div class="product-theme-tags-v191"><button type="button" onclick="addCatalogThemeV191('Natal')">Natal</button><button type="button" onclick="addCatalogThemeV191('Halloween')">Halloween</button><button type="button" onclick="addCatalogThemeV191('Páscoa')">Páscoa</button><button type="button" onclick="addCatalogThemeV191('Religioso')">Religioso</button><button type="button" onclick="addCatalogThemeV191('Primavera / Floral')">Floral</button><button type="button" onclick="addCatalogThemeV191('Dia dos Namorados')">São Valentim</button><button type="button" onclick="addCatalogThemeV191('Outono')">Outono</button></div></div>
         <div class="field span2 product-availability-v1726"><label>Disponibilidade base na loja</label><select id="prodAvailability" onchange="updateProductAvailabilityUI()"><option value="regular">Todo o ano + coleções</option><option value="edition">Apenas em coleções sazonais</option></select><small class="mix-help">Um produto pode pertencer a várias coleções sem ser duplicado. “Todo o ano + coleções” mantém-no no catálogo normal; “Apenas em coleções sazonais” só o disponibiliza quando pelo menos uma coleção associada estiver ativa e dentro das datas.</small></div>
         <div class="field span2 product-editions-v1726" id="prodEditionField"><label>Coleções / temas (Natal, Páscoa, Halloween…)</label><select id="prodEditionId" multiple hidden aria-hidden="true" tabindex="-1"></select><div class="product-edition-touch-head-v1758"><span id="prodEditionSelectionCountV1758">Nenhuma coleção selecionada</span><button type="button" class="btn ghost" onclick="refreshProductEditionOptionsV1758()">Atualizar</button></div><div id="prodEditionPickerV1758" class="product-edition-touch-list-v1758" role="group" aria-label="Coleções sazonais do produto"></div><small class="mix-help">Toca nas coleções para associar ou remover. Não é necessário usar Ctrl/Cmd. Um produto pode pertencer a várias coleções sem ser duplicado.</small></div>
         <div class="field edition-cost-field" id="prodEditionLaborField" hidden aria-hidden="true"><label>Tempo extra por unidade</label><div class="edition-cost-input"><input id="prodEditionExtraLaborMinutes" type="number" min="0" step="0.1" value="0"><span>min</span></div><small class="mix-help">Só o tempo adicional desta edição. O custo é calculado com a mão de obra €/hora já definida na app.</small></div>
@@ -6164,7 +6182,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.90';
+const APP_VERSION='1.9.91';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -11558,7 +11576,7 @@ function cancelProductEditV145(){
  clearNewProductRecipeDraftV1805();
  void finalizePendingProductImageV1806(false);void finalizePendingProductGalleryImagesV1860(false);
  ++productEditSessionV1798; // invalida carregamentos assíncronos do produto anterior
- prodName.value=prodCode.value=prodPrice.value=prodShopDescription.value='';const tagsEl=document.getElementById('prodTagsV1753');if(tagsEl)tagsEl.value='';const seasonEl=document.getElementById('prodSeasonTagsV1761');if(seasonEl)seasonEl.value='';renderAprecoSourceV1753(null);
+ prodName.value=prodCode.value=prodPrice.value=prodShopDescription.value='';const tagsEl=document.getElementById('prodTagsV1753');if(tagsEl)tagsEl.value='';const seasonEl=document.getElementById('prodSeasonTagsV1761');if(seasonEl)seasonEl.value='';fillCatalogEditorV191(null);renderAprecoSourceV1753(null);
  const op=document.getElementById('prodOnlinePriceV12620');if(op)op.value='';
  prodShopVisible.checked=false;resetProductPersonalizationV1773();resetProductPublicCharacteristicsV1820();
  const mv=document.getElementById('prodMixVisible');if(mv)mv.checked=false;
@@ -11585,7 +11603,7 @@ function resetProductEditorAfterSaveV1749(){
  ++productEditSessionV1798; // impede que um carregamento antigo volte a preencher o editor limpo
  // Um novo produto deve começar num estado realmente vazio. Esta rotina limpa apenas o editor;
  // não altera o produto/ficha técnica já guardados no modelo de dados.
- prodName.value='';prodCode.value='';prodPrice.value='';prodShopDescription.value='';const tagsEl=document.getElementById('prodTagsV1753');if(tagsEl)tagsEl.value='';const seasonEl=document.getElementById('prodSeasonTagsV1761');if(seasonEl)seasonEl.value='';renderAprecoSourceV1753(null);
+ prodName.value='';prodCode.value='';prodPrice.value='';prodShopDescription.value='';const tagsEl=document.getElementById('prodTagsV1753');if(tagsEl)tagsEl.value='';const seasonEl=document.getElementById('prodSeasonTagsV1761');if(seasonEl)seasonEl.value='';fillCatalogEditorV191(null);renderAprecoSourceV1753(null);
  const cost=document.getElementById('prodCost');if(cost)cost.value='0.0000';
  const op=document.getElementById('prodOnlinePriceV12620');if(op)op.value='';
  prodShopVisible.checked=false;resetProductPersonalizationV1773();resetProductPublicCharacteristicsV1820();
@@ -11841,6 +11859,7 @@ function descriptionContextV1888(){
  if(palette.length)facts.push('Cores à escolha: '+descriptionListV1888(palette));
  if(fragrances.length)facts.push('Fragrâncias à escolha: '+descriptionListV1888(fragrances));
  if(packaging)facts.push('Embalagem incluída');
+ const browse=catalogBreadcrumbV191(catalogFromEditorV191());if(browse)facts.push('Família comercial: '+browse);
  return {name,category,process,type:descriptionProductTypeV1888(process,category),theme,motifs,distinctive,facts,fragrances,scentFromName,
   sources:[name?'nome':'',category?'tipo':'',theme?'tema '+theme.label:'',distinctive?'pormenor próprio':'',
    wax||material||weight||container?'características':'',fragrances.length?'fragrâncias':'',palette.length?'cores':''].filter(Boolean)};
@@ -12155,7 +12174,7 @@ function saveProduct(){
  const publicCharacteristics=productPublicCharacteristicsFromFormV1820();
  const archivedNow=existing?.archivedV1803===true;
  const publicReleasePendingV1803=archivedNow?true:(existing?.publicReleasePendingV1803===true&&!prodShopVisible.checked);
- const obj={code,name,category:prodCat.value,publicPriceMode,tagsV1753:productTagsV1753,seasonalTagsV1761,seasonalTagsManualV1761:true,archivedV1803:archivedNow,archivedAtV1803:existing?.archivedAtV1803||null,publicReleasePendingV1803,cost:0,price:directPrice,onlinePrice,shopVisible:archivedNow?false:!!prodShopVisible.checked,shopDescription:prodShopDescription.value.trim(),shopImageUrl:String(document.getElementById('prodShopImageUrl')?.value||'').trim(),shopImageUrl2:String(document.getElementById('prodShopImageUrl2')?.value||'').trim(),shopImageUrl3:String(document.getElementById('prodShopImageUrl3')?.value||'').trim(),personalizationV1773,publicCharacteristics,customizable:(Number(personalizationV1773.colors?.max)||0)>0||!!personalizationV1773.fragrance?.enabled,mixVisible:archivedNow?false:mixVisible,mixMaxQty,mixBoxCapacities,availabilityType,editionExclusive:availabilityType==='edition',editionId,editionIds,editionExtraLaborMinutes,editionExtraWastePct,laborMinutes,profitPct,marginPct,wastePct,moldAverageCost,operatingAverageCost,moldCost,moldUses,moldCavities,moldUnitOverride,packagingCost,equipmentPowerW,equipmentMinutes,indirectCost,otherCost,targetMarginPct,onlineTargetMarginPct,productionType,manufactured,cureHours,prepTemp,mixTemp,pourTemp,productionNotes,qualityNotes,materialsText:additionalIngredientsText,careInstructions:storageInstructions,safetyInstructions:consumptionGuidance,additionalIngredientsText,additionalSafetysContains:[],additionalSafetysMayContain:[],storageInstructions,consumptionGuidance,technicalInfoVerified:false,technicalInfoReviewedAt:''};
+ const obj={code,name,category:prodCat.value,...catalogFromEditorV191(),publicPriceMode,tagsV1753:productTagsV1753,seasonalTagsV1761,seasonalTagsManualV1761:true,archivedV1803:archivedNow,archivedAtV1803:existing?.archivedAtV1803||null,publicReleasePendingV1803,cost:0,price:directPrice,onlinePrice,shopVisible:archivedNow?false:!!prodShopVisible.checked,shopDescription:prodShopDescription.value.trim(),shopImageUrl:String(document.getElementById('prodShopImageUrl')?.value||'').trim(),shopImageUrl2:String(document.getElementById('prodShopImageUrl2')?.value||'').trim(),shopImageUrl3:String(document.getElementById('prodShopImageUrl3')?.value||'').trim(),personalizationV1773,publicCharacteristics,customizable:(Number(personalizationV1773.colors?.max)||0)>0||!!personalizationV1773.fragrance?.enabled,mixVisible:archivedNow?false:mixVisible,mixMaxQty,mixBoxCapacities,availabilityType,editionExclusive:availabilityType==='edition',editionId,editionIds,editionExtraLaborMinutes,editionExtraWastePct,laborMinutes,profitPct,marginPct,wastePct,moldAverageCost,operatingAverageCost,moldCost,moldUses,moldCavities,moldUnitOverride,packagingCost,equipmentPowerW,equipmentMinutes,indirectCost,otherCost,targetMarginPct,onlineTargetMarginPct,productionType,manufactured,cureHours,prepTemp,mixTemp,pourTemp,productionNotes,qualityNotes,materialsText:additionalIngredientsText,careInstructions:storageInstructions,safetyInstructions:consumptionGuidance,additionalIngredientsText,additionalSafetysContains:[],additionalSafetysMayContain:[],storageInstructions,consumptionGuidance,technicalInfoVerified:false,technicalInfoReviewedAt:''};
  obj.ingredientsText=productFinalIngredientsV12811(obj);obj.safetysContains=productFinalContainsV12811(obj);obj.safetysMayContain=productFinalMayContainV12811(obj);
  existing?Object.assign(existing,obj):db.products.push(obj);
  const savedProduct=existing||db.products[db.products.length-1];
@@ -12174,7 +12193,7 @@ function editProduct(code){
  const editSession=++productEditSessionV1798;
  setProductEditorModeV145(p);
 
- prodCode.value=p.code;prodName.value=p.name;refreshTechnicalCategorySelectsV1863(p.category);prodCat.value=p.category;
+ prodCode.value=p.code;prodName.value=p.name;refreshTechnicalCategorySelectsV1863(p.category);prodCat.value=p.category;fillCatalogEditorV191(p);
  const tagsEl=document.getElementById('prodTagsV1753');if(tagsEl)tagsEl.value=(Array.isArray(p.tagsV1753)?p.tagsV1753:[]).join(', ');
  const seasonEl=document.getElementById('prodSeasonTagsV1761');if(seasonEl)seasonEl.value=(Array.isArray(p.seasonalTagsV1761)?p.seasonalTagsV1761:[]).join(', ');
  renderAprecoSourceV1753(p);const ppm=document.getElementById('prodPublicPriceModeV1864');if(ppm)ppm.value=['from','quote'].includes(p.publicPriceMode)?p.publicPriceMode:'fixed';prodCost.value=calculatedProductCost(p).toFixed(4);prodPrice.value=p.price;prodShopVisible.checked=!!p.shopVisible;prodShopDescription.value=p.shopDescription||'';fillProductPersonalizationV1773(p);fillProductPublicCharacteristicsV1820(p);
@@ -12213,9 +12232,85 @@ function updateProductCollectionFilterV1752(){
  sel.innerHTML=opts.join('');
  if([...sel.options].some(o=>o.value===prev))sel.value=prev;else sel.value='all';
 }
+
+/* Classificação comercial independente da categoria técnica. */
+const CATALOG_FAMILIES_V191=[
+ {id:'velas-decorativas',name:'Velas decorativas',subs:[['religiosas','Religiosas'],['figuras-humanas','Figuras humanas'],['figuras-decorativas','Figuras decorativas'],['flores','Flores individuais'],['animais-natureza','Animais e natureza'],['outras','Outras formas']]},
+ {id:'velas-recipiente',name:'Velas em recipiente',subs:[['latas','Latas'],['copos','Copos'],['potes','Potes e frascos'],['outros','Outros recipientes']]},
+ {id:'arranjos-florais',name:'Arranjos florais de velas',subs:[['bouquets','Ramos e bouquets'],['centros','Centros de mesa'],['caixas','Caixas florais'],['outros','Outros arranjos']]},
+ {id:'wax-melts',name:'Wax melts',subs:[['tabletes','Tabletes'],['formas','Figuras e formas'],['conjuntos','Conjuntos']]},
+ {id:'sabonetes',name:'Sabonetes artesanais',subs:[['barras','Em barra'],['figuras','Figurativos'],['conjuntos','Conjuntos']]},
+ {id:'resina-organica',name:'Resina orgânica / Jesmonite',subs:[['bases','Bases e suportes'],['bandejas','Bandejas'],['saboneteiras','Saboneteiras'],['decoracao','Decoração']]},
+ {id:'resina-epoxi',name:'Resina epóxi',subs:[['decoracao','Decoração'],['porta-chaves','Porta-chaves'],['personalizados','Personalizados']]},
+ {id:'laser',name:'Artigos gravados a laser',subs:[['placas','Placas e identificadores'],['nomes','Nomes e letras'],['lembrancas','Lembranças'],['decoracao','Decoração']]},
+ {id:'acessorios',name:'Acessórios e complementos',subs:[['queimadores','Queimadores'],['suportes','Suportes'],['outros','Outros acessórios']]},
+ {id:'conjuntos',name:'Conjuntos e presentes',subs:[['boxes','Boxes predefinidas'],['kits','Kits e conjuntos'],['presentes','Presentes personalizados']]},
+ {id:'outros',name:'Outros artigos',subs:[['artesanais','Peças artesanais'],['personalizados','Personalizados'],['diversos','Diversos']]}
+];
+const CATALOG_THEMES_V191=['Natal','Halloween','Páscoa','Religioso','Primavera / Floral','Dia dos Namorados','Outono'];
+function catalogFamilyV191(id){return CATALOG_FAMILIES_V191.find(f=>f.id===String(id||''))||null}
+function catalogSubnameV191(id,sub){return catalogFamilyV191(id)?.subs.find(s=>s[0]===String(sub||''))?.[1]||''}
+function catalogBreadcrumbV191(p){const f=catalogFamilyV191(p?.catalogGroupV191);return f?[f.name,catalogSubnameV191(f.id,p?.catalogSubgroupV191)].filter(Boolean).join(' · '):''}
+function updateCatalogSubgroupsV191(preferred){
+ const selected=document.getElementById('prodCatalogGroupV191')?.value||'',sub=document.getElementById('prodCatalogSubgroupV191');
+ if(!sub)return;const f=catalogFamilyV191(selected),value=typeof preferred==='string'?preferred:sub.value;
+ sub.innerHTML='<option value="">'+(f?'Sem subcategoria':'Seleciona primeiro a família')+'</option>'+(f?f.subs.map(x=>'<option value="'+escapeAttr(x[0])+'">'+escapeHtml(x[1])+'</option>').join(''):'');
+ sub.disabled=!f;sub.value=f?.subs.some(x=>x[0]===value)?value:'';
+}
+function updateCatalogEditorV191(selected){
+ const field=document.getElementById('prodCatalogGroupV191');if(!field)return;
+ const value=typeof selected==='string'?selected:field.value;
+ field.innerHTML='<option value="">Por classificar — escolher família</option>'+CATALOG_FAMILIES_V191.map(f=>'<option value="'+escapeAttr(f.id)+'">'+escapeHtml(f.name)+'</option>').join('');
+ field.value=catalogFamilyV191(value)?value:'';updateCatalogSubgroupsV191();
+}
+function fillCatalogEditorV191(p){
+ updateCatalogEditorV191(p?.catalogGroupV191||'');updateCatalogSubgroupsV191(p?.catalogSubgroupV191||'');
+ const hint=document.getElementById('catalogClassificationHintV191');
+ if(hint)hint.textContent=p?.catalogGroupV191?'Classificação comercial deste produto.':'Sem classificação comercial. Escolhe a família sem alterar a categoria técnica.';
+}
+function catalogFromEditorV191(){
+ const id=document.getElementById('prodCatalogGroupV191')?.value||'',sub=document.getElementById('prodCatalogSubgroupV191')?.value||'',family=catalogFamilyV191(id);
+ return {catalogGroupV191:family?family.id:'',catalogSubgroupV191:family&&family.subs.some(x=>x[0]===sub)?sub:''};
+}
+function suggestCatalogFamilyV191(){
+ const text=String(document.getElementById('prodName')?.value||'')+' '+String(document.getElementById('prodCat')?.value||'');
+ const normalized=text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+ const type=document.getElementById('prodProductionTypeV130')?.value||'';
+ let id='';
+ if(/arranjo|bouquet|ramo de velas|centro floral/.test(normalized))id='arranjos-florais';
+ else if(/epoxi|epoxy/.test(normalized))id='resina-epoxi';
+ else if(/jesmonite|resina organica|resina eco/.test(normalized))id='resina-organica';
+ else id=({wax_mold:'velas-decorativas',wax_container:'velas-recipiente',wax_melt:'wax-melts',soap:'sabonetes',laser:'laser'})[type]||'';
+ if(id)updateCatalogEditorV191(id);
+ const hint=document.getElementById('catalogClassificationHintV191');
+ if(hint)hint.textContent=id?'Sugestão aplicada apenas ao editor. Confirma a subcategoria e guarda.':'Não é possível sugerir uma família com segurança. Escolhe-a manualmente.';
+}
+function addCatalogThemeV191(theme){
+ if(!CATALOG_THEMES_V191.includes(theme))return;
+ const field=document.getElementById('prodSeasonTagsV1761');if(!field)return;
+ const tags=parseSeasonTagsV1761(field.value);
+ if(!tags.some(s=>s.toLocaleLowerCase('pt-PT')===theme.toLocaleLowerCase('pt-PT')))tags.push(theme);
+ field.value=tags.join(', ');field.dispatchEvent(new Event('input',{bubbles:true}));
+}
+function updateCatalogSubFilterV191(){
+ const group=document.getElementById('productCatalogGroupFilterV191')?.value||'all',field=document.getElementById('productCatalogSubFilterV191');if(!field)return;
+ const f=catalogFamilyV191(group),selected=field.value||'all';
+ field.innerHTML='<option value="all">Todas as subcategorias</option>'+(f?'<option value="none">Sem subcategoria</option>'+f.subs.map(x=>'<option value="'+escapeAttr(x[0])+'">'+escapeHtml(x[1])+'</option>').join(''):'');
+ field.disabled=!f;field.value=[...field.options].some(x=>x.value===selected)?selected:'all';
+}
+function updateCatalogFiltersV191(products){
+ const field=document.getElementById('productCatalogGroupFilterV191');if(!field)return;
+ const selected=field.value||'all',counts=new Map();
+ (products||[]).forEach(p=>{const id=catalogFamilyV191(p?.catalogGroupV191)?.id||'none';counts.set(id,(counts.get(id)||0)+1)});
+ field.innerHTML='<option value="all">Todas as famílias comerciais</option><option value="none">Por classificar ('+(counts.get('none')||0)+')</option>'+CATALOG_FAMILIES_V191.map(f=>'<option value="'+escapeAttr(f.id)+'">'+escapeHtml(f.name)+' ('+(counts.get(f.id)||0)+')</option>').join('');
+ field.value=[...field.options].some(o=>o.value===selected)?selected:'all';updateCatalogSubFilterV191();
+ const info=document.getElementById('catalogClassificationProgressV191');
+ if(info)info.textContent=((products||[]).length-(counts.get('none')||0))+'/'+(products||[]).length+' produtos classificados comercialmente';
+}
+
 function productSearchTextV1752(p){
  const collections=productEditionNamesV138(p).join(' ');
- return [p?.name,p?.code,p?.shopDescription,p?.category,(Array.isArray(p?.tagsV1753)?p.tagsV1753.join(' '):''),(Array.isArray(p?.seasonalTagsV1761)?p.seasonalTagsV1761.join(' '):''),collections,normalizeProductAvailabilityV1244(p)==='edition'?'sazonal edição especial':''].filter(Boolean).join(' ').toLowerCase();
+ return [p?.name,p?.code,p?.shopDescription,p?.category,catalogBreadcrumbV191(p),(Array.isArray(p?.tagsV1753)?p.tagsV1753.join(' '):''),(Array.isArray(p?.seasonalTagsV1761)?p.seasonalTagsV1761.join(' '):''),collections,normalizeProductAvailabilityV1244(p)==='edition'?'sazonal edição especial':''].filter(Boolean).join(' ').toLowerCase();
 }
 function productPublicDescriptionV1762(p){const raw=String(p?.shopDescription||'').trim();if(!raw)return '';if(p?.aprecoImportIdV1753&&/^[\d\s.,x×-]{1,12}$/i.test(raw))return '';return raw}
 function productCompletenessV1762(p){const photo=!!String(p?.shopImageUrl||'').trim(),tech=productTechSheetStateV146(p).ok,description=!!productPublicDescriptionV1762(p),price=(Number(p?.onlinePrice)>0||Number(p?.price)>0),review=(Array.isArray(p?.tagsV1753)&&p.tagsV1753.includes('Por rever'))||!!p?.aprecoNeedsReviewV1753;return{photo,tech,description,price,review,ready:photo&&tech&&description&&price&&!review}}
@@ -12326,7 +12421,8 @@ function renderProducts(){
  refreshTechnicalCategorySelectsV1863();renderTechnicalCategoriesV1863();ensureProductSafetyEditorV1287();if(!document.getElementById('prodCode')?.value){renderProductBaseSummaryV12811(false);setProductEditorModeV145(null);}updateProductTechnicalStatusV1287();
  loadProductEditionsV1245(false).then(()=>{fillProductEditionOptionsV1244(selectedProductEditionIdsV138());updateProductCollectionFilterV1752();});updateProductAvailabilityUI();
  updateProductCollectionFilterV1752();
- const all=Array.isArray(db.products)?db.products:[],activeProducts=all.filter(p=>!productArchivedV1803(p)),archivedCount=all.length-activeProducts.length;updateProductTagFilterV1753(all);updateProductSeasonFilterV1761(all);
+ const all=Array.isArray(db.products)?db.products:[];updateCatalogEditorV191();updateCatalogFiltersV191(all);
+ const activeProducts=all.filter(p=>!productArchivedV1803(p)),archivedCount=all.length-activeProducts.length;updateProductTagFilterV1753(all);updateProductSeasonFilterV1761(all);
  const published=activeProducts.filter(p=>p.shopVisible&&p?.publicReleasePendingV1803!==true).length;
  const mixEnabled=activeProducts.filter(p=>p.mixVisible).length;
  const lowMargin=activeProducts.filter(p=>{const c=calculatedProductCost(p),m=p.price?(p.price-c)/p.price:0;return m+1e-9<pricingProductMarginPctV1745(p)/100}).length;
@@ -12352,6 +12448,8 @@ function renderProducts(){
 
  const q=(document.getElementById('productSearch')?.value||'').trim().toLowerCase();
  const cat=document.getElementById('productCategoryFilter')?.value||'all';
+ const browseGroup=document.getElementById('productCatalogGroupFilterV191')?.value||'all';
+ const browseSub=document.getElementById('productCatalogSubFilterV191')?.value||'all';
  const collection=document.getElementById('productCollectionFilterV1752')?.value||'all';
  const tag=document.getElementById('productTagFilterV1753')?.value||'all';
  const season=document.getElementById('productSeasonFilterV1761')?.value||'all';
@@ -12365,6 +12463,9 @@ function renderProducts(){
    const ma=archive==='all'||(archive==='active'&&!productArchivedV1803(p))||(archive==='archived'&&productArchivedV1803(p))||(archive==='archived-public'&&productArchivedV1803(p)&&(!!p.shopVisible||!!p.mixVisible||productEditionIdsV138(p).length>0));
    const mq=!q||productSearchTextV1752(p).includes(q);
    const mc=cat==='all'||p.category===cat;
+   const fam=catalogFamilyV191(p?.catalogGroupV191);
+   const mbrowse=browseGroup==='all'||(browseGroup==='none'&&!fam)||fam?.id===browseGroup;
+   const mbrowseSub=browseSub==='all'||(fam?.id===browseGroup&&(browseSub==='none'?!p.catalogSubgroupV191:p.catalogSubgroupV191===browseSub));
    const mt=tag==='all'||(Array.isArray(p.tagsV1753)&&p.tagsV1753.includes(tag));
    const seasons=Array.isArray(p.seasonalTagsV1761)?p.seasonalTagsV1761:[];const mse=season==='all'||(season==='none'&&!seasons.length)||seasons.includes(season);
    const editionIds=productEditionMembershipIdsV138(p);
@@ -12373,7 +12474,7 @@ function renderProducts(){
    const mm=mix==='all'||(mix==='enabled'&&p.mixVisible)||(mix==='disabled'&&!p.mixVisible);
    const mf=technical==='all'||(technical==='reviewed'&&productTechnicalInfoCompleteV1287(p))||(technical==='pending'&&!productTechnicalInfoCompleteV1287(p));
    const pc=productCompletenessV1762(p);const mcomp=completeness==='all'||(completeness==='ready'&&pc.ready)||(completeness==='photo'&&!pc.photo)||(completeness==='tech'&&!pc.tech)||(completeness==='description'&&!pc.description)||(completeness==='price'&&!pc.price)||(completeness==='review'&&pc.review);
-   return ma&&mq&&mc&&mt&&mse&&mcollection&&ms&&mm&&mf&&mcomp;
+   return ma&&mq&&mc&&mbrowse&&mbrowseSub&&mt&&mse&&mcollection&&ms&&mm&&mf&&mcomp;
  });
 
  const count=document.getElementById('productsResultCount');
@@ -12390,7 +12491,7 @@ function renderProducts(){
      ${img}
      <div class="product-card-body">
        <div class="product-card-top">
-         <div><span class="badge">${normalizeProductAvailabilityV1244(p)==='edition'?'✨ Edição Especial':escapeHtml(p.category==='Velas em molde'?'Velas decorativas / em molde':(p.category||'—'))}</span><h3>${escapeHtml(p.name||'Sem nome')}</h3><small>${escapeHtml(p.code||'—')}</small></div>
+         <div><span class="badge">${normalizeProductAvailabilityV1244(p)==='edition'?'✨ Edição Especial':escapeHtml(p.category==='Velas em molde'?'Velas decorativas / em molde':(p.category||'—'))}</span><h3>${escapeHtml(p.name||'Sem nome')}</h3><small>${escapeHtml(p.code||'—')}</small><small class="product-catalog-label-v191">${escapeHtml(catalogBreadcrumbV191(p)||'Família comercial por definir')}</small></div>
          <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end">
            ${productArchivedV1803(p)?`<span class="badge warn">Arquivado${productArchivedDateLabelV1803(p)?' · '+escapeHtml(productArchivedDateLabelV1803(p)):''}</span>`:`<span class="badge ${p.shopVisible?'ok':'warn'}">${p.shopVisible?'Publicado':'Oculto'}</span>`}
            <span class="badge product-mix-badge ${p.mixVisible?'':'off'}">${p.mixVisible?'Conjuntos ✓':'Fora dos conjuntos'}</span>
