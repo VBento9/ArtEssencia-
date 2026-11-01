@@ -4,29 +4,27 @@ const aeTechNotesModels={"wax_mold":["Confirmar o molde limpo e seco. Pesar cera
 function installTechnicalNotesDefaults(editor){
  const process=document.getElementById('prodProductionTypeV130'),prod=document.getElementById('prodProductionNotesV130'),quality=document.getElementById('prodQualityNotesV130');
  if(!process||!prod||!quality)return;
- const fields=[prod,quality],last=['',''],manual=[false,false];
+ const fields=[prod,quality],generated=['',''],manual=[false,false];
  const editing=()=>typeof editingProductCodeV147!=='undefined'&&!!editingProductCodeV147;
  function seed(){
-  // Os valores dos produtos existentes, mesmo vazios, nunca recebem sugestões automaticamente.
-  if(editing())return;
   const texts=aeTechNotesModels[process.value]||aeTechNotesModels.other;
+  let filled=false;
   fields.forEach((field,i)=>{
    if(manual[i])return;
-   // Atualiza apenas um valor gerado automaticamente ou um campo ainda vazio.
-   if(!field.value.trim()||field.value===last[i]){
-    field.value=texts[i];
-    last[i]=texts[i];
-   }
+   const current=String(field.value||'');
+   // Preenche campos vazios também ao editar; preserva textos próprios já guardados.
+   if(current.trim()&&current!==generated[i])return;
+   const suggested=texts[i];
+   if(current!==suggested){field.value=suggested;filled=true}
+   generated[i]=suggested;
   });
+  if(filled&&editing())editor.dispatchEvent(new Event('artessencia:technical-notes-auto-filled'));
  }
- function onNewSession(){
-  if(editing())return;
-  // O Backoffice limpa os campos antes de colocar o editor em modo «Novo produto».
-  // Uma nova sessão liberta as edições manuais da sessão anterior.
-  if(fields.every(field=>!field.value.trim())){
-   manual.fill(false);
-   last.fill('');
-  }
+ function resetSession(){
+  manual.fill(false);
+  generated.fill('');
+  editor.dispatchEvent(new Event('artessencia:product-editor-session'));
+  // editProduct() carrega os valores guardados antes da execução deste observador.
   seed();
  }
  fields.forEach((field,i)=>field.addEventListener('input',()=>{manual[i]=true}));
@@ -34,14 +32,13 @@ function installTechnicalNotesDefaults(editor){
   if(['prodCat','prodProductionTypeV130'].includes(event.target?.id))seed();
  });
  const title=document.getElementById('productEditorTitleV145');
- if(title)new MutationObserver(onNewSession).observe(title,{childList:true,subtree:true,characterData:true});
- // Recupera o preenchimento se outro módulo tiver limpo o novo rascunho sem alterar o título.
+ if(title)new MutationObserver(resetSession).observe(title,{childList:true,subtree:true,characterData:true});
  const nav=editor.querySelector('.product-editor-nav-v1762');
  if(nav)nav.addEventListener('click',event=>{
   if(event.target.closest('[data-product-panel-btn="production"]'))seed();
  });
  window.addEventListener('pageshow',seed);
- onNewSession();
+ resetSession();
 }
 function init(){
  const root=document.getElementById('products'),editor=root?.querySelector('.products-form-card'),nav=editor?.querySelector('.product-editor-nav-v1762');
@@ -97,6 +94,11 @@ function init(){
  const techButton=document.getElementById('prodTechSheetBtn');
  if(techButton){
   let changedProductCode='';
+  editor.addEventListener('artessencia:product-editor-session',()=>{changedProductCode=''});
+  editor.addEventListener('artessencia:technical-notes-auto-filled',()=>{
+   const code=typeof editingProductCodeV147!=='undefined'?String(editingProductCodeV147||''):'';
+   if(code)changedProductCode=code;
+  });
   const markEditorChange=event=>{
    if(!event.isTrusted)return;
    const code=typeof editingProductCodeV147!=='undefined'?String(editingProductCodeV147||''):'';
