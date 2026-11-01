@@ -2,7 +2,7 @@
 (()=>{'use strict';
 const ENTITY='operational_tasks_v1',TABLE='artessencia_cloud_records',ROOT='aeTaskManagerV2';
 const PAGE=6,TZ='Europe/Lisbon';
-const sections=[['today','Hoje'],['week','Semana'],['calendar','Calendário'],['done','Concluídas'],['rules','Rotinas'],['capacity','Capacidade']];
+const sections=[['today','Hoje'],['week','Semana'],['calendar','Calendário'],['editions','Edições'],['done','Concluídas'],['rules','Rotinas'],['capacity','Capacidade']];
 const statuses=[['pendente','Pendente'],['em_curso','Em curso'],['concluida','Concluída']];
 const priorities=[['alta','Alta'],['normal','Normal'],['baixa','Baixa']];
 const categories=['Gestão','Comercial','Produção','Criação','Marketing','Segurança'];
@@ -459,6 +459,8 @@ function currentView(){
   body.append(node('h3','','Histórico concluído'));
   body.append(q);taskList(tasks().filter(t=>t.status==='concluida').sort((a,b)=>String(b.completed_at||'').localeCompare(String(a.completed_at||''))),'Ainda não existem tarefas concluídas.');
  }else if(screen==='calendar')renderCalendar();
+ else if(screen==='editions'&&typeof window.aeSeasonalCalendarV1==='function')window.aeSeasonalCalendarV1({body,editions,tasks:tasks(),today,shift,pretty,node,button,createEditionPlan,updateEditions,renderEditionPlanning,render});
+ else if(screen==='editions')body.append(node('p','ae-tm-empty','A carregar o calendário das edições…'));
  else if(screen==='rules')renderRules();
  else if(typeof window.aeTaskCapacityV1==='function')window.aeTaskCapacityV1({body,tasks:tasks(),rows,upsert,mutate,today,dt,shift,pretty,valid,node,button});
  else body.append(node('p','ae-tm-empty','O painel de capacidade não está disponível.'));
@@ -497,7 +499,6 @@ function renderCalendar(){
  if(selected.length>5)detail.append(node('small','','Mais '+(selected.length-5)+' tarefas. Usa a vista Semana para consultar.'));
  detail.append(button('+ Tarefa para este dia',()=>{formEdit={due_date:daySelected};newFormOpen=true;render()},'primary'));
  body.append(detail);
- renderEditionPlanning();
 }
 function lastAtelierDay(date){
  if(!valid(date))return null;
@@ -505,40 +506,53 @@ function lastAtelierDay(date){
  return week===0||week===1?date:shift(date,-(week-1));
 }
 async function createEditionPlan(ed){
- if(!valid(ed.start))return;
- const steps=[[-21,'Definir produtos e capacidade de produção','Criação',90],
-  [-14,'Validar custos, fichas técnicas e materiais','Gestão',45],
-  [-7,'Preparar fotografia, textos e catálogo','Marketing',60],
-  [-1,'Rever publicação e confirmar disponibilidade','Comercial',20]];
- const planned=steps.map(([days,title,category,estimate_min])=>({
-  days,title,category,estimate_min,
-  due_date:category==='Criação'||category==='Produção'?
-   lastAtelierDay(shift(ed.start,days)):shift(ed.start,days)
- })).filter(step=>step.due_date>=today());
- const skipped=steps.length-planned.length;
+ if(!valid(ed.start)){message='Define primeiro uma data válida de início da edição.';render();return;}
+ // Os identificadores antigos são preservados para não duplicar as quatro etapas existentes.
+ const steps=[
+  {key:'preparacao-35',days:-35,title:'Definir produtos, capacidade e quantidades',category:'Criação',estimate_min:90},
+  {key:'materiais-28',days:-28,title:'Conferir materiais, stock e custos',category:'Gestão',estimate_min:45},
+  {key:'0',days:-21,title:'Definir produtos e capacidade de produção',category:'Criação',estimate_min:90},
+  {key:'7',days:-14,title:'Validar custos, fichas técnicas e materiais',category:'Gestão',estimate_min:45},
+  {key:'14',days:-7,title:'Preparar fotografia, textos e catálogo',category:'Marketing',estimate_min:60},
+  {key:'20',days:-1,title:'Rever publicação e confirmar disponibilidade',category:'Comercial',estimate_min:20},
+  {key:'lancamento',days:0,title:'Publicar a edição e comunicar o lançamento',category:'Marketing',estimate_min:30},
+  {key:'revisao-7',days:7,title:'Analisar interesse, pedidos e estatísticas da edição',category:'Comercial',estimate_min:30}
+ ];
+ if(valid(ed.end)&&ed.end>=ed.start)steps.push({key:'fecho',date:ed.end,title:'Encerrar campanha e rever resultados',category:'Gestão',estimate_min:30});
+ const existing=new Set(rows.map(r=>r.record_id));
+ const proposed=steps.map(step=>{
+  const date=step.date||shift(ed.start,step.days);
+  const due_date=['Criação','Produção'].includes(step.category)?lastAtelierDay(date):date;
+  const id='ae-edition-'+encodeURIComponent(ed.id).slice(0,110)+'-'+step.key;
+  return {...step,id,due_date,planned_date:due_date};
+ });
+ const planned=proposed.filter(step=>valid(step.due_date)&&step.due_date>=today()&&!existing.has(step.id));
+ const skippedPast=proposed.filter(step=>valid(step.due_date)&&step.due_date<today()).length;
+ const already=proposed.filter(step=>existing.has(step.id)).length;
  if(!planned.length){
-  message='A edição «'+ed.name+'» não tem etapas de preparação futuras. Não foram criadas tarefas atrasadas.';
+  message='Não existem novas tarefas futuras para «'+ed.name+'». '+already+' etapa(s) já registada(s).';
   render();return;
  }
- const prompt='Criar '+planned.length+' tarefa(s) para «'+ed.name+'»?'
-  +(skipped?' '+skipped+' etapa(s) com prazo passado serão ignoradas.':'')
-  +' As edições, os produtos e os preços não serão alterados.';
- if(!window.confirm(prompt))return;
+ if(!window.confirm('Criar '+planned.length+' tarefa(s) para «'+ed.name+'»? '
+  +already+' etapa(s) existente(s) serão preservadas.'
+  +(skippedPast?' '+skippedPast+' etapa(s) ultrapassada(s) serão ignoradas.':'')
+  +' Não publica a edição nem modifica produtos, stock ou preços.'))return;
  await mutate(async user=>{
   for(const step of planned){
-   const id='ae-edition-'+encodeURIComponent(ed.id).slice(0,110)+'-'+(21+step.days);
-   await upsert(user,{id,kind:'task',title:step.title+' — '+ed.name,
-    category:step.category,priority:'alta',due_date:step.due_date,edition_id:ed.id,
+   await upsert(user,{id:step.id,kind:'task',title:step.title+' — '+ed.name,
+    category:step.category,priority:step.days===0?'alta':'normal',
+    due_date:step.due_date,planned_date:step.planned_date,edition_id:ed.id,
     status:'pendente',source:'edition-plan',estimate_min:step.estimate_min,
     createdAt:new Date().toISOString()},true);
   }
  });
 }
+
 function renderEditionPlanning(){
  const detail=node('details','ae-tm-edition-planning');
  detail.append(node('summary','','Planeamento ligado às edições especiais'));
  const wrap=node('div');
- wrap.append(node('p','ae-tm-subtext','Mostra datas reais das edições. O plano é opcional e só cria tarefas futuras: criação no domingo/segunda-feira, preparação comercial e marketing com prazos próprios. Nunca publica a edição ou modifica preços.'));
+ wrap.append(node('p','ae-tm-subtext','Estas são as edições já guardadas na Cloud. O plano cria apenas etapas futuras, incluindo lançamento e acompanhamento. Não publica a edição nem altera produtos ou preços.'));
  if(!editions.length)wrap.append(node('p','ae-tm-empty','Ainda não foram carregadas edições com datas.'));
  for(const ed of editions.filter(x=>x.active).slice(0,12)){
   const row=node('div','ae-tm-edition');
@@ -623,6 +637,7 @@ function start(){
   watcher.observe(document.body,{childList:true,subtree:true});
  }
 }
+import('./edition-calendar-v1.js').then(()=>{if(screen==='editions')render()}).catch(e=>console.warn('Calendário sazonal indisponível',e));
 import('./task-capacity-v1.js').then(()=>{if(!document.getElementById('aeTaskCapacityStyles')){const link=document.createElement('link');link.id='aeTaskCapacityStyles';link.rel='stylesheet';link.href='/task-capacity-v1.css';document.head.append(link)}if(screen==='capacity')render()}).catch(e=>console.warn('Capacidade indisponível',e));
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
