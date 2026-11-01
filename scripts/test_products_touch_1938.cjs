@@ -10,11 +10,14 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
  const card=page.locator('#productsCards .product-card');
  assert.equal(await card.getByRole('button',{name:'Ver ficha',exact:true}).isVisible(),true);
  assert.equal(await card.getByRole('button',{name:'Editar',exact:true}).isVisible(),true);
- assert.equal(await page.locator('#aeReviewToggle1995').innerText(),'Rever produtos por estado');
- await page.locator('#aeReviewToggle1995').click();
- assert.equal(await card.isVisible(),false,'A vista de revisão deve recolher só a listagem original');
+ assert.equal(await page.locator('#aeProductsListNav1997').getAttribute('aria-pressed'),'true');
+ assert.equal(await page.locator('#aeProductsReviewNav1997').innerText(),'Revisão por estado');
+ await page.locator('#aeProductsReviewNav1997').click();
+ assert.equal(await card.isVisible(),false,'A revisão deve recolher só a listagem original');
+ assert.equal(await page.locator('#aeReviewToggle1995').isVisible(),true,'O regresso à lista deve estar explícito dentro da revisão');
  await page.locator('#aeReviewToggle1995').click();
  assert.equal(await card.isVisible(),true,'Voltar à lista deve devolver todos os botões');
+ assert.equal(await page.locator('#aeProductsReviewNav1997').isVisible(),true,'Navegação por estado continua acessível');
  assert.equal(await card.getByRole('button',{name:'Arquivar',exact:true}).isVisible(),false);
  const targets=card.locator('.product-card-actions>.btn,summary');
  for(const target of await targets.all()){const box=await target.boundingBox();assert(box.width>=44&&box.height>=44,'Touch target '+width)}

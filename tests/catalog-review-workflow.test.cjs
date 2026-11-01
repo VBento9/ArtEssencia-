@@ -49,8 +49,10 @@ test('revisão não altera preço nem estado da publicação',()=>{
 test('interface mantém acesso à listagem antiga e ao editor',()=>{
  assert.match(source,/aeReviewToggle1995/);assert.match(source,/ae-review-focus1995/);
  assert.match(source,/editProduct\(code\)/);
- assert.match(source,/Rever produtos por estado/);
+ assert.match(source,/aeProductsListNav1997/);
+ assert.match(source,/aeProductsReviewNav1997/);
  assert.match(source,/Voltar à lista e aos botões/);
+ assert.match(source,/setMode\(false\)/);
  assert.doesNotMatch(source,/list\.classList\.add\('ae-review-focus1995'\)/);
 });
 
