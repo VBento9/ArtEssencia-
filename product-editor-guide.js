@@ -37,6 +37,47 @@ function init(){
   buttons[next].click();buttons[next].focus();
  });
  new MutationObserver(update).observe(nav,{subtree:true,attributes:true,attributeFilter:['class']});
+
+ // Preserva o rascunho dos produtos novos; para os existentes, abre a ficha correta em Custos.
+ const techButton=document.getElementById('prodTechSheetBtn');
+ if(techButton){
+  let changedProductCode='';
+  const markEditorChange=event=>{
+   if(!event.isTrusted)return;
+   const code=typeof editingProductCodeV147!=='undefined'?String(editingProductCodeV147||''):'';
+   if(code)changedProductCode=code;
+  };
+  editor.addEventListener('input',markEditorChange,true);
+  editor.addEventListener('change',markEditorChange,true);
+  techButton.onclick=()=>{
+   const code=typeof editingProductCodeV147!=='undefined'?String(editingProductCodeV147||''):'';
+   const saved=code&&typeof findProductByCodeV147==='function'?findProductByCodeV147(code):null;
+   if(!saved){
+    if(typeof openProductTechSheetV1250==='function')openProductTechSheetV1250();
+    return;
+   }
+   if(changedProductCode===code&&!confirm('Existem alterações neste produto que podem não estar guardadas. Queres sair do editor e abrir a ficha técnica em Custos?'))return;
+   if(typeof go!=='function')return;
+   go('costs');
+   if(typeof showCostTabV1927==='function')showCostTabV1927('recipes');
+   const select=document.getElementById('costProduct');
+   if(!select){
+    if(typeof toast==='function')toast('Não foi possível abrir o seletor de fichas técnicas.');
+    return;
+   }
+   if(!Array.from(select.options).some(option=>option.value===code))select.add(new Option(saved.name||code,code));
+   if(typeof chooseRecipeProductV1763==='function')chooseRecipeProductV1763(code);
+   else{
+    select.value=code;
+    select.dispatchEvent(new Event('change',{bubbles:true}));
+    if(typeof renderProductRecipeEditor==='function')renderProductRecipeEditor();
+   }
+   requestAnimationFrame(()=>{
+    document.getElementById('costPanelrecipes')?.scrollIntoView({behavior:'smooth',block:'start'});
+    document.getElementById('recipeProductChoiceV1763')?.focus({preventScroll:true});
+   });
+  };
+ }
  restoreProductPanelV1762();update();
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
