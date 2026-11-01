@@ -120,7 +120,7 @@ function init(){
  var list=el('products')?.querySelector('.products-list-card');
  if(!list||el('aeReviewWorkflow1995'))return;
  var root=document.createElement('section');root.id='aeReviewWorkflow1995';root.className='ae-review-workflow';
- root.innerHTML='<div class="ae-review-head"><div><h3>Revisão do catálogo de produtos</h3><p>Separação interna dos produtos por tratar, prontos para validar e revistos. Não altera a publicação na loja.</p></div><div class="ae-review-head-actions"><button type="button" class="btn ghost" id="aeReviewRefresh1995">Atualizar</button><button type="button" class="btn ghost" id="aeReviewToggle1995" aria-expanded="false">Mostrar lista completa</button></div></div>'+
+ root.innerHTML='<div class="ae-review-head"><div><h3>Revisão do catálogo de produtos</h3><p>Separação interna dos produtos por tratar, prontos para validar e revistos. Não altera a publicação na loja.</p></div><div class="ae-review-head-actions"><button type="button" class="btn ghost" id="aeReviewRefresh1995">Atualizar</button><button type="button" class="btn primary" id="aeReviewToggle1995" aria-expanded="false">Rever produtos por estado</button></div></div>'+
   '<div class="ae-review-progress"><div class="ae-review-progress-caption" id="aeReviewCount1995"></div><div class="ae-review-track"><span id="aeReviewBar1995" role="progressbar" aria-label="Produtos revistos" aria-valuemin="0" aria-valuemax="100"></span></div></div>'+
   '<div class="ae-review-tabs" aria-label="Filtrar produtos por revisão"><button type="button" data-review-tab="pending"></button><button type="button" data-review-tab="ready"></button><button type="button" data-review-tab="reviewed"></button><button type="button" data-review-tab="all"></button></div>'+
   '<label class="ae-review-search-label">Pesquisar neste estado <input id="aeReviewSearch1995" type="search" placeholder="Nome, código ou categoria"></label>'+
@@ -128,13 +128,16 @@ function init(){
   '<div class="ae-review-pagination"><button type="button" class="btn ghost" id="aeReviewPrev1995">Anterior</button><span id="aeReviewPage1995"></span><button type="button" class="btn ghost" id="aeReviewNext1995">Seguinte</button></div>'+
   '<p class="ae-review-note">Só é possível confirmar a revisão após preencher os dados indicados. Uma alteração posterior nos dados relevantes faz regressar o produto à validação.</p>';
  list.prepend(root);
- // A listagem original continua disponível, mas não duplica o painel de trabalho.
- list.classList.add('ae-review-focus1995');
+ // Preservar por defeito os cartões com os comandos originais de Produtos.
+ // A revisão é uma vista alternativa, não substitui o editor nem a ficha técnica.
  var showOriginal=el('aeReviewToggle1995');
  showOriginal.onclick=function(){
-  var focused=list.classList.toggle('ae-review-focus1995');
-  showOriginal.textContent=focused?'Mostrar lista completa':'Ocultar lista completa';
-  showOriginal.setAttribute('aria-expanded',String(!focused));
+  var reviewing=list.classList.toggle('ae-review-focus1995');
+  showOriginal.textContent=reviewing?'Voltar à lista e aos botões':'Rever produtos por estado';
+  showOriginal.setAttribute('aria-expanded',String(reviewing));
+  showOriginal.classList.toggle('primary',!reviewing);
+  showOriginal.classList.toggle('ghost',reviewing);
+  if(reviewing)render();
  };
  root.querySelectorAll('[data-review-tab]').forEach(b=>b.onclick=()=>{view=b.dataset.reviewTab;page=0;render()});
  el('aeReviewSearch1995').oninput=e=>{search=e.target.value;page=0;render()};
