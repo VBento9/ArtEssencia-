@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.99">
+<meta name="artessencia-version" content="1.9.100">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -6184,7 +6184,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.99';
+const APP_VERSION='1.9.100';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -6572,14 +6572,19 @@ function renderAfterSaveV1800(scope='all'){
  renderBackupInfo();
 }
 function save(scope='all'){
- let persisted=false;
+ let persisted=false,hasChanges=false;
  try{
   if(!cloudApplying)relDetectChangedOrders();
-  localStorage.setItem(KEY,JSON.stringify(db));persisted=true;
+  const serialized=JSON.stringify(db);
+  hasChanges=localStorage.getItem(KEY)!==serialized;
+  if(hasChanges)localStorage.setItem(KEY,serialized);
+  persisted=true;
   localSaveFailedV1926=false;document.getElementById('localSaveRecoveryV1926')?.remove();
  }catch(error){localSaveFailedV1926=true;showLocalSaveRecoveryV1926(error)}
- if(!cloudApplying){
+ if(!cloudApplying&&hasChanges){
   try{localStorage.setItem(REL_DIRTY,'1');setCloudMeta({dirty:true,verified:false,localChangedAt:new Date().toISOString()})}catch(error){localSaveFailedV1926=true;showLocalSaveRecoveryV1926(error)}
+  scheduleCloudPushV1860(650);
+ }else if(!cloudApplying&&(cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1')){
   scheduleCloudPushV1860(650);
  }
  renderAfterSaveV1800(scope);
@@ -15241,10 +15246,11 @@ function mergeRemoteRelationalRow(kind,row,eventType='UPDATE'){
  let target=arr.find(x=>x?._rid===row.id);
  if(!target&&cfg.table==='product'&&base.code)target=arr.find(x=>String(x?.code)===String(base.code));
  if(!target&&base.id)target=arr.find(x=>String(x?.id)===String(base.id));
- if(target)Object.assign(target,base);
- else arr.push(base);
+ if(target&&Object.keys(base).every(k=>stableStringify(target[k])===stableStringify(base[k])))return false;
+  if(target)Object.assign(target,base);
+  else arr.push(base);
 
- db[cfg.key]=arr;
+  db[cfg.key]=arr;
  localStorage.setItem(KEY,JSON.stringify(db));
  localStorage.setItem(REL_MIGRATED,'1');
  localStorage.removeItem(REL_DIRTY);
@@ -15274,7 +15280,8 @@ async function subscribeCloud(){
        return
      }
      const changed=mergeRemoteRelationalRow(k,row,eventType);
-     cloudLogMsg((changed?'Alteração recebida':'Alteração confirmada')+' em '+k+(rid?' · '+rid.slice(0,8):''));
+      if(!changed)return;
+      cloudLogMsg('Alteração recebida em '+k+(rid?' · '+rid.slice(0,8):''));
      setCloudMeta({verified:true,lastSync:new Date().toISOString(),conflict:false});
      renderCloudUI();
    })
@@ -15583,7 +15590,7 @@ async function operationalCloudPushStateV1858(user){
    const rev=Number(remote.revision||0);
    setCloudMeta({baseRevision:rev,remoteRevision:rev,lastCloudAt:remote.updated_at||cloudMeta().lastCloudAt,conflict:false,verified:true});
    if(cloudConflict?.type==='revision')cloudConflict=null;
-   cloudLogMsg('Dados operacionais sem alterações · revisão Cloud alinhada em '+rev);
+   // Sem atividade em consultas que não gravam dados.
    return remote
  }
  return await pushOperationalCloudStateV139(user)
@@ -15810,10 +15817,13 @@ async function cloudPullNow(force=false){
  const u=cloudUser||await ensureCloudSession();
  if(u){try{await pullOperationalCloudStateV139(u,{force})}catch(e){cloudLogMsg('Não foi possível receber dados operacionais: '+cloudErrText(e));if(force)toast('Aviso: Stock/Configuração não puderam ser atualizados')}}
  const ok1=await relationalHydrateCore(force);
- if(!ok1)return false;
- await cloudSleep(250);
- const ok2=await relationalHydrateCore(force);
- if(ok2)await pullOnlineOrders(false);
+  if(!ok1)return false;
+  let ok2=ok1;
+  if(force){
+    await cloudSleep(250);
+    ok2=await relationalHydrateCore(true);
+  }
+  if(ok2)await pullOnlineOrders(false);
  if(force&&ok2){
    cloudLogMsg(`Receção manual concluída · ${db.clients.length} clientes · ${db.orders.length} encomendas · ${(db.quotes||[]).length} orçamentos`);
    toast('Dados V10 + Loja recebidos')
@@ -16237,14 +16247,22 @@ async function syncStoreCatalogV1421(user){
  const products=Array.isArray(db.products)?db.products:[];
  const categories=[...new Set(products.filter(p=>p&&p.shopVisible&&!productArchivedV1803(p)).map(p=>String(p.category||'Outros produtos artesanais').trim()).filter(Boolean))];
  const categoryMap=new Map();
- for(const name of categories){
-   const slug=storeSlugV1421(name);
-   const {data,error}=await cloudClient.from('store_categories').upsert({name,slug,active:true,updated_at:new Date().toISOString()},{onConflict:'slug'}).select('id,slug').maybeSingle();
-   if(error)throw error;if(data?.id)categoryMap.set(name,data.id)
- }
- const {data:remotePersonalizationRowsV1820,error:remotePersonalizationErrorV1820}=await cloudClient.from('store_products').select('code,personalization');
+  let catalogWritesV19100=0;
+  const {data:existingCatsV19100,error:catsErrV19100}=await cloudClient.from('store_categories').select('id,slug,name,active');
+  if(catsErrV19100)throw catsErrV19100;
+  const categoryBySlugV19100=new Map((existingCatsV19100||[]).map(c=>[String(c.slug||''),c]));
+  for(const name of categories){
+    const slug=storeSlugV1421(name),old=categoryBySlugV19100.get(slug);
+    if(old&&old.name===name&&old.active===true){categoryMap.set(name,old.id);continue}
+    const {data,error}=await cloudClient.from('store_categories').upsert({name,slug,active:true,updated_at:new Date().toISOString()},{onConflict:'slug'}).select('id,slug').maybeSingle();
+    if(error)throw error;if(data?.id)categoryMap.set(name,data.id);
+    catalogWritesV19100++;
+  }
+  const storeKeysV19100=['backoffice_product_id','code','name','slug','description','category_id','price_online','image_url','active','available','customizable','personalization'];
+  const {data:remotePersonalizationRowsV1820,error:remotePersonalizationErrorV1820}=await cloudClient.from('store_products').select(storeKeysV19100.join(','));
  if(remotePersonalizationErrorV1820)throw remotePersonalizationErrorV1820;
- const remotePersonalizationByCodeV1820=new Map((remotePersonalizationRowsV1820||[]).map(r=>[String(r.code||'').trim().toLowerCase(),r.personalization&&typeof r.personalization==='object'?r.personalization:{}]));
+ const remoteProductsByCodeV19100=new Map((remotePersonalizationRowsV1820||[]).map(r=>[String(r.code||'').trim().toLowerCase(),r]));
+  const remotePersonalizationByCodeV1820=new Map((remotePersonalizationRowsV1820||[]).map(r=>[String(r.code||'').trim().toLowerCase(),r.personalization&&typeof r.personalization==='object'?r.personalization:{}]));
  const visibleCodes=new Set();
  for(const p of products){
    const code=String(p?.code||'').trim();if(!code)continue;
@@ -16261,7 +16279,11 @@ async function syncStoreCatalogV1421(user){
    const effectiveColorsV1820=personalizationV1809.colors||{},effectiveFragranceV1820=personalizationV1809.fragrance||{};
    const effectiveCustomizableV1820=Number(effectiveColorsV1820.max)>0||!!effectiveFragranceV1820.enabled||productIsCustomizableV1773(p);
    const row={backoffice_product_id:p._rid||code,code,name:String(p.name||code),slug:storeSlugV1421(code+'-'+(p.name||'')),description:productPublicDescriptionV1762(p),category_id:categoryMap.get(category)||null,price_online:Math.max(0,price),image_url:p.shopImageUrl||null,active:online,available:online,customizable:effectiveCustomizableV1820,personalization:personalizationV1809,updated_at:new Date().toISOString()};
-   const {error}=await cloudClient.from('store_products').upsert(row,{onConflict:'code'});if(error)throw error;
+   const old=remoteProductsByCodeV19100.get(code.toLowerCase());
+    if(old&&storeKeysV19100.every(k=>stableStringify(old[k]??null)===stableStringify(row[k]??null)))continue;
+    const {error}=await cloudClient.from('store_products').upsert(row,{onConflict:'code'});
+    if(error)throw error;
+    catalogWritesV19100++;
  }
  // Limpar apenas categorias públicas sem qualquer produto público ativo associado.
  // Não elimina categorias nem produtos e não depende do snapshot local para decidir sobre produtos remotos.
@@ -16273,14 +16295,21 @@ async function syncStoreCatalogV1421(user){
    if(catsErr)throw catsErr;if(activeErr)throw activeErr;
    const used=new Set((activeProducts||[]).map(x=>String(x.category_id||'')).filter(Boolean));
    const orphanIds=(allCats||[]).filter(x=>x.active!==false&&!used.has(String(x.id||''))).map(x=>x.id).filter(Boolean);
-   if(orphanIds.length){const {error:offErr}=await cloudClient.from('store_categories').update({active:false,updated_at:new Date().toISOString()}).in('id',orphanIds);if(offErr)throw offErr}
+   if(orphanIds.length){const {error:offErr}=await cloudClient.from('store_categories').update({active:false,updated_at:new Date().toISOString()}).in('id',orphanIds);if(offErr)throw offErr;catalogWritesV19100+=orphanIds.length}
  }catch(e){cloudLogMsg('Aviso ao limpar categorias públicas sem produtos: '+cloudErrText(e))}
  // Segurança multi-dispositivo: este Backoffice publica/oculta apenas produtos presentes no seu snapshot local.
  // Nunca desativar registos remotos desconhecidos só por estarem ausentes deste dispositivo.
- cloudLogMsg('Catálogo Loja ArtEssencia sincronizado · '+visibleCodes.size+' produto(s) público(s)');
+ if(catalogWritesV19100)cloudLogMsg('Catálogo Loja ArtEssencia atualizado · '+catalogWritesV19100+' registo(s) alterado(s)');
  return true
 }
 
+function changedRelationalRowsV19100(localRows,remoteRows){
+ const known=new Map((remoteRows||[]).map(r=>[String(r.id),r]));
+ return localRows.filter(row=>{
+  const old=known.get(String(row.id));
+  return !old||Object.keys(row).some(k=>k!=='updated_at'&&stableStringify(row[k]??null)!==stableStringify(old[k]??null));
+ });
+}
 async function relationalSyncCore(showToast=false){
  if(productionBlockedV1926())return false;
  if(cloudBusy){
@@ -16305,8 +16334,9 @@ async function relationalSyncCore(showToast=false){
      id:relUuid(c),user_id:u.id,name:c.name||'',phone:c.phone||null,email:c.email||null,notes:c.notes||null,
      data:relClone(c),updated_at:new Date().toISOString()
    }));
-   if(clientRows.length){
-     const {error}=await cloudClient.from(REL_TABLES.clients).upsert(clientRows,{onConflict:'id'});
+   const clientsToWriteV19100=changedRelationalRowsV19100(clientRows,remoteClients);
+    if(clientsToWriteV19100.length){
+      const {error}=await cloudClient.from(REL_TABLES.clients).upsert(clientsToWriteV19100,{onConflict:'id'});
      if(error)throw error
    }
 
@@ -16315,18 +16345,38 @@ async function relationalSyncCore(showToast=false){
      price:Number(p.onlinePrice)>0?Number(p.onlinePrice):(Number(p.price)||0),cost:Number(calculatedProductCost(p))||0,active:!productArchivedV1803(p),
      data:relClone(p),updated_at:new Date().toISOString()
    }));
-   if(productRows.length){
-     const {error}=await cloudClient.from(REL_TABLES.products).upsert(productRows,{onConflict:'id'});
+   const productsToWriteV19100=changedRelationalRowsV19100(productRows,remoteProducts);
+   // Registar os perfis a confirmar ANTES das escritas relacionais.
+   // Se houver falha ou a aplicação fechar, a próxima reconciliação recupera-os.
+   const publicProfilePendingKeyV19100='artessencia_public_profiles_pending_v19100_'+u.id;
+   let pendingPublicProfilesV19100;
+   try{
+     const saved=JSON.parse(localStorage.getItem(publicProfilePendingKeyV19100)||'[]');
+     pendingPublicProfilesV19100=new Set(Array.isArray(saved)?saved.map(String):[]);
+   }catch(e){pendingPublicProfilesV19100=new Set()}
+   const changedProductIdsV19100=new Set(productsToWriteV19100.map(r=>String(r.id)));
+   for(const p of (db.products||[])){
+     if(p?.code&&changedProductIdsV19100.has(String(p._rid)))
+       pendingPublicProfilesV19100.add(String(p.code));
+   }
+   if(pendingPublicProfilesV19100.size)
+     localStorage.setItem(publicProfilePendingKeyV19100,JSON.stringify([...pendingPublicProfilesV19100]));
+    if(productsToWriteV19100.length){
+      const {error}=await cloudClient.from(REL_TABLES.products).upsert(productsToWriteV19100,{onConflict:'id'});
      if(error)throw error
    }
-   // O Backoffice principal só conclui a sincronização depois de confirmar
-   // as características públicas de todos os produtos na Cloud.
-   for(const p of (db.products||[])){
-     if(!p?.code)continue;
-     const publicOk=await syncProductPublicCharacteristicsV1820(p);
-     if(!publicOk)throw new Error('public_characteristics_sync_failed:'+String(p.code||''))
-   }
+   // A publicação da Loja é diferencial; inclui alterações públicas sem edição relacional.
    await syncStoreCatalogV1421(u);
+   for(const p of (db.products||[])){
+     const code=String(p?.code||'');
+     if(!code||!pendingPublicProfilesV19100.has(code))continue;
+     const publicOk=await syncProductPublicCharacteristicsV1820(p);
+     if(!publicOk)throw new Error('public_characteristics_sync_failed:'+code);
+     pendingPublicProfilesV19100.delete(code);
+     if(pendingPublicProfilesV19100.size)
+       localStorage.setItem(publicProfilePendingKeyV19100,JSON.stringify([...pendingPublicProfilesV19100]));
+     else localStorage.removeItem(publicProfilePendingKeyV19100);
+   }
 
    const pendingOrders=relOrderPendingSet();
    const ordersToSync=db.orders.filter(o=>relIsOrderPending(o,pendingOrders));
@@ -16354,8 +16404,9 @@ async function relationalSyncCore(showToast=false){
        data:relClone(q),updated_at:new Date().toISOString()
      }
    });
-   if(quoteRows.length){
-     const {error}=await cloudClient.from(REL_TABLES.quotes).upsert(quoteRows,{onConflict:'id'});
+   const quotesToWriteV19100=changedRelationalRowsV19100(quoteRows,remoteQuotes);
+    if(quotesToWriteV19100.length){
+      const {error}=await cloudClient.from(REL_TABLES.quotes).upsert(quotesToWriteV19100,{onConflict:'id'});
      if(error)throw error
    }
 
@@ -16372,7 +16423,8 @@ async function relationalSyncCore(showToast=false){
    setCloudMeta({dirty:true,conflict:false,verified:!changedDuringSync,lastSync:new Date().toISOString()});
    if(pendingOrdersAfterSync||changedDuringSync)cloudPushPending=true;
    cloudConflict=null;
-   cloudLogMsg(`V10 sincronizada · ${clientRows.length} clientes · ${productRows.length} produtos · ${orderRows.length} encomendas · ${quoteRows.length} orçamentos`);
+   if(clientsToWriteV19100.length||productsToWriteV19100.length||orderRows.length||quotesToWriteV19100.length)
+     cloudLogMsg(`V10 atualizada · ${clientsToWriteV19100.length} clientes · ${productsToWriteV19100.length} produtos · ${orderRows.length} encomendas · ${quotesToWriteV19100.length} orçamentos`);
    if(showToast)toast('Dados V10 sincronizados');
    return true
  }catch(e){
@@ -16407,6 +16459,7 @@ async function relationalHydrateCore(initial=false){
      const localProducts=(db.products||[]).slice();
      const localOrders=(db.orders||[]).slice();
      const localQuotes=(db.quotes||[]).slice();
+      const beforeHydrateV19100=stableStringify([localClients,localProducts,localOrders,localQuotes]);
 
      const mergeRows=(localRows,remoteRows,kind)=>{
        const byRid=new Map();
@@ -16518,7 +16571,8 @@ async function relationalHydrateCore(initial=false){
 
      db.quotes=mergeRows(localQuotes,remoteQuotesAdjusted,'quote');
 
-     localStorage.setItem(KEY,JSON.stringify(db));
+      const hydrateChangedV19100=beforeHydrateV19100!==stableStringify([db.clients,db.products,db.orders,db.quotes]);
+      if(hydrateChangedV19100)localStorage.setItem(KEY,JSON.stringify(db));
      localStorage.setItem(REL_MIGRATED,'1');
 
      // Shadow representa apenas o último estado confirmado da Cloud.
@@ -16528,8 +16582,10 @@ async function relationalHydrateCore(initial=false){
 
      setCloudMeta({dirty:relOrderPendingSet().size>0,conflict:false,verified:true,lastSync:new Date().toISOString()});
      cloudConflict=null;
-     renderAll();
-     cloudLogMsg(`Cloud reconciliada · ${db.clients.length} clientes · ${(db.products||[]).length} produtos · ${db.orders.length} encomendas · ${relOrderPendingSet().size} pendente(s) localmente`);
+      if(hydrateChangedV19100){
+        renderAll();
+        cloudLogMsg(`Cloud atualizada · ${db.clients.length} clientes · ${(db.products||[]).length} produtos · ${db.orders.length} encomendas · ${relOrderPendingSet().size} pendente(s) localmente`);
+      }
    }finally{
      cloudApplying=false
    }
