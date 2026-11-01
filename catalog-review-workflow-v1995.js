@@ -146,6 +146,7 @@ async function syncOneReview(p,review){
 async function mark(code,approve){
  var p=rows().find(x=>String(x.code)===code);if(!p)return;
  var status=assessment(p);
+ if(reviewSyncBusy){alertUser('Outra revisão está a sincronizar. Confirma novamente após terminar.');return}
  if(approve&&status.lack.length){alertUser('Ainda faltam campos: '+status.lack.join(', '));return}
  if(typeof cloudBusy!=='undefined'&&cloudBusy){alertUser('Sincronização Cloud em curso. Tenta novamente.');return}
  if(typeof cloudMeta==='function'&&cloudMeta().conflict){alertUser('Existe um conflito Cloud por resolver. Resolve-o antes de confirmar revisões.');return}
