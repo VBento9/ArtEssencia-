@@ -2,7 +2,7 @@ const vm=require('vm'),fs=require('fs'),assert=require('assert/strict');
 const latest=JSON.parse(fs.readFileSync('version.json','utf8')).app;
 (async()=>{
  const elements=new Map(),handlers={},swHandlers={};let reloads=0,updated=0,failUpdate=false;
- const el=()=>({style:{},children:[],setAttribute(){},append(...items){this.children.push(...items)}});
+ const el=()=>({style:{},dataset:{},children:[],setAttribute(){},append(...items){this.children.push(...items)},querySelector(selector){return selector==='button'?this.children.find(x=>typeof x.onclick==='function'):this.children.find(x=>x.dataset?.aeUpdateStatus)},remove(){elements.delete(this.id)}});
  const body=el();body.append=x=>elements.set(x.id,x);
  const reg={update:async()=>{updated++;if(failUpdate)throw new Error('offline worker')}};
  const c={URL,APP_VERSION:'1.9.24',navigator:{onLine:true,serviceWorker:{addEventListener:(n,h)=>swHandlers[n]=h,register:async()=>reg}},location:{href:'https://fixture.test/?existing=1#stock',protocol:'https:',replace(url){assert.equal(new URL(url).hash,'#stock');assert.equal(new URL(url).searchParams.get('existing'),'1');reloads++}},document:{querySelector:()=>null,visibilityState:'visible',getElementById:id=>elements.get(id),createElement:el,body,addEventListener:(n,h)=>handlers[n]=h},window:{addEventListener:(n,h)=>handlers[n]=h},fetch:async()=>({ok:true,json:async()=>({app:latest,channel:'artessencia-backoffice-stable'})}),setInterval:()=>{},console:{warn(){}}};
