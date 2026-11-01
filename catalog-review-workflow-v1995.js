@@ -112,7 +112,18 @@ function reviewCleanSnapshot(p){
  var copy=JSON.parse(JSON.stringify(p));
  delete copy.catalogReviewV1995;
  delete copy.updatedAt;
- return JSON.stringify(copy);
+ // Os objetos JSONB podem chegar da Cloud com as propriedades em ordem
+ // diferente. Comparar conteúdo, não a ordem de serialização.
+ function stable(value){
+  if(Array.isArray(value))return value.map(stable);
+  if(value&&typeof value==='object'){
+   var result={};
+   Object.keys(value).sort().forEach(key=>{result[key]=stable(value[key])});
+   return result
+  }
+  return value
+ }
+ return JSON.stringify(stable(copy));
 }
 // Fast path restrito: atualizar UM registo relacional só quando a Cloud e o
 // dispositivo concordam com o produto. Nunca sobrescrever alterações remotas.
