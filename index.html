@@ -11895,9 +11895,7 @@ function descriptionTextV1888(style,ctx){
   sentences.push(subject+' é '+type+(motif?', com referência ao motivo de '+motif:'')+'.');
   if(theme)sentences.push('A sua presença evoca '+themeMood+'.');
   if(ctx.distinctive)sentences.push(form);
-
-
-  else if(!theme&&usage)sentences.push(usage);
+  if(!theme&&usage)sentences.push(usage);
  }else if(style==='gift'){
   sentences.push(subject+' é '+type+(motif?', com motivo de '+motif:'')+'.');
   sentences.push('Uma sugestão de presente '+(theme?'para '+theme.occasion:'para quem aprecia '+ctx.type[1]+(motif?' com inspiração em '+motif:'') )+'.');
