@@ -117,7 +117,7 @@ function reviewCleanSnapshot(p){
 // Fast path restrito: atualizar UM registo relacional só quando a Cloud e o
 // dispositivo concordam com o produto. Nunca sobrescrever alterações remotas.
 async function syncOneReview(p,review){
- if(reviewSyncBusy||typeof cloudMeta!=='function'||cloudMeta().dirty||cloudMeta().conflict||
+ if(reviewSyncBusy||typeof cloudMeta!=='function'||cloudMeta().conflict||
     typeof cloudBusy!=='undefined'&&cloudBusy||typeof cloudPushRunning!=='undefined'&&cloudPushRunning||
     typeof cloudStartupDone!=='undefined'&&!cloudStartupDone||
     typeof cloudHydrating!=='undefined'&&cloudHydrating||
@@ -157,22 +157,16 @@ async function mark(code,approve){
  var at=new Date().toISOString();
  var desired=approve?{status:'reviewed',reviewedAt:at,fingerprint:fingerprint(p)}:{status:'pending',reviewedAt:null,fingerprint:null};
  try{
-  // Uma confirmação isolada não deve enviar produtos, clientes, encomendas e loja.
-  // Se houver alterações locais por enviar, conserva o percurso de sincronização geral.
-  if(typeof cloudMeta==='function'&&!cloudMeta().dirty&&navigator.onLine&&p._rid){
-   var remote=await syncOneReview(p,desired);
-   if(remote){
-    p.catalogReviewV1995=desired;p.updatedAt=remote.updatedAt;
-    try{localStorage.setItem(KEY,JSON.stringify(db))}
-    catch(e){alertUser('Revisão guardada na Cloud, mas falhou a cópia local. Recarrega a partir da Cloud.');return}
-    render();alertUser('Revisão sincronizada na Cloud para este produto.');return
-   }
-  }
-  p.catalogReviewV1995=desired;p.updatedAt=at;
-  if(typeof save!=='function')throw Error('Gravação indisponível');
-  if(save('products')!==true)throw Error('Falha ao guardar no armazenamento local. A revisão não foi confirmada.');
+  // A revisão é uma operação Cloud individual. Nunca iniciar um envio geral
+  // de todos os Produtos/Encomendas/Clientes apenas por confirmar um cartão.
+  // Dirty global não impede uma atualização protegida por comparação do produto.
+  var remote=await syncOneReview(p,desired);
+  if(!remote)throw Error('Cloud ocupada, indisponível ou produto ainda sem registo sincronizado. A revisão não foi gravada; não foi iniciada uma sincronização geral.');
+  p.catalogReviewV1995=desired;p.updatedAt=remote.updatedAt;
+  try{localStorage.setItem(KEY,JSON.stringify(db))}
+  catch(e){alertUser('Revisão guardada na Cloud, mas falhou a cópia local. Reabre o Backoffice quando a Cloud estiver estável.');return}
   render();
-  alertUser(approve?'Revisão atualizada localmente. Confirma a sincronização Cloud.':'Revisão reaberta localmente. Confirma a sincronização Cloud.');
+  alertUser('Revisão sincronizada na Cloud para este produto.');
  }catch(e){
   p.catalogReviewV1995=previous;p.updatedAt=previousTime;
   alertUser('Revisão não confirmada: '+String(e.message||e));
@@ -202,11 +196,12 @@ function init(){
  if(hero)hero.insertAdjacentElement('afterend',nav);else list.parentNode.insertBefore(nav,list);
  var listNav=el('aeProductsListNav1997'),reviewNav=el('aeProductsReviewNav1997');
  function setMode(reviewing){
-  // Quem regressa da edição à revisão precisa que o módulo compacto volte a
-  // mostrar a listagem. Não descartar nem gravar alterações automaticamente.
+  // Os separadores desta vista e o módulo compacto têm de mostrar a MESMA
+  // listagem. Caso contrário a navegação assinala "Lista" mas a lista está hidden.
   var compact=el('aeProductsCompact');
   var showListButton=compact&&Array.from(compact.querySelectorAll('button')).find(b=>value(b.textContent)==='Ver catálogo');
-  if(list.hidden&&showListButton)showListButton.click();
+  if(showListButton&&(list.hidden||showListButton.getAttribute('aria-pressed')!=='true'))showListButton.click();
+  else if(list.hidden)list.hidden=false;
   list.classList.toggle('ae-review-focus1995',reviewing);
   listNav.setAttribute('aria-pressed',String(!reviewing));
   reviewNav.setAttribute('aria-pressed',String(reviewing));
@@ -216,7 +211,31 @@ function init(){
   reviewNav.classList.toggle('ghost',!reviewing);
   if(reviewing)render();
  }
- listNav.onclick=function(){setMode(false);if(list.scrollIntoView)list.scrollIntoView({block:'start'});};
+ function ensureListResults(){
+  // A revisão inclui arquivados; a lista tradicional tem filtros adicionais.
+  // Um filtro antigo pode esconder tudo apesar de existirem produtos no dispositivo.
+  if(typeof renderProducts==='function')renderProducts();
+  var cards=el('productsCards');
+  if(!cards||cards.querySelector('.product-card')||!rows().length)return;
+  var ids=['productSearch','productCategoryFilter','productCatalogGroupFilterV191',
+   'productCatalogSubFilterV191','productCollectionFilterV1752','productTagFilterV1753',
+   'productSeasonFilterV1761','productArchiveFilterV1803','productShopFilter',
+   'productMixFilter','productTechnicalFilterV1288','productCompletenessFilterV1762'];
+  ids.forEach(id=>{
+   var input=el(id);if(!input)return;
+   if(input.tagName==='INPUT')input.value='';
+   else if(input.options){
+    var target='all';
+    if(Array.from(input.options).some(o=>o.value===target))input.value=target;
+   }
+  });
+  if(typeof renderProducts==='function')renderProducts();
+  if(!cards.querySelector('.product-card')){
+   var count=el('productsResultCount');
+   if(count)count.textContent='Sem resultados na listagem. Verifica a sincronização; nenhum dado foi apagado.';
+  }
+ }
+ listNav.onclick=function(){setMode(false);ensureListResults();if(list.scrollIntoView)list.scrollIntoView({block:'start'});};
  reviewNav.onclick=function(){setMode(true);if(root.scrollIntoView)root.scrollIntoView({block:'start'});};
  el('aeReviewToggle1995').onclick=function(){setMode(false);if(list.scrollIntoView)list.scrollIntoView({block:'start'});};
  setMode(false);
