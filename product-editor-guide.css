@@ -27,3 +27,17 @@
 #products .description-sources-v1888,#products .description-hint-v1888{margin-top:8px!important;text-transform:none!important;letter-spacing:normal!important;font-size:11px!important;line-height:1.4}
 #products .description-hint-v1888{font-weight:500!important}
 @media(max-width:580px){#products .description-template-grid-v1852{grid-template-columns:repeat(2,minmax(0,1fr))}#products .description-template-card-v1852{min-height:72px;padding:10px 9px}#products .description-template-card-v1852 b{font-size:11px}#products .description-template-card-v1852 span{font-size:10px}}
+
+/* IA visual no editor de Produtos: rascunho separado da descrição comercial. */
+#products .description-photo-ai-v1890{margin-top:14px;padding:13px;border:1px solid var(--line);border-radius:14px;display:grid;gap:10px;min-width:0;background:var(--card)}
+#products .description-photo-ai-v1890 strong{display:block;font-size:13px}
+#products .description-photo-ai-v1890 small{display:block;color:var(--muted);font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+#products #descriptionPhotoAnalyzeV1890{width:max-content;max-width:100%;min-height:42px}
+#products #descriptionPhotoResultV1890[hidden]{display:none!important}
+#products #descriptionPhotoResultV1890{display:grid;gap:8px;min-width:0}
+#products #descriptionPhotoResultV1890 label{font-size:12px;font-weight:750}
+#products #descriptionPhotoDraftV1890{width:100%;min-width:0;box-sizing:border-box;resize:vertical;line-height:1.55}
+#products .description-photo-actions-v1890{display:flex;gap:8px;flex-wrap:wrap}
+#products .description-photo-actions-v1890 .btn{min-height:44px}
+#products #descriptionPhotoStatusV1890[data-state="error"]{color:#a33c28}
+@media(max-width:600px){#products .description-photo-actions-v1890{display:grid;grid-template-columns:1fr}#products .description-photo-actions-v1890 .btn,#products #descriptionPhotoAnalyzeV1890{width:100%}}

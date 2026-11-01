@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.89">
+<meta name="artessencia-version" content="1.9.90">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <link rel="manifest" href="manifest.webmanifest">
@@ -5834,6 +5834,20 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
               <button id="descriptionReplaceBtnV1852" class="btn primary" type="button" onclick="applyDescriptionTemplateV1852('replace')" disabled>Substituir descrição</button>
               <button id="descriptionAppendBtnV1852" class="btn" type="button" onclick="applyDescriptionTemplateV1852('append')" disabled>Acrescentar à descrição</button>
             </div>
+            <div class="description-photo-ai-v1890">
+              <div><strong>Descrição a partir da fotografia · IA</strong><small>Analisa até duas fotografias já carregadas na Cloud. Apenas proposta: não altera a ficha nem publica.</small></div>
+              <button id="descriptionPhotoAnalyzeV1890" type="button" class="btn" onclick="analyzeProductPhotoDescriptionV1890()">Analisar fotografias</button>
+              <small id="descriptionPhotoStatusV1890" role="status" aria-live="polite">Fotografias da secção 2 necessárias. A análise só acontece quando carregares neste botão.</small>
+              <div id="descriptionPhotoResultV1890" hidden>
+                <label for="descriptionPhotoDraftV1890">Proposta visual — podes editar antes de aplicar</label>
+                <textarea id="descriptionPhotoDraftV1890" rows="5" maxlength="2200"></textarea>
+                <small id="descriptionPhotoObservationsV1890"></small>
+                <div class="description-photo-actions-v1890">
+                  <button id="descriptionPhotoReplaceV1890" type="button" class="btn primary" onclick="applyPhotoDescriptionV1890('replace')">Usar na descrição</button>
+                  <button id="descriptionPhotoAppendV1890" type="button" class="btn" onclick="applyPhotoDescriptionV1890('append')">Acrescentar ao texto</button>
+                </div>
+              </div>
+            </div>
           </div>
           <textarea id="prodShopDescription" rows="4" placeholder="Descrição curta que o cliente verá no Catálogo e na Loja"></textarea>
         </div>
@@ -6150,7 +6164,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.89';
+const APP_VERSION='1.9.90';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -11922,7 +11936,111 @@ function applyDescriptionTemplateV1852(mode){
  el.dispatchEvent(new Event('input',{bubbles:true}));
  el.focus();
 }
+/* ArtEssencia v1.9.90: imagem -> proposta editorial privada, sem alteração automática. */
+let descriptionPhotoGenerationV1890=0;
+let descriptionPhotoFingerprintV1890='',descriptionPhotoRunningV1890=false;
+function descriptionPhotoContextV1890(){
+ const ctx=descriptionContextV1888(),imageUrls=['prodShopImageUrl','prodShopImageUrl2'].map(id=>descriptionValueV1888(id)).filter(Boolean);
+ let editionNames=[];
+ try{
+  const chosen=new Set([...productEditionDraftIdsV1758].map(String));
+  editionNames=(Array.isArray(specialEditionsAdmin)?specialEditionsAdmin:[])
+   .filter(ed=>chosen.has(String(editionIdV1244(ed))))
+   .map(ed=>String(ed.name||ed.slug||'').trim()).filter(Boolean).slice(0,5);
+ }catch(_){}
+ const facts=ctx.facts||[];
+ return {
+  imageUrls,
+  style:selectedDescriptionTemplateV1852,
+  product:{
+   name:ctx.name,category:ctx.category,productionType:ctx.process,
+   seasonalTags:descriptionValueV1888('prodSeasonTagsV1761').split(',').map(x=>x.trim()).filter(Boolean).slice(0,5),
+   editionNames,visualDetail:ctx.distinctive,productFacts:facts
+  }
+ };
+}
+function descriptionPhotoStatusV1890(text,state='idle'){
+ const e=document.getElementById('descriptionPhotoStatusV1890');
+ if(e){e.textContent=text;e.dataset.state=state}
+}
+function resetPhotoDescriptionV1890(){
+ ++descriptionPhotoGenerationV1890;
+ descriptionPhotoFingerprintV1890='';
+ const result=document.getElementById('descriptionPhotoResultV1890');
+ if(result)result.hidden=true;
+ const draft=document.getElementById('descriptionPhotoDraftV1890');
+ if(draft)draft.value='';
+ const obs=document.getElementById('descriptionPhotoObservationsV1890');
+ if(obs)obs.textContent='';
+ descriptionPhotoStatusV1890('Fotografias da secção 2 necessárias. A análise só acontece quando carregares neste botão.');
+ // A chamada que estiver a decorrer nunca poderá aplicar a proposta a outro produto.
+}
+async function analyzeProductPhotoDescriptionV1890(){
+ if(descriptionPhotoRunningV1890)return;
+ const payload=descriptionPhotoContextV1890(),fingerprint=JSON.stringify(payload);
+ if(!payload.product.name)return descriptionPhotoStatusV1890('Indica primeiro o nome do produto na Secção 1.','error');
+ if(!payload.imageUrls.length)return descriptionPhotoStatusV1890('Carrega primeiro uma fotografia do produto para a Cloud na Secção 2.','error');
+ const client=typeof initCloudClient==='function'?initCloudClient():null;
+ if(!client)return descriptionPhotoStatusV1890('Liga a conta Cloud para utilizar a análise de fotografias.','error');
+ const seq=++descriptionPhotoGenerationV1890;
+ descriptionPhotoFingerprintV1890='';
+ const result=document.getElementById('descriptionPhotoResultV1890');
+ if(result)result.hidden=true;
+ const btn=document.getElementById('descriptionPhotoAnalyzeV1890');
+ descriptionPhotoRunningV1890=true;if(btn)btn.disabled=true;
+ descriptionPhotoStatusV1890('A analisar as fotografias…','loading');
+ try{
+  const session=await client.auth.getSession(),token=session?.data?.session?.access_token;
+  if(!token)throw new Error('Sessão Cloud expirada. Volta a iniciar sessão.');
+  const response=await fetch('/api/product-description-ai',{
+   method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+   cache:'no-store',body:JSON.stringify(payload)
+  });
+  const data=await response.json().catch(()=>({}));
+  if(seq!==descriptionPhotoGenerationV1890)return;
+  if(!response.ok||!data?.ok||!data?.proposal?.description)throw new Error(data?.error||'A análise não produziu uma proposta válida.');
+  if(JSON.stringify(descriptionPhotoContextV1890())!==fingerprint){
+   descriptionPhotoStatusV1890('Os dados ou fotografias mudaram durante a análise. Gera uma nova proposta.','error');
+   return;
+  }
+  const draft=document.getElementById('descriptionPhotoDraftV1890');
+  if(draft)draft.value=String(data.proposal.description||'');
+  const notes=document.getElementById('descriptionPhotoObservationsV1890');
+  if(notes)notes.textContent=[data.proposal.visualDetails,data.proposal.reviewNotes].filter(Boolean).join(' · ');
+  descriptionPhotoFingerprintV1890=fingerprint;
+  if(result)result.hidden=false;
+  descriptionPhotoStatusV1890('Proposta disponível para revisão. Nada foi guardado ou publicado.','ready');
+ }catch(error){
+  if(seq===descriptionPhotoGenerationV1890)descriptionPhotoStatusV1890(error?.message||'Análise visual indisponível. Podes continuar com os modelos locais.','error');
+ }finally{
+  descriptionPhotoRunningV1890=false;
+  if(btn)btn.disabled=false;
+ }
+}
+function applyPhotoDescriptionV1890(mode){
+ if(!['replace','append'].includes(mode))return;
+ const target=document.getElementById('prodShopDescription'),draft=document.getElementById('descriptionPhotoDraftV1890');
+ if(!target||!draft||!descriptionPhotoFingerprintV1890)return;
+ if(descriptionPhotoFingerprintV1890!==JSON.stringify(descriptionPhotoContextV1890())){
+  descriptionPhotoStatusV1890('A ficha mudou desde a análise. Analisa novamente antes de aplicar.','error');
+  return;
+ }
+ const text=String(draft.value||'').trim(),current=String(target.value||'').trim();
+ if(!text)return descriptionPhotoStatusV1890('A proposta está vazia.','error');
+ if(mode==='replace'){
+  if(current!==text&&current&&!confirm('Substituir a descrição atual deste produto pela proposta de IA?'))return;
+  target.value=text;
+ }else{
+  if(current.includes(text))return;
+  target.value=current?current+'\n\n'+text:text;
+ }
+ target.dispatchEvent(new Event('input',{bubbles:true}));
+ target.focus();
+ descriptionPhotoStatusV1890('Texto aplicado ao editor. Carrega em «Guardar alterações» para o guardar no produto.','ready');
+}
+
 function resetDescriptionAssistantV1888(){
+ resetPhotoDescriptionV1890();
  selectedDescriptionTemplateV1852='detail';
  const detail=document.getElementById('descriptionDetailV1888');
  if(detail)detail.value='';
@@ -11937,6 +12055,9 @@ function installDescriptionAssistantV1888(){
  const changed=e=>{if(tracked.has(e.target?.id))renderDescriptionPreviewV1888()};
  document.addEventListener('input',changed,true);
  document.addEventListener('change',changed,true);
+ document.addEventListener('change',e=>{
+  if(['prodShopImageUrl','prodShopImageUrl2','prodShopImageUrl3','prodShopImageFile','prodShopImageFile2','prodShopImageFile3'].includes(e.target?.id))resetPhotoDescriptionV1890();
+ },true);
  document.addEventListener('click',e=>{
   if(e.target?.closest?.('[data-product-panel-btn="public"]'))renderDescriptionPreviewV1888();
  },true);
