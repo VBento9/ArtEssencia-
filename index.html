@@ -11858,8 +11858,8 @@ function descriptionContextV1888(){
  if(container)facts.push('Recipiente / base: '+container);
  if(weight)facts.push('Peso aproximado: '+weight);
  if(sizeLabel)facts.push('Tamanho: '+sizeLabel);
- if(palette.length)facts.push('Cores à escolha: '+descriptionListV1888(palette));
- if(fragrances.length)facts.push('Fragrâncias à escolha: '+descriptionListV1888(fragrances));
+
+
  if(packaging)facts.push('Embalagem incluída');
  const browse=catalogBreadcrumbV191(catalogFromEditorV191());if(browse)facts.push('Família comercial: '+browse);
  return {name,category,process,type:descriptionProductTypeV1888(process,category),theme,motifs,distinctive,facts,fragrances,scentFromName,
@@ -11895,8 +11895,8 @@ function descriptionTextV1888(style,ctx){
   sentences.push(subject+' é '+type+(motif?', com referência ao motivo de '+motif:'')+'.');
   if(theme)sentences.push('A sua presença evoca '+themeMood+'.');
   if(ctx.distinctive)sentences.push(form);
-  if(ctx.fragrances.length)sentences.push('Fragrâncias disponíveis para escolha: '+descriptionListV1888(ctx.fragrances)+'.');
-  else if(ctx.scentFromName.length)sentences.push('O nome remete para '+descriptionListV1888(ctx.scentFromName)+', sem indicação de fragrância confirmada.');
+
+
   else if(!theme&&usage)sentences.push(usage);
  }else if(style==='gift'){
   sentences.push(subject+' é '+type+(motif?', com motivo de '+motif:'')+'.');
@@ -11914,7 +11914,7 @@ function descriptionTextV1888(style,ctx){
  }
  const maxFacts=style==='short'?2:style==='atmosphere'?2:style==='theme'?3:4;
  let facts=ctx.facts.slice(0,maxFacts);
- if(style==='atmosphere'&&ctx.fragrances.length)facts=facts.filter(x=>!x.startsWith('Fragrâncias à escolha:'));
+
  if(facts.length)sentences.push(facts.join(' · ')+'.');
  return sentences.filter(Boolean).join(' ').replace(/\s+/g,' ').trim();
 }
@@ -11930,7 +11930,7 @@ function renderDescriptionPreviewV1888(){
  const preview=area.querySelector('p'),sources=document.getElementById('descriptionSourcesV1888'),hint=document.getElementById('descriptionHintV1888');
  if(preview)preview.textContent=text||'Indica o nome do produto na Secção 1 para gerar uma descrição própria.';
  if(sources)sources.textContent='Baseado em: '+(ctx.sources.join(' · ')||'nenhum dado registado');
- if(hint)hint.textContent=ctx.name&&!ctx.motifs.length&&!ctx.distinctive&&!ctx.theme?'Acrescenta um pormenor distintivo ou a coleção para tornar o texto menos genérico.':'O texto é uma proposta: confirma sempre os detalhes antes de o publicar.';
+ if(hint)hint.textContent='Sugestão editorial: confirma os detalhes. Cores e fragrâncias são configuráveis e não devem ser descritas como únicas opções disponíveis.';
  for(const id of ['descriptionReplaceBtnV1852','descriptionAppendBtnV1852']){
   const button=document.getElementById(id);if(button)button.disabled=!text;
  }
