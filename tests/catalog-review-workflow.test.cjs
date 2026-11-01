@@ -78,3 +78,11 @@ test('sinalizadores Por rever e importação pendente são respeitados',()=>{
  assert.ok(api.missing(p).includes('Marcado «Por rever»'));
  assert.ok(api.missing(p).includes('Revisão de importação'));
 });
+
+test('clicar no cartão de revisão e Enter abrem editor sem passar pela lista geral',()=>{
+ assert.match(source,/ae-review-clickable/);
+ assert.match(source,/data-review-code/);
+ assert.match(source,/addEventListener\('keydown'/);
+ assert.match(source,/edit\(card\.dataset\.reviewCode\)/);
+ assert.match(source,/value\(b\.textContent\)==='Abrir editor'/);
+});

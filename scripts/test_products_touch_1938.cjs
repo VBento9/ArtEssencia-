@@ -17,6 +17,19 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
  assert.equal(await page.locator('#aeReviewToggle1995').isVisible(),true,'O regresso à lista deve estar explícito dentro da revisão');
  await page.locator('#aeReviewToggle1995').click();
  assert.equal(await card.isVisible(),true,'Voltar à lista deve devolver todos os botões');
+ // Rever sem voltar à listagem: o cartão e o botão abrem o editor original.
+ await page.locator('#aeProductsReviewNav1997').click();
+ const review=page.locator('#aeReviewRows1995 .ae-review-clickable').filter({hasText:'Vela de teste com nome comprido'});
+ await review.waitFor({state:'visible'});
+ await review.click();
+ assert.equal(await page.locator('.products-form-card').isVisible(),true,'Clicar no cartão deve abrir editor');
+ assert.equal(await page.locator('#prodCode').inputValue(),"FIX'QUOTE");
+ await page.locator('#aeProductsReviewNav1997').click();
+ await review.getByRole('button',{name:'Completar dados',exact:true}).click();
+ assert.equal(await page.locator('.products-form-card').isVisible(),true,'Completar dados deve abrir editor');
+ assert.equal(await page.locator('#prodCode').inputValue(),"FIX'QUOTE");
+ await page.locator('#aeProductsListNav1997').click();
+ assert.equal(await card.isVisible(),true,'Regressar à lista preserva cartões e botões');
  assert.equal(await page.locator('#aeProductsReviewNav1997').isVisible(),true,'Navegação por estado continua acessível');
  assert.equal(await card.getByRole('button',{name:'Arquivar',exact:true}).isVisible(),false);
  const targets=card.locator('.product-card-actions>.btn,summary');
