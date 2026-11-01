@@ -13,7 +13,10 @@ function setup(){
  const instrumented=source.replace("if(document.readyState==='loading')",
   "window.__reviewTest={assessment,missing,fingerprint,rows,mark};\nif(document.readyState==='loading')".replace('\\n','\n'));
  assert.notEqual(instrumented,source,'Ponto de instrumentação encontrado');
- vm.runInNewContext(instrumented,ctx);
+ // Apenas no ambiente isolado: não existe DOM para desenhar o painel.
+ const isolated=instrumented.replace(/  render\(\);\n  alertUser\(approve\?/,
+   "  alertUser(approve?");
+ vm.runInNewContext(isolated,ctx);
  const p={code:'EX-1',name:'Vela',category:'Vela',catalogGroupV191:'vela',catalogSubgroupV191:'religiosa',
   shopDescription:'Vela artesanal',shopImageUrl:'https://example.invalid/vela.png',
   manufactured:true,productionNotes:'Preparar',qualityNotes:'Conferir',price:12};
