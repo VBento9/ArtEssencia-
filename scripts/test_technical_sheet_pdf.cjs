@@ -61,7 +61,12 @@ new vm.Script(source,{filename:'product-technical-sheet.js'});
    assert(pdf.length>4000);
    const pages=(pdf.toString('latin1').match(/\/Type\s*\/Page\b/g)||[]).length;
    assert(pages>=2,'A long technical sheet should span multiple PDF pages');
-   await popup.close();
+   // Simula o fecho do diálogo de impressão; o separador auxiliar é libertado
+   // mesmo que a impressora continue fisicamente a imprimir.
+   assert.equal(await popup.evaluate(()=>window.__printRequested),true);
+   const closed=popup.waitForEvent('close');
+   await popup.evaluate(()=>window.dispatchEvent(new Event('afterprint')));
+   await closed;
    return pages;
   }
   const a5=await checkPrint('Imprimir A5','A5',false);

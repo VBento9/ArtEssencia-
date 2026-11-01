@@ -1,4 +1,4 @@
-/* ArtEssencia 1.9.83 — fichas técnicas de consulta, sem escrita de dados. */
+/* ArtEssencia 1.9.85 — fichas técnicas de consulta, sem escrita de dados. */
 (function productSheetAddon(){
 'use strict';
 const clean=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -149,7 +149,16 @@ function printSheet(code,format){
  const html='<!doctype html><html lang="pt-PT"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+clean(fileName)+'</title><style>'+css+'</style></head><body><div class="ts-tools"><div><b>Pré-visualização '+size+'</b><small> · Para guardar em PDF, escolhe “Guardar como PDF” na impressão.</small></div><button id="ts-print-action" type="button" disabled>Imprimir / Guardar PDF</button></div>'+fallback+markup(s,full,img)+'</body></html>';
  win.document.open();win.document.write(html);win.document.close();
  const printButton=win.document.getElementById('ts-print-action');
- printButton.onclick=()=>{try{win.focus();win.print()}catch(_){alert('A impressão não abriu. Usa o menu Imprimir do navegador ou abre o Backoffice num navegador compatível.')}};
+ // Cada ficha abre um trabalho independente: depois de confirmado o diálogo de impressão,
+ // libertar a janela sem aguardar pela conclusão física na impressora.
+ // O spooler/driver do dispositivo, e não o navegador, decide se aceita vários trabalhos em fila.
+ win.addEventListener('afterprint',()=>{
+  try{win.setTimeout(()=>{if(!win.closed)win.close()},150)}catch(_){}
+ },{once:true});
+ printButton.onclick=()=>{
+  try{win.focus();win.print()}
+  catch(_){alert('A impressão não abriu. Usa o menu Imprimir do navegador ou abre o Backoffice num navegador compatível.')}
+ };
  const image=win.document.querySelector('.ts-photo');
  if(image){
   try{if(!image.complete)await Promise.race([image.decode(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Tempo de imagem excedido')),6000))]);if(!image.naturalWidth)throw new Error('Imagem vazia')}
