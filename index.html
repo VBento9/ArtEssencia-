@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.87">
+<meta name="artessencia-version" content="1.9.88">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <link rel="manifest" href="manifest.webmanifest">
@@ -5819,13 +5819,16 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           <label>Descrição para o catálogo / loja</label>
           <div class="description-assistant-v1852">
             <div class="description-assistant-head-v1852">
-              <div><strong>Assistente de descrição</strong><small>Escolhe uma base neutra e adapta apenas o que for necessário.</small></div>
+              <div><strong>Assistente de descrição contextual</strong><small>Textos sobre esta peça, construídos com o nome, a temática e os detalhes registados.</small></div>
               <span class="description-assistant-pill-v1852">Opcional</span>
             </div>
+            <div class="description-distinctive-v1888"><label for="descriptionDetailV1888">O detalhe que distingue esta peça <small>(opcional)</small></label><input id="descriptionDetailV1888" type="text" maxlength="180" placeholder="Ex.: fantasma apoiado numa abóbora, com detalhes em relevo"><small>O detalhe só entra na descrição se aplicares o texto.</small></div>
             <div id="descriptionTemplateGridV1852" class="description-template-grid-v1852"></div>
             <div id="descriptionPreviewV1852" class="description-preview-v1852">
               <small>Pré-visualização</small>
-              <p>Seleciona um modelo para veres o texto antes de o aplicares.</p>
+              <p>Indica o nome do produto para veres uma descrição específica.</p>
+              <small id="descriptionSourcesV1888" class="description-sources-v1888"></small>
+              <small id="descriptionHintV1888" class="description-hint-v1888"></small>
             </div>
             <div class="description-actions-v1852">
               <button id="descriptionReplaceBtnV1852" class="btn primary" type="button" onclick="applyDescriptionTemplateV1852('replace')" disabled>Substituir descrição</button>
@@ -6147,7 +6150,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.87';
+const APP_VERSION='1.9.88';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -11560,7 +11563,7 @@ function cancelProductEditV145(){
  const bd=document.getElementById('batchDiscountPctV1745');if(bd)bd.value='0';
  const bm=document.getElementById('batchProfitPctV1744');if(bm)bm.value='';
  const bp=document.getElementById('batchManualUnitPriceV1743');if(bp)bp.value='';
- refreshProductChannelPricingV12620();setProductEditorModeV145(null);refreshProductTechSheetBridgeV1250();toast('Edição cancelada')
+ refreshProductChannelPricingV12620();setProductEditorModeV145(null);resetDescriptionAssistantV1888();refreshProductTechSheetBridgeV1250();toast('Edição cancelada')
 }
 function resetProductEditorAfterSaveV1749(){
  clearNewProductRecipeDraftV1805();
@@ -11589,7 +11592,7 @@ function resetProductEditorAfterSaveV1749(){
  const bd=document.getElementById('batchDiscountPctV1745');if(bd)bd.value='0';
  const bm=document.getElementById('batchProfitPctV1744');if(bm)bm.value='';
  const bp=document.getElementById('batchManualUnitPriceV1743');if(bp)bp.value='';
- setProductEditorModeV145(null);
+ setProductEditorModeV145(null);resetDescriptionAssistantV1888();
  // É essencial recalcular apenas depois de o código ter sido limpo: caso contrário,
  // productDraftV110() reencontra o produto acabado de guardar e reutiliza a ficha anterior.
  refreshProductChannelPricingV12620();
@@ -11739,35 +11742,202 @@ function productSizeCategoryFromLegacyDimensionsV1850(value){
  if(!nums.length)return '';const max=Math.max(...nums);return max<=8?'small':max<=15?'medium':'large'
 }
 const DESCRIPTION_TEMPLATES_V1852=[
- {id:'versatile',title:'Decorativo versátil',note:'Neutro e adaptável a várias coleções',text:'Uma peça artesanal de carácter decorativo, criada para dar personalidade e detalhe ao espaço. O seu design versátil permite integrá-la em diferentes ambientes e coleções ao longo do ano.'},
- {id:'nature',title:'Natureza / Bosque',note:'Orgânico, acolhedor e natural',text:'Uma criação artesanal inspirada nas formas e elementos da natureza, com um visual orgânico e acolhedor. Ideal para composições decorativas, ambientes naturais e diferentes coleções sazonais.'},
- {id:'mystic',title:'Místico / Misterioso',note:'Mais marcante e envolvente',text:'Uma peça de carácter marcante e atmosfera envolvente, com um design pensado para criar composições expressivas e cheias de personalidade.'},
- {id:'minimal',title:'Elegante / Minimalista',note:'Linhas simples e intemporais',text:'Uma criação de linhas equilibradas e acabamento delicado, pensada para complementar diferentes estilos de decoração com simplicidade e elegância.'},
- {id:'romantic',title:'Romântico / Delicado',note:'Suave, acolhedor e especial',text:'Uma peça artesanal de linhas suaves e carácter delicado, pensada para criar ambientes acolhedores e tornar pequenos momentos ainda mais especiais.'},
- {id:'playful',title:'Divertido / Expressivo',note:'Original e descontraído',text:'Uma criação artesanal de carácter descontraído e expressivo, pensada para acrescentar um apontamento original e divertido à decoração.'},
- {id:'gift',title:'Oferta / Presente',note:'Adequado a diferentes ocasiões',text:'Uma peça artesanal pensada para oferecer ou para criar um detalhe especial em casa. O seu carácter versátil torna-a adequada para diferentes ocasiões ao longo do ano.'},
- {id:'aromatic',title:'Vela aromática / Ambiente',note:'Decoração e experiência aromática',text:'Uma vela artesanal criada para conjugar presença decorativa e experiência aromática, proporcionando um ambiente acolhedor e personalizado através das fragrâncias disponíveis.'},
- {id:'seasonal',title:'Sazonal neutra',note:'Funciona em várias edições especiais',text:'Uma criação artesanal especialmente adequada a composições sazonais, mantendo um design suficientemente versátil para integrar diferentes coleções e ambientes ao longo do ano.'},
- {id:'short',title:'Descrição curta',note:'Direta e simples',text:'Peça artesanal de carácter decorativo, criada com atenção ao detalhe e pensada para diferentes ambientes e ocasiões.'}
+ {id:'detail',title:'A peça em detalhe',note:'Forma, tipo e características'},
+ {id:'theme',title:'História da coleção',note:'Ocasião, símbolos e temática'},
+ {id:'atmosphere',title:'Ambiente e sensações',note:'Atmosfera sem inventar aromas'},
+ {id:'gift',title:'Para oferecer',note:'Sugestão ligada à ocasião'},
+ {id:'short',title:'Curta para catálogo',note:'Direta, mas específica'}
 ];
-let selectedDescriptionTemplateV1852='';
+let selectedDescriptionTemplateV1852='detail';
+const DESCRIPTION_THEMES_V1888=[
+ {label:'Halloween',test:/halloween|fantasma|abobora|morcego|bruxa|gato negro|boo/,mood:'o lado divertido e misterioso do Halloween',occasion:'a época de Halloween',decor:'decoração de Halloween'},
+ {label:'Natal',test:/natal|natividade|pres[eé]pio|sagrada familia|rena|gnomo|pinheiro|arvore de natal|boneco de neve|gengibre/,mood:'a magia dos encontros e tradições de Natal',occasion:'a época de Natal',decor:'decoração natalícia'},
+ {label:'São Valentim',test:/valentim|namorados|coracao|romantic|amor/,mood:'os pequenos gestos de carinho e afeto',occasion:'o Dia de São Valentim',decor:'momentos especiais'},
+ {label:'Páscoa',test:/pascoa|coelh|ovo de pascoa/,mood:'a leveza e os símbolos da Páscoa',occasion:'a Páscoa',decor:'decoração pascal'},
+ {label:'Outono',test:/outono|colheita|folhas? de outono|cogumelo|pinha/,mood:'a atmosfera acolhedora do outono',occasion:'o outono',decor:'composições outonais'},
+ {label:'Primavera',test:/primavera|margarida|flores|floral|flor de/,mood:'a leveza e a renovação da primavera',occasion:'a primavera',decor:'composições primaveris'},
+ {label:'Verão',test:/verao|praia|concha|maritimo/,mood:'a luminosidade e descontração do verão',occasion:'o verão',decor:'ambientes de verão'},
+ {label:'Inverno',test:/inverno|floco de neve/,mood:'a tranquilidade e o conforto do inverno',occasion:'o inverno',decor:'ambientes de inverno'}
+];
+const DESCRIPTION_MOTIFS_V1888=[
+ [/fantasma/,'fantasma'],[/abobora/,'abóbora'],[/sagrada familia/,'Sagrada Família'],
+ [/natividade|presepio/,'presépio'],[/boneco de neve/,'boneco de neve'],[/rena/,'rena'],
+ [/gnomo/,'gnomo'],[/pinhas?/,'pinha'],[/cogumelo/,'cogumelo'],[/margarida/,'margarida'],
+ [/coelh/,'coelho'],[/coracao/,'coração'],[/anjo|angelical/,'anjo'],[/morcego/,'morcego'],
+ [/gato negro/,'gato negro'],[/gengibre/,'gengibre'],[/lavanda/,'lavanda'],[/cafe/,'café'],[/urso|ursinho/,'urso'],
+ [/arvore|pinheiro/,'árvore'],[/estrela/,'estrela'],[/flor/,'flor']
+];
+function descriptionNormV1888(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()}
+function descriptionValueV1888(id){return String(document.getElementById(id)?.value||'').replace(/\s+/g,' ').trim()}
+function descriptionListV1888(a){
+ const parts=a.filter(Boolean);return parts.length<2?parts.join(''):parts.slice(0,-1).join(', ')+' e '+parts[parts.length-1]
+}
+function descriptionProductTypeV1888(process,category){
+ const map={
+  wax_mold:['uma','vela decorativa em molde'],wax_container:['uma','vela em recipiente'],
+  wax_melt:['um','wax melt'],soap:['um','sabonete'],resin:['uma','peça em resina'],
+  laser:['uma','peça com gravação'],assembly:['uma','composição personalizada']
+ };
+ if(map[process])return map[process];
+ const c=descriptionNormV1888(category);
+ if(c.includes('vela'))return ['uma','vela decorativa'];
+ if(c.includes('sabonete'))return ['um','sabonete'];
+ if(c.includes('resina')||c.includes('jesmonite'))return ['uma','peça decorativa em resina'];
+ return ['uma','peça decorativa'];
+}
+function descriptionContextV1888(){
+ const name=descriptionValueV1888('prodName'),category=descriptionValueV1888('prodCat');
+ const process=descriptionValueV1888('prodProductionTypeV130');
+ const seasons=descriptionValueV1888('prodSeasonTagsV1761');
+ let editions=[];
+ try{
+  if(typeof productEditionDraftIdsV1758!=='undefined'&&Array.isArray(specialEditionsAdmin)){
+   const ids=new Set([...productEditionDraftIdsV1758].map(String));
+   editions=specialEditionsAdmin.filter(e=>ids.has(String(editionIdV1244(e)))).map(e=>String(e.name||e.slug||'').trim()).filter(Boolean);
+  }
+ }catch(_){}
+ const explicit=descriptionNormV1888(editions.join(' ')+' '+seasons);
+ const fromName=descriptionNormV1888(name);
+ const theme=DESCRIPTION_THEMES_V1888.find(t=>t.test.test(explicit))||DESCRIPTION_THEMES_V1888.find(t=>t.test.test(fromName))||null;
+ let motifs=DESCRIPTION_MOTIFS_V1888.filter(([pattern])=>pattern.test(fromName)).map(([,label])=>label);
+ if(motifs.includes('margarida'))motifs=motifs.filter(x=>x!=='flor');
+ if(motifs.includes('Sagrada Família'))motifs=motifs.filter(x=>x!=='presépio');
+ motifs=[...new Set(motifs)].slice(0,3);
+ const colorMax=Number(descriptionValueV1888('prodColorMaxV1773'))||0;
+ const palette=colorMax>0?descriptionValueV1888('prodColorsV1773').split(/[,;\n]+/).map(x=>x.split('|')[0].trim()).filter(Boolean).slice(0,3):[];
+ const fragranceEnabled=!!document.getElementById('prodFragranceEnabledV1773')?.checked;
+ const fragrances=fragranceEnabled?descriptionValueV1888('prodFragrancesV1773').split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean).slice(0,3):[];
+ const distinctive=descriptionValueV1888('descriptionDetailV1888').replace(/[.!?]+$/,'');
+ const material=descriptionValueV1888('prodPublicMaterialTypeV1861');
+ const wax=descriptionValueV1888('prodPublicWaxTypeV1820');
+ const weight=descriptionValueV1888('prodPublicWeightV1820');
+ const container=descriptionValueV1888('prodPublicMaterialContainerV1820');
+ const size=descriptionValueV1888('prodPublicSizeV1850');
+ const sizeLabel=({small:'pequeno',medium:'médio',large:'grande'})[size]||'';
+ const packaging=!!document.getElementById('prodPackagingIncludedV1853')?.checked;
+ const facts=[];
+ if(process.startsWith('wax_')&&wax)facts.push('Cera indicada: '+wax);
+ if(material)facts.push('Material: '+material);
+ if(container)facts.push('Recipiente / base: '+container);
+ if(weight)facts.push('Peso aproximado: '+weight);
+ if(sizeLabel)facts.push('Tamanho: '+sizeLabel);
+ if(palette.length)facts.push('Cores à escolha: '+descriptionListV1888(palette));
+ if(fragrances.length)facts.push('Fragrâncias à escolha: '+descriptionListV1888(fragrances));
+ if(packaging)facts.push('Embalagem incluída');
+ return {name,category,process,type:descriptionProductTypeV1888(process,category),theme,motifs,distinctive,facts,fragrances,
+  sources:[name?'nome':'',category?'tipo':'',theme?'tema '+theme.label:'',distinctive?'pormenor próprio':'',
+   wax||material||weight||container?'características':'',fragrances.length?'fragrâncias':'',palette.length?'cores':''].filter(Boolean)};
+}
+function descriptionUseV1888(process){
+ return {
+  wax_mold:'A forma da vela permite apresentá-la como um detalhe decorativo.',
+  wax_container:'A vela em recipiente pode integrar a decoração de um ambiente interior.',
+  wax_melt:'Para utilização num queimador próprio para wax melts.',
+  soap:'Uma proposta para integrar a rotina de higiene quotidiana.',
+  resin:'Uma opção para composições decorativas em casa.',
+  laser:'A gravação valoriza o desenho escolhido para a peça.',
+  assembly:'A apresentação reúne os elementos definidos para esta criação.'
+ }[process]||'';
+}
+function descriptionTextV1888(style,ctx){
+ if(!ctx.name)return '';
+ const subject='«'+ctx.name+'»';
+ const type=ctx.type[0]+' '+ctx.type[1], motif=descriptionListV1888(ctx.motifs), usage=descriptionUseV1888(ctx.process);
+ const form=ctx.distinctive?'Detalhe distintivo: '+ctx.distinctive+'.':'';
+ const theme=ctx.theme;
+ let sentences=[];
+ if(style==='theme'){
+  if(theme)sentences.push(subject+' é '+type+' com inspiração na temática de '+theme.label+(motif?', ligada ao motivo de '+motif:'')+'.');
+  else sentences.push(subject+' apresenta-se como '+type+(motif?', com referência ao motivo de '+motif:'')+'.');
+  if(form)sentences.push(form);
+  if(theme)sentences.push('O conceito evoca '+theme.mood+'.');
+  else if(usage)sentences.push(usage);
+ }else if(style==='atmosphere'){
+  sentences.push(subject+' é '+type+(motif?', com referência ao motivo de '+motif:'')+'.');
+  if(theme)sentences.push('A proposta evoca '+theme.mood+', com uma presença ligada ao tema de '+theme.label+'.');
+  if(ctx.distinctive)sentences.push(form);
+  if(ctx.fragrances.length)sentences.push('Fragrâncias disponíveis para escolha: '+descriptionListV1888(ctx.fragrances)+'.');
+  else if(!theme&&usage)sentences.push(usage);
+ }else if(style==='gift'){
+  sentences.push(subject+' é '+type+(motif?', com motivo de '+motif:'')+'.');
+  sentences.push('Uma sugestão de presente '+(theme?'para '+theme.occasion:'para quem aprecia '+ctx.type[1]+(motif?' com inspiração em '+motif:'') )+'.');
+  if(ctx.distinctive)sentences.push(form);
+ }else if(style==='short'){
+  sentences.push(subject+' — '+ctx.type[1]+(motif?', com motivo de '+motif:'')+(theme?', com inspiração na temática de '+theme.label:'')+'.');
+  if(ctx.distinctive)sentences.push(form);
+  else if(!theme&&usage)sentences.push(usage);
+ }else{
+  sentences.push(subject+' é '+type+(motif?', com referência a '+motif:'')+'.');
+  if(ctx.distinctive)sentences.push(form);
+  if(theme)sentences.push('A temática de '+theme.label+' evoca '+theme.mood+'.');
+  else if(usage)sentences.push(usage);
+ }
+ const maxFacts=style==='short'?2:style==='atmosphere'?2:style==='theme'?3:4;
+ let facts=ctx.facts.slice(0,maxFacts);
+ if(style==='atmosphere'&&ctx.fragrances.length)facts=facts.filter(x=>!x.startsWith('Fragrâncias à escolha:'));
+ if(facts.length)sentences.push(facts.join(' · ')+'.');
+ return sentences.filter(Boolean).join(' ').replace(/\s+/g,' ').trim();
+}
 function renderDescriptionTemplatesV1852(){
  const box=document.getElementById('descriptionTemplateGridV1852');if(!box)return;
- box.innerHTML=DESCRIPTION_TEMPLATES_V1852.map(t=>'<button type="button" class="description-template-card-v1852'+(selectedDescriptionTemplateV1852===t.id?' active':'')+'" onclick="selectDescriptionTemplateV1852(\''+t.id+'\')"><b>'+escapeHtml(t.title)+'</b><span>'+escapeHtml(t.note)+'</span></button>').join('')
+ box.innerHTML=DESCRIPTION_TEMPLATES_V1852.map(t=>'<button type="button" class="description-template-card-v1852'+(selectedDescriptionTemplateV1852===t.id?' active':'')+'" aria-pressed="'+(selectedDescriptionTemplateV1852===t.id)+'" onclick="selectDescriptionTemplateV1852(\''+t.id+'\')"><b>'+escapeHtml(t.title)+'</b><span>'+escapeHtml(t.note)+'</span></button>').join('');
+ renderDescriptionPreviewV1888();
+}
+function renderDescriptionPreviewV1888(){
+ const area=document.getElementById('descriptionPreviewV1852'),ctx=descriptionContextV1888();
+ if(!area)return;
+ const text=descriptionTextV1888(selectedDescriptionTemplateV1852,ctx);
+ const preview=area.querySelector('p'),sources=document.getElementById('descriptionSourcesV1888'),hint=document.getElementById('descriptionHintV1888');
+ if(preview)preview.textContent=text||'Indica o nome do produto na Secção 1 para gerar uma descrição própria.';
+ if(sources)sources.textContent='Baseado em: '+(ctx.sources.join(' · ')||'nenhum dado registado');
+ if(hint)hint.textContent=ctx.name&&!ctx.motifs.length&&!ctx.distinctive&&!ctx.theme?'Acrescenta um pormenor distintivo ou a coleção para tornar o texto menos genérico.':'O texto é uma proposta: confirma sempre os detalhes antes de o publicar.';
+ for(const id of ['descriptionReplaceBtnV1852','descriptionAppendBtnV1852']){
+  const button=document.getElementById(id);if(button)button.disabled=!text;
+ }
 }
 function selectDescriptionTemplateV1852(id){
- const t=DESCRIPTION_TEMPLATES_V1852.find(x=>x.id===id);if(!t)return;
- selectedDescriptionTemplateV1852=id;renderDescriptionTemplatesV1852();
- const p=document.querySelector('#descriptionPreviewV1852 p');if(p)p.textContent=t.text;
- ['descriptionReplaceBtnV1852','descriptionAppendBtnV1852'].forEach(x=>{const e=document.getElementById(x);if(e)e.disabled=false})
+ if(!DESCRIPTION_TEMPLATES_V1852.some(x=>x.id===id))return;
+ selectedDescriptionTemplateV1852=id;
+ renderDescriptionTemplatesV1852();
 }
 function applyDescriptionTemplateV1852(mode){
- const t=DESCRIPTION_TEMPLATES_V1852.find(x=>x.id===selectedDescriptionTemplateV1852),el=document.getElementById('prodShopDescription');if(!t||!el)return;
- if(mode==='append'){const cur=String(el.value||'').trim();el.value=cur?cur+'\n\n'+t.text:t.text}
- else el.value=t.text;
- el.dispatchEvent(new Event('input',{bubbles:true}));el.focus()
+ const el=document.getElementById('prodShopDescription');
+ if(!el||!['append','replace'].includes(mode))return;
+ const text=descriptionTextV1888(selectedDescriptionTemplateV1852,descriptionContextV1888());
+ if(!text)return;
+ const current=String(el.value||'').trim();
+ if(mode==='append'){
+  if(current.includes(text))return;
+  el.value=current?current+'\n\n'+text:text;
+ }else{
+  if(current===text)return;
+  if(current&&!confirm('Substituir a descrição atual deste produto? O texto anterior será perdido quando guardares.'))return;
+  el.value=text;
+ }
+ el.dispatchEvent(new Event('input',{bubbles:true}));
+ el.focus();
 }
-setTimeout(renderDescriptionTemplatesV1852,0);
+function resetDescriptionAssistantV1888(){
+ selectedDescriptionTemplateV1852='detail';
+ const detail=document.getElementById('descriptionDetailV1888');
+ if(detail)detail.value='';
+ renderDescriptionTemplatesV1852();
+}
+function installDescriptionAssistantV1888(){
+ renderDescriptionTemplatesV1852();
+ const tracked=new Set(['prodName','prodCat','prodSeasonTagsV1761','prodTagsV1753','prodProductionTypeV130',
+  'prodPublicWaxTypeV1820','prodPublicMaterialTypeV1861','prodPublicWeightV1820','prodPublicSizeV1850',
+  'prodPublicMaterialContainerV1820','prodColorMaxV1773','prodColorsV1773','prodFragranceEnabledV1773',
+  'prodFragrancesV1773','prodPackagingIncludedV1853','descriptionDetailV1888']);
+ const changed=e=>{if(tracked.has(e.target?.id))renderDescriptionPreviewV1888()};
+ document.addEventListener('input',changed,true);
+ document.addEventListener('change',changed,true);
+ document.addEventListener('click',e=>{
+  if(e.target?.closest?.('[data-product-panel-btn="public"]'))renderDescriptionPreviewV1888();
+ },true);
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installDescriptionAssistantV1888,{once:true});
+else installDescriptionAssistantV1888();
 
 function productPublicCharacteristicsFromFormV1820(){
  return {
@@ -11906,7 +12076,7 @@ function editProduct(code){
  fillProductTechnicalFormV1287(p);
  setProductShopImagePreview(p.shopImageUrl||'');setProductGalleryImagePreviewV1860(2,p.shopImageUrl2||'');setProductGalleryImagePreviewV1860(3,p.shopImageUrl3||'');
  for(const id of ['prodShopImageFile','prodShopImageFile2','prodShopImageFile3']){const f=document.getElementById(id);if(f)f.value=''};
- syncPricingQuickFromBaseV1762();restoreProductPanelV1762();window.scrollTo({top:0,behavior:'smooth'})
+ syncPricingQuickFromBaseV1762();restoreProductPanelV1762();resetDescriptionAssistantV1888();window.scrollTo({top:0,behavior:'smooth'})
 }
 function updateProductCollectionFilterV1752(){
  const sel=document.getElementById('productCollectionFilterV1752');if(!sel)return;

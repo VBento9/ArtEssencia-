@@ -18,3 +18,12 @@
  #products #prodTechSheetBtn{width:100%;min-width:0}
  #products #prodTechSheetBridge .product-techsheet-stats-v1250{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+/* Assistente de descrições: breve e legível também no telemóvel. */
+#products .description-distinctive-v1888{margin:0 0 12px;display:grid;gap:5px}
+#products .description-distinctive-v1888 label{font-size:12px;font-weight:750}
+#products .description-distinctive-v1888 input{width:100%;min-width:0;box-sizing:border-box}
+#products .description-distinctive-v1888 small{font-size:11px;color:var(--muted);line-height:1.35}
+#products .description-sources-v1888,#products .description-hint-v1888{margin-top:8px!important;text-transform:none!important;letter-spacing:normal!important;font-size:11px!important;line-height:1.4}
+#products .description-hint-v1888{font-weight:500!important}
+@media(max-width:580px){#products .description-template-grid-v1852{grid-template-columns:repeat(2,minmax(0,1fr))}#products .description-template-card-v1852{min-height:72px;padding:10px 9px}#products .description-template-card-v1852 b{font-size:11px}#products .description-template-card-v1852 span{font-size:10px}}
