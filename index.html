@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.88">
+<meta name="artessencia-version" content="1.9.89">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <link rel="manifest" href="manifest.webmanifest">
@@ -6150,7 +6150,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.88';
+const APP_VERSION='1.9.89';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -10998,6 +10998,7 @@ function toggleProductEditionV1758(id,checked){
  if(checked)productEditionDraftIdsV1758.add(id);else productEditionDraftIdsV1758.delete(id);
  const el=document.getElementById('prodEditionId');if(el){const o=[...el.options].find(x=>String(x.value)===id);if(o)o.selected=!!checked}
  renderProductEditionPickerV1758();
+ renderDescriptionPreviewV1888();
 }
 async function loadProductEditionsV1245(force=false){if(force||!Array.isArray(specialEditionsAdmin)||!specialEditionsAdmin.length)await loadSpecialEditionsAdmin(false);return Array.isArray(specialEditionsAdmin)?specialEditionsAdmin:[]}
 async function refreshProductEditionOptionsV1758(){
@@ -11719,7 +11720,7 @@ function importPersonalizationLibraryV1791(){
  lib.fragrances.sort((a,b)=>a.localeCompare(b,'pt'));lib.colors.sort((a,b)=>a.name.localeCompare(b.name,'pt'));save();renderPersonalizationLibraryV1791();toast(`Importadas ${nf} fragrância(s) e ${nc} cor(es)`)
 }
 function selectedProductFragrancesV1791(){return parseProductFragrancesV1773(document.getElementById('prodFragrancesV1773')?.value)}
-function setSelectedProductFragrancesV1791(arr){const el=document.getElementById('prodFragrancesV1773');if(el)el.value=(arr||[]).join(', ');renderProductMasterFragrancesV1791()}
+function setSelectedProductFragrancesV1791(arr){const el=document.getElementById('prodFragrancesV1773');if(el)el.value=(arr||[]).join(', ');renderProductMasterFragrancesV1791();renderDescriptionPreviewV1888()}
 function toggleProductFragranceV1791(encoded){const name=decodeURIComponent(encoded),arr=selectedProductFragrancesV1791(),k=personalizationKeyV1792(name),i=arr.findIndex(x=>personalizationKeyV1792(x)===k);if(i>=0)arr.splice(i,1);else arr.push(name);setSelectedProductFragrancesV1791(arr)}
 function renderProductMasterFragrancesV1791(){
  const box=document.getElementById('productMasterFragrancesV1791');if(!box)return;const lib=personalizationLibraryV1791(),q=String(document.getElementById('productFragranceSearchV1791')?.value||'').trim().toLocaleLowerCase('pt-PT'),cat=document.getElementById('productFragranceCategoryV1792')?.value||'',sel=new Set(selectedProductFragrancesV1791().map(x=>personalizationKeyV1792(x)));
@@ -11729,13 +11730,13 @@ function renderProductMasterFragrancesV1791(){
 function selectAllProductFragrancesV1791(){const lib=personalizationLibraryV1791(),cat=document.getElementById('productFragranceCategoryV1792')?.value||'';setSelectedProductFragrancesV1791(lib.fragrances.filter(x=>!cat||lib.fragranceCategoryMap[personalizationKeyV1792(x)]===cat))}
 function clearProductFragrancesV1791(){setSelectedProductFragrancesV1791([])}
 function selectedProductColorsV1791(){return parseProductColorsV1773(document.getElementById('prodColorsV1773')?.value)}
-function toggleProductColorV1791(index){const master=personalizationLibraryV1791().colors[index];if(!master)return;const arr=selectedProductColorsV1791(),k=normalizeColorNameV1775(master.name),i=arr.findIndex(x=>normalizeColorNameV1775(x.name)===k);if(i>=0)arr.splice(i,1);else arr.push({...master});serializeProductColorsV1775(arr);renderProductColorPreviewV1773();renderProductMasterColorsV1791()}
+function toggleProductColorV1791(index){const master=personalizationLibraryV1791().colors[index];if(!master)return;const arr=selectedProductColorsV1791(),k=normalizeColorNameV1775(master.name),i=arr.findIndex(x=>normalizeColorNameV1775(x.name)===k);if(i>=0)arr.splice(i,1);else arr.push({...master});serializeProductColorsV1775(arr);renderProductColorPreviewV1773();renderProductMasterColorsV1791();renderDescriptionPreviewV1888()}
 function renderProductMasterColorsV1791(){
  const box=document.getElementById('productMasterColorsV1791');if(!box)return;const lib=personalizationLibraryV1791(),q=normalizeColorNameV1775(document.getElementById('productColorSearchV1791')?.value||''),cat=document.getElementById('productColorCategoryV1792')?.value||'',sel=new Set(selectedProductColorsV1791().map(x=>normalizeColorNameV1775(x.name))),rows=lib.colors.map((x,i)=>({x,i})).filter(o=>(!q||normalizeColorNameV1775(o.x.name).includes(q))&&(!cat||lib.colorCategoryMap[normalizeColorNameV1775(o.x.name)]===cat));
  box.innerHTML=rows.length?rows.map(o=>`<button type="button" class="personalization-option-v1791 ${sel.has(normalizeColorNameV1775(o.x.name))?'selected':''}" onclick="toggleProductColorV1791(${o.i})"><i style="background:${escapeAttr(o.x.hex)}"></i>${escapeHtml(o.x.name)}</button>`).join(''):'<span class="muted">Nenhuma cor encontrada.</span>'
 }
 function selectAllProductColorsV1791(){const lib=personalizationLibraryV1791(),cat=document.getElementById('productColorCategoryV1792')?.value||'',arr=lib.colors.filter(x=>!cat||lib.colorCategoryMap[normalizeColorNameV1775(x.name)]===cat);serializeProductColorsV1775(arr);renderProductColorPreviewV1773();renderProductMasterColorsV1791()}
-function clearProductColorsV1791(){serializeProductColorsV1775([]);renderProductColorPreviewV1773();renderProductMasterColorsV1791()}
+function clearProductColorsV1791(){serializeProductColorsV1775([]);renderProductColorPreviewV1773();renderProductMasterColorsV1791();renderDescriptionPreviewV1888()}
 
 function productSizeCategoryFromLegacyDimensionsV1850(value){
  const nums=String(value||'').match(/\d+(?:[.,]\d+)?/g)?.map(v=>Number(v.replace(',','.'))).filter(Number.isFinite)||[];
@@ -11801,6 +11802,7 @@ function descriptionContextV1888(){
  const theme=DESCRIPTION_THEMES_V1888.find(t=>t.test.test(explicit))||DESCRIPTION_THEMES_V1888.find(t=>t.test.test(fromName))||null;
  let motifs=DESCRIPTION_MOTIFS_V1888.filter(([pattern])=>pattern.test(fromName)).map(([,label])=>label);
  if(motifs.includes('margarida'))motifs=motifs.filter(x=>x!=='flor');
+ if(['soap','wax_melt','wax_container'].includes(process))motifs=motifs.filter(x=>!['lavanda','café'].includes(x));
  if(motifs.includes('Sagrada Família'))motifs=motifs.filter(x=>x!=='presépio');
  motifs=[...new Set(motifs)].slice(0,3);
  const colorMax=Number(descriptionValueV1888('prodColorMaxV1773'))||0;
@@ -11808,6 +11810,7 @@ function descriptionContextV1888(){
  const fragranceEnabled=!!document.getElementById('prodFragranceEnabledV1773')?.checked;
  const fragrances=fragranceEnabled?descriptionValueV1888('prodFragrancesV1773').split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean).slice(0,3):[];
  const distinctive=descriptionValueV1888('descriptionDetailV1888').replace(/[.!?]+$/,'');
+ const scentFromName=process==='soap'||process==='wax_melt'||process==='wax_container'?DESCRIPTION_MOTIFS_V1888.filter(([pattern,label])=>['lavanda','café'].includes(label)&&pattern.test(fromName)).map(([,label])=>label):[];
  const material=descriptionValueV1888('prodPublicMaterialTypeV1861');
  const wax=descriptionValueV1888('prodPublicWaxTypeV1820');
  const weight=descriptionValueV1888('prodPublicWeightV1820');
@@ -11824,7 +11827,7 @@ function descriptionContextV1888(){
  if(palette.length)facts.push('Cores à escolha: '+descriptionListV1888(palette));
  if(fragrances.length)facts.push('Fragrâncias à escolha: '+descriptionListV1888(fragrances));
  if(packaging)facts.push('Embalagem incluída');
- return {name,category,process,type:descriptionProductTypeV1888(process,category),theme,motifs,distinctive,facts,fragrances,
+ return {name,category,process,type:descriptionProductTypeV1888(process,category),theme,motifs,distinctive,facts,fragrances,scentFromName,
   sources:[name?'nome':'',category?'tipo':'',theme?'tema '+theme.label:'',distinctive?'pormenor próprio':'',
    wax||material||weight||container?'características':'',fragrances.length?'fragrâncias':'',palette.length?'cores':''].filter(Boolean)};
 }
@@ -11843,20 +11846,22 @@ function descriptionTextV1888(style,ctx){
  if(!ctx.name)return '';
  const subject='«'+ctx.name+'»';
  const type=ctx.type[0]+' '+ctx.type[1], motif=descriptionListV1888(ctx.motifs), usage=descriptionUseV1888(ctx.process);
- const form=ctx.distinctive?'Detalhe distintivo: '+ctx.distinctive+'.':'';
+ const form=ctx.distinctive?'Destaca-se pelo pormenor '+ctx.distinctive.replace(/^(?:o|a|os|as)\s+/i,'')+'.':'';
  const theme=ctx.theme;
+ const themeMood=theme?theme.mood:'';
  let sentences=[];
  if(style==='theme'){
-  if(theme)sentences.push(subject+' é '+type+' com inspiração na temática de '+theme.label+(motif?', ligada ao motivo de '+motif:'')+'.');
+  if(theme)sentences.push(subject+' é '+type+' com inspiração na coleção '+theme.label+(motif?', com elementos de '+motif:'')+'.');
   else sentences.push(subject+' apresenta-se como '+type+(motif?', com referência ao motivo de '+motif:'')+'.');
   if(form)sentences.push(form);
-  if(theme)sentences.push('O conceito evoca '+theme.mood+'.');
+  if(theme)sentences.push('A composição evoca '+themeMood+'.');
   else if(usage)sentences.push(usage);
  }else if(style==='atmosphere'){
   sentences.push(subject+' é '+type+(motif?', com referência ao motivo de '+motif:'')+'.');
-  if(theme)sentences.push('A proposta evoca '+theme.mood+', com uma presença ligada ao tema de '+theme.label+'.');
+  if(theme)sentences.push('A sua presença evoca '+themeMood+'.');
   if(ctx.distinctive)sentences.push(form);
   if(ctx.fragrances.length)sentences.push('Fragrâncias disponíveis para escolha: '+descriptionListV1888(ctx.fragrances)+'.');
+  else if(ctx.scentFromName.length)sentences.push('O nome remete para '+descriptionListV1888(ctx.scentFromName)+', sem indicação de fragrância confirmada.');
   else if(!theme&&usage)sentences.push(usage);
  }else if(style==='gift'){
   sentences.push(subject+' é '+type+(motif?', com motivo de '+motif:'')+'.');
@@ -11869,7 +11874,7 @@ function descriptionTextV1888(style,ctx){
  }else{
   sentences.push(subject+' é '+type+(motif?', com referência a '+motif:'')+'.');
   if(ctx.distinctive)sentences.push(form);
-  if(theme)sentences.push('A temática de '+theme.label+' evoca '+theme.mood+'.');
+  if(theme)sentences.push('O desenho evoca '+themeMood+'.');
   else if(usage)sentences.push(usage);
  }
  const maxFacts=style==='short'?2:style==='atmosphere'?2:style==='theme'?3:4;
