@@ -38,3 +38,10 @@
 #products .ae-review-head-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 #products .ae-review-head-actions .btn{min-height:44px}
 @media(max-width:650px){#products .ae-review-head{flex-direction:column}#products .ae-review-head-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}#products .ae-review-head-actions .btn{min-width:0;white-space:normal;font-size:11px}}
+
+/* A lista original com Editar, Ver ficha e restantes ações é a vista inicial. */
+#products .products-list-card:not(.ae-review-focus1995) #aeReviewWorkflow1995 .ae-review-tabs,
+#products .products-list-card:not(.ae-review-focus1995) #aeReviewWorkflow1995 .ae-review-search-label,
+#products .products-list-card:not(.ae-review-focus1995) #aeReviewWorkflow1995 .ae-review-rows,
+#products .products-list-card:not(.ae-review-focus1995) #aeReviewWorkflow1995 .ae-review-pagination,
+#products .products-list-card:not(.ae-review-focus1995) #aeReviewWorkflow1995 .ae-review-note {display:none!important}
