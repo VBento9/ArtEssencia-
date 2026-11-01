@@ -99,7 +99,7 @@ test('a revisão usa via unitária com proteção contra conflitos remotos',()=>
 });
 
 test('sincronização unitária não invoca gravação geral de produtos',async()=>{
- const window={confirm:()=>true},document={readyState:'loading',addEventListener(){}};
+ const window={confirm:()=>true},document={readyState:'loading',addEventListener(){},getElementById(){return null}};
  const p={_rid:'prod-1',code:'EX-2',name:'Vela',category:'Vela',catalogGroupV191:'vela',
   catalogSubgroupV191:'religiosa',shopDescription:'Descrição',shopImageUrl:'https://example.invalid/photo',
   manufactured:false,price:10};
