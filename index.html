@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.105">
+<meta name="artessencia-version" content="1.9.106">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -6092,6 +6092,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
     <div class="card cloud-safety-card" style="margin-top:10px">
       <div class="cloud-pro-card-head"><div><div class="section-title" style="margin:0">Recuperação & conflitos</div><small>Usa estas opções apenas quando houver um conflito ou uma sincronização incorreta.</small></div></div>
       <div class="cloud-safety-actions">
+        <button class="btn" onclick="revalidateCloudConflictV19106()">Revalidar conflito sem substituir dados</button>
         <button class="btn" onclick="cloudResolveConflict('local')">Manter dados deste dispositivo</button>
         <button class="btn" onclick="cloudResolveConflict('remote')">Usar dados da Cloud</button>
         <button class="btn danger" onclick="restoreCloudSafetySnapshot()">Recuperar cópia anterior</button>
@@ -6187,7 +6188,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.105';
+const APP_VERSION='1.9.106';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -15091,7 +15092,7 @@ function renderCloudUICore(){
  else if(cloudUser){cls='pending';label='Cloud por validar'}
  else if(cfg.url&&cfg.key){cls='pending';label='Cloud sem sessão'}
  if(chip){chip.className='pill cloud-status '+cls;if(txt)txt.textContent=label}
- const box=document.getElementById('cloudStateBox');if(box){let detail=label;if(cloudBusy)detail='Sincronização em curso…';if(cloudConflict)detail='Existe uma escolha manual pendente entre dados locais e cloud.';const pendingProductsV19104=Object.keys(pendingProductEditsV19102()).length;if(pendingProductsV19104)detail+=' · '+pendingProductsV19104+' produto(s) por enviar';if(m.productLastConfirmedV19104)detail+=' · Produtos confirmados na Cloud: '+new Date(m.productLastConfirmedV19104).toLocaleString('pt-PT');box.textContent=detail}
+ const box=document.getElementById('cloudStateBox');if(box){let detail=label;if(cloudBusy)detail='Sincronização em curso…';if(cloudConflict)detail=cloudConflict.type==='product'?'Conflito no produto '+String(cloudConflict.code||'sem código')+' · dados locais preservados':cloudConflict.type==='revision'?'Conflito de revisão operacional · dados locais preservados':'Conflito Cloud pendente · dados locais preservados';else if(m.conflict)detail='Conflito persistente · usa «Revalidar conflito sem substituir dados»';const pendingProductsV19104=Object.keys(pendingProductEditsV19102()).length;if(pendingProductsV19104)detail+=' · '+pendingProductsV19104+' produto(s) por enviar';if(m.productLastConfirmedV19104)detail+=' · Produtos confirmados na Cloud: '+new Date(m.productLastConfirmedV19104).toLocaleString('pt-PT');box.textContent=detail}
  const ls=document.getElementById('cloudLastSync');if(ls)ls.textContent='Última sincronização V10: '+(m.lastSync?new Date(m.lastSync).toLocaleString('pt-PT'):'—');
  const ui=document.getElementById('cloudUserInfo');if(ui)ui.textContent='Conta: '+(cloudUser?.email||cfg.email||'—');
  const log=document.getElementById('cloudLog');if(log){const a=cloudLogData();log.innerHTML=a.length?a.map(x=>'<div>'+escapeHtml(x)+'</div>').join(''):'Sem atividade de sincronização.'}
@@ -15681,7 +15682,28 @@ function trySafeOperationalRebaseV19102(remote,baseRevision){
    e os registos locais não confirmados permanecem intactos. */
 async function recoverStaleCloudConflictV19103(user){
  if(!user||!cloudClient||productionBlockedV1926()||hasRestorePendingV12645())return false;
- if(cloudConflict?.type==='product'||cloudConflict?.type==='restore')return false;
+ if(cloudConflict?.type==='restore')return false;
+ // O bloqueio do produto pode continuar assinalado mesmo depois de a Cloud
+ // confirmar o registo, ou quando a base ainda corresponde à Cloud.
+ if(cloudConflict?.type==='product'){
+   const code=String(cloudConflict.code||'');
+   const current=(db.products||[]).find(p=>String(p?.code||'')===code);
+   if(!code||!current)return false;
+   try{
+     const rows=await relFetchAll(REL_TABLES.products);
+     const matches=rows.filter(r=>String(r?.data?.code||'')===code);
+     if(matches.length!==1||(current._rid&&String(current._rid)!==String(matches[0].id)))return false;
+     const remote=matches[0],pending=pendingProductEditsV19102()[code];
+     const same=productVersionMatchesV19104(current,remote.data);
+     const baseSame=!!pending?.base&&productVersionMatchesV19104(pending.base,remote.data);
+     if(!same&&!baseSame)return false;
+     if(same)clearConfirmedProductEditsV19102([{data:relClone(current)}]);
+     cloudConflict=null;
+     setCloudMeta({conflict:false,dirty:true,verified:false});
+     cloudLogMsg('Conflito de produto '+code+' revalidado, alterações locais preservadas');
+     return true;
+   }catch(e){cloudLogMsg('Revalidação adiada em '+code+': '+cloudErrText(e));return false}
+ }
  const meta=cloudMeta();
  if(!meta.conflict&&!cloudConflict)return false;
  try{
@@ -15697,10 +15719,12 @@ async function recoverStaleCloudConflictV19103(user){
      for(const code of codes){
        const local=(db.products||[]).find(p=>String(p?.code||'')===code);
        const cloudRow=remoteProducts.find(r=>String(r?.data?.code||'')===code);
-       if(!local||!cloudRow)return false;
+       if(!local)return false;
+       // A criação de um produto sem base remota não é, por si só, conflito.
+       if(!cloudRow){if(pendingProducts[code]?.base)return false;continue}
        // Evitar limpar uma fila de edições enquanto esta for diferente do servidor.
-       const localSame=stableStringify(local)===stableStringify(cloudRow.data);
-       const baseSame=stableStringify(pendingProducts[code]?.base)===stableStringify(cloudRow.data);
+       const localSame=productVersionMatchesV19104(local,cloudRow.data);
+       const baseSame=!!pendingProducts[code]?.base&&productVersionMatchesV19104(pendingProducts[code].base,cloudRow.data);
        if(!localSame&&!baseSame)return false;
      }
      // Só remover entradas que já coincidam com a Cloud. As outras continuam
@@ -15708,7 +15732,7 @@ async function recoverStaleCloudConflictV19103(user){
      clearConfirmedProductEditsV19102(codes.filter(code=>{
        const local=(db.products||[]).find(p=>String(p?.code||'')===code);
        const row=remoteProducts.find(r=>String(r?.data?.code||'')===code);
-       return local&&row&&stableStringify(local)===stableStringify(row.data);
+       return local&&row&&productVersionMatchesV19104(local,row.data);
      }).map(code=>({data:(db.products||[]).find(p=>String(p?.code||'')===code)})));
    }
    // Antes do envio geral, não permitir que clientes ou orçamentos antigos
@@ -16180,6 +16204,26 @@ async function cloudPullNow(force=false){
    toast('Dados V10 + Loja recebidos')
  }
  return ok2
+}
+async function revalidateCloudConflictV19106(){
+ if(productionBlockedV1926()||hasRestorePendingV12645()){
+   toast('Restauro ou falha de armazenamento pendente; dados preservados');return false;
+ }
+ if(cloudBusy||cloudPushRunning||productSyncBusyV19104){
+   toast('Sincronização em curso; repete após terminar');return false;
+ }
+ const user=cloudUser||await ensureCloudSession();
+ if(!user){toast('Sessão Cloud indisponível');return false}
+ cloudLogMsg('Iniciada a revalidação segura do conflito');
+ const ok=await recoverStaleCloudConflictV19103(user);
+ if(!ok){
+   cloudLogMsg('Conflito real ou sem base confirmada; dados locais preservados');
+   toast('Conflito ainda por resolver; consulta Atividade');return false;
+ }
+ cloudLogMsg('Conflito revalidado sem substituir dados');
+ if(cloudStartupDone&&!cloudHydrating)scheduleCloudPushV1860(350);
+ toast('Revalidação concluída; sincronização agendada');
+ return true;
 }
 async function cloudResolveConflict(choice){
  const restorePending=hasRestorePendingV12645();
