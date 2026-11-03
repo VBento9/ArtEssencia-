@@ -54,8 +54,18 @@
 
  function reloadFresh(){
   if(syncPending()){
-   bannerMessage('Há alterações por sincronizar. Confirma o estado em Cloud Sync e volta a selecionar Atualizar agora.');
-   return;
+   // A atualização do código não exige que o conflito remoto seja resolvido.
+   // A cópia local permanece no armazenamento do dispositivo após a navegação.
+   if((typeof cloudBusy==='boolean'&&cloudBusy)||
+      (typeof cloudPushRunning==='boolean'&&cloudPushRunning)||
+      (typeof cloudHydrating==='boolean'&&cloudHydrating)||
+      (typeof hasRestorePendingV12645==='function'&&hasRestorePendingV12645())){
+     bannerMessage('Operação Cloud ou restauro em curso. Não atualizar ainda.');return;
+   }
+   let durable=false;
+   try{durable=typeof KEY==='string'&&typeof db!=='undefined'&&localStorage.getItem(KEY)===JSON.stringify(db)}catch(_){}
+   if(!durable){bannerMessage('Os dados locais não estão confirmados no armazenamento. Guarda antes de atualizar.');return}
+   if(!confirm('Existem dados locais ainda não confirmados na Cloud. A atualização mantém o armazenamento deste dispositivo, mas não resolve os conflitos. Guarda os campos que estás a editar. Atualizar agora?'))return;
   }
   const button=updateBanner?.querySelector('button');
   if(button){button.disabled=true;button.textContent='A atualizar…'}
