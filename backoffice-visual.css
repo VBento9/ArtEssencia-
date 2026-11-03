@@ -302,3 +302,52 @@
     .app #clients .client-actions > .btn,.app #clients .client-actions > details { flex: 1 1 140px; }
   }
 }
+
+/* Quotes and catalogues: readable history and clear document/box actions. */
+@media screen {
+  .app #quotes .quotes-section-head-v1730 { flex-wrap: wrap; gap: 12px; }
+  .app #quotes .quotes-section-head-v1730 small { font-size: 12px; line-height: 1.5; color: #6b5747; }
+  .app #quotes .qh-toolbar-1965 { padding: 12px; background: #faf7f2; border: 1px solid #e2d9cf; border-radius: 12px; }
+  .app #quotes .qh-toolbar-1965 label { font-size: 12px; gap: 6px; }
+  .app #quotes .qh-toolbar-1965 :is(input,select) { min-height: 46px; font-size: 14px; }
+  .app #quotes .qh-counter-1965 { font-size: 13px; line-height: 1.5; }
+  .app #quotes .quotes-history-table-v1730 tbody td { font-size: 13px !important; line-height: 1.5 !important; font-variant-numeric: tabular-nums; }
+  .app #quotes .quotes-history-table-v1730 tbody td::before { font-size: 11px; color: #6b5747; }
+  .app #quotes .quotes-history-table-v1730 tbody td:nth-child(2) { font-size: 16px !important; }
+  .app #quotes .quotes-history-table-v1730 tbody td:nth-child(1) { font-size: 12px !important; }
+  .app #quotes .quotes-history-table-v1730 tbody td:nth-child(6) small { font-size: 12px; }
+  .app #quotes .quotes-history-table-v1730 tbody td:nth-child(7) select { min-height: 46px; font-size: 14px; padding: 10px; }
+  .app #quotes .quotes-history-table-v1730 tbody td:nth-child(8) button,
+  .app #quotes .qh-nav-1965 button { min-height: 46px !important; font-size: 13px !important; padding: 10px 12px !important; }
+  .app #quotes :is(.qh-primary-1965,.qh-secondary-1965) { gap: 10px; }
+  .app #quotes .qh-more-1965 > summary { min-height: 46px; font-size: 13px; padding: 11px 13px; }
+  .app #quotes .qh-nav-1965 { flex-wrap: wrap; gap: 10px; padding: 12px; background: #faf7f2; border-radius: 12px; }
+  .app #quotes .qh-nav-1965 span { font-size: 13px; }
+  .app #catalogs .btn { font-size: 13px; min-height: 46px; }
+  .app #catalogs .catalog-dashboard { gap: 16px; flex-wrap: wrap; }
+  .app #catalogs .catalog-top-actions { gap: 10px; flex-wrap: wrap; }
+  .app #catalogs .catalog-document-card-v1731 { min-width: 0; padding: 16px; }
+  .app #catalogs .catalog-doc-kicker { font-size: 11px; color: #6b5747; letter-spacing: .08em; }
+  .app #catalogs .catalog-document-card-v1731 .muted { font-size: 13px; line-height: 1.5; }
+  .app #catalogs .catalog-actions-v1731 { display: flex; flex-wrap: wrap; gap: 10px; }
+  .app #catalogs .catalog-actions-v1731 .btn { flex: 1 1 110px; min-width: 0; }
+  .app #aeBoxesHubV1 :is(h2,h3) { font-family: var(--ae-ui-font); font-size: 20px; line-height: 1.35; }
+  .app #aeBoxesHubV1 .ae-hub-tabs { gap: 10px; padding: 10px; border: 1px solid #e2d9cf; border-radius: 12px; background: #faf7f2; }
+  .app #aeBoxesHubV1 .ae-hub-tabs .btn { font-size: 13px; min-height: 46px; }
+  .app #aeBoxesHubV1 .ae-box-pick-head { gap: 8px; }
+  .app #aeBoxesHubV1 .ae-box-pick-head small { font-size: 12px; line-height: 1.5; }
+  .app #aeBoxesHubV1 .ae-box-line { gap: 12px; padding: 12px 0; }
+  .app #aeBoxesHubV1 .ae-box-line b { font-size: 14px; line-height: 1.4; }
+  .app #aeBoxesHubV1 .ae-box-line small { font-size: 12px; line-height: 1.5; }
+  .app #aeBoxesHubV1 .ae-box-cost-total { background: #fffdf9; padding: 12px; border: 1px solid #d8cab8; border-radius: 10px; margin-top: 6px; }
+  .app #aeBoxesHubV1 .ae-box-cost-total strong { font-size: 18px; line-height: 1.4; }
+  .app #aeBoxesHubV1 .ae-box-cost-row { padding: 8px 0; font-size: 13px; line-height: 1.5; }
+  @media (max-width: 650px) {
+    .app #quotes .qh-toolbar-1965 :is(input,select),
+    .app #quotes .quotes-history-table-v1730 tbody td:nth-child(7) select { font-size: 16px; }
+    .app #quotes .qh-primary-1965 { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
+    .app #quotes .qh-primary-1965 button { min-width: 0; }
+    .app #catalogs .catalog-top-actions { display: grid; grid-template-columns: minmax(0,1fr); width: 100%; }
+    .app #aeBoxesHubV1 .ae-hub-tabs { gap: 10px; padding: 8px; }
+  }
+}
