@@ -1,0 +1,73 @@
+/* Presentation only. Screen media keeps technical sheets and printed orders intact. */
+@media screen {
+  body {
+    --ae-ui-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: #f6f3ee;
+    color: #352c25;
+    font-family: var(--ae-ui-font);
+    line-height: 1.45;
+  }
+  .app .main { font-family: var(--ae-ui-font); }
+  .app .page-heading h1 { font-family: var(--ae-ui-font); font-weight: 650; letter-spacing: -.035em; }
+  .app .main .section-title {
+    font-family: var(--ae-ui-font); font-size: 16px; font-weight: 650;
+    line-height: 1.4; padding-bottom: 10px; margin-top: 22px;
+  }
+  .app .main .card { border-color: #e2d9cf; box-shadow: 0 2px 8px rgba(59,40,27,.035); }
+  .app .brand img { height: auto; aspect-ratio: auto; object-fit: contain; filter: none; box-shadow: none; }
+  .app .brand small { font-size: 10px; letter-spacing: .1em; }
+  .app .nav button { min-height: 44px; }
+  .app .nav button:hover { transform: none; }
+  .app .nav .nav-label { line-height: 1.35; }
+  .app .main :is(.btn,.smallbtn) {
+    border-radius: 10px; font-weight: 650; min-height: 44px;
+    line-height: 1.35; letter-spacing: 0; padding: 10px 14px;
+    cursor: pointer; overflow-wrap: anywhere;
+  }
+  .app .main .btn { background: #72533d; color: #fff; border: 1px solid transparent; }
+  .app .main .btn.primary { background: #3f2d20; color: #fff; }
+  .app .main .smallbtn { background: #fffdf9; color: #514035; border: 1px solid #d8cabc; box-shadow: none; }
+  .app .main .btn.danger { background: #f8e9e5; color: #842f24; border-color: #e6bcb4; }
+  .app .main button:disabled { cursor: not-allowed; opacity: .55; filter: none; transform: none; }
+  .app :is(button,a,input,select,textarea,summary):focus-visible { outline: 3px solid #806047 !important; outline-offset: 3px; }
+  .app .main .field { min-width: 0; gap: 6px; }
+  .app .main .field label { font-size: 12px; font-weight: 650; text-transform: none; letter-spacing: 0; color: #59483b; }
+  .app .main .field :is(input,select,textarea) { background: #fffdf9; border-color: #d8cabc; font-weight: 500; line-height: 1.4; }
+  .app .main :is(.btnrow,.client-actions,.catalog-actions) { gap: 10px; }
+  .app .main .tablewrap th { background: #eee7de; color: #4e3d30; font-size: 12px; font-weight: 650; letter-spacing: 0; }
+  .app .main .tablewrap td { line-height: 1.45; font-variant-numeric: tabular-nums; }
+  .app .main .tablewrap tbody tr:hover { background: #faf7f2; }
+  .app .main .muted { color: #6e5e51; line-height: 1.5; }
+  #dashboard .dashboard-hero h2 { font-family: var(--ae-ui-font); font-size: 26px; font-weight: 650; letter-spacing: -.025em; }
+  #dashboard .dashboard-section-head h3 { font-family: var(--ae-ui-font) !important; font-size: 18px !important; font-weight: 650 !important; }
+  #dashboard .dashboard-section-head span { color: #735d4b !important; font-size: 10px; letter-spacing: .1em !important; }
+  #dashboard .dashboard-daily-card { border-left-width: 4px !important; min-height: 80px; }
+  #dashboard .dashboard-daily-card.warn { border-left-color: #aa701b !important; }
+  #dashboard .dashboard-daily-card.bad { border-left-color: #a54536 !important; }
+  #dashboard .dashboard-daily-card.good { border-left-color: #4f7456 !important; }
+  #dashboard .dashboard-daily-card small { font-size: 12px; color: #655143; line-height: 1.4; }
+  #dashboard .dashboard-daily-card b { font-variant-numeric: tabular-nums; }
+  #dashboard .dashboard-kpi-card .label { font-size: 11px !important; line-height: 1.4; }
+  #dashboard .dashboard-kpi-card .value { font-family: var(--ae-ui-font); font-variant-numeric: tabular-nums; font-weight: 650 !important; }
+  #dashboard .dashboard-today-head strong { font-family: var(--ae-ui-font); font-weight: 650; }
+  #dashboard .dashboard-action b { font-size: 13px; }
+  #dashboard .dashboard-action small { font-size: 11px; color: #6b5747 !important; }
+  #dashboard .dashboard-action.primary small { color: #f2e5d7 !important; }
+  #dashboard :is(.dashboard-action,.dashboard-daily-card,.dashboard-kpi-card):hover { transform: none; }
+  #dashboard .ae-dash-compact-nav { flex-wrap: wrap; overflow: visible; gap: 8px; }
+  #dashboard :is(.ae-dash-compact-nav button,.ae-dash-analysis-toggle,.ae-dash-compact-kpis button) { min-height: 44px; white-space: normal; font-size: 13px; }
+  @media (max-width: 1100px) {
+    #dashboard .dashboard-actions { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+  }
+  @media (max-width: 650px) {
+    .app .page-heading h1 { font-size: 24px !important; line-height: 1.2; }
+    .app .main :is(.btn,.smallbtn) { min-height: 46px; }
+    #dashboard .dashboard-hero h2 { font-size: 23px; }
+    #dashboard .dashboard-section-head { flex-wrap: wrap; gap: 8px; }
+    #dashboard .dashboard-action { padding: 11px; column-gap: 7px; }
+    #dashboard .ae-dash-compact-nav button { flex: 1 1 130px; }
+  }
+  @media (max-width: 360px) {
+    #dashboard .dashboard-actions { grid-template-columns: minmax(0,1fr) !important; }
+  }
+}
