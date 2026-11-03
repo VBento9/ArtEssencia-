@@ -15683,9 +15683,17 @@ async function recoverStaleCloudConflictV19103(user){
        const cloudRow=remoteProducts.find(r=>String(r?.data?.code||'')===code);
        if(!local||!cloudRow)return false;
        // Evitar limpar uma fila de edições enquanto esta for diferente do servidor.
-       if(stableStringify(local)!==stableStringify(cloudRow.data))return false;
+       const localSame=stableStringify(local)===stableStringify(cloudRow.data);
+       const baseSame=stableStringify(pendingProducts[code]?.base)===stableStringify(cloudRow.data);
+       if(!localSame&&!baseSame)return false;
      }
-     clearConfirmedProductEditsV19102(codes.map(code=>({data:(db.products||[]).find(p=>String(p?.code||'')===code)})));
+     // Só remover entradas que já coincidam com a Cloud. As outras continuam
+     // pendentes e serão enviadas individualmente no próximo ciclo.
+     clearConfirmedProductEditsV19102(codes.filter(code=>{
+       const local=(db.products||[]).find(p=>String(p?.code||'')===code);
+       const row=remoteProducts.find(r=>String(r?.data?.code||'')===code);
+       return local&&row&&stableStringify(local)===stableStringify(row.data);
+     }).map(code=>({data:(db.products||[]).find(p=>String(p?.code||'')===code)})));
    }
    saveConfirmedShadow(remote);
    const rev=Number(remote.revision||0);
