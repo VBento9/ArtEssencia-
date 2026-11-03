@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.104">
+<meta name="artessencia-version" content="1.9.105">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -6187,7 +6187,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.104';
+const APP_VERSION='1.9.105';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -15315,8 +15315,8 @@ function mergeRemoteRelationalRow(kind,row,eventType='UPDATE'){
 
   db[cfg.key]=arr;
  localStorage.setItem(KEY,JSON.stringify(db));
- localStorage.setItem(REL_MIGRATED,'1');
- if(!hasPendingProductEditsV19102()&&localStorage.getItem(REL_DIRTY)!=='1')
+ if(!cloudMeta().dirty&&localStorage.getItem(REL_DIRTY)!=='1'&&!hasPendingProductEditsV19102())localStorage.setItem(REL_MIGRATED,'1');
+ if(!cloudMeta().dirty&&!hasPendingProductEditsV19102()&&localStorage.getItem(REL_DIRTY)!=='1')
    setCloudMeta({dirty:false,verified:true,conflict:false,lastSync:new Date().toISOString()});
  renderAll();
  return true
@@ -15338,14 +15338,30 @@ async function subscribeCloud(){
      const eventType=payload?.eventType||'UPDATE';
      const row=eventType==='DELETE'?payload?.old:payload?.new;
      const rid=row?.id||'';
-     if(cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||hasPendingProductEditsV19102()){
-       cloudLogMsg('Atualização relacional remota adiada enquanto existem alterações locais pendentes · '+k+(rid?' · '+rid.slice(0,8):''));
-       return
+     const pendingByCodeV19105=pendingProductEditsV19102();
+     const hasLocalPendingV19105=cloudMeta().dirty||cloudMeta().conflict||!!cloudConflict||
+       localStorage.getItem(REL_DIRTY)==='1'||Object.keys(pendingByCodeV19105).length>0;
+     if(hasLocalPendingV19105){
+       // Alterações noutros produtos podem chegar sem tocar na ficha pendente.
+       // Eliminações e identidades divergentes continuam bloqueadas.
+       const codeV19105=String(row?.data?.code||'');
+       const existingV19105=k==='products'?(db.products||[]).find(p=>
+         (rid&&String(p?._rid||'')===String(rid))||
+         (codeV19105&&String(p?.code||'')===codeV19105)):null;
+       const independentV19105=k==='products'&&eventType!=='DELETE'&&!!codeV19105&&
+         !Object.prototype.hasOwnProperty.call(pendingByCodeV19105,codeV19105)&&
+         (!existingV19105||(!Object.prototype.hasOwnProperty.call(pendingByCodeV19105,String(existingV19105.code||''))&&
+          !!existingV19105._rid&&String(existingV19105._rid)===String(rid)));
+       if(!independentV19105){
+         cloudLogMsg('Atualização relacional remota adiada enquanto existem alterações locais pendentes · '+k+(rid?' · '+rid.slice(0,8):''));
+         return;
+       }
      }
      const changed=mergeRemoteRelationalRow(k,row,eventType);
       if(!changed)return;
       cloudLogMsg('Alteração recebida em '+k+(rid?' · '+rid.slice(0,8):''));
-     setCloudMeta({verified:true,lastSync:new Date().toISOString(),conflict:false});
+     if(hasLocalPendingV19105)setCloudMeta({verified:false,lastSync:new Date().toISOString()});
+     else setCloudMeta({verified:true,lastSync:new Date().toISOString(),conflict:false});
      renderCloudUI();
    })
  });
@@ -15984,6 +16000,14 @@ async function syncPendingProductsIndependentV19104(showToast=false){
          if(latest[code]&&productVersionMatchesV19104(latest[code].base,written.data)){
            // Nova edição concorrente: o próximo envio parte da revisão confirmada.
          }
+       }
+       // Resolver apenas conflitos já confirmados deste mesmo produto.
+       if(cloudConflict?.type==='product'&&String(cloudConflict.code||'')===code&&
+          !Object.prototype.hasOwnProperty.call(pendingProductEditsV19102(),code)&&
+          productVersionMatchesV19104((db.products||[]).find(p=>String(p?.code||'')===code),written.data)){
+         cloudConflict=null;
+         setCloudMeta({conflict:false,verified:false});
+         cloudLogMsg('Conflito do produto '+code+' resolvido após confirmação na Cloud');
        }
        confirmed++;
        try{
@@ -16812,6 +16836,8 @@ async function relationalHydrateCore(initial=false,allowLocalOverwriteV19102=fal
  }
  const u=cloudUser||await ensureCloudSession();
  if(!u)return false;
+ const hydrateStartedAtV19105=cloudLocalChangedMsV1739();
+ const hydrateSnapshotV19105=localStorage.getItem(KEY);
  const ownBusy=!cloudBusy;
  if(ownBusy){cloudBusy=true;renderCloudUI()}
  try{
@@ -16820,6 +16846,16 @@ async function relationalHydrateCore(initial=false,allowLocalOverwriteV19102=fal
    ]);
 
    if(productionBlockedV1926())return false;
+   // Revalidar após a consulta: a edição local pode ter ocorrido em voo.
+   if(!allowLocalOverwriteV19102&&(
+     cloudLocalChangedMsV1739()>hydrateStartedAtV19105||
+     localStorage.getItem(KEY)!==hydrateSnapshotV19105||
+     cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||
+     hasPendingProductEditsV19102()
+   )){
+     cloudLogMsg('Receção relacional adiada: alterações locais surgiram durante a consulta');
+     return false;
+   }
    cloudApplying=true;
    try{
      const localClients=(db.clients||[]).slice();
