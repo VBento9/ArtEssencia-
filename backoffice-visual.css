@@ -257,3 +257,48 @@
     .app #costs .cost-list-pages-v1927 span { grid-row: 1; grid-column: 1/-1; }
   }
 }
+
+/* Daily management modules share one readable toolbar and pagination treatment. */
+@media screen {
+  .app :is(#clients,#purchases,#cash) :is(.clients-hero,.purchase-hero,.cash-hero) { flex-direction: column; align-items: stretch; gap: 14px; }
+  .app :is(#clients,#purchases,#cash) :is(.clients-hero,.purchase-hero,.cash-hero) small { font-size: 13px; line-height: 1.5; color: #6b5747; }
+  .app :is(#clients,#purchases,#cash) :is(.clients-tools,.purchase-tools,.cash-tools) { display: grid !important; grid-template-columns: repeat(2,minmax(0,1fr)) !important; gap: 10px; width: 100%; }
+  .app :is(#clients,#purchases,#cash) :is(.clients-tools,.purchase-tools,.cash-tools) > input { grid-column: 1/-1; }
+  .app :is(#clients,#purchases,#cash) :is(.clients-tools,.purchase-tools,.cash-tools) > :is(input,select) { width: 100%; min-width: 0; height: auto; min-height: 46px; padding: 11px; font-size: 14px; background: #fffdf9; }
+  .app #clients .clients-tools > select { grid-column: 1/-1; }
+  .app :is(#clients,#purchases,#cash) :is(.clients-kpi,.purchase-kpi,.cash-kpi) :is(small,span,.label) { font-size: 12px; line-height: 1.5; color: #6b5747; }
+  .app :is(#clients,#purchases,#cash) :is(.clients-kpi,.purchase-kpi,.cash-kpi) :is(strong,.value) { font-size: 24px; line-height: 1.3; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .app :is(#clients,#purchases,#cash) :is(.ae-clients-toolbar,.ae-purchases-toolbar,.ae-cash-toolbar) { gap: 10px; }
+  .app :is(#clients,#purchases,#cash) :is(.ae-clients-pages,.ae-purchases-pages,.ae-cash-pages) { gap: 10px; padding: 12px; border: 1px solid #e2d9cf; border-radius: 12px; background: #faf7f2; }
+  .app :is(#clients,#purchases,#cash) :is(.ae-clients-pages,.ae-purchases-pages,.ae-cash-pages) :is(button,select) { min-height: 46px; font-size: 13px; }
+  .app :is(#clients,#purchases,#cash) :is(.ae-clients-pages,.ae-purchases-pages,.ae-cash-pages) :is(span,label) { font-size: 13px; line-height: 1.5; }
+  .app :is(#clients,#purchases,#cash) :is(.clients-form-head,.purchase-form-head,.cash-form-head) small { font-size: 12px; line-height: 1.5; color: #6b5747; }
+  .app #clients .client-card-main { grid-template-columns: 44px minmax(0,1fr); padding: 14px; gap: 12px; }
+  .app #clients .client-info strong { font-size: 16px; line-height: 1.4; }
+  .app #clients .client-info :is(small,span) { font-size: 13px; line-height: 1.5; white-space: normal; overflow-wrap: anywhere; }
+  .app #clients .client-metrics { grid-column: 1/-1; gap: 8px; }
+  .app #clients .client-metrics > div { padding: 9px; min-width: 0; }
+  .app #clients .client-metrics small { font-size: 12px; line-height: 1.4; color: #6b5747; }
+  .app #clients .client-metrics strong { font-size: 14px; line-height: 1.4; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .app #clients .client-card-foot { flex-wrap: wrap; padding: 12px; gap: 10px; }
+  .app #clients .client-card-foot > span { font-size: 12px; line-height: 1.5; }
+  .app #clients .client-actions { gap: 10px; }
+  .app #clients .client-actions .btn { min-height: 46px !important; font-size: 13px !important; padding: 10px 12px; }
+  .app #clients .client-actions summary { min-height: 46px; font-size: 13px; padding: 12px; background: #faf7f2; }
+  .app :is(#purchases,#cash) :is(.purchase-table,.cash-table) td { font-size: 13px; line-height: 1.5; font-variant-numeric: tabular-nums; }
+  .app :is(#purchases,#cash) :is(.purchase-table,.cash-table) td strong { font-size: 14px; }
+  .app :is(#purchases,#cash) :is(.purchase-table,.cash-table) .badge { font-size: 11px; line-height: 1.4; padding: 6px 9px; }
+  .app :is(#purchases,#cash) :is(.purchase-actions,.cash-actions) { gap: 10px; }
+  .app :is(#purchases,#cash) :is(.purchase-actions,.cash-actions) .btn { min-height: 46px; font-size: 13px; padding: 10px 12px; white-space: normal; }
+  @media (max-width: 650px) {
+    .app :is(#clients,#purchases,#cash) :is(.clients-tools,.purchase-tools,.cash-tools) { grid-template-columns: minmax(0,1fr) !important; }
+    .app :is(#clients,#purchases,#cash) :is(.clients-tools,.purchase-tools,.cash-tools) > :is(input,select) { font-size: 16px; }
+    .app :is(#clients,#purchases,#cash) :is(.ae-clients-pages,.ae-purchases-pages,.ae-cash-pages) { justify-content: center; }
+    .app :is(#clients,#purchases,#cash) :is(.ae-clients-pages,.ae-purchases-pages,.ae-cash-pages) label { justify-content: center; }
+    .app :is(#purchases,#cash) :is(.purchase-table,.cash-table) td::before { font-size: 12px; color: #6b5747; }
+    .app :is(#purchases,#cash) :is(.purchase-actions,.cash-actions) { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
+    .app :is(#purchases,#cash) :is(.purchase-actions,.cash-actions) .btn.danger { grid-column: 1/-1; }
+    .app #clients .client-actions { width: 100%; }
+    .app #clients .client-actions > .btn,.app #clients .client-actions > details { flex: 1 1 140px; }
+  }
+}
