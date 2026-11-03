@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.106">
+<meta name="artessencia-version" content="1.9.107">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -6093,8 +6093,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       <div class="cloud-pro-card-head"><div><div class="section-title" style="margin:0">Recuperação & conflitos</div><small>Usa estas opções apenas quando houver um conflito ou uma sincronização incorreta.</small></div></div>
       <div class="cloud-safety-actions">
         <button class="btn" onclick="revalidateCloudConflictV19106()">Revalidar conflito sem substituir dados</button>
-        <button class="btn" onclick="cloudResolveConflict('local')">Manter dados deste dispositivo</button>
-        <button class="btn" onclick="cloudResolveConflict('remote')">Usar dados da Cloud</button>
+        <div id="productSyncV19107" aria-live="polite" style="width:100%;min-width:0;flex-basis:100%"></div>
+
         <button class="btn danger" onclick="restoreCloudSafetySnapshot()">Recuperar cópia anterior</button>
         <button class="btn primary" onclick="recoverProductPersonalizationV1820()">Recuperar cores / fragrâncias</button>
       </div>
@@ -6188,7 +6188,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.106';
+const APP_VERSION='1.9.107';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -6600,6 +6600,7 @@ function trackLocalProductEditsV19102(beforeJson){
    if(!code)continue;
    const base=previousByCode.get(code);
    if(stableStringify(base??null)===stableStringify(p))continue;
+   productSyncStateV19107(code,{status:'pending'});
    if(!Object.prototype.hasOwnProperty.call(pending,code)){
      pending[code]={base:base?relClone(base):null,recordedAt:new Date().toISOString()};
      added++;
@@ -6629,12 +6630,19 @@ function save(scope='all'){
   const previousSerializedV19102=localStorage.getItem(KEY);
   hasChanges=previousSerializedV19102!==serialized;
   if(hasChanges&&!cloudApplying&&typeof trackLocalProductEditsV19102==='function')trackLocalProductEditsV19102(previousSerializedV19102);
-  if(hasChanges)localStorage.setItem(KEY,serialized);
+  if(hasChanges){
+   const before=previousSerializedV19102?JSON.parse(previousSerializedV19102):null;
+   const omitProducts=x=>{const copy={...x};delete copy.products;return copy};
+   const onlyProducts=before&&stableStringify(omitProducts(before))===stableStringify(omitProducts(db));
+   const meta=cloudMeta();
+   localStorage.setItem(CLOUD_META,JSON.stringify({...meta,productOnlyV19107:!!onlyProducts&&(!meta.dirty||meta.productOnlyV19107===true)}));
+   localStorage.setItem(KEY,serialized);
+  }
   persisted=true;
   localSaveFailedV1926=false;document.getElementById('localSaveRecoveryV1926')?.remove();
  }catch(error){localSaveFailedV1926=true;showLocalSaveRecoveryV1926(error)}
  if(!cloudApplying&&hasChanges){
-  try{localStorage.setItem(REL_DIRTY,'1');setCloudMeta({dirty:true,verified:false,localChangedAt:new Date().toISOString()})}catch(error){localSaveFailedV1926=true;showLocalSaveRecoveryV1926(error)}
+  try{localStorage.setItem(REL_DIRTY,'1');setCloudMeta({dirty:true,verified:false,productOnlyV19107:cloudMeta().productOnlyV19107===true,localChangedAt:new Date().toISOString()})}catch(error){localSaveFailedV1926=true;showLocalSaveRecoveryV1926(error)}
   scheduleCloudPushV1860(650);
  }else if(!cloudApplying&&(cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1')){
   scheduleCloudPushV1860(650);
@@ -15075,7 +15083,7 @@ function cloudMeta(){
    return {dirty:false,lastSync:null,lastCloudAt:null,conflict:false,remoteRevision:0,baseRevision:0,verified:false}
  }
 }
-function setCloudMeta(patch){const m={...cloudMeta(),...patch};localStorage.setItem(CLOUD_META,JSON.stringify(m));renderCloudUI();return m}
+function setCloudMeta(patch){if(patch.dirty!==undefined&&!Object.prototype.hasOwnProperty.call(patch,'productOnlyV19107'))patch={...patch,productOnlyV19107:false};const m={...cloudMeta(),...patch};localStorage.setItem(CLOUD_META,JSON.stringify(m));renderCloudUI();return m}
 function cloudLogMsg(msg){const stamp=new Date().toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit',second:'2-digit'});const key=CLOUD_LOG;let arr=[];try{arr=JSON.parse(localStorage.getItem(key))||[]}catch(e){}arr.unshift(stamp+' · '+msg);arr=arr.slice(0,40);localStorage.setItem(key,JSON.stringify(arr));renderCloudUI()}
 function cloudLogData(){try{return JSON.parse(localStorage.getItem(CLOUD_LOG))||[]}catch(e){return[]}}
 function renderCloudUICore(){
@@ -15085,9 +15093,9 @@ function renderCloudUICore(){
  const chip=document.getElementById('cloudStatus'),txt=document.getElementById('cloudStatusText');
  let cls='neutral',label='Cloud desligada';
  if(!online){cls='offline';label=m.dirty?'Offline · por sincronizar':'Offline'}
- else if(cloudConflict||m.conflict){cls='error';label='Ação manual necessária'}
+ else if(cloudConflict||m.conflict){cls='pending';label=cloudConflict?.type==='product'?'Produtos com conflito · fila ativa':'Conflito operacional · fila de produtos ativa'}
  else if(cloudUser&&!cloudStartupDone){cls='pending';label='A validar cloud…'}
- else if(cloudUser&&m.dirty){cls='pending';label='Por sincronizar'}
+ else if(cloudUser&&(m.dirty||hasPendingProductEditsV19102())){cls='pending';label='Por sincronizar'}
  else if(cloudUser&&m.verified){cls='ok';label='Sincronizado'}
  else if(cloudUser){cls='pending';label='Cloud por validar'}
  else if(cfg.url&&cfg.key){cls='pending';label='Cloud sem sessão'}
@@ -15106,6 +15114,7 @@ function renderCloudUI(){
    localStorage.setItem(CLOUD_META,JSON.stringify(meta));
  }
  renderCloudUICore();
+ renderProductSyncV19107();
  const passkeyEnroll=document.getElementById('cloudPasskeyRegisterV20261008');
  if(passkeyEnroll)passkeyEnroll.classList.toggle('hidden',!(PASSKEY_PREVIEW_V20261008&&!!cloudUser&&location.protocol==='https:'&&location.hostname==='art-essencia.vercel.app'&&typeof cloudClient?.auth?.registerPasskey==='function'));
  meta=cloudMeta();
@@ -15170,7 +15179,7 @@ async function cloudConnect(){
      cloudPushPending=!cloudMeta().conflict&&!cloudConflict;
    }
    cloudHydrating=false;cloudStartupDone=true;
-   await subscribeCloud();await publishPublicTechnicalProfilesV12815(false);startOrderNotificationPollingV12624();renderOrderNotificationsV12624();
+   await subscribeCloud();await receiveProductsV19107();await publishPublicTechnicalProfilesV12815(false);startOrderNotificationPollingV12624();renderOrderNotificationsV12624();
    toast(cloudMeta().conflict||cloudConflict?'Sessão iniciada · conflito Cloud preservado':(cloudMeta().dirty?'Sessão iniciada · sincronização pendente':'ArtEssencia V10 ligada e sincronizada'))
  }catch(e){
    cloudHydrating=false;cloudStartupDone=true;
@@ -15339,6 +15348,7 @@ async function subscribeCloud(){
      const eventType=payload?.eventType||'UPDATE';
      const row=eventType==='DELETE'?payload?.old:payload?.new;
      const rid=row?.id||'';
+     if(k==='products'){if(eventType!=='DELETE')void receiveProductEventV19107(row);return}
      const pendingByCodeV19105=pendingProductEditsV19102();
      const hasLocalPendingV19105=cloudMeta().dirty||cloudMeta().conflict||!!cloudConflict||
        localStorage.getItem(REL_DIRTY)==='1'||Object.keys(pendingByCodeV19105).length>0;
@@ -15929,6 +15939,171 @@ function finalizeCloudCleanV1739(syncStartedMs,showToast=false){
 /* V1.9.104 — sincronizar produtos alterados sem bloquear na revisão operacional.
    Somente um produto cuja base corresponda à versão remota pode ser escrito.
    Conflitos reais continuam pendentes e nunca são resolvidos por sobrescrita. */
+/* V1.9.107: product reconciliation. Arrays are atomic (recipes must not be merged by index). */
+// Read authoritative product rows on reconnect/focus, even when another product
+// is conflicted. Never apply a response to a record edited since the read began.
+async function receiveProductsV19107(){
+ if(!cloudUser||!cloudClient||navigator.onLine===false||productionBlockedV1926()||hasRestorePendingV12645())return false;
+ const before=new Map((db.products||[]).map(p=>[String(p.code),stableStringify(p)]));
+ const userId=cloudUser.id;
+ try{
+  const rows=[];
+  for(let offset=0;;offset+=500){
+   const {data,error}=await cloudClient.from(REL_TABLES.products).select('*').eq('user_id',userId).order('id').range(offset,offset+499);
+   if(error)throw error;rows.push(...(data||[]));if(!data||data.length<500)break;
+  }
+  if(cloudUser?.id!==userId||productionBlockedV1926()||hasRestorePendingV12645())return false;
+  const duplicates=new Set(),seen=new Set();
+  rows.forEach(r=>{const code=String(r.data?.code||'');if(seen.has(code))duplicates.add(code);seen.add(code)});
+  let changed=false;
+  for(const row of rows){
+   const code=String(row.data?.code||'');
+   const current=(db.products||[]).find(p=>String(p.code)===code);
+   if(!code||duplicates.has(code)||pendingProductEditsV19102()[code]||stableStringify(current)!==before.get(code))continue;
+   if(current?._rid&&String(current._rid)!==String(row.id))continue;
+   changed=applyRemoteProductV19107(row)||changed;
+  }
+  if(changed)renderAll();return true;
+ }catch(e){cloudLogMsg('Receção de Produtos adiada: '+cloudErrText(e));return false}
+}
+function applyRemoteProductV19107(row){
+ const code=String(row?.data?.code||'');if(!code||pendingProductEditsV19102()[code])return false;
+ const current=(db.products||[]).find(p=>String(p.code)===code);
+ if(current?._rid&&String(current._rid)!==String(row.id))return false;
+ const revisions=JSON.parse(localStorage.getItem('ae_product_revisions_19107')||'{}');
+ // ISO timestamps returned by PostgREST preserve fractional precision.
+ const canonical=x=>String(x||'').replace('Z','+00:00');
+ if(revisions[code]&&canonical(row.updated_at)<canonical(revisions[code]))return false;
+ const value={...relClone(row.data),_rid:row.id};
+ if(productVersionMatchesV19104(current,value))return false;
+ const next=relClone(db),index=next.products.findIndex(p=>String(p.code)===code);
+ if(index<0)next.products.push(value);else next.products[index]=value;
+ localStorage.setItem(KEY,JSON.stringify(next));db=next;
+ revisions[code]=row.updated_at;localStorage.setItem('ae_product_revisions_19107',JSON.stringify(revisions));return true;
+}
+async function receiveProductEventV19107(row){
+ if(!row?.id||!cloudUser||!cloudClient)return;
+ const userId=cloudUser.id,code=String(row.data?.code||'');
+ const before=stableStringify((db.products||[]).find(p=>String(p.code)===code));
+ try{
+  // Do not trust event arrival order: read the currently committed row.
+  const {data,error}=await cloudClient.from(REL_TABLES.products).select('*').eq('id',row.id).eq('user_id',userId).maybeSingle();
+  if(error)throw error;
+  if(!data||cloudUser?.id!==userId||productionBlockedV1926()||hasRestorePendingV12645())return;
+  if(before!==stableStringify((db.products||[]).find(p=>String(p.code)===code)))return;
+  if(applyRemoteProductV19107(data))renderAll();
+ }catch(e){cloudLogMsg('Receção do produto adiada: '+cloudErrText(e))}
+}
+
+function productMergeV19107(base,local,remote,choices={}){
+ const equal=(a,b)=>stableStringify(a)===stableStringify(b);
+ const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
+ const conflicts=[];
+ function walk(b,l,r,path){
+  if(equal(l,r))return relCloneValueV19107(l);
+  if(base!==null&&equal(l,b))return relCloneValueV19107(r);
+  if(base!==null&&equal(r,b))return relCloneValueV19107(l);
+  if(object(l)&&object(r)&&(object(b)||b===undefined)){
+   const out={};
+   for(const key of new Set([...Object.keys(b||{}),...Object.keys(l),...Object.keys(r)])){
+    if(['__proto__','constructor','prototype'].includes(key))continue;
+    if(!path.length&&key==='_rid')continue;
+    const value=walk(b?.[key],l[key],r[key],[...path,key]);
+    if(value!==undefined)out[key]=value;
+   }
+   return out;
+  }
+  const id=JSON.stringify(path);
+  if(choices[id]==='local')return relCloneValueV19107(l);
+  if(choices[id]==='remote')return relCloneValueV19107(r);
+  conflicts.push({path,base:b,local:l,remote:r});
+  return relCloneValueV19107(l);
+ }
+ const merged=walk(base,local,remote,[]);
+ if(merged&&typeof merged==='object')merged._rid=local?._rid||remote?._rid;
+ return {merged,conflicts};
+}
+function relCloneValueV19107(v){return v===undefined?undefined:relClone(v)}
+function productSyncStatesV19107(){return JSON.parse(localStorage.getItem('ae_product_sync_19107')||'{}')}
+function productSyncStateV19107(code,value){
+ const states=productSyncStatesV19107();states[code]={...value,at:new Date().toISOString()};
+ localStorage.setItem('ae_product_sync_19107',JSON.stringify(states));
+}
+function productBackupV19107(code,base,local,remote){
+ // Append-only recovery copies: never overwrite an earlier resolution.
+ const id='ae_product_recovery_19107_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+ localStorage.setItem(id,JSON.stringify({code,base,local,remote,at:new Date().toISOString()}));
+ return id;
+}
+function applyProductMergeV19107(code,base,local,row,merged){
+ productBackupV19107(code,base,local,row);
+ const next=relClone(db),target=next.products.find(p=>String(p.code)===code);
+ if(!target)throw new Error('Ficha local indisponível');
+ Object.keys(target).forEach(k=>delete target[k]);Object.assign(target,merged,{_rid:row.id});
+ // Keep the old queue base until the merged local data is durable. A crash can
+ // cause a conservative re-comparison, never acknowledgement of an unsent edit.
+ localStorage.setItem(KEY,JSON.stringify(next));db=next;
+ const queue=pendingProductEditsV19102();
+ queue[code]={...queue[code],base:relClone(row.data),recordedAt:new Date().toISOString()};
+ localStorage.setItem(PRODUCT_PENDING_V19102,JSON.stringify(queue));
+}
+function renderProductSyncV19107(){
+ const el=document.getElementById('productSyncV19107');if(!el)return;
+ const queue=pendingProductEditsV19102(),states=productSyncStatesV19107();
+ const signature=JSON.stringify([queue,states,productSyncBusyV19104,cloudMeta().localChangedAt,cloudMeta().productLastConfirmedV19104]);
+ if(el._signature===signature)return;el._signature=signature;
+ const preserved=new Map([...el.querySelectorAll('details')].map(card=>[card.dataset.code,{at:card.dataset.at,open:card.open,values:[...card.querySelectorAll('select')].map(s=>s.value)}]));
+ const codes=Object.keys(queue),counts={pending:0,sending:0,conflict:0,failed:0};
+ codes.forEach(code=>{const s=states[code]?.status;counts[s==='sending'&&!productSyncBusyV19104?'pending':s in counts?s:'pending']++});
+ const meta=cloudMeta();
+ el.replaceChildren();
+ const summary=document.createElement('p');
+ summary.textContent=`Produtos: ${counts.pending} pendentes · ${counts.sending} em envio · ${counts.conflict} com conflito · ${counts.failed} com falha. ${Object.values(states).filter(x=>x.status==='confirmed').length} confirmações registadas neste dispositivo.`;
+ el.append(summary);
+ const exportButton=document.createElement('button');exportButton.className='btn';exportButton.textContent='Exportar cópias de recuperação de Produtos';
+ exportButton.onclick=()=>{const copies=[];for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key?.startsWith('ae_product_recovery_19107_'))copies.push(JSON.parse(localStorage.getItem(key)))}const url=URL.createObjectURL(new Blob([JSON.stringify({copies,conflicts:productSyncStatesV19107()},null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='ArtEssencia-recuperacao-produtos.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};el.append(exportButton);
+ const times=document.createElement('p');times.textContent='Última gravação local: '+(meta.localChangedAt?new Date(meta.localChangedAt).toLocaleString('pt-PT'):'—')+' · Última confirmação Cloud: '+(meta.productLastConfirmedV19104?new Date(meta.productLastConfirmedV19104).toLocaleString('pt-PT'):'—');el.append(times);
+ for(const code of codes){
+  const state=states[code];if(!state||!['conflict','failed'].includes(state.status))continue;
+  const card=document.createElement('details');card.className='card';card.style.marginTop='8px';card.dataset.code=code;card.dataset.at=state.at;
+  const saved=preserved.get(code);if(saved?.at===state.at)card.open=saved.open;
+  const title=document.createElement('summary');title.textContent=code+' · '+(state.error||'Escolher campos incompatíveis');card.append(title);
+  if(state.local&&state.remote){
+   const result=productMergeV19107(state.base,state.local,state.remote.data);
+   const selectors=[];
+   for(const field of result.conflicts){
+    const box=document.createElement('div');box.style.cssText='margin:12px 0;overflow-wrap:anywhere';
+    const label=document.createElement('strong');label.textContent=field.path.join(' › ');box.append(label);
+    for(const [name,value] of [['Base',field.base],['Neste dispositivo',field.local],['Cloud',field.remote]]){
+     const line=document.createElement('div');line.style.whiteSpace='pre-wrap';line.textContent=name+': '+(value===undefined?'(campo ausente)':typeof value==='string'?value:JSON.stringify(value,null,2));box.append(line);
+    }
+    const select=document.createElement('select');select.setAttribute('aria-label','Escolha para '+field.path.join(' › '));
+    for(const [value,text] of [['','Escolher este campo…'],['local','Manter valor deste dispositivo'],['remote','Manter valor Cloud']]){const o=document.createElement('option');o.value=value;o.textContent=text;select.append(o)}
+    if(saved?.at===state.at)select.value=saved.values[selectors.length]||'';
+    box.append(select);card.append(box);selectors.push([JSON.stringify(field.path),select]);
+   }
+   const button=document.createElement('button');button.className='btn';button.textContent='Guardar escolhas deste produto e sincronizar';
+   button.onclick=()=>resolveProductFieldsV19107(code,state,Object.fromEntries(selectors.map(([k,s])=>[k,s.value])));card.append(button);
+  }
+  el.append(card);
+ }
+ const note=document.createElement('small');note.textContent='As cópias anteriores à reconciliação ficam guardadas neste dispositivo. A Cloud não fornece confirmação de leitura por cada aparelho.';el.append(note);
+}
+async function resolveProductFieldsV19107(code,state,choices){
+ if(productSyncBusyV19104||cloudBusy||cloudPushRunning){toast('Aguarda o envio em curso');return false}
+ const current=(db.products||[]).find(p=>String(p.code)===code);
+ if(!productVersionMatchesV19104(current,state.local)){toast('O produto mudou entretanto; volta a revalidar');return false}
+ const result=productMergeV19107(state.base,current,state.remote.data,choices);
+ if(result.conflicts.length){toast('Escolhe um valor para cada campo incompatível');return false}
+ try{
+  applyProductMergeV19107(code,state.base,current,state.remote,result.merged);
+  productSyncStateV19107(code,{status:'pending'});
+  setCloudMeta({dirty:true,verified:false,localChangedAt:new Date().toISOString()});
+  // The next send fetches a fresh Cloud row and uses compare-and-swap again.
+  scheduleCloudPushV1860(350);renderCloudUI();return true;
+ }catch(e){toast('Não foi possível guardar a resolução: '+cloudErrText(e));return false}
+}
+
 let productSyncBusyV19104=false;
 function productVersionMatchesV19104(a,b){
  if(!a||!b)return a==null&&b==null;
@@ -15942,50 +16117,57 @@ async function syncPendingProductsIndependentV19104(showToast=false){
  const pending=pendingProductEditsV19102();
  const codes=Object.keys(pending);
  if(!codes.length)return true;
- const u=cloudUser||await ensureCloudSession();
- if(!u||!cloudClient)return false;
  productSyncBusyV19104=true;
+ let u;
+ try{u=cloudUser||await ensureCloudSession()}catch(e){productSyncBusyV19104=false;return false}
+ if(!u||!cloudClient){productSyncBusyV19104=false;return false}
  let confirmed=0,conflicted=0,publicPending=0;
  try{
-   const remoteRows=await relFetchAll(REL_TABLES.products);
-   const byCode=new Map();
-   for(const row of remoteRows){
-     const code=String(row?.data?.code||'');
-     if(!code)continue;
-     if(byCode.has(code)){
-       cloudLogMsg('Produto duplicado na Cloud · '+code+' · revisão manual necessária');
-       conflicted++;
-       continue;
-     }
-     byCode.set(code,row);
+   const byCode=new Map(),duplicates=new Set();
+   for(let offset=0;offset<codes.length;offset+=50){
+    const {data:rows,error}=await cloudClient.from(REL_TABLES.products).select('*').eq('user_id',u.id).in('data->>code',codes.slice(offset,offset+50));
+    if(error)throw error;
+    for(const row of rows||[]){const code=String(row.data?.code||'');if(byCode.has(code))duplicates.add(code);byCode.set(code,row)}
    }
    for(const code of codes){
-     const initial=(db.products||[]).find(p=>String(p?.code||'')===code);
-     if(!initial){cloudLogMsg('Produto pendente sem ficha local · '+code);conflicted++;continue}
+     const attempt=Number(productSyncStatesV19107()[code]?.attempt||0)+1;
+     let initial=(db.products||[]).find(p=>String(p?.code||'')===code);
+     if(duplicates.has(code)){productSyncStateV19107(code,{status:'conflict',error:'Identidade duplicada na Cloud; nenhuma gravação efetuada'});conflicted++;continue}
+     if(!initial){productSyncStateV19107(code,{status:'failed',error:'Produto pendente sem ficha local'});conflicted++;continue}
      const old=byCode.get(code);
      if(old&&initial._rid&&String(initial._rid)!==String(old.id)){
+       productSyncStateV19107(code,{status:'conflict',error:'Identidade local diferente da Cloud; nenhuma gravação efetuada'});
        cloudLogMsg('Conflito de identidade do produto '+code+' · cópia local preservada');
        conflicted++;continue;
      }
-     const base=pending[code]?.base??null;
-     if(old&&!productVersionMatchesV19104(initial,old.data)&&
-        (!base||!productVersionMatchesV19104(base,old.data))){
-       cloudLogMsg('Conflito de edição do produto '+code+' · Cloud mudou desde a base local');
-       conflicted++;continue;
+     const base=pendingProductEditsV19102()[code]?.base??null;
+     if(old&&!productVersionMatchesV19104(initial,old.data)){
+       const result=productMergeV19107(base,initial,old.data);
+       if(result.conflicts.length){
+         productSyncStateV19107(code,{status:'conflict',base,local:relClone(initial),remote:old,error:result.conflicts.length+' campo(s) incompatível(eis)'});
+         conflicted++;continue;
+       }
+       try{
+         if(!productVersionMatchesV19104(initial,result.merged)){
+           applyProductMergeV19107(code,base,initial,old,result.merged);
+           initial=db.products.find(p=>String(p.code)===code);
+         }
+       }catch(e){productSyncStateV19107(code,{status:'failed',error:cloudErrText(e)});conflicted++;continue}
      }
      if(!old&&base){
-       cloudLogMsg('Produto '+code+' ausente na Cloud, mas já existia na edição local');
+       productSyncStateV19107(code,{status:'conflict',error:'Produto ausente na Cloud; base e ficha local preservadas'});
        conflicted++;continue;
      }
      if(!initial._rid){
        // Adotar a identidade remota conhecida apenas após comparação da base.
        initial._rid=old?.id||relUuid(initial);
        try{localStorage.setItem(KEY,JSON.stringify(db))}
-       catch(e){cloudLogMsg('Sem espaço para guardar a identidade do produto '+code+': '+cloudErrText(e));conflicted++;continue}
+       catch(e){productSyncStateV19107(code,{status:'failed',error:'Falha de armazenamento local: '+cloudErrText(e)});cloudLogMsg('Sem espaço para guardar a identidade do produto '+code+': '+cloudErrText(e));conflicted++;continue}
      }
      const snapshot=relClone(initial);
      let written=old;
      try{
+       productSyncStateV19107(code,{status:'sending'});
        if(!old){
          const payload={
            id:snapshot._rid,user_id:u.id,name:snapshot.name||'',
@@ -15993,7 +16175,7 @@ async function syncPendingProductsIndependentV19104(showToast=false){
            price:Number(snapshot.onlinePrice)>0?Number(snapshot.onlinePrice):(Number(snapshot.price)||0),
            cost:Number(calculatedProductCost(snapshot))||0,
            active:!productArchivedV1803(snapshot),
-           data:snapshot,updated_at:new Date().toISOString()
+           data:snapshot,updated_at:new Date(Math.max(Date.now(),Date.parse(old?.updated_at||'1970-01-01')+1)).toISOString()
          };
          const {data,error}=await cloudClient.from(REL_TABLES.products)
            .insert(payload).select('id,data,updated_at').maybeSingle();
@@ -16006,7 +16188,7 @@ async function syncPendingProductsIndependentV19104(showToast=false){
            price:Number(snapshot.onlinePrice)>0?Number(snapshot.onlinePrice):(Number(snapshot.price)||0),
            cost:Number(calculatedProductCost(snapshot))||0,
            active:!productArchivedV1803(snapshot),
-           data:snapshot,updated_at:new Date().toISOString()
+           data:snapshot,updated_at:new Date(Math.max(Date.now(),Date.parse(old?.updated_at||'1970-01-01')+1)).toISOString()
          };
          const {data,error}=await cloudClient.from(REL_TABLES.products)
            .update(payload).eq('id',old.id).eq('user_id',u.id)
@@ -16018,6 +16200,8 @@ async function syncPendingProductsIndependentV19104(showToast=false){
        if(!written||!productVersionMatchesV19104(snapshot,written.data))
          throw new Error('A Cloud não confirmou o conteúdo do produto');
        // A confirmação só remove o registo pendente se não houve nova edição.
+       const revisions=JSON.parse(localStorage.getItem('ae_product_revisions_19107')||'{}');
+       revisions[code]=written.updated_at;localStorage.setItem('ae_product_revisions_19107',JSON.stringify(revisions));
        clearConfirmedProductEditsV19102([{data:snapshot}]);
        if(hasPendingProductEditsV19102()){
          const latest=pendingProductEditsV19102();
@@ -16033,9 +16217,10 @@ async function syncPendingProductsIndependentV19104(showToast=false){
          setCloudMeta({conflict:false,verified:false});
          cloudLogMsg('Conflito do produto '+code+' resolvido após confirmação na Cloud');
        }
+       productSyncStateV19107(code,{status:pendingProductEditsV19102()[code]?'pending':'confirmed',revision:written.updated_at});
        confirmed++;
        try{
-         await syncStoreCatalogV1421(u,new Set([code]));
+         await syncStoreCatalogV1421(u,new Set([code]),[snapshot]);
          if(!await syncProductPublicCharacteristicsV1820(snapshot)){
            publicPending++;
            const qkey='artessencia_public_profiles_pending_v19100_'+u.id;
@@ -16050,6 +16235,7 @@ async function syncPendingProductsIndependentV19104(showToast=false){
        }
      }catch(e){
        conflicted++;
+       productSyncStateV19107(code,{status:'failed',attempt,error:cloudErrText(e)});
        cloudLogMsg('Produto '+code+' não sincronizado; dados locais protegidos: '+cloudErrText(e));
      }
    }
@@ -16060,12 +16246,23 @@ async function syncPendingProductsIndependentV19104(showToast=false){
    }else if(showToast)toast('Produtos ainda pendentes; consultar Atividade no Sync');
    return conflicted===0;
  }catch(e){
+   try{for(const code of codes){
+    if(!pendingProductEditsV19102()[code])continue;
+    const prior=productSyncStatesV19107()[code];
+    if(prior?.status!=='conflict')productSyncStateV19107(code,{status:'failed',attempt:Number(prior?.attempt||0)+1,error:cloudErrText(e)});
+   }
    cloudLogMsg('Envio individual de Produtos indisponível: '+cloudErrText(e));
+   }catch(storageError){localSaveFailedV1926=true;showLocalSaveRecoveryV1926(storageError)}
    if(showToast)toast('Não foi possível enviar Produtos; cópias locais preservadas');
    return false;
  }finally{
    productSyncBusyV19104=false;
    renderCloudUI();
+   const remaining=pendingProductEditsV19102(),states=productSyncStatesV19107();
+   if(!productionBlockedV1926()&&cloudStartupDone&&!cloudHydrating&&navigator.onLine!==false){
+    if(Object.keys(remaining).some(code=>states[code]?.status==='pending'))scheduleCloudPushV1860(650);
+    else if(Object.keys(remaining).some(code=>states[code]?.status==='failed'&&Number(states[code]?.attempt||3)<3))scheduleCloudPushV1860(10000);
+   }
  }
 }
 
@@ -16074,6 +16271,10 @@ async function cloudPushNow(showToast=true){
  // A alteração de Produtos tem uma fila própria e não depende da revisão geral.
  if(hasPendingProductEditsV19102())
    await syncPendingProductsIndependentV19104(false);
+ if(cloudMeta().productOnlyV19107&&!cloudMeta().conflict&&!cloudConflict){
+   if(!hasPendingProductEditsV19102()&&!relOrderPendingSet().size)finalizeCloudCleanV1739(Date.now(),showToast);
+   return !hasPendingProductEditsV19102();
+ }
  if(cloudMeta().conflict||cloudConflict){
    const u=cloudUser||await ensureCloudSession();
    if(!u||!await recoverStaleCloudConflictV19103(u)){
@@ -16215,7 +16416,8 @@ async function revalidateCloudConflictV19106(){
  const user=cloudUser||await ensureCloudSession();
  if(!user){toast('Sessão Cloud indisponível');return false}
  cloudLogMsg('Iniciada a revalidação segura do conflito');
- const ok=await recoverStaleCloudConflictV19103(user);
+ await syncPendingProductsIndependentV19104(false);
+ const ok=(!cloudMeta().conflict&&!cloudConflict)||await recoverStaleCloudConflictV19103(user);
  if(!ok){
    cloudLogMsg('Conflito real ou sem base confirmada; dados locais preservados');
    toast('Conflito ainda por resolver; consulta Atividade');return false;
@@ -16226,6 +16428,7 @@ async function revalidateCloudConflictV19106(){
  return true;
 }
 async function cloudResolveConflict(choice){
+ if(hasPendingProductEditsV19102()||cloudConflict?.type==='product'){toast('Resolve os campos na área de Produtos; as fichas pendentes estão protegidas');return false}
  const restorePending=hasRestorePendingV12645();
  if(restorePending&&choice==='remote'){
    if(!confirm('Descartar o restauro local e usar os dados atuais da Cloud?'))return false;
@@ -16271,9 +16474,9 @@ async function cloudResolveConflict(choice){
  return false
 }
 function getDeviceId(){let id=localStorage.getItem(DEVICE_KEY);if(!id){id='DEV-'+Math.random().toString(36).slice(2,8)+'-'+Date.now().toString(36);localStorage.setItem(DEVICE_KEY,id)}return id}
-window.addEventListener('online',()=>{renderCloudUI();if(!hasRestorePendingV12645()&&cloudStartupDone&&(cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending))scheduleCloudPushV1860(700)});window.addEventListener('offline',renderCloudUI);
+window.addEventListener('online',()=>{void receiveProductsV19107();renderCloudUI();if(!hasRestorePendingV12645()&&cloudStartupDone&&(cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending))scheduleCloudPushV1860(700)});window.addEventListener('offline',renderCloudUI);
 function flushCloudIfDirty(){try{clearTimeout(cloudPushTimer);/* pagehide não espera fetch; a alteração já está segura no localStorage e dirty=true */}catch(e){}}
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&cloudStartupDone){const pending=cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending;if(pending&&!cloudMeta().conflict&&!hasRestorePendingV12645())scheduleCloudPushV1860(250);else if(!cloudBusy&&!cloudPushRunning)setTimeout(()=>cloudPullNow(false),150);refreshVisualCatalogsFromCloudV1944(true);setTimeout(()=>checkNewOnlineOrdersV12624(),900)}});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&cloudStartupDone){void receiveProductsV19107();const pending=cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending;if(pending&&!cloudMeta().conflict&&!hasRestorePendingV12645())scheduleCloudPushV1860(250);else if(!cloudBusy&&!cloudPushRunning)setTimeout(()=>cloudPullNow(false),150);refreshVisualCatalogsFromCloudV1944(true);setTimeout(()=>checkNewOnlineOrdersV12624(),900)}});
 window.addEventListener('pageshow',()=>{if(cloudStartupDone){if((cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending)&&!cloudMeta().conflict&&!hasRestorePendingV12645())scheduleCloudPushV1860(300);refreshVisualCatalogsFromCloudV1944(true)}});
 async function cloudHydrateStartup(){
  return relationalHydrateCore(true)
@@ -16304,6 +16507,7 @@ async function cloudStartup(){
  }
  try{if(db?.aprecoImportV1753?.completedAt&&!db?.aprecoOrganizationV1761?.completedAt)organizeAprecoProductsV1761(false);else renderAprecoOrganizationV1761()}catch(e){console.error('organização Apreço V1.7.61',e)}
  await subscribeCloud();
+ await receiveProductsV19107();
  if(hasPendingProductEditsV19102())await syncPendingProductsIndependentV19104(false);
  await refreshVisualCatalogsFromCloudV1944(true);
  await publishPublicTechnicalProfilesV12815(false);
@@ -16640,9 +16844,10 @@ async function relDeleteMissing(table,remoteRows,localIds){
  if(error)throw error
 }
 function storeSlugV1421(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,90)||'item'}
-async function syncStoreCatalogV1421(user,onlyProductCodesV19102=null){
+async function syncStoreCatalogV1421(user,onlyProductCodesV19102=null,confirmedProductsV19107=null){
  if(!user||!cloudClient)return false;
- const products=Array.isArray(db.products)?db.products.filter(p=>!onlyProductCodesV19102||onlyProductCodesV19102.has(String(p?.code||''))):[];
+ const sourceProductsV19107=confirmedProductsV19107||db.products;
+ const products=Array.isArray(sourceProductsV19107)?sourceProductsV19107.filter(p=>!onlyProductCodesV19102||onlyProductCodesV19102.has(String(p?.code||''))):[];
  const categories=[...new Set(products.filter(p=>p&&p.shopVisible&&!productArchivedV1803(p)).map(p=>String(p.category||'Outros produtos artesanais').trim()).filter(Boolean))];
  const categoryMap=new Map();
   let catalogWritesV19100=0;
@@ -16738,18 +16943,8 @@ async function relationalSyncCore(showToast=false){
      if(error)throw error
    }
 
-   const productRows=(db.products||[]).map(p=>({
-     id:relUuid(p),user_id:u.id,name:p.name||'',category:p.category||null,
-     price:Number(p.onlinePrice)>0?Number(p.onlinePrice):(Number(p.price)||0),cost:Number(calculatedProductCost(p))||0,active:!productArchivedV1803(p),
-     data:relClone(p),updated_at:new Date().toISOString()
-   }));
-   const pendingProductsV19102=pendingProductEditsV19102();
-   const remoteProductIdsV19102=new Set(remoteProducts.map(r=>String(r.id)));
-   const firstMigrationV19102=localStorage.getItem(REL_MIGRATED)!=='1';
-   const productsToWriteV19100=changedRelationalRowsV19100(productRows,remoteProducts).filter(row=>
-     Object.prototype.hasOwnProperty.call(pendingProductsV19102,String(row.data?.code||''))||
-     (firstMigrationV19102&&!remoteProductIdsV19102.has(String(row.id)))
-   );
+   // Product writes belong exclusively to the persistent per-record queue.
+   const productsToWriteV19100=[];
    // Registar os perfis a confirmar ANTES das escritas relacionais.
    // Se houver falha ou a aplicação fechar, a próxima reconciliação recupera-os.
    const publicProfilePendingKeyV19100='artessencia_public_profiles_pending_v19100_'+u.id;
@@ -16765,41 +16960,11 @@ async function relationalSyncCore(showToast=false){
    }
    if(pendingPublicProfilesV19100.size)
      localStorage.setItem(publicProfilePendingKeyV19100,JSON.stringify([...pendingPublicProfilesV19100]));
-   const remoteProductsByIdV19102=new Map(remoteProducts.map(r=>[String(r.id),r]));
-   const remoteProductsByCodeV19102=new Map(remoteProducts.filter(r=>r.data?.code).map(r=>[String(r.data.code),r]));
-   for(const row of productsToWriteV19100){
-     const code=String(row.data?.code||''),pending=pendingProductsV19102[code];
-     const old=remoteProductsByIdV19102.get(String(row.id))||remoteProductsByCodeV19102.get(code);
-     if(old){
-       const remoteEqualsLocal=stableStringify(old.data)===stableStringify(row.data);
-       if(remoteEqualsLocal)continue;
-       if(String(old.id)!==String(row.id)||(pending&&pending.base&&stableStringify(pending.base)!==stableStringify(old.data))){
-         cloudConflict={type:'product',code};
-         throw new Error('Conflito no produto '+code+' · edição remota mais recente preservada');
-       }
-       const {data,error}=await cloudClient.from(REL_TABLES.products).update(row)
-         .eq('id',old.id).eq('user_id',u.id).eq('updated_at',old.updated_at)
-         .select('id').maybeSingle();
-       if(error)throw error;
-       if(!data){
-         cloudConflict={type:'product',code};
-         throw new Error('Conflito no produto '+code+' · gravação concorrente');
-       }
-     }else{
-       if(pending?.base){
-         cloudConflict={type:'product',code};
-         throw new Error('Produto '+code+' não existe na Cloud; cópia local preservada');
-       }
-       const {data,error}=await cloudClient.from(REL_TABLES.products).insert(row).select('id').maybeSingle();
-       if(error)throw error;
-       if(!data)throw new Error('Produto '+code+' não foi confirmado pela Cloud');
-     }
-   }
    // Só publicar na Loja produtos realmente alterados e confirmados.
    if(productsToWriteV19100.length)await syncStoreCatalogV1421(u,new Set(productsToWriteV19100.map(r=>String(r.data?.code||''))));
    for(const p of (db.products||[])){
      const code=String(p?.code||'');
-     if(!code||!pendingPublicProfilesV19100.has(code))continue;
+     if(!code||!pendingPublicProfilesV19100.has(code)||pendingProductEditsV19102()[code])continue;
      const publicOk=await syncProductPublicCharacteristicsV1820(p);
      if(!publicOk)throw new Error('public_characteristics_sync_failed:'+code);
      pendingPublicProfilesV19100.delete(code);
@@ -16852,7 +17017,7 @@ async function relationalSyncCore(showToast=false){
    // Apenas finalizeCloudCleanV1739(), no fim do ciclo completo, pode declarar sincronizado.
    localStorage.setItem(REL_DIRTY,'1');
    setCloudMeta({dirty:true,conflict:false,verified:!changedDuringSync,lastSync:new Date().toISOString()});
-   if(pendingOrdersAfterSync||changedDuringSync||hasPendingProductEditsV19102())cloudPushPending=true;
+   if(pendingOrdersAfterSync||changedDuringSync)cloudPushPending=true;
    cloudConflict=null;
    if(clientsToWriteV19100.length||productsToWriteV19100.length||orderRows.length||quotesToWriteV19100.length)
      cloudLogMsg(`V10 atualizada · ${clientsToWriteV19100.length} clientes · ${productsToWriteV19100.length} produtos · ${orderRows.length} encomendas · ${quotesToWriteV19100.length} orçamentos`);
