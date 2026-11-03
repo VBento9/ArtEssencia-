@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.102">
+<meta name="artessencia-version" content="1.9.103">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -6186,7 +6186,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.102';
+const APP_VERSION='1.9.103';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -15099,7 +15099,7 @@ function renderCloudUI(){
  relPruneOrphanPendingOrdersV1741();
  let meta=cloudMeta();
  const realPending=localStorage.getItem(REL_DIRTY)==='1'||relOrderPendingSet().size>0||hasPendingProductEditsV19102()||cloudPushPending||cloudPushRunning;
- if(meta.dirty&&!realPending&&!cloudBusy&&!cloudHydrating){
+ if(meta.dirty&&!meta.conflict&&!cloudConflict&&!realPending&&!cloudBusy&&!cloudHydrating){
    meta={...meta,dirty:false,verified:true};
    localStorage.setItem(CLOUD_META,JSON.stringify(meta));
  }
@@ -15159,11 +15159,17 @@ async function cloudConnect(){
    const ok=await cloudApiDiagnostic(false);
    if(!ok)throw new Error('Tabelas V10 não acessíveis');
    cloudStartupDone=false;cloudHydrating=true;
-   await hydrateOperationalCloudStartupV1755(cloudUser,'ligação à Cloud');
-   await relationalHydrateCore(true);
+   if(cloudMeta().conflict||cloudConflict)await recoverStaleCloudConflictV19103(cloudUser);
+   if(!(cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||hasPendingProductEditsV19102()||cloudMeta().conflict||cloudConflict)){
+     await hydrateOperationalCloudStartupV1755(cloudUser,'ligação à Cloud');
+     await relationalHydrateCore(true);
+   }else{
+     cloudLogMsg('Ligação estabelecida; alterações locais ou conflito preservados');
+     cloudPushPending=!cloudMeta().conflict&&!cloudConflict;
+   }
    cloudHydrating=false;cloudStartupDone=true;
    await subscribeCloud();await publishPublicTechnicalProfilesV12815(false);startOrderNotificationPollingV12624();renderOrderNotificationsV12624();
-   toast('ArtEssencia V10 ligada e sincronizada')
+   toast(cloudMeta().conflict||cloudConflict?'Sessão iniciada · conflito Cloud preservado':(cloudMeta().dirty?'Sessão iniciada · sincronização pendente':'ArtEssencia V10 ligada e sincronizada'))
  }catch(e){
    cloudHydrating=false;cloudStartupDone=true;
    cloudLogMsg('Erro V10: '+cloudErrText(e));
@@ -15621,6 +15627,9 @@ function trySafeOperationalRebaseV19102(remote,baseRevision){
  const shadow=parseLocal(CLOUD_SHADOW);
  const matchingBase=shadow&&Number(shadow.revision||0)===Number(baseRevision||0);
  const baseOps=matchingBase?operationalCloudRowSnapshotV1858({data:shadow.data}):null;
+ // Sem shadow, só é seguro alinhar uma revisão se o snapshot operacional
+ // coincidir exatamente, nunca substituir valores locais desconhecidos.
+ if(!baseOps&&stableStringify(localOps)!==stableStringify(remoteOps))return false;
  const merged={};
  for(const k of CLOUD_OPERATIONAL_KEYS_V139){
    const ours=localOps[k],theirs=remoteOps[k],base=baseOps?.[k];
@@ -15645,6 +15654,57 @@ function trySafeOperationalRebaseV19102(remote,baseRevision){
  cloudConflict=null;
  cloudLogMsg('Revisão operacional reconciliada sem substituir alterações locais · Cloud '+remoteRev);
  return true;
+}
+
+
+/* V1.9.103: recuperação conservadora de uma revisão persistida.
+   Só é automática quando a Cloud contém exatamente os mesmos dados operacionais
+   e os registos locais não confirmados permanecem intactos. */
+async function recoverStaleCloudConflictV19103(user){
+ if(!user||!cloudClient||productionBlockedV1926()||hasRestorePendingV12645())return false;
+ if(cloudConflict?.type==='product'||cloudConflict?.type==='restore')return false;
+ const meta=cloudMeta();
+ if(!meta.conflict&&!cloudConflict)return false;
+ try{
+   const remote=await fetchCloudRowAuthoritative(user);
+   if(!remote?.data)return false;
+   if(stableStringify(operationalCloudSnapshotV139())!==stableStringify(operationalCloudRowSnapshotV1858(remote))){
+     cloudLogMsg('Conflito operacional mantido: valores locais diferentes da Cloud');
+     return false;
+   }
+   // Se existem alterações locais pendentes em tabelas relacionais, não afirmar
+   // sincronização nem receber dados remotos por cima desses registos.
+   const pendingProducts=pendingProductEditsV19102();
+   const codes=Object.keys(pendingProducts);
+   if(codes.length){
+     const remoteProducts=await relFetchAll(REL_TABLES.products);
+     for(const code of codes){
+       const local=(db.products||[]).find(p=>String(p?.code||'')===code);
+       const cloudRow=remoteProducts.find(r=>String(r?.data?.code||'')===code);
+       if(!local||!cloudRow)return false;
+       // Evitar limpar uma fila de edições enquanto esta for diferente do servidor.
+       const localSame=stableStringify(local)===stableStringify(cloudRow.data);
+       const baseSame=stableStringify(pendingProducts[code]?.base)===stableStringify(cloudRow.data);
+       if(!localSame&&!baseSame)return false;
+     }
+     // Só remover entradas que já coincidam com a Cloud. As outras continuam
+     // pendentes e serão enviadas individualmente no próximo ciclo.
+     clearConfirmedProductEditsV19102(codes.filter(code=>{
+       const local=(db.products||[]).find(p=>String(p?.code||'')===code);
+       const row=remoteProducts.find(r=>String(r?.data?.code||'')===code);
+       return local&&row&&stableStringify(local)===stableStringify(row.data);
+     }).map(code=>({data:(db.products||[]).find(p=>String(p?.code||'')===code)})));
+   }
+   saveConfirmedShadow(remote);
+   const rev=Number(remote.revision||0);
+   cloudConflict=null;
+   setCloudMeta({conflict:false,baseRevision:rev,remoteRevision:rev,lastCloudAt:remote.updated_at||meta.lastCloudAt,verified:false});
+   cloudLogMsg('Revisão Cloud revalidada; alterações locais preservadas');
+   return true;
+ }catch(error){
+   cloudLogMsg('Recuperação segura indisponível: '+cloudErrText(error));
+   return false;
+ }
 }
 
 async function validateCloudRevisionBeforePushV1860(user){
@@ -15804,6 +15864,14 @@ function finalizeCloudCleanV1739(syncStartedMs,showToast=false){
 
 async function cloudPushNow(showToast=true){
  if(productionBlockedV1926())return false;
+ if(cloudMeta().conflict||cloudConflict){
+   const u=cloudUser||await ensureCloudSession();
+   if(!u||!await recoverStaleCloudConflictV19103(u)){
+     cloudLogMsg('Envio suspenso: conflito não reconciliado; dados locais preservados');
+     if(showToast)toast('Conflito ainda por resolver · verifica a atividade Cloud');
+     return false;
+   }
+ }
  const syncStartedMs=Date.now();
  if(hasRestorePendingV12645()){
    cloudLogMsg('Envio automático bloqueado: existe um restauro pendente de reconciliação');
@@ -15985,7 +16053,8 @@ async function cloudStartup(){
  const u=await ensureCloudSession();
  if(!u){cloudStartupDone=true;renderCloudUI();renderOrderNotificationsV12624();startOrderNotificationPollingV12624();startEmailNotificationPollingV1710();try{if(db?.aprecoImportV1753?.completedAt&&!db?.aprecoOrganizationV1761?.completedAt)organizeAprecoProductsV1761(false);else renderAprecoOrganizationV1761()}catch(e){console.error('organização Apreço V1.7.61',e)}return}
  cloudLogMsg('Sessão V10 recuperada');
- const localPendingAtStartup=cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||hasPendingProductEditsV19102();
+ if(cloudMeta().conflict||cloudConflict)await recoverStaleCloudConflictV19103(u);
+ const localPendingAtStartup=cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||hasPendingProductEditsV19102()||cloudMeta().conflict||!!cloudConflict;
  cloudHydrating=true;cloudStartupDone=false;
  try{
    await cloudApiDiagnostic(false);
@@ -16009,7 +16078,7 @@ async function cloudStartup(){
  await publishPublicTechnicalProfilesV12815(false);
  startOrderNotificationPollingV12624();startEmailNotificationPollingV1710();
  renderOrderNotificationsV12624();
- if((cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending)&&!cloudMeta().conflict&&!hasRestorePendingV12645())scheduleCloudPushV1860(400)
+ if((cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending)&&!cloudMeta().conflict&&!cloudConflict&&!hasRestorePendingV12645())scheduleCloudPushV1860(400)
 }
 
 
