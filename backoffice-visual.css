@@ -71,3 +71,62 @@
     #dashboard .dashboard-actions { grid-template-columns: minmax(0,1fr) !important; }
   }
 }
+
+/* Products and Orders: consistent filters, readable values and touch actions. */
+@media screen {
+  .app #products .ae-products-compact-bar button:last-child { grid-column: auto; }
+  .app #products .products-filter-field-v1101 > span { font-size: 12px; color: #59483b; }
+  .app #products .products-filter-field-v1101 > select { font-size: 14px; }
+  .app #products .product-card-metrics { align-items: stretch; }
+  .app #products .product-card-metrics strong { font-variant-numeric: tabular-nums; }
+  .app #products .product-secondary-actions > summary { font-size: 13px; min-height: 46px; }
+  .app #products .product-secondary-actions[open] { padding: 10px; border: 1px solid #dfd2c5; border-radius: 12px; background: #faf7f2; }
+  .app #products .product-editor-nav-v1762 button small { font-size: 11px; line-height: 1.4; color: #6b5747; }
+  .app #orders .orders-toolbar-v1728 { display: grid; grid-template-columns: minmax(0,1fr); gap: 16px; }
+  .app #orders .orders-toolbar-title p { font-size: 13px; line-height: 1.5; color: #6b5747; }
+  .app #orders .orders-toolbar-controls-v1728 { display: grid; grid-template-columns: minmax(180px,2fr) minmax(130px,1fr) minmax(180px,1fr); align-items: end; gap: 12px; }
+  .app #orders .orders-toolbar-controls-v1728 > * { min-width: 0; }
+  .app #orders .orders-search { min-width: 0; }
+  .app #orders .orders-view-switch { display: flex; gap: 6px; }
+  .app #orders .orders-view-switch button { flex: 1; min-width: 0; min-height: 46px; padding: 10px; font-size: 13px; white-space: normal; }
+  .app #orders .orders-filter-utility-v1915 { grid-column: 1/-1; display: flex; align-items: end; gap: 12px; padding: 12px; background: #f8f4ee; border: 1px solid #e2d9cf; border-radius: 12px; }
+  .app #orders .orders-sort-control-v1940 { flex: 1 1 210px; gap: 6px; color: #59483b; }
+  .app #orders #ordersResultsV1915 { flex: 1 1 160px; align-self: center; line-height: 1.5; }
+  .app #orders .orders-new-wrap-v1728 { grid-column: 1/-1; justify-self: end; }
+  .app #orders #aeOrdersCompact { justify-self: start; white-space: normal; }
+  .app #orders .ae-orders-advanced { padding: 12px; background: #f8f4ee; border: 1px solid #e2d9cf; border-radius: 12px; }
+  .app #orders .ae-orders-advanced > .field { flex: 1 1 150px; }
+  .app #orders .order-ref { font-size: 13px; overflow-wrap: anywhere; }
+  .app #orders .order-client div { min-width: 0; }
+  .app #orders .order-client b { font-size: 16px; overflow-wrap: anywhere; }
+  .app #orders .order-client small { font-size: 12px; color: #6b5747; overflow-wrap: anywhere; }
+  .app #orders .order-card-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+  .app #orders .order-card-grid > div { padding: 10px; min-width: 0; }
+  .app #orders .order-card-grid span { font-size: 12px; color: #6b5747; line-height: 1.4; }
+  .app #orders .order-card-grid b { font-size: 14px; line-height: 1.45; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .app #orders .order-card-actions { gap: 10px; padding: 12px; }
+  .app #orders .order-card-actions > .btn { min-height: 46px; font-size: 13px; }
+  .app #orders .ae-order-more { flex: 1 1 150px; min-width: 0; }
+  .app #orders .ae-order-more > summary { min-height: 46px; text-align: center; padding: 12px; background: #faf7f2; border: 1px solid #dfd2c5; border-radius: 10px; font-size: 13px; }
+  .app #orders .ae-order-more-content { gap: 10px; }
+  .app #orders .ae-order-more-content > * { min-height: 46px !important; font-size: 13px !important; max-width: 100%; white-space: normal; }
+  .app #orders .ae-orders-list-nav select { min-height: 44px; }
+  @media (max-width: 900px) {
+    .app #orders .orders-toolbar-controls-v1728 { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    .app #orders .orders-search { grid-column: 1/-1; }
+  }
+  @media (max-width: 650px) {
+    .app #products .products-filter-field-v1101 > select { font-size: 16px; }
+    .app #products .product-secondary-menu { grid-template-columns: minmax(0,1fr); }
+    .app #orders .orders-new-wrap-v1728 { justify-self: stretch; }
+    .app #orders .orders-new { width: 100%; }
+    .app #orders #aeOrdersCompact { grid-column: 1/-1; justify-self: stretch; }
+    .app #orders #ordersSortV1916 { font-size: 16px; }
+    .app #orders .order-card-actions > .btn { flex: 1 1 100%; }
+    .app #orders .ae-orders-list-nav { position: static; }
+    .app #orders .ae-orders-pagination { flex-wrap: wrap; }
+  }
+  @media (max-width: 360px) {
+    .app #orders .orders-toolbar-controls-v1728 { grid-template-columns: minmax(0,1fr); }
+  }
+}
