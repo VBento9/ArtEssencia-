@@ -15653,7 +15653,7 @@ async function validateCloudRevisionBeforePushV1860(user){
  if(!remote)return true;
  const meta=cloudMeta(),remoteRev=Number(remote.revision||0),baseRev=Number(meta.baseRevision||0);
  if(remoteRev<=0)return true;
- if((baseRev<=0||remoteRev>baseRev)&&trySafeOperationalRebaseV19102(remote,baseRev))return true;
+ if((baseRev<=0||remoteRev>baseRev)&&typeof trySafeOperationalRebaseV19102==='function'&&trySafeOperationalRebaseV19102(remote,baseRev))return true;
  if(baseRev<=0){
    if(remote.device_id&&remote.device_id===getDeviceId()){
      setCloudMeta({baseRevision:remoteRev,remoteRevision:remoteRev,lastCloudAt:remote.updated_at||meta.lastCloudAt});
