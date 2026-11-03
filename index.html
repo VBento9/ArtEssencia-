@@ -6585,9 +6585,10 @@ function pendingProductEditsV19102(){
 }
 function hasPendingProductEditsV19102(){return Object.keys(pendingProductEditsV19102()).length>0}
 function trackLocalProductEditsV19102(beforeJson){
- if(!beforeJson)return;
  let previous;
+ if(!beforeJson){previous={products:[]}} else {
  try{previous=JSON.parse(beforeJson)}catch(e){return}
+ }
  if(!Array.isArray(previous?.products)||!Array.isArray(db.products))return;
  const previousByCode=new Map(previous.products.filter(p=>p?.code).map(p=>[String(p.code),p]));
  const pending=pendingProductEditsV19102();
@@ -6625,7 +6626,7 @@ function save(scope='all'){
   const serialized=JSON.stringify(db);
   const previousSerializedV19102=localStorage.getItem(KEY);
   hasChanges=previousSerializedV19102!==serialized;
-  if(hasChanges&&!cloudApplying)trackLocalProductEditsV19102(previousSerializedV19102);
+  if(hasChanges&&!cloudApplying&&typeof trackLocalProductEditsV19102==='function')trackLocalProductEditsV19102(previousSerializedV19102);
   if(hasChanges)localStorage.setItem(KEY,serialized);
   persisted=true;
   localSaveFailedV1926=false;document.getElementById('localSaveRecoveryV1926')?.remove();
