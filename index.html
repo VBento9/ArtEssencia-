@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.103">
+<meta name="artessencia-version" content="1.9.104">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -6077,6 +6077,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         </div>
         <div class="cloud-sync-actions">
           <button class="btn primary" onclick="cloudPushNow()">Enviar agora</button>
+          <button class="btn" onclick="syncPendingProductsIndependentV19104(true)">Enviar só Produtos pendentes</button>
           <button class="btn" onclick="cloudPullNow(true)">Receber agora</button>
           <button class="btn" onclick="cloudApiDiagnostic(true)">Testar ligação</button>
         </div>
@@ -6186,7 +6187,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.103';
+const APP_VERSION='1.9.104';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -15090,7 +15091,7 @@ function renderCloudUICore(){
  else if(cloudUser){cls='pending';label='Cloud por validar'}
  else if(cfg.url&&cfg.key){cls='pending';label='Cloud sem sessão'}
  if(chip){chip.className='pill cloud-status '+cls;if(txt)txt.textContent=label}
- const box=document.getElementById('cloudStateBox');if(box){let detail=label;if(cloudBusy)detail='Sincronização em curso…';if(cloudConflict)detail='Existe uma escolha manual pendente entre dados locais e cloud.';box.textContent=detail}
+ const box=document.getElementById('cloudStateBox');if(box){let detail=label;if(cloudBusy)detail='Sincronização em curso…';if(cloudConflict)detail='Existe uma escolha manual pendente entre dados locais e cloud.';const pendingProductsV19104=Object.keys(pendingProductEditsV19102()).length;if(pendingProductsV19104)detail+=' · '+pendingProductsV19104+' produto(s) por enviar';if(m.productLastConfirmedV19104)detail+=' · Produtos confirmados na Cloud: '+new Date(m.productLastConfirmedV19104).toLocaleString('pt-PT');box.textContent=detail}
  const ls=document.getElementById('cloudLastSync');if(ls)ls.textContent='Última sincronização V10: '+(m.lastSync?new Date(m.lastSync).toLocaleString('pt-PT'):'—');
  const ui=document.getElementById('cloudUserInfo');if(ui)ui.textContent='Conta: '+(cloudUser?.email||cfg.email||'—');
  const log=document.getElementById('cloudLog');if(log){const a=cloudLogData();log.innerHTML=a.length?a.map(x=>'<div>'+escapeHtml(x)+'</div>').join(''):'Sem atividade de sincronização.'}
@@ -15177,6 +15178,7 @@ async function cloudConnect(){
  }finally{
    cloudBusy=false;
    renderCloudUI();
+   if(hasPendingProductEditsV19102())await syncPendingProductsIndependentV19104(false);
    if(cloudPushPending&&cloudStartupDone&&!cloudHydrating&&!cloudMeta().conflict&&!hasRestorePendingV12645()&&navigator.onLine!==false) scheduleCloudPushV1860(250)
  }
 }
@@ -15862,8 +15864,140 @@ function finalizeCloudCleanV1739(syncStartedMs,showToast=false){
  return clean
 }
 
+
+/* V1.9.104 — sincronizar produtos alterados sem bloquear na revisão operacional.
+   Somente um produto cuja base corresponda à versão remota pode ser escrito.
+   Conflitos reais continuam pendentes e nunca são resolvidos por sobrescrita. */
+let productSyncBusyV19104=false;
+function productVersionMatchesV19104(a,b){
+ if(!a||!b)return a==null&&b==null;
+ const x=relClone(a),y=relClone(b);
+ delete x._rid;delete y._rid;
+ return stableStringify(x)===stableStringify(y);
+}
+async function syncPendingProductsIndependentV19104(showToast=false){
+ if(productSyncBusyV19104||cloudBusy||cloudPushRunning||productionBlockedV1926()||
+    hasRestorePendingV12645()||navigator.onLine===false)return false;
+ const pending=pendingProductEditsV19102();
+ const codes=Object.keys(pending);
+ if(!codes.length)return true;
+ const u=cloudUser||await ensureCloudSession();
+ if(!u||!cloudClient)return false;
+ productSyncBusyV19104=true;
+ let confirmed=0,conflicted=0,publicPending=0;
+ try{
+   const remoteRows=await relFetchAll(REL_TABLES.products);
+   const byCode=new Map();
+   for(const row of remoteRows){
+     const code=String(row?.data?.code||'');
+     if(!code)continue;
+     if(byCode.has(code)){
+       cloudLogMsg('Produto duplicado na Cloud · '+code+' · revisão manual necessária');
+       conflicted++;
+       continue;
+     }
+     byCode.set(code,row);
+   }
+   for(const code of codes){
+     const initial=(db.products||[]).find(p=>String(p?.code||'')===code);
+     if(!initial){cloudLogMsg('Produto pendente sem ficha local · '+code);conflicted++;continue}
+     const old=byCode.get(code);
+     if(old&&initial._rid&&String(initial._rid)!==String(old.id)){
+       cloudLogMsg('Conflito de identidade do produto '+code+' · cópia local preservada');
+       conflicted++;continue;
+     }
+     const base=pending[code]?.base??null;
+     if(old&&!productVersionMatchesV19104(initial,old.data)&&
+        (!base||!productVersionMatchesV19104(base,old.data))){
+       cloudLogMsg('Conflito de edição do produto '+code+' · Cloud mudou desde a base local');
+       conflicted++;continue;
+     }
+     if(!old&&base){
+       cloudLogMsg('Produto '+code+' ausente na Cloud, mas já existia na edição local');
+       conflicted++;continue;
+     }
+     if(!initial._rid){
+       // Adotar a identidade remota conhecida apenas após comparação da base.
+       initial._rid=old?.id||relUuid(initial);
+       try{localStorage.setItem(KEY,JSON.stringify(db))}
+       catch(e){cloudLogMsg('Sem espaço para guardar a identidade do produto '+code+': '+cloudErrText(e));conflicted++;continue}
+     }
+     const snapshot=relClone(initial);
+     let written=old;
+     try{
+       if(!old){
+         const payload={
+           id:snapshot._rid,user_id:u.id,name:snapshot.name||'',
+           category:snapshot.category||null,
+           price:Number(snapshot.onlinePrice)>0?Number(snapshot.onlinePrice):(Number(snapshot.price)||0),
+           cost:Number(calculatedProductCost(snapshot))||0,
+           active:!productArchivedV1803(snapshot),
+           data:snapshot,updated_at:new Date().toISOString()
+         };
+         const {data,error}=await cloudClient.from(REL_TABLES.products)
+           .insert(payload).select('id,data,updated_at').maybeSingle();
+         if(error)throw error;
+         if(!data)throw new Error('Sem confirmação de INSERT na Cloud');
+         written=data;
+       }else if(!productVersionMatchesV19104(snapshot,old.data)){
+         const payload={
+           name:snapshot.name||'',category:snapshot.category||null,
+           price:Number(snapshot.onlinePrice)>0?Number(snapshot.onlinePrice):(Number(snapshot.price)||0),
+           cost:Number(calculatedProductCost(snapshot))||0,
+           active:!productArchivedV1803(snapshot),
+           data:snapshot,updated_at:new Date().toISOString()
+         };
+         const {data,error}=await cloudClient.from(REL_TABLES.products)
+           .update(payload).eq('id',old.id).eq('user_id',u.id)
+           .eq('updated_at',old.updated_at).select('id,data,updated_at').maybeSingle();
+         if(error)throw error;
+         if(!data)throw new Error('Conflito: outra sessão alterou o produto durante o envio');
+         written=data;
+       }
+       if(!written||!productVersionMatchesV19104(snapshot,written.data))
+         throw new Error('A Cloud não confirmou o conteúdo do produto');
+       // A confirmação só remove o registo pendente se não houve nova edição.
+       clearConfirmedProductEditsV19102([{data:snapshot}]);
+       if(hasPendingProductEditsV19102()){
+         const latest=pendingProductEditsV19102();
+         if(latest[code]&&productVersionMatchesV19104(latest[code].base,written.data)){
+           // Nova edição concorrente: o próximo envio parte da revisão confirmada.
+         }
+       }
+       confirmed++;
+       try{
+         await syncStoreCatalogV1421(u,new Set([code]));
+         if(!await syncProductPublicCharacteristicsV1820(snapshot))publicPending++;
+       }catch(e){
+         publicPending++;
+         cloudLogMsg('Produto '+code+' guardado na Cloud; publicação pública ainda pendente: '+cloudErrText(e));
+       }
+     }catch(e){
+       conflicted++;
+       cloudLogMsg('Produto '+code+' não sincronizado; dados locais protegidos: '+cloudErrText(e));
+     }
+   }
+   if(confirmed){
+     setCloudMeta({productLastConfirmedV19104:new Date().toISOString(),verified:false});
+     cloudLogMsg(confirmed+' produto(s) confirmados na Cloud · '+conflicted+' conflito(s) · '+publicPending+' publicação(ões) pendente(s)');
+     if(showToast)toast(confirmed+' produto(s) guardado(s) na Cloud');
+   }else if(showToast)toast('Produtos ainda pendentes; consultar Atividade no Sync');
+   return conflicted===0;
+ }catch(e){
+   cloudLogMsg('Envio individual de Produtos indisponível: '+cloudErrText(e));
+   if(showToast)toast('Não foi possível enviar Produtos; cópias locais preservadas');
+   return false;
+ }finally{
+   productSyncBusyV19104=false;
+   renderCloudUI();
+ }
+}
+
 async function cloudPushNow(showToast=true){
  if(productionBlockedV1926())return false;
+ // A alteração de Produtos tem uma fila própria e não depende da revisão geral.
+ if(hasPendingProductEditsV19102())
+   await syncPendingProductsIndependentV19104(false);
  if(cloudMeta().conflict||cloudConflict){
    const u=cloudUser||await ensureCloudSession();
    if(!u||!await recoverStaleCloudConflictV19103(u)){
@@ -16074,6 +16208,7 @@ async function cloudStartup(){
  }
  try{if(db?.aprecoImportV1753?.completedAt&&!db?.aprecoOrganizationV1761?.completedAt)organizeAprecoProductsV1761(false);else renderAprecoOrganizationV1761()}catch(e){console.error('organização Apreço V1.7.61',e)}
  await subscribeCloud();
+ if(hasPendingProductEditsV19102())await syncPendingProductsIndependentV19104(false);
  await refreshVisualCatalogsFromCloudV1944(true);
  await publishPublicTechnicalProfilesV12815(false);
  startOrderNotificationPollingV12624();startEmailNotificationPollingV1710();
