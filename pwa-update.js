@@ -37,6 +37,8 @@
    if(typeof REL_DIRTY==='string'&&localStorage.getItem(REL_DIRTY)==='1')return true;
    if(typeof cloudPushPending==='boolean'&&cloudPushPending)return true;
    if(typeof cloudPushRunning==='boolean'&&cloudPushRunning)return true;
+   if(typeof productSyncBusyV19104==='boolean'&&productSyncBusyV19104)return true;
+   if(typeof hasPendingProductEditsV19102==='function'&&hasPendingProductEditsV19102())return true;
    if(typeof cloudHydrating==='boolean'&&cloudHydrating)return true;
    if(typeof relOrderPendingSet==='function'&&relOrderPendingSet().size>0)return true;
    if(typeof hasRestorePendingV12645==='function'&&hasRestorePendingV12645())return true;
@@ -58,6 +60,7 @@
    // A cópia local permanece no armazenamento do dispositivo após a navegação.
    if((typeof cloudBusy==='boolean'&&cloudBusy)||
       (typeof cloudPushRunning==='boolean'&&cloudPushRunning)||
+      (typeof productSyncBusyV19104==='boolean'&&productSyncBusyV19104)||
       (typeof cloudHydrating==='boolean'&&cloudHydrating)||
       (typeof hasRestorePendingV12645==='function'&&hasRestorePendingV12645())){
      bannerMessage('Operação Cloud ou restauro em curso. Não atualizar ainda.');return;
