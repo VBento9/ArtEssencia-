@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.111">
+<meta name="artessencia-version" content="1.9.112">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -4120,8 +4120,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <small>Regista entradas de matérias-primas e acompanha o custo real do stock.</small>
       </div>
       <div class="purchase-tools">
-        <input id="purchaseSearch" placeholder="Pesquisar fornecedor ou artigo…" oninput="renderPurchases()">
-        <select id="purchaseMethodFilter" onchange="renderPurchases()">
+        <input id="purchaseSearch" aria-label="Pesquisar compras por fornecedor ou artigo" placeholder="Pesquisar fornecedor ou artigo…" oninput="renderPurchases()">
+        <select id="purchaseMethodFilter" aria-label="Meio de pagamento da compra" onchange="renderPurchases()">
           <option value="all">Todos os pagamentos</option>
           <option>Dinheiro</option>
           <option>MB Way</option>
@@ -5229,14 +5229,14 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <small>Entradas, saídas e pagamentos num único controlo financeiro.</small>
       </div>
       <div class="cash-tools">
-        <input id="cashSearch" placeholder="Pesquisar descrição…" oninput="renderCash()">
-        <select id="cashTypeFilter" onchange="renderCash()">
+        <input id="cashSearch" aria-label="Pesquisar movimentos de caixa" placeholder="Pesquisar descrição…" oninput="renderCash()">
+        <select id="cashTypeFilter" aria-label="Tipo de movimento de caixa" onchange="renderCash()">
           <option value="all">Todos os tipos</option>
           <option value="Entrada">Entradas</option>
           <option value="Despesa">Despesas</option>
           <option value="Saída">Saídas</option>
         </select>
-        <select id="cashMethodFilter" onchange="renderCash()">
+        <select id="cashMethodFilter" aria-label="Meio de pagamento do movimento" onchange="renderCash()">
           <option value="all">Todos os meios</option>
           <option>Dinheiro</option>
           <option>MB Way</option>
@@ -5290,8 +5290,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <small>Contactos, histórico de encomendas e valor acumulado por cliente.</small>
       </div>
       <div class="clients-tools">
-        <input id="clientSearch" placeholder="Pesquisar nome, telefone ou email…" oninput="renderClients()">
-        <select id="clientOrderFilter" onchange="renderClients()">
+        <input id="clientSearch" aria-label="Pesquisar clientes por nome, telefone ou email" placeholder="Pesquisar nome, telefone ou email…" oninput="renderClients()">
+        <select id="clientOrderFilter" aria-label="Filtrar clientes por encomendas" onchange="renderClients()">
           <option value="all">Todos os clientes</option>
           <option value="with">Com encomendas</option>
           <option value="without">Sem encomendas</option>
@@ -6189,7 +6189,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.111';
+const APP_VERSION='1.9.112';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
