@@ -130,3 +130,71 @@
     .app #orders .orders-toolbar-controls-v1728 { grid-template-columns: minmax(0,1fr); }
   }
 }
+
+/* Stock and Production: readable operational data, with existing actions intact. */
+@media screen {
+  .app #stock .stock-hero { align-items: stretch; flex-direction: column; }
+  .app #stock .stock-hero small { font-size: 13px; line-height: 1.5; color: #6b5747; }
+  .app #stock .stock-tools { width: 100%; grid-template-columns: minmax(0,2fr) minmax(0,1fr) !important; }
+  .app #stock .stock-tools :is(input,select) { min-width: 0; width: 100%; height: auto; min-height: 46px; font-size: 14px; padding: 11px; }
+  .app #stock :is(.stock-kpi span,.stock-kpi small,.stock-form-head small,.stock-list-head small) { font-size: 12px; line-height: 1.5; color: #6b5747; }
+  .app #stock .stock-kpi strong { font-size: 24px; font-variant-numeric: tabular-nums; }
+  .app #stock :is(.ae-stock-action-tabs,.ae-stock-pages) { gap: 10px; }
+  .app #stock :is(.ae-stock-action-tabs button,.ae-stock-pages button,.ae-stock-page-size select) { min-height: 46px; font-size: 13px; }
+  .app #stock .ae-stock-action-tabs { padding: 8px; border: 1px solid #e2d9cf; border-radius: 12px; background: #faf7f2; }
+  .app #stock .ae-stock-action-tabs button[aria-expanded=true] { background: #72533d; color: #fff; border-color: #72533d; }
+  .app #stock .stock-table td { font-size: 13px; line-height: 1.45; font-variant-numeric: tabular-nums; }
+  .app #stock .stock-table td strong { font-size: 14px; }
+  .app #stock .stock-table .badge { font-size: 11px; line-height: 1.4; }
+  .app #stock .stock-status-btn { min-height: 44px; padding: 9px; cursor: pointer; }
+  .app #stock .stock-actions { gap: 10px; }
+  .app #stock .stock-actions .btn { min-height: 46px; font-size: 13px; }
+  .app #stock .stock-name-cell-v1771 { min-width: 0; }
+  .app #stock .stock-name-cell-v1771 > div { min-width: 0; overflow-wrap: anywhere; }
+  .app #stock .stock-form-head { flex-wrap: wrap; }
+  .app #stock .stock-form-actions { flex-wrap: wrap; gap: 10px; }
+  .app #production .prod-head-main { flex-direction: column; align-items: stretch; gap: 16px; }
+  .app #production :is(.prod-head-main small,.prod-card-title small,.prod-kpi > small,.prod-kpi > span) { font-size: 12px; line-height: 1.5; color: #6b5747; }
+  .app #production .prod-head-actions { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; align-items: end; }
+  .app #production .prod-head-actions .field { min-width: 0; }
+  .app #production .prod-head-actions .btn { min-height: 46px; font-size: 13px; padding: 10px; }
+  .app #production .prod-head-actions .production-complete-action { grid-column: 1/-1; background: #3f2d20; color: #fff; margin-top: 4px; }
+  .app #production .prod-kpi { gap: 5px; padding: 14px; }
+  .app #production .prod-kpi > strong { font-size: 25px; font-variant-numeric: tabular-nums; }
+  .app #production .ae-production-tabs { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 8px; overflow: visible; }
+  .app #production .ae-production-tabs button { min-width: 0; min-height: 46px; font-size: 13px; white-space: normal; padding: 10px 8px; }
+  .app #production .ae-production-tabs button[aria-pressed=true] { background: #72533d; color: #fff; border-color: #72533d; }
+  .app #production .prod-order-main { padding: 12px; gap: 10px; }
+  .app #production .prod-order-main small { font-size: 12px; line-height: 1.4; color: #6b5747; }
+  .app #production .prod-order-main strong { font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; white-space: normal; }
+  .app #production .prod-order-foot { flex-wrap: wrap; padding: 10px 12px; gap: 10px; }
+  .app #production .prod-order-actions { flex-wrap: wrap; gap: 10px; }
+  .app #production .prod-order-actions .btn { min-height: 46px; padding: 10px 12px; font-size: 13px; }
+  .app #production :is(.prod-order-foot,.prod-stock-right) .badge { font-size: 11px; line-height: 1.4; padding: 6px 9px; white-space: normal; }
+  .app #production :is(.prod-line,.prod-recipe-head) :is(span,strong),
+  .app #production :is(.prod-stock-line,.prod-history) strong { font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+  .app #production :is(.prod-stock-line,.prod-history) small { font-size: 12px; line-height: 1.5; color: #6b5747; }
+  .app #production :is(.prod-line,.prod-stock-line,.prod-history) { padding-top: 10px; padding-bottom: 10px; }
+  .app #production .prod-stock-right { flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+  .app #production .empty { font-size: 13px; line-height: 1.5; padding: 18px 12px; }
+  @media (max-width: 900px) {
+    .app #production .ae-production-tabs { grid-template-columns: repeat(3,minmax(0,1fr)); }
+    .app #production .prod-head-actions { grid-template-columns: repeat(3,minmax(0,1fr)); }
+    .app #production .prod-head-actions > .field { grid-column: 1/-1; }
+  }
+  @media (max-width: 650px) {
+    .app #stock .stock-tools { grid-template-columns: minmax(0,1fr) !important; }
+    .app #stock .stock-tools :is(input,select) { font-size: 16px; }
+    .app #stock .stock-table td::before { font-size: 12px; color: #6b5747; }
+    .app #stock .stock-table .stock-actions { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    .app #stock .stock-table .stock-actions .btn.danger { grid-column: 1/-1; }
+    .app #stock .stock-table tr.stock-row-out { border-left: 4px solid #a54536; }
+    .app #stock .stock-table tr.stock-row-low { border-left: 4px solid #aa701b; }
+    .app #production .ae-production-tabs { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    .app #production .prod-order-main { grid-template-columns: minmax(0,1fr) auto; }
+    .app #production .prod-order-main > :last-child { grid-column: 1/-1; }
+    .app #production .prod-summary { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    .app #production .prod-stock-line { grid-template-columns: minmax(0,1fr); }
+    .app #production .prod-stock-right { justify-content: flex-start; }
+  }
+}

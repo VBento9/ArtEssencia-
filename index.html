@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.109">
+<meta name="artessencia-version" content="1.9.110">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -3818,7 +3818,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           <button class="btn" onclick="previewProductionPDFV12653()">Ver ordem PDF</button>
           <button class="btn" onclick="downloadProductionPDFV12653()">Guardar PDF</button>
           <button class="btn primary" onclick="renderProduction()">Atualizar</button>
-          <button class="btn" onclick="consumeProduction()">Concluir produção e descontar stock</button>
+          <button class="btn production-complete-action" onclick="consumeProduction()">Concluir produção e descontar stock</button>
         </div>
       </div>
     </div>
@@ -3954,7 +3954,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <small>Controlo de matérias-primas, componentes, unidades e níveis mínimos.</small>
       </div>
       <div class="stock-tools">
-        <input id="stockSearch" placeholder="Pesquisar artigo…" oninput="renderStock()">
+        <input id="stockSearch" aria-label="Pesquisar artigo de stock" placeholder="Pesquisar artigo…" oninput="renderStock()">
         <select id="stockStateFilter" aria-label="Estado do stock" onchange="renderStock()">
           <option value="all">Todos</option>
           <option value="replenish">A repor (sem stock + baixo)</option>
@@ -6189,7 +6189,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.109';
+const APP_VERSION='1.9.110';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
