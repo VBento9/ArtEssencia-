@@ -15627,7 +15627,8 @@ function trySafeOperationalRebaseV19102(remote,baseRevision){
  const localOps=operationalCloudSnapshotV139();
  const remoteOps=operationalCloudRowSnapshotV1858(remote);
  const shadow=parseLocal(CLOUD_SHADOW);
- const matchingBase=shadow&&Number(shadow.revision||0)===Number(baseRevision||0);
+ const expectedBase=Number(baseRevision||0)||Number(shadow?.revision||0);
+ const matchingBase=shadow&&Number(shadow.revision||0)===expectedBase;
  const baseOps=matchingBase?operationalCloudRowSnapshotV1858({data:shadow.data}):null;
  // Sem shadow, só é seguro alinhar uma revisão se o snapshot operacional
  // coincidir exatamente, nunca substituir valores locais desconhecidos.
@@ -15670,10 +15671,7 @@ async function recoverStaleCloudConflictV19103(user){
  try{
    const remote=await fetchCloudRowAuthoritative(user);
    if(!remote?.data)return false;
-   if(stableStringify(operationalCloudSnapshotV139())!==stableStringify(operationalCloudRowSnapshotV1858(remote))){
-     cloudLogMsg('Conflito operacional mantido: valores locais diferentes da Cloud');
-     return false;
-   }
+   const operationalDifferentV19104=stableStringify(operationalCloudSnapshotV139())!==stableStringify(operationalCloudRowSnapshotV1858(remote));
    // Se existem alterações locais pendentes em tabelas relacionais, não afirmar
    // sincronização nem receber dados remotos por cima desses registos.
    const pendingProducts=pendingProductEditsV19102();
@@ -15697,11 +15695,34 @@ async function recoverStaleCloudConflictV19103(user){
        return local&&row&&stableStringify(local)===stableStringify(row.data);
      }).map(code=>({data:(db.products||[]).find(p=>String(p?.code||'')===code)})));
    }
-   saveConfirmedShadow(remote);
+   // Antes do envio geral, não permitir que clientes ou orçamentos antigos
+   // deste dispositivo substituam fichas modificadas na Cloud.
+   const [remoteClientsV19104,remoteQuotesV19104]=await Promise.all([
+     relFetchAll(REL_TABLES.clients),relFetchAll(REL_TABLES.quotes)
+   ]);
+   for(const [kind,localRows,remoteRows] of [
+     ['Clientes',db.clients||[],remoteClientsV19104],
+     ['Orçamentos',db.quotes||[],remoteQuotesV19104]
+   ]){
+     const byId=new Map(remoteRows.map(r=>[String(r.id),r]));
+     for(const local of localRows){
+       if(!local?._rid)continue;
+       const server=byId.get(String(local._rid));
+       if(server&&stableStringify(local)!==stableStringify(server.data)){
+         cloudLogMsg('Conflito relacional preservado em '+kind+' · sincronização global pendente');
+         return false;
+       }
+     }
+   }
+   if(operationalDifferentV19104&&!trySafeOperationalRebaseV19102(remote,Number(meta.baseRevision||0))){
+     cloudLogMsg('Conflito operacional sem conciliação segura · alterações locais preservadas');
+     return false;
+   }
+   if(!operationalDifferentV19104)saveConfirmedShadow(remote);
    const rev=Number(remote.revision||0);
    cloudConflict=null;
    setCloudMeta({conflict:false,baseRevision:rev,remoteRevision:rev,lastCloudAt:remote.updated_at||meta.lastCloudAt,verified:false});
-   cloudLogMsg('Revisão Cloud revalidada; alterações locais preservadas');
+   cloudLogMsg('Revisão Cloud reconciliada sem substituir alterações locais');
    return true;
  }catch(error){
    cloudLogMsg('Recuperação segura indisponível: '+cloudErrText(error));
@@ -15967,10 +15988,17 @@ async function syncPendingProductsIndependentV19104(showToast=false){
        confirmed++;
        try{
          await syncStoreCatalogV1421(u,new Set([code]));
-         if(!await syncProductPublicCharacteristicsV1820(snapshot))publicPending++;
+         if(!await syncProductPublicCharacteristicsV1820(snapshot)){
+           publicPending++;
+           const qkey='artessencia_public_profiles_pending_v19100_'+u.id;
+           const q=new Set(JSON.parse(localStorage.getItem(qkey)||'[]'));
+           q.add(code);localStorage.setItem(qkey,JSON.stringify([...q]));
+         }
        }catch(e){
          publicPending++;
          cloudLogMsg('Produto '+code+' guardado na Cloud; publicação pública ainda pendente: '+cloudErrText(e));
+         const qkey='artessencia_public_profiles_pending_v19100_'+u.id;
+         try{const q=new Set(JSON.parse(localStorage.getItem(qkey)||'[]'));q.add(code);localStorage.setItem(qkey,JSON.stringify([...q]))}catch(_){}
        }
      }catch(e){
        conflicted++;
