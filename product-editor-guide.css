@@ -41,3 +41,104 @@
 #products .description-photo-actions-v1890 .btn{min-height:44px}
 #products #descriptionPhotoStatusV1890[data-state="error"]{color:#a33c28}
 @media(max-width:600px){#products .description-photo-actions-v1890{display:grid;grid-template-columns:1fr}#products .description-photo-actions-v1890 .btn,#products #descriptionPhotoAnalyzeV1890{width:100%}}
+
+
+/* Fluxo compacto do editor: cinco passos sempre claros, sem editar dados. */
+#products #aeProductEditorGuide{
+ display:grid;grid-template-columns:minmax(0,1fr) auto;
+ gap:12px;align-items:center;min-width:0;
+ border-radius:14px;border:1px solid #e0d0c0;
+ padding:12px 14px;margin:10px 0 14px;
+ background:linear-gradient(130deg,#fffefa,#f7eee4);
+}
+#products .ae-editor-guide-copy{
+ min-width:0;display:flex;flex-direction:column;gap:3px;
+}
+#products .ae-editor-progress{
+ align-self:start;color:#78533b;
+ font:800 10px/1.35 system-ui,sans-serif;
+ letter-spacing:.095em;text-transform:uppercase;
+}
+#products .ae-editor-guide-copy strong{
+ color:#3c2b21;font:750 16px/1.28 system-ui,sans-serif;
+ letter-spacing:-.02em;
+}
+#products .ae-editor-guide-copy>span:last-child{
+ color:#6f5b4d;font-size:12px;line-height:1.45;
+ overflow-wrap:anywhere;
+}
+#products .ae-editor-step-actions{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:8px;align-items:center;
+}
+#products .ae-editor-step-actions button{
+ min-width:108px;min-height:44px;
+ border:1px solid #cdb7a2;border-radius:11px;
+ padding:9px 12px;background:#fffaf4;
+ color:#503627;font-size:12px;font-weight:750;
+ white-space:normal;line-height:1.35;
+}
+#products .ae-editor-step-actions button:disabled{
+ opacity:.45;cursor:not-allowed;
+}
+#products .ae-editor-step-actions button:not(:disabled):hover{
+ border-color:#997252;background:#f1e2d4;
+}
+#products .ae-editor-step-actions button:focus-visible{
+ outline:3px solid #8a664b;outline-offset:2px;
+}
+#products .product-editor-nav-v1762 button.active,
+#products .product-editor-nav-v1762 button[aria-selected="true"]{
+ border-color:#8d6b51;box-shadow:0 1px 8px rgba(69,46,29,.08);
+}
+#products .product-editor-nav-v1762 button[aria-selected="true"] b{
+ background:#624331;color:#fff;
+}
+@media(max-width:1100px){
+ #products .product-editor-nav-v1762{
+  display:flex!important;grid-template-columns:none!important;
+  gap:8px!important;overflow-x:auto!important;overflow-y:hidden!important;
+  scroll-snap-type:x proximity;scrollbar-width:thin;
+  overscroll-behavior-x:contain;
+  padding:4px 3px 10px!important;
+ }
+ #products .product-editor-nav-v1762 button{
+  flex:0 0 clamp(135px,22vw,180px);
+  min-width:135px!important;max-width:180px;
+  min-height:63px;
+  scroll-snap-align:start;
+  display:grid;
+  padding:8px 9px!important;
+  row-gap:2px;
+ }
+ #products .product-editor-nav-v1762 button small{
+  display:none!important;
+ }
+ #products .product-editor-nav-v1762 button span{
+  font-size:12px!important;line-height:1.25!important;
+  padding-right:0!important;
+ }
+}
+@media(max-width:650px){
+ #products #aeProductEditorGuide{
+  grid-template-columns:minmax(0,1fr);
+  gap:9px;padding:11px;
+ }
+ #products .ae-editor-step-actions{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+ }
+ #products .ae-editor-step-actions button{
+  width:100%;min-width:0;
+  min-height:44px;
+ }
+ #products .product-editor-nav-v1762 button{
+  flex-basis:43vw;min-width:122px!important;
+  max-width:168px;min-height:57px;
+ }
+ #products .ae-editor-guide-copy strong{font-size:15px}
+}
+@media(prefers-reduced-motion:reduce){
+ #products .product-editor-nav-v1762{
+  scroll-behavior:auto!important;
+ }
+}
