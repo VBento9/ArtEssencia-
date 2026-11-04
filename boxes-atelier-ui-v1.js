@@ -8,7 +8,7 @@ const money=v=>new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR'}).
 const text=v=>String(v??'').trim();
 const productKey=p=>text(p?.code||p?.id);
 const usable=p=>p&&p.active!==false&&!p.archivedV1803;
-let selected=[], custom=[], activeTab='ready';
+let selected=[], custom=[], activeTab='pdf';
 function products(){return (Array.isArray(db?.products)?db.products:[]).filter(p=>usable(p)&&productKey(p)&&text(p.name)).sort((a,b)=>text(a.name).localeCompare(text(b.name),'pt-PT'))}
 function match(code){return (db?.products||[]).find(p=>productKey(p)===code)}
 function composition(){return selected.map(x=>({code:String(x.code),qty:Math.max(1,Math.min(1000,Number(x.qty)||1))})).filter(x=>match(x.code))}
@@ -97,7 +97,7 @@ function loadExisting(b){selected=Array.isArray(b?.items)?b.items.map(x=>({code:
 function showTab(tab){
  const hub=$(ID);if(!hub)return;
  const names=['ready','custom','requests','pdf','advanced'];
- activeTab=names.includes(tab)?tab:'ready';
+ activeTab=names.includes(tab)?tab:'pdf';
  names.forEach(n=>{
   const panel=$('aeHubPanel_'+n);if(panel)panel.hidden=n!==activeTab;
   const btn=hub.querySelector('[data-ae-tab="'+n+'"]');
@@ -107,6 +107,11 @@ function showTab(tab){
  if(activeTab==='ready')reloadPublicBoxesV1();
  if(activeTab==='custom')drawCustom();
  if(activeTab==='requests')loadBoxRequestsV2();
+}
+function openBoxEditor(){
+ showTab('ready');
+ const editor=$('catalogBoxEditor');if(editor)editor.open=true;
+ $('themeBoxName')?.focus();
 }
 function phone(){let n=text(db?.settings?.businessPhone).replace(/\D/g,'');if(n.startsWith('00'))n=n.slice(2);return n.length===9?'351'+n:n;}
 function proposal(){
@@ -207,7 +212,7 @@ function renderPredefinedExtras(){
  const name=$('themeBoxName');if(name)name.placeholder='Ex.: Box Natal — Doces & Aromas';
  ['themeBoxPrice','themeBoxBasePackaging','themeBoxDecorationCost','aeReadyMarginPctV1'].forEach(id=>{$(id)?.addEventListener('input',previewPredefined);$(id)?.addEventListener('change',previewPredefined)});
  const original=window.editThemedBox;
- if(typeof original==='function')window.editThemedBox=function(id){original(id);const b=(db.themedBoxes||[]).find(x=>String(x.id)===String(id));const m=$('aeReadyMarginPctV1');if(m)m.value=b?.targetMarginPct!=null&&Number.isFinite(Number(b.targetMarginPct))?String(b.targetMarginPct):'35';loadExisting(b);loadTechV2(b);originRequestIdV4=text(b?.originRequestId||'');showTab('ready')};
+ if(typeof original==='function')window.editThemedBox=function(id){original(id);const b=(db.themedBoxes||[]).find(x=>String(x.id)===String(id));const m=$('aeReadyMarginPctV1');if(m)m.value=b?.targetMarginPct!=null&&Number.isFinite(Number(b.targetMarginPct))?String(b.targetMarginPct):'35';loadExisting(b);loadTechV2(b);originRequestIdV4=text(b?.originRequestId||'');openBoxEditor()};
  const clear=window.clearThemedBoxForm;
  if(typeof clear==='function')window.clearThemedBoxForm=function(){clear();selected=[];originRequestIdV4='';const m=$('aeReadyMarginPctV1');if(m)m.value='35';drawPicker('aeBoxProductsV1',selected,true);loadTechV2(null);previewPredefined()};
  const tech=document.createElement('div');tech.className='ae-box-composition';
@@ -286,18 +291,23 @@ function install(){
  const creator=screen.querySelector('.catalog-creator-card');
  const heading=screen.querySelector('.catalog-saved-head');
  const list=$('themedBoxesGrid');
+ const summaryFold=summary?.closest('details.catalog-fold');
+ const editorFold=$('catalogBoxEditor');
+ const savedFold=$('catalogSavedBoxes');
+ const creatorFold=$('catalogCreatorSettings');
  if(!dashboard||!summary||!pdf||!editor||!creator||!heading||!list)return;
  const hub=document.createElement('section');hub.id=ID;
- hub.innerHTML='<div class="ae-hub-intro"><div><h2>Boxes ArtEssencia</h2><p>Cria, combina e partilha boxes com artigos reais. Nenhuma alteração publica automaticamente produtos.</p></div></div>'+
+ hub.innerHTML=
  '<div class="ae-hub-tabs" role="tablist" aria-label="Secções de Boxes">'+
- [['ready','Boxes pré-definidas'],['custom','Criar Box personalizada'],['requests','Pedidos de clientes'],['pdf','Catálogos para clientes'],['advanced','Regras e opções']].map(([id,name])=>'<button type="button" role="tab" class="btn" data-ae-tab="'+id+'">'+name+'</button>').join('')+
+ [['pdf','Catálogos PDF'],['ready','Boxes guardadas'],['custom','Box personalizada'],['requests','Pedidos'],['advanced','Configuração']].map(([id,name])=>'<button type="button" role="tab" class="btn" data-ae-tab="'+id+'">'+name+'</button>').join('')+
  '</div>';
  dashboard.insertAdjacentElement('afterend',hub);
- hub.querySelector('.ae-hub-tabs').before(summary);
+ hub.querySelector('.ae-hub-tabs').after(summaryFold||summary);
  summary.style.marginTop='12px';
  const ready=document.createElement('div');ready.id='aeHubPanel_ready';ready.className='ae-hub-panel';
  ready.innerHTML='<div class="ae-hub-heading"><h3>Boxes pré-definidas</h3><p>Define a composição, embalagem, fotografia e preço. Depois de guardar, utiliza os botões de publicação de cada Box para escolher Catálogo Digital, Loja ou ambos.</p><button type="button" class="btn" id="aeNewBoxV1">+ Nova Box</button></div>';
- ready.append(editor,heading,list);
+ ready.append(editorFold||editor);
+ if(savedFold){savedFold.open=true;ready.append(savedFold)}else ready.append(heading,list);
  const customPane=document.createElement('div');customPane.id='aeHubPanel_custom';customPane.className='ae-hub-panel';
  customPane.innerHTML='<div class="ae-hub-heading"><h3>Criar Box personalizada</h3><p>Escolhe os produtos, introduz os custos adicionais e o tempo de montagem, e define a margem de lucro pretendida. O preço sugerido é calculado automaticamente.</p></div>'+
  '<div class="ae-custom-grid"><label>Título da Box<input id="aeCustomTitleV1" placeholder="Ex.: Presente especial"></label><label>Embalagem<select id="aeCustomPackagingV1"></select></label><label>Nome / dedicatória<input id="aeCustomNameV1" maxlength="120" placeholder="Opcional"></label><label>Preferências de cor, aroma e observações<textarea id="aeCustomNotesV1" rows="3" maxlength="400"></textarea></label></div>'+
@@ -317,7 +327,7 @@ function install(){
  advanced.innerHTML='<div class="ae-hub-heading"><h3>Regras e opções de personalização</h3><p>Opções técnicas do criador atual, preservadas para compatibilidade com a Loja. A ativação não reabre a Loja.</p></div>';
  const legacy=document.createElement('details');legacy.className='ae-creator-legacy-v1';
  legacy.innerHTML='<summary style="padding:15px;cursor:pointer;font-weight:700;background:#fff;border:1px solid #dfd2c6;border-radius:12px">Mostrar configuração técnica antiga (compatibilidade)</summary>';
- legacy.append(creator);advanced.append(legacy);
+ if(creatorFold){advanced.append(creatorFold)}else{legacy.append(creator);advanced.append(legacy);}
  const requestsPane=document.createElement('div');requestsPane.id='aeHubPanel_requests';requestsPane.className='ae-hub-panel';
  requestsPane.innerHTML='<div class="ae-hub-heading"><h3>Pedidos de Boxes personalizadas</h3><p>Pedidos recebidos no Catálogo Digital e na Loja. Define custos, envia uma ligação privada com validade e aguarda a resposta. A aceitação não cria automaticamente encomendas nem altera stock.</p><button class="btn" type="button" id="aeRefreshBoxRequests">Atualizar pedidos</button></div><div id="aeBoxRequestList" class="ae-box-items">A consultar Cloud…</div>';
  hub.append(ready,customPane,requestsPane,docs,advanced);
@@ -348,8 +358,7 @@ function install(){
   $('themeBoxDesc').value='';
   drawPicker('aeBoxProductsV1',selected,true);
   loadTechV2(null);
-  showTab('ready');
-  $('themeBoxName')?.focus();
+  openBoxEditor();
   toast('Ficha privada preparada. Define a receita, o tempo de trabalho e guarda a Box.');
   return;
  }
@@ -413,7 +422,7 @@ function install(){
 
  hub.querySelectorAll('[data-ae-tab]').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.aeTab)));
  renderPredefinedExtras();
- $('aeNewBoxV1')?.addEventListener('click',()=>{clearThemedBoxForm();showTab('ready');$('themeBoxName')?.focus();});
+ $('aeNewBoxV1')?.addEventListener('click',()=>{clearThemedBoxForm();openBoxEditor();});
  const pack=$('aeCustomPackagingV1');
  pack.innerHTML='<option value="">Embalagem a confirmar</option>'+(db.packaging||[]).map(x=>'<option value="'+safe(x.name)+'">'+safe(x.name)+'</option>').join('');
  hub.addEventListener('click',ev=>{
@@ -488,7 +497,7 @@ function install(){
   db.themedBoxes=db.themedBoxes.filter(x=>String(x.id)!==String(id));
   save();publicRows.delete(String(id));renderPublicationButtonsV1();toast('Box apagada');
  };
- showTab('ready');
+ showTab('pdf');
 }
 
 let requestsCache=[];
