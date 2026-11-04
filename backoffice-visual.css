@@ -625,3 +625,58 @@
 @media print{
  #aeJumpModule,.ae-module-palette-backdrop{display:none!important}
 }
+
+
+/* ArtEssencia — Fluxos operacionais, sem alterar funções de negócio ou dados. */
+@media screen{
+ .app #products .ae-products-compact-bar{
+  display:flex;flex-wrap:wrap;gap:8px;
+  scroll-margin-top:90px;
+ }
+ .app #products .ae-products-compact-bar button{
+  min-height:44px;border-radius:11px;
+  font-weight:700;white-space:normal;
+ }
+ .app #products .ae-products-compact-bar button[aria-pressed="true"]{
+  background:#463227;color:#fff;border-color:#463227;
+  box-shadow:0 2px 6px rgba(63,45,32,.12);
+ }
+ .app #products .ae-products-return-list{
+  flex:1 1 150px;
+  white-space:normal;
+  font-size:12px;
+ }
+ .app #orders #aeOrdersCompact[data-has-dates="true"]{
+  background:#efe2d4;border-color:#b99376;color:#503526;
+  font-weight:750;
+ }
+ .app #orders #aeOrdersAdvanced{
+  scroll-margin-top:110px;
+  border-radius:13px;
+ }
+ .app #stock .ae-stock-action-tabs button[aria-pressed="true"]{
+  border-color:#7c5b45;background:#eee1d3;color:#4b3325;
+  font-weight:750;
+ }
+ .app #stock .ae-stock-pages button,
+ .app #stock .ae-stock-bottom-pages button{
+  min-height:44px;border-radius:10px;
+ }
+ .app #stock .ae-stock-compact-controls{
+  scroll-margin-top:100px;
+ }
+ .app #dashboard .ae-dash-compact-nav button{
+  min-height:44px;border-radius:11px;
+ }
+ .app #dashboard .ae-dash-compact-nav button[aria-selected="true"]{
+  background:#463227;color:#fff;border-color:#463227;
+  font-weight:750;
+ }
+ .app #dashboard [role="tabpanel"]{min-width:0;overflow-wrap:anywhere}
+ @media(max-width:650px){
+  .app #products .ae-products-compact-bar button{flex:1 1 125px}
+  .app #products .product-actions-v147 .ae-products-return-list{flex:1 1 100%}
+  .app #orders #aeOrdersCompact{white-space:normal;width:100%}
+  .app #dashboard .ae-dash-compact-nav button{flex:1 1 130px}
+ }
+}

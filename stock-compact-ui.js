@@ -13,15 +13,23 @@ function init(){
  const makeButton=label=>{const b=document.createElement('button');b.type='button';b.textContent=label;return b};
  const container=document.createElement('div');container.id='aeStockCompactControls';container.className='ae-stock-compact-controls';
  const actions=document.createElement('div');actions.className='ae-stock-action-tabs';
- const add=makeButton('Abrir formulário'),move=makeButton('Movimento rápido');
+ const add=makeButton('Novo artigo'),move=makeButton('Movimento rápido');
+ form.id=form.id||'aeStockCreatePanel';
+ movement.id=movement.id||'aeStockMovementPanel';
+ add.setAttribute('aria-controls',form.id);move.setAttribute('aria-controls',movement.id);
  add.setAttribute('aria-expanded','false');move.setAttribute('aria-expanded','false');
+ add.setAttribute('aria-pressed','false');move.setAttribute('aria-pressed','false');
  actions.append(add,move);
  const pages=document.createElement('div');pages.className='ae-stock-pages';
  const prev=makeButton('Anterior'),next=makeButton('Seguinte'),indicator=document.createElement('span');
+ prev.setAttribute('aria-label','Página anterior do stock');
+ next.setAttribute('aria-label','Página seguinte do stock');
  indicator.setAttribute('aria-live','polite');pages.append(prev,indicator,next);
  container.append(actions,pages);list.insertBefore(container,anchor);
  const bottom=pages.cloneNode(false);bottom.classList.add('ae-stock-bottom-pages');
  const prev2=makeButton('Anterior'),next2=makeButton('Seguinte'),indicator2=document.createElement('span');
+ prev2.setAttribute('aria-label','Página anterior do stock');
+ next2.setAttribute('aria-label','Página seguinte do stock');
  indicator2.setAttribute('aria-live','polite');bottom.append(prev2,indicator2,next2);list.append(bottom);
  let page=0,pageSize=DEFAULT_PAGE_SIZE,preservePage=false,lastEditAction='';
  const sizeLabel=document.createElement('label'),size=document.createElement('select');
@@ -47,6 +55,10 @@ function init(){
    form.hidden=which!=='form';movement.hidden=which!=='movement';
    add.setAttribute('aria-expanded',String(which==='form'));
    move.setAttribute('aria-expanded',String(which==='movement'));
+   add.setAttribute('aria-pressed',String(which==='form'));
+   move.setAttribute('aria-pressed',String(which==='movement'));
+   add.textContent=which==='form'?'Recolher artigo':'Novo artigo';
+   move.textContent=which==='movement'?'Recolher movimento':'Movimento rápido';
    if(which==='form'||which==='movement')(which==='form'?form:movement).scrollIntoView({block:'nearest'});
  }
  add.addEventListener('click',()=>open(form.hidden?'form':null));

@@ -9,7 +9,8 @@ function init(){
  if(!hero||!form||!list||filters.length<2)return;
  const bar=document.createElement('div');bar.id='aeProductsCompact';bar.className='ae-products-compact-bar';
  const make=(label)=>{const el=document.createElement('button');el.type='button';el.textContent=label;return el};
- const showList=make('Ver catálogo'),showForm=make('Abrir editor'),filterButton=make('Filtros avançados');
+ const showList=make('Lista de produtos'),showForm=make('Editor de produto'),filterButton=make('Filtros avançados');
+ bar.setAttribute('role','group');bar.setAttribute('aria-label','Vista de Produtos');
  bar.append(showList,showForm);
  const searchActions=root.querySelector('.products-search-actions-v1101');
  if(searchActions)searchActions.prepend(filterButton);
@@ -21,6 +22,7 @@ function init(){
    active=which;form.hidden=which!=='editor';list.hidden=which!=='list';
    showList.setAttribute('aria-pressed',String(which==='list'));
    showForm.setAttribute('aria-pressed',String(which==='editor'));
+   bar.dataset.activeView=which;
  }
  function filtersApply(){
    // Nunca apaga valores de filtros já escolhidos.
@@ -28,8 +30,18 @@ function init(){
    filterButton.setAttribute('aria-expanded',String(advanced));
    filterButton.textContent=advanced?'Recolher filtros':'Filtros avançados';
  }
- showList.addEventListener('click',()=>select('list'));
- showForm.addEventListener('click',()=>select('editor'));
+ const jumpToBar=()=>bar.scrollIntoView({block:'start',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+ showList.addEventListener('click',()=>{select('list');jumpToBar()});
+ showForm.addEventListener('click',()=>{select('editor');jumpToBar()});
+ // Atalho junto aos controlos de gravação, sem alterar o formulário ou persistir dados.
+ const editorActions=form.querySelector('.product-actions-v147');
+ if(editorActions&&!editorActions.querySelector('.ae-products-return-list')){
+  const returnButton=make('Ver lista sem guardar');
+  returnButton.className='btn ghost ae-products-return-list';
+  returnButton.title='Voltar à listagem. O editor permanece disponível, mas este botão não grava alterações.';
+  returnButton.addEventListener('click',()=>{select('list');jumpToBar()});
+  editorActions.append(returnButton);
+ }
  filterButton.addEventListener('click',()=>{advanced=!advanced;filtersApply()});
  // Editar é uma ação original da listagem: mostrar o editor antes de executar o handler.
  root.addEventListener('click',e=>{
