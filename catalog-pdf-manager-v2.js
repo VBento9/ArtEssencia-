@@ -207,9 +207,9 @@
     const rows=sorted(selection());
     if(!rows.length)throw new Error('Seleciona pelo menos um produto para o PDF');
     const pages=[];let canvas,ctx,y=235,currentCategory='';
-    const pageHeight=1754,pageWidth=1240,limit=1570,rowHeight=settings.images?150:82;
+    const pageHeight=3508,pageWidth=2480,limit=1570,rowHeight=settings.images?150:82;
     async function startPage(){
-      canvas=document.createElement('canvas');canvas.width=pageWidth;canvas.height=pageHeight;
+      canvas=createCatalogPrintCanvas();
       ctx=canvas.getContext('2d');
       if(!ctx)throw new Error('Não foi possível preparar a página PDF');
       await drawArtEssenciaHeader(ctx,'CATÁLOGO','Produtos ArtEssencia · '+new Date().toLocaleDateString('pt-PT'));
@@ -219,8 +219,9 @@
       drawCatalogFooter(ctx);
       ctx.fillStyle='#806b62';ctx.textAlign='right';ctx.font='18px Arial';
       ctx.fillText('Página '+(pages.length+1),1150,1603);ctx.textAlign='left';
-      const jpg=await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('Não foi possível gerar a página PDF')),'image/jpeg',0.88));
+      const jpg=await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('Não foi possível gerar a página PDF')),'image/jpeg',0.98));
       pages.push(jpg);
+      canvas.width=0;canvas.height=0;
     }
     await startPage();
     for(const p of rows){
