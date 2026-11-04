@@ -142,3 +142,49 @@
   scroll-behavior:auto!important;
  }
 }
+
+/* Navegação contextual do editor: só nos passos técnicos e de publicação. */
+#products .ae-editor-section-jump{
+ display:flex;flex-wrap:wrap;align-items:center;
+ gap:9px;margin:0 0 14px;padding:11px 12px;
+ border:1px solid #e1d2c4;border-radius:13px;
+ background:linear-gradient(125deg,#fffefa,#f8f0e7);
+ min-width:0;
+}
+#products .ae-editor-section-jump[hidden]{display:none!important}
+#products .ae-editor-section-jump-label{
+ flex:0 0 auto;color:#74543d;font-size:11px;
+ font-weight:800;text-transform:uppercase;letter-spacing:.06em;
+}
+#products .ae-editor-section-links{
+ flex:1 1 220px;display:flex;flex-wrap:wrap;
+ gap:7px;min-width:0;
+}
+#products .ae-editor-section-link,
+#products .ae-editor-section-top{
+ min-height:44px;min-width:0;padding:8px 12px;
+ background:#fffdfa;border:1px solid #d3c1b0;
+ color:#4d3627;font:700 12px/1.35 system-ui,sans-serif;
+ border-radius:11px;white-space:normal;cursor:pointer;
+}
+#products .ae-editor-section-link:hover,
+#products .ae-editor-section-top:hover{background:#f0e1d1;border-color:#aa866a}
+#products .ae-editor-section-link:focus-visible,
+#products .ae-editor-section-top:focus-visible{
+ outline:3px solid #86644a;outline-offset:2px;
+}
+#products .ae-editor-section-top{margin-left:auto;color:#684934}
+#products .ae-editor-section-empty{font-size:12px;color:#735d4f}
+#products [data-product-panel="production"] :is(h3,h4,legend,#prodTechSheetBridge,#prodProductionTypeV130,#prodProductionNotesV130,#prodQualityNotesV130),
+#products [data-product-panel="public"] :is(h3,h4,legend,#productPublicStatusV1850,#prodDescription,#descriptionPhotoAnalyzeV1890){
+ scroll-margin-top:92px;
+}
+@media(max-width:650px){
+ #products .ae-editor-section-jump{display:grid;grid-template-columns:minmax(0,1fr);gap:7px}
+ #products .ae-editor-section-links{flex:auto;display:flex;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;padding:2px 0 7px}
+ #products .ae-editor-section-link{flex:0 0 auto;max-width:210px}
+ #products .ae-editor-section-top{justify-self:end}
+}
+@media print{
+ #products .ae-editor-section-jump{display:none!important}
+}

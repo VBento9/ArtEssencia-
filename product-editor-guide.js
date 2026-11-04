@@ -108,6 +108,7 @@ function init(){
   progress.textContent='Passo '+(index+1)+' de '+navButtons.length;
   heading.textContent=data[0];hint.textContent=data[1];
   previous.disabled=index===0;next.disabled=index===navButtons.length-1;
+  if(previousKey!==key&&typeof renderQuickNav==='function')renderQuickNav(key);
   navButtons.forEach((button,i)=>{
    const selected=i===index;button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;
   });
@@ -119,7 +120,68 @@ function init(){
    }
   }
  }
+
+ // Navegação interna não destrutiva nas duas etapas mais longas.
+ // Atua apenas nos títulos/controles existentes e não toca em valores ou gravação.
+ const quickNav=document.createElement('nav');
+ quickNav.className='ae-editor-section-jump';
+ quickNav.setAttribute('aria-label','Ir para uma área do passo atual');
+ const quickHeading=document.createElement('span');
+ quickHeading.className='ae-editor-section-jump-label';quickHeading.textContent='Nesta etapa';
+ const quickList=document.createElement('div');quickList.className='ae-editor-section-links';
+ const quickTop=document.createElement('button');
+ quickTop.type='button';quickTop.className='ae-editor-section-top';quickTop.textContent='↑ Início do passo';
+ quickTop.addEventListener('click',()=>{
+  const key=navButtons[currentStep()]?.dataset.productPanelBtn;
+  const destination=key&&panel(key);
+  if(destination)destination.scrollIntoView({block:'start',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+ });
+ quickNav.append(quickHeading,quickList,quickTop);guide.after(quickNav);
+ const quickTargets={
+  production:[
+   ['Ficha técnica','#prodTechSheetBridge'],
+   ['Parâmetros de produção','#prodProductionTypeV130'],
+   ['Instruções de produção','#prodProductionNotesV130'],
+   ['Controlo de qualidade','#prodQualityNotesV130']
+  ],
+  public:[
+   ['Estado de publicação','#productPublicStatusV1850'],
+   ['Descrição e apresentação','#prodDescription'],
+   ['Fotografias e texto público','#descriptionPhotoAnalyzeV1890']
+  ]
+ };
+ function renderQuickNav(key){
+  quickList.replaceChildren();
+  quickNav.hidden=!['production','public'].includes(key);
+  if(quickNav.hidden)return;
+  const targetPanel=panel(key),seen=new Set();
+  const direct=(quickTargets[key]||[]).map(([label,selector])=>({label,el:targetPanel?.querySelector(selector)})).filter(({el})=>!!el);
+  const headings=[...targetPanel.querySelectorAll('h3,h4,legend,.product-section-title-v1748,.product-section-divider-v1748')].map(el=>({el,label:String(el.textContent||'').trim().replace(/\s+/g,' ')})).filter(x=>x.label.length>=4&&x.label.length<=66);
+  const entries=[...direct,...headings];
+  for(const {label,el} of entries){
+   if(!el||seen.has(el))continue;
+   seen.add(el);
+   if(quickList.childElementCount>=7)break;
+   const button=document.createElement('button');button.type='button';button.className='ae-editor-section-link';
+   button.textContent=label;
+   button.addEventListener('click',()=>{
+    // Scroll ao título/campo real, sem fechar painéis ou ativar gravações.
+    el.scrollIntoView({block:'start',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+    const focusable=el.matches('input,textarea,select,button')?el:null;
+    if(focusable)focusable.focus({preventScroll:true});
+   });
+   quickList.append(button);
+  }
+  if(!quickList.childElementCount){
+   const empty=document.createElement('span');empty.className='ae-editor-section-empty';
+   empty.textContent='Consulta os campos desta etapa abaixo.';
+   quickList.append(empty);
+  }
+ }
+
  nav.addEventListener('click',event=>{
+  const selected=event.target.closest('[data-product-panel-btn]');
+  if(selected)requestAnimationFrame(()=>renderQuickNav(selected.dataset.productPanelBtn));
   if(event.target.closest('[data-product-panel-btn="production"]')&&typeof refreshProductTechSheetBridgeV1250==='function')
    refreshProductTechSheetBridgeV1250();
  });
@@ -178,6 +240,7 @@ function init(){
  }
  installTechnicalNotesDefaults(editor);
  restoreProductPanelV1762();update();
+ renderQuickNav(navButtons[currentStep()]?.dataset.productPanelBtn||'identity');
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
