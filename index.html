@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.116">
+<meta name="artessencia-version" content="1.9.117">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -6189,7 +6189,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.116';
+const APP_VERSION='1.9.117';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -14778,23 +14778,115 @@ function quoteWhatsApp(id){const q=(db.quotes||[]).find(x=>x.id===id);if(!q)retu
 function wrapCanvasText(ctx,text,maxWidth){const words=String(text||'').split(/\s+/),lines=[];let line='';for(const w of words){const test=line?line+' '+w:w;if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=w}else line=test}if(line)lines.push(line);return lines}
 function loadQuoteLogo(){return new Promise(resolve=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>resolve(null);img.src='brand-artessencia-transparente.svg'})}
 async function buildQuotePdfBlob(q){
-  const c=quoteCalc(q),canvas=createCatalogPrintCanvas();const ctx=canvas.getContext('2d');
-  ctx.fillStyle='#fffdf9';ctx.fillRect(0,0,1240,1754);ctx.fillStyle='#55210b';ctx.fillRect(0,0,1240,18);ctx.fillStyle='#f12473';ctx.fillRect(0,18,1240,8);
-  const logo=await loadQuoteLogo();if(logo)ctx.drawImage(logo,70,55,145,145*487/792);
-  ctx.fillStyle='#55210b';ctx.font='700 42px Georgia,serif';ctx.fillText((db.settings.businessName||'ArtEssencia').toUpperCase(),245,105);ctx.fillStyle='#11adb5';ctx.font='italic 24px Georgia,serif';ctx.fillText('peças artesanais, grandes momentos',247,145);
-  ctx.textAlign='right';ctx.fillStyle='#55210b';ctx.font='700 27px Arial';ctx.fillText('ORÇAMENTO',1160,78);ctx.font='22px Arial';ctx.fillText(q.id,1160,113);ctx.fillStyle='#6b5b55';ctx.font='18px Arial';ctx.fillText('Emitido em '+(q.created||todayISO()),1160,145);ctx.textAlign='left';
-  ctx.strokeStyle='#f1d7c8';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(70,220);ctx.lineTo(1165,220);ctx.stroke();
-  ctx.fillStyle='#55210b';ctx.font='700 20px Arial';ctx.fillText('CLIENTE',78,266);ctx.fillText('EVENTO / VALIDADE',690,266);ctx.fillStyle='#6b5b55';ctx.font='22px Arial';ctx.fillText(q.client||'-',78,305);ctx.font='18px Arial';ctx.fillText(q.contact||'-',78,336);ctx.fillText('Evento: '+(q.eventDate||'-'),690,305);ctx.fillText('Válido até: '+(q.validUntil||'-'),690,336);
-  ctx.fillStyle='#fff4cc';ctx.fillRect(70,380,1095,54);ctx.fillStyle='#55210b';ctx.font='700 18px Arial';ctx.fillText('DESCRIÇÃO',82,414);ctx.fillText('QTD.',735,414);ctx.fillText('PREÇO/UN.',865,414);ctx.textAlign='right';ctx.fillText('TOTAL',1150,414);ctx.textAlign='left';
-  let y=475;ctx.font='20px Arial';for(const i of (q.items||[])){const lines=wrapCanvasText(ctx,i.name,610);const h=Math.max(44,lines.length*27);ctx.fillStyle='#55210b';lines.forEach((ln,n)=>ctx.fillText(ln,82,y+n*27));ctx.fillStyle='#6b5b55';ctx.textAlign='center';ctx.fillText(String(i.qty),760,y);ctx.fillText(euro(i.price),925,y);ctx.textAlign='right';ctx.fillText(euro(i.qty*i.price),1150,y);ctx.textAlign='left';y+=h;ctx.strokeStyle='#f1d7c8';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(70,y-14);ctx.lineTo(1165,y-14);ctx.stroke();if(y>1040)break}
-  y=Math.max(y+25,1040);ctx.fillStyle='#6b5b55';ctx.font='21px Arial';ctx.fillText('Subtotal',790,y);ctx.textAlign='right';ctx.fillText(euro(c.sub),1150,y);y+=38;if(c.disc){ctx.textAlign='left';ctx.fillText(q.discountType==='percent'?`Desconto (${Number(q.discountValue||0).toLocaleString('pt-PT')}%)`:'Desconto',790,y);ctx.textAlign='right';ctx.fillText('- '+euro(c.disc),1150,y);y+=42}ctx.fillStyle='#55210b';ctx.font='700 31px Arial';ctx.textAlign='left';ctx.fillText('TOTAL',790,y);ctx.textAlign='right';ctx.fillText(euro(c.total),1150,y);ctx.textAlign='left';
-  y+=70;ctx.fillStyle='#55210b';ctx.font='700 20px Arial';ctx.fillText('CONDIÇÕES DE PAGAMENTO',82,y);y+=34;ctx.fillStyle='#6b5b55';ctx.font='19px Arial';const req=quoteDepositRequired(q),due=quoteBalanceDueDate(q),payLines=[q.box?`Embalagem: ${q.box} × ${Math.max(1,Number(q.boxes)||1)}`:'',quotePaymentLabel(q),`Pagamento inicial para confirmação/reserva: ${euro(req)}`,due?`Saldo restante deve estar liquidado até ${due}.`:'',`A produção e a data só ficam confirmadas após receção do pagamento inicial.`];for(const pl of payLines.filter(Boolean)){for(const ln of wrapCanvasText(ctx,pl,1060)){ctx.fillText(ln,82,y);y+=27}}
+  const c=quoteCalc(q),pages=[],logo=await loadQuoteLogo();
+  const bottom=1510,lineHeight=27;
+  let canvas,ctx,y;
+  // Preserve paragraphs and split long unbroken references within the column.
+  function lines(text,width){
+    const result=[];
+    for(const paragraph of String(text??'').split(/\r\n|\r|\n/)){
+      let line='';
+      for(const word of paragraph.split(/\s+/).filter(Boolean)){
+        if(line&&ctx.measureText(line+' '+word).width<=width){line+=' '+word;continue;}
+        if(line){result.push(line);line='';}
+        for(const char of word){
+          if(line&&ctx.measureText(line+char).width>width){result.push(line);line='';}
+          line+=char;
+        }
+      }
+      result.push(line);
+    }
+    return result;
+  }
+  function startPage(){
+    canvas=createCatalogPrintCanvas();ctx=canvas.getContext('2d');
+    ctx.fillStyle='#fffdf9';ctx.fillRect(0,0,1240,1754);
+    ctx.fillStyle='#55210b';ctx.fillRect(0,0,1240,18);ctx.fillStyle='#f12473';ctx.fillRect(0,18,1240,8);
+    if(logo)ctx.drawImage(logo,70,55,145,145*487/792);
+    ctx.fillStyle='#55210b';ctx.font='700 42px Georgia,serif';
+    ctx.fillText((db.settings.businessName||'ArtEssencia').toUpperCase(),245,105,600);
+    ctx.fillStyle='#11adb5';ctx.font='italic 24px Georgia,serif';ctx.fillText('peças artesanais, grandes momentos',247,145,600);
+    ctx.textAlign='right';ctx.fillStyle='#55210b';ctx.font='700 27px Arial';ctx.fillText('ORÇAMENTO',1160,78);
+    ctx.font='22px Arial';ctx.fillText(String(q.id||''),1160,113,290);
+    ctx.fillStyle='#6b5b55';ctx.font='18px Arial';ctx.fillText('Emitido em '+(q.created||todayISO()),1160,145,290);
+    ctx.textAlign='left';ctx.strokeStyle='#f1d7c8';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(70,205);ctx.lineTo(1165,205);ctx.stroke();
+    y=250;
+  }
+  async function finishPage(){
+    ctx.fillStyle='#fff4cc';ctx.fillRect(70,1560,1095,105);ctx.fillStyle='#55210b';ctx.font='18px Arial';ctx.textAlign='left';
+    ctx.fillText('Este documento é um orçamento e não substitui fatura.',95,1604);
+    ctx.fillText('A adjudicação/reserva depende do pagamento inicial indicado nas condições acima.',95,1638,1045);
+    ctx.textAlign='right';ctx.fillStyle='#6b5b55';ctx.fillText('Página '+(pages.length+1),1160,1710);ctx.textAlign='left';
+    const jpg=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Falha ao gerar PDF')),'image/jpeg',0.98));
+    pages.push(jpg);canvas.width=0;canvas.height=0;
+  }
+  async function space(height){
+    if(y+height<=bottom)return false;
+    await finishPage();startPage();return true;
+  }
+  async function section(title,values){
+    await space(70);ctx.fillStyle='#55210b';ctx.font='700 20px Arial';ctx.fillText(title,82,y);y+=34;
+    for(const value of values){
+      ctx.font='19px Arial';
+      const wrapped=lines(value,1060);
+      for(const line of wrapped){
+        if(await space(lineHeight)){
+          ctx.fillStyle='#55210b';ctx.font='700 20px Arial';ctx.fillText(title+' · continuação',82,y);y+=34;
+        }
+        ctx.fillStyle='#6b5b55';ctx.font='19px Arial';ctx.fillText(line,82,y);y+=lineHeight;
+      }
+    }
+    y+=24;
+  }
+  function tableHeader(){
+    ctx.fillStyle='#fff4cc';ctx.fillRect(70,y-24,1095,54);ctx.fillStyle='#55210b';ctx.font='700 18px Arial';
+    ctx.fillText('DESCRIÇÃO',82,y+10);ctx.fillText('QTD.',735,y+10);ctx.fillText('PREÇO/UN.',865,y+10);
+    ctx.textAlign='right';ctx.fillText('TOTAL',1150,y+10);ctx.textAlign='left';y+=65;
+  }
+  startPage();
+  await section('CLIENTE',[q.client||'-',q.contact||'-']);
+  await section('EVENTO / VALIDADE',['Evento: '+(q.eventDate||'-'),'Válido até: '+(q.validUntil||'-')]);
+  await space(110);tableHeader();
+  for(const item of q.items||[]){
+    ctx.font='20px Arial';const wrapped=lines(item.name,610);
+    let offset=0;
+    // Keep a normal row together; exceptionally long descriptions may span pages.
+    const fullHeight=Math.max(44,wrapped.length*lineHeight+14);
+    if(y+Math.min(fullHeight,bottom-315)>bottom){await finishPage();startPage();tableHeader();}
+    while(offset<wrapped.length){
+      if(y+44>bottom){await finishPage();startPage();tableHeader();}
+      const count=Math.min(wrapped.length-offset,Math.max(1,Math.floor((bottom-y-14)/lineHeight)));
+      ctx.fillStyle='#55210b';ctx.font='20px Arial';
+      for(let n=0;n<count;n++)ctx.fillText(wrapped[offset+n],82,y+n*lineHeight);
+      if(offset===0){
+        ctx.fillStyle='#6b5b55';ctx.textAlign='center';ctx.fillText(String(item.qty),760,y,90);
+        ctx.fillText(euro(item.price),925,y,155);ctx.textAlign='right';ctx.fillText(euro(item.qty*item.price),1150,y,140);ctx.textAlign='left';
+      }
+      y+=Math.max(44,count*lineHeight+14);offset+=count;
+      if(offset<wrapped.length){await finishPage();startPage();tableHeader();}
+    }
+    ctx.strokeStyle='#f1d7c8';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(70,y-14);ctx.lineTo(1165,y-14);ctx.stroke();
+  }
+  y+=25;await space(c.disc?155:113);
+  ctx.fillStyle='#6b5b55';ctx.font='21px Arial';ctx.fillText('Subtotal',790,y);ctx.textAlign='right';ctx.fillText(euro(c.sub),1150,y,170);ctx.textAlign='left';y+=38;
+  if(c.disc){
+    ctx.fillText(q.discountType==='percent'?`Desconto (${Number(q.discountValue||0).toLocaleString('pt-PT')}%)`:'Desconto',790,y,195);
+    ctx.textAlign='right';ctx.fillText('- '+euro(c.disc),1150,y,160);ctx.textAlign='left';y+=42;
+  }
+  ctx.fillStyle='#55210b';ctx.font='700 31px Arial';ctx.fillText('TOTAL',790,y);ctx.textAlign='right';ctx.fillText(euro(c.total),1150,y,220);ctx.textAlign='left';y+=70;
+  const req=quoteDepositRequired(q),due=quoteBalanceDueDate(q);
+  await section('CONDIÇÕES DE PAGAMENTO',[
+    q.box?`Embalagem: ${q.box} × ${Math.max(1,Number(q.boxes)||1)}`:'',quotePaymentLabel(q),
+    `Pagamento inicial para confirmação/reserva: ${euro(req)}`,
+    due?`Saldo restante deve estar liquidado até ${due}.`:'',
+    'A produção e a data só ficam confirmadas após receção do pagamento inicial.'
+  ].filter(Boolean));
   const contact=(db.settings.businessPhone||'').trim(),iban=(db.settings.iban||'').trim(),payNote=(db.settings.paymentNote||'').trim();
-  if((contact||iban||payNote)&&y<1435){y+=24;const payData=[contact?`Contacto / MB Way: ${contact}`:'',iban?`IBAN: ${iban}`:'',payNote].filter(Boolean);ctx.font='18px Arial';const payDisplayLines=payData.flatMap(pl=>wrapCanvasText(ctx,pl,1010)).slice(0,5),boxTop=y-25,payHeight=55+payDisplayLines.length*25;ctx.fillStyle='#fff4cc';ctx.fillRect(70,boxTop,1095,payHeight);ctx.fillStyle='#55210b';ctx.font='700 20px Arial';ctx.fillText('CONTACTO E DADOS PARA PAGAMENTO',92,y);y+=33;ctx.fillStyle='#6b5b55';ctx.font='18px Arial';for(const ln of payDisplayLines){ctx.fillText(ln,92,y);y+=25}}
-  if(q.notes&&y<1470){y+=25;ctx.fillStyle='#55210b';ctx.font='700 20px Arial';ctx.fillText('OBSERVAÇÕES',82,y);y+=32;ctx.fillStyle='#6b5b55';ctx.font='18px Arial';for(const ln of wrapCanvasText(ctx,q.notes,1060).slice(0,5)){ctx.fillText(ln,82,y);y+=25}}
-  ctx.fillStyle='#fff4cc';ctx.fillRect(70,1560,1095,105);ctx.fillStyle='#55210b';ctx.font='18px Arial';ctx.fillText('Este documento é um orçamento e não substitui fatura.',95,1604);ctx.fillText('A adjudicação/reserva depende do pagamento inicial indicado nas condições acima.',95,1638);
-  const jpg=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Falha ao gerar PDF')),'image/jpeg',0.98));return jpegBlobToPDF(jpg,canvas.width,canvas.height)
+  if(contact||iban||payNote)await section('CONTACTO E DADOS PARA PAGAMENTO',[contact?'Contacto / MB Way: '+contact:'',iban?'IBAN: '+iban:'',payNote].filter(Boolean));
+  if(q.notes)await section('OBSERVAÇÕES',[q.notes]);
+  await finishPage();return jpegBlobsToPDF(pages,2480,3508);
 }
+
 async function jpegBlobsToPDF(jpegBlobs,imgW,imgH){
  if(!jpegBlobs.length)throw new Error('Sem páginas para PDF');if(jpegBlobs.length===1)return jpegBlobToPDF(jpegBlobs[0],imgW,imgH);
  const enc=new TextEncoder(),parts=[],offsets=[0];let size=0;const push=x=>{const b=typeof x==='string'?enc.encode(x):x;parts.push(b);size+=b.length};const obj=n=>{offsets[n]=size;push(`${n} 0 obj\n`)};
