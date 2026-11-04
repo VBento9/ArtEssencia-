@@ -73,10 +73,51 @@ function init(){
   const divider=section.querySelector('.product-section-divider-v1748 > span');if(divider)divider.textContent=String(i+1);
  });
  const guide=document.createElement('div');guide.id='aeProductEditorGuide';guide.className='ae-product-editor-guide';
- const heading=document.createElement('strong'),hint=document.createElement('span');guide.append(heading,hint);nav.after(guide);
+ const copy=document.createElement('div');copy.className='ae-editor-guide-copy';
+ const progress=document.createElement('span');progress.className='ae-editor-progress';progress.setAttribute('role','status');progress.setAttribute('aria-live','polite');
+ const heading=document.createElement('strong'),hint=document.createElement('span');
+ copy.append(progress,heading,hint);
+ const controls=document.createElement('div');controls.className='ae-editor-step-actions';controls.setAttribute('role','group');controls.setAttribute('aria-label','Navegação dos passos do editor');
+ const previous=document.createElement('button');previous.type='button';previous.className='btn ghost';previous.textContent='← Anterior';previous.setAttribute('aria-label','Passo anterior do editor');
+ const next=document.createElement('button');next.type='button';next.className='btn ghost';next.textContent='Próximo →';next.setAttribute('aria-label','Próximo passo do editor');
+ controls.append(previous,next);guide.append(copy,controls);nav.after(guide);
+ const navButtons=[...nav.querySelectorAll('[data-product-panel-btn]')];
+ let previousKey='';
+ function currentStep(){
+  const active=nav.querySelector('[data-product-panel-btn].active');
+  const index=navButtons.indexOf(active);
+  return Math.max(0,index);
+ }
+ function activateAdjacent(delta){
+  const nextIndex=Math.max(0,Math.min(navButtons.length-1,currentStep()+delta));
+  const button=navButtons[nextIndex];
+  if(!button)return;
+  // O próprio botão original escolhe o painel: não tocar em dados ou handlers.
+  button.click();
+  const target=button.getBoundingClientRect(),reference=nav.getBoundingClientRect();
+  if(nav.scrollWidth>nav.clientWidth&&typeof nav.scrollTo==='function'){
+   nav.scrollTo({left:Math.max(0,nav.scrollLeft+target.left-reference.left-(nav.clientWidth-target.width)/2),behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+  }
+  guide.scrollIntoView({block:'nearest',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+ }
+ previous.addEventListener('click',()=>activateAdjacent(-1));
+ next.addEventListener('click',()=>activateAdjacent(1));
  function update(){
-  const key=nav.querySelector('[data-product-panel-btn].active')?.dataset.productPanelBtn||'identity';
-  const data=steps[key]||steps.identity;heading.textContent=data[0];hint.textContent=data[1];
+  const index=currentStep(),active=navButtons[index];
+  const key=active?.dataset.productPanelBtn||'identity',data=steps[key]||steps.identity;
+  progress.textContent='Passo '+(index+1)+' de '+navButtons.length;
+  heading.textContent=data[0];hint.textContent=data[1];
+  previous.disabled=index===0;next.disabled=index===navButtons.length-1;
+  navButtons.forEach((button,i)=>{
+   const selected=i===index;button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;
+  });
+  if(previousKey!==key&&active){
+   previousKey=key;
+   if(nav.scrollWidth>nav.clientWidth&&typeof nav.scrollTo==='function'){
+    const tab=active.getBoundingClientRect(),bounds=nav.getBoundingClientRect();
+    nav.scrollTo({left:Math.max(0,nav.scrollLeft+tab.left-bounds.left-(nav.clientWidth-tab.width)/2),behavior:'auto'});
+   }
+  }
  }
  nav.addEventListener('click',event=>{
   if(event.target.closest('[data-product-panel-btn="production"]')&&typeof refreshProductTechSheetBridgeV1250==='function')
