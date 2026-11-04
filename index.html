@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.119">
+<meta name="artessencia-version" content="1.9.120">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -3505,6 +3505,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 #catalogs .catalog-fold>summary{padding:16px;min-height:44px;cursor:pointer;font-weight:700;color:#44372b}
 #catalogs .catalog-fold>summary:focus-visible{outline:3px solid #916b42;outline-offset:-3px}
 #catalogs .catalog-fold[open]>summary{border-bottom:1px solid #ded2c1}
+#catalogs .catalog-group-content{padding:0 12px 12px}
+#catalogs .catalog-creator-group .creator-section-v1261,#catalogs .catalog-creator-group .creator-section-title-v1266{display:none}
+#catalogs #catalogSummary{padding:0 12px 12px;margin:0}
 #catalogs .catalog-fold>.card{margin:0;border:0;border-radius:0;box-shadow:none}
 #catalogs #catalogSavedBoxes>.catalog-saved-head,#catalogs #catalogSavedBoxes>.catalog-grid{margin:12px}
 #catalogs .catalog-documents-stack-v1731{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
@@ -4217,15 +4220,11 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
     <div class="catalog-dashboard card">
       <div>
         <div class="section-title" style="margin:0">Catálogos & Caixas</div>
-        <p class="muted" style="margin:4px 0 0">Centraliza o catálogo de produtos, conjuntos temáticos e coleções sazonais da futura loja.</p>
-      </div>
-      <div class="catalog-top-actions">
-        <button class="btn" onclick="previewMenuPDF()">Ver catálogo</button>
-        <button class="btn" onclick="previewThemedBoxesPDF()">Ver catálogo de caixas</button>
+        <p class="muted" style="margin:4px 0 0">Escolhe um catálogo e abre, guarda ou envia o PDF.</p>
       </div>
     </div>
 
-    <div id="catalogSummary" class="catalog-summary"></div>
+    <details class="catalog-fold"><summary>Ver resumo de produtos e caixas</summary><div id="catalogSummary" class="catalog-summary"></div></details>
 
     <section class="catalog-documents-stack-v1731">
       <article class="card catalog-document-card catalog-document-card-v1731">
@@ -4290,6 +4289,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <span id="creatorStatusBadge" class="badge">—</span>
       </div>
 
+      <details class="catalog-fold catalog-creator-group"><summary>Ocasiões e cores</summary><div class="catalog-group-content">
       <div class="creator-section-v1261">
         <strong>1. Personalização disponível</strong>
         <small>Ocasiões, cores e personalizações apresentadas ao cliente.</small>
@@ -4320,6 +4320,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       </div>
 
       
+      </div></details>
+
+      <details class="catalog-fold catalog-creator-group"><summary>Temas</summary><div class="catalog-group-content">
       <div class="creator-section-v1266">
         <div class="creator-section-title-v1266">
           <strong>2. Temas</strong>
@@ -4339,6 +4342,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       </div>
 
 
+      </div></details>
+
+      <details class="catalog-fold catalog-creator-group"><summary>Personalizações e preços</summary><div class="catalog-group-content">
       <div class="creator-section-v1261 creator-section-prices-v1261">
         <strong>3. Personalizações e preços</strong>
         <small>Controla individualmente o que está disponível na loja e o respetivo acréscimo.</small>
@@ -4372,6 +4378,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <small class="muted">A mensagem na caixa é curta. O cartão permite uma dedicatória mais longa. A etiqueta não tem texto do cliente.</small>
       </div>
 
+      </div></details>
+
+      <details class="catalog-fold catalog-creator-group"><summary>Fotografia de exemplo</summary><div class="catalog-group-content">
       <div class="creator-section-v1261" style="margin-top:18px">
         <strong>4. Imagem exemplo da personalização</strong>
         <small>Carrega uma fotografia real de uma caixa ArtEssencia com extras. A imagem aparece na loja junto à personalização e é apenas ilustrativa.</small>
@@ -4385,6 +4394,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <img id="creatorExampleImagePreviewV1275" alt="Pré-visualização" style="display:none;margin-top:14px;width:min(420px,100%);max-height:260px;object-fit:cover;border-radius:14px;border:1px solid #eadde1">
       </div>
 
+      </div></details>
+
+      <details class="catalog-fold catalog-creator-group"><summary>Eventos</summary><div class="catalog-group-content">
       <div class="creator-section-v1261" style="margin-top:18px">
         <strong>5. ArtEssencia para Eventos</strong>
         <small>Controla o terceiro caminho da loja. O cliente envia um pedido de orçamento, não uma encomenda paga.</small>
@@ -4406,6 +4418,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <small class="muted">Estes valores são enviados para a loja através do mesmo Criador de Caixas. Não altera encomendas, produtos ou orçamentos existentes.</small>
       </div>
 
+      </div></details>
+
+      <details class="catalog-fold catalog-creator-group"><summary>Personalizações adicionais</summary><div class="catalog-group-content">
       <div class="creator-custom-person-v12657 creator-custom-person-v1271">
         <div class="creator-custom-person-head-v12657 creator-custom-person-head-v1270">
           <div><span class="creator-ux-eyebrow-v1270">ADICIONAIS</span> <strong>Personalizações adicionais</strong><br><small>Seguem a mesma estrutura visual das personalizações padrão.</small></div>
@@ -4414,6 +4429,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div id="creatorCustomPersonalizationsV12657" class="creator-custom-person-list-v12657"></div>
         <div id="creatorPersonalizationInlineHostV1271"></div>
       </div>
+
+      </div></details>
 
       <div class="creator-pricing-grid creator-master-pricing-v1268">
         <div class="creator-price-field"><label>Acréscimo base temático</label><div class="creator-money"><span>€</span><input id="creatorBaseExtra" type="number" min="0" step="0.01"></div></div>
@@ -6210,7 +6227,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.119';
+const APP_VERSION='1.9.120';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
