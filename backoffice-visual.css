@@ -351,3 +351,59 @@
     .app #aeBoxesHubV1 .ae-hub-tabs { gap: 10px; padding: 8px; }
   }
 }
+
+/* Secondary actions and the editorial/analytics modules. */
+@media screen {
+  .app .main .btn.ghost:not(.primary):not(.danger):not(.active):not([aria-pressed=true]):not([aria-expanded=true]) { background: #fffdf9; color: #514035; border: 1px solid #d8cabc; box-shadow: none; }
+  .app #specialEditions :is(.special-saved-filters-v1964,.special-picker-tools-v1962) label { font-size: 12px; }
+  .app #specialEditions .special-saved-filters-v1964 label span { font-size: 12px; }
+  .app #specialEditions :is(.special-saved-filters-v1964,.special-picker-tools-v1962) :is(input,select) { min-height: 46px; font-size: 14px; }
+  .app #specialEditions :is(.special-saved-result-v1964,.special-picker-status-v1962) { font-size: 12px; line-height: 1.5; }
+  .app #specialEditions .special-pro-card h3 { font-size: 16px; line-height: 1.4; overflow-wrap: anywhere; }
+  .app #specialEditions :is(.special-edition-meta,.special-pro-dates,.special-pro-foot > span,.special-pro-metrics small) { font-size: 12px; line-height: 1.5; color: #6b5747; }
+  .app #specialEditions .special-pro-metrics strong { font-size: 15px; font-variant-numeric: tabular-nums; }
+  .app #specialEditions .special-pro-foot { flex-wrap: wrap; gap: 10px; }
+  .app #specialEditions .special-pro-foot .btn { min-height: 46px; padding: 10px 12px !important; font-size: 13px !important; }
+  .app #specialEditions :is(.special-saved-resume-v1964,.special-saved-more-v1964,.special-editor-close-v1964,.special-only-selected-v1962) { min-height: 46px !important; font-size: 13px !important; padding: 10px 12px !important; white-space: normal; }
+  .app #specialEditions .special-compact-tab-v1962 { min-height: 46px; font-size: 13px; }
+  .app #digitalStats :is(.ds-dashboard-heading-v1966,.ds-summary-head-v1966,.ae-compare-head-v1967) { flex-wrap: wrap; gap: 10px; }
+  .app #digitalStats :is(.ds-dashboard-heading-v1966,.ds-summary-head-v1966) strong { font-size: 16px; line-height: 1.4; }
+  .app #digitalStats :is(.ds-dashboard-heading-v1966,.ds-summary-head-v1966) small { font-size: 12px; line-height: 1.5; color: #6b5747; }
+  .app #digitalStats .ds-insight-kpi-v1966 { padding: 13px; gap: 6px; }
+  .app #digitalStats .ds-insight-kpi-v1966 :is(span,small) { font-size: 12px; line-height: 1.5; color: #6b5747; }
+  .app #digitalStats .ds-insight-kpi-v1966 strong { font-size: 25px; overflow-wrap: anywhere; }
+  .app #digitalStats .ds-navigation-v1966 { position: static; display: flex; flex-wrap: wrap; gap: 10px; overflow: visible; padding: 10px; border: 1px solid #e2d9cf; border-radius: 12px; background: #faf7f2; }
+  .app #digitalStats .ds-tab-v1966 { min-height: 46px; font-size: 13px; white-space: normal; line-height: 1.4; }
+  .app #digitalStats .ds-details-v1966 > summary { min-height: 46px; font-size: 13px; line-height: 1.5; }
+  .app #digitalStats .ds-takeaway-v1966 strong { font-size: 14px; }
+  .app #digitalStats :is(.ds-takeaway-v1966 span,.ds-method-v1966,.ds-state-v1966,.ds-sample-v1966) { font-size: 12px; line-height: 1.5; color: #6b5747; }
+  .app #digitalStats .ds-ranked-main-v1966 strong { font-size: 14px; line-height: 1.4; }
+  .app #digitalStats .ds-ranked-main-v1966 small { font-size: 12px; line-height: 1.5; }
+  .app #digitalStats .ds-trend-head-v1966 { flex-wrap: wrap; font-size: 13px; }
+  .app #digitalStats .ds-trend-head-v1966 select { min-height: 46px; font-size: 14px; max-width: 100%; }
+  .app #digitalStats .ae-compare-grid-v1967 { font-size: 13px; line-height: 1.5; }
+  .app #digitalStats .ae-compare-metric-v1967 strong { font-size: 23px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .app #digitalStats :is(.ae-compare-metric-v1967 small,.ae-compare-note-v1967) { font-size: 12px; line-height: 1.5; }
+  .app #digitalStats :is(.ae-advisor-head p,.ae-advisor-status,.ae-advisor-diagnosis p,.ae-advisor-action p,.ae-advisor-limitations) { font-size: 13px; line-height: 1.6; }
+  .app #digitalStats :is(.ae-advisor-diagnosis strong,.ae-advisor-action-heading strong) { font-size: 14px; line-height: 1.5; }
+  @media (max-width: 650px) {
+    .app #specialEditions :is(.special-saved-filters-v1964,.special-picker-tools-v1962) :is(input,select) { font-size: 16px; }
+    .app #specialEditions .special-pro-card { grid-template-columns: 72px minmax(0,1fr) !important; }
+    .app #specialEditions .special-pro-cover { width: 72px; }
+    .app #digitalStats .ds-tab-v1966 { flex: 1 1 130px; }
+    .app #digitalStats .ds-trend-head-v1966 select { font-size: 16px; }
+    .app #digitalStats .ds-ranked-item-v1966 { grid-template-columns: 22px minmax(0,1fr); }
+    .app #digitalStats .ds-sample-v1966 { grid-column: 2; max-width: none; text-align: left; }
+  }
+}
+
+@media screen {
+  .app .brand { background:#fbf7f0; border-radius:12px; padding:12px; }
+  .app .brand small { color:#6b5747; }
+  .app .brand img { border-radius:0; background:transparent; padding:0; }
+}
+
+@media screen {
+ .auth-card-v1880 img { width:150px; height:auto; max-height:94px; object-fit:contain; }
+ #brandSplashV1778 img { object-fit:contain; background:transparent; border-radius:0; }
+}
