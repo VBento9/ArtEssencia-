@@ -4,7 +4,8 @@
   'use strict';
   const STORAGE_KEY='artessencia.catalog.pdf.prefs.v2';
   const PAGE_SIZE=36;
-  let settings={scope:'published',selected:null,images:true};
+  let settings={scope:'published',selected:null,images:true,source:'',candles:false};
+  let remoteEditions=null,sourceLoad=null;
   let filters={query:'',category:'',collection:'',onlySelected:false,page:0};
   try {
     const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
@@ -12,7 +13,9 @@
       settings.scope=saved.scope==='all'?'all':'published';
       settings.selected=Array.isArray(saved.selected)?[...new Set(saved.selected.map(String))]:null;
       settings.images=saved.images!==false;
-      if(settings.scope==='all' && settings.selected===null)settings.selected=[];
+      settings.source=typeof saved.source==='string'?saved.source:'';
+      settings.candles=saved.candles===true;
+      if(settings.scope==='all' && settings.selected===null && !saved.source && saved.candles!==true)settings.selected=[];
     }
   }catch(_){}
   const $=id=>document.getElementById(id);
@@ -21,12 +24,55 @@
   const code=p=>clean(p&& (p.code||p.id));
   const category=p=>clean(p&&p.category)||'Outros produtos artesanais';
   const published=p=>!!p.shopVisible && p.publicReleasePendingV1803!==true;
-  function eligible(){
+  function baseEligible(){
     return (Array.isArray(db.products)?db.products:[]).filter(p=>p&&productUsableV1803(p)&&code(p)&&clean(p.name)&&(settings.scope==='all'||published(p)));
+  }
+  function editions(){
+    return remoteEditions===null?(typeof specialEditionsAdmin!=='undefined'&&Array.isArray(specialEditionsAdmin)?specialEditionsAdmin:[]):remoteEditions;
+  }
+  function editionMatches(ed,p){
+    if(Array.isArray(ed.data?.products)){
+      const ids=new Set(ed.data.products.map(x=>clean(typeof x==='string'?x:x?.id)).filter(Boolean));
+      return [p._rid,p.id,p.code].some(id=>id!=null&&ids.has(String(id)));
+    }
+    const ids=Array.isArray(p.editionIds)?p.editionIds:(p.editionId?[p.editionId]:[]);
+    return ids.map(String).includes(clean(ed.id||ed.slug||ed.name));
+  }
+  function sources(){
+    let saved=[];
+    try{saved=typeof visualCatalogsDataV192==='function'?visualCatalogsDataV192():[];}catch(_){}
+    const result=saved.map(c=>({key:'catalog:'+c.id,label:clean(c.title)||'Catálogo',group:'Catálogos guardados',matches:p=>(c.productIds||[]).map(String).includes(code(p))}));
+    for(const ed of editions())result.push({key:'edition:'+clean(ed.id||ed.slug||ed.name),label:clean(ed.name||ed.slug||ed.id),group:'Edições',matches:p=>editionMatches(ed,p)});
+    const names=[...new Set(baseEligible().flatMap(p=>[p.collection,p.collectionName,p.season].map(clean).filter(Boolean)))];
+    for(const name of names)result.push({key:'collection:'+name,label:name,group:'Coleções',matches:p=>[p.collection,p.collectionName,p.season].map(clean).includes(name)});
+    return result;
+  }
+  function chosenSource(){return sources().find(s=>s.key===settings.source);}
+  function sourceLabel(){return settings.source?(chosenSource()?.label||'Catálogo indisponível'):'Catálogo geral';}
+  function eligible(){
+    const source=settings.source?chosenSource():null;
+    return baseEligible().filter(p=>(!settings.source||(source&&source.matches(p)))&&(!settings.candles||['wax_mold','wax_container'].includes(p.productionType)||/^velas?(?:\s|$)/i.test(category(p))));
+  }
+  async function refreshSources(){
+    if(sourceLoad)return sourceLoad;
+    sourceLoad=(async()=>{
+      // Read the existing editions endpoint without reconciling or saving products.
+      if(typeof initCloudClient!=='function'||typeof cloudUser==='undefined'||!cloudUser)return;
+      const client=initCloudClient();if(!client)return;
+      const {data,error}=await client.rpc('artessencia_list_shop_special_editions_admin_v1');
+      if(error)throw error;
+      remoteEditions=Array.isArray(data)?data:[];
+    })();
+    try{await sourceLoad;}finally{sourceLoad=null;}
+  }
+  function selectSource(value,candles=settings.candles){
+    settings.source=value;settings.candles=candles;settings.selected=null;
+    filters={query:'',category:'',collection:'',onlySelected:false,page:0};
+    store();render();
   }
   function selection(){
     const rows=eligible();
-    return settings.selected===null && settings.scope==='published' ? rows : rows.filter(p=>settings.selected.includes(code(p)));
+    return settings.selected===null ? rows : rows.filter(p=>settings.selected.includes(code(p)));
   }
   function selections(){return new Set(selection().map(code));}
   function store(){
@@ -34,19 +80,19 @@
     catch(_){toast('Não foi possível guardar a seleção neste dispositivo');}
   }
   function collections(p){
-    try{return typeof visualCollectionsV192==='function'?visualCollectionsV192(p):[];}
+    try{return [...new Set([...(typeof visualCollectionsV192==='function'?visualCollectionsV192(p):[]),...editions().filter(ed=>editionMatches(ed,p)).map(ed=>clean(ed.name||ed.slug||ed.id))])];}
     catch(_){return [];}
   }
   function sorted(rows){
     return rows.slice().sort((a,b)=>category(a).localeCompare(category(b),'pt-PT')||clean(a.name).localeCompare(clean(b.name),'pt-PT'));
   }
   function matching(){
-    const q=filters.query.toLocaleLowerCase('pt-PT');
+    const q=filters.query.toLocaleLowerCase('pt-PT'),chosen=filters.onlySelected?selections():null;
     return sorted(eligible().filter(p=>
       (!filters.category||category(p)===filters.category)&&
       (!filters.collection||collections(p).includes(filters.collection))&&
       (!q||[p.name,p.code,category(p),collections(p).join(' ')].join(' ').toLocaleLowerCase('pt-PT').includes(q))&&
-      (!filters.onlySelected||selections().has(code(p)))
+      (!chosen||chosen.has(code(p)))
     ));
   }
   const styles="\n#aeCatalogPdfV2[hidden]{display:none!important}\n#aeCatalogPdfV2{margin-top:14px;padding:14px;border:1px solid #ded2c1;border-radius:16px;background:#fffaf5;color:#44372b}\n#aeCatalogPdfV2 .ae-pdf-title{display:flex;justify-content:space-between;align-items:center;gap:12px}\n#aeCatalogPdfV2 .ae-pdf-title strong{font-size:16px}\n#aeCatalogPdfV2 .ae-pdf-controls,#aeCatalogPdfV2 .ae-pdf-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:10px;margin:12px 0}\n#aeCatalogPdfV2 label{display:grid;gap:5px;font-size:13px}\n#aeCatalogPdfV2 input[type=\"search\"],#aeCatalogPdfV2 select{width:100%;min-height:44px;font-size:15px}\n#aeCatalogPdfV2 .ae-pdf-photo{display:flex;align-items:center;gap:9px}\n#aeCatalogPdfV2 .ae-pdf-tools,#aeCatalogPdfV2 .ae-pdf-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0}\n#aeCatalogPdfV2 .ae-pdf-tools label{display:flex;align-items:center;gap:7px}\n#aeCatalogPdfV2 .ae-pdf-count{font-weight:700;font-size:13px}\n#aeCatalogPdfV2 .ae-pdf-rows{max-height:360px;overflow:auto;border:1px solid #ded2c1;border-radius:12px;background:#fff}\n#aeCatalogPdfV2 .ae-pdf-item{display:flex;flex-direction:row;align-items:center;gap:10px;padding:10px;border-bottom:1px solid #eee7dd;cursor:pointer}\n#aeCatalogPdfV2 .ae-pdf-item:last-child{border-bottom:0}\n#aeCatalogPdfV2 .ae-pdf-item-name{flex:1;min-width:0;overflow-wrap:anywhere}\n#aeCatalogPdfV2 .ae-pdf-item-name small{display:block;color:#796b5f;margin-top:4px}\n#aeCatalogPdfV2 .ae-pdf-item-price{font-weight:700;white-space:nowrap}\n#aeCatalogPdfV2 .ae-pdf-pages{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px}\n#aeCatalogPdfV2 .ae-pdf-note{font-size:12px;line-height:1.5}\n#aeCatalogPdfV2 .btn{min-height:44px}\n@media(max-width:650px){\n #aeCatalogPdfV2{padding:10px}\n #aeCatalogPdfV2 .ae-pdf-controls,#aeCatalogPdfV2 .ae-pdf-filters{grid-template-columns:minmax(0,1fr)}\n #aeCatalogPdfV2 .ae-pdf-actions .btn{flex:1 1 100%}\n #aeCatalogPdfV2 .ae-pdf-item-price{white-space:normal;text-align:right}\n}\n";
@@ -62,29 +108,38 @@
     addStyle();
     const buttons=card.querySelector('.catalog-actions');
     if(!buttons)return;
-    const open=document.createElement('button');open.type='button';open.className='btn';open.textContent='Escolher artigos';open.setAttribute('aria-controls','aeCatalogPdfV2');
+    const open=document.createElement('button');open.type='button';open.className='btn';open.textContent='Escolher catálogo';open.setAttribute('aria-controls','aeCatalogPdfV2');
     open.addEventListener('click',()=>{
       const panel=$('aeCatalogPdfV2');panel.hidden=!panel.hidden;
       open.setAttribute('aria-expanded',String(!panel.hidden));
-      if(!panel.hidden)render();
+      if(!panel.hidden){render();refreshSources().then(()=>{const hint=$('aePdfSourceHint');if(hint)hint.textContent='Escolhe uma edição ou catálogo e, se pretenderes, marca «Só velas».';render();}).catch(()=>{const hint=$('aePdfSourceHint');if(hint)hint.textContent='Não foi possível atualizar as edições. Confirma a ligação à Cloud e volta a abrir esta seleção.';});}
     });
     buttons.prepend(open);
+    open.setAttribute('aria-expanded','false');
+    const summary=document.createElement('p');summary.id='aePdfSummary';summary.className='muted';summary.setAttribute('role','status');buttons.after(summary);
     const panel=document.createElement('section');panel.id='aeCatalogPdfV2';panel.hidden=true;
     panel.setAttribute('aria-label','Personalizar catálogo PDF de produtos');
     panel.innerHTML=
       '<div class="ae-pdf-title"><strong>Personalizar catálogo PDF</strong><button type="button" class="btn" data-ae-action="close" aria-label="Fechar editor">Fechar</button></div>'+
-      '<p class="muted">Escolhe os artigos que entram no documento. Esta seleção não publica nem altera produtos.</p>'+
+      '<p class="muted">Escolhe o catálogo que queres enviar. O PDF inclui apenas os produtos dessa seleção.</p>'+
       '<div class="ae-pdf-controls">'+
-        '<label>Produtos disponíveis<select id="aePdfScope"><option value="published">Marcados como publicados</option><option value="all">Todos os ativos (seleção manual)</option></select></label>'+
+        '<label>Catálogo / edição<select id="aePdfSource"><option value="">Catálogo geral</option></select></label>'+
+        '<label class="ae-pdf-photo"><input id="aePdfCandles" type="checkbox"> Só velas (todas as categorias de velas)</label>'+
+      '</div>'+
+      '<p id="aePdfSourceHint" class="ae-pdf-note">Exemplo: escolhe Natal e marca «Só velas». Podes depois retirar artigos individualmente.</p>'+
+      '<div class="ae-pdf-controls">'+
+        '<label>Produtos disponíveis<select id="aePdfScope"><option value="published">Marcados como publicados</option><option value="all">Todos os ativos</option></select></label>'+
         '<label class="ae-pdf-photo"><input id="aePdfImages" type="checkbox"> Incluir fotografias no PDF</label>'+
       '</div>'+
+      '<p class="ae-pdf-note">Para reduzir ainda mais a seleção, pesquisa ou filtra a lista e clica em «Usar apenas os resultados».</p>'+
       '<div class="ae-pdf-filters">'+
         '<label>Pesquisar<input id="aePdfQuery" type="search" placeholder="Nome ou código"></label>'+
         '<label>Categoria<select id="aePdfCategory"><option value="">Todas as categorias</option></select></label>'+
         '<label>Coleção<select id="aePdfCollection"><option value="">Todas as coleções</option></select></label>'+
       '</div>'+
       '<div class="ae-pdf-tools">'+
-        '<button class="btn" type="button" data-ae-action="selectFiltered">Selecionar filtrados</button>'+
+        '<button class="btn primary" type="button" data-ae-action="replaceFiltered">Usar apenas os resultados</button>'+
+        '<button class="btn" type="button" data-ae-action="selectFiltered">Adicionar resultados à seleção</button>'+
         '<button class="btn" type="button" data-ae-action="clearFiltered">Retirar filtrados</button>'+
         '<button class="btn" type="button" data-ae-action="auto">Usar publicados automaticamente</button>'+
         '<label><input type="checkbox" id="aePdfOnlySelected"> Só selecionados</label>'+
@@ -106,6 +161,8 @@
         filters={query:'',category:'',collection:'',onlySelected:false,page:0};
         store();render();return;
       }
+      if(el.id==='aePdfSource'){selectSource(el.value);return;}
+      if(el.id==='aePdfCandles'){selectSource(settings.source,el.checked);return;}
       if(el.id==='aePdfImages'){settings.images=el.checked;store();return;}
       if(el.id==='aePdfCategory'){filters.category=el.value;filters.page=0;renderList();return;}
       if(el.id==='aePdfCollection'){filters.collection=el.value;filters.page=0;renderList();return;}
@@ -124,10 +181,11 @@
       if(action==='prev'){filters.page=Math.max(0,filters.page-1);renderList();return;}
       if(action==='next'){filters.page++;renderList();return;}
       if(action==='auto'){
-        settings.scope='published';settings.selected=null;
+        settings.scope='published';settings.selected=null;settings.source='';settings.candles=false;
         filters={query:'',category:'',collection:'',onlySelected:false,page:0};
         store();render();return;
       }
+      if(action==='replaceFiltered'){settings.selected=matching().map(code);store();renderList();return;}
       if(action==='selectFiltered'||action==='clearFiltered'){
         const chosen=selections();
         for(const p of matching()){
@@ -139,6 +197,7 @@
       if(action==='save')window.downloadMenuPDF();
       if(action==='share')window.shareMenuPDF();
     });
+    render();
   }
   function options(select,values,first){
     const old=select.value;
@@ -147,6 +206,14 @@
   }
   function render(){
     const root=$('aeCatalogPdfV2');if(!root)return;
+    const choices=sources(),sourceSelect=$('aePdfSource');
+    sourceSelect.innerHTML='<option value="">Catálogo geral</option>'+['Catálogos guardados','Edições','Coleções'].map(group=>{
+      const rows=choices.filter(s=>s.group===group).sort((a,b)=>a.label.localeCompare(b.label,'pt-PT'));
+      return rows.length?'<optgroup label="'+html(group)+'">'+rows.map(s=>'<option value="'+html(s.key)+'">'+html(s.label)+'</option>').join('')+'</optgroup>':'';
+    }).join('');
+    if(settings.source&&!choices.some(s=>s.key===settings.source))sourceSelect.innerHTML+='<option value="'+html(settings.source)+'">Catálogo indisponível — escolhe novamente</option>';
+    sourceSelect.value=settings.source;
+    $('aePdfCandles').checked=settings.candles;
     $('aePdfScope').value=settings.scope;
     $('aePdfImages').checked=settings.images;
     $('aePdfQuery').value=filters.query;
@@ -161,6 +228,7 @@
     const rows=matching();
     const count=selection().length;
     const total=eligible().length;
+    const summary=$('aePdfSummary');if(summary)summary.textContent='PDF: '+sourceLabel()+(settings.candles?' · Só velas':'')+' — '+count+' produto(s).';
     $('aePdfCount').textContent=count+' selecionado(s) de '+total+' disponíveis · '+(settings.selected===null?'seleção automática':'seleção manual')+'. '+rows.length+' correspondem aos filtros.';
     const maxPage=Math.max(0,Math.ceil(rows.length/PAGE_SIZE)-1);
     filters.page=Math.min(filters.page,maxPage);
@@ -204,6 +272,8 @@
     ctx.drawImage(img,x+(width-w)/2,y+(height-h)/2,w,h);
   }
   async function buildPdf(){
+    if(settings.source.startsWith('edition:')){try{await refreshSources();}catch(_){throw new Error('Não foi possível confirmar os produtos da edição. Verifica a ligação à Cloud.');}}
+    if(settings.source&&!chosenSource())throw new Error('O catálogo selecionado não está disponível. Abre «Escolher catálogo» e escolhe novamente.');
     const rows=sorted(selection());
     if(!rows.length)throw new Error('Seleciona pelo menos um produto para o PDF');
     const pages=[];let canvas,ctx,y=235,currentCategory='';
@@ -212,7 +282,7 @@
       canvas=createCatalogPrintCanvas();
       ctx=canvas.getContext('2d');
       if(!ctx)throw new Error('Não foi possível preparar a página PDF');
-      await drawArtEssenciaHeader(ctx,'CATÁLOGO','Produtos ArtEssencia · '+new Date().toLocaleDateString('pt-PT'));
+      await drawArtEssenciaHeader(ctx,'CATÁLOGO',(sourceLabel()+(settings.candles?' · Só velas':'')).slice(0,65)+' · '+new Date().toLocaleDateString('pt-PT'));
       y=235;currentCategory='';
     }
     async function finishPage(){
