@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.118">
+<meta name="artessencia-version" content="1.9.119">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -3499,6 +3499,17 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 </style>
 <link rel="stylesheet" href="./layout-refinement.css?v=20261026">
 <link rel="stylesheet" href="./backoffice-visual.css" media="screen">
+<style>
+/* Compact catalogue: native disclosures preserve forms and keyboard access. */
+#catalogs .catalog-fold{margin:12px 0;border:1px solid #ded2c1;border-radius:14px;background:#fffaf5;overflow:hidden}
+#catalogs .catalog-fold>summary{padding:16px;min-height:44px;cursor:pointer;font-weight:700;color:#44372b}
+#catalogs .catalog-fold>summary:focus-visible{outline:3px solid #916b42;outline-offset:-3px}
+#catalogs .catalog-fold[open]>summary{border-bottom:1px solid #ded2c1}
+#catalogs .catalog-fold>.card{margin:0;border:0;border-radius:0;box-shadow:none}
+#catalogs #catalogSavedBoxes>.catalog-saved-head,#catalogs #catalogSavedBoxes>.catalog-grid{margin:12px}
+#catalogs .catalog-documents-stack-v1731{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media(max-width:850px){#catalogs .catalog-documents-stack-v1731{grid-template-columns:minmax(0,1fr)}}
+</style>
 </head>
 <body>
 <div id="brandSplashV1778" aria-hidden="true"><div class="brand-splash-card"><img src="brand-artessencia-transparente.svg" alt=""></div></div>
@@ -4244,6 +4255,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       </article>
     </section>
 
+    <details id="catalogBoxEditor" class="catalog-fold"><summary>Adicionar / editar caixa</summary>
     <section class="card catalog-editor-card catalog-editor-card-v1731">
       <div class="catalog-editor-head">
         <div>
@@ -4266,6 +4278,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       <div class="catalog-theme-preview-v1731"><img id="themeBoxPreview" class="image-preview hidden" alt="Pré-visualização"></div>
     </section>
 
+    </details>
+
+    <details id="catalogCreatorSettings" class="catalog-fold"><summary>Configurar Criador de Caixas</summary>
     <section class="card catalog-creator-card creator-ui-v114 catalog-creator-card-v1731">
       <div class="creator-ui-head creator-head-v1261">
         <div>
@@ -4411,6 +4426,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       </div>
     </section>
 
+    </details>
+
+    <details id="catalogSavedBoxes" class="catalog-fold"><summary>Consultar caixas guardadas</summary>
     <div class="catalog-saved-head catalog-saved-head-v1731">
       <div>
         <div class="section-title" style="margin:0">Caixas temáticas guardadas</div>
@@ -4418,6 +4436,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       </div>
     </div>
     <div id="themedBoxesGrid" class="catalog-grid catalog-grid-pro"></div>
+    </details>
+
+
   </section>
 
 
@@ -6189,7 +6210,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.118';
+const APP_VERSION='1.9.119';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -12941,7 +12962,9 @@ function editThemedBox(id){
  themeBoxPrice.value=b.price??0;themeBoxDesc.value=b.description||'';
  themeBoxActive.value=b.active===false?'0':'1';themeBoxImage.value='';
  themeBoxPreview.src=b.image||'';themeBoxPreview.classList.toggle('hidden',!b.image);
- window.scrollTo({top:0,behavior:'smooth'})
+ const editor=document.getElementById('catalogBoxEditor');
+ if(editor){editor.open=true;editor.scrollIntoView({behavior:'smooth',block:'start'});themeBoxName.focus({preventScroll:true})}
+ else window.scrollTo({top:0,behavior:'smooth'});
 }
 function deleteThemedBox(id){const b=(db.themedBoxes||[]).find(x=>x.id===id);if(!b)return;if(!confirm('Apagar a conjunto personalizado "'+b.name+'"?'))return;db.themedBoxes=db.themedBoxes.filter(x=>x.id!==id);save();toast('Conjunto personalizado apagado')}
 

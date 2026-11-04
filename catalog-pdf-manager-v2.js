@@ -99,7 +99,7 @@
   function addStyle(){
     if($('aeCatalogPdfV2Style'))return;
     const el=document.createElement('style');el.id='aeCatalogPdfV2Style';
-    el.textContent=styles;document.head.appendChild(el);
+    el.textContent=styles+'\n#aeCatalogPdfV2 .ae-pdf-advanced{border-top:1px solid #ded2c1;margin-top:10px}\n#aeCatalogPdfV2 .ae-pdf-advanced>summary{cursor:pointer;padding:12px 0;font-weight:700;min-height:44px}\n#aeCatalogPdfV2 .ae-pdf-advanced>summary:focus-visible{outline:2px solid #916b42}';document.head.appendChild(el);
   }
   function install(){
     if($('aeCatalogPdfV2'))return;
@@ -127,6 +127,7 @@
         '<label class="ae-pdf-photo"><input id="aePdfCandles" type="checkbox"> Só velas (todas as categorias de velas)</label>'+
       '</div>'+
       '<p id="aePdfSourceHint" class="ae-pdf-note">Exemplo: escolhe Natal e marca «Só velas». Podes depois retirar artigos individualmente.</p>'+
+      '<details class="ae-pdf-advanced"><summary>Opções e seleção de artigos</summary>'+
       '<div class="ae-pdf-controls">'+
         '<label>Produtos disponíveis<select id="aePdfScope"><option value="published">Marcados como publicados</option><option value="all">Todos os ativos</option></select></label>'+
         '<label class="ae-pdf-photo"><input id="aePdfImages" type="checkbox"> Incluir fotografias no PDF</label>'+
@@ -148,6 +149,7 @@
       '<div id="aePdfRows" class="ae-pdf-rows"></div>'+
       '<div class="ae-pdf-pages"><button type="button" class="btn" data-ae-action="prev">Anterior</button><span id="aePdfPageLabel"></span><button type="button" class="btn" data-ae-action="next">Seguinte</button></div>'+
       '<p class="muted ae-pdf-note">Preferências guardadas neste dispositivo. Para manter a lista automaticamente atualizada, usa «Usar publicados automaticamente». O PDF é criado de novo sempre que o abres.</p>'+
+      '</details>'+
       '<div class="ae-pdf-actions"><button type="button" class="btn" data-ae-action="preview">Ver PDF</button><button type="button" class="btn primary" data-ae-action="save">Guardar PDF</button><button type="button" class="btn" data-ae-action="share">Enviar PDF</button></div>';
     card.appendChild(panel);
     panel.addEventListener('input',event=>{
