@@ -407,3 +407,221 @@
  .auth-card-v1880 img { width:150px; height:auto; max-height:94px; object-fit:contain; }
  #brandSplashV1778 img { object-fit:contain; background:transparent; border-radius:0; }
 }
+
+
+/* ArtEssencia — Interface operacional moderna, segura para dados e impressões.
+   Alterações de apresentação, sem alterar processos, handlers ou Cloud. */
+@media screen{
+ body .app{
+  --ae-ui-font: Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  --ae-modern-surface:#fffdfb;
+  --ae-modern-border:#e5d9cc;
+  --ae-modern-text:#34271f;
+  --ae-modern-muted:#6d5a4d;
+  font-family:var(--ae-ui-font);
+  color:var(--ae-modern-text);
+ }
+ body:has(.app){background:#f5f2ed}
+ .app .sidebar{
+  background:linear-gradient(175deg,#302920,#48372e 58%,#584333)!important;
+  border-right:1px solid rgba(255,255,255,.11);
+ }
+ .app .sidebar .brand{
+  border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.06)!important;
+  backdrop-filter:blur(10px);
+  border-radius:15px!important;
+  padding:12px!important;
+ }
+ .app .sidebar .brand img{
+  max-width:100%;object-fit:contain;
+  background:transparent!important;
+ }
+ .app .sidebar .nav button{
+  min-height:46px;border-radius:12px!important;
+  margin:2px 0;transition:background-color .15s ease,border-color .15s ease;
+ }
+ .app .sidebar .nav button.active,
+ .app .sidebar .nav button[aria-current="page"]{
+  background:rgba(255,255,255,.17)!important;
+  box-shadow:inset 3px 0 0 #e3c6a8;
+  color:#fff;
+ }
+ .app .sidebar .nav button:hover{background:rgba(255,255,255,.11)}
+ .app .main{color:var(--ae-modern-text)}
+ .app .main .page-heading h1{
+  font-family:var(--ae-ui-font)!important;
+  font-size:clamp(23px,2.5vw,32px)!important;
+  font-weight:720!important;line-height:1.13!important;letter-spacing:-.045em!important;
+ }
+ .app .main :is(.section-title,.section-head h2,.section-head h3){
+  letter-spacing:-.025em;line-height:1.32;font-weight:700;
+ }
+ .app .main .card{
+  border:1px solid var(--ae-modern-border);
+  border-radius:16px;
+  background:var(--ae-modern-surface);
+  box-shadow:0 3px 14px rgba(54,38,25,.045);
+ }
+ .app .main :is(.card,.product-card,.order-card,.stock-card){
+  min-width:0;overflow-wrap:anywhere;
+ }
+ .app .main :is(.card,.product-card,.order-card,.stock-card):focus-within{
+  border-color:#c6ae96;
+ }
+ .app .main :is(.btn,.smallbtn){
+  min-height:44px;
+  border-radius:11px!important;
+  font-weight:670!important;
+  letter-spacing:-.006em;
+  transition:background-color .15s ease,border-color .15s ease,box-shadow .15s ease!important;
+  transform:none!important;
+ }
+ .app .main :is(.btn,.smallbtn):hover:not(:disabled){
+  box-shadow:0 2px 8px rgba(49,32,20,.09);
+ }
+ .app .main .btn.primary{
+  background:#463227!important;border-color:#463227!important;
+  color:#fff!important;
+ }
+ .app .main .btn.primary:hover:not(:disabled){
+  background:#604333!important;
+ }
+ .app .main .btn.ghost:not(.danger):not(.active){
+  background:#fffdfa;color:#514035;
+  border:1px solid #d9cabb;
+ }
+ .app .main .btn.danger{
+  background:#f9ebe8;color:#8c3931;border:1px solid #e7c4bf;
+ }
+ .app .main .field label{
+  font-size:12px;line-height:1.5;font-weight:670;
+  letter-spacing:0;color:#574639;
+ }
+ .app .main .field :is(input,select,textarea){
+  border-radius:11px;
+  background:#fffefa;
+  border:1px solid #d6c5b7;
+  min-width:0;max-width:100%;
+  line-height:1.45;
+ }
+ .app .main :is(input:not([type=checkbox]):not([type=radio]),select,textarea):focus-visible{
+  border-color:#806047!important;
+  box-shadow:0 0 0 3px rgba(128,96,71,.12);
+ }
+ .app .main .tablewrap{
+  border:1px solid #e4d9cf;border-radius:14px;
+  overflow-x:auto;max-width:100%;
+ }
+ .app .main .tablewrap th{
+  position:sticky;top:0;z-index:1;
+  color:#584538;background:#f2eae1;
+  font-weight:750;letter-spacing:.005em;
+ }
+ .app .main .tablewrap td{vertical-align:middle}
+ .app .main .muted{color:var(--ae-modern-muted)}
+ .app .main :is(.ae-products-compact-bar,.ae-orders-toolbar,.ae-stock-toolbar,.ae-cash-toolbar,.ae-purchases-toolbar,.ae-clients-toolbar,.cost-tabs-v1927){
+  border-radius:14px;
+  border-color:#e0d2c4;
+  background:linear-gradient(140deg,#fffefa,#f7f1e9);
+  padding:9px;gap:8px;
+ }
+ .app .main :is(.ae-products-compact-bar,.ae-orders-toolbar,.ae-stock-toolbar,.ae-cash-toolbar,.ae-purchases-toolbar,.ae-clients-toolbar,.cost-tabs-v1927) button{
+  border-radius:11px!important;
+ }
+ .app #dashboard :is(.dashboard-action,.dashboard-kpi-card,.dashboard-daily-card){
+  border-radius:15px;
+  box-shadow:0 3px 12px rgba(45,32,21,.045);
+ }
+ .app #dashboard .dashboard-kpi-card .value{
+  font-variant-numeric:tabular-nums;letter-spacing:-.035em;
+ }
+ .app #products .product-card-actions,
+ .app #orders .order-card-actions{gap:9px}
+ .app #products .product-editor-nav-v1762 button,
+ .app #specialEditions .special-compact-tab-v1962{
+  border-radius:11px;
+  font-weight:700;
+ }
+ .app .main :is(.product-card-img,.product-photo-section-v1726 img){
+  object-fit:contain;
+ }
+ .app :is(button,input,select,textarea,summary,a):focus-visible{
+  outline:3px solid #9b714e!important;outline-offset:2px;
+ }
+ .ae-heading-actions{align-items:center;gap:8px;flex-wrap:wrap}
+ #aeJumpModule{
+  background:#463227;color:#fff;border:1px solid #463227;
+  border-radius:11px;padding:10px 14px;
+  min-height:44px;font-size:13px;white-space:normal;cursor:pointer;
+ }
+ #aeJumpModule:hover{background:#604333}
+ body.ae-palette-open{overflow:hidden}
+ .ae-module-palette-backdrop{
+  position:fixed;inset:0;z-index:10000;
+  display:grid;place-items:start center;
+  padding:clamp(20px,10vh,100px) 16px 20px;
+  background:rgba(26,20,16,.64);
+  backdrop-filter:blur(4px);
+  overflow-y:auto;
+ }
+ .ae-module-palette-backdrop[hidden]{display:none!important}
+ .ae-module-palette{
+  width:min(100%,560px);
+  max-height:min(76vh,610px);
+  display:flex;flex-direction:column;
+  border:1px solid #e7d8c9;border-radius:18px;
+  box-shadow:0 24px 70px rgba(23,17,13,.28);
+  background:#fffcf8;color:#392c24;
+  padding:clamp(16px,3vw,23px);
+ }
+ .ae-module-palette-header{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;margin-bottom:13px;
+ }
+ .ae-module-palette-header strong{
+  font:720 21px/1.2 Inter,system-ui,sans-serif;
+  letter-spacing:-.025em;
+ }
+ .ae-palette-close{
+  border:1px solid #dfcdbc;border-radius:10px;
+  background:#fff8f0;color:#513b2d;
+  padding:9px 12px;min-height:44px;
+  font:700 12px/1.35 system-ui,sans-serif;cursor:pointer;
+ }
+ #aeModulePaletteInput{
+  width:100%;min-height:50px;max-width:100%;box-sizing:border-box;
+  padding:12px 15px;border:1px solid #cbb8a5;border-radius:12px;
+  background:white;color:#3d2b20;
+  font:500 16px/1.35 system-ui,sans-serif;
+ }
+ .ae-module-palette-results{display:grid;gap:6px;overflow:auto;margin-top:13px}
+ .ae-palette-result{
+  min-width:0;min-height:44px;text-align:left;display:flex;align-items:center;
+  border:1px solid #e8dcd0;border-radius:11px;
+  padding:10px 13px;background:#fff;color:#453227;
+  font:650 13px/1.4 system-ui,sans-serif;cursor:pointer;
+ }
+ .ae-palette-result:hover,.ae-palette-result:focus-visible{
+  background:#f1e5d8;border-color:#bda189;
+ }
+ .ae-palette-result.is-current{
+  background:#f7f0e7;border-color:#d9bfa7;
+ }
+ .ae-palette-empty{margin:12px 0;color:#766053;font-size:13px}
+ .ae-module-palette-help{margin:12px 0 0;color:#786255;font-size:12px;line-height:1.5}
+ @media(max-width:650px){
+  .app .main .card{border-radius:13px}
+  .app .main .page-heading h1{font-size:24px!important}
+  .app .main :is(.btn,.smallbtn){min-height:46px}
+  .ae-module-palette-backdrop{padding:14px 10px}
+  .ae-module-palette{max-height:calc(100dvh - 28px);padding:15px;border-radius:14px}
+  .ae-heading-actions #aeJumpModule{flex:1 1 120px}
+ }
+ @media(prefers-reduced-motion:reduce){
+  .ae-module-palette-backdrop *,.app .main .card{transition:none!important;animation:none!important}
+ }
+}
+@media print{
+ #aeJumpModule,.ae-module-palette-backdrop{display:none!important}
+}
