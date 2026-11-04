@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.115">
+<meta name="artessencia-version" content="1.9.116">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -6189,7 +6189,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.115';
+const APP_VERSION='1.9.116';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -8887,17 +8887,18 @@ function renderProductionDailyCenterV12653(date){
 async function buildProductionDailyPdfBlobV12653(){
  const date=prodDate.value||todayISO(),orders=productionDayOrdersV12653(date);if(!orders.length)throw new Error('Sem encomendas para esta data');
  const rows=[];orders.forEach(o=>{const c=calcOrder(o),pay=productionPaymentStateV12653(o),pers=productionOrderPersonalizationV12653(o),products=(o.items||[]).map(i=>`${Number(i.qty)||0}x ${i.name||i.code||'Produto'}`).join(' | ');rows.push({o,c,pay,pers,products})});
- const pages=[],perPage=5,totalPages=Math.ceil(rows.length/perPage);
+ const pages=[],perPage=4,totalPages=Math.ceil(rows.length/perPage);
  for(let pg=0;pg<totalPages;pg++){
-  const canvas=document.createElement('canvas');canvas.width=1240;canvas.height=1754;const ctx=canvas.getContext('2d');await drawArtEssenciaHeader(ctx,'ORDEM DE PRODUÇÃO',`${datePt(date)} · página ${pg+1}/${totalPages}`);let y=225;
+  const canvas=createCatalogPrintCanvas();const ctx=canvas.getContext('2d');await drawArtEssenciaHeader(ctx,'ORDEM DE PRODUÇÃO',`${datePt(date)} · página ${pg+1}/${totalPages}`);let y=225;
   if(pg===0){const total=orders.reduce((a,o)=>a+calcOrder(o).qty,0),boxes=orders.reduce((a,o)=>a+productionOrderBoxesV12653(o),0);ctx.fillStyle='#f8efec';ctx.fillRect(70,y,1100,72);ctx.fillStyle='#5A240B';ctx.font='700 23px Arial';ctx.fillText(`${orders.length} encomenda(s) · ${total} unidades · ${boxes} caixa(s)`,92,y+31);ctx.font='18px Arial';ctx.fillStyle='#806b62';ctx.fillText('Documento operacional — conferir personalizações e pagamento antes da entrega.',92,y+57);y+=100}
   for(const r of rows.slice(pg*perPage,pg*perPage+perPage)){
    const o=r.o;ctx.strokeStyle='#e4d7d1';ctx.lineWidth=2;ctx.strokeRect(70,y,1100,245);ctx.fillStyle='#5A240B';ctx.font='900 24px Arial';ctx.fillText(String(o.id||'—'),92,y+34);ctx.font='700 20px Arial';ctx.fillStyle='#6d5149';ctx.fillText(String(o.client||'—').slice(0,46),92,y+64);ctx.textAlign='right';ctx.fillStyle='#F12473';ctx.font='900 21px Arial';ctx.fillText(`${r.c.qty} unidades · ${productionOrderBoxesV12653(o)} caixa(s)`,1148,y+34);ctx.fillStyle='#6d5149';ctx.font='18px Arial';ctx.fillText(productionDeliveryLabelV12653(o),1148,y+64);ctx.textAlign='left';
    const tech=(o.items||[]).map(line=>{const p=productionProductForLineV130(line);return p?productionProfileSummaryV130(p):''}).filter(Boolean).join(' | ');const lines=[`Estado: ${o.status||'Pedido'} · Pagamento: ${r.pay.label}`,`Produtos: ${r.products||'—'}`];if(tech)lines.push('Processos: '+tech);if(r.pers.length)lines.push('Personalização: '+r.pers.join(' | '));if(o.notes)lines.push('Notas: '+o.notes);ctx.font='18px Arial';ctx.fillStyle='#5e4a44';let ly=y+104;for(const line of lines){const words=String(line).split(' ');let cur='';for(const w of words){const test=cur?cur+' '+w:w;if(ctx.measureText(test).width>1030&&cur){ctx.fillText(cur,92,ly);ly+=24;cur=w}else cur=test}if(cur){ctx.fillText(cur,92,ly);ly+=24}if(ly>y+222)break}y+=267;
   }
-  drawCatalogFooter(ctx);pages.push(await new Promise((res,rej)=>canvas.toBlob(b=>b?res(b):rej(new Error('PDF')),'image/jpeg',.92)));
+  drawCatalogFooter(ctx);pages.push(await new Promise((res,rej)=>canvas.toBlob(b=>b?res(b):rej(new Error('PDF')),'image/jpeg',0.98)));
+  canvas.width=0;canvas.height=0;
  }
- return jpegBlobsToPDF(pages,1240,1754);
+ return jpegBlobsToPDF(pages,2480,3508);
 }
 function previewProductionPDFV12653(){return openPdfBlob(buildProductionDailyPdfBlobV12653)}
 function downloadProductionPDFV12653(){const d=prodDate.value||todayISO();return downloadPdfBlob(buildProductionDailyPdfBlobV12653,'ArtEssencia_Ordem_Producao_'+d+'.pdf')}
@@ -14777,8 +14778,8 @@ function quoteWhatsApp(id){const q=(db.quotes||[]).find(x=>x.id===id);if(!q)retu
 function wrapCanvasText(ctx,text,maxWidth){const words=String(text||'').split(/\s+/),lines=[];let line='';for(const w of words){const test=line?line+' '+w:w;if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=w}else line=test}if(line)lines.push(line);return lines}
 function loadQuoteLogo(){return new Promise(resolve=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>resolve(null);img.src='brand-artessencia-transparente.svg'})}
 async function buildQuotePdfBlob(q){
-  const c=quoteCalc(q),canvas=document.createElement('canvas');canvas.width=1240;canvas.height=1754;const ctx=canvas.getContext('2d');
-  ctx.fillStyle='#fffdf9';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#55210b';ctx.fillRect(0,0,1240,18);ctx.fillStyle='#f12473';ctx.fillRect(0,18,1240,8);
+  const c=quoteCalc(q),canvas=createCatalogPrintCanvas();const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#fffdf9';ctx.fillRect(0,0,1240,1754);ctx.fillStyle='#55210b';ctx.fillRect(0,0,1240,18);ctx.fillStyle='#f12473';ctx.fillRect(0,18,1240,8);
   const logo=await loadQuoteLogo();if(logo)ctx.drawImage(logo,70,55,145,145*487/792);
   ctx.fillStyle='#55210b';ctx.font='700 42px Georgia,serif';ctx.fillText((db.settings.businessName||'ArtEssencia').toUpperCase(),245,105);ctx.fillStyle='#11adb5';ctx.font='italic 24px Georgia,serif';ctx.fillText('peças artesanais, grandes momentos',247,145);
   ctx.textAlign='right';ctx.fillStyle='#55210b';ctx.font='700 27px Arial';ctx.fillText('ORÇAMENTO',1160,78);ctx.font='22px Arial';ctx.fillText(q.id,1160,113);ctx.fillStyle='#6b5b55';ctx.font='18px Arial';ctx.fillText('Emitido em '+(q.created||todayISO()),1160,145);ctx.textAlign='left';
@@ -14792,7 +14793,7 @@ async function buildQuotePdfBlob(q){
   if((contact||iban||payNote)&&y<1435){y+=24;const payData=[contact?`Contacto / MB Way: ${contact}`:'',iban?`IBAN: ${iban}`:'',payNote].filter(Boolean);ctx.font='18px Arial';const payDisplayLines=payData.flatMap(pl=>wrapCanvasText(ctx,pl,1010)).slice(0,5),boxTop=y-25,payHeight=55+payDisplayLines.length*25;ctx.fillStyle='#fff4cc';ctx.fillRect(70,boxTop,1095,payHeight);ctx.fillStyle='#55210b';ctx.font='700 20px Arial';ctx.fillText('CONTACTO E DADOS PARA PAGAMENTO',92,y);y+=33;ctx.fillStyle='#6b5b55';ctx.font='18px Arial';for(const ln of payDisplayLines){ctx.fillText(ln,92,y);y+=25}}
   if(q.notes&&y<1470){y+=25;ctx.fillStyle='#55210b';ctx.font='700 20px Arial';ctx.fillText('OBSERVAÇÕES',82,y);y+=32;ctx.fillStyle='#6b5b55';ctx.font='18px Arial';for(const ln of wrapCanvasText(ctx,q.notes,1060).slice(0,5)){ctx.fillText(ln,82,y);y+=25}}
   ctx.fillStyle='#fff4cc';ctx.fillRect(70,1560,1095,105);ctx.fillStyle='#55210b';ctx.font='18px Arial';ctx.fillText('Este documento é um orçamento e não substitui fatura.',95,1604);ctx.fillText('A adjudicação/reserva depende do pagamento inicial indicado nas condições acima.',95,1638);
-  const jpg=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Falha ao gerar PDF')),'image/jpeg',0.92));return jpegBlobToPDF(jpg,canvas.width,canvas.height)
+  const jpg=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Falha ao gerar PDF')),'image/jpeg',0.98));return jpegBlobToPDF(jpg,canvas.width,canvas.height)
 }
 async function jpegBlobsToPDF(jpegBlobs,imgW,imgH){
  if(!jpegBlobs.length)throw new Error('Sem páginas para PDF');if(jpegBlobs.length===1)return jpegBlobToPDF(jpegBlobs[0],imgW,imgH);
