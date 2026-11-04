@@ -188,3 +188,64 @@
 @media print{
  #products .ae-editor-section-jump{display:none!important}
 }
+
+/* Editor compacto fase 3: orientação contextual recolhível e atalhos sem duplicação. */
+@media screen{
+ #products #aeProductEditorGuide{
+  padding:9px 12px;margin:7px 0 9px;gap:9px;
+ }
+ #products .ae-editor-guide-copy{
+  gap:2px;min-width:0;
+ }
+ #products .ae-editor-guide-copy strong{
+  font-size:15px;line-height:1.25;
+ }
+ #products .ae-editor-step-help{
+  min-width:0;font-size:12px;line-height:1.45;
+ }
+ #products .ae-editor-step-help summary{
+  cursor:pointer;display:list-item;min-height:30px;
+  padding:6px 0;color:#71513b;font-size:12px;font-weight:700;
+ }
+ #products .ae-editor-step-help summary:focus-visible{
+  outline:3px solid #86644a;outline-offset:2px;
+ }
+ #products .ae-editor-step-help>span{
+  display:block;margin:4px 0 5px;
+  color:#675548;font-size:12px;line-height:1.5;
+  overflow-wrap:anywhere;
+ }
+ #products .ae-editor-step-actions{gap:7px}
+ #products .ae-editor-step-actions button{padding:8px 10px}
+ #products .ae-editor-section-jump{
+  flex-wrap:nowrap;gap:7px;padding:8px 9px;
+  margin-bottom:10px;align-items:center;
+ }
+ #products .ae-editor-section-jump-label{font-size:10px}
+ #products .ae-editor-section-links{
+  display:flex;flex-wrap:nowrap;gap:6px;overflow-x:auto;
+  scrollbar-width:thin;overscroll-behavior-x:contain;
+  padding:2px 0 5px;
+ }
+ #products .ae-editor-section-link{
+  flex:0 0 auto;min-height:44px;max-width:220px;
+  padding:8px 10px;font-size:11px;
+ }
+ #products .ae-editor-section-top{
+  flex:0 0 auto;min-height:44px;
+  padding:8px 10px;font-size:11px;
+ }
+ @media(max-width:650px){
+  #products #aeProductEditorGuide{gap:7px;padding:9px}
+  #products .ae-editor-section-jump{
+   display:grid;grid-template-columns:minmax(0,1fr) auto;
+   gap:5px 8px;
+  }
+  #products .ae-editor-section-jump-label{grid-column:1}
+  #products .ae-editor-section-top{grid-column:2;grid-row:1;justify-self:end}
+  #products .ae-editor-section-links{grid-column:1 / -1;min-width:0;max-width:100%;padding-bottom:5px}
+ }
+}
+@media print{
+ #products .ae-editor-section-jump,#products #aeProductEditorGuide{display:none!important}
+}

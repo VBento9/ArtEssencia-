@@ -76,7 +76,10 @@ function init(){
  const copy=document.createElement('div');copy.className='ae-editor-guide-copy';
  const progress=document.createElement('span');progress.className='ae-editor-progress';progress.setAttribute('role','status');progress.setAttribute('aria-live','polite');
  const heading=document.createElement('strong'),hint=document.createElement('span');
- copy.append(progress,heading,hint);
+ // A orientação completa continua disponível sem ocupar altura permanente.
+ const details=document.createElement('details');details.className='ae-editor-step-help';
+ const summary=document.createElement('summary');summary.textContent='Orientação deste passo';
+ details.append(summary,hint);copy.append(progress,heading,details);
  const controls=document.createElement('div');controls.className='ae-editor-step-actions';controls.setAttribute('role','group');controls.setAttribute('aria-label','Navegação dos passos do editor');
  const previous=document.createElement('button');previous.type='button';previous.className='btn ghost';previous.textContent='← Anterior';previous.setAttribute('aria-label','Passo anterior do editor');
  const next=document.createElement('button');next.type='button';next.className='btn ghost';next.textContent='Próximo →';next.setAttribute('aria-label','Próximo passo do editor');
@@ -108,6 +111,7 @@ function init(){
   progress.textContent='Passo '+(index+1)+' de '+navButtons.length;
   heading.textContent=data[0];hint.textContent=data[1];
   previous.disabled=index===0;next.disabled=index===navButtons.length-1;
+  if(previousKey!==key)details.open=false;
   if(previousKey!==key&&typeof renderQuickNav==='function')renderQuickNav(key);
   navButtons.forEach((button,i)=>{
    const selected=i===index;button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;
@@ -154,14 +158,17 @@ function init(){
   quickList.replaceChildren();
   quickNav.hidden=!['production','public'].includes(key);
   if(quickNav.hidden)return;
-  const targetPanel=panel(key),seen=new Set();
-  const direct=(quickTargets[key]||[]).map(([label,selector])=>({label,el:targetPanel?.querySelector(selector)})).filter(({el})=>!!el);
+  const targetPanel=panel(key),seen=new Set(),seenLabels=new Set();
+  if(!targetPanel)return;
+  const direct=(quickTargets[key]||[]).map(([label,selector])=>({label,el:targetPanel.querySelector(selector)})).filter(({el})=>!!el);
   const headings=[...targetPanel.querySelectorAll('h3,h4,legend,.product-section-title-v1748,.product-section-divider-v1748')].map(el=>({el,label:String(el.textContent||'').trim().replace(/\s+/g,' ')})).filter(x=>x.label.length>=4&&x.label.length<=66);
   const entries=[...direct,...headings];
   for(const {label,el} of entries){
    if(!el||seen.has(el))continue;
-   seen.add(el);
-   if(quickList.childElementCount>=7)break;
+   const normalized=label.toLocaleLowerCase('pt-PT').replace(/\s+/g,' ').trim();
+   if(seenLabels.has(normalized))continue;
+   seen.add(el);seenLabels.add(normalized);
+   if(quickList.childElementCount>=5)break;
    const button=document.createElement('button');button.type='button';button.className='ae-editor-section-link';
    button.textContent=label;
    button.addEventListener('click',()=>{
