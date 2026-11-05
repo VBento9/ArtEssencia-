@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.135">
+<meta name="artessencia-version" content="1.9.136">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -5486,7 +5486,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 
 <section id="funds" class="screen">
  <div class="funds-hero-v1929 card">
-  <div><div class="dashboard-kicker">CONTROLO FINANCEIRO</div><h2>Mapa de Fundos</h2><p>Distribuição dos recebimentos por Materiais, Despesas extras e Lucro reservado, com saldo acumulado.</p></div>
+  <div><div class="dashboard-kicker">CONTROLO FINANCEIRO</div><h2>Mapa de Fundos</h2><p>Cada recebimento é repartido pelo custo histórico do produto: materiais, despesas, trabalho e lucro. Saldo por categoria e período.</p></div>
   <button class="btn" type="button" onclick="go('cash')">Abrir Caixa</button>
  </div>
  <section class="card funds-controls-v1929" aria-label="Período do mapa financeiro">
@@ -5499,15 +5499,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
   <div class="funds-card-head-v1929"><div><div class="section-title">Saldo por departamento</div><small id="fundsAppliedV1929">Período selecionado</small></div><button class="btn" type="button" id="fundsExportV1929">Exportar CSV</button></div>
   <div class="funds-tablewrap-v1929"><table><thead><tr><th scope="col">Departamento</th><th scope="col">Saldo inicial</th><th scope="col">Entradas</th><th scope="col">Saídas</th><th scope="col">Saldo final</th></tr></thead><tbody id="fundsTableBodyV1929"></tbody></table></div>
   <div id="fundsQualityV1929" class="funds-quality-v1929" role="status"></div>
-  <details class="funds-rule-v1929"><summary>Configurar reserva para despesas extras</summary>
-   <div class="funds-rule-fields-v1929">
-    <label>Reserva (%)<input type="number" min="0" max="100" step="0.1" id="fundsRatePercentV1929"></label>
-    <label>Aplicar desde<input type="date" id="fundsRateStartV1929"></label>
-    <button class="btn primary" type="button" id="fundsSaveRateV1929">Guardar regra</button>
-   </div>
-   <p>Aplicada à parte recebida depois da reserva estimada de materiais. A alteração recalcula o mapa a partir da data escolhida; não modifica pagamentos nem compras.</p>
-  </details>
- </section>
+  </section>
  <section class="card funds-card-v1929">
   <div class="funds-card-head-v1929"><div><div class="section-title">Movimentos e classificação</div><small id="fundsMovementCountV1929">0 movimentos</small></div><small class="muted">Classifica saídas manuais para refletir o departamento correto</small></div>
   <div class="funds-tablewrap-v1929"><table class="funds-movement-table-v1929"><thead><tr><th scope="col">Data</th><th scope="col">Movimento</th><th scope="col">Departamento</th><th scope="col">Montante</th></tr></thead><tbody id="fundsMovementBodyV1929"></tbody></table></div>
@@ -6421,7 +6413,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.135';
+const APP_VERSION='1.9.136';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){

@@ -1,4 +1,4 @@
-/* ArtEssencia — mapa de fundos V1.9.129 */
+/* ArtEssencia — mapa de fundos V1.9.136 */
 #funds{min-width:0}
 #funds .funds-hero-v1929{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;padding:17px 20px}
 #funds .funds-hero-v1929>div{flex:1 1 270px;min-width:0}
@@ -45,3 +45,11 @@
 #funds .funds-annual-v1930[hidden]{display:none}
 #funds .funds-annual-v1930 h3{font-size:15px;margin:0 0 5px}
 #funds .funds-annual-v1930 p{font-size:12px;line-height:1.5;margin:5px 0 10px;color:#6e5a4e}
+
+/* Detalhe auditável da distribuição de cada pagamento sem expandir a tabela. */
+#funds .funds-split-v1936{display:flex;flex-wrap:wrap;gap:5px 9px;margin-top:5px}
+#funds .funds-part-v1936{display:inline-flex;gap:4px;align-items:center;padding:3px 7px;border:1px solid #ecdfd3;border-radius:7px;background:#faf5ef;font-size:11px;color:#59463a;white-space:normal}
+#funds .funds-part-v1936 b{font-weight:750}
+#funds .funds-kpis-v1929{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:850px){#funds .funds-kpis-v1929{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:480px){#funds .funds-kpis-v1929{grid-template-columns:repeat(2,minmax(0,1fr))}#funds .funds-part-v1936{font-size:10px}}

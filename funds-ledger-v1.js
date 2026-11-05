@@ -1,9 +1,9 @@
-/* ArtEssencia — Mapa de Fundos V1.9.129
+/* ArtEssencia — Mapa de Fundos V1.9.136
    Reservas calculadas a partir do Caixa. Não cria nem altera pagamentos. */
 (function(){
 'use strict';
-const DEPTS=['materials','extras','profit','unclassified'];
-const LABEL={materials:'Materiais',extras:'Despesas extras',profit:'Lucro reservado',unclassified:'Por classificar'};
+const DEPTS=['materials','expenses','labor','profit','unclassified'];
+const LABEL={materials:'Materiais e embalagens',expenses:'Despesas',labor:'Trabalho',profit:'Lucro',unclassified:'Por classificar'};
 const SOURCES=new Set(['order_payment','order_payment_correction','quote_payment']);
 const TODAY=new Date();
 const state={mode:'month',year:TODAY.getFullYear(),slot:TODAY.getMonth()+1,page:1};
@@ -14,29 +14,62 @@ const date=v=>{const s=String(v||'').slice(0,10);return /^\d{4}-\d{2}-\d{2}$/.te
 const base=()=>({materials:0,extras:0,profit:0,unclassified:0});
 const total=x=>DEPTS.reduce((a,k)=>a+(x[k]||0),0);
 const fill=(a,b)=>DEPTS.forEach(k=>a[k]+=(b[k]||0));
-function rules(){
- const data=db?.settings?.fundsRatesV1929;
- return (Array.isArray(data)?data:[]).filter(x=>date(x.start)&&Number.isFinite(Number(x.percent))&&Number(x.percent)>=0&&Number(x.percent)<=100).sort((a,b)=>a.start.localeCompare(b.start));
+
+/* Histórico contabilístico: nunca recalcular uma venda com custos atuais do produto. */
+function historicalLineCost(line){
+ const qty=Number(line?.qty),cost=Number(line?.cost);
+ if(!line||!Number.isFinite(qty)||qty<=0||line.cost==null||line.cost===''||!Number.isFinite(cost)||cost<0)return null;
+ if(line.type==='quote_extra')return {materials:0,expenses:cost*qty,labor:0,total:cost*qty};
+ let parts=null;
+ const snap=line.costBreakdownSnapshotV1769;
+ if(snap&&typeof snap==='object'&&snap.estimated!==true){
+  if(['materials','labor','fixed','other'].every(k=>Number.isFinite(Number(snap[k]))&&Number(snap[k])>=0))
+   parts={materials:Number(snap.materials),labor:Number(snap.labor),expenses:Number(snap.fixed)+Number(snap.other)};
+ }else if(line.quantityPricingSnapshot&&Number(line.quantityPricingSnapshot.units)>0){
+  const p=line.quantityPricingSnapshot,u=Number(p.units);
+  if(['materialsCost','laborCost','fixedCost','otherCost'].every(k=>Number.isFinite(Number(p[k]))&&Number(p[k])>=0))
+   parts={materials:Number(p.materialsCost)/u,labor:Number(p.laborCost)/u,expenses:(Number(p.fixedCost)+Number(p.otherCost))/u};
+ }
+ if(!parts||Math.abs(parts.materials+parts.expenses+parts.labor-cost)>0.03)return null;
+ return {materials:parts.materials*qty,expenses:parts.expenses*qty,labor:parts.labor*qty,total:cost*qty};
 }
-function rateAt(d){let r=0;for(const x of rules()){if(x.start<=d)r=Number(x.percent);else break}return r}
 function matchedOrder(c){
  const orders=Array.isArray(db?.orders)?db.orders:[];
  if(c.orderId){const o=orders.find(x=>String(x.id)===String(c.orderId));if(o)return o}
- if(c.quoteId){return orders.find(x=>String(x.sourceQuoteId||'')===String(c.quoteId))||null}
+ if(c.quoteId)return orders.find(x=>String(x.sourceQuoteId||'')===String(c.quoteId))||null;
  return null;
+}
+function orderReserveCosts(o){
+ const items=Array.isArray(o.items)?o.items:[];
+ const lines=items.filter(x=>!['quote_discount','quote_adjustment'].includes(x?.type)&&Number(x?.qty)>0);
+ if(!lines.length)return null;
+ const sums={materials:0,expenses:0,labor:0};let cost=0;
+ for(const line of lines){
+  const p=historicalLineCost(line);
+  if(!p)return null;
+  for(const k of ['materials','expenses','labor'])sums[k]+=p[k];
+  cost+=p.total;
+ }
+ const boxes=Number(o.boxes)||0;
+ if(!Number.isFinite(boxes)||boxes<0)return null;
+ if(boxes>0&&(o.boxCostSnapshot==null||!Number.isFinite(Number(o.boxCostSnapshot))||Number(o.boxCostSnapshot)<0))return null;
+ const packaging=Math.max(0,Number(o.boxCostSnapshot)||0)*boxes;
+ sums.materials+=packaging;cost+=packaging;
+ if(Math.abs(calcOrder(o).cost-cost)>0.04)return null;
+ return sums;
 }
 function paymentBreakdown(c){
  const n=cents(c.value)*(c.type==='Entrada'?1:-1),o=matchedOrder(c);
- if(!o||o.status==='Cancelado'||o.voidedAt)return {amounts:{unclassified:n},why:'Pagamento sem encomenda válida'};
- const calc=calcOrder(o),gross=cents(calc.total),lines=Array.isArray(o.items)?o.items:[];
- const valid=lines.filter(x=>!['quote_discount','quote_adjustment'].includes(x.type)&&Number(x.qty)>0);
- const missing=valid.some(x=>x.cost===null||x.cost===undefined||x.cost===''||!Number.isFinite(Number(x.cost))||Number(x.cost)<0);
- const cost=cents(calc.cost);
- if(gross<=0||!valid.length||missing||cost<=0)return {amounts:{unclassified:n},why:'Falta custo histórico validado'};
- const a=Math.abs(n),sgn=n<0?-1:1;
- const mat=Math.min(a,Math.round(a*Math.min(1,cost/gross)));
- const extras=Math.min(a-mat,Math.round((a-mat)*rateAt(date(c.date))/100));
- return {amounts:{materials:sgn*mat,extras:sgn*extras,profit:sgn*(a-mat-extras)},why:cost>gross?'Custo superior à venda; reserva limitada ao recebido':'Distribuição pelo custo histórico'};
+ if(!o||o.status==='Cancelado'||o.voidedAt)return {amounts:{unclassified:n},why:'Sem encomenda válida associada'};
+ const gross=cents(calcOrder(o).total),cost=orderReserveCosts(o);
+ if(gross<=0||!cost||Math.abs(n)>gross+1)return {amounts:{unclassified:n},why:'Custos históricos incompletos; confirmar ficha da venda'};
+ const amount=Math.abs(n),sign=n<0?-1:1;
+ const materials=Math.round(amount*cents(cost.materials)/gross);
+ const expenses=Math.round(amount*cents(cost.expenses)/gross);
+ const labor=Math.round(amount*cents(cost.labor)/gross);
+ const profit=amount-materials-expenses-labor;
+ return {amounts:{materials:sign*materials,expenses:sign*expenses,labor:sign*labor,profit:sign*profit},
+  why:profit<0?'Venda com margem negativa':'Repartição proporcional ao recebimento e custos históricos'};
 }
 function movements(){
  const cash=Array.isArray(db?.cash)?db.cash:[];
@@ -44,7 +77,8 @@ function movements(){
   const day=date(c.date),signed=cents(c.value)*(c.type==='Entrada'?1:-1),source=String(c.source||'manual');
   if(!day)return {c,i,date:'',signed,amounts:{unclassified:signed},why:'Data inválida'};
   if(SOURCES.has(source))return {c,i,date:day,signed,...paymentBreakdown(c)};
-  const dept=source==='purchase'?'materials':source==='gateway_fee'?'extras':DEPTS.includes(c.fundsDepartmentV1929)?c.fundsDepartmentV1929:'unclassified';
+  const previous=c.fundsDepartmentV1929==='extras'?'expenses':c.fundsDepartmentV1929;
+  const dept=source==='purchase'?'materials':source==='gateway_fee'?'expenses':DEPTS.includes(previous)?previous:'unclassified';
   return {c,i,date:day,signed,amounts:{[dept]:signed},why:source==='purchase'?'Compra de materiais':source==='gateway_fee'?'Taxa de pagamento':dept==='unclassified'?'Movimento sem classificação':'Classificado manualmente'};
  });
 }
@@ -87,9 +121,6 @@ function controls(){
  if(mode)mode.value=state.mode;
  if(year)year.value=String(state.year);
  slotOptions();
- const rates=rules(),last=rates[rates.length-1],dateField=document.getElementById('fundsRateStartV1929'),pct=document.getElementById('fundsRatePercentV1929');
- if(dateField&&document.activeElement!==dateField)dateField.value=last?.start||String(TODAY.getFullYear())+'-01-01';
- if(pct&&document.activeElement!==pct)pct.value=last?String(last.percent):'0';
 }
 function movementsTable(r){
  const body=document.getElementById('fundsMovementBodyV1929');if(!body)return;
@@ -100,9 +131,10 @@ function movementsTable(r){
   const c=m.c,src=String(c.source||'manual');
   const automatic=SOURCES.has(src)||src==='purchase'||src==='gateway_fee';
   const currently=DEPTS.find(k=>m.amounts[k])||'unclassified';
+  const split=DEPTS.filter(k=>m.amounts[k]).map(k=>'<span class="funds-part-v1936"><b>'+LABEL[k]+'</b> '+euroC(m.amounts[k])+'</span>').join('');
   const cls=automatic?'<span class="funds-auto-v1929">'+(SOURCES.has(src)?'Distribuição automática':LABEL[currently])+'</span>':
   '<select class="funds-dept-v1929" aria-label="Departamento do movimento" data-cashid="'+escapeAttr(String(c.id||''))+'">'+DEPTS.map(k=>'<option value="'+k+'" '+(currently===k?'selected':'')+'>'+LABEL[k]+'</option>').join('')+'</select>';
-  return '<tr><td>'+escapeHtml(m.date)+'</td><td><strong>'+escapeHtml(String(c.desc||'Movimento'))+'</strong><small>'+escapeHtml(m.why)+'</small></td><td>'+cls+'</td><td class="'+(m.signed<0?'funds-debit-v1929':'funds-credit-v1929')+'">'+(m.signed<0?'−':'+')+euroC(Math.abs(m.signed))+'</td></tr>';
+  return '<tr><td>'+escapeHtml(m.date)+'</td><td><strong>'+escapeHtml(String(c.desc||'Movimento'))+'</strong><small>'+escapeHtml(m.why)+'</small>'+(SOURCES.has(src)?'<div class="funds-split-v1936">'+split+'</div>':'')+'</td><td>'+cls+'</td><td class="'+(m.signed<0?'funds-debit-v1929':'funds-credit-v1929')+'">'+(m.signed<0?'−':'+')+euroC(Math.abs(m.signed))+'</td></tr>';
  }).join(''):'<tr><td colspan="4" class="empty">Sem movimentos no período selecionado.</td></tr>';
  const pagesNode=document.getElementById('fundsPaginationV1929');
  if(pagesNode)pagesNode.innerHTML=pages>1?'<button class="btn" type="button" data-funds-page="-1" '+(state.page===1?'disabled':'')+'>Anterior</button><span>Página '+state.page+' de '+pages+'</span><button class="btn" type="button" data-funds-page="1" '+(state.page===pages?'disabled':'')+'>Seguinte</button>':'';
@@ -134,7 +166,7 @@ function render(){
  const body=document.getElementById('fundsTableBodyV1929');if(!body)return;
  const r=calculate(),label=document.getElementById('fundsAppliedV1929');if(label)label.textContent='Período: '+r.period.label;
  const kpi=document.getElementById('fundsKpisV1929'),inSum=total(r.inflow),outSum=total(r.outflow);
- if(kpi)kpi.innerHTML=[['Entradas no período',inSum],['Saídas no período',outSum],['Variação do período',inSum-outSum],['Saldo acumulado',total(r.closing)]].map(([name,v])=>'<div class="funds-kpi-v1929"><small>'+name+'</small><strong>'+euroC(v)+'</strong></div>').join('');
+ if(kpi)kpi.innerHTML=[...DEPTS.map(k=>[LABEL[k],r.closing[k]]),['Saldo total estimado',total(r.closing)]].map(([name,v])=>'<div class="funds-kpi-v1929"><small>'+name+'</small><strong>'+euroC(v)+'</strong></div>').join('');
  body.innerHTML=DEPTS.map(k=>'<tr><th scope="row">'+LABEL[k]+'</th><td>'+euroC(r.opening[k])+'</td><td>'+euroC(r.inflow[k])+'</td><td>'+euroC(r.outflow[k])+'</td><td class="'+(r.closing[k]<0?'funds-negative-v1929':'')+'"><strong>'+euroC(r.closing[k])+'</strong></td></tr>').join('')+
  '<tr class="funds-total-v1929"><th scope="row">Total</th><td>'+euroC(total(r.opening))+'</td><td>'+euroC(inSum)+'</td><td>'+euroC(outSum)+'</td><td><strong>'+euroC(total(r.closing))+'</strong></td></tr>';
  const note=document.getElementById('fundsQualityV1929');
@@ -142,7 +174,7 @@ function render(){
   const uncertain=r.rows.filter(x=>SOURCES.has(x.c.source)&&x.amounts.unclassified).length,manual=r.rows.filter(x=>!SOURCES.has(x.c.source)&&x.amounts.unclassified).length;
   note.textContent=(r.rows.length?r.rows.length+' movimento(s) no período.':'Sem movimentos registados neste período.')+
   ' Saldo inicial '+euroC(total(r.opening))+' transitado de períodos anteriores; não é receita do período. '+
-  (rules().length?'Reserva extra configurada por data.':'Reserva extra por configurar: 0% até definir a regra.')+
+  ' Repartição pelos custos históricos de cada venda, quando completos.'+
   ' · '+uncertain+' pagamento(s) sem custos completos · '+manual+' movimento(s) sem departamento'+
   (r.invalid.length?' · '+r.invalid.length+' movimento(s) com data inválida excluídos':'')+
   '. Isto é uma estimativa interna, não prova de saldo bancário nem lucro fiscal.';
@@ -155,21 +187,11 @@ function modeChange(){
  if(nextMode!==state.mode)state.slot=nextMode==='month'&&nextYear===TODAY.getFullYear()?TODAY.getMonth()+1:1;
  state.mode=nextMode;state.year=nextYear;state.page=1;slotOptions();render();
 }
-function saveRate(){
- const field=document.getElementById('fundsRatePercentV1929'),from=date(document.getElementById('fundsRateStartV1929')?.value),pct=Number(field?.value);
- if(!field||field.value===''||!from||!Number.isFinite(pct)||pct<0||pct>100)return toast('Define uma percentagem entre 0 e 100 e uma data válida.');
- if(!confirm('Aplicar uma reserva extra de '+pct+'% a partir de '+from+'? A repartição será recalculada desde essa data, sem alterar movimentos de Caixa.'))return;
- db.settings=db.settings||{};
- const old=Array.isArray(db.settings.fundsRatesV1929)?db.settings.fundsRatesV1929.slice():[];
- db.settings.fundsRatesV1929=[...old.filter(x=>x.start!==from),{start:from,percent:pct}].sort((a,b)=>a.start.localeCompare(b.start));
- if(!save()){db.settings.fundsRatesV1929=old;render();return toast('A regra não foi guardada.')}
- render();toast('Reserva de despesas extras guardada.');
-}
 function classify(id,dept){
  if(!DEPTS.includes(dept))return;
  const c=(db.cash||[]).find(x=>String(x.id)===String(id));if(!c)return;
  if(SOURCES.has(c.source)||['purchase','gateway_fee'].includes(c.source))return;
- const was=c.fundsDepartmentV1929||'unclassified';if(was===dept)return;
+ const was=c.fundsDepartmentV1929||'unclassified';if(was===dept||(was==='extras'&&dept==='expenses'))return;
  c.fundsDepartmentV1929=dept;
  if(!save()){c.fundsDepartmentV1929=was;render();return toast('Classificação não guardada.')}
  render();toast('Departamento atualizado: '+LABEL[dept]);
@@ -188,7 +210,6 @@ function bind(){
  document.getElementById('fundsPeriodV1929')?.addEventListener('change',modeChange);
  document.getElementById('fundsYearV1929')?.addEventListener('change',modeChange);
  document.getElementById('fundsSlotV1929')?.addEventListener('change',e=>{state.slot=Number(e.target.value)||1;state.page=1;render()});
- document.getElementById('fundsSaveRateV1929')?.addEventListener('click',saveRate);
  document.getElementById('fundsExportV1929')?.addEventListener('click',exportCsv);
  document.getElementById('fundsMovementBodyV1929')?.addEventListener('change',e=>{if(e.target?.classList.contains('funds-dept-v1929'))classify(e.target.dataset.cashid,e.target.value)});
  document.getElementById('fundsPaginationV1929')?.addEventListener('click',e=>{const btn=e.target.closest('button[data-funds-page]');if(!btn)return;state.page+=Number(btn.dataset.fundsPage)||0;render()});
