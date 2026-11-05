@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.125">
+<meta name="artessencia-version" content="1.9.126">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -2938,6 +2938,52 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
  #publication .publication-filter-fields-v1925{grid-template-columns:minmax(0,1fr)}
  #publication .publication-sync-v1812{align-items:flex-start;flex-wrap:wrap}
 }
+
+/* 1.9.126 — Centro de Publicação: alinhamento, tipografia e filtros rápidos. */
+#publication .publication-hero-v1812{align-items:flex-start}
+#publication .publication-hero-v1812 .btnrow{align-self:center;min-width:0}
+#publication .publication-hero-v1812 .btnrow .btn{min-height:44px;margin:0;font-family:inherit;font-size:12px;line-height:1.35;white-space:normal}
+#publication .publication-kpi-v1812{display:grid;grid-template-rows:auto auto 1fr;align-content:start;gap:4px;min-width:0}
+#publication .publication-kpi-v1812 span,#publication .publication-kpi-v1812 small{font-family:inherit;font-size:12px;line-height:1.35;overflow-wrap:break-word}
+#publication .publication-kpi-v1812 span{font-weight:750}
+#publication .publication-kpi-v1812 strong{margin:0;font-size:22px;line-height:1.1;font-variant-numeric:tabular-nums}
+#publication .publication-tools-v1812 .field label{font-family:inherit;font-size:12px;font-weight:750}
+#publication .publication-filter-drawer-v1925>summary{font-family:inherit;font-size:12px;line-height:1.35;min-height:46px}
+#publication .publication-shortcuts-v1926{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line,#eadfdb)}
+#publication .publication-shortcuts-label-v1926{font-size:12px;font-weight:750;color:var(--muted,#7b665a);margin-right:3px}
+#publication .publication-shortcuts-v1926 .btn{min-width:0;min-height:38px;padding:7px 11px;margin:0;border-radius:999px;white-space:normal;font:inherit;font-size:12px;line-height:1.25}
+#publication .publication-shortcuts-v1926 .btn[aria-pressed="true"]{background:#684632;border-color:#684632;color:#fff;font-weight:800}
+#publication .publication-results-heading-v1925{align-items:center}
+#publication .publication-item-v1925{container-type:inline-size;gap:9px}
+#publication .publication-item-head-v1925{display:grid;grid-template-columns:minmax(0,1fr);align-items:start;gap:8px;min-width:0}
+#publication .publication-product-v1812{flex:none;min-width:0;max-width:100%}
+#publication .publication-product-v1812 b{display:block;margin:0 0 6px;font-family:inherit;font-size:16px;font-weight:800;line-height:1.35;word-break:normal;overflow-wrap:break-word}
+#publication .publication-identity-meta-v1926{display:flex;align-items:center;flex-wrap:wrap;gap:5px 10px;min-width:0}
+#publication .publication-identity-meta-v1926 small{display:inline;min-width:0;margin:0;font-family:inherit;font-size:12px;line-height:1.4;overflow-wrap:break-word;color:var(--muted,#806d61)}
+#publication .publication-code-v1926{font-variant-numeric:tabular-nums}
+#publication .publication-item-statuses-v1925{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:flex-start;min-width:0;border-top:1px solid #eee5dc;padding-top:8px}
+#publication .publication-item-v1925 .badge{font-family:inherit;font-size:12px;line-height:1.35;white-space:normal;word-break:normal;overflow-wrap:break-word}
+#publication .publication-item-quick-v1925{min-width:0;align-items:stretch;gap:7px}
+#publication .publication-item-quick-v1925>div{min-width:0;display:grid;grid-template-rows:auto 1fr;align-content:start;gap:5px;overflow-wrap:break-word}
+#publication .publication-item-quick-v1925 small,#publication .publication-item-quick-v1925 strong{font-family:inherit;font-size:12px;line-height:1.4;white-space:normal;word-break:normal;overflow-wrap:break-word;margin:0}
+#publication .publication-item-more-v1925>summary,#publication .publication-item-detail-v1925 small,#publication .publication-item-detail-v1925>div{font-family:inherit;font-size:12px;line-height:1.45;overflow-wrap:break-word}
+#publication .publication-item-more-v1925>summary{min-height:34px;display:flex;align-items:center}
+#publication .publication-actions-v1812{margin-top:auto;align-items:stretch}
+#publication .publication-actions-v1812 .btn{min-height:44px;font-family:inherit;font-size:12px;line-height:1.35}
+@container (max-width:440px){
+ #publication .publication-item-quick-v1925{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #publication .publication-item-quick-v1925>div:last-child{grid-column:1/-1}
+}
+@container (max-width:345px){
+ #publication .publication-item-detail-v1925{grid-template-columns:minmax(0,1fr)}
+ #publication .publication-item-detail-v1925 .wide{grid-column:1}
+}
+@media(max-width:700px){
+ #publication .publication-hero-v1812 .btnrow{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ #publication .publication-hero-v1812 .btnrow .btn{width:100%;padding:10px 7px}
+ #publication .publication-shortcuts-label-v1926{flex-basis:100%}
+ #publication .publication-kpi-v1812{padding:10px}
+}
 </style>
 <style id="artessencia-top-actions-clean-v1814">
 /* Topbar limpa: sino, sincronização e data sem cápsulas, fundos ou contornos. */
@@ -4568,6 +4614,13 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       <div class="field"><label for="publicationCollectionV1812">Coleção</label><select id="publicationCollectionV1812" onchange="publicationFilterChangedV1925()"><option value="all">Todas</option><option value="none">Sem coleção</option></select></div>
      </div>
     </details>
+   </div>
+   <div class="publication-shortcuts-v1926" role="group" aria-label="Filtros rápidos de publicação">
+    <span class="publication-shortcuts-label-v1926">Vista rápida:</span>
+    <button class="btn publication-filter-shortcut-v1926" type="button" data-filter="all" aria-pressed="true" onclick="document.getElementById('publicationFilterV1812').value='all';publicationFilterChangedV1925()">Todos</button>
+    <button class="btn publication-filter-shortcut-v1926" type="button" data-filter="issues" aria-pressed="false" onclick="document.getElementById('publicationFilterV1812').value='issues';publicationFilterChangedV1925()">Com problemas</button>
+    <button class="btn publication-filter-shortcut-v1926" type="button" data-filter="published" aria-pressed="false" onclick="document.getElementById('publicationFilterV1812').value='published';publicationFilterChangedV1925()">Publicados</button>
+    <button class="btn publication-filter-shortcut-v1926" type="button" data-filter="hidden" aria-pressed="false" onclick="document.getElementById('publicationFilterV1812').value='hidden';publicationFilterChangedV1925()">Ocultos</button>
    </div>
   </section>
   <section class="card publication-table-v1812" id="publicationResultsHeadingV1925">
@@ -6312,7 +6365,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.125';
+const APP_VERSION='1.9.126';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -17587,6 +17640,7 @@ function renderPublicationCenterV1812(){
  else if(!publicationRemoteLoadedAtV1812){if(syncTitle)syncTitle.textContent='A verificar sincronização…';if(syncDetail)syncDetail.textContent='Comparação entre o Backoffice e a camada pública.';if(syncBadge){syncBadge.className='badge warn';syncBadge.textContent='A verificar'}}
  else{const remotePublic=(publicationRemoteRowsV1812||[]).filter(r=>r.active&&r.available).length,visibleToday=publicationCatalogVisibleV1813.size?new Set((publicationRemoteRowsV1812||[]).filter(r=>r.active&&r.available&&(publicationCatalogVisibleV1813.has(String(r.backoffice_product_id||'').trim().toUpperCase())||publicationCatalogVisibleV1813.has(String(r.code||'').toUpperCase()))).map(r=>r.code)).size:0,seasonalHidden=Math.max(0,remotePublic-visibleToday);if(syncTitle)syncTitle.textContent=inconsistent.length?'⚠ '+inconsistent.length+' divergência(s) de publicação':'✓ Publicação sincronizada';if(syncDetail)syncDetail.textContent='Backoffice esperado: '+expected.length+' · Preparados: '+remotePublic+' · Visíveis hoje: '+visibleToday+' · Ocultos por regra sazonal: '+seasonalHidden+' · Verificado '+new Date(publicationRemoteLoadedAtV1812).toLocaleString('pt-PT');if(syncBadge){syncBadge.className='badge '+(inconsistent.length?'bad':'ok');syncBadge.textContent=inconsistent.length?'Rever':'Sincronizado'}}
  const q=String(document.getElementById('publicationSearchV1812')?.value||'').trim().toLocaleLowerCase('pt-PT'),filter=document.getElementById('publicationFilterV1812')?.value||'all',collection=document.getElementById('publicationCollectionV1812')?.value||'all';
+ document.querySelectorAll('#publication .publication-filter-shortcut-v1926').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.filter===filter)));
  const rows=all.filter(p=>{
   const pc=productCompletenessV1762(p),pub=publicationExpectedPublicV1812(p),archPub=productArchivedV1803(p)&&(!!p.shopVisible||!!p.mixVisible||productEditionIdsV138(p).length>0),ed=productEditionIdsV138(p);
   const text=[p.name,p.code,p.category,productEditionNamesV138(p).join(' ')].join(' ').toLocaleLowerCase('pt-PT');
@@ -17615,14 +17669,14 @@ function renderPublicationCenterV1812(){
   const needsAttention=publicationIssueV1812(p);
   const encoded=productArgV147(p.code).replace(/'/g,'%27');
   return '<article role="listitem" class="publication-item-v1925 '+(archived?'publication-muted-v1812 ':'')+(needsAttention?'needs-attention':'')+'">'+
-   '<div class="publication-item-head-v1925"><div class="publication-product-v1812"><b>'+escapeHtml(p.name||'Sem nome')+'</b><small>'+escapeHtml(p.code||'—')+' · '+escapeHtml(p.category||'—')+'</small></div>'+
+   '<div class="publication-item-head-v1925"><div class="publication-product-v1812"><b>'+escapeHtml(p.name||'Sem nome')+'</b><div class="publication-identity-meta-v1926"><small class="publication-code-v1926">'+escapeHtml(p.code||'—')+'</small><small class="publication-category-v1926">'+escapeHtml(p.category||'—')+'</small></div></div>'+
    '<div class="publication-item-statuses-v1925"><span class="badge '+(pub?'ok':'warn')+'">'+(pub?'Publicado':'Oculto')+'</span>'+
    '<span class="badge '+(sync.key==='ok'?'ok':sync.key==='bad'?'bad':'warn')+'">'+escapeHtml(sync.label)+'</span></div></div>'+
    '<div class="publication-item-quick-v1925">'+
    '<div><small>Catálogo hoje</small><strong class="'+(hasRemote&&!visible?'attention':'')+'">'+visibleLabel+'</strong></div>'+
    '<div><small>Ficha técnica</small><strong class="'+(tech.ok?'':'attention')+'">'+escapeHtml(tech.label)+'</strong></div>'+
    '<div><small>PVP</small><strong class="'+(Number(p.price)>0?'':'attention')+'">'+escapeHtml(price)+'</strong></div></div>'+
-   '<details class="publication-item-more-v1925"><summary>Ver restantes estados e coleções</summary>'+
+   '<details class="publication-item-more-v1925"><summary>Mais informações</summary>'+
    '<div class="publication-item-detail-v1925">'+
    '<div><small>Estado interno</small><span class="badge '+(archived?'warn':'ok')+'">'+(archived?'Arquivado':'Ativo')+'</span></div>'+
    '<div><small>Fotografia</small><span class="badge '+(pc.photo?'ok':'warn')+'">'+(pc.photo?'Disponível':'Sem fotografia')+'</span></div>'+
