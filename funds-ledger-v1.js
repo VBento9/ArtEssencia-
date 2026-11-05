@@ -1,4 +1,4 @@
-/* ArtEssencia — Mapa de Fundos V1.9.128
+/* ArtEssencia — Mapa de Fundos V1.9.129
    Reservas calculadas a partir do Caixa. Não cria nem altera pagamentos. */
 (function(){
 'use strict';
@@ -55,7 +55,9 @@ function period(){
  if(state.mode==='month'){m1=m2=Math.min(12,slot);label=new Date(y,m1-1,1).toLocaleDateString('pt-PT',{month:'long',year:'numeric'})}
  if(state.mode==='quarter'){m1=(Math.min(slot,4)-1)*3+1;m2=m1+2;label=Math.ceil(m1/3)+'.º trimestre de '+y}
  if(state.mode==='semester'){m1=slot===2?7:1;m2=m1+5;label=(m1===1?'1.º':'2.º')+' semestre de '+y}
- return {from:y+'-'+String(m1).padStart(2,'0')+'-01',until:y+'-'+String(m2).padStart(2,'0')+'-31',label};
+ const from=y+'-'+String(m1).padStart(2,'0')+'-01';
+ const until=y+'-'+String(m2).padStart(2,'0')+'-'+String(new Date(y,m2,0).getDate()).padStart(2,'0');
+ return {from,until,label,year:y,firstMonth:m1,lastMonth:m2};
 }
 function calculate(){
  const p=period(),opening=base(),inflow=base(),outflow=base(),closing=base(),rows=[],invalid=[];
@@ -106,26 +108,52 @@ function movementsTable(r){
  if(pagesNode)pagesNode.innerHTML=pages>1?'<button class="btn" type="button" data-funds-page="-1" '+(state.page===1?'disabled':'')+'>Anterior</button><span>Página '+state.page+' de '+pages+'</span><button class="btn" type="button" data-funds-page="1" '+(state.page===pages?'disabled':'')+'>Seguinte</button>':'';
  const count=document.getElementById('fundsMovementCountV1929');if(count)count.textContent=rows.length+' movimento(s)';
 }
+function annualRows(r){
+ const months=Array.from({length:12},(_,i)=>({month:i+1,entries:0,exits:0,count:0,closing:0}));
+ for(const m of r.rows){
+  const month=Number(m.date.slice(5,7));if(month<1||month>12)continue;
+  const row=months[month-1];row.count++;
+  if(m.signed>=0)row.entries+=m.signed;else row.exits-=m.signed;
+ }
+ let balance=total(r.opening);
+ for(const row of months){balance+=row.entries-row.exits;row.closing=balance}
+ return months;
+}
+function renderAnnualBreakdown(r){
+ const body=document.getElementById('fundsTableBodyV1929'),wrapper=body?.closest?.('.funds-tablewrap-v1929');if(!wrapper)return;
+ let panel=document.getElementById('fundsAnnualBreakdownV1930');
+ if(!panel){panel=document.createElement('section');panel.id='fundsAnnualBreakdownV1930';panel.className='funds-annual-v1930';wrapper.insertAdjacentElement('afterend',panel)}
+ panel.hidden=state.mode!=='year';if(panel.hidden)return;
+ panel.innerHTML='<h3>Resumo mensal de '+r.period.year+'</h3><p>Os movimentos pertencem ao mês indicado; o saldo acumulado inclui períodos anteriores.</p>'+
+ '<div class="funds-tablewrap-v1929"><table><thead><tr><th>Mês</th><th>Entradas</th><th>Saídas</th><th>Variação</th><th>Saldo acumulado</th></tr></thead><tbody>'+
+ annualRows(r).map(row=>'<tr><th scope="row">'+new Date(r.period.year,row.month-1,1).toLocaleDateString('pt-PT',{month:'long'})+
+ '</th><td>'+euroC(row.entries)+'</td><td>'+euroC(row.exits)+'</td><td>'+euroC(row.entries-row.exits)+'</td><td>'+euroC(row.closing)+'</td></tr>').join('')+
+ '</tbody></table></div>'+(!r.rows.length?'<p>Sem movimentos de Caixa registados neste ano; o saldo inicial transita de anos anteriores.</p>':'');
+}
 function render(){
  const body=document.getElementById('fundsTableBodyV1929');if(!body)return;
  const r=calculate(),label=document.getElementById('fundsAppliedV1929');if(label)label.textContent='Período: '+r.period.label;
- const kpi=document.getElementById('fundsKpisV1929');
- if(kpi)kpi.innerHTML=[['Entradas',total(r.inflow)],['Saídas / devoluções',total(r.outflow)],['Saldo acumulado',total(r.closing)],['A classificar',r.closing.unclassified]].map(([name,v])=>'<div class="funds-kpi-v1929"><small>'+name+'</small><strong>'+euroC(v)+'</strong></div>').join('');
+ const kpi=document.getElementById('fundsKpisV1929'),inSum=total(r.inflow),outSum=total(r.outflow);
+ if(kpi)kpi.innerHTML=[['Entradas no período',inSum],['Saídas no período',outSum],['Variação do período',inSum-outSum],['Saldo acumulado',total(r.closing)]].map(([name,v])=>'<div class="funds-kpi-v1929"><small>'+name+'</small><strong>'+euroC(v)+'</strong></div>').join('');
  body.innerHTML=DEPTS.map(k=>'<tr><th scope="row">'+LABEL[k]+'</th><td>'+euroC(r.opening[k])+'</td><td>'+euroC(r.inflow[k])+'</td><td>'+euroC(r.outflow[k])+'</td><td class="'+(r.closing[k]<0?'funds-negative-v1929':'')+'"><strong>'+euroC(r.closing[k])+'</strong></td></tr>').join('')+
- '<tr class="funds-total-v1929"><th scope="row">Total</th><td>'+euroC(total(r.opening))+'</td><td>'+euroC(total(r.inflow))+'</td><td>'+euroC(total(r.outflow))+'</td><td><strong>'+euroC(total(r.closing))+'</strong></td></tr>';
+ '<tr class="funds-total-v1929"><th scope="row">Total</th><td>'+euroC(total(r.opening))+'</td><td>'+euroC(inSum)+'</td><td>'+euroC(outSum)+'</td><td><strong>'+euroC(total(r.closing))+'</strong></td></tr>';
  const note=document.getElementById('fundsQualityV1929');
  if(note){
- const uncertain=r.rows.filter(x=>SOURCES.has(x.c.source)&&x.amounts.unclassified).length,manual=r.rows.filter(x=>!SOURCES.has(x.c.source)&&x.amounts.unclassified).length;
- note.textContent=(rules().length?'Reserva extra configurada por data.':'Reserva extra por configurar: 0% até definir a regra.')+
- ' · '+uncertain+' pagamento(s) sem custos completos · '+manual+' movimento(s) sem departamento'+(r.invalid.length?' · '+r.invalid.length+' movimento(s) com data inválida excluídos':'')+
- '. Isto é uma estimativa de fundos internos, não prova de saldo bancário nem lucro fiscal.';
+  const uncertain=r.rows.filter(x=>SOURCES.has(x.c.source)&&x.amounts.unclassified).length,manual=r.rows.filter(x=>!SOURCES.has(x.c.source)&&x.amounts.unclassified).length;
+  note.textContent=(r.rows.length?r.rows.length+' movimento(s) no período.':'Sem movimentos registados neste período.')+
+  ' Saldo inicial '+euroC(total(r.opening))+' transitado de períodos anteriores; não é receita do período. '+
+  (rules().length?'Reserva extra configurada por data.':'Reserva extra por configurar: 0% até definir a regra.')+
+  ' · '+uncertain+' pagamento(s) sem custos completos · '+manual+' movimento(s) sem departamento'+
+  (r.invalid.length?' · '+r.invalid.length+' movimento(s) com data inválida excluídos':'')+
+  '. Isto é uma estimativa interna, não prova de saldo bancário nem lucro fiscal.';
  }
- movementsTable(r);
+ renderAnnualBreakdown(r);movementsTable(r);
 }
 function modeChange(){
- state.mode=document.getElementById('fundsPeriodV1929')?.value||'month';
- state.year=Number(document.getElementById('fundsYearV1929')?.value)||TODAY.getFullYear();
- state.slot=1;state.page=1;slotOptions();render();
+ const nextMode=document.getElementById('fundsPeriodV1929')?.value||'month';
+ const nextYear=Number(document.getElementById('fundsYearV1929')?.value)||TODAY.getFullYear();
+ if(nextMode!==state.mode)state.slot=nextMode==='month'&&nextYear===TODAY.getFullYear()?TODAY.getMonth()+1:1;
+ state.mode=nextMode;state.year=nextYear;state.page=1;slotOptions();render();
 }
 function saveRate(){
  const field=document.getElementById('fundsRatePercentV1929'),from=date(document.getElementById('fundsRateStartV1929')?.value),pct=Number(field?.value);
@@ -144,7 +172,7 @@ function classify(id,dept){
  const was=c.fundsDepartmentV1929||'unclassified';if(was===dept)return;
  c.fundsDepartmentV1929=dept;
  if(!save()){c.fundsDepartmentV1929=was;render();return toast('Classificação não guardada.')}
- toast('Departamento atualizado: '+LABEL[dept]);
+ render();toast('Departamento atualizado: '+LABEL[dept]);
 }
 function exportCsv(){
  const r=calculate(),fmt=n=>(n/100).toFixed(2).replace('.',',');
@@ -168,5 +196,6 @@ function bind(){
 }
 window.renderFundsV1929=render;
 window.aeFundsCalculateV1929=calculate;
+window.aeFundsAnnualRowsV1930=annualRows;
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
 })();

@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.128">
+<meta name="artessencia-version" content="1.9.129">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -6397,7 +6397,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.128';
+const APP_VERSION='1.9.129';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -6434,7 +6434,7 @@ const REL_DIRTY='artessencia_v10_rel_dirty',
       REL_ORDER_SHADOW='artessencia_v12_order_shadow',
       REL_TABLES={clients:'artessencia_v1_clients',products:'artessencia_v1_products',orders:'artessencia_v1_orders',quotes:'artessencia_v1_quotes',sales:'artessencia_v1_sales'};
 let db=load(), cart=[], quoteCart=[], unlocked=true, deferredPrompt=null, idleTimer=null, editingPurchaseId=null, editingCashId=null, editingStockIndex=null;
-let cloudClient=null, cloudUser=null, cloudChannel=null, cloudPushTimer=null, cloudApplying=false, cloudBusy=false, cloudPushRunning=false, cloudPushPending=false, cloudConflict=null, cloudStartupDone=false, cloudHydrating=false;
+let cloudClient=null, cloudUser=null, cloudChannel=null, cloudPushTimer=null, cloudApplying=false, cloudBusy=false, cloudPushRunning=false, cloudPushPending=false, cloudConflict=null, cloudStartupDone=false, cloudHydrating=false, cloudValidationStartedV19129=0;
 
 function stableStringify(v){
  if(v===null||typeof v!=='object')return JSON.stringify(v);
@@ -15406,6 +15406,14 @@ function cloudMeta(){
 function setCloudMeta(patch){if(patch.dirty!==undefined&&!Object.prototype.hasOwnProperty.call(patch,'productOnlyV19107'))patch={...patch,productOnlyV19107:false};const m={...cloudMeta(),...patch};localStorage.setItem(CLOUD_META,JSON.stringify(m));renderCloudUI();return m}
 function cloudLogMsg(msg){const stamp=new Date().toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit',second:'2-digit'});const key=CLOUD_LOG;let arr=[];try{arr=JSON.parse(localStorage.getItem(key))||[]}catch(e){}arr.unshift(stamp+' · '+msg);arr=arr.slice(0,40);localStorage.setItem(key,JSON.stringify(arr));renderCloudUI()}
 function cloudLogData(){try{return JSON.parse(localStorage.getItem(CLOUD_LOG))||[]}catch(e){return[]}}
+function startCloudValidationNoticeV19129(){
+ const marker=Date.now();cloudValidationStartedV19129=marker;
+ setTimeout(()=>{
+  if(cloudValidationStartedV19129!==marker||cloudStartupDone||!cloudUser)return;
+  cloudLogMsg('Validação Cloud demorada: verifica a atividade e a ligação. Dados locais preservados.');
+  renderCloudUI();
+ },15000);
+}
 function renderCloudUICore(){
  const cfg=cloudCfg(),m=cloudMeta(),online=navigator.onLine;
  const url=document.getElementById('cloudUrl'),key=document.getElementById('cloudKey'),email=document.getElementById('cloudEmail');
@@ -15414,7 +15422,7 @@ function renderCloudUICore(){
  let cls='neutral',label='Cloud desligada';
  if(!online){cls='offline';label=m.dirty?'Offline · por sincronizar':'Offline'}
  else if(cloudConflict||m.conflict){cls='pending';label=cloudConflict?.type==='product'?'Produtos com conflito · fila ativa':'Conflito operacional · fila de produtos ativa'}
- else if(cloudUser&&!cloudStartupDone){cls='pending';label='A validar cloud…'}
+ else if(cloudUser&&!cloudStartupDone){cls='pending';label=cloudValidationStartedV19129&&Date.now()-cloudValidationStartedV19129>=15000?'Validação Cloud demorada':'A validar Cloud…'}
  else if(cloudUser&&(m.dirty||hasPendingProductEditsV19102())){cls='pending';label='Por sincronizar'}
  else if(cloudUser&&m.verified){cls='ok';label='Sincronizado'}
  else if(cloudUser){cls='pending';label='Cloud por validar'}
@@ -15429,10 +15437,8 @@ function renderCloudUI(){
  relPruneOrphanPendingOrdersV1741();
  let meta=cloudMeta();
  const realPending=localStorage.getItem(REL_DIRTY)==='1'||relOrderPendingSet().size>0||hasPendingProductEditsV19102()||cloudPushPending||cloudPushRunning;
- if(meta.dirty&&!meta.conflict&&!cloudConflict&&!realPending&&!cloudBusy&&!cloudHydrating){
-   meta={...meta,dirty:false,verified:true};
-   localStorage.setItem(CLOUD_META,JSON.stringify(meta));
- }
+ // Sem fila local não significa confirmação de gravação Cloud.
+ // Apenas a conclusão do envio com resposta confirmada pode atribuir verified=true.
  renderCloudUICore();
  renderProductSyncV19107();
  const passkeyEnroll=document.getElementById('cloudPasskeyRegisterV20261008');
@@ -15443,15 +15449,16 @@ function renderCloudUI(){
  const dirty=!!meta.dirty||realPending;
  const hero=document.getElementById('cloudHeroStatus');
  if(hero){
-   hero.textContent=!online?'SEM INTERNET':connected?(dirty?'POR SINCRONIZAR':'SINCRONIZADA'):(cfg.url?'DESLIGADA':'NÃO CONFIGURADA');
-   hero.className='cloud-hero-status '+(!online?'offline':connected?(dirty?'pending':'ok'):'off');
+   const verified=connected&&cloudStartupDone&&!dirty&&!meta.conflict&&!cloudConflict&&!!meta.verified;
+   hero.textContent=!online?'SEM INTERNET':!connected?(cfg.url?'DESLIGADA':'NÃO CONFIGURADA'):!cloudStartupDone?'A VALIDAR CLOUD':dirty?'POR SINCRONIZAR':verified?'SINCRONIZADA':'POR VALIDAR';
+   hero.className='cloud-hero-status '+(!online?'offline':verified?'ok':connected?'pending':'off');
  }
  const sum=document.getElementById('cloudProSummary');
  if(sum)sum.innerHTML=[
    ['Ligação',online?'Online':'Offline',online?'Internet disponível':'A trabalhar localmente'],
    ['Conta',connected?'Ligada':'Desligada',connected?(cloudUser?.email||'Sessão ativa'):'Sem sessão'],
    ['Dados locais',dirty?'Pendentes':'Guardados',dirty?'Existem alterações por enviar':'Sem alterações pendentes'],
-   ['Multi-dispositivo',connected?'Ativo':'Inativo',connected?'Sincronização disponível':'Liga a conta ArtEssencia']
+   ['Multi-dispositivo',connected?(meta.verified&&cloudStartupDone&&!dirty?'Confirmado':'Por validar'):'Inativo',connected?'Ligação ativa; confirmar sincronização em cada dispositivo':'Liga a conta ArtEssencia']
  ].map(([a,b,c])=>`<div class="card cloud-pro-kpi"><span>${a}</span><strong>${b}</strong><small>${escapeHtml(String(c))}</small></div>`).join('');
 }
 
@@ -15489,7 +15496,7 @@ async function cloudConnect(){
    cloudLogMsg('Sessão V10 iniciada');
    const ok=await cloudApiDiagnostic(false);
    if(!ok)throw new Error('Tabelas V10 não acessíveis');
-   cloudStartupDone=false;cloudHydrating=true;
+   cloudStartupDone=false;startCloudValidationNoticeV19129();cloudHydrating=true;
    if(cloudMeta().conflict||cloudConflict)await recoverStaleCloudConflictV19103(cloudUser);
    if(!(cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||hasPendingProductEditsV19102()||cloudMeta().conflict||cloudConflict)){
      await hydrateOperationalCloudStartupV1755(cloudUser,'ligação à Cloud');
@@ -16802,9 +16809,9 @@ async function cloudHydrateStartup(){
  return relationalHydrateCore(true)
 }
 async function cloudStartup(){
- renderCloudUI();
+ startCloudValidationNoticeV19129();renderCloudUI();
  const u=await ensureCloudSession();
- if(!u){cloudStartupDone=true;renderCloudUI();renderOrderNotificationsV12624();startOrderNotificationPollingV12624();startEmailNotificationPollingV1710();try{if(db?.aprecoImportV1753?.completedAt&&!db?.aprecoOrganizationV1761?.completedAt)organizeAprecoProductsV1761(false);else renderAprecoOrganizationV1761()}catch(e){console.error('organização Apreço V1.7.61',e)}return}
+ if(!u){cloudStartupDone=true;cloudValidationStartedV19129=0;renderCloudUI();renderOrderNotificationsV12624();startOrderNotificationPollingV12624();startEmailNotificationPollingV1710();try{if(db?.aprecoImportV1753?.completedAt&&!db?.aprecoOrganizationV1761?.completedAt)organizeAprecoProductsV1761(false);else renderAprecoOrganizationV1761()}catch(e){console.error('organização Apreço V1.7.61',e)}return}
  cloudLogMsg('Sessão V10 recuperada');
  if(cloudMeta().conflict||cloudConflict)await recoverStaleCloudConflictV19103(u);
  const localPendingAtStartup=cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||hasPendingProductEditsV19102()||cloudMeta().conflict||!!cloudConflict;
@@ -16823,7 +16830,7 @@ async function cloudStartup(){
      if(relOrderPendingSet().size)await syncPendingOrdersOnly(false)
    }
  }finally{
-   cloudHydrating=false;cloudStartupDone=true;renderCloudUI()
+   cloudHydrating=false;cloudStartupDone=true;cloudValidationStartedV19129=0;renderCloudUI()
  }
  try{if(db?.aprecoImportV1753?.completedAt&&!db?.aprecoOrganizationV1761?.completedAt)organizeAprecoProductsV1761(false);else renderAprecoOrganizationV1761()}catch(e){console.error('organização Apreço V1.7.61',e)}
  await subscribeCloud();
