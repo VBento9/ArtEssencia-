@@ -1,4 +1,4 @@
-/* ArtEssencia — mapa de fundos V1.9.128 */
+/* ArtEssencia — mapa de fundos V1.9.129 */
 #funds{min-width:0}
 #funds .funds-hero-v1929{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;padding:17px 20px}
 #funds .funds-hero-v1929>div{flex:1 1 270px;min-width:0}
@@ -40,3 +40,8 @@
 #funds :is(button,input,select,summary):focus-visible{outline:3px solid #b18462;outline-offset:2px}
 @media(max-width:980px){#funds .funds-kpis-v1929{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){#funds .funds-controls-v1929{grid-template-columns:repeat(2,minmax(0,1fr))}#funds .funds-controls-v1929 label:first-child{grid-column:1/-1}#funds .funds-rule-fields-v1929{grid-template-columns:1fr 1fr}#funds .funds-rule-fields-v1929 .btn{grid-column:1/-1}#funds .funds-kpi-v1929{padding:11px}#funds .funds-kpi-v1929 strong{font-size:17px}}
+
+#funds .funds-annual-v1930{margin-top:15px;border-top:1px solid #e8dbd1;padding-top:13px}
+#funds .funds-annual-v1930[hidden]{display:none}
+#funds .funds-annual-v1930 h3{font-size:15px;margin:0 0 5px}
+#funds .funds-annual-v1930 p{font-size:12px;line-height:1.5;margin:5px 0 10px;color:#6e5a4e}
