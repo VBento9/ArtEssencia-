@@ -53,3 +53,28 @@
 #funds .funds-kpis-v1929{grid-template-columns:repeat(3,minmax(0,1fr))}
 @media(max-width:850px){#funds .funds-kpis-v1929{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:480px){#funds .funds-kpis-v1929{grid-template-columns:repeat(2,minmax(0,1fr))}#funds .funds-part-v1936{font-size:10px}}
+
+/* Conciliação de custos históricos — apenas os casos sem informação confirmada. */
+#funds .funds-history-v1{margin-top:12px}
+#funds .funds-history-v1[hidden]{display:none}
+#funds .funds-history-intro-v1{font-size:12px;line-height:1.55;color:#705b4e;margin:2px 0 12px}
+#funds .funds-history-list-v1{display:grid;gap:7px}
+#funds .funds-history-row-v1{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border:1px solid #eee2d8;border-radius:10px;background:#fffcf8}
+#funds .funds-history-row-v1 strong{font-size:13px}
+#funds .funds-history-row-v1 small{display:block;color:#776c62;font-size:11px;margin-top:3px;line-height:1.5}
+#funds .funds-history-row-actions-v1{display:flex;align-items:center;gap:9px;flex-shrink:0}
+#funds .funds-history-row-actions-v1 b{font-size:13px}
+#funds .funds-history-editor-v1{border-top:1px solid #eaded5;padding-top:13px;margin-top:15px}
+#funds .funds-history-editor-v1 h4{margin:0 0 7px;font-size:15px}
+#funds .funds-history-editor-v1 p{font-size:12px;line-height:1.55;color:#6e5a4e}
+#funds .funds-history-line-v1{border:1px solid #e6d9cf;border-radius:10px;margin:10px 0;padding:12px}
+#funds .funds-history-line-v1 legend{font-size:13px;font-weight:800;padding:0 5px}
+#funds .funds-history-line-v1>small{color:#6e5a4e;font-size:11px}
+#funds .funds-history-grid-v1{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:9px}
+#funds .funds-history-grid-v1 label{font-size:11px;font-weight:750;display:grid;gap:5px}
+#funds .funds-history-grid-v1 input{min-height:40px}
+#funds .funds-history-confirm-v1{display:flex;align-items:flex-start;gap:9px;font-size:12px;line-height:1.4;margin:9px 0}
+#funds .funds-history-confirm-v1 input{width:auto;min-width:auto;margin-top:2px;flex-shrink:0}
+#funds .funds-history-actions-v1{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+#funds .funds-history-error-v1{color:#a13928!important;font-weight:750}
+@media(max-width:600px){#funds .funds-history-grid-v1{grid-template-columns:repeat(2,minmax(0,1fr))}#funds .funds-history-row-v1{align-items:flex-start;flex-wrap:wrap}#funds .funds-history-row-actions-v1{width:100%;justify-content:space-between}}
