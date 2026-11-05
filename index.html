@@ -15604,8 +15604,11 @@ function attachCloudAuthListenerV19134(client){
   // Não executar operações de Cloud, nem renderização, dentro do callback Auth.
   setTimeout(()=>{
    if(cloudClient!==client)return;
-   if(event==='SIGNED_OUT')cloudUser=null;
-   else if(session?.user?.id)cloudUser=session.user;
+   if(event==='SIGNED_OUT'){
+    cloudUser=null;
+    lockNow();
+    authGateShowV1880('Sessão Cloud terminada. Inicia sessão novamente.');
+   }else if(session?.user?.id)cloudUser=session.user;
    renderCloudUI();
    if(!cloudUser||!cloudStartupDone||cloudHydrating||!(event==='SIGNED_IN'||event==='TOKEN_REFRESHED'))return;
    if(!cloudChannel)void subscribeCloud();
