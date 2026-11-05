@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.133">
+<meta name="artessencia-version" content="1.9.134">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -6397,7 +6397,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.133';
+const APP_VERSION='1.9.134';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -15468,6 +15468,35 @@ const PASSKEY_PREVIEW_V20261008=true;
 // O botão de registo permanece oculto até à ativação explícita da experiência. // Aguardar validação da configuração Supabase e RP ID.
 /* V1.9.131: o SDK gere o início da sessão. Evitar duas consultas concorrentes a
    getSession. Os eventos Auth só agendam tarefas Supabase fora do callback. */
+/* 1.9.134: não subscrever eventos Auth enquanto o SDK está a recuperar a
+   sessão persistida. Em certas versões do supabase-js isto bloqueia o lock
+   de autenticação e todas as leituras seguintes. */
+let cloudAuthListenerClientV19134=null;
+function attachCloudAuthListenerV19134(client){
+ if(!client||cloudClient!==client||cloudAuthListenerClientV19134===client)return;
+ cloudAuthListenerClientV19134=client;
+ client.auth.onAuthStateChange((event,session)=>{
+  // Não executar operações de Cloud, nem renderização, dentro do callback Auth.
+  setTimeout(()=>{
+   if(cloudClient!==client)return;
+   if(event==='SIGNED_OUT')cloudUser=null;
+   else if(session?.user?.id)cloudUser=session.user;
+   renderCloudUI();
+   if(!cloudUser||!cloudStartupDone||cloudHydrating||!(event==='SIGNED_IN'||event==='TOKEN_REFRESHED'))return;
+   if(!cloudChannel)void subscribeCloud();
+   if((cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending)&&!cloudMeta().conflict&&!hasRestorePendingV12645())scheduleCloudPushV1860(300);
+  },0);
+ });
+}
+async function boundedCloudAuthV19134(action,label,ms=20000){
+ let timer;
+ try{
+  return await Promise.race([
+   Promise.resolve().then(action),
+   new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(label+' excedeu '+Math.ceil(ms/1000)+'s')),ms)})
+  ]);
+ }finally{clearTimeout(timer)}
+}
 function initCloudClient(){
  const cfg=cloudCfg();
  if(!cfg.url||!cfg.key)return null;
@@ -15475,16 +15504,7 @@ function initCloudClient(){
  if(cloudClient)return cloudClient;
  const client=window.supabase.createClient(cfg.url,cfg.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,...(PASSKEY_PREVIEW_V20261008?{experimental:{passkey:true}}:{})},db:{schema:'public'}});
  cloudClient=client;
- client.auth.onAuthStateChange((event,session)=>{
-  if(cloudClient!==client)return;
-  cloudUser=session?.user||null;renderCloudUI();
-  if(!cloudUser||!cloudStartupDone||cloudHydrating||!(event==='SIGNED_IN'||event==='TOKEN_REFRESHED'))return;
-  setTimeout(()=>{
-   if(cloudClient!==client||!cloudUser||!cloudStartupDone||cloudHydrating)return;
-   if(!cloudChannel)void subscribeCloud();
-   if((cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending)&&!cloudMeta().conflict&&!hasRestorePendingV12645())scheduleCloudPushV1860(300);
-  },0);
- });
+ // A subscrição só é efetuada após getSession/getUser ou signIn concluídos.
  return client;
 }
 function cloudStateQuery(){return cloudClient.schema('public').from(CLOUD_TABLE)}
@@ -15514,6 +15534,7 @@ async function cloudConnect(){
    const {data,error}=await c.auth.signInWithPassword({email:cfg.email,password});
    if(error)throw error;
    cloudUser=data.user;
+   attachCloudAuthListenerV19134(c);
    document.getElementById('cloudPassword').value='';
    cloudLogMsg('Sessão V10 iniciada');
    const ok=await cloudApiDiagnostic(false);
@@ -15598,7 +15619,7 @@ async function authGatePasskeyLoginV20261008(){
  try{
   const {data,error}=await c.auth.signInWithPasskey();if(error)throw error;
   if(!data?.session?.access_token||!data?.user?.id)throw new Error('Sessão não validada');
-  cloudUser=data.user;authGateHideV1880();
+  cloudUser=data.user;attachCloudAuthListenerV19134(c);authGateHideV1880();
  }catch(error){authGateShowV1880('Não foi possível entrar com biometria. Usa a palavra-passe.');return}
  finally{if(btn)btn.disabled=false}
  return resumeAuthenticatedCloudV19133();
@@ -15612,9 +15633,10 @@ async function authGateLoginV1880(){
  const c=initCloudClient();if(!c){authGateMessageV1880('Não foi possível iniciar a autenticação Cloud.');return}
  if(btn){btn.disabled=true;btn.textContent='A autenticar…'}authGateMessageV1880('');
  try{
-  const {data,error}=await c.auth.signInWithPassword({email,password});if(error)throw error;
+  const {data,error}=await boundedCloudAuthV19134(()=>c.auth.signInWithPassword({email,password}),'Entrada Cloud');if(error)throw error;
   cloudUser=data?.user||data?.session?.user||null;
   if(!cloudUser?.id)throw new Error('Sessão não iniciada');
+  attachCloudAuthListenerV19134(c);
   const passField=document.getElementById('authGatePasswordV1880');if(passField)passField.value='';
   authGateHideV1880();
  }catch(error){
@@ -15631,23 +15653,23 @@ async function authGateStartupV1880(){
  const c=initCloudClient();
  if(!c){authGateShowV1880('A configuração Cloud não está disponível neste dispositivo.');return false}
  try{
-  const {data,error}=await c.auth.getSession();if(error)throw error;
+  const {data,error}=await boundedCloudAuthV19134(()=>c.auth.getSession(),'Sessão Cloud');if(error)throw error;
   const session=data?.session||null,expiresAt=Number(session?.expires_at||0)*1000;
   if(navigator.onLine===false){
    if(!session?.user?.id||!expiresAt||expiresAt<=Date.now()){
     cloudUser=null;authGateShowV1880('É necessária ligação à internet para iniciar sessão.');
     return false;
    }
-   cloudUser=session.user;authGateHideV1880();cloudStartupDone=true;renderCloudUI();
+   cloudUser=session.user;attachCloudAuthListenerV19134(c);authGateHideV1880();cloudStartupDone=true;renderCloudUI();
    return true;
   }
   if(!session?.user?.id){
-   cloudUser=null;authGateShowV1880();return false;
+   cloudUser=null;attachCloudAuthListenerV19134(c);authGateShowV1880();return false;
   }
-  const {data:identity,error:identityError}=await c.auth.getUser();
+  const {data:identity,error:identityError}=await boundedCloudAuthV19134(()=>c.auth.getUser(),'Identidade Cloud');
   if(identityError)throw identityError;
   if(!identity?.user?.id||identity.user.id!==session.user.id)throw new Error('Identidade Cloud diferente da sessão guardada.');
-  cloudUser=identity.user;authGateHideV1880();
+  cloudUser=identity.user;attachCloudAuthListenerV19134(c);authGateHideV1880();
  }catch(error){
   cloudUser=null;
   cloudLogMsg('Recuperação da sessão não confirmada: '+cloudErrText(error));
@@ -15921,14 +15943,18 @@ async function fetchCloudRow(user,{retries=3,delay=220}={}){
  let lastError=null;
  for(let attempt=0;attempt<=retries;attempt++){
    try{
-     const {data:sessionData,error:sessionError}=await cloudClient.auth.getSession();
+     const {data:sessionData,error:sessionError}=await boundedCloudAuthV19134(()=>cloudClient.auth.getSession(),'Sessão para leitura Cloud');
      if(sessionError)throw sessionError;
      const activeUser=sessionData?.session?.user;
      if(!activeUser||activeUser.id!==user.id)throw new Error('Sessão cloud indisponível durante leitura');
-     const {data,error}=await cloudStateQuery()
-       .select('user_id,data,updated_at,app_version,device_id,revision')
-       .eq('user_id',user.id)
-       .limit(1);
+     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
+     let data,error;
+     try{
+       ({data,error}=await cloudStateQuery()
+         .select('user_id,data,updated_at,app_version,device_id,revision')
+         .eq('user_id',user.id)
+         .limit(1).abortSignal(controller.signal));
+     }finally{clearTimeout(timer)}
      if(error)throw error;
      if(Array.isArray(data)&&data.length)return data[0];
      lastError=null;
@@ -16895,7 +16921,7 @@ async function cloudStartup(){
    const relationalOk=await relationalHydrateCore(true);
    if(!relationalOk)throw new Error('Receção dos dados relacionais não confirmada');
    cloudValidationStageV19131='A verificar encomendas online';renderCloudUI();
-   await pullOnlineOrders(false);
+   if(!await pullOnlineOrders(false))throw new Error('Encomendas online não confirmadas');
    if(relOrderPendingSet().size)await syncPendingOrdersOnly(false);
   }
   completed=true;
@@ -17158,8 +17184,12 @@ async function pullOnlineOrders(showToast=false){
  const u=cloudUser||await ensureCloudSession();
  if(!u||!cloudClient)return false;
  try{
-   const {data,error}=await cloudClient.rpc('artessencia_get_online_orders_v1');
+   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),25000);
+   let data,error;
+   try{({data,error}=await cloudClient.rpc('artessencia_get_online_orders_v1').abortSignal(controller.signal))}
+   finally{clearTimeout(timer)}
    if(error)throw error;
+   if(cloudUser?.id!==u.id)throw new Error('A sessão Cloud mudou durante a receção das encomendas');
    if(productionBlockedV1926())return false;
    const rows=Array.isArray(data)?data:[];
    const pending=relOrderPendingSet();
@@ -17234,9 +17264,15 @@ async function pullOnlineOrders(showToast=false){
  }
 }
 async function relFetchAll(table){
- const {data,error}=await cloudClient.from(table).select('*').eq('user_id',cloudUser.id);
- if(error)throw error;
- return data||[]
+ const userId=cloudUser?.id;
+ if(!userId)throw new Error('Sessão Cloud indisponível ao ler '+table);
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),25000);
+ try{
+  const {data,error}=await cloudClient.from(table).select('*').eq('user_id',userId).abortSignal(controller.signal);
+  if(error)throw error;
+  if(cloudUser?.id!==userId)throw new Error('A sessão Cloud mudou durante a leitura');
+  return data||[];
+ }finally{clearTimeout(timer)}
 }
 async function relDeleteMissing(table,remoteRows,localIds){
  const missing=(remoteRows||[]).map(r=>r.id).filter(id=>!localIds.has(id));
@@ -17806,7 +17842,7 @@ function renderPublicationCenterV1812(){
    '<button class="btn" type="button" onclick="publicationOpenCostsV1812(decodeURIComponent(\''+encoded+'\'))">Custos / ficha</button></div></article>';
  }).join(''):'<div class="publication-empty-v1925 empty">Nenhum produto corresponde à pesquisa ou aos filtros.</div>';
 }
- function renderAll(){ensureQuotePaymentModel();ensureCostModel();syncPackagingSelect();renderTechnicalCategoriesV1863();renderClientSuggestions();renderDashboard();renderPicker();renderCart();renderOrders();renderProduction();renderCosts();renderStock();renderPurchases();renderCash();renderFundsV1929();renderClients();renderQuotes();renderQuoteCart();renderProducts();renderProductWorkflowV1851(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null);renderProductPublicStatusV1850(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null);renderCommercialCalendarV1850();renderPublicationCenterV1812();renderCatalogs();renderVisualCatalogsV192();renderSpecialEditionsAdmin();renderCatalogDigitalCenterV160();renderSettings();renderAprecoImportV1753();renderBusinessSettings();if(!personalizationCategorySelectOpenV1794)renderPersonalizationLibraryV1791();renderReports();renderDigitalStatsV1795();renderLaunchStatsV1813();renderQuantityPricingV1750();renderLegalSummaryV1286();renderCloudUI();renderBackupInfo();renderOrderNotificationsV12624();renderPushStatusV12625();const s=sec();if(document.getElementById('lockMinutes'))document.getElementById('lockMinutes').value=String(s.lockMinutes??15)}
+ function renderAll(){ensureQuotePaymentModel();ensureCostModel();syncPackagingSelect();renderTechnicalCategoriesV1863();renderClientSuggestions();renderDashboard();renderPicker();renderCart();renderOrders();renderProduction();renderCosts();renderStock();renderPurchases();renderCash();if(typeof renderFundsV1929==='function')renderFundsV1929();renderClients();renderQuotes();renderQuoteCart();renderProducts();renderProductWorkflowV1851(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null);renderProductPublicStatusV1850(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null);renderCommercialCalendarV1850();renderPublicationCenterV1812();renderCatalogs();renderVisualCatalogsV192();renderSpecialEditionsAdmin();renderCatalogDigitalCenterV160();renderSettings();renderAprecoImportV1753();renderBusinessSettings();if(!personalizationCategorySelectOpenV1794)renderPersonalizationLibraryV1791();renderReports();renderDigitalStatsV1795();renderLaunchStatsV1813();renderQuantityPricingV1750();renderLegalSummaryV1286();renderCloudUI();renderBackupInfo();renderOrderNotificationsV12624();renderPushStatusV12625();const s=sec();if(document.getElementById('lockMinutes'))document.getElementById('lockMinutes').value=String(s.lockMinutes??15)}
 document.addEventListener('input',e=>{if(e.target&&['costPackQty','costPackPrice'].includes(e.target.id))updateCostPreview()});
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;installBtn.classList.remove('hidden');installBanner.classList.remove('hidden')});
 async function installApp(){if(!deferredPrompt)return toast('No Chrome: menu ⋮ → Adicionar ao ecrã principal / Instalar app');deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;installBtn.classList.add('hidden');installBanner.classList.add('hidden')}

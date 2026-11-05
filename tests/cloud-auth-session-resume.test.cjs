@@ -30,6 +30,8 @@ function setup({session,validUser,offline=false,failSync=false}={}){
   setCloudMeta:patch=>events.push('meta:'+JSON.stringify(patch)),
   renderCloudUI:()=>events.push('renderCloudUI'),
   initCloudClient:()=>({auth}),
+  attachCloudAuthListenerV19134:()=>events.push('attachAuthListener'),
+  boundedCloudAuthV19134:async action=>action(),
   authGateHideV1880:()=>events.push('hide'),
   authGateShowV1880:()=>events.push('show'),
   authGateMessageV1880:()=>{},
