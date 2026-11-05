@@ -182,22 +182,21 @@ function aeCustomEstimateV1(){
 }
 function renderCustomEstimateV1(){
  const v=aeCustomEstimateV1(),el=$('aeCustomTotalV1');if(!el)return;
- el.innerHTML='<b>Como se calcula o preço da Box personalizada</b>'+
+ const breakdown=$('aeCustomBreakdown');
+ if(breakdown)breakdown.innerHTML=
  '<div class="ae-box-cost-lines">'+aeCostRowV1('Matérias-primas dos artigos e extras',v.breakdown.materials)+
  aeCostRowV1('Mão de obra dos artigos e montagem',v.breakdown.labor)+
  aeCostRowV1('Energia dos artigos',v.breakdown.energy)+
  aeCostRowV1('Outros custos dos artigos e extras',v.breakdown.indirect)+
- aeCostRowV1('Embalagem escolhida',v.packaging)+'</div>'+
+ aeCostRowV1('Embalagem escolhida',v.packaging)+'</div>';
+ el.innerHTML=
  '<div class="ae-box-cost-total"><span>Custo total estimado</span><strong>'+(v.complete?money(v.cost):'Por completar')+'</strong></div>'+
  '<div class="ae-box-cost-total"><span>Preço sugerido ('+(v.margin===null?'margem inválida':v.margin.toLocaleString('pt-PT')+'% de margem')+')</span><strong>'+(v.suggested===null?'—':money(v.suggested))+'</strong></div>'+
  (v.complete&&v.quote!==null?'<div class="ae-box-cost-row"><span>Lucro com o preço proposto</span><strong>'+money(v.quote-v.cost)+'</strong></div>'+
  '<div class="ae-box-cost-row"><span>Margem efetiva do preço proposto</span><strong>'+aeActualMarginV1(v.cost,v.quote).toLocaleString('pt-PT',{maximumFractionDigits:1})+'%</strong></div>':'')+
  (v.missing.length?'<small class="ae-box-cost-warning">Custos técnicos em falta: '+safe(v.missing.join(', '))+'.</small>':'')+
  (!custom.length?'<small class="ae-box-cost-warning">Seleciona os artigos para calcular o custo.</small>':'')+
- (v.margin===null?'<small class="ae-box-cost-warning">Introduz uma margem entre 0% e 95%.</small>':'')+
- '<small>Preço sugerido = custo total ÷ (1 − margem/100). Inclui custo de fabrico dos artigos, embalagem, materiais extra e tempo de montagem.</small>'+
- '<small>Este simulador calcula montagem de produtos acabados. Se a Box tiver uma receita produzida em conjunto, prepara uma ficha técnica própria em Boxes pré-definidas ou a partir de um pedido.</small>'+
- '<small>O preço indicativo só aparece na proposta enviada se estiver preenchido; não é uma encomenda confirmada.</small>';
+ (v.margin===null?'<small class="ae-box-cost-warning">Introduz uma margem entre 0% e 95%.</small>':'');
  const apply=$('aeCustomApplyPriceV1');
  if(apply){apply.disabled=v.suggested===null;apply.dataset.suggested=v.suggested===null?'':String(v.suggested);}
 }
@@ -344,16 +343,19 @@ function install(){
  ready.append(editorFold||editor);
  if(savedFold){savedFold.open=true;ready.append(savedFold)}else ready.append(heading,list);
  const customPane=document.createElement('div');customPane.id='aeHubPanel_custom';customPane.className='ae-hub-panel';
- customPane.innerHTML='<div class="ae-hub-heading"><h3>Criar Box personalizada</h3><p>Escolhe os produtos, introduz os custos adicionais e o tempo de montagem, e define a margem de lucro pretendida. O preço sugerido é calculado automaticamente.</p></div>'+
- '<div class="ae-custom-grid"><label>Título da Box<input id="aeCustomTitleV1" placeholder="Ex.: Presente especial"></label><label>Embalagem<select id="aeCustomPackagingV1"></select></label><label>Nome / dedicatória<input id="aeCustomNameV1" maxlength="120" placeholder="Opcional"></label><label>Preferências de cor, aroma e observações<textarea id="aeCustomNotesV1" rows="3" maxlength="400"></textarea></label></div>'+
- '<div id="aeCustomProductsV1"></div><div class="ae-box-composition"><h3>Custos e margem desta Box</h3><p class="muted">Os custos dos artigos vêm das fichas técnicas. Introduz apenas os extras específicos desta Box.</p><div class="ae-custom-grid">'+
+ customPane.innerHTML='<div id="aeCustomProductsV1"></div>'+
+ '<div class="ae-custom-grid"><label>Título da Box<input id="aeCustomTitleV1" placeholder="Ex.: Presente especial"></label><label>Embalagem<select id="aeCustomPackagingV1"></select></label></div>'+
+ '<details class="catalog-fold"><summary>Dedicatória e preferências</summary><div class="ae-custom-grid"><label>Nome / dedicatória<input id="aeCustomNameV1" maxlength="120" placeholder="Opcional"></label><label>Preferências de cor, aroma e observações<textarea id="aeCustomNotesV1" rows="3" maxlength="400"></textarea></label></div></details>'+
+ '<div class="ae-box-composition"><h3>Preço da proposta</h3><details class="catalog-fold"><summary>Materiais extra, tempo de montagem e outros custos</summary><div class="ae-custom-grid">'+
  '<label>Materiais extra / decoração (€)<input id="aeCustomMaterialsV1" type="number" inputmode="decimal" min="0" step="0.01" value="0"></label>'+
  '<label>Tempo de montagem adicional (min)<input id="aeCustomAssemblyV1" type="number" inputmode="numeric" min="0" step="1" value="0"></label>'+
  '<label>Outros custos (€)<input id="aeCustomOtherV1" type="number" inputmode="decimal" min="0" step="0.01" value="0"></label>'+
- '<label>Margem de lucro pretendida (%)<input id="aeCustomMarginPctV1" type="number" inputmode="decimal" min="0" max="95" step="0.5" value="35"></label>'+
+ '</div></details><div class="ae-custom-grid"><label>Margem de lucro pretendida (%)<input id="aeCustomMarginPctV1" type="number" inputmode="decimal" min="0" max="95" step="0.5" value="35"></label>'+
  '<label>Preço indicativo a propor (€)<input id="aeCustomQuotePriceV1" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Opcional"></label></div>'+
+ '<div id="aeCustomTotalV1" class="ae-box-estimate" aria-live="polite"></div>'+
  '<div class="ae-box-margin-editor"><button type="button" class="btn" id="aeCustomApplyPriceV1" data-ae-price-apply="custom">Aplicar preço sugerido à proposta</button></div>'+
- '<div id="aeCustomTotalV1" class="ae-box-estimate" aria-live="polite"></div></div><div class="ae-custom-actions">'+
+ '<details class="catalog-fold"><summary>Ver cálculo do preço</summary><div class="catalog-group-content"><div id="aeCustomBreakdown"></div><p>Preço sugerido = custo total ÷ (1 − margem/100). O cálculo assume a montagem de produtos acabados.</p></div></details></div>'+
+ '<div class="ae-custom-actions">'+
  '<button type="button" class="btn" data-action="copy">Copiar proposta</button><button type="button" class="btn primary" data-action="whatsapp">Enviar por WhatsApp</button><button type="button" class="btn" data-action="pdf">Ver proposta PDF</button><button type="button" class="btn" data-action="sendpdf">Enviar PDF</button><button type="button" class="btn" data-action="client">Copiar ligação para o cliente escolher</button><a class="btn" href="https://catalogo.artessenciatlier.pt/boxes.html" target="_blank" rel="noopener">Abrir configurador do cliente</a></div>';
  const docs=document.createElement('div');docs.id='aeHubPanel_pdf';docs.className='ae-hub-panel';
  docs.innerHTML='<div class="ae-hub-heading"><h3>Catálogos para clientes</h3><p>Escolhe entre produtos gerais e boxes existentes. PDFs são gerados a partir dos dados do Backoffice.</p></div>';
