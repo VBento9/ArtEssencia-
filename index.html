@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.123">
+<meta name="artessencia-version" content="1.9.124">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -6227,7 +6227,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.123';
+const APP_VERSION='1.9.124';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -12603,15 +12603,21 @@ function renderProducts(){
      ${img}
      <div class="product-card-body">
        <div class="product-card-top">
-         <div><span class="badge">${normalizeProductAvailabilityV1244(p)==='edition'?'✨ Edição Especial':escapeHtml(p.category==='Velas em molde'?'Velas decorativas / em molde':(p.category||'—'))}</span><h3>${escapeHtml(p.name||'Sem nome')}</h3><small>${escapeHtml(p.code||'—')}</small><small class="product-catalog-label-v191">${escapeHtml(catalogBreadcrumbV191(p)||'Família comercial por definir')}</small></div>
-         <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end">
+         <h3>${escapeHtml(p.name||'Sem nome')}</h3>
+         <div class="product-card-ident-meta">
+           <small class="product-card-code">${escapeHtml(p.code||'—')}</small>
+           <span class="badge product-card-category">${normalizeProductAvailabilityV1244(p)==='edition'?'✨ Edição Especial':escapeHtml(p.category==='Velas em molde'?'Velas decorativas / em molde':(p.category||'—'))}</span>
+         </div>
+         <small class="product-catalog-label-v191">${escapeHtml(catalogBreadcrumbV191(p)||'Família comercial por definir')}</small>
+       </div>
+         <div class="product-card-flags" aria-label="Estado do produto">
            ${productArchivedV1803(p)?`<span class="badge warn">Arquivado${productArchivedDateLabelV1803(p)?' · '+escapeHtml(productArchivedDateLabelV1803(p)):''}</span>`:`<span class="badge ${p.shopVisible?'ok':'warn'}">${p.shopVisible?'Publicado':'Oculto'}</span>`}
            <span class="badge product-mix-badge ${p.mixVisible?'':'off'}">${p.mixVisible?'Conjuntos ✓':'Fora dos conjuntos'}</span>
-           <span class="badge ${productTechSheetStateV146(p).ok?'ok':'warn'}">Ficha técnica · ${escapeHtml(productTechSheetStateV146(p).label)}</span>
-           ${productEditionMembershipIdsV138(p).length?`<span class="badge edition-product-badge">${escapeHtml(productEditionNamesV138(p).join(' · ')||productEditionMembershipIdsV138(p).length+' coleção(ões)')}</span>`:''}
+           <span class="badge product-card-tech-badge ${productTechSheetStateV146(p).ok?'ok':'warn needs-attention'}">Ficha técnica · ${escapeHtml(productTechSheetStateV146(p).label)}</span>
+           
            ${p.aprecoImportIdV1753?`<span class="badge apreco-badge-v1753">Apreço importado${p.aprecoNeedsReviewV1753?' · rever':''}</span>`:''}
          </div>
-       </div>
+       ${productEditionMembershipIdsV138(p).length?`<div class="product-card-collections" aria-label="Coleções do produto">${(productEditionNamesV138(p).length?productEditionNamesV138(p):[productEditionMembershipIdsV138(p).length+' coleção(ões)']).map(name=>`<span class="badge edition-product-badge">${escapeHtml(name)}</span>`).join('')}</div>`:''}
        ${productPublicDescriptionV1762(p)?`<p>${escapeHtml(productPublicDescriptionV1762(p))}</p>`:''}
        <div class="product-card-status-v1852">
          <div class="${pc.ready?'ok':'warn'}"><span>Preparação</span><b>${pc.ready?'Pronto':'Incompleto'}</b></div>
