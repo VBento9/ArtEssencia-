@@ -21,7 +21,7 @@ function make({order,orders,products}={}){
  };
  vm.createContext(ctx);
  vm.runInContext(code,ctx);
- return {ctx,order:base,split:c=>ctx.paymentBreakdown({value:Math.abs(c.value),type:c.value>=0?'Entrada':'Saída',orderId:'ORD-1',...c})};
+ return {ctx,order:base,split:c=>ctx.paymentBreakdown({...c,value:Math.abs(c.value),type:c.value>=0?'Entrada':'Saída',orderId:'ORD-1'})};
 }
 const item=(m,e,l,qty=1)=>({type:'product',qty,cost:m+e+l,
  costBreakdownSnapshotV1769:{materials:m,fixed:e,other:0,labor:l,total:m+e+l,estimated:false}});
