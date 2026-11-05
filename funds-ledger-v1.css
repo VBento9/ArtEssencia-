@@ -78,3 +78,10 @@
 #funds .funds-history-actions-v1{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 #funds .funds-history-error-v1{color:#a13928!important;font-weight:750}
 @media(max-width:600px){#funds .funds-history-grid-v1{grid-template-columns:repeat(2,minmax(0,1fr))}#funds .funds-history-row-v1{align-items:flex-start;flex-wrap:wrap}#funds .funds-history-row-actions-v1{width:100%;justify-content:space-between}}
+
+/* Histórico verificável, com retificações documentadas. */
+#funds .funds-history-verified-v1{margin-top:13px;border:1px solid #e7d9cf;border-radius:10px;padding:10px 12px;background:#fffefa}
+#funds .funds-history-verified-v1 summary{font-size:12px;font-weight:800;cursor:pointer;line-height:1.45}
+#funds .funds-history-verified-v1 .funds-history-list-v1{margin-top:9px}
+#funds .funds-history-reason-v1{display:grid;gap:7px;font-weight:750;font-size:12px;margin-top:11px}
+#funds .funds-history-reason-v1 textarea{font:inherit;font-size:13px;width:100%;max-width:100%;min-height:76px;padding:9px;border:1px solid #e2d3c7;border-radius:9px;box-sizing:border-box}
