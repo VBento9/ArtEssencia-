@@ -1,9 +1,10 @@
-/* ArtEssencia — Mapa de Fundos V1.9.137
+/* ArtEssencia — Mapa de Fundos V1.9.138
    Reservas calculadas a partir do Caixa. Não cria nem altera pagamentos. */
 (function(){
 'use strict';
-const DEPTS=['materials','expenses','labor','profit','unclassified'];
-const LABEL={materials:'Materiais e embalagens',expenses:'Despesas',labor:'Trabalho',profit:'Lucro',unclassified:'Por classificar'};
+const DEPTS=['materials','labor','expenses','fixed','profit','unclassified'];
+const FUNDS_DEPTS=DEPTS.filter(k=>k!=='unclassified');
+const LABEL={materials:'Materiais e embalagens',labor:'Mão de obra / salário',expenses:'Custos extras',fixed:'Custos fixos',profit:'Lucro',unclassified:'Pendente de conciliação histórica'};
 const SOURCES=new Set(['order_payment','order_payment_correction','quote_payment']);
 const TODAY=new Date();
 const state={mode:'month',year:TODAY.getFullYear(),slot:TODAY.getMonth()+1,page:1};
@@ -13,25 +14,40 @@ const cents=n=>Number.isFinite(Number(n))?Math.round(Number(n)*100):0;
 const date=v=>{const s=String(v||'').slice(0,10);return /^\d{4}-\d{2}-\d{2}$/.test(s)?s:''};
 const base=()=>Object.fromEntries(DEPTS.map(k=>[k,0]));
 const total=x=>DEPTS.reduce((a,k)=>a+(x[k]||0),0);
+const distributed=x=>FUNDS_DEPTS.reduce((a,k)=>a+(x[k]||0),0);
 const fill=(a,b)=>DEPTS.forEach(k=>a[k]+=(b[k]||0));
 
 /* Histórico contabilístico: nunca recalcular uma venda com custos atuais do produto. */
+/* Respeitar o total de custo registado na venda, sem consultar a ficha
+   atual. Uma pequena diferença positiva confirmada pelo total histórico
+   representa custo complementar e é imputada aos custos extras. */
 function historicalLineCost(line){
+ function reconcile(materials,labor,fixed,other,cost,verifiedTotal){
+  const vals=[materials,labor,fixed,other,cost];
+  if(vals.some(v=>!Number.isFinite(v)||v<0))return null;
+  const diff=cost-(materials+labor+fixed+other);
+  const rounding=Math.abs(diff)<=0.03;
+  const smallAdjustment=verifiedTotal&&diff>0&&diff<=Math.max(0.03,cost*0.05);
+  if((!rounding&&!smallAdjustment)||other+diff<0)return null;
+  return {materials,labor,fixed,expenses:other+diff,adjusted:smallAdjustment&&!rounding?diff:0};
+ }
  const qty=Number(line?.qty),cost=Number(line?.cost);
  if(!line||!Number.isFinite(qty)||qty<=0||line.cost==null||line.cost===''||!Number.isFinite(cost)||cost<0)return null;
- if(line.type==='quote_extra')return {materials:0,expenses:cost*qty,labor:0,total:cost*qty};
+ if(line.type==='quote_extra')return {materials:0,expenses:cost*qty,fixed:0,labor:0,total:cost*qty,adjusted:0};
  let parts=null;
  const snap=line.costBreakdownSnapshotV1769;
- if(snap&&typeof snap==='object'&&snap.estimated!==true){
-  if(['materials','labor','fixed','other'].every(k=>snap[k]!=null&&snap[k]!==''&&Number.isFinite(Number(snap[k]))&&Number(snap[k])>=0))
-   parts={materials:Number(snap.materials),labor:Number(snap.labor),expenses:Number(snap.fixed)+Number(snap.other)};
+ if(snap&&typeof snap==='object'){
+  if(snap.estimated!==true&&['materials','labor','fixed','other'].every(k=>snap[k]!=null&&snap[k]!==''&&Number.isFinite(Number(snap[k]))&&Number(snap[k])>=0)){
+   const verified=snap.total!=null&&snap.total!==''&&Number.isFinite(Number(snap.total))&&Math.abs(Number(snap.total)-cost)<=0.03;
+   parts=reconcile(Number(snap.materials),Number(snap.labor),Number(snap.fixed),Number(snap.other),cost,verified);
+  }
  }else if(line.quantityPricingSnapshot&&Number(line.quantityPricingSnapshot.units)>0){
   const p=line.quantityPricingSnapshot,u=Number(p.units);
   if(['materialsCost','laborCost','fixedCost','otherCost'].every(k=>p[k]!=null&&p[k]!==''&&Number.isFinite(Number(p[k]))&&Number(p[k])>=0))
-   parts={materials:Number(p.materialsCost)/u,labor:Number(p.laborCost)/u,expenses:(Number(p.fixedCost)+Number(p.otherCost))/u};
+   parts=reconcile(Number(p.materialsCost)/u,Number(p.laborCost)/u,Number(p.fixedCost)/u,Number(p.otherCost)/u,cost,false);
  }
- if(!parts||Math.abs(parts.materials+parts.expenses+parts.labor-cost)>0.03)return null;
- return {materials:parts.materials*qty,expenses:parts.expenses*qty,labor:parts.labor*qty,total:cost*qty};
+ if(!parts)return null;
+ return {materials:parts.materials*qty,expenses:parts.expenses*qty,fixed:parts.fixed*qty,labor:parts.labor*qty,total:cost*qty,adjusted:parts.adjusted*qty};
 }
 function matchedOrder(c){
  const orders=Array.isArray(db?.orders)?db.orders:[];
@@ -43,12 +59,12 @@ function orderReserveCosts(o){
  const items=Array.isArray(o.items)?o.items:[];
  const lines=items.filter(x=>!['quote_discount','quote_adjustment'].includes(x?.type)&&Number(x?.qty)>0);
  if(!lines.length)return null;
- const sums={materials:0,expenses:0,labor:0};let cost=0;
+ const sums={materials:0,expenses:0,fixed:0,labor:0,adjusted:0};let cost=0;
  for(const line of lines){
   const p=historicalLineCost(line);
   if(!p)return null;
-  for(const k of ['materials','expenses','labor'])sums[k]+=p[k];
-  cost+=p.total;
+  for(const k of ['materials','expenses','fixed','labor'])sums[k]+=p[k];
+  sums.adjusted+=p.adjusted||0;cost+=p.total;
  }
  const boxes=Number(o.boxes)||0;
  if(!Number.isFinite(boxes)||boxes<0)return null;
@@ -60,16 +76,17 @@ function orderReserveCosts(o){
 }
 function paymentBreakdown(c){
  const n=cents(c.value)*(c.type==='Entrada'?1:-1),o=matchedOrder(c);
- if(!o||o.status==='Cancelado'||o.voidedAt)return {amounts:{unclassified:n},why:'Sem encomenda válida associada'};
+ if(!o||o.status==='Cancelado'||o.voidedAt)return {amounts:{unclassified:n},why:'Sem encomenda histórica válida associada'};
  const gross=cents(calcOrder(o).total),cost=orderReserveCosts(o);
- if(gross<=0||!cost||Math.abs(n)>gross+1)return {amounts:{unclassified:n},why:'Custos históricos incompletos; confirmar ficha da venda'};
+ if(gross<=0||!cost||Math.abs(n)>gross+1)return {amounts:{unclassified:n},why:'É necessária a conciliação dos custos históricos desta venda'};
  const amount=Math.abs(n),sign=n<0?-1:1;
  const materials=Math.round(amount*cents(cost.materials)/gross);
  const expenses=Math.round(amount*cents(cost.expenses)/gross);
+ const fixed=Math.round(amount*cents(cost.fixed)/gross);
  const labor=Math.round(amount*cents(cost.labor)/gross);
- const profit=amount-materials-expenses-labor;
- return {amounts:{materials:sign*materials,expenses:sign*expenses,labor:sign*labor,profit:sign*profit},
-  why:profit<0?'Venda com margem negativa':'Repartição proporcional ao recebimento e custos históricos'};
+ const profit=amount-materials-expenses-fixed-labor;
+ return {amounts:{materials:sign*materials,expenses:sign*expenses,fixed:sign*fixed,labor:sign*labor,profit:sign*profit},
+  why:profit<0?'Venda com margem negativa':cost.adjusted>0?'Repartição automática; complemento histórico nos custos extras':'Repartição automática pelos custos históricos'};
 }
 function movements(){
  const cash=Array.isArray(db?.cash)?db.cash:[];
@@ -166,16 +183,17 @@ function render(){
  const body=document.getElementById('fundsTableBodyV1929');if(!body)return;
  const r=calculate(),label=document.getElementById('fundsAppliedV1929');if(label)label.textContent='Período: '+r.period.label;
  const kpi=document.getElementById('fundsKpisV1929'),inSum=total(r.inflow),outSum=total(r.outflow);
- if(kpi)kpi.innerHTML=[...DEPTS.map(k=>[LABEL[k],r.closing[k]]),['Saldo total estimado',total(r.closing)]].map(([name,v])=>'<div class="funds-kpi-v1929"><small>'+name+'</small><strong>'+euroC(v)+'</strong></div>').join('');
- body.innerHTML=DEPTS.map(k=>'<tr><th scope="row">'+LABEL[k]+'</th><td>'+euroC(r.opening[k])+'</td><td>'+euroC(r.inflow[k])+'</td><td>'+euroC(r.outflow[k])+'</td><td class="'+(r.closing[k]<0?'funds-negative-v1929':'')+'"><strong>'+euroC(r.closing[k])+'</strong></td></tr>').join('')+
- '<tr class="funds-total-v1929"><th scope="row">Total</th><td>'+euroC(total(r.opening))+'</td><td>'+euroC(inSum)+'</td><td>'+euroC(outSum)+'</td><td><strong>'+euroC(total(r.closing))+'</strong></td></tr>';
+ if(kpi)kpi.innerHTML=[...FUNDS_DEPTS.map(k=>[LABEL[k],r.closing[k]]),['Total distribuído',distributed(r.closing)]].map(([name,v])=>'<div class="funds-kpi-v1929"><small>'+name+'</small><strong>'+euroC(v)+'</strong></div>').join('');
+ body.innerHTML=FUNDS_DEPTS.map(k=>'<tr><th scope="row">'+LABEL[k]+'</th><td>'+euroC(r.opening[k])+'</td><td>'+euroC(r.inflow[k])+'</td><td>'+euroC(r.outflow[k])+'</td><td class="'+(r.closing[k]<0?'funds-negative-v1929':'')+'"><strong>'+euroC(r.closing[k])+'</strong></td></tr>').join('')+
+ '<tr class="funds-total-v1929"><th scope="row">Total distribuído</th><td>'+euroC(distributed(r.opening))+'</td><td>'+euroC(distributed(r.inflow))+'</td><td>'+euroC(distributed(r.outflow))+'</td><td><strong>'+euroC(distributed(r.closing))+'</strong></td></tr>';
  const note=document.getElementById('fundsQualityV1929');
  if(note){
   const uncertain=r.rows.filter(x=>SOURCES.has(x.c.source)&&x.amounts.unclassified).length,manual=r.rows.filter(x=>!SOURCES.has(x.c.source)&&x.amounts.unclassified).length;
   note.textContent=(r.rows.length?r.rows.length+' movimento(s) no período.':'Sem movimentos registados neste período.')+
   ' Saldo inicial '+euroC(total(r.opening))+' transitado de períodos anteriores; não é receita do período. '+
   ' Repartição pelos custos históricos de cada venda, quando completos.'+
-  ' · '+uncertain+' pagamento(s) sem custos completos · '+manual+' movimento(s) sem departamento'+
+  (r.closing.unclassified?' · Atenção: '+euroC(r.closing.unclassified)+' em conciliação histórica, fora dos fundos disponíveis.':'')+
+  (uncertain||manual?' · '+uncertain+' pagamento(s) com dados históricos insuficientes · '+manual+' movimento(s) avulso(s) por conciliar.':'')+
   (r.invalid.length?' · '+r.invalid.length+' movimento(s) com data inválida excluídos':'')+
   '. Isto é uma estimativa interna, não prova de saldo bancário nem lucro fiscal.';
  }
@@ -199,8 +217,10 @@ function classify(id,dept){
 function exportCsv(){
  const r=calculate(),fmt=n=>(n/100).toFixed(2).replace('.',',');
  const rows=[['Departamento','Saldo inicial (EUR)','Entradas (EUR)','Saídas (EUR)','Saldo final (EUR)']];
- DEPTS.forEach(k=>rows.push([LABEL[k],fmt(r.opening[k]),fmt(r.inflow[k]),fmt(r.outflow[k]),fmt(r.closing[k])]));
- rows.push(['Total',fmt(total(r.opening)),fmt(total(r.inflow)),fmt(total(r.outflow)),fmt(total(r.closing))]);
+ FUNDS_DEPTS.forEach(k=>rows.push([LABEL[k],fmt(r.opening[k]),fmt(r.inflow[k]),fmt(r.outflow[k]),fmt(r.closing[k])]));
+ rows.push(['Total distribuído',fmt(distributed(r.opening)),fmt(distributed(r.inflow)),fmt(distributed(r.outflow)),fmt(distributed(r.closing))]);
+ if(r.opening.unclassified||r.inflow.unclassified||r.outflow.unclassified||r.closing.unclassified)rows.push(['Em conciliação histórica (não disponível)',fmt(r.opening.unclassified),fmt(r.inflow.unclassified),fmt(r.outflow.unclassified),fmt(r.closing.unclassified)]);
+ rows.push(['Saldo contabilístico de Caixa',fmt(total(r.opening)),fmt(total(r.inflow)),fmt(total(r.outflow)),fmt(total(r.closing))]);
  const csv=rows.map(line=>line.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(';')).join('\r\n');
  downloadBlob(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}),'ArtEssencia_mapa_fundos_'+r.period.from+'_'+r.period.until+'.csv');
 }
