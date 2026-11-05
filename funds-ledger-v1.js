@@ -121,7 +121,6 @@ function controls(){
  if(mode)mode.value=state.mode;
  if(year)year.value=String(state.year);
  slotOptions();
-
 }
 function movementsTable(r){
  const body=document.getElementById('fundsMovementBodyV1929');if(!body)return;
@@ -167,7 +166,7 @@ function render(){
  const body=document.getElementById('fundsTableBodyV1929');if(!body)return;
  const r=calculate(),label=document.getElementById('fundsAppliedV1929');if(label)label.textContent='Período: '+r.period.label;
  const kpi=document.getElementById('fundsKpisV1929'),inSum=total(r.inflow),outSum=total(r.outflow);
- if(kpi)kpi.innerHTML=[['Entradas no período',inSum],['Saídas no período',outSum],['Variação do período',inSum-outSum],['Saldo acumulado',total(r.closing)]].map(([name,v])=>'<div class="funds-kpi-v1929"><small>'+name+'</small><strong>'+euroC(v)+'</strong></div>').join('');
+ if(kpi)kpi.innerHTML=[...DEPTS.map(k=>[LABEL[k],r.closing[k]]),['Saldo total estimado',total(r.closing)]].map(([name,v])=>'<div class="funds-kpi-v1929"><small>'+name+'</small><strong>'+euroC(v)+'</strong></div>').join('');
  body.innerHTML=DEPTS.map(k=>'<tr><th scope="row">'+LABEL[k]+'</th><td>'+euroC(r.opening[k])+'</td><td>'+euroC(r.inflow[k])+'</td><td>'+euroC(r.outflow[k])+'</td><td class="'+(r.closing[k]<0?'funds-negative-v1929':'')+'"><strong>'+euroC(r.closing[k])+'</strong></td></tr>').join('')+
  '<tr class="funds-total-v1929"><th scope="row">Total</th><td>'+euroC(total(r.opening))+'</td><td>'+euroC(inSum)+'</td><td>'+euroC(outSum)+'</td><td><strong>'+euroC(total(r.closing))+'</strong></td></tr>';
  const note=document.getElementById('fundsQualityV1929');
