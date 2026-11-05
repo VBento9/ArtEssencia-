@@ -4,14 +4,14 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 
 const js=fs.readFileSync('funds-ledger-v1.js','utf8');
-const a=js.indexOf('function historicalLineCost(');
+const a=js.indexOf('const HISTORY_KEY=');
 const b=js.indexOf('function movements(){',a);
 assert.ok(a>0&&b>a,'Encontrar distribuição pelos custos históricos');
 const code=js.slice(a,b);
 function make({order,orders,products}={}){
  const base={id:'ORD-1',status:'Entregue',items:[],total:100,boxes:0,boxCostSnapshot:0,...order};
  const ctx={
-  db:{orders:orders||[base],products:products||[]},
+  db:{orders:orders||[base],products:products||[],costMeta:{}},
   calcOrder:o=>({
    total:Number(o.total),
    cost:(o.items||[]).reduce((a,l)=>a+(Number(l.qty)||0)*(Number(l.cost)||0),0)+
@@ -94,4 +94,34 @@ test('Não inventar complemento quando o total histórico é inconsistente',()=>
  const line={qty:1,cost:3.84,costBreakdownSnapshotV1769:{materials:1.89,labor:1.62,fixed:.20,other:0,total:3.60,estimated:false}};
  const a=make({order:{items:[line],total:10}});
  assert.deepEqual(plain(a.split({value:10}).amounts),{unclassified:1000});
+});
+
+test('Snapshot antigo de preço por quantidade discrimina custos sem entrada manual',()=>{
+ const line={type:'product',qty:25,cost:2.7581317777777783,quantityPricingSnapshot:{
+  units:50,materialsCost:95.7177,laborCost:38.88888888888889,fixedCost:3.3,otherCost:0,costTotal:137.9065888888889
+ }};
+ const a=make({order:{items:[line],total:97.5}});
+ const result=plain(a.split({value:97.5}).amounts);
+ assert.equal(Object.keys(result).includes('unclassified'),false);
+ assert.equal(Object.values(result).reduce((sum,v)=>sum+v,0),9750);
+ assert.equal(result.materials>0&&result.labor>0&&result.fixed>0,true);
+});
+test('Conciliação histórica confirmada usa custos totais das unidades sem alterar a encomenda',()=>{
+ const line={type:'product',name:'Peça histórica',code:'H1',qty:5,cost:4.292003580246914,price:8};
+ const a=make({order:{items:[line],total:40}});
+ const key='__fundsHistoricalLineCostsV1';
+ a.ctx.db.costMeta[key]={'ORD-1':{'0':{materials:1000,labor:600,fixed:300,other:246,
+  originalCostCents:2146,fingerprint:a.ctx.historicalFingerprint(line),source:'manual_historical_verified',confirmedAt:'2026-11-05T12:00:00Z'}}};
+ const result=plain(a.split({value:40}).amounts);
+ assert.deepEqual(result,{materials:1000,expenses:246,fixed:300,labor:600,profit:1854});
+ assert.equal(line.cost,4.292003580246914);
+});
+test('Conciliação de uma linha alterada ou sem valores reais é rejeitada',()=>{
+ const line={type:'product',name:'Peça histórica',code:'H1',qty:5,cost:4.292003580246914,price:8};
+ const a=make({order:{items:[line],total:40}});
+ const key='__fundsHistoricalLineCostsV1';
+ a.ctx.db.costMeta[key]={'ORD-1':{'0':{materials:1000,labor:600,fixed:300,other:246,
+  originalCostCents:2146,fingerprint:a.ctx.historicalFingerprint(line),source:'manual_historical_verified',confirmedAt:'2026-11-05T12:00:00Z'}}};
+ line.qty=6;
+ assert.deepEqual(plain(a.split({value:40}).amounts),{unclassified:4000});
 });
