@@ -22,6 +22,7 @@ function setup(){
   cloudClient:null,cloudUser:null,cloudStartupDone:true,cloudHydrating:false,cloudChannel:null,cloudPushPending:false,
   cloudCfg:()=>({url:'https://fake.supabase.test',key:'publishable-test'}),
   cloudLogMsg:()=>{},renderCloudUI:()=>events.push('render'),
+  lockNow:()=>events.push('lock'),authGateShowV1880:()=>events.push('authGate'),
   subscribeCloud:async()=>events.push('subscribeCloud'),
   cloudMeta:()=>({dirty:false,conflict:false}),
   localStorage:{getItem:()=>null},REL_DIRTY:'dirty',
@@ -69,4 +70,6 @@ test('Sem sessão, não marca utilizador autenticado no evento SIGNED_OUT',()=>{
  getListener()('SIGNED_OUT',null);
  tasks.shift()();
  assert.equal(ctx.cloudUser,null);
+ assert.ok(events.includes('lock'));
+ assert.ok(events.includes('authGate'));
 });

@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.134">
+<meta name="artessencia-version" content="1.9.135">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -560,8 +560,22 @@
 @media(max-width:900px){.prod-day-row-main-v12653{grid-template-columns:minmax(150px,1fr) 105px 100px}.prod-day-row-main-v12653>div:nth-child(4){grid-column:2/4}.prod-day-row-detail-v12653{grid-template-columns:1fr 1fr}.prod-day-actions-v12653{grid-column:1/-1;justify-content:flex-start}}
 @media(max-width:620px){.prod-day-agenda-head-v12653{flex-direction:column}.prod-day-agenda-meta-v12653{justify-content:flex-start}.prod-day-row-main-v12653{grid-template-columns:1fr 1fr}.prod-day-row-main-v12653>div:first-child{grid-column:1/-1}.prod-day-row-main-v12653>div:nth-child(4){grid-column:auto}.prod-day-row-detail-v12653{grid-template-columns:1fr}.prod-day-actions-v12653{grid-column:auto}.prod-alert-v12653{grid-template-columns:auto 1fr}.prod-alert-v12653>strong{grid-column:2}}
 
-/* ArtEssencia V10.4.4 — entrada direta sem PIN */
-#lockScreen{display:none!important}
+/* V1.9.135 — bloquear o ecrã operacional independentemente do estado Cloud. */
+#lockScreen{z-index:99999;background:rgba(41,31,26,.92);backdrop-filter:blur(14px)}
+#lockScreen .lockbox{background:#fffdf9;border:1px solid #e7dacd;max-height:96vh;overflow:auto;color:#372c27}
+#lockScreen .lockbox img{width:90px;height:75px;object-fit:contain;border-radius:0}
+#lockScreen .lockbox input{box-sizing:border-box;max-width:100%}
+#lockScreen .unlock-cloud-v19135{display:grid;gap:10px;text-align:left;margin-top:18px}
+#lockScreen .unlock-cloud-v19135 label{font-weight:700;font-size:13px}
+#lockScreen .unlock-cloud-v19135 input{width:100%;height:48px;border-radius:12px;border:1px solid #d4c5b9;padding:11px;background:#fff;color:#30251e}
+#lockScreen .unlock-cloud-v19135 .btn{width:100%;min-height:44px}
+#lockScreen .unlock-cloud-v19135 .unlock-bio-v19135{background:#f7efe7}
+#lockScreen .unlock-pin-v19135{border-top:1px solid #eaded1;margin-top:16px;padding-top:16px}
+#lockScreen .unlock-pin-v19135 .pin{letter-spacing:5px;background:#fff;border:1px solid #d4c5b9;font-size:19px}
+#lockScreen .unlock-pin-v19135 .btn{width:100%;margin-top:8px}
+#lockScreen .unlock-hint-v19135{display:block;margin-top:14px;color:#7a685d;font-size:12px}
+#lockScreen .unlock-error-v19135{min-height:16px;color:#a53633;font-size:12px;font-weight:600}
+#lockScreen .lockbox p{font-size:13px}
 
 
 /* ArtEssencia V10.5.0 — Stock interativo */
@@ -3656,14 +3670,24 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
   </div>
 </div>
 
-<div id="lockScreen" class="lock">
+<div id="lockScreen" class="lock" role="dialog" aria-modal="true" aria-labelledby="lockTitleV19135">
   <div class="lockbox">
     <img src="brand-artessencia-transparente.svg" alt="ArtEssencia">
-    <h1>ArtEssencia</h1>
-    <p id="lockText">Cria o teu PIN pessoal para proteger a aplicação.</p>
-    <input id="pinInput" class="pin" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="6" placeholder="••••">
-    <div class="btnrow" style="justify-content:center"><button class="btn primary" onclick="submitPin()" id="pinButton">Criar PIN</button></div>
-    <small>O PIN fica guardado apenas neste dispositivo.</small>
+    <h1 id="lockTitleV19135">ArtEssencia</h1>
+    <p id="lockText">Desbloqueia a aplicação para aceder ao Backoffice.</p>
+    <div class="unlock-cloud-v19135">
+      <label for="cloudUnlockPasswordV19135">Palavra-passe da conta ArtEssencia</label>
+      <input id="cloudUnlockPasswordV19135" type="password" autocomplete="current-password" placeholder="Palavra-passe" onkeydown="if(event.key==='Enter'){event.preventDefault();unlockWithCloudPasswordV19135()}">
+      <button class="btn primary" id="unlockCloudButtonV19135" type="button" onclick="unlockWithCloudPasswordV19135()">Desbloquear com palavra-passe</button>
+      <button class="btn unlock-bio-v19135 hidden" id="unlockBiometricButtonV19135" type="button" onclick="unlockWithBiometricsV19135()">Desbloquear com biometria / passkey</button>
+      <span id="lockErrorV19135" class="unlock-error-v19135" role="status" aria-live="polite"></span>
+    </div>
+    <div id="lockPinPanelV19135" class="unlock-pin-v19135 hidden">
+      <label for="pinInput">Ou utiliza o PIN deste dispositivo</label>
+      <input id="pinInput" class="pin" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="6" placeholder="PIN">
+      <button class="btn" type="button" onclick="submitPin()" id="pinButton">Desbloquear com PIN</button>
+    </div>
+    <small class="unlock-hint-v19135">A sessão Cloud permanece guardada. O desbloqueio protege o acesso à aplicação.</small>
   </div>
 </div>
 
@@ -6397,7 +6421,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.134';
+const APP_VERSION='1.9.135';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -6876,49 +6900,150 @@ async function hashPin(pin){
       for(let i=0;i<pin.length;i++){h^=pin.charCodeAt(i);h=Math.imul(h,16777619)}
       return 'local-'+(h>>>0).toString(16)
     }
+/* V1.9.135 — sessão Supabase persistida, mas acesso local bloqueado sempre
+   que a PWA abre ou regressa após ausência. Nenhum desbloqueio altera dirty,
+   filas de produtos, revisões Cloud ou armazenamento de encomendas. */
+function refreshLockMethodsV19135(){
+ const s=sec(),pin=document.getElementById('lockPinPanelV19135');
+ if(pin)pin.classList.toggle('hidden',!s.pinHash);
+ const c=cloudClient,biometric=document.getElementById('unlockBiometricButtonV19135');
+ const available=!!(navigator.onLine&&location.protocol==='https:'&&
+   location.hostname==='art-essencia.vercel.app'&&
+   PASSKEY_PREVIEW_V20261008&&typeof c?.auth?.signInWithPasskey==='function'&&cloudUser?.id);
+ if(biometric)biometric.classList.toggle('hidden',!available);
+}
+function finishAppUnlockV19135(){
+ const gate=document.getElementById('authGateV1880');
+ if(gate&&!gate.classList.contains('hidden'))return false;
+ const ls=document.getElementById('lockScreen');
+ const pass=document.getElementById('cloudUnlockPasswordV19135');
+ const pin=document.getElementById('pinInput');
+ if(pass)pass.value='';
+ if(pin)pin.value='';
+ const err=document.getElementById('lockErrorV19135');if(err)err.textContent='';
+ unlocked=true;
+ if(ls)ls.classList.add('hidden');
+ const app=document.querySelector('.app');if(app)app.inert=false;
+ resetIdle();
+ return true;
+}
 function configureLock(){
  const ls=document.getElementById('lockScreen');
- const input=document.getElementById('pinInput');
- const text=document.getElementById('lockText');
- const btn=document.getElementById('pinButton');
  if(!ls)return;
- const s=sec();
- clearTimeout(idleTimer);
- unlocked=false;
- if(input)input.value='';
- if(s.pinHash){
-   if(text)text.textContent='Introduz o teu PIN para aceder ao Backoffice.';
-   if(btn)btn.textContent='Entrar';
- }else{
-   if(text)text.textContent='Cria o teu PIN pessoal para proteger a aplicação.';
-   if(btn)btn.textContent='Criar PIN';
- }
- ls.classList.remove('hidden');
- setTimeout(()=>input?.focus(),80);
-}
-
-async function submitPin(){const p=document.getElementById('pinInput').value.trim();if(p.length<4||p.length>6||!/^\d+$/.test(p))return toast('Usa um PIN de 4 a 6 números');const h=await hashPin(p),s=sec(),now=Date.now();if(s.blockedUntil&&now<s.blockedUntil){const mins=Math.ceil((s.blockedUntil-now)/60000);return toast('Acesso bloqueado. Tente novamente em '+mins+' min.')}if(!s.pinHash){localStorage.setItem(SEC,JSON.stringify({pinHash:h,lockMinutes:15,failCount:0,blockedUntil:0}));unlocked=true;document.getElementById('lockScreen').classList.add('hidden');toast('PIN criado');resetIdle();return}if(h===s.pinHash){s.failCount=0;s.blockedUntil=0;localStorage.setItem(SEC,JSON.stringify(s));unlocked=true;document.getElementById('lockScreen').classList.add('hidden');resetIdle();return}s.failCount=(s.failCount||0)+1;if(s.failCount>=5){s.failCount=0;s.blockedUntil=now+5*60000;toast('5 tentativas erradas - bloqueado 5 minutos')}else toast('PIN incorreto - tentativa '+s.failCount+'/5');localStorage.setItem(SEC,JSON.stringify(s))}
-function lockNow(){
- clearTimeout(idleTimer);
- unlocked=false;
- const ls=document.getElementById('lockScreen');
+ clearTimeout(idleTimer);unlocked=false;
+ const app=document.querySelector('.app');if(app)app.inert=true;
  const input=document.getElementById('pinInput');
+ const password=document.getElementById('cloudUnlockPasswordV19135');
  const text=document.getElementById('lockText');
- const btn=document.getElementById('pinButton');
- const s=sec();
+ const err=document.getElementById('lockErrorV19135');
  if(input)input.value='';
- if(s.pinHash){
-   if(text)text.textContent='Sessão bloqueada por inatividade. Introduz o teu PIN.';
-   if(btn)btn.textContent='Entrar';
- }else{
-   if(text)text.textContent='Cria o teu PIN pessoal para proteger a aplicação.';
-   if(btn)btn.textContent='Criar PIN';
- }
- if(ls)ls.classList.remove('hidden');
- setTimeout(()=>input?.focus(),80);
+ if(password)password.value='';
+ if(err)err.textContent='';
+ if(text)text.textContent='Introduz a palavra-passe ou utiliza a biometria para aceder ao Backoffice.';
+ refreshLockMethodsV19135();
+ ls.classList.remove('hidden');
+ setTimeout(()=>password?.focus(),80);
 }
-
-function resetIdle(){if(!unlocked)return;clearTimeout(idleTimer);const mins=Number(sec().lockMinutes??15);if(mins>0)idleTimer=setTimeout(lockNow,mins*60000)}
+async function unlockWithCloudPasswordV19135(){
+ const btn=document.getElementById('unlockCloudButtonV19135');
+ const field=document.getElementById('cloudUnlockPasswordV19135');
+ const err=document.getElementById('lockErrorV19135');
+ const password=String(field?.value||'');
+ if(unlocked)return true;
+ if(!navigator.onLine){if(err)err.textContent='Sem internet. Utiliza o PIN local, se estiver configurado.';return false}
+ if(!password){if(err)err.textContent='Introduz a palavra-passe da conta.';return false}
+ const user=cloudUser;
+ if(!user?.id||!user.email){if(err)err.textContent='A sessão Cloud ainda não foi validada. Aguarda ou inicia sessão.';return false}
+ const client=initCloudClient();
+ if(!client){if(err)err.textContent='A autenticação Cloud não está disponível.';return false}
+ if(btn)btn.disabled=true;
+ if(err)err.textContent='';
+ try{
+  const {data,error}=await boundedCloudAuthV19134(
+   ()=>client.auth.signInWithPassword({email:user.email,password}),
+   'Desbloqueio ArtEssencia'
+  );
+  if(error)throw error;
+  const verified=data?.user||data?.session?.user;
+  if(!verified?.id||verified.id!==user.id)throw new Error('Identidade da conta diferente da sessão ativa.');
+  cloudUser=verified;
+  attachCloudAuthListenerV19134(client);
+  return finishAppUnlockV19135();
+ }catch(error){
+  if(err)err.textContent='Não foi possível confirmar a palavra-passe. Verifica a ligação e tenta novamente.';
+  return false;
+ }finally{
+  if(field)field.value='';
+  if(btn)btn.disabled=false;
+ }
+}
+async function unlockWithBiometricsV19135(){
+ const btn=document.getElementById('unlockBiometricButtonV19135');
+ const err=document.getElementById('lockErrorV19135');
+ const expected=cloudUser?.id;
+ const client=cloudClient;
+ if(unlocked)return true;
+ if(!navigator.onLine||!expected||typeof client?.auth?.signInWithPasskey!=='function'){
+  if(err)err.textContent='Biometria indisponível. Utiliza a palavra-passe da conta.';
+  return false
+ }
+ if(btn)btn.disabled=true;
+ if(err)err.textContent='';
+ try{
+  // Só uma autenticação verificada pelo Supabase pode desbloquear.
+  const {data,error}=await boundedCloudAuthV19134(
+   ()=>client.auth.signInWithPasskey(),
+   'Autenticação biométrica',30000
+  );
+  if(error)throw error;
+  if(!data?.session?.access_token||data?.user?.id!==expected)throw new Error('Identidade biométrica não confirmada');
+  cloudUser=data.user;
+  attachCloudAuthListenerV19134(client);
+  return finishAppUnlockV19135();
+ }catch(error){
+  if(err)err.textContent='Não foi possível autenticar com biometria. Utiliza a palavra-passe.';
+  return false;
+ }finally{if(btn)btn.disabled=false}
+}
+async function submitPin(){
+ const field=document.getElementById('pinInput'),p=String(field?.value||'').trim();
+ const s=sec(),err=document.getElementById('lockErrorV19135');
+ if(!s.pinHash){if(err)err.textContent='Configura um PIN nas Definições depois de entrares com a palavra-passe.';return false}
+ if(p.length<4||p.length>6||!/^[0-9]+$/.test(p)){if(err)err.textContent='Introduz o PIN de 4 a 6 números.';return false}
+ const now=Date.now();
+ if(s.blockedUntil&&now<s.blockedUntil){
+  if(err)err.textContent='PIN bloqueado. Tenta novamente mais tarde ou utiliza a palavra-passe.';
+  return false
+ }
+ const h=await hashPin(p);
+ if(field)field.value='';
+ if(h===s.pinHash){
+  s.failCount=0;s.blockedUntil=0;
+  localStorage.setItem(SEC,JSON.stringify(s));
+  return finishAppUnlockV19135();
+ }
+ s.failCount=(s.failCount||0)+1;
+ if(s.failCount>=5){
+  s.failCount=0;s.blockedUntil=now+5*60000;
+  if(err)err.textContent='PIN bloqueado durante 5 minutos. Usa a palavra-passe da conta.';
+ }else if(err)err.textContent='PIN incorreto · tentativa '+s.failCount+'/5';
+ localStorage.setItem(SEC,JSON.stringify(s));
+ return false;
+}
+function lockNow(){configureLock()}
+function resetIdle(){
+ if(!unlocked)return;
+ clearTimeout(idleTimer);
+ const mins=Number(sec().lockMinutes??15);
+ if(mins>0)idleTimer=setTimeout(lockNow,mins*60000);
+}
+let hiddenAtV19135=0;
+document.addEventListener('visibilitychange',()=>{
+ if(document.visibilityState==='hidden'){hiddenAtV19135=Date.now();return}
+ if(hiddenAtV19135&&Date.now()-hiddenAtV19135>=30000)lockNow();
+ hiddenAtV19135=0;
+});
+window.addEventListener('pagehide',()=>{lockNow()});
 ['click','touchstart','keydown'].forEach(ev=>document.addEventListener(ev,resetIdle,{passive:true}));
 document.getElementById('pinInput')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submitPin()}});
 
@@ -15479,8 +15604,11 @@ function attachCloudAuthListenerV19134(client){
   // Não executar operações de Cloud, nem renderização, dentro do callback Auth.
   setTimeout(()=>{
    if(cloudClient!==client)return;
-   if(event==='SIGNED_OUT')cloudUser=null;
-   else if(session?.user?.id)cloudUser=session.user;
+   if(event==='SIGNED_OUT'){
+    cloudUser=null;
+    lockNow();
+    authGateShowV1880('Sessão Cloud terminada. Inicia sessão novamente.');
+   }else if(session?.user?.id)cloudUser=session.user;
    renderCloudUI();
    if(!cloudUser||!cloudStartupDone||cloudHydrating||!(event==='SIGNED_IN'||event==='TOKEN_REFRESHED'))return;
    if(!cloudChannel)void subscribeCloud();
@@ -15575,7 +15703,7 @@ function authGateShowV1880(message=''){
  document.getElementById('authGatePasskeyV20261008')?.classList.toggle('hidden',!PASSKEY_PREVIEW_V20261008);
  setTimeout(()=>{(email?.value?password:email)?.focus()},80)
 }
-function authGateHideV1880(){document.getElementById('authGateV1880')?.classList.add('hidden');authGateMessageV1880('')}
+function authGateHideV1880(){document.getElementById('authGateV1880')?.classList.add('hidden');authGateMessageV1880('');refreshLockMethodsV19135()}
 function authGateKeyV1881(event){if(event.key==='Enter'){event.preventDefault();authGateLoginV1880()}}
 async function registerCloudPasskeyV20261008(){
  if(!PASSKEY_PREVIEW_V20261008)return;
@@ -15619,7 +15747,7 @@ async function authGatePasskeyLoginV20261008(){
  try{
   const {data,error}=await c.auth.signInWithPasskey();if(error)throw error;
   if(!data?.session?.access_token||!data?.user?.id)throw new Error('Sessão não validada');
-  cloudUser=data.user;attachCloudAuthListenerV19134(c);authGateHideV1880();
+  cloudUser=data.user;attachCloudAuthListenerV19134(c);authGateHideV1880();finishAppUnlockV19135();
  }catch(error){authGateShowV1880('Não foi possível entrar com biometria. Usa a palavra-passe.');return}
  finally{if(btn)btn.disabled=false}
  return resumeAuthenticatedCloudV19133();
@@ -15638,7 +15766,7 @@ async function authGateLoginV1880(){
   if(!cloudUser?.id)throw new Error('Sessão não iniciada');
   attachCloudAuthListenerV19134(c);
   const passField=document.getElementById('authGatePasswordV1880');if(passField)passField.value='';
-  authGateHideV1880();
+  authGateHideV1880();finishAppUnlockV19135();
  }catch(error){
   cloudUser=null;authGateShowV1880('Não foi possível iniciar sessão. Verifica as credenciais e a ligação.');
   if(btn){btn.disabled=false;btn.textContent='Entrar'}
@@ -15660,7 +15788,7 @@ async function authGateStartupV1880(){
     cloudUser=null;authGateShowV1880('É necessária ligação à internet para iniciar sessão.');
     return false;
    }
-   cloudUser=session.user;attachCloudAuthListenerV19134(c);authGateHideV1880();cloudStartupDone=true;renderCloudUI();
+   cloudUser=session.user;attachCloudAuthListenerV19134(c);authGateHideV1880();cloudStartupDone=true;refreshLockMethodsV19135();renderCloudUI();
    return true;
   }
   if(!session?.user?.id){
@@ -15669,7 +15797,7 @@ async function authGateStartupV1880(){
   const {data:identity,error:identityError}=await boundedCloudAuthV19134(()=>c.auth.getUser(),'Identidade Cloud');
   if(identityError)throw identityError;
   if(!identity?.user?.id||identity.user.id!==session.user.id)throw new Error('Identidade Cloud diferente da sessão guardada.');
-  cloudUser=identity.user;attachCloudAuthListenerV19134(c);authGateHideV1880();
+  cloudUser=identity.user;attachCloudAuthListenerV19134(c);authGateHideV1880();refreshLockMethodsV19135();
  }catch(error){
   cloudUser=null;
   cloudLogMsg('Recuperação da sessão não confirmada: '+cloudErrText(error));
