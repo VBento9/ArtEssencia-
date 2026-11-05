@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.126">
+<meta name="artessencia-version" content="1.9.127">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -4610,7 +4610,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
     <div class="field search"><label for="publicationSearchV1812">Pesquisar produto</label><input id="publicationSearchV1812" placeholder="Nome, código, categoria ou coleção…" oninput="publicationFilterChangedV1925()"></div>
     <details class="publication-filter-drawer-v1925"><summary>Filtros avançados</summary>
      <div class="publication-filter-fields-v1925">
-      <div class="field"><label for="publicationFilterV1812">Estado</label><select id="publicationFilterV1812" onchange="publicationFilterChangedV1925()"><option value="all">Todos</option><option value="published">Publicados</option><option value="hidden">Ocultos</option><option value="issues">Com problemas</option><option value="photo">Sem fotografia</option><option value="price">Sem PVP</option><option value="tech">Ficha incompleta</option><option value="pending">Publicação pendente</option><option value="archived-public">Arquivados inconsistentes</option></select></div>
+      <div class="field"><label for="publicationFilterV1812">Estado</label><select id="publicationFilterV1812" onchange="publicationFilterChangedV1925()"><option value="all">Todos</option><option value="published">Publicados</option><option value="hidden">Ocultos</option><option value="issues">Com problemas</option><option value="photo">Sem fotografia</option><option value="price">Sem PVP</option><option value="tech">Ficha incompleta</option><option value="pending">Publicação pendente</option><option value="archived">Arquivados</option><option value="archived-public">Arquivados inconsistentes</option></select></div>
       <div class="field"><label for="publicationCollectionV1812">Coleção</label><select id="publicationCollectionV1812" onchange="publicationFilterChangedV1925()"><option value="all">Todas</option><option value="none">Sem coleção</option></select></div>
      </div>
     </details>
@@ -4624,7 +4624,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
    </div>
   </section>
   <section class="card publication-table-v1812" id="publicationResultsHeadingV1925">
-   <div class="publication-results-heading-v1925"><div><div class="section-title" style="margin:0">Produtos e publicação</div><small id="publicationCountV1812">0 produtos</small></div><small class="muted">Seleciona um produto para consultar detalhes</small></div>
+   <div class="publication-results-heading-v1925"><div><div class="section-title" style="margin:0">Produtos e publicação</div><small id="publicationCountV1812">0 produtos</small></div><small class="muted">Vista normal sem arquivados · arquivo nos filtros avançados</small></div>
    <div id="publicationBodyV1812" class="publication-results-v1925" role="list" aria-label="Lista de produtos e estados de publicação"></div>
    <div id="publicationPaginationV1925" class="publication-pagination-v1925" aria-label="Paginação de produtos"></div>
   </section>
@@ -6365,7 +6365,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.126';
+const APP_VERSION='1.9.127';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -17625,7 +17625,7 @@ function renderPublicationCenterV1812(){
  updatePublicationCollectionFilterV1812();
  const all=Array.isArray(db.products)?db.products:[],active=all.filter(p=>!productArchivedV1803(p)&&p.active!==false),remoteMap=publicationRemoteMapV1812();
  const expected=active.filter(publicationExpectedPublicV1812),publishedNoPhoto=expected.filter(p=>!String(p.shopImageUrl||'').trim()),noPvp=active.filter(p=>!(Number(p.price)>0)),techIncomplete=active.filter(p=>!productTechSheetStateV146(p).ok);
- const inconsistent=all.filter(p=>publicationSyncForV1812(p,remoteMap).key==='bad'),issues=all.filter(publicationIssueV1812);
+ const inconsistent=all.filter(p=>publicationSyncForV1812(p,remoteMap).key==='bad'),issues=active.filter(publicationIssueV1812);
  const kpis=document.getElementById('publicationKpisV1812');
  if(kpis)kpis.innerHTML=[
   ['Produtos ativos',active.length,'Uso interno'],
@@ -17645,9 +17645,14 @@ function renderPublicationCenterV1812(){
   const pc=productCompletenessV1762(p),pub=publicationExpectedPublicV1812(p),archPub=productArchivedV1803(p)&&(!!p.shopVisible||!!p.mixVisible||productEditionIdsV138(p).length>0),ed=productEditionIdsV138(p);
   const text=[p.name,p.code,p.category,productEditionNamesV138(p).join(' ')].join(' ').toLocaleLowerCase('pt-PT');
   const mq=!q||text.includes(q),mc=collection==='all'||(collection==='none'&&!ed.length)||ed.includes(collection);
-  const mf=filter==='all'||(filter==='published'&&pub)||(filter==='hidden'&&!pub&&!productArchivedV1803(p))||(filter==='issues'&&publicationIssueV1812(p))||(filter==='photo'&&pub&&!pc.photo)||(filter==='price'&&!(Number(p.price)>0))||(filter==='tech'&&!pc.tech)||(filter==='pending'&&p?.publicReleasePendingV1803===true)||(filter==='archived-public'&&archPub);
+  const archived=productArchivedV1803(p);
+  const archivedView=filter==='archived'||filter==='archived-public';
+  if(archived!==archivedView)return false;
+  const mf=filter==='all'||(filter==='published'&&pub)||(filter==='hidden'&&!pub)||(filter==='issues'&&publicationIssueV1812(p))||(filter==='photo'&&pub&&!pc.photo)||(filter==='price'&&!(Number(p.price)>0))||(filter==='tech'&&!pc.tech)||(filter==='pending'&&p?.publicReleasePendingV1803===true)||(filter==='archived'&&archived)||(filter==='archived-public'&&archPub);
   return mq&&mc&&mf;
  });
+ const heading=document.querySelector('#publicationResultsHeadingV1925 .section-title');
+ if(heading)heading.textContent=filter==='archived'?'Produtos arquivados':filter==='archived-public'?'Arquivados com publicação inconsistente':'Produtos e publicação';
  const count=document.getElementById('publicationCountV1812');
  const total=rows.length,pages=Math.max(1,Math.ceil(total/PUBLICATION_PAGE_SIZE_V1925));
  publicationPageV1925=Math.min(Math.max(1,publicationPageV1925),pages);
