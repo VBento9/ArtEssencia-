@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.124">
+<meta name="artessencia-version" content="1.9.125">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -2858,6 +2858,86 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 .publication-muted-v1812{opacity:.65}
 @media(max-width:1050px){.publication-kpis-v1812{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:700px){.publication-hero-v1812{align-items:stretch;flex-direction:column}.publication-kpis-v1812{grid-template-columns:1fr 1fr}.publication-tools-v1812{display:grid;grid-template-columns:1fr}.publication-tools-v1812 .field{min-width:0}}
+
+/* V1.9.125 — Centro de Publicação: leitura compacta e controlos preservados */
+#publication .publication-v1812{gap:10px;min-width:0}
+#publication .publication-hero-v1812{align-items:center;gap:16px;flex-wrap:wrap}
+#publication .publication-hero-v1812>div:first-child{flex:1 1 280px;min-width:0}
+#publication .publication-hero-v1812 h2{font-size:clamp(19px,2vw,24px);line-height:1.2}
+#publication .publication-hero-v1812 p{font-size:12px;line-height:1.45;max-width:66ch}
+#publication .publication-hero-v1812 .btnrow{display:flex;flex-wrap:wrap;gap:8px}
+#publication .publication-note-v1812{font-size:12px;padding:9px 12px;line-height:1.5}
+#publication .publication-note-v1812 summary{font-weight:750;cursor:pointer}
+#publication .publication-note-v1812 p{margin:7px 0 0;max-width:85ch}
+#publication .publication-kpis-v1812{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#publication .publication-kpi-v1812{padding:10px 12px;min-width:0}
+#publication .publication-kpi-v1812 span{font-size:11px;line-height:1.3;text-transform:none;letter-spacing:normal}
+#publication .publication-kpi-v1812 strong{font-size:22px;line-height:1.2}
+#publication .publication-kpi-v1812 small{font-size:11px;line-height:1.3}
+#publication .publication-sync-v1812{align-items:center;gap:12px;min-width:0;padding:11px 13px}
+#publication .publication-sync-v1812>div{min-width:0;flex:1}
+#publication .publication-sync-v1812 b{display:block;font-size:13px;line-height:1.35}
+#publication .publication-sync-v1812 small{font-size:11px;line-height:1.45;overflow-wrap:anywhere}
+#publication .publication-search-card-v1925{padding:12px}
+#publication .publication-tools-v1812{display:grid;grid-template-columns:minmax(0,1fr) minmax(185px,240px);gap:10px;align-items:end;min-width:0}
+#publication .publication-tools-v1812 .field,#publication .publication-tools-v1812 .field.search{min-width:0;min-height:0;margin:0}
+#publication .publication-tools-v1812 .field label{display:block;font-size:12px;line-height:1.35;margin-bottom:5px}
+#publication .publication-tools-v1812 input,#publication .publication-tools-v1812 select{width:100%;max-width:100%;min-width:0;box-sizing:border-box;font-family:inherit;font-size:14px}
+#publication .publication-filter-drawer-v1925{min-width:0;align-self:stretch;position:relative}
+#publication .publication-filter-drawer-v1925>summary{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:44px;padding:10px 12px;border:1px solid #e2d5ca;background:#faf7f3;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;list-style:none}
+#publication .publication-filter-drawer-v1925>summary::-webkit-details-marker{display:none}
+#publication .publication-filter-drawer-v1925>summary::after{content:"⌄";font-size:17px}
+#publication .publication-filter-drawer-v1925[open]>summary::after{content:"⌃"}
+#publication .publication-filter-fields-v1925{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px 0 0}
+#publication .publication-results-heading-v1925{display:flex;justify-content:space-between;align-items:end;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+#publication .publication-results-heading-v1925 .section-title{font-size:16px;line-height:1.3}
+#publication .publication-results-heading-v1925 small{font-size:12px;line-height:1.35}
+#publication .publication-results-v1925{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,415px),1fr));gap:10px;min-width:0}
+#publication .publication-item-v1925{border:1px solid #e6dad0;border-radius:13px;background:#fffdfb;padding:12px;min-width:0;display:grid;gap:10px;align-content:start;overflow:hidden}
+#publication .publication-item-v1925.needs-attention{border-color:#dfbb83;background:#fffdf8}
+#publication .publication-item-head-v1925{display:flex;gap:9px;justify-content:space-between;align-items:start;flex-wrap:wrap;min-width:0}
+#publication .publication-product-v1812{min-width:0;flex:1 1 180px}
+#publication .publication-product-v1812 b{font-size:15px;line-height:1.35;font-weight:800;overflow-wrap:break-word}
+#publication .publication-product-v1812 small{display:block;font-size:12px;line-height:1.45;margin-top:3px;overflow-wrap:break-word}
+#publication .publication-item-statuses-v1925{display:flex;flex-wrap:wrap;gap:5px;align-items:start;justify-content:flex-start;min-width:0}
+#publication .publication-item-v1925 .badge{display:inline-flex;align-items:center;min-width:0;max-width:100%;white-space:normal;line-height:1.35;font-size:11px;padding:4px 7px;overflow-wrap:break-word}
+#publication .publication-item-quick-v1925{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+#publication .publication-item-quick-v1925>div{background:#faf5f0;border:1px solid #f0e5dc;border-radius:9px;padding:8px;min-width:0;overflow-wrap:break-word}
+#publication .publication-item-quick-v1925 small{display:block;font-size:11px;color:#7e6c61;line-height:1.3}
+#publication .publication-item-quick-v1925 strong{display:block;font-size:12px;line-height:1.4;margin-top:3px}
+#publication .publication-item-quick-v1925 .attention{color:#8c4d20}
+#publication .publication-item-more-v1925{border-top:1px solid #efe6df;padding-top:8px;min-width:0}
+#publication .publication-item-more-v1925>summary{cursor:pointer;font-size:12px;font-weight:750;color:#674936;padding:3px 0;list-style:none}
+#publication .publication-item-more-v1925>summary::-webkit-details-marker{display:none}
+#publication .publication-item-more-v1925>summary::before{content:"+";display:inline-block;margin-right:8px;font-size:15px}
+#publication .publication-item-more-v1925[open]>summary::before{content:"−"}
+#publication .publication-item-detail-v1925{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:10px;font-size:12px}
+#publication .publication-item-detail-v1925>div{min-width:0;line-height:1.45;overflow-wrap:break-word}
+#publication .publication-item-detail-v1925 small{display:block;color:#7b655c;font-size:11px;margin-bottom:3px}
+#publication .publication-item-detail-v1925 .wide{grid-column:1/-1}
+#publication .publication-editions-v1925{display:flex;flex-wrap:wrap;gap:5px}
+#publication .publication-actions-v1812{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#publication .publication-actions-v1812 .btn{min-height:42px;min-width:0;padding:8px 10px;font-size:12px;line-height:1.3;white-space:normal;margin:0}
+#publication .publication-pagination-v1925{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:14px;flex-wrap:wrap;font-size:12px}
+#publication .publication-pagination-v1925 .btn{min-height:42px;font-size:12px}
+#publication .publication-pagination-v1925 [disabled]{opacity:.45;cursor:default}
+#publication .publication-empty-v1925{grid-column:1/-1;padding:18px;text-align:center;font-size:13px}
+#publication :is(button,summary,input,select):focus-visible{outline:3px solid #b18462;outline-offset:2px}
+@media(max-width:850px){
+ #publication .publication-kpis-v1812{grid-template-columns:repeat(3,minmax(0,1fr))}
+ #publication .publication-tools-v1812{grid-template-columns:minmax(0,1fr)}
+ #publication .publication-filter-fields-v1925{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:520px){
+ #publication .publication-kpis-v1812{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #publication .publication-item-v1925{padding:10px}
+ #publication .publication-item-head-v1925{display:block}
+ #publication .publication-item-statuses-v1925{margin-top:7px}
+ #publication .publication-item-quick-v1925{gap:5px}
+ #publication .publication-item-quick-v1925>div{padding:7px 6px}
+ #publication .publication-filter-fields-v1925{grid-template-columns:minmax(0,1fr)}
+ #publication .publication-sync-v1812{align-items:flex-start;flex-wrap:wrap}
+}
 </style>
 <style id="artessencia-top-actions-clean-v1814">
 /* Topbar limpa: sino, sincronização e data sem cápsulas, fundos ou contornos. */
@@ -4476,19 +4556,24 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
    <div><div class="dashboard-kicker">CONTROLO PÚBLICO</div><h2>Centro de Publicação</h2><p class="muted" style="margin:0">Visão central do que está preparado, publicado e sincronizado, sem duplicar a gestão dos produtos.</p></div>
    <div class="btnrow" style="margin:0"><button class="btn" type="button" onclick="loadPublicationRemoteV1812(true)">Atualizar sincronização</button><button class="btn primary" type="button" onclick="go('catalogDigital')">Abrir Catálogo Digital</button></div>
   </div>
-  <div class="publication-note-v1812"><strong>Modo de leitura seguro.</strong> Nesta fase, Catálogo e Loja ainda reutilizam o mesmo estado público do produto. A separação individual dos dois canais só será ativada depois da alteração server-side e respetiva validação.</div>
+  <details class="publication-note-v1812"><summary>Informação sobre a publicação</summary><p>Este painel é de consulta. O Catálogo e a Loja ainda partilham o mesmo estado público do produto. A separação dos canais depende de validação no servidor.</p></details>
   <div id="publicationKpisV1812" class="publication-kpis-v1812"></div>
   <section class="card publication-sync-v1812"><div><b id="publicationSyncTitleV1812">A verificar sincronização…</b><small id="publicationSyncDetailV1812">Comparação entre o Backoffice e a camada pública.</small></div><span id="publicationSyncBadgeV1812" class="badge warn">A verificar</span></section>
-  <section class="card">
+  <section class="card publication-search-card-v1925">
    <div class="publication-tools-v1812">
-    <div class="field search"><label>Pesquisar</label><input id="publicationSearchV1812" placeholder="Produto, código, categoria ou coleção…" oninput="renderPublicationCenterV1812()"></div>
-    <div class="field"><label>Estado</label><select id="publicationFilterV1812" onchange="renderPublicationCenterV1812()"><option value="all">Todos</option><option value="published">Publicados</option><option value="hidden">Ocultos</option><option value="issues">Com problemas</option><option value="photo">Sem fotografia</option><option value="price">Sem PVP</option><option value="tech">Ficha incompleta</option><option value="pending">Publicação pendente</option><option value="archived-public">Arquivados inconsistentes</option></select></div>
-    <div class="field"><label>Coleção</label><select id="publicationCollectionV1812" onchange="renderPublicationCenterV1812()"><option value="all">Todas</option><option value="none">Sem coleção</option></select></div>
+    <div class="field search"><label for="publicationSearchV1812">Pesquisar produto</label><input id="publicationSearchV1812" placeholder="Nome, código, categoria ou coleção…" oninput="publicationFilterChangedV1925()"></div>
+    <details class="publication-filter-drawer-v1925"><summary>Filtros avançados</summary>
+     <div class="publication-filter-fields-v1925">
+      <div class="field"><label for="publicationFilterV1812">Estado</label><select id="publicationFilterV1812" onchange="publicationFilterChangedV1925()"><option value="all">Todos</option><option value="published">Publicados</option><option value="hidden">Ocultos</option><option value="issues">Com problemas</option><option value="photo">Sem fotografia</option><option value="price">Sem PVP</option><option value="tech">Ficha incompleta</option><option value="pending">Publicação pendente</option><option value="archived-public">Arquivados inconsistentes</option></select></div>
+      <div class="field"><label for="publicationCollectionV1812">Coleção</label><select id="publicationCollectionV1812" onchange="publicationFilterChangedV1925()"><option value="all">Todas</option><option value="none">Sem coleção</option></select></div>
+     </div>
+    </details>
    </div>
   </section>
-  <section class="card publication-table-v1812">
-   <div class="catalog-center-section-head-v1733"><div><div class="section-title" style="margin:0">Produtos e publicação</div><small id="publicationCountV1812">0 produtos</small></div></div>
-   <div class="tablewrap" style="margin-top:10px"><table><thead><tr><th>Produto</th><th>Interno</th><th>Preparado</th><th>Catálogo hoje</th><th>Fotografia</th><th>PVP</th><th>Ficha</th><th>Coleções</th><th>Sincronização</th><th>Ações</th></tr></thead><tbody id="publicationBodyV1812"></tbody></table></div>
+  <section class="card publication-table-v1812" id="publicationResultsHeadingV1925">
+   <div class="publication-results-heading-v1925"><div><div class="section-title" style="margin:0">Produtos e publicação</div><small id="publicationCountV1812">0 produtos</small></div><small class="muted">Seleciona um produto para consultar detalhes</small></div>
+   <div id="publicationBodyV1812" class="publication-results-v1925" role="list" aria-label="Lista de produtos e estados de publicação"></div>
+   <div id="publicationPaginationV1925" class="publication-pagination-v1925" aria-label="Paginação de produtos"></div>
   </section>
  </div>
 </section> <section id="catalogDigital" class="screen">
@@ -6227,7 +6312,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.124';
+const APP_VERSION='1.9.125';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -17474,6 +17559,14 @@ function publicationOpenProductV1812(code){
 function publicationOpenCostsV1812(code){
  go('costs');setTimeout(()=>{const s=document.getElementById('costProduct');if(s){s.value=code;try{renderProductRecipeEditor()}catch(e){}}},120);
 }
+let publicationPageV1925=1;
+const PUBLICATION_PAGE_SIZE_V1925=8;
+function publicationFilterChangedV1925(){publicationPageV1925=1;renderPublicationCenterV1812()}
+function publicationGoPageV1925(page){
+ publicationPageV1925=Math.max(1,Number(page)||1);
+ renderPublicationCenterV1812();
+ document.getElementById('publicationResultsHeadingV1925')?.scrollIntoView({block:'start',behavior:'auto'});
+}
 function renderPublicationCenterV1812(){
  const body=document.getElementById('publicationBodyV1812');if(!body)return;
  updatePublicationCollectionFilterV1812();
@@ -17501,21 +17594,45 @@ function renderPublicationCenterV1812(){
   const mf=filter==='all'||(filter==='published'&&pub)||(filter==='hidden'&&!pub&&!productArchivedV1803(p))||(filter==='issues'&&publicationIssueV1812(p))||(filter==='photo'&&pub&&!pc.photo)||(filter==='price'&&!(Number(p.price)>0))||(filter==='tech'&&!pc.tech)||(filter==='pending'&&p?.publicReleasePendingV1803===true)||(filter==='archived-public'&&archPub);
   return mq&&mc&&mf;
  });
- const count=document.getElementById('publicationCountV1812');if(count)count.textContent=rows.length+(rows.length===1?' produto':' produtos');
- body.innerHTML=rows.length?rows.map(p=>{
+ const count=document.getElementById('publicationCountV1812');
+ const total=rows.length,pages=Math.max(1,Math.ceil(total/PUBLICATION_PAGE_SIZE_V1925));
+ publicationPageV1925=Math.min(Math.max(1,publicationPageV1925),pages);
+ const first=(publicationPageV1925-1)*PUBLICATION_PAGE_SIZE_V1925;
+ const subset=rows.slice(first,first+PUBLICATION_PAGE_SIZE_V1925);
+ if(count)count.textContent=total?(first+1)+'–'+(first+subset.length)+' de '+total+' produtos':'0 produtos';
+ const paging=document.getElementById('publicationPaginationV1925');
+ if(paging) paging.innerHTML=total>PUBLICATION_PAGE_SIZE_V1925?
+   '<button class="btn" type="button" onclick="publicationGoPageV1925('+(publicationPageV1925-1)+')" '+(publicationPageV1925<=1?'disabled':'')+'>Anterior</button>'+
+   '<span>Página '+publicationPageV1925+' de '+pages+'</span>'+
+   '<button class="btn" type="button" onclick="publicationGoPageV1925('+(publicationPageV1925+1)+')" '+(publicationPageV1925>=pages?'disabled':'')+'>Seguinte</button>':'';
+ const hasRemote=!!publicationRemoteLoadedAtV1812&&!publicationRemoteErrorV1812;
+ body.innerHTML=subset.length?subset.map(p=>{
   const pc=productCompletenessV1762(p),pub=publicationExpectedPublicV1812(p),sync=publicationSyncForV1812(p,remoteMap),eds=productEditionNamesV138(p);
-  return '<tr class="'+(productArchivedV1803(p)?'publication-muted-v1812':'')+'">'+
-   '<td class="publication-product-v1812"><b>'+escapeHtml(p.name||'Sem nome')+'</b><small>'+escapeHtml(p.code||'—')+' · '+escapeHtml(p.category||'—')+'</small></td>'+
-   '<td><span class="badge '+(productArchivedV1803(p)?'warn':'ok')+'">'+(productArchivedV1803(p)?'Arquivado':'Ativo')+'</span></td>'+
-   '<td><span class="badge '+(pub?'ok':'warn')+'">'+(pub?'Publicado':'Oculto')+'</span>'+(p?.publicReleasePendingV1803===true?'<br><small>Publicação pendente</small>':'')+'</td>'+
-   '<td><span class="badge '+((publicationCatalogVisibleV1813.has(String(p._rid||'').trim().toUpperCase())||publicationCatalogVisibleV1813.has(String(p.code||'').toUpperCase()))?'ok':'warn')+'">'+((publicationCatalogVisibleV1813.has(String(p._rid||'').trim().toUpperCase())||publicationCatalogVisibleV1813.has(String(p.code||'').toUpperCase()))?'Visível':'Oculto agora')+'</span><br><small>'+(pub?'pode estar sujeito a datas sazonais':'não preparado')+'</small></td>'+
-   '<td><span class="badge '+(pc.photo?'ok':'warn')+'">'+(pc.photo?'✓':'Sem foto')+'</span></td>'+
-   '<td><span class="badge '+(Number(p.price)>0?'ok':'warn')+'">'+(Number(p.price)>0?euro(p.price):'Sem PVP')+'</span></td>'+
-   '<td><span class="badge '+(pc.tech?'ok':'warn')+'">'+escapeHtml(productTechSheetStateV146(p).label)+'</span></td>'+
-   '<td>'+(eds.length?eds.map(x=>'<span class="badge">'+escapeHtml(x)+'</span>').join(' '):'<span class="muted">—</span>')+'</td>'+
-   '<td><span class="badge '+(sync.key==='ok'?'ok':sync.key==='bad'?'bad':'warn')+'">'+escapeHtml(sync.label)+'</span></td>'+
-   '<td><div class="publication-actions-v1812"><button class="btn" type="button" onclick="publicationOpenProductV1812(\''+String(p.code||'').replaceAll("'","\\'")+'\')">Editar</button><button class="btn" type="button" onclick="publicationOpenCostsV1812(\''+String(p.code||'').replaceAll("'","\\'")+'\')">Custos / ficha</button></div></td></tr>';
- }).join(''):'<tr><td colspan="10" class="empty">Nenhum produto corresponde aos filtros.</td></tr>';
+  const archived=productArchivedV1803(p),tech=productTechSheetStateV146(p);
+  const visible=hasRemote&&(publicationCatalogVisibleV1813.has(String(p._rid||'').trim().toUpperCase())||publicationCatalogVisibleV1813.has(String(p.code||'').toUpperCase()));
+  const visibleLabel=hasRemote?(visible?'Visível':'Oculto agora'):'Por verificar';
+  const price=Number(p.price)>0?euro(p.price):'Sem PVP';
+  const needsAttention=publicationIssueV1812(p);
+  const encoded=productArgV147(p.code).replace(/'/g,'%27');
+  return '<article role="listitem" class="publication-item-v1925 '+(archived?'publication-muted-v1812 ':'')+(needsAttention?'needs-attention':'')+'">'+
+   '<div class="publication-item-head-v1925"><div class="publication-product-v1812"><b>'+escapeHtml(p.name||'Sem nome')+'</b><small>'+escapeHtml(p.code||'—')+' · '+escapeHtml(p.category||'—')+'</small></div>'+
+   '<div class="publication-item-statuses-v1925"><span class="badge '+(pub?'ok':'warn')+'">'+(pub?'Publicado':'Oculto')+'</span>'+
+   '<span class="badge '+(sync.key==='ok'?'ok':sync.key==='bad'?'bad':'warn')+'">'+escapeHtml(sync.label)+'</span></div></div>'+
+   '<div class="publication-item-quick-v1925">'+
+   '<div><small>Catálogo hoje</small><strong class="'+(hasRemote&&!visible?'attention':'')+'">'+visibleLabel+'</strong></div>'+
+   '<div><small>Ficha técnica</small><strong class="'+(tech.ok?'':'attention')+'">'+escapeHtml(tech.label)+'</strong></div>'+
+   '<div><small>PVP</small><strong class="'+(Number(p.price)>0?'':'attention')+'">'+escapeHtml(price)+'</strong></div></div>'+
+   '<details class="publication-item-more-v1925"><summary>Ver restantes estados e coleções</summary>'+
+   '<div class="publication-item-detail-v1925">'+
+   '<div><small>Estado interno</small><span class="badge '+(archived?'warn':'ok')+'">'+(archived?'Arquivado':'Ativo')+'</span></div>'+
+   '<div><small>Fotografia</small><span class="badge '+(pc.photo?'ok':'warn')+'">'+(pc.photo?'Disponível':'Sem fotografia')+'</span></div>'+
+   '<div><small>Preparação</small><span class="badge '+(pub?'ok':'warn')+'">'+(pub?'Publicado':'Oculto')+'</span>'+(p?.publicReleasePendingV1803===true?' <small>Publicação pendente</small>':'')+'</div>'+
+   '<div><small>Disponibilidade</small>'+((pub&&hasRemote&&!visible)?'Sujeito a regras sazonais':'Consultar o Catálogo')+'</div>'+
+   '<div class="wide"><small>Coleções</small><div class="publication-editions-v1925">'+(eds.length?eds.map(x=>'<span class="badge">'+escapeHtml(x)+'</span>').join(''):'<span class="muted">Sem coleções</span>')+'</div></div>'+
+   '</div></details>'+
+   '<div class="publication-actions-v1812"><button class="btn primary" type="button" onclick="publicationOpenProductV1812(decodeURIComponent(\''+encoded+'\'))">Editar</button>'+
+   '<button class="btn" type="button" onclick="publicationOpenCostsV1812(decodeURIComponent(\''+encoded+'\'))">Custos / ficha</button></div></article>';
+ }).join(''):'<div class="publication-empty-v1925 empty">Nenhum produto corresponde à pesquisa ou aos filtros.</div>';
 }
  function renderAll(){ensureQuotePaymentModel();ensureCostModel();syncPackagingSelect();renderTechnicalCategoriesV1863();renderClientSuggestions();renderDashboard();renderPicker();renderCart();renderOrders();renderProduction();renderCosts();renderStock();renderPurchases();renderCash();renderClients();renderQuotes();renderQuoteCart();renderProducts();renderProductWorkflowV1851(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null);renderProductPublicStatusV1850(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null);renderCommercialCalendarV1850();renderPublicationCenterV1812();renderCatalogs();renderVisualCatalogsV192();renderSpecialEditionsAdmin();renderCatalogDigitalCenterV160();renderSettings();renderAprecoImportV1753();renderBusinessSettings();if(!personalizationCategorySelectOpenV1794)renderPersonalizationLibraryV1791();renderReports();renderDigitalStatsV1795();renderLaunchStatsV1813();renderQuantityPricingV1750();renderLegalSummaryV1286();renderCloudUI();renderBackupInfo();renderOrderNotificationsV12624();renderPushStatusV12625();const s=sec();if(document.getElementById('lockMinutes'))document.getElementById('lockMinutes').value=String(s.lockMinutes??15)}
 document.addEventListener('input',e=>{if(e.target&&['costPackQty','costPackPrice'].includes(e.target.id))updateCostPreview()});
