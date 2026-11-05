@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.131">
+<meta name="artessencia-version" content="1.9.132">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -6397,7 +6397,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.131';
+const APP_VERSION='1.9.132';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -16190,9 +16190,10 @@ async function pushOperationalCloudStateV139(user,{force=false}={}){
  const payload={...operationalCloudSnapshotV139(),_meta:{appVersion:APP_VERSION,schema:7,updatedAt:new Date().toISOString()}};
  return await saveCloudStateSimple(user,payload,{force})
 }
+// cloudHydrating is an in-progress READ, not an unsent local edit.
 function operationalLocalPendingV1949(){
  const meta=cloudMeta();
- return !!(meta.dirty||meta.conflict||cloudConflict||cloudPushPending||cloudPushRunning||cloudHydrating||
+ return !!(meta.dirty||meta.conflict||cloudConflict||cloudPushPending||cloudPushRunning||
    localStorage.getItem(REL_DIRTY)==='1'||hasPendingProductEditsV19102()||hasRestorePendingV12645());
 }
 function applyOperationalCloudRowSafelyV1949(row,{force=false}={}){
