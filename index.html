@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.130">
+<meta name="artessencia-version" content="1.9.131">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -6397,7 +6397,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.130';
+const APP_VERSION='1.9.131';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -6434,7 +6434,7 @@ const REL_DIRTY='artessencia_v10_rel_dirty',
       REL_ORDER_SHADOW='artessencia_v12_order_shadow',
       REL_TABLES={clients:'artessencia_v1_clients',products:'artessencia_v1_products',orders:'artessencia_v1_orders',quotes:'artessencia_v1_quotes',sales:'artessencia_v1_sales'};
 let db=load(), cart=[], quoteCart=[], unlocked=true, deferredPrompt=null, idleTimer=null, editingPurchaseId=null, editingCashId=null, editingStockIndex=null;
-let cloudClient=null, cloudUser=null, cloudChannel=null, cloudPushTimer=null, cloudApplying=false, cloudBusy=false, cloudPushRunning=false, cloudPushPending=false, cloudConflict=null, cloudStartupDone=false, cloudHydrating=false, cloudValidationStartedV19129=0;
+let cloudClient=null, cloudUser=null, cloudChannel=null, cloudPushTimer=null, cloudApplying=false, cloudBusy=false, cloudPushRunning=false, cloudPushPending=false, cloudConflict=null, cloudStartupDone=false, cloudHydrating=false, cloudValidationStartedV19129=0, cloudValidationStageV19131='', cloudValidationFailureV19131='';
 
 function stableStringify(v){
  if(v===null||typeof v!=='object')return JSON.stringify(v);
@@ -15422,13 +15422,14 @@ function renderCloudUICore(){
  let cls='neutral',label='Cloud desligada';
  if(!online){cls='offline';label=m.dirty?'Offline · por sincronizar':'Offline'}
  else if(cloudConflict||m.conflict){cls='pending';label=cloudConflict?.type==='product'?'Produtos com conflito · fila ativa':'Conflito operacional · fila de produtos ativa'}
- else if(cloudUser&&!cloudStartupDone){cls='pending';label=cloudValidationStartedV19129&&Date.now()-cloudValidationStartedV19129>=15000?'Validação Cloud demorada':'A validar Cloud…'}
+ else if(cloudUser&&cloudValidationFailureV19131){cls='pending';label='Falha na validação Cloud'}
+  else if(cloudUser&&!cloudStartupDone){cls='pending';label=cloudValidationStartedV19129&&Date.now()-cloudValidationStartedV19129>=15000?'Validação Cloud demorada':'A validar Cloud…'}
  else if(cloudUser&&(m.dirty||hasPendingProductEditsV19102())){cls='pending';label='Por sincronizar'}
  else if(cloudUser&&m.verified){cls='ok';label='Sincronizado'}
  else if(cloudUser){cls='pending';label='Cloud por validar'}
  else if(cfg.url&&cfg.key){cls='pending';label='Cloud sem sessão'}
  if(chip){chip.className='pill cloud-status '+cls;if(txt)txt.textContent=label}
- const box=document.getElementById('cloudStateBox');if(box){let detail=label;if(cloudBusy)detail='Sincronização em curso…';if(cloudConflict)detail=cloudConflict.type==='product'?'Conflito no produto '+String(cloudConflict.code||'sem código')+' · dados locais preservados':cloudConflict.type==='revision'?'Conflito de revisão operacional · dados locais preservados':'Conflito Cloud pendente · dados locais preservados';else if(m.conflict)detail='Conflito persistente · usa «Revalidar conflito sem substituir dados»';const pendingProductsV19104=Object.keys(pendingProductEditsV19102()).length;if(pendingProductsV19104)detail+=' · '+pendingProductsV19104+' produto(s) por enviar';if(m.productLastConfirmedV19104)detail+=' · Produtos confirmados na Cloud: '+new Date(m.productLastConfirmedV19104).toLocaleString('pt-PT');box.textContent=detail}
+ const box=document.getElementById('cloudStateBox');if(box){let detail=label;if(cloudBusy)detail='Sincronização em curso…';if(cloudUser&&!cloudStartupDone&&cloudValidationStageV19131)detail='A validar: '+cloudValidationStageV19131;if(cloudValidationFailureV19131)detail='Falha na etapa '+(cloudValidationStageV19131||'Cloud')+': '+cloudValidationFailureV19131.slice(0,150)+' · dados locais preservados';if(cloudConflict)detail=cloudConflict.type==='product'?'Conflito no produto '+String(cloudConflict.code||'sem código')+' · dados locais preservados':cloudConflict.type==='revision'?'Conflito de revisão operacional · dados locais preservados':'Conflito Cloud pendente · dados locais preservados';else if(m.conflict)detail='Conflito persistente · usa «Revalidar conflito sem substituir dados»';const pendingProductsV19104=Object.keys(pendingProductEditsV19102()).length;if(pendingProductsV19104)detail+=' · '+pendingProductsV19104+' produto(s) por enviar';if(m.productLastConfirmedV19104)detail+=' · Produtos confirmados na Cloud: '+new Date(m.productLastConfirmedV19104).toLocaleString('pt-PT');box.textContent=detail}
  const ls=document.getElementById('cloudLastSync');if(ls)ls.textContent='Última sincronização V10: '+(m.lastSync?new Date(m.lastSync).toLocaleString('pt-PT'):'—');
  const ui=document.getElementById('cloudUserInfo');if(ui)ui.textContent='Conta: '+(cloudUser?.email||cfg.email||'—');
  const log=document.getElementById('cloudLog');if(log){const a=cloudLogData();log.innerHTML=a.length?a.map(x=>'<div>'+escapeHtml(x)+'</div>').join(''):'Sem atividade de sincronização.'}
@@ -15449,8 +15450,8 @@ function renderCloudUI(){
  const dirty=!!meta.dirty||realPending;
  const hero=document.getElementById('cloudHeroStatus');
  if(hero){
-   const verified=connected&&cloudStartupDone&&!dirty&&!meta.conflict&&!cloudConflict&&!!meta.verified;
-   hero.textContent=!online?'SEM INTERNET':!connected?(cfg.url?'DESLIGADA':'NÃO CONFIGURADA'):!cloudStartupDone?'A VALIDAR CLOUD':dirty?'POR SINCRONIZAR':verified?'SINCRONIZADA':'POR VALIDAR';
+   const verified=connected&&cloudStartupDone&&!dirty&&!meta.conflict&&!cloudConflict&&!cloudValidationFailureV19131&&!!meta.verified;
+   hero.textContent=!online?'SEM INTERNET':!connected?(cfg.url?'DESLIGADA':'NÃO CONFIGURADA'):cloudValidationFailureV19131?'FALHA DE VALIDAÇÃO':!cloudStartupDone?'A VALIDAR CLOUD':dirty?'POR SINCRONIZAR':verified?'SINCRONIZADA':'POR VALIDAR';
    hero.className='cloud-hero-status '+(!online?'offline':verified?'ok':connected?'pending':'off');
  }
  const sum=document.getElementById('cloudProSummary');
@@ -15465,8 +15466,8 @@ function renderCloudUI(){
 function saveCloudConfig(){const url=(document.getElementById('cloudUrl')?.value||'').trim().replace(/\/$/,'');const key=(document.getElementById('cloudKey')?.value||'').trim();const email=(document.getElementById('cloudEmail')?.value||'').trim();if(url&&!/^https:\/\/[^\s]+$/i.test(url)){toast('URL Supabase inválido');return false}if((url&&!key)||(!url&&key)){toast('Preenche URL e chave');return false}const prev=cloudCfg();localStorage.setItem(CLOUD_CFG,JSON.stringify({url,key,email}));if(prev.url!==url||prev.key!==key){cloudClient=null;cloudUser=null;cloudChannel=null;setCloudMeta({verified:false})}cloudLogMsg('Configuração cloud guardada');toast('Configuração cloud guardada');renderCloudUI();return true}
 const PASSKEY_PREVIEW_V20261008=true;
 // O botão de registo permanece oculto até à ativação explícita da experiência. // Aguardar validação da configuração Supabase e RP ID.
-/* V1.9.130: registar o observador só depois da inicialização Auth.
-   No evento Auth, nunca chamar diretamente operações Supabase: evita bloqueios de refresh. */
+/* V1.9.131: o SDK gere o início da sessão. Evitar duas consultas concorrentes a
+   getSession. Os eventos Auth só agendam tarefas Supabase fora do callback. */
 function initCloudClient(){
  const cfg=cloudCfg();
  if(!cfg.url||!cfg.key)return null;
@@ -15474,32 +15475,25 @@ function initCloudClient(){
  if(cloudClient)return cloudClient;
  const client=window.supabase.createClient(cfg.url,cfg.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,...(PASSKEY_PREVIEW_V20261008?{experimental:{passkey:true}}:{})},db:{schema:'public'}});
  cloudClient=client;
- (async()=>{
-  try{await client.auth.getSession()}catch(error){
-   if(cloudClient===client)cloudLogMsg('Sessão Cloud ainda não validada: '+cloudErrText(error));
-  }
+ client.auth.onAuthStateChange((event,session)=>{
   if(cloudClient!==client)return;
-  client.auth.onAuthStateChange((event,session)=>{
-   if(cloudClient!==client)return;
-   cloudUser=session?.user||null;
-   renderCloudUI();
-   if(!cloudUser||!cloudStartupDone||cloudHydrating||!(event==='SIGNED_IN'||event==='TOKEN_REFRESHED'))return;
-   // O callback Auth é síncrono: o acesso à Cloud só ocorre no evento seguinte.
-   setTimeout(()=>{
-    if(cloudClient!==client||!cloudUser||!cloudStartupDone||cloudHydrating)return;
-    if(!cloudChannel)void subscribeCloud();
-    if((cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending)&&!cloudMeta().conflict&&!hasRestorePendingV12645())scheduleCloudPushV1860(300);
-   },0);
-  });
- })().catch(error=>{if(cloudClient===client)cloudLogMsg('Falha ao observar sessão Cloud: '+cloudErrText(error))});
- return cloudClient;
+  cloudUser=session?.user||null;renderCloudUI();
+  if(!cloudUser||!cloudStartupDone||cloudHydrating||!(event==='SIGNED_IN'||event==='TOKEN_REFRESHED'))return;
+  setTimeout(()=>{
+   if(cloudClient!==client||!cloudUser||!cloudStartupDone||cloudHydrating)return;
+   if(!cloudChannel)void subscribeCloud();
+   if((cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending)&&!cloudMeta().conflict&&!hasRestorePendingV12645())scheduleCloudPushV1860(300);
+  },0);
+ });
+ return client;
 }
 function cloudStateQuery(){return cloudClient.schema('public').from(CLOUD_TABLE)}
 function cloudErrText(e){if(!e)return 'Erro desconhecido';const parts=[];if(e.message)parts.push(e.message);if(e.code)parts.push('code='+e.code);if(e.details)parts.push('details='+e.details);if(e.hint)parts.push('hint='+e.hint);if(e.status)parts.push('status='+e.status);return parts.join(' | ')}
 async function cloudApiDiagnostic(showToast=false){
  const c=initCloudClient();if(!c)return false;
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
  try{
-   const {error}=await c.from(REL_TABLES.clients).select('id').limit(1);
+   const {error}=await c.from(REL_TABLES.clients).select('id').limit(1).abortSignal(controller.signal);
    if(error)throw error;
    cloudLogMsg('Diagnóstico V10: tabelas relacionais acessíveis');
    if(showToast)toast('Base V10 acessível');
@@ -15508,7 +15502,7 @@ async function cloudApiDiagnostic(showToast=false){
    cloudLogMsg('Diagnóstico V10: '+cloudErrText(e));
    if(showToast)toast('Erro no acesso à base V10');
    return false
- }
+ }finally{clearTimeout(timer)}
 }
 async function cloudConnect(){
  if(!saveCloudConfig())return;
@@ -15524,7 +15518,7 @@ async function cloudConnect(){
    cloudLogMsg('Sessão V10 iniciada');
    const ok=await cloudApiDiagnostic(false);
    if(!ok)throw new Error('Tabelas V10 não acessíveis');
-   cloudStartupDone=false;startCloudValidationNoticeV19129();cloudHydrating=true;
+   cloudStartupDone=false;cloudValidationFailureV19131='';cloudValidationStageV19131='A ligar à Cloud';startCloudValidationNoticeV19129();cloudHydrating=true;
    if(cloudMeta().conflict||cloudConflict)await recoverStaleCloudConflictV19103(cloudUser);
    if(!(cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||hasPendingProductEditsV19102()||cloudMeta().conflict||cloudConflict)){
      await hydrateOperationalCloudStartupV1755(cloudUser,'ligação à Cloud');
@@ -16836,30 +16830,47 @@ window.addEventListener('pageshow',()=>{if(cloudStartupDone){if((cloudMeta().dir
 async function cloudHydrateStartup(){
  return relationalHydrateCore(true)
 }
+/* V1.9.131: relatório de fase e saída explícita em caso de falha no arranque.
+   Não realizar push, apagar filas, nem forçar hidratação em estado inseguro. */
 async function cloudStartup(){
+ cloudValidationFailureV19131='';
+ cloudValidationStageV19131='A confirmar sessão';
+ cloudStartupDone=false;cloudHydrating=true;
  startCloudValidationNoticeV19129();renderCloudUI();
- const u=await ensureCloudSession();
- if(!u){cloudStartupDone=true;cloudValidationStartedV19129=0;renderCloudUI();renderOrderNotificationsV12624();startOrderNotificationPollingV12624();startEmailNotificationPollingV1710();try{if(db?.aprecoImportV1753?.completedAt&&!db?.aprecoOrganizationV1761?.completedAt)organizeAprecoProductsV1761(false);else renderAprecoOrganizationV1761()}catch(e){console.error('organização Apreço V1.7.61',e)}return}
- cloudLogMsg('Sessão V10 recuperada');
- if(cloudMeta().conflict||cloudConflict)await recoverStaleCloudConflictV19103(u);
- const localPendingAtStartup=cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||hasPendingProductEditsV19102()||cloudMeta().conflict||!!cloudConflict;
- cloudHydrating=true;cloudStartupDone=false;
+ let completed=false;
  try{
-   await cloudApiDiagnostic(false);
-   if(localPendingAtStartup){
-     // Não hidratar por cima de alterações locais ainda não enviadas.
-     // O ciclo automático abaixo envia primeiro e mantém a deteção de conflito operacional.
-     cloudLogMsg('Arranque Cloud · alterações locais pendentes preservadas para envio automático');
-     cloudPushPending=true
-   }else{
-     await hydrateOperationalCloudStartupV1755(u,'arranque');
-     await relationalHydrateCore(true);
-     await pullOnlineOrders(false);
-     if(relOrderPendingSet().size)await syncPendingOrdersOnly(false)
-   }
+  const u=cloudUser||await ensureCloudSession();
+  if(!u)throw new Error('Sessão Cloud indisponível');
+  cloudLogMsg('Sessão autenticada; a validar dados');
+  if(cloudMeta().conflict||cloudConflict){
+   cloudValidationStageV19131='A revalidar conflitos pendentes';renderCloudUI();
+   await recoverStaleCloudConflictV19103(u);
+  }
+  const localPending=cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||hasPendingProductEditsV19102()||cloudMeta().conflict||!!cloudConflict;
+  cloudValidationStageV19131='A confirmar acesso às tabelas';renderCloudUI();
+  if(!await cloudApiDiagnostic(false))throw new Error('O acesso às tabelas não foi confirmado');
+  if(localPending){
+   cloudLogMsg('Arranque Cloud · alterações locais pendentes preservadas para envio');
+   cloudPushPending=true;
+  }else{
+   cloudValidationStageV19131='A receber stock, caixa e configuração';renderCloudUI();
+   await hydrateOperationalCloudStartupV1755(u,'arranque');
+   cloudValidationStageV19131='A receber clientes, produtos e encomendas';renderCloudUI();
+   const relationalOk=await relationalHydrateCore(true);
+   if(!relationalOk)throw new Error('Receção dos dados relacionais não confirmada');
+   cloudValidationStageV19131='A verificar encomendas online';renderCloudUI();
+   await pullOnlineOrders(false);
+   if(relOrderPendingSet().size)await syncPendingOrdersOnly(false);
+  }
+  completed=true;
+ }catch(e){
+  cloudValidationFailureV19131=cloudErrText(e)||'Falha desconhecida';
+  setCloudMeta({verified:false});
+  cloudLogMsg('Falha de validação na etapa '+(cloudValidationStageV19131||'arranque')+': '+cloudValidationFailureV19131);
  }finally{
-   cloudHydrating=false;cloudStartupDone=true;cloudValidationStartedV19129=0;renderCloudUI()
+  cloudHydrating=false;cloudStartupDone=true;cloudValidationStartedV19129=0;renderCloudUI();
  }
+ if(!completed)return false;
  try{if(db?.aprecoImportV1753?.completedAt&&!db?.aprecoOrganizationV1761?.completedAt)organizeAprecoProductsV1761(false);else renderAprecoOrganizationV1761()}catch(e){console.error('organização Apreço V1.7.61',e)}
  await subscribeCloud();
  await receiveProductsV19107();
@@ -16868,10 +16879,9 @@ async function cloudStartup(){
  await publishPublicTechnicalProfilesV12815(false);
  startOrderNotificationPollingV12624();startEmailNotificationPollingV1710();
  renderOrderNotificationsV12624();
- if((cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending)&&!cloudMeta().conflict&&!cloudConflict&&!hasRestorePendingV12645())scheduleCloudPushV1860(400)
+ if((cloudMeta().dirty||localStorage.getItem(REL_DIRTY)==='1'||cloudPushPending)&&!cloudMeta().conflict&&!cloudConflict&&!hasRestorePendingV12645())scheduleCloudPushV1860(400);
+ return true;
 }
-
-
 function relUuid(obj){
  if(!obj)return null;
  if(!obj._rid){
