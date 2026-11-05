@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.127">
+<meta name="artessencia-version" content="1.9.128">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -3585,6 +3585,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 <link rel="stylesheet" href="./clients-compact-ui.css">
 <link rel="stylesheet" href="./purchases-compact-ui.css">
 <link rel="stylesheet" href="./cash-compact-ui.css">
+<link rel="stylesheet" href="./funds-ledger-v1.css">
 <link rel="stylesheet" href="./production-compact-ui.css">
 <link rel="stylesheet" href="./order-detail-compact-ui.css">
 <style id="visual-filters-compact-20261023">
@@ -5459,6 +5460,37 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
     </div>
   </section>
 
+<section id="funds" class="screen">
+ <div class="funds-hero-v1929 card">
+  <div><div class="dashboard-kicker">CONTROLO FINANCEIRO</div><h2>Mapa de Fundos</h2><p>Distribuição dos recebimentos por Materiais, Despesas extras e Lucro reservado, com saldo acumulado.</p></div>
+  <button class="btn" type="button" onclick="go('cash')">Abrir Caixa</button>
+ </div>
+ <section class="card funds-controls-v1929" aria-label="Período do mapa financeiro">
+  <label>Período<select id="fundsPeriodV1929"><option value="month">Mês</option><option value="quarter">Trimestre</option><option value="semester">Semestre</option><option value="year">Ano</option></select></label>
+  <label>Ano<input type="number" id="fundsYearV1929" min="2000" max="2200" step="1"></label>
+  <label>Intervalo<select id="fundsSlotV1929"></select></label>
+ </section>
+ <div class="funds-kpis-v1929" id="fundsKpisV1929" aria-label="Totais do mapa financeiro"></div>
+ <section class="card funds-card-v1929">
+  <div class="funds-card-head-v1929"><div><div class="section-title">Saldo por departamento</div><small id="fundsAppliedV1929">Período selecionado</small></div><button class="btn" type="button" id="fundsExportV1929">Exportar CSV</button></div>
+  <div class="funds-tablewrap-v1929"><table><thead><tr><th scope="col">Departamento</th><th scope="col">Saldo inicial</th><th scope="col">Entradas</th><th scope="col">Saídas</th><th scope="col">Saldo final</th></tr></thead><tbody id="fundsTableBodyV1929"></tbody></table></div>
+  <div id="fundsQualityV1929" class="funds-quality-v1929" role="status"></div>
+  <details class="funds-rule-v1929"><summary>Configurar reserva para despesas extras</summary>
+   <div class="funds-rule-fields-v1929">
+    <label>Reserva (%)<input type="number" min="0" max="100" step="0.1" id="fundsRatePercentV1929"></label>
+    <label>Aplicar desde<input type="date" id="fundsRateStartV1929"></label>
+    <button class="btn primary" type="button" id="fundsSaveRateV1929">Guardar regra</button>
+   </div>
+   <p>Aplicada à parte recebida depois da reserva estimada de materiais. A alteração recalcula o mapa a partir da data escolhida; não modifica pagamentos nem compras.</p>
+  </details>
+ </section>
+ <section class="card funds-card-v1929">
+  <div class="funds-card-head-v1929"><div><div class="section-title">Movimentos e classificação</div><small id="fundsMovementCountV1929">0 movimentos</small></div><small class="muted">Classifica saídas manuais para refletir o departamento correto</small></div>
+  <div class="funds-tablewrap-v1929"><table class="funds-movement-table-v1929"><thead><tr><th scope="col">Data</th><th scope="col">Movimento</th><th scope="col">Departamento</th><th scope="col">Montante</th></tr></thead><tbody id="fundsMovementBodyV1929"></tbody></table></div>
+  <div id="fundsPaginationV1929" class="funds-pagination-v1929"></div>
+ </section>
+</section>
+
   <section id="clients" class="screen">
     <div class="clients-hero card">
       <div>
@@ -6365,7 +6397,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.127';
+const APP_VERSION='1.9.128';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -6916,9 +6948,9 @@ function installNavKeyboard(){
 
 setTimeout(installNavKeyboard,0);
 
-const pages=[['dashboard','Dashboard'],['sale','Vendas'],['orders','Encomendas'],['quotes','Orçamentos'],['production','Produção'],['costs','Custos'],['stock','Stock'],['purchases','Compras'],['cash','Caixa'],['clients','Clientes'],['email','Comunicações · Email'],['digitalStats','Estatísticas Digitais'],['reports','Relatórios'],['quantityPricing','Precificação em quantidade'],['products','Produtos'],['commercialCalendar','Calendário Comercial'],['publication','Publicação'],['catalogDigital','Catálogo Digital'],['visualCatalogs','Catálogos Visuais'],['catalogs','Catálogos'],['specialEditions','Edições Especiais'],['homepage','Homepage pública'],['socialAI','Redes Sociais / IA'],['campaigns','Campanhas'],['delivery','Entregas · futura Loja'],['legal','Informação Legal pública'],['settings','Configuração'],['cloud','Cloud Sync'],['backup','Backup']];
+const pages=[['dashboard','Dashboard'],['sale','Vendas'],['orders','Encomendas'],['quotes','Orçamentos'],['production','Produção'],['costs','Custos'],['stock','Stock'],['purchases','Compras'],['cash','Caixa'],['funds','Mapa de Fundos'],['clients','Clientes'],['email','Comunicações · Email'],['digitalStats','Estatísticas Digitais'],['reports','Relatórios'],['quantityPricing','Precificação em quantidade'],['products','Produtos'],['commercialCalendar','Calendário Comercial'],['publication','Publicação'],['catalogDigital','Catálogo Digital'],['visualCatalogs','Catálogos Visuais'],['catalogs','Catálogos'],['specialEditions','Edições Especiais'],['homepage','Homepage pública'],['socialAI','Redes Sociais / IA'],['campaigns','Campanhas'],['delivery','Entregas · futura Loja'],['legal','Informação Legal pública'],['settings','Configuração'],['cloud','Cloud Sync'],['backup','Backup']];
 const pageIcons={
- dashboard:'🏠',sale:'➕',orders:'🧾',quotes:'📄',production:'🛠️',costs:'🧮',stock:'📦',purchases:'🛒',cash:'💶',
+ dashboard:'🏠',sale:'➕',orders:'🧾',quotes:'📄',production:'🛠️',costs:'🧮',stock:'📦',purchases:'🛒',cash:'💶',funds:'📊',
  clients:'👥',email:'✉️',digitalStats:'📈',reports:'📊',quantityPricing:'🧮',products:'🕯️',commercialCalendar:'🗓️',publication:'🌐',catalogDigital:'📱',visualCatalogs:'🖼️',catalogs:'🗂️',specialEditions:'🎉',homepage:'🖼️',socialAI:'✦',campaigns:'📣',delivery:'🚚',legal:'⚖️',settings:'⚙️',cloud:'☁️',backup:'💾'
 };
 const navGroupsV1857={dashboard:'Visão geral',sale:'Operação',costs:'Gestão',clients:'Clientes e comunicação',digitalStats:'Análise',products:'Conteúdo público',campaigns:'Marketing',delivery:'Loja e conformidade',settings:'Sistema'};
@@ -7654,7 +7686,7 @@ function go(id){
  requestAnimationFrame(()=>target.classList.add('screen-enter'));
  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
  document.getElementById('pageTitle').textContent=pages.find(x=>x[0]===id)?.[1]||'';
- const contextMap={dashboard:'VISÃO GERAL',sale:'ENCOMENDAS',orders:'ENCOMENDAS',quotes:'ORÇAMENTOS',production:'PRODUÇÃO',costs:'GESTÃO',stock:'GESTÃO',purchases:'GESTÃO',cash:'FINANCEIRO',clients:'CLIENTES',email:'COMUNICAÇÕES',digitalStats:'ESTATÍSTICAS DIGITAIS',reports:'RELATÓRIOS',quantityPricing:'PRECIFICAÇÃO',products:'CATÁLOGO DIGITAL',commercialCalendar:'PLANEAMENTO COMERCIAL',publication:'PUBLICAÇÃO',catalogDigital:'CATÁLOGO DIGITAL',visualCatalogs:'CONTEÚDO',catalogs:'CATÁLOGO DIGITAL',specialEditions:'CONTEÚDO SAZONAL',homepage:'CONTEÚDO PÚBLICO',socialAI:'MARKETING',campaigns:'MARKETING',delivery:'LOJA ONLINE',legal:'CONFORMIDADE',settings:'SISTEMA',cloud:'SISTEMA',backup:'SISTEMA'};
+ const contextMap={dashboard:'VISÃO GERAL',sale:'ENCOMENDAS',orders:'ENCOMENDAS',quotes:'ORÇAMENTOS',production:'PRODUÇÃO',costs:'GESTÃO',stock:'GESTÃO',purchases:'GESTÃO',cash:'FINANCEIRO',funds:'FINANCEIRO',clients:'CLIENTES',email:'COMUNICAÇÕES',digitalStats:'ESTATÍSTICAS DIGITAIS',reports:'RELATÓRIOS',quantityPricing:'PRECIFICAÇÃO',products:'CATÁLOGO DIGITAL',commercialCalendar:'PLANEAMENTO COMERCIAL',publication:'PUBLICAÇÃO',catalogDigital:'CATÁLOGO DIGITAL',visualCatalogs:'CONTEÚDO',catalogs:'CATÁLOGO DIGITAL',specialEditions:'CONTEÚDO SAZONAL',homepage:'CONTEÚDO PÚBLICO',socialAI:'MARKETING',campaigns:'MARKETING',delivery:'LOJA ONLINE',legal:'CONFORMIDADE',settings:'SISTEMA',cloud:'SISTEMA',backup:'SISTEMA'};
  const pc=document.getElementById('pageContext');if(pc)pc.textContent=contextMap[id]||'GESTÃO ArtEssencia';
  renderAll();if(id==='socialAI')setTimeout(()=>{loadSocialPublicationsV7(false);loadSocialMetaStatusV11(false)},30);if(id==='email')setTimeout(()=>loadEmailModuleV177(false),30);if(id==='digitalStats')setTimeout(()=>loadDigitalStatsV1795(false),30);if(id==='campaigns')setTimeout(()=>loadCampaignDashboardV12626(false),50);
  if(id==='delivery'){renderShopDeliverySettings();renderShopCapacityAgenda();loadDeliveryZonesV197();}
@@ -17693,7 +17725,7 @@ function renderPublicationCenterV1812(){
    '<button class="btn" type="button" onclick="publicationOpenCostsV1812(decodeURIComponent(\''+encoded+'\'))">Custos / ficha</button></div></article>';
  }).join(''):'<div class="publication-empty-v1925 empty">Nenhum produto corresponde à pesquisa ou aos filtros.</div>';
 }
- function renderAll(){ensureQuotePaymentModel();ensureCostModel();syncPackagingSelect();renderTechnicalCategoriesV1863();renderClientSuggestions();renderDashboard();renderPicker();renderCart();renderOrders();renderProduction();renderCosts();renderStock();renderPurchases();renderCash();renderClients();renderQuotes();renderQuoteCart();renderProducts();renderProductWorkflowV1851(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null);renderProductPublicStatusV1850(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null);renderCommercialCalendarV1850();renderPublicationCenterV1812();renderCatalogs();renderVisualCatalogsV192();renderSpecialEditionsAdmin();renderCatalogDigitalCenterV160();renderSettings();renderAprecoImportV1753();renderBusinessSettings();if(!personalizationCategorySelectOpenV1794)renderPersonalizationLibraryV1791();renderReports();renderDigitalStatsV1795();renderLaunchStatsV1813();renderQuantityPricingV1750();renderLegalSummaryV1286();renderCloudUI();renderBackupInfo();renderOrderNotificationsV12624();renderPushStatusV12625();const s=sec();if(document.getElementById('lockMinutes'))document.getElementById('lockMinutes').value=String(s.lockMinutes??15)}
+ function renderAll(){ensureQuotePaymentModel();ensureCostModel();syncPackagingSelect();renderTechnicalCategoriesV1863();renderClientSuggestions();renderDashboard();renderPicker();renderCart();renderOrders();renderProduction();renderCosts();renderStock();renderPurchases();renderCash();renderFundsV1929();renderClients();renderQuotes();renderQuoteCart();renderProducts();renderProductWorkflowV1851(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null);renderProductPublicStatusV1850(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null);renderCommercialCalendarV1850();renderPublicationCenterV1812();renderCatalogs();renderVisualCatalogsV192();renderSpecialEditionsAdmin();renderCatalogDigitalCenterV160();renderSettings();renderAprecoImportV1753();renderBusinessSettings();if(!personalizationCategorySelectOpenV1794)renderPersonalizationLibraryV1791();renderReports();renderDigitalStatsV1795();renderLaunchStatsV1813();renderQuantityPricingV1750();renderLegalSummaryV1286();renderCloudUI();renderBackupInfo();renderOrderNotificationsV12624();renderPushStatusV12625();const s=sec();if(document.getElementById('lockMinutes'))document.getElementById('lockMinutes').value=String(s.lockMinutes??15)}
 document.addEventListener('input',e=>{if(e.target&&['costPackQty','costPackPrice'].includes(e.target.id))updateCostPreview()});
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;installBtn.classList.remove('hidden');installBanner.classList.remove('hidden')});
 async function installApp(){if(!deferredPrompt)return toast('No Chrome: menu ⋮ → Adicionar ao ecrã principal / Instalar app');deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;installBtn.classList.add('hidden');installBanner.classList.add('hidden')}
@@ -17896,6 +17928,7 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 <script defer src="./clients-compact-ui.js"></script>
 <script defer src="./purchases-compact-ui.js"></script>
 <script defer src="./cash-compact-ui.js"></script>
+<script defer src="./funds-ledger-v1.js"></script>
 <script defer src="./stock-compact-ui.js" id="ae-stock-compact-script"></script>
 <script defer src="./dashboard-compact-ui.js" id="ae-dashboard-compact-script"></script>
 <script defer src="./products-compact-ui.js" id="ae-products-compact-script"></script>
