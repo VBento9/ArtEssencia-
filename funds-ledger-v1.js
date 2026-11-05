@@ -229,7 +229,7 @@ function saveHistoricalReview(form){
   for(const k of ['materials','labor','fixed','other']){
    const field=form.querySelector('[data-funds-line="'+index+'"][data-funds-field="'+k+'"]');
    const raw=String(field?.value??'').trim().replace(',','.');
-   if(!/^\\d+(?:\\.\\d{1,2})?$/.test(raw))return historicalError('Preenche '+LABEL[k==='other'?'expenses':k]+' com um valor válido (duas casas decimais) na linha '+(index+1)+'.');
+   if(!/^\d+(?:\.\d{1,2})?$/.test(raw))return historicalError('Preenche '+LABEL[k==='other'?'expenses':k]+' com um valor válido (duas casas decimais) na linha '+(index+1)+'.');
    values[k]=cents(Number(raw));
   }
   const expected=cents(Number(line.qty)*Number(line.cost));
