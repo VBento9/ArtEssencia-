@@ -1,0 +1,20 @@
+name: Validar Mapa de Fundos
+on:
+  push:
+    branches: [fix/mapa-fundos-rubricas-20261105]
+  pull_request:
+    paths:
+      - funds-ledger-v1.js
+      - tests/funds-sales-allocation-19136.test.cjs
+      - tests/funds-period-balances-19137.test.cjs
+      - .github/workflows/funds-rubricas.yml
+jobs:
+  funds:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node --check funds-ledger-v1.js
+      - run: node --test tests/funds-sales-allocation-19136.test.cjs tests/funds-period-balances-19137.test.cjs

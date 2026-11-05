@@ -28,20 +28,20 @@ const item=(m,e,l,qty=1)=>({type:'product',qty,cost:m+e+l,
 function plain(x){return JSON.parse(JSON.stringify(x))}
 test('Pagamento de 100 € divide custos reais por quatro rubricas',()=>{
  const a=make({order:{items:[item(25,15,30)]}});
- assert.deepEqual(plain(a.split({value:100}).amounts),{materials:2500,expenses:1500,labor:3000,profit:3000});
+ assert.deepEqual(plain(a.split({value:100}).amounts),{materials:2500,expenses:0,fixed:1500,labor:3000,profit:3000});
 });
 test('Sinal de 40 € distribui apenas a parte recebida',()=>{
  const a=make({order:{items:[item(25,15,30)]}});
- assert.deepEqual(plain(a.split({value:40}).amounts),{materials:1000,expenses:600,labor:1200,profit:1200});
+ assert.deepEqual(plain(a.split({value:40}).amounts),{materials:1000,expenses:0,fixed:600,labor:1200,profit:1200});
 });
 test('Correção negativa reverte as quatro rubricas',()=>{
  const a=make({order:{items:[item(25,15,30)]}});
- assert.deepEqual(plain(a.split({value:-20}).amounts),{materials:-500,expenses:-300,labor:-600,profit:-600});
+ assert.deepEqual(plain(a.split({value:-20}).amounts),{materials:-500,expenses:0,fixed:-300,labor:-600,profit:-600});
 });
 test('Custo de embalagens junta-se a materiais',()=>{
  const a=make({order:{items:[item(20,10,20)],boxes:2,boxCostSnapshot:5}});
  const got=plain(a.split({value:100}).amounts);
- assert.equal(got.materials,3000);assert.equal(got.expenses,1000);assert.equal(got.labor,2000);assert.equal(got.profit,4000);
+ assert.equal(got.materials,3000);assert.equal(got.expenses,0);assert.equal(got.fixed,1000);assert.equal(got.labor,2000);assert.equal(got.profit,4000);
 });
 test('Custo maior que o preço é identificado como margem negativa',()=>{
  const a=make({order:{items:[item(40,30,50)]}});
@@ -78,4 +78,20 @@ test('Snapshot de preço por quantidade sem componentes reais permanece por clas
  const line={type:'product',qty:1,cost:70,quantityPricingSnapshot:{units:1,materialsCost:25,laborCost:30,fixedCost:15}};
  const a=make({order:{items:[line]}});
  assert.deepEqual(plain(a.split({value:100}).amounts),{unclassified:10000});
+});
+
+test('Separar custos extras de custos fixos',()=>{
+ const line={qty:1,cost:70,costBreakdownSnapshotV1769:{materials:20,labor:30,fixed:10,other:10,total:70,estimated:false}};
+ const a=make({order:{items:[line]}});
+ assert.deepEqual(plain(a.split({value:100}).amounts),{materials:2000,expenses:1000,fixed:1000,labor:3000,profit:3000});
+});
+test('Ajuste positivo pequeno confirmado pelo custo histórico pertence aos extras',()=>{
+ const line={qty:1,cost:3.84,costBreakdownSnapshotV1769:{materials:1.89,labor:1.62,fixed:.20,other:0,total:3.84,estimated:false}};
+ const a=make({order:{items:[line],total:10}});
+ assert.deepEqual(plain(a.split({value:10}).amounts),{materials:189,expenses:13,fixed:20,labor:162,profit:616});
+});
+test('Não inventar complemento quando o total histórico é inconsistente',()=>{
+ const line={qty:1,cost:3.84,costBreakdownSnapshotV1769:{materials:1.89,labor:1.62,fixed:.20,other:0,total:3.60,estimated:false}};
+ const a=make({order:{items:[line],total:10}});
+ assert.deepEqual(plain(a.split({value:10}).amounts),{unclassified:1000});
 });

@@ -24,7 +24,7 @@ const item={qty:1,cost:70,costBreakdownSnapshotV1769:{materials:25,other:0,fixed
 const orders=[{id:'ORD-1',total:100,status:'Entregue',items:[item]}];
 test('Entradas de novembro são repartidas sem saldo NaN',()=>{
  const r=scenario([{date:'2026-11-05',type:'Entrada',value:100,source:'order_payment',orderId:'ORD-1'}],orders);
- assert.deepEqual(plain(r.closing),{materials:2500,expenses:1500,labor:3000,profit:3000,unclassified:0});
+ assert.deepEqual(plain(r.closing),{materials:2500,labor:3000,expenses:0,fixed:1500,profit:3000,unclassified:0});
  assert.equal(Object.values(r.closing).reduce((s,n)=>s+n,0),10000);
 });
 test('Saldo de outubro transita para novembro nas quatro rubricas',()=>{
@@ -32,17 +32,17 @@ test('Saldo de outubro transita para novembro nas quatro rubricas',()=>{
   {date:'2026-10-31',type:'Entrada',value:40,source:'order_payment',orderId:'ORD-1'},
   {date:'2026-11-05',type:'Entrada',value:60,source:'order_payment',orderId:'ORD-1'}
  ],orders);
- assert.deepEqual(plain(r.opening),{materials:1000,expenses:600,labor:1200,profit:1200,unclassified:0});
- assert.deepEqual(plain(r.inflow),{materials:1500,expenses:900,labor:1800,profit:1800,unclassified:0});
+ assert.deepEqual(plain(r.opening),{materials:1000,labor:1200,expenses:0,fixed:600,profit:1200,unclassified:0});
+ assert.deepEqual(plain(r.inflow),{materials:1500,labor:1800,expenses:0,fixed:900,profit:1800,unclassified:0});
  assert.equal(r.rows.length,1);
- assert.deepEqual(plain(r.closing),{materials:2500,expenses:1500,labor:3000,profit:3000,unclassified:0});
+ assert.deepEqual(plain(r.closing),{materials:2500,labor:3000,expenses:0,fixed:1500,profit:3000,unclassified:0});
 });
 test('Saída classificada como despesa reduz o saldo de despesas',()=>{
  const r=scenario([
   {date:'2026-11-05',type:'Entrada',value:100,source:'order_payment',orderId:'ORD-1'},
   {date:'2026-11-06',type:'Saída',value:10,source:'manual',fundsDepartmentV1929:'expenses'}
  ],orders);
- assert.equal(r.closing.expenses,500);
+ assert.equal(r.closing.expenses,-1000);assert.equal(r.closing.fixed,1500);
  assert.equal(Object.values(r.closing).reduce((s,n)=>s+n,0),9000);
 });
 test('Classificações antigas extras são preservadas como despesas',()=>{
@@ -56,6 +56,6 @@ test('Compra reduz materiais sem mexer no dinheiro do trabalho',()=>{
   {date:'2026-11-06',type:'Saída',value:12,source:'purchase'}
  ],orders);
  assert.equal(r.closing.materials,1300);
- assert.equal(r.closing.labor,3000);
+ assert.equal(r.closing.labor,3000);assert.equal(r.closing.fixed,1500);
  assert.equal(Object.values(r.closing).reduce((s,n)=>s+n,0),8800);
 });
