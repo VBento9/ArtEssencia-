@@ -125,3 +125,30 @@ test('Conciliação de uma linha alterada ou sem valores reais é rejeitada',()=
  line.qty=6;
  assert.deepEqual(plain(a.split({value:40}).amounts),{unclassified:4000});
 });
+
+test('Retificar uma conciliação mantém a composição original no histórico',()=>{
+ const line={type:'product',name:'Peça histórica',code:'H1',qty:5,cost:4.292003580246914,price:8};
+ const a=make({order:{items:[line],total:40}});
+ const key='__fundsHistoricalLineCostsV1';
+ a.ctx.db.costMeta[key]={'ORD-1':{'0':{materials:1000,labor:600,fixed:300,other:246,
+  originalCostCents:2146,fingerprint:a.ctx.historicalFingerprint(line),source:'manual_historical_verified',confirmedAt:'2026-11-05T12:00:00Z'}}};
+ let saveCount=0;
+ Object.assign(a.ctx,{state:{reconcileMode:'amend',reconcileOrderId:'ORD-1'},LABEL:{materials:'Materiais',labor:'Trabalho',fixed:'Custos fixos',expenses:'Custos extras'},render:()=>{},toast:()=>{},save:()=>{saveCount++;return true;},document:{getElementById:()=>null}});
+ vm.runInContext(js.slice(js.indexOf('function historicEditor('),js.indexOf('function movementsTable(')),a.ctx);
+ const values={materials:'9.00',labor:'7.00',fixed:'3.00',other:'2.46'};
+ const form={dataset:{fundsOrder:'ORD-1',fundsMode:'amend'},querySelector(selector){
+  if(selector==='[name="confirmed"]')return {checked:true};
+  if(selector==='[name="correctionReason"]')return {value:'Conferência de comprovativos originais'};
+  const m=selector.match(/data-funds-field="([^"]+)"/);
+  return m?{value:values[m[1]]}:null;
+ }};
+ a.ctx.saveHistoricalReview(form);
+ const rec=a.ctx.db.costMeta[key]['ORD-1']['0'];
+ assert.equal(saveCount,1);assert.equal(rec.revision,2);
+ assert.equal(rec.history.length,1);assert.equal(rec.history[0].previous.materials,1000);
+ assert.equal(rec.materials,900);assert.equal(rec.labor,700);
+ assert.equal(line.qty,5);assert.equal(line.cost,4.292003580246914);
+ const valuesPaid=plain(a.split({value:40}).amounts);
+ assert.equal(valuesPaid.materials,900);
+ assert.equal(Object.values(valuesPaid).reduce((x,y)=>x+y,0),4000);
+});

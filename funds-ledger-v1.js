@@ -1,4 +1,4 @@
-/* ArtEssencia — Mapa de Fundos V1.9.139
+/* ArtEssencia — Mapa de Fundos V1.9.140
    Reservas calculadas a partir do Caixa. Não cria nem altera pagamentos. */
 (function(){
 'use strict';
@@ -7,7 +7,7 @@ const FUNDS_DEPTS=DEPTS.filter(k=>k!=='unclassified');
 const LABEL={materials:'Materiais e embalagens',labor:'Mão de obra / salário',expenses:'Custos extras',fixed:'Custos fixos',profit:'Lucro',unclassified:'Pendente de conciliação histórica'};
 const SOURCES=new Set(['order_payment','order_payment_correction','quote_payment']);
 const TODAY=new Date();
-const state={mode:'month',year:TODAY.getFullYear(),slot:TODAY.getMonth()+1,page:1,reconcileOrderId:null};
+const state={mode:'month',year:TODAY.getFullYear(),slot:TODAY.getMonth()+1,page:1,reconcileOrderId:null,reconcileMode:'pending'};
 const PAGE_SIZE=15;
 const euroC=c=>(Number(c||0)/100).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
 const cents=n=>Number.isFinite(Number(n))?Math.round(Number(n)*100):0;
@@ -180,15 +180,34 @@ function pendingHistoricalOrders(){
  }
  return Array.from(groups.values()).sort((a,b)=>b.lastDate.localeCompare(a.lastDate));
 }
-function historicEditor(order){
- const lines=(Array.isArray(order.items)?order.items:[]).map((line,index)=>({line,index})).filter(({line,index})=>Number(line?.qty)>0&&!['quote_discount','quote_adjustment'].includes(line?.type)&&!historicalLineCost(line,order,index));
+function verifiedHistoricalOrders(){
+ const records=historicalRecords();
+ return (Array.isArray(db?.orders)?db.orders:[]).filter(order=>{
+  const lines=Array.isArray(order.items)?order.items:[];
+  const entry=records[historicalKey(order)];
+  return entry&&typeof entry==='object'&&Object.keys(entry).some(key=>{
+   const i=Number(key);
+   return Number.isInteger(i)&&i>=0&&i<lines.length&&!!manualHistoricalLineCost(lines[i],order,i);
+  });
+ });
+}
+function historicEditor(order,mode='pending'){
+ const lines=(Array.isArray(order.items)?order.items:[]).map((line,index)=>({line,index})).filter(({line,index})=>Number(line?.qty)>0&&!['quote_discount','quote_adjustment'].includes(line?.type)&&(mode==='amend'?!!manualHistoricalLineCost(line,order,index):!historicalLineCost(line,order,index)));
  if(!lines.length)return '<p>Esta encomenda não tem linhas por conciliar. Verifica a associação do pagamento ou o total da encomenda.</p>';
- const input=(index,k,label)=>'<label>'+label+'<input inputmode="decimal" type="number" min="0" step="0.01" required data-funds-field="'+k+'" data-funds-line="'+index+'" placeholder="0,00" aria-label="'+label+' da linha '+(index+1)+'"></label>';
- return '<form id="fundsHistoryFormV1" data-funds-order="'+escapeAttr(historicalKey(order))+'">'+
+ const input=(index,k,label)=>{
+  const prior=historicalRecords()[historicalKey(order)]?.[String(index)];
+  const c=prior?.[k];
+  return '<label>'+label+'<input inputmode="decimal" type="number" min="0" step="0.01" required data-funds-field="'+k+'" data-funds-line="'+index+'"'+
+   (Number.isSafeInteger(c)&&c>=0?' value="'+(c/100).toFixed(2)+'"':'')+
+   ' placeholder="0,00" aria-label="'+label+' da linha '+(index+1)+'"></label>';
+ };
+ return '<form id="fundsHistoryFormV1" data-funds-order="'+escapeAttr(historicalKey(order))+'" data-funds-mode="'+mode+'">'+
   '<p>Indica os <strong>custos totais de cada linha</strong> (para todas as unidades), tal como eram na data da venda. Não usar preços ou custos atuais sem comprovativo. O total de cada linha deve coincidir ao cêntimo com o custo histórico.</p>'+
   lines.map(({line,index})=>'<fieldset class="funds-history-line-v1"><legend>'+escapeHtml(String(line.name||line.code||'Produto'))+'</legend>'+
    '<small>Quantidade: '+escapeHtml(String(line.qty))+' · Custo histórico da linha: <strong>'+euroC(cents(Number(line.cost)*Number(line.qty)))+'</strong></small>'+
    '<div class="funds-history-grid-v1">'+input(index,'materials','Materiais')+input(index,'labor','Mão de obra')+input(index,'fixed','Custos fixos')+input(index,'other','Custos extras')+'</div></fieldset>').join('')+
+  (mode==='amend'||lines.some(({index})=>!!historicalRecords()[historicalKey(order)]?.[String(index)])?
+   '<label class="funds-history-reason-v1">Motivo da retificação<textarea name="correctionReason" required minlength="8" maxlength="500" rows="2" placeholder="Comprovativo ou motivo da correção"></textarea></label>':'')+
   '<label class="funds-history-confirm-v1"><input type="checkbox" name="confirmed" required> Confirmo que os valores foram verificados com os registos históricos da venda.</label>'+
   '<p role="alert" class="funds-history-error-v1" id="fundsHistoryErrorV1" hidden></p>'+
   '<div class="funds-history-actions-v1"><button class="btn primary" type="submit">Guardar conciliação</button><button class="btn ghost" type="button" data-funds-cancel="1">Cancelar</button></div></form>';
@@ -197,8 +216,10 @@ function renderHistoricalPanel(){
  const screen=document.getElementById('funds');if(!screen)return;
  let panel=document.getElementById('fundsHistoryV1');
  if(!panel){panel=document.createElement('section');panel.id='fundsHistoryV1';panel.className='card funds-card-v1929 funds-history-v1';screen.appendChild(panel)}
- const outstanding=pendingHistoricalOrders();
- panel.hidden=!outstanding.length;
+ const outstanding=pendingHistoricalOrders(),verified=verifiedHistoricalOrders();
+ // Evita perder campos que estão a ser preenchidos durante renderizações de sincronização.
+ if(panel.querySelector('#fundsHistoryFormV1')?.contains(document.activeElement))return;
+ panel.hidden=!outstanding.length&&!verified.length;
  if(panel.hidden){state.reconcileOrderId=null;return}
  const amount=outstanding.reduce((n,x)=>n+x.amount,0);
  panel.innerHTML='<div class="funds-card-head-v1929"><div><h3 class="section-title">Conciliação histórica</h3>'+
@@ -210,7 +231,12 @@ function renderHistoricalPanel(){
    '<div class="funds-history-row-actions-v1"><b>'+euroC(x.amount)+'</b>'+
    (x.order?'<button type="button" class="btn ghost" data-funds-review="'+escapeAttr(historicalKey(x.order))+'">Conciliar</button>':'<small>Corrigir ligação em Encomendas</small>')+'</div></div>';
  }).join('')+'</div>'+
- (state.reconcileOrderId?(()=>{const o=outstanding.find(x=>x.order&&historicalKey(x.order)===state.reconcileOrderId)?.order;return o?'<div class="funds-history-editor-v1"><h4>Verificar composição da venda</h4>'+historicEditor(o)+'</div>':''})():'');
+ (state.reconcileOrderId?(()=>{const o=(state.reconcileMode==='amend'?verified:outstanding.map(x=>x.order)).find(x=>x&&historicalKey(x)===state.reconcileOrderId);return o?'<div class="funds-history-editor-v1"><h4>Verificar composição da venda</h4>'+historicEditor(o,state.reconcileMode)+'</div>':''})():'');
+ if(verified.length)panel.insertAdjacentHTML('beforeend',
+  '<details class="funds-history-verified-v1"><summary>'+verified.length+' conciliação(ões) confirmada(s) — consultar e retificar</summary>'+
+  '<div class="funds-history-list-v1">'+verified.map(o=>'<div class="funds-history-row-v1"><strong>'+escapeHtml('Encomenda '+historicalKey(o))+
+  '</strong><button type="button" class="btn ghost" data-funds-amend="'+escapeAttr(historicalKey(o))+'">Rever valores</button></div>').join('')+'</div></details>');
+
 }
 function historicalError(message){
  const note=document.getElementById('fundsHistoryErrorV1');
@@ -220,7 +246,15 @@ function saveHistoricalReview(form){
  const key=String(form?.dataset.fundsOrder||''),o=(db?.orders||[]).find(x=>historicalKey(x)===key);
  if(!o||!key)return historicalError('A encomenda já não foi encontrada. Atualiza os dados antes de continuar.');
  if(o.status==='Cancelado'||o.voidedAt)return historicalError('Não é possível conciliar uma encomenda anulada.');
- const pending=(Array.isArray(o.items)?o.items:[]).map((line,index)=>({line,index})).filter(({line,index})=>Number(line?.qty)>0&&!['quote_discount','quote_adjustment'].includes(line?.type)&&!historicalLineCost(line,o,index));
+ const mode=String(form.dataset.fundsMode||'pending');
+ if(!['pending','amend'].includes(mode))return historicalError('Modo de conciliação inválido.');
+ const pending=(Array.isArray(o.items)?o.items:[]).map((line,index)=>({line,index})).filter(({line,index})=>
+  Number(line?.qty)>0&&!['quote_discount','quote_adjustment'].includes(line?.type)&&
+  (mode==='amend'?!!manualHistoricalLineCost(line,o,index):!historicalLineCost(line,o,index)));
+ const oldRecords=historicalRecords()[key]||{};
+ const hasPrevious=pending.some(({index})=>!!oldRecords[String(index)]);
+ const reason=String(form.querySelector('[name="correctionReason"]')?.value||'').trim();
+ if(hasPrevious&&(reason.length<8||reason.length>500))return historicalError('Indica um motivo de retificação com 8 a 500 caracteres.');
  if(!pending.length)return historicalError('Não existem linhas pendentes. Atualiza o Mapa de Fundos.');
  if(!form.querySelector('[name="confirmed"]')?.checked)return historicalError('Confirma que verificaste os registos históricos.');
  const updates={};
@@ -235,15 +269,23 @@ function saveHistoricalReview(form){
   const expected=cents(Number(line.qty)*Number(line.cost));
   const actual=values.materials+values.labor+values.fixed+values.other;
   if(actual!==expected)return historicalError('Linha '+(index+1)+': a soma é '+euroC(actual)+', mas o custo histórico é '+euroC(expected)+'. Corrige antes de guardar.');
-  updates[String(index)]={...values,originalCostCents:expected,fingerprint:historicalFingerprint(line),confirmedAt:new Date().toISOString(),source:'manual_historical_verified'};
+  const previous=oldRecords[String(index)],now=new Date().toISOString();
+  const history=Array.isArray(previous?.history)?previous.history.slice():[];
+  if(previous)history.push({changedAt:now,reason,previous:{
+   materials:previous.materials,labor:previous.labor,fixed:previous.fixed,other:previous.other,
+   fingerprint:previous.fingerprint,confirmedAt:previous.confirmedAt,revision:previous.revision||1
+  }});
+  updates[String(index)]={...values,originalCostCents:expected,fingerprint:historicalFingerprint(line),confirmedAt:now,
+   source:'manual_historical_verified',revision:previous?Math.max(1,Number(previous.revision)||1)+1:1,
+   ...(history.length?{history}:{}),...(previous?{lastCorrectionReason:reason}:{})};
  }
  const before=db.costMeta;
  const meta=before&&typeof before==='object'&&!Array.isArray(before)?before:{};
  const existing=historicalRecords();
- db.costMeta={...meta,[HISTORY_KEY]:{...existing,[key]:{...(existing[key]||{}),...updates}}};
+ db.costMeta={...meta,[HISTORY_KEY]:{...existing,[key]:{...oldRecords,...updates}}};
  if(!save('none')){db.costMeta=before;return historicalError('A conciliação não ficou guardada. Verifica o armazenamento e tenta novamente.')}
- state.reconcileOrderId=null;render();
- toast('Conciliação guardada no dispositivo; aguarda sincronização Cloud.');
+ state.reconcileOrderId=null;state.reconcileMode='pending';render();
+ toast('Conciliação guardada localmente. Confirma a sincronização Cloud antes de trabalhar noutro dispositivo.');
 }
 
 function movementsTable(r){
@@ -342,8 +384,10 @@ function bind(){
  document.getElementById('fundsPaginationV1929')?.addEventListener('click',e=>{const btn=e.target.closest('button[data-funds-page]');if(!btn)return;state.page+=Number(btn.dataset.fundsPage)||0;render()});
  screen.addEventListener('click',e=>{
   const review=e.target.closest?.('[data-funds-review]'),cancel=e.target.closest?.('[data-funds-cancel]');
-  if(review){state.reconcileOrderId=review.dataset.fundsReview;renderHistoricalPanel()}
-  if(cancel){state.reconcileOrderId=null;renderHistoricalPanel()}
+  const amend=e.target.closest?.('[data-funds-amend]');
+  if(review){state.reconcileOrderId=review.dataset.fundsReview;state.reconcileMode='pending';renderHistoricalPanel()}
+  if(amend){state.reconcileOrderId=amend.dataset.fundsAmend;state.reconcileMode='amend';renderHistoricalPanel()}
+  if(cancel){state.reconcileOrderId=null;state.reconcileMode='pending';renderHistoricalPanel()}
  });
  screen.addEventListener('submit',e=>{
   if(e.target?.id!=='fundsHistoryFormV1')return;
