@@ -7043,7 +7043,7 @@ document.addEventListener('visibilitychange',()=>{
  if(hiddenAtV19135&&Date.now()-hiddenAtV19135>=30000)lockNow();
  hiddenAtV19135=0;
 });
-window.addEventListener('pagehide',()=>{unlocked=false});
+window.addEventListener('pagehide',()=>{lockNow()});
 ['click','touchstart','keydown'].forEach(ev=>document.addEventListener(ev,resetIdle,{passive:true}));
 document.getElementById('pinInput')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submitPin()}});
 
