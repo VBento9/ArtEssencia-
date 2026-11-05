@@ -1,4 +1,4 @@
-/* ArtEssencia — Mapa de Fundos V1.9.136
+/* ArtEssencia — Mapa de Fundos V1.9.137
    Reservas calculadas a partir do Caixa. Não cria nem altera pagamentos. */
 (function(){
 'use strict';
@@ -11,7 +11,7 @@ const PAGE_SIZE=15;
 const euroC=c=>(Number(c||0)/100).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
 const cents=n=>Number.isFinite(Number(n))?Math.round(Number(n)*100):0;
 const date=v=>{const s=String(v||'').slice(0,10);return /^\d{4}-\d{2}-\d{2}$/.test(s)?s:''};
-const base=()=>({materials:0,extras:0,profit:0,unclassified:0});
+const base=()=>Object.fromEntries(DEPTS.map(k=>[k,0]));
 const total=x=>DEPTS.reduce((a,k)=>a+(x[k]||0),0);
 const fill=(a,b)=>DEPTS.forEach(k=>a[k]+=(b[k]||0));
 
@@ -23,11 +23,11 @@ function historicalLineCost(line){
  let parts=null;
  const snap=line.costBreakdownSnapshotV1769;
  if(snap&&typeof snap==='object'&&snap.estimated!==true){
-  if(['materials','labor','fixed','other'].every(k=>Number.isFinite(Number(snap[k]))&&Number(snap[k])>=0))
+  if(['materials','labor','fixed','other'].every(k=>snap[k]!=null&&snap[k]!==''&&Number.isFinite(Number(snap[k]))&&Number(snap[k])>=0))
    parts={materials:Number(snap.materials),labor:Number(snap.labor),expenses:Number(snap.fixed)+Number(snap.other)};
  }else if(line.quantityPricingSnapshot&&Number(line.quantityPricingSnapshot.units)>0){
   const p=line.quantityPricingSnapshot,u=Number(p.units);
-  if(['materialsCost','laborCost','fixedCost','otherCost'].every(k=>Number.isFinite(Number(p[k]))&&Number(p[k])>=0))
+  if(['materialsCost','laborCost','fixedCost','otherCost'].every(k=>p[k]!=null&&p[k]!==''&&Number.isFinite(Number(p[k]))&&Number(p[k])>=0))
    parts={materials:Number(p.materialsCost)/u,labor:Number(p.laborCost)/u,expenses:(Number(p.fixedCost)+Number(p.otherCost))/u};
  }
  if(!parts||Math.abs(parts.materials+parts.expenses+parts.labor-cost)>0.03)return null;
