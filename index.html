@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.132">
+<meta name="artessencia-version" content="1.9.133">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -6397,7 +6397,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.132';
+const APP_VERSION='1.9.133';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -15574,6 +15574,21 @@ async function registerCloudPasskeyV20261008(){
  }catch(e){console.warn('[passkey] registo falhou:',e?.message||e);toast('Não foi possível registar a Passkey. A palavra-passe continua disponível.')}
  finally{if(btn)btn.disabled=false}
 }
+/* V1.9.133 — A sessão Auth e a sincronização são independentes.
+   Não exigir nova password quando a recuperação da sessão já foi confirmada. */
+async function resumeAuthenticatedCloudV19133(){
+ try{
+  return await cloudStartup();
+ }catch(error){
+  cloudHydrating=false;cloudStartupDone=true;cloudValidationStartedV19129=0;
+  cloudValidationStageV19131='A finalizar sincronização';
+  cloudValidationFailureV19131=cloudErrText(error)||'Falha desconhecida';
+  setCloudMeta({verified:false});
+  cloudLogMsg('Sessão autenticada, sincronização incompleta: '+cloudValidationFailureV19131);
+  renderCloudUI();
+  return false;
+ }
+}
 async function authGatePasskeyLoginV20261008(){
  if(!PASSKEY_PREVIEW_V20261008)return;
  if(location.protocol!=='https:'||location.hostname!=='art-essencia.vercel.app'){authGateMessageV1880('Biometria disponível apenas no domínio oficial.');return}
@@ -15583,9 +15598,10 @@ async function authGatePasskeyLoginV20261008(){
  try{
   const {data,error}=await c.auth.signInWithPasskey();if(error)throw error;
   if(!data?.session?.access_token||!data?.user?.id)throw new Error('Sessão não validada');
-  cloudUser=data.user;authGateHideV1880();await cloudStartup();
- }catch(e){authGateShowV1880('Não foi possível entrar com biometria. Usa a palavra-passe.')}
+  cloudUser=data.user;authGateHideV1880();
+ }catch(error){authGateShowV1880('Não foi possível entrar com biometria. Usa a palavra-passe.');return}
  finally{if(btn)btn.disabled=false}
+ return resumeAuthenticatedCloudV19133();
 }
 async function authGateLoginV1880(){
  const email=String(document.getElementById('authGateEmailV1880')?.value||'').trim();
@@ -15596,31 +15612,50 @@ async function authGateLoginV1880(){
  const c=initCloudClient();if(!c){authGateMessageV1880('Não foi possível iniciar a autenticação Cloud.');return}
  if(btn){btn.disabled=true;btn.textContent='A autenticar…'}authGateMessageV1880('');
  try{
-   const {data,error}=await c.auth.signInWithPassword({email,password});if(error)throw error;
-   cloudUser=data?.user||data?.session?.user||null;
-   if(!cloudUser)throw new Error('Sessão não iniciada');
-   document.getElementById('authGatePasswordV1880').value='';
-   authGateHideV1880();
-   await cloudStartup();
- }catch(e){
-   cloudUser=null;authGateShowV1880('Não foi possível iniciar sessão. Verifica as credenciais e a ligação.');
- }finally{if(btn){btn.disabled=false;btn.textContent='Entrar'}}
+  const {data,error}=await c.auth.signInWithPassword({email,password});if(error)throw error;
+  cloudUser=data?.user||data?.session?.user||null;
+  if(!cloudUser?.id)throw new Error('Sessão não iniciada');
+  const passField=document.getElementById('authGatePasswordV1880');if(passField)passField.value='';
+  authGateHideV1880();
+ }catch(error){
+  cloudUser=null;authGateShowV1880('Não foi possível iniciar sessão. Verifica as credenciais e a ligação.');
+  if(btn){btn.disabled=false;btn.textContent='Entrar'}
+  return false;
+ }
+ try{return await resumeAuthenticatedCloudV19133()}
+ finally{if(btn){btn.disabled=false;btn.textContent='Entrar'}}
 }
+/* Restaurar sessões persistidas na PWA apenas após validação de identidade
+   pelo servidor Supabase Auth; proteger as sessões offline não expiradas. */
 async function authGateStartupV1880(){
  const c=initCloudClient();
- if(!c){authGateShowV1880('A configuração Cloud não está disponível neste dispositivo.');return}
+ if(!c){authGateShowV1880('A configuração Cloud não está disponível neste dispositivo.');return false}
  try{
-   const {data,error}=await c.auth.getSession();if(error)throw error;
-   const session=data?.session||null,expiresAt=Number(session?.expires_at||0)*1000;
-   if(navigator.onLine===false){
-     if(!session?.user||!expiresAt||expiresAt<=Date.now()){authGateShowV1880('É necessária ligação à internet para iniciar sessão.');return}
-     cloudUser=session.user;authGateHideV1880();cloudStartupDone=true;renderCloudUI();return
+  const {data,error}=await c.auth.getSession();if(error)throw error;
+  const session=data?.session||null,expiresAt=Number(session?.expires_at||0)*1000;
+  if(navigator.onLine===false){
+   if(!session?.user?.id||!expiresAt||expiresAt<=Date.now()){
+    cloudUser=null;authGateShowV1880('É necessária ligação à internet para iniciar sessão.');
+    return false;
    }
-   cloudUser=null;
-   authGateShowV1880();
- }catch(e){cloudUser=null;authGateShowV1880('Não foi possível validar a sessão guardada. Inicia sessão novamente.')}
+   cloudUser=session.user;authGateHideV1880();cloudStartupDone=true;renderCloudUI();
+   return true;
+  }
+  if(!session?.user?.id){
+   cloudUser=null;authGateShowV1880();return false;
+  }
+  const {data:identity,error:identityError}=await c.auth.getUser();
+  if(identityError)throw identityError;
+  if(!identity?.user?.id||identity.user.id!==session.user.id)throw new Error('Identidade Cloud diferente da sessão guardada.');
+  cloudUser=identity.user;authGateHideV1880();
+ }catch(error){
+  cloudUser=null;
+  cloudLogMsg('Recuperação da sessão não confirmada: '+cloudErrText(error));
+  authGateShowV1880('Não foi possível validar a sessão guardada. Inicia sessão novamente.');
+  return false;
+ }
+ return resumeAuthenticatedCloudV19133();
 }
-
 function mergeRemoteRelationalRow(kind,row,eventType='UPDATE'){
  if(!row)return false;
  const map={
