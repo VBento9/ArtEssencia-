@@ -68,3 +68,14 @@ test('Cada pagamento reconcilia ao cêntimo',()=>{
   assert.equal(Object.values(got).reduce((sum,value)=>sum+value,0),Math.round(amount*100));
  }
 });
+
+test('Snapshot sem rubricas reais não é aceite como custo discriminado',()=>{
+ const line=item(25,15,30);delete line.costBreakdownSnapshotV1769.labor;
+ const a=make({order:{items:[line]}});
+ assert.deepEqual(plain(a.split({value:100}).amounts),{unclassified:10000});
+});
+test('Snapshot de preço por quantidade sem componentes reais permanece por classificar',()=>{
+ const line={type:'product',qty:1,cost:70,quantityPricingSnapshot:{units:1,materialsCost:25,laborCost:30,fixedCost:15}};
+ const a=make({order:{items:[line]}});
+ assert.deepEqual(plain(a.split({value:100}).amounts),{unclassified:10000});
+});
