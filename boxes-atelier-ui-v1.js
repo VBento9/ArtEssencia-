@@ -282,6 +282,41 @@ function aeBoxPrintTechnicalV3(format){
 }
 
 function showTechSummaryV2(){const el=document.getElementById('aeBoxTechSummary');if(!el)return;const x=techCostV2(composition(),techDraftV2());el.innerHTML='<b>Fabrico: '+money(x.total)+'</b><span>Materiais: '+money(x.materials)+' · Trabalho: '+money(x.labor)+' · Energia: '+money(x.energy)+' · Outros: '+money(x.indirect)+'</span><small>'+(x.incomplete?'Preenche o custo das matérias-primas para produção conjunta.':'Estimativa sem embalagem física e decoração, adicionadas no total da Box.')+'</small>'}
+let savedBoxPage=0;
+const SAVED_BOX_PAGE_SIZE=6;
+function filterSavedBoxes(){
+ const grid=$('themedBoxesGrid');if(!grid)return;
+ const normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-PT');
+ const query=normalize($('aeSavedBoxSearch')?.value).trim();
+ const cards=Array.from(grid.querySelectorAll('.catalog-pro-card'));
+ const matches=cards.filter(card=>!query||normalize([card.querySelector('h3')?.textContent,card.querySelector('.catalog-pro-desc')?.textContent].join(' ')).includes(query));
+ const pages=Math.max(1,Math.ceil(matches.length/SAVED_BOX_PAGE_SIZE));
+ savedBoxPage=Math.max(0,Math.min(savedBoxPage,pages-1));
+ const visible=new Set(matches.slice(savedBoxPage*SAVED_BOX_PAGE_SIZE,(savedBoxPage+1)*SAVED_BOX_PAGE_SIZE));
+ cards.forEach(card=>{card.hidden=!visible.has(card)});
+ const status=$('aeSavedBoxStatus');if(status)status.textContent=matches.length?matches.length+(matches.length===1?' box':' boxes')+(pages>1?' · Página '+(savedBoxPage+1)+' de '+pages:''):(cards.length?'Nenhuma box corresponde à pesquisa.':'Ainda não existem boxes guardadas.');
+ const prev=$('aeSavedBoxPrev'),next=$('aeSavedBoxNext');
+ const paging=$('aeSavedBoxNav');if(paging)paging.hidden=pages<=1;
+ if(prev)prev.disabled=savedBoxPage===0;
+ if(next)next.disabled=savedBoxPage>=pages-1;
+ const clear=$('aeSavedBoxClear');if(clear)clear.disabled=!query;
+}
+function installSavedBoxList(){
+ const grid=$('themedBoxesGrid');if(!grid||$('aeSavedBoxSearch'))return;
+ const tools=document.createElement('div');tools.className='ae-saved-box-tools';
+ tools.innerHTML='<label for="aeSavedBoxSearch">Pesquisar boxes</label><div class="ae-saved-box-search"><input id="aeSavedBoxSearch" type="search" placeholder="Nome ou descrição"><button type="button" class="btn" id="aeSavedBoxClear">Limpar</button></div>';
+ grid.before(tools);
+ const pages=document.createElement('div');pages.className='ae-saved-box-pages';
+ pages.innerHTML='<p id="aeSavedBoxStatus" role="status" aria-live="polite"></p><div id="aeSavedBoxNav"><button type="button" class="btn" id="aeSavedBoxPrev">Anterior</button><button type="button" class="btn" id="aeSavedBoxNext">Seguinte</button></div>';
+ grid.after(pages);
+ $('aeSavedBoxSearch').addEventListener('input',()=>{savedBoxPage=0;filterSavedBoxes()});
+ $('aeSavedBoxClear').addEventListener('click',()=>{$('aeSavedBoxSearch').value='';savedBoxPage=0;filterSavedBoxes();$('aeSavedBoxSearch').focus()});
+ $('aeSavedBoxPrev').addEventListener('click',()=>{savedBoxPage--;filterSavedBoxes();tools.scrollIntoView({block:'start',behavior:'smooth'})});
+ $('aeSavedBoxNext').addEventListener('click',()=>{savedBoxPage++;filterSavedBoxes();tools.scrollIntoView({block:'start',behavior:'smooth'})});
+ // Observe only card replacement; publication controls inside cards keep their original indices.
+ new MutationObserver(filterSavedBoxes).observe(grid,{childList:true});
+ filterSavedBoxes();
+}
 function install(){
  const screen=$('catalogs');if(!screen||$(ID))return;
  const dashboard=screen.querySelector('.catalog-dashboard');
@@ -332,6 +367,7 @@ function install(){
  requestsPane.innerHTML='<div class="ae-hub-heading"><h3>Pedidos de Boxes personalizadas</h3><p>Pedidos recebidos no Catálogo Digital e na Loja. Define custos, envia uma ligação privada com validade e aguarda a resposta. A aceitação não cria automaticamente encomendas nem altera stock.</p><button class="btn" type="button" id="aeRefreshBoxRequests">Atualizar pedidos</button></div><div id="aeBoxRequestList" class="ae-box-items">A consultar Cloud…</div>';
  hub.append(ready,customPane,requestsPane,docs,advanced);
  $('aeRefreshBoxRequests').addEventListener('click',loadBoxRequestsV2);
+ installSavedBoxList();
  requestsPane.addEventListener('click',async ev=>{
  const button=ev.target.closest('[data-box-request-action]');if(!button)return;
  const id=button.dataset.id,action=button.dataset.boxRequestAction;
@@ -665,3 +701,14 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 (()=>{const s=document.createElement('style');s.textContent="#aeBoxesHubV1{margin-top:12px}#aeBoxesHubV1 .ae-hub-intro{padding:16px 18px;background:#fffaf5;border:1px solid #ded2c1;border-radius:16px}#aeBoxesHubV1 h2,#aeBoxesHubV1 h3{font:600 22px Georgia,serif;margin:0 0 6px}#aeBoxesHubV1 h3{font-size:19px}#aeBoxesHubV1 p{line-height:1.55;margin:4px 0 12px}#aeBoxesHubV1 .ae-hub-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}#aeBoxesHubV1 .ae-hub-tabs .btn{flex:1 1 170px;min-height:46px}#aeBoxesHubV1 .ae-hub-panel[hidden]{display:none!important}#aeBoxesHubV1 .ae-hub-panel{display:grid;gap:12px}#aeBoxesHubV1 .ae-hub-heading{border:1px solid #ded2c1;border-radius:14px;background:#fff;padding:15px}#aeBoxesHubV1 .ae-hub-heading .btn{margin-top:6px}#aeBoxesHubV1 .ae-hub-heading p{font-size:13px;color:#6d6158}#aeBoxesHubV1 .ae-box-composition{margin-top:14px;padding:14px;border:1px solid #dfd2c6;border-radius:14px;background:#fffaf5}#aeBoxesHubV1 .ae-box-pick-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:5px;margin:10px 0}#aeBoxesHubV1 .ae-box-pick-head small{color:#78695c}#aeBoxesHubV1 .ae-box-add{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}#aeBoxesHubV1 .ae-box-add select{min-width:0;flex:1 1 210px}#aeBoxesHubV1 .ae-box-line{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #e5dace}#aeBoxesHubV1 .ae-box-line>span{flex:1;min-width:0;overflow-wrap:anywhere}#aeBoxesHubV1 .ae-box-line small{display:block;color:#86796b}#aeBoxesHubV1 .ae-box-line label{font-size:12px;width:70px}#aeBoxesHubV1 .ae-box-line input{width:100%;min-width:0}#aeBoxesHubV1 .ae-box-totals{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px;font-size:12px;font-weight:600}#aeBoxesHubV1 .ae-box-totals span{padding:6px 8px;border:1px solid #dfd2c6;border-radius:9px}#aeBoxesHubV1 .ae-box-estimate{padding:12px;margin-top:10px;background:#f2e9dc;border:1px solid #ddcdb9;border-radius:13px;display:grid;gap:6px;font-size:13px}#aeBoxesHubV1 .ae-box-estimate small{color:#706153}#aeBoxesHubV1 .ae-custom-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;background:#fff;padding:14px;border-radius:13px}#aeBoxesHubV1 .ae-custom-grid label{display:grid;gap:6px;font-size:13px}#aeBoxesHubV1 .ae-custom-grid label:last-child{grid-column:1/-1}#aeBoxesHubV1 .ae-custom-grid input,#aeBoxesHubV1 .ae-custom-grid textarea,#aeBoxesHubV1 .ae-custom-grid select{width:100%;min-width:0}#aeBoxesHubV1 .ae-custom-actions{display:flex;flex-wrap:wrap;gap:8px}#aeBoxesHubV1 .ae-custom-actions>*{flex:1 1 170px;display:inline-flex;align-items:center;justify-content:center}#aeBoxesHubV1 .ae-box-items{max-height:470px;overflow:auto}#aeBoxesHubV1 .ae-hub-panel > .catalog-grid{margin:0}#aeBoxesHubV1 .ae-hub-panel .catalog-creator-card{margin:0}@media(max-width:650px){#aeBoxesHubV1 .ae-hub-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}#aeBoxesHubV1 .ae-hub-tabs .btn{font-size:12px;min-width:0}#aeBoxesHubV1 .ae-custom-grid{grid-template-columns:minmax(0,1fr)}#aeBoxesHubV1 .ae-box-line{flex-wrap:wrap}#aeBoxesHubV1 .ae-box-line>span{flex:1 1 100%}}";document.head.appendChild(s)})();
 (()=>{const st=document.createElement('style');st.id='aeBoxesPricingResponsiveV1';st.textContent="\n#aeBoxesHubV1,#aeBoxesHubV1 *{box-sizing:border-box}\n#aeBoxesHubV1,#aeBoxesHubV1 .ae-hub-panel,#aeBoxesHubV1 .ae-hub-heading,\n#aeBoxesHubV1 .ae-box-composition,#aeBoxesHubV1 .ae-custom-grid,\n#aeBoxesHubV1 .ae-box-estimate,#aeBoxesHubV1 .ae-box-items,\n#aeBoxesHubV1 .catalog-editor-card,#aeBoxesHubV1 .catalog-grid,\n#aeBoxesHubV1 .catalog-saved-head{min-width:0;max-width:100%;overflow-wrap:anywhere}\n#aeBoxesHubV1 .ae-hub-intro p,#aeBoxesHubV1 .ae-hub-heading p,\n#aeBoxesHubV1 .ae-box-composition p{overflow-wrap:anywhere;white-space:normal}\n#aeBoxesHubV1 .ae-box-add select,#aeBoxesHubV1 .ae-custom-grid input,\n#aeBoxesHubV1 .ae-custom-grid textarea,#aeBoxesHubV1 .ae-custom-grid select,\n#aeBoxesHubV1 .ae-box-margin-editor input,#aeBoxesHubV1 .ae-box-line input{\nwidth:100%;min-width:0;max-width:100%;font-size:16px}\n#aeBoxesHubV1 .ae-custom-grid label{min-width:0;max-width:100%;overflow-wrap:anywhere}\n#aeBoxesHubV1 .ae-box-margin-editor{display:flex;flex-wrap:wrap;gap:10px;align-items:end;\nmargin:14px 0;padding:12px;border:1px solid #dfd2c6;border-radius:12px;background:#fff}\n#aeBoxesHubV1 .ae-box-margin-editor label{flex:1 1 190px;min-width:0;display:grid;gap:6px;font-size:13px}\n#aeBoxesHubV1 .ae-box-margin-editor button{flex:1 1 190px;min-width:0;white-space:normal;min-height:44px}\n#aeBoxesHubV1 .ae-box-cost-lines{display:grid;gap:4px;padding:8px 0;border-bottom:1px solid #ddd0bd}\n#aeBoxesHubV1 .ae-box-cost-row,#aeBoxesHubV1 .ae-box-cost-total{\ndisplay:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:start;\npadding:6px 0;overflow-wrap:anywhere}\n#aeBoxesHubV1 .ae-box-cost-row strong,#aeBoxesHubV1 .ae-box-cost-total strong{\nwhite-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}\n#aeBoxesHubV1 .ae-box-cost-total{font-size:15px;border-bottom:1px solid #d8cab8;padding:12px 0}\n#aeBoxesHubV1 .ae-box-cost-warning{color:#8b4323;font-weight:600}\n#aeBoxesHubV1 .ae-box-estimate small{display:block;line-height:1.5}\n#aeBoxesHubV1 .ae-hub-tabs button,#aeBoxesHubV1 .ae-custom-actions .btn{\nwhite-space:normal;overflow-wrap:anywhere;min-width:0;max-width:100%}\n@media(max-width:650px){\n#aeBoxesHubV1 .ae-hub-tabs{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}\n#aeBoxesHubV1 .ae-hub-tabs button{font-size:12px;line-height:1.35;padding:10px 7px;min-height:48px}\n#aeBoxesHubV1 .ae-custom-grid{grid-template-columns:minmax(0,1fr)!important;gap:10px}\n#aeBoxesHubV1 .ae-custom-grid label:last-child{grid-column:auto!important}\n#aeBoxesHubV1 .ae-box-add{display:grid;grid-template-columns:minmax(0,1fr)}\n#aeBoxesHubV1 .ae-box-line{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}\n#aeBoxesHubV1 .ae-box-line>span{grid-column:1/-1;min-width:0}\n#aeBoxesHubV1 .ae-box-line label{width:100%;min-width:0}\n#aeBoxesHubV1 .ae-custom-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}\n#aeBoxesHubV1 .ae-custom-actions>*{width:100%;min-width:0;justify-content:center;min-height:44px}\n#aeBoxesHubV1 .ae-box-margin-editor{display:grid;grid-template-columns:minmax(0,1fr)}\n#aeBoxesHubV1 .ae-box-cost-row,#aeBoxesHubV1 .ae-box-cost-total{gap:6px}\n#aeBoxesHubV1 .ae-box-cost-row strong,#aeBoxesHubV1 .ae-box-cost-total strong{white-space:normal}\n}\n@media(max-width:355px){\n#aeBoxesHubV1 .ae-hub-tabs{grid-template-columns:minmax(0,1fr)}\n#aeBoxesHubV1 .ae-box-cost-row,#aeBoxesHubV1 .ae-box-cost-total{grid-template-columns:minmax(0,1fr)}\n#aeBoxesHubV1 .ae-box-cost-row strong,#aeBoxesHubV1 .ae-box-cost-total strong{text-align:left}\n}";document.head.appendChild(st);})();
+
+(()=>{const style=document.createElement('style');style.textContent=`
+#aeSavedBoxNav[hidden],#themedBoxesGrid>.catalog-pro-card[hidden]{display:none!important}
+#aeBoxesHubV1 .ae-saved-box-tools,#aeBoxesHubV1 .ae-saved-box-pages{margin:12px;min-width:0}
+#aeBoxesHubV1 .ae-saved-box-tools>label{display:block;font-size:14px;font-weight:700;margin-bottom:6px}
+#aeBoxesHubV1 .ae-saved-box-search{display:flex;gap:8px}
+#aeBoxesHubV1 .ae-saved-box-search input{flex:1;min-width:0;width:100%;font-size:16px;min-height:44px}
+#aeBoxesHubV1 .ae-saved-box-pages>div{display:flex;gap:8px;justify-content:center}
+#aeBoxesHubV1 .ae-saved-box-pages p{text-align:center;font-size:13px}
+#aeBoxesHubV1 .ae-saved-box-pages .btn{min-height:44px}
+`;document.head.appendChild(style)})();
