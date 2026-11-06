@@ -48,6 +48,16 @@ new vm.Script(source,{filename:'product-technical-sheet.js'});
    await popup.emulateMedia({media:'print'});
    // Match the printable width: paper width minus the CSS page margins.
    await popup.setViewportSize({width:Math.floor((size==='A5'?130:186)*96/25.4),height:900});
+   // A fotografia tem de permanecer legível nos dois formatos de impressão.
+   const photoDimensions=await popup.locator('.ts-photo').evaluate(el=>({
+    width:el.getBoundingClientRect().width,
+    height:el.getBoundingClientRect().height,
+    fit:getComputedStyle(el).objectFit
+   }));
+   const minPhotoSize=size==='A4'?112:108;
+   assert(photoDimensions.width>=minPhotoSize-1 && photoDimensions.height>=minPhotoSize-1,
+    size+' photograph must remain readable in printed output');
+   assert.equal(photoDimensions.fit,'contain','preserve original photo proportions');
    const overflow=await popup.evaluate(()=>{
     const sheet=document.querySelector('.ts-sheet').getBoundingClientRect();
     return [...document.querySelectorAll('.ts-sheet *')].filter(el=>{
