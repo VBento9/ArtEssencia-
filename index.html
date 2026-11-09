@@ -4112,6 +4112,27 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
     </div></div>
   </section>
 
+  <section id="technicalLibrary" class="screen">
+    <div class="card ae-fl-library-v1">
+      <div class="ae-fl-header-v1">
+        <div><h2>Biblioteca de Fragrâncias</h2><p>Arquivo técnico e de consulta da ArtEssencia. Não altera o Stock, Compras, Caixa nem a precificação.</p></div>
+        <div class="ae-fl-actions-v1">
+          <button class="btn primary" type="button" onclick="aeFragrancesV1.add()">+ Nova fragrância</button>
+          <button class="btn" type="button" onclick="aeFragrancesV1.importReceipt()">Importar recibo 67827</button>
+          <button class="btn" type="button" onclick="aeFragrancesV1.exportCsv()">Exportar CSV</button>
+        </div>
+      </div>
+      <div class="ae-fl-counts-v1" id="aeFlCountsV1"></div>
+      <div class="ae-fl-filters-v1">
+        <input id="aeFlSearchV1" type="search" placeholder="Pesquisar por nome, nome original ou fornecedor…" aria-label="Pesquisar fragrâncias" oninput="aeFragrancesV1.render()">
+        <select id="aeFlFamilyV1" aria-label="Família olfativa" onchange="aeFragrancesV1.render()"><option value="">Todas as famílias</option></select>
+        <select id="aeFlStatusV1" aria-label="Estado" onchange="aeFragrancesV1.render()"><option value="active">Ativas</option><option value="all">Todas</option><option value="archived">Arquivadas</option></select>
+      </div>
+      <div id="aeFlCardsV1" class="ae-fl-cards-v1" aria-live="polite"></div>
+      <p class="muted ae-fl-footnote-v1">A identificação de uma fragrância nesta biblioteca não cria, altera ou desconta artigos de stock. As informações técnicas devem ser confirmadas com o fabricante.</p>
+    </div>
+  </section>
+
   <section id="stock" class="screen">
     <div class="stock-hero card">
       <div>
@@ -7065,12 +7086,12 @@ function installNavKeyboard(){
 
 setTimeout(installNavKeyboard,0);
 
-const pages=[['dashboard','Dashboard'],['sale','Vendas'],['orders','Encomendas'],['quotes','Orçamentos'],['production','Produção'],['costs','Custos'],['stock','Stock'],['purchases','Compras'],['cash','Caixa'],['funds','Mapa de Fundos'],['clients','Clientes'],['email','Comunicações · Email'],['digitalStats','Estatísticas Digitais'],['reports','Relatórios'],['quantityPricing','Precificação em quantidade'],['products','Produtos'],['commercialCalendar','Calendário Comercial'],['publication','Publicação'],['catalogDigital','Catálogo Digital'],['visualCatalogs','Catálogos Visuais'],['catalogs','Catálogos'],['specialEditions','Edições Especiais'],['homepage','Homepage pública'],['socialAI','Redes Sociais / IA'],['campaigns','Campanhas'],['delivery','Entregas · futura Loja'],['legal','Informação Legal pública'],['settings','Configuração'],['cloud','Cloud Sync'],['backup','Backup']];
+const pages=[['dashboard','Dashboard'],['sale','Vendas'],['orders','Encomendas'],['quotes','Orçamentos'],['production','Produção'],['costs','Custos'],['technicalLibrary','Biblioteca Técnica'],['stock','Stock'],['purchases','Compras'],['cash','Caixa'],['funds','Mapa de Fundos'],['clients','Clientes'],['email','Comunicações · Email'],['digitalStats','Estatísticas Digitais'],['reports','Relatórios'],['quantityPricing','Precificação em quantidade'],['products','Produtos'],['commercialCalendar','Calendário Comercial'],['publication','Publicação'],['catalogDigital','Catálogo Digital'],['visualCatalogs','Catálogos Visuais'],['catalogs','Catálogos'],['specialEditions','Edições Especiais'],['homepage','Homepage pública'],['socialAI','Redes Sociais / IA'],['campaigns','Campanhas'],['delivery','Entregas · futura Loja'],['legal','Informação Legal pública'],['settings','Configuração'],['cloud','Cloud Sync'],['backup','Backup']];
 const pageIcons={
- dashboard:'🏠',sale:'➕',orders:'🧾',quotes:'📄',production:'🛠️',costs:'🧮',stock:'📦',purchases:'🛒',cash:'💶',funds:'📊',
+ dashboard:'🏠',sale:'➕',orders:'🧾',quotes:'📄',production:'🛠️',costs:'🧮',technicalLibrary:'🌿',stock:'📦',purchases:'🛒',cash:'💶',funds:'📊',
  clients:'👥',email:'✉️',digitalStats:'📈',reports:'📊',quantityPricing:'🧮',products:'🕯️',commercialCalendar:'🗓️',publication:'🌐',catalogDigital:'📱',visualCatalogs:'🖼️',catalogs:'🗂️',specialEditions:'🎉',homepage:'🖼️',socialAI:'✦',campaigns:'📣',delivery:'🚚',legal:'⚖️',settings:'⚙️',cloud:'☁️',backup:'💾'
 };
-const navGroupsV1857={dashboard:'Visão geral',sale:'Operação',costs:'Gestão',clients:'Clientes e comunicação',digitalStats:'Análise',products:'Conteúdo público',campaigns:'Marketing',delivery:'Loja e conformidade',settings:'Sistema'};
+const navGroupsV1857={dashboard:'Visão geral',sale:'Operação',costs:'Gestão',technicalLibrary:'Biblioteca Técnica',clients:'Clientes e comunicação',digitalStats:'Análise',products:'Conteúdo público',campaigns:'Marketing',delivery:'Loja e conformidade',settings:'Sistema'};
 document.getElementById('nav').innerHTML=pages.map(([id,l])=>{const group=navGroupsV1857[id]||'';return `<button data-page="${id}" ${group?`class="nav-group-start-v1857" data-group-label="${group}"`:''} onclick="go('${id}')"><span class="nav-icon">${pageIcons[id]||'•'}</span><span class="nav-label">${l}</span>${id==='orders'?'<span id="navOrderBadgeV12624" class="nav-order-badge-v12624 hidden">0</span>':''}${id==='email'?'<span id="navEmailBadgeV1716" class="nav-order-badge-v12624 hidden">0</span>':''}<span class="nav-active-dot"></span></button>`}).join('');
 // UX grouping is DOM-only: original navigation buttons, page ids and onclick handlers remain intact.
 (function groupNavigationVUX20261019(){
@@ -7803,7 +7824,7 @@ function go(id){
  requestAnimationFrame(()=>target.classList.add('screen-enter'));
  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
  document.getElementById('pageTitle').textContent=pages.find(x=>x[0]===id)?.[1]||'';
- const contextMap={dashboard:'VISÃO GERAL',sale:'ENCOMENDAS',orders:'ENCOMENDAS',quotes:'ORÇAMENTOS',production:'PRODUÇÃO',costs:'GESTÃO',stock:'GESTÃO',purchases:'GESTÃO',cash:'FINANCEIRO',funds:'FINANCEIRO',clients:'CLIENTES',email:'COMUNICAÇÕES',digitalStats:'ESTATÍSTICAS DIGITAIS',reports:'RELATÓRIOS',quantityPricing:'PRECIFICAÇÃO',products:'CATÁLOGO DIGITAL',commercialCalendar:'PLANEAMENTO COMERCIAL',publication:'PUBLICAÇÃO',catalogDigital:'CATÁLOGO DIGITAL',visualCatalogs:'CONTEÚDO',catalogs:'CATÁLOGO DIGITAL',specialEditions:'CONTEÚDO SAZONAL',homepage:'CONTEÚDO PÚBLICO',socialAI:'MARKETING',campaigns:'MARKETING',delivery:'LOJA ONLINE',legal:'CONFORMIDADE',settings:'SISTEMA',cloud:'SISTEMA',backup:'SISTEMA'};
+ const contextMap={dashboard:'VISÃO GERAL',sale:'ENCOMENDAS',orders:'ENCOMENDAS',quotes:'ORÇAMENTOS',production:'PRODUÇÃO',costs:'GESTÃO',technicalLibrary:'BIBLIOTECA TÉCNICA',stock:'GESTÃO',purchases:'GESTÃO',cash:'FINANCEIRO',funds:'FINANCEIRO',clients:'CLIENTES',email:'COMUNICAÇÕES',digitalStats:'ESTATÍSTICAS DIGITAIS',reports:'RELATÓRIOS',quantityPricing:'PRECIFICAÇÃO',products:'CATÁLOGO DIGITAL',commercialCalendar:'PLANEAMENTO COMERCIAL',publication:'PUBLICAÇÃO',catalogDigital:'CATÁLOGO DIGITAL',visualCatalogs:'CONTEÚDO',catalogs:'CATÁLOGO DIGITAL',specialEditions:'CONTEÚDO SAZONAL',homepage:'CONTEÚDO PÚBLICO',socialAI:'MARKETING',campaigns:'MARKETING',delivery:'LOJA ONLINE',legal:'CONFORMIDADE',settings:'SISTEMA',cloud:'SISTEMA',backup:'SISTEMA'};
  const pc=document.getElementById('pageContext');if(pc)pc.textContent=contextMap[id]||'GESTÃO ArtEssencia';
  renderAll();if(id==='socialAI')setTimeout(()=>{loadSocialPublicationsV7(false);loadSocialMetaStatusV11(false)},30);if(id==='email')setTimeout(()=>loadEmailModuleV177(false),30);if(id==='digitalStats')setTimeout(()=>loadDigitalStatsV1795(false),30);if(id==='campaigns')setTimeout(()=>loadCampaignDashboardV12626(false),50);
  if(id==='delivery'){renderShopDeliverySettings();renderShopCapacityAgenda();loadDeliveryZonesV197();}
@@ -17962,7 +17983,7 @@ function renderPublicationCenterV1812(){
    '<button class="btn" type="button" onclick="publicationOpenCostsV1812(decodeURIComponent(\''+encoded+'\'))">Custos / ficha</button></div></article>';
  }).join(''):'<div class="publication-empty-v1925 empty">Nenhum produto corresponde à pesquisa ou aos filtros.</div>';
 }
- function renderAll(){ensureQuotePaymentModel();ensureCostModel();syncPackagingSelect();renderTechnicalCategoriesV1863();renderClientSuggestions();renderDashboard();renderPicker();renderCart();renderOrders();renderProduction();renderCosts();renderStock();renderPurchases();renderCash();if(typeof renderFundsV1929==='function')renderFundsV1929();renderClients();renderQuotes();renderQuoteCart();renderProducts();renderProductWorkflowV1851(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null);renderProductPublicStatusV1850(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null);renderCommercialCalendarV1850();renderPublicationCenterV1812();renderCatalogs();renderVisualCatalogsV192();renderSpecialEditionsAdmin();renderCatalogDigitalCenterV160();renderSettings();renderAprecoImportV1753();renderBusinessSettings();if(!personalizationCategorySelectOpenV1794)renderPersonalizationLibraryV1791();renderReports();renderDigitalStatsV1795();renderLaunchStatsV1813();renderQuantityPricingV1750();renderLegalSummaryV1286();renderCloudUI();renderBackupInfo();renderOrderNotificationsV12624();renderPushStatusV12625();const s=sec();if(document.getElementById('lockMinutes'))document.getElementById('lockMinutes').value=String(s.lockMinutes??15)}
+ function renderAll(){ensureQuotePaymentModel();ensureCostModel();syncPackagingSelect();renderTechnicalCategoriesV1863();renderClientSuggestions();renderDashboard();renderPicker();renderCart();renderOrders();renderProduction();renderCosts();if(typeof window.renderTechnicalLibraryV1==='function')window.renderTechnicalLibraryV1();renderStock();renderPurchases();renderCash();if(typeof renderFundsV1929==='function')renderFundsV1929();renderClients();renderQuotes();renderQuoteCart();renderProducts();renderProductWorkflowV1851(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null);renderProductPublicStatusV1850(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null);renderCommercialCalendarV1850();renderPublicationCenterV1812();renderCatalogs();renderVisualCatalogsV192();renderSpecialEditionsAdmin();renderCatalogDigitalCenterV160();renderSettings();renderAprecoImportV1753();renderBusinessSettings();if(!personalizationCategorySelectOpenV1794)renderPersonalizationLibraryV1791();renderReports();renderDigitalStatsV1795();renderLaunchStatsV1813();renderQuantityPricingV1750();renderLegalSummaryV1286();renderCloudUI();renderBackupInfo();renderOrderNotificationsV12624();renderPushStatusV12625();const s=sec();if(document.getElementById('lockMinutes'))document.getElementById('lockMinutes').value=String(s.lockMinutes??15)}
 document.addEventListener('input',e=>{if(e.target&&['costPackQty','costPackPrice'].includes(e.target.id))updateCostPreview()});
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;installBtn.classList.remove('hidden');installBanner.classList.remove('hidden')});
 async function installApp(){if(!deferredPrompt)return toast('No Chrome: menu ⋮ → Adicionar ao ecrã principal / Instalar app');deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;installBtn.classList.add('hidden');installBanner.classList.add('hidden')}
@@ -18160,6 +18181,8 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 <script src="catalog-background-presets.js"></script>
 <script src="pwa-update.js"></script>
 <script defer src="./order-detail-compact-ui.js"></script>
+<link rel="stylesheet" href="./technical-fragrances-v1.css">
+<script defer src="./technical-fragrances-v1.js"></script>
 <script defer src="./production-compact-ui.js"></script>
 <script defer src="./product-editor-guide.js"></script>
 <script defer src="./clients-compact-ui.js"></script>

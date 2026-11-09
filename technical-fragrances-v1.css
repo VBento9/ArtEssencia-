@@ -1,0 +1,24 @@
+#technicalLibrary .ae-fl-header-v1{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+#technicalLibrary .ae-fl-header-v1 h2{font-size:21px;margin:0 0 5px}
+#technicalLibrary .ae-fl-header-v1 p{margin:0;color:var(--muted,#76685c);font-size:13px}
+#technicalLibrary .ae-fl-actions-v1{display:flex;flex-wrap:wrap;gap:8px}
+#technicalLibrary .ae-fl-counts-v1{margin:18px 0 10px;font-size:13px;font-weight:700}
+#technicalLibrary .ae-fl-filters-v1{display:grid;grid-template-columns:minmax(220px,2fr) 1fr 1fr;gap:10px;margin:12px 0 18px}
+#technicalLibrary .ae-fl-filters-v1 input,#technicalLibrary .ae-fl-filters-v1 select{width:100%;min-width:0;padding:10px;border:1px solid var(--line,#e3d6ca);border-radius:10px;background:white}
+#technicalLibrary .ae-fl-cards-v1{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:12px}
+#technicalLibrary .ae-fl-card-v1{border:1px solid var(--line,#e3d6ca);background:var(--card,white);border-radius:14px;padding:15px;display:flex;justify-content:space-between;gap:12px;flex-direction:column;min-width:0}
+#technicalLibrary .ae-fl-card-v1 h3{margin:0 0 5px;font-size:15px;overflow-wrap:anywhere}
+#technicalLibrary .ae-fl-card-v1 small{display:block;color:var(--muted,#76685c);overflow-wrap:anywhere}
+#technicalLibrary .ae-fl-card-v1 span{display:block;font-size:11px;font-weight:700;margin:10px 0 6px}
+#technicalLibrary .ae-fl-card-v1 p{margin:0;font-size:12px;color:var(--muted,#76685c)}
+#technicalLibrary .ae-fl-card-v1 button{align-self:flex-start}
+#technicalLibrary .ae-fl-footnote-v1{font-size:11px;margin:20px 0 0}
+.ae-fl-dialog-v1{border:1px solid #ded5c9;border-radius:18px;width:min(720px,calc(100vw - 25px));max-height:90dvh;overflow:auto;padding:22px;background:#fff;color:#302921}
+.ae-fl-dialog-v1::backdrop{background:rgba(29,22,17,.65)}
+.ae-fl-dialog-v1 h2{margin:0 0 6px;font-size:20px}
+.ae-fl-dialog-v1 .muted{font-size:12px;color:#74695f}
+.ae-fl-edit-v1{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0}
+.ae-fl-edit-v1 label{font-size:12px;font-weight:650;display:grid;gap:5px;min-width:0}
+.ae-fl-edit-v1 input,.ae-fl-edit-v1 textarea,.ae-fl-edit-v1 select{width:100%;min-width:0;border:1px solid #ded5c9;border-radius:10px;padding:10px;background:white;color:#302921}
+.ae-fl-dialog-actions-v1{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px}
+@media(max-width:700px){#technicalLibrary .ae-fl-filters-v1{grid-template-columns:1fr}.ae-fl-edit-v1{grid-template-columns:1fr}}
