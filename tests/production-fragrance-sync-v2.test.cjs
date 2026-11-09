@@ -1,0 +1,13 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');
+const html=fs.readFileSync('index.html','utf8');
+const merge=html.slice(html.indexOf('function mergeOperationalCloudSnapshotV139('),html.indexOf('async function pushOperationalCloudStateV139('));
+const receive=html.slice(html.indexOf('function applyOperationalCloudRowSafelyV1949('),html.indexOf('async function pullOperationalCloudStateV139('));
+function device(){let meta={baseRevision:7,remoteRevision:7},dirty=false,pending=false;const writes=[];
+ const c={db:{products:[{price:12}],orders:[{id:'old',price:12}],stock:[{name:'Coco',qty:50}]},CLOUD_OPERATIONAL_KEYS_V139:['stock','stockMoves','productionRuns','settings','productRecipes'],relClone:x=>JSON.parse(JSON.stringify(x)),normalizeImportedDb:x=>x,ensureQuotePaymentModel(){},ensureCostModel(){},ensureRecordIds(){},ensureClientsFromOrders(){},cloudMeta:()=>meta,setCloudMeta:x=>meta={...meta,...x},productionBlockedV1926:()=>pending,operationalLocalPendingV1949:()=>dirty,KEY:'test',localStorage:{setItem:(k,v)=>writes.push(v)},saveConfirmedShadow(){},cloudApplying:false};vm.createContext(c);vm.runInContext(merge+receive,c);return {c,writes,dirty:x=>dirty=x,pending:x=>pending=x,meta:()=>meta};
+}
+test('computer, tablet and phone receive same actual consumption and costs through operational sync',()=>{
+ const cloud={revision:8,data:{stock:[{name:'Coco',qty:28},{name:'Figo',qty:41}],stockMoves:[{productionRunId:'R',item:'Coco',qty:22}],productionRuns:[{id:'R',fragranceActualsV2:[{lineIndex:0,actualItem:'Coco',actualCost:4.4}]}],settings:{productionFragranceStockV2:['Coco','Figo']},productRecipes:{P:[{item:'Ref',qty:10}]}}};
+ const devices=[device(),device(),device()];for(const d of devices){assert.equal(d.c.applyOperationalCloudRowSafelyV1949(cloud),true);assert.equal(d.meta().baseRevision,8);assert.deepEqual(JSON.parse(d.writes[0]).productionRuns,cloud.data.productionRuns);assert.equal(d.c.db.products[0].price,12);assert.equal(d.c.db.orders[0].id,'old');assert.equal(d.c.applyOperationalCloudRowSafelyV1949({revision:7,data:{stock:[]}}),false)}
+ assert.deepEqual(devices.map(d=>JSON.stringify(d.c.db)),Array(3).fill(JSON.stringify(devices[0].c.db)));
+});
+test('local edits and unresolved production block remote overwrite',()=>{const d=device(),row={revision:8,data:{stock:[]}};d.dirty(true);assert.equal(d.c.applyOperationalCloudRowSafelyV1949(row),false);d.dirty(false);d.pending(true);assert.equal(d.c.applyOperationalCloudRowSafelyV1949(row),false);assert.equal(d.c.db.stock[0].qty,50);assert.equal(d.writes.length,0)});

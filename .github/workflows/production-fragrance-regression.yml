@@ -3,7 +3,11 @@ on:
   pull_request:
     paths:
       - 'index.html'
-      - 'scripts/test_production_fragrance_reservations.cjs'
+      - 'scripts/test_production*.cjs'
+      - 'scripts/test_backoffice_integrity.cjs'
+      - 'production-fragrance-v2.*'
+      - 'sql/complete-production-backoffice-v*.sql'
+      - 'tests/production-fragrance*.cjs'
       - '.github/workflows/production-fragrance-regression.yml'
   workflow_dispatch:
 jobs:
@@ -16,3 +20,14 @@ jobs:
           node-version: '22'
       - name: Verify fragrance reservations without Cloud writes
         run: node scripts/test_production_fragrance_reservations.cjs
+      - name: Verify actual consumption and durable retry
+        run: |
+          node --test tests/production-fragrance*.test.cjs tests/technical-fragrances-library.test.cjs
+          node scripts/test_backoffice_integrity.cjs
+      - name: Install isolated PostgreSQL test engine
+        run: npm install --prefix "$RUNNER_TEMP/fragrance-tests" --ignore-scripts @electric-sql/pglite@0.3.14
+      - name: Verify v1 compatibility and v2 atomic transactions
+        run: |
+          export PGLITE_MODULE="$RUNNER_TEMP/fragrance-tests/node_modules/@electric-sql/pglite"
+          node scripts/test_production_atomic_sql.cjs
+          node scripts/test_production_fragrance_v2_sql.cjs
