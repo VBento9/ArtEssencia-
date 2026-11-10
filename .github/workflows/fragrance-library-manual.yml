@@ -1,0 +1,18 @@
+name: Manual fragrance library
+on:
+  pull_request:
+  push:
+    branches: [feature/biblioteca-fragrancias-manual-20261110]
+jobs:
+  library:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test tests/fragrance-ledger.test.cjs tests/fragrance-library-sync.test.cjs
+      - run: node scripts/test_ux_navigation.cjs && node scripts/test_ux_mobile_audit.cjs
+      - run: npm install --no-save playwright@1.56.1
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/test_fragrance_library_browser.cjs

@@ -1,0 +1,9 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const source=fs.readFileSync('index.html','utf8');
+const start=source.indexOf('function trySafeOperationalRebaseV19102('),end=source.indexOf('\n\n\n/* V1.9.103',start);
+const rebase=source.slice(start,end);
+const L=require('../fragrance-ledger');
+function device(base,local){const context={db:{settings:{manualFragranceLibraryV1:local}},CLOUD_OPERATIONAL_KEYS_V139:['settings'],CLOUD_SHADOW:'shadow',KEY:'db',cloudConflict:{},localStorage:{setItem(){}},parseLocal:()=>({revision:1,data:{settings:{manualFragranceLibraryV1:base}}}),relClone:structuredClone,stableStringify:JSON.stringify,saveConfirmedShadow(){},setCloudMeta(){},cloudLogMsg(){}};context.operationalCloudSnapshotV139=()=>structuredClone(context.db);context.operationalCloudRowSnapshotV1858=r=>r.data;vm.createContext(context);vm.runInContext(rebase,context);return context}
+const original={id:'a',movements:[]},with100=L.apply(original,{id:'initial',type:'refill',quantity:'100',date:'2026-11-10'});
+test('duas cópias alteradas não se substituem: conflito existente bloqueia rebase',()=>{const used=L.apply(with100,{id:'a',type:'consumption',quantity:'12',date:'2026-11-10'}),other=L.apply(with100,{id:'b',type:'consumption',quantity:'20',date:'2026-11-10'}),d=device([with100],[other]);assert.equal(d.trySafeOperationalRebaseV19102({revision:2,data:{settings:{manualFragranceLibraryV1:[used]}}},1),false);assert.equal(L.balance(d.db.settings.manualFragranceLibraryV1[0]),80000)});
+test('cópia sem edições recebe consumo recente; não repõe saldo antigo',()=>{const used=L.apply(with100,{id:'a',type:'consumption',quantity:'12',date:'2026-11-10'}),d=device([with100],[with100]);assert.equal(d.trySafeOperationalRebaseV19102({revision:2,data:{settings:{manualFragranceLibraryV1:[used]}}},1),true);assert.equal(L.balance(d.db.settings.manualFragranceLibraryV1[0]),88000)});
