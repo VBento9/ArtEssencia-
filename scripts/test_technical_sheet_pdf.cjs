@@ -8,7 +8,9 @@ new vm.Script(source,{filename:'product-technical-sheet.js'});
  const browser=await chromium.launch({headless:true});
  try{
   const context=await browser.newContext({viewport:{width:760,height:900}});
-  await context.addInitScript(()=>{window.print=()=>{window.__printRequested=true}});
+  let printRequested=false;
+  await context.exposeBinding('__recordPrint',()=>{printRequested=true});
+  await context.addInitScript(()=>{window.print=()=>{window.__printRequested=true;void window.__recordPrint()}});
   const page=await context.newPage();
   // Give the isolated document an HTTP origin: the shared logo resolves against location.href.
   // All requests remain intercepted; this test cannot reach Cloud or production.
@@ -83,8 +85,8 @@ new vm.Script(source,{filename:'product-technical-sheet.js'});
    // mesmo que a impressora continue fisicamente a imprimir.
    // Printing starts after asynchronous image decoding and A4 layout fitting.
    // Do not race the print handler: wait for the real print invocation.
-   await popup.waitForFunction(()=>window.__printRequested===true,null,{timeout:10000});
-   assert.equal(await popup.evaluate(()=>window.__printRequested),true);
+   for(let attempt=0;attempt<100&&!printRequested;attempt++)await new Promise(resolve=>setTimeout(resolve,100));
+   assert.equal(printRequested,true,'the print callback must run after async image decoding');
    const closed=popup.waitForEvent('close');
    await popup.evaluate(()=>window.dispatchEvent(new Event('afterprint')));
    await closed;
