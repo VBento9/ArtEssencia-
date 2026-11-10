@@ -5,7 +5,7 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
  const context=await browser.newContext({viewport:{width,height:1000},serviceWorkers:'block'}),page=await context.newPage();
  await page.route('**/*',r=>new URL(r.request().url()).origin==='http://127.0.0.1:8765'?r.continue():r.abort());page.on('dialog',d=>d.accept());
  await page.goto('http://127.0.0.1:8765');await page.waitForFunction(()=>typeof renderStock==='function');await page.waitForTimeout(400);
- await page.evaluate(()=>{document.getElementById('authGateV1880')?.remove();scheduleCloudPushV1860=()=>{};db.stock=Array.from({length:45},(_,i)=>({name:'Fixture '+String(i).padStart(2,'0'),qty:100,unit:'g',min:10,target:200,unitCost:.02,imageUrl:'',preferredSupplier:''}));go('stock');window.initialStock=JSON.stringify(db.stock)});
+ await page.evaluate(()=>{document.getElementById('authGateV1880')?.remove();finishAppUnlockV19135();scheduleCloudPushV1860=()=>{};db.stock=Array.from({length:45},(_,i)=>({name:'Fixture '+String(i).padStart(2,'0'),qty:100,unit:'g',min:10,target:200,unitCost:.02,imageUrl:'',preferredSupplier:''}));go('stock');window.initialStock=JSON.stringify(db.stock)});
  const rows=page.locator('#stockBody tr:not([hidden])'),controls=page.locator('#aeStockCompactControls');
  assert.equal(await rows.count(),20);await page.getByLabel('Artigos por página',{exact:true}).selectOption('10');assert.equal(await rows.count(),10);
  await controls.getByRole('button',{name:'Seguinte',exact:true}).click();assert.match(await controls.locator('.ae-stock-pages span').innerText(),/11–20 de 45/);

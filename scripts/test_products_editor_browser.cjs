@@ -5,7 +5,7 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
  const context=await browser.newContext({viewport:{width,height:1000},serviceWorkers:'block'}),page=await context.newPage();
  await page.route('**/*',r=>new URL(r.request().url()).origin==='http://127.0.0.1:8765'?r.continue():r.abort());page.on('dialog',d=>d.accept());
  await page.goto('http://127.0.0.1:8765');await page.waitForFunction(()=>typeof saveProduct==='function');await page.waitForTimeout(400);
- await page.evaluate(()=>{document.getElementById('authGateV1880')?.remove();scheduleCloudPushV1860=()=>{};db.products=[];go('products');window.originalFile=document.getElementById('prodShopImageFile');window.beforeProducts=JSON.stringify(db.products)});
+ await page.evaluate(()=>{document.getElementById('authGateV1880')?.remove();finishAppUnlockV19135();scheduleCloudPushV1860=()=>{};db.products=[];go('products');window.originalFile=document.getElementById('prodShopImageFile');window.beforeProducts=JSON.stringify(db.products)});
  await page.locator('#aeProductsCompact button').nth(1).click();
  const tab=key=>page.locator('[data-product-panel-btn="'+key+'"]');
  assert.deepEqual(await page.locator('.product-editor-nav-v1762 button').evaluateAll(es=>es.map(e=>e.dataset.productPanelBtn)),['identity','photos','production','pricing','public']);

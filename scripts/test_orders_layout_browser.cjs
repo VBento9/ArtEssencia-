@@ -2,7 +2,7 @@
 const {chromium}=require('playwright'),assert=require('node:assert/strict');
 (async()=>{const browser=await chromium.launch({headless:true});try{
  async function open(width){const context=await browser.newContext({viewport:{width,height:1000},serviceWorkers:'block'}),page=await context.newPage();page.on('dialog',d=>d.accept());await page.route('**/*',r=>new URL(r.request().url()).origin==='http://127.0.0.1:8765'?r.continue():r.abort());await page.goto('http://127.0.0.1:8765');await page.waitForFunction(()=>typeof showOrder==='function');await page.waitForTimeout(400);await page.evaluate(()=>{
-  document.getElementById('authGateV1880')?.remove();scheduleCloudPushV1860=()=>{};queueOrderBusinessSyncV1757=()=>{};save=()=>{localStorage.setItem(KEY,JSON.stringify(db));renderOrders()};
+  document.getElementById('authGateV1880')?.remove();finishAppUnlockV19135();scheduleCloudPushV1860=()=>{};queueOrderBusinessSyncV1757=()=>{};save=()=>{localStorage.setItem(KEY,JSON.stringify(db));renderOrders()};
   db.clients=[];db.cash=[];db.productionRuns=[];db.packaging=[{name:'Fixture box',cost:0,capacity:1}];
   db.orders=Array.from({length:25},(_,i)=>({id:'FIX-'+String(i).padStart(2,'0'),client:'Álvaro '+i,contact:'900000000',created:'2026-10-01',delivery:'2026-11-01',status:'Pedido',payment:'Dinheiro',paid:0,box:'Fixture box',boxes:1,items:[{code:'FIX',name:'Fixture candle',qty:2,price:10,cost:2}],notes:'Fixture notes'}));
   db.orders.push({id:'HISTORY',client:'Outro',created:'2025-01-01',delivery:'2025-02-01',status:'Entregue',items:[],paid:0});go('orders');window.initialOrders=JSON.stringify(db.orders);
