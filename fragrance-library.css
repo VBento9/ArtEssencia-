@@ -33,3 +33,4 @@
 .ae-fl-dialog-v1 input,.ae-fl-dialog-v1 textarea{box-sizing:border-box;max-width:100%;width:100%}
 .ae-fl-dialog-v1 [role=alert]{color:#9b3224}
 @media(max-width:700px){#technicalLibrary .fl-filters{grid-template-columns:1fr 1fr}.fl-actions .btn{flex:1 1 120px}.ae-fl-dialog-v1{width:calc(100% - 28px);box-sizing:border-box}}
+#technicalLibrary .fl-filters input,#technicalLibrary .fl-filters select{width:100%;min-width:0;border:1px solid #ded5c9;border-radius:10px;padding:10px;background:white;color:#302921}
