@@ -86,7 +86,7 @@ test('clicar no cartão de revisão e Enter abrem editor sem passar pela lista g
  assert.match(source,/data-review-code/);
  assert.match(source,/addEventListener\('keydown'/);
  assert.match(source,/edit\(card\.dataset\.reviewCode\)/);
- assert.match(source,/value\(b\.textContent\)==='Abrir editor'/);
+ assert.ok(source.includes("['Abrir editor','Editor de produto'].includes(value(b.textContent))"));
 });
 
 test('revisão usa a fila persistente, sem exigir ligação nem escrever diretamente na Cloud',()=>{
