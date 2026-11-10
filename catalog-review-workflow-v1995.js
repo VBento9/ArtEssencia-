@@ -152,7 +152,7 @@ function init(){
   // Os separadores desta vista e o módulo compacto têm de mostrar a MESMA
   // listagem. Caso contrário a navegação assinala "Lista" mas a lista está hidden.
   var compact=el('aeProductsCompact');
-  var showListButton=compact&&Array.from(compact.querySelectorAll('button')).find(b=>value(b.textContent)==='Ver catálogo');
+  var showListButton=compact&&Array.from(compact.querySelectorAll('button')).find(b=>['Ver catálogo','Lista de produtos'].includes(value(b.textContent)));
   if(showListButton&&(list.hidden||showListButton.getAttribute('aria-pressed')!=='true'))showListButton.click();
   else if(list.hidden)list.hidden=false;
   list.classList.toggle('ae-review-focus1995',reviewing);

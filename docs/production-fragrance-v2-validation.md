@@ -41,3 +41,5 @@ Comparação antes/depois da instalação: hashes idênticos do estado operacion
 ## Gates finais de publicação
 
 O CI detetou o contrato de cache sem sufixo e overflow do cartão a 320 px. A cache foi uniformizada para `artessencia-backoffice-1.9.138`; o rodapé do cartão usa largura automática para descontar as margens laterais, preservando os botões e os dados. Os testes de largura e cache mantêm as mesmas asserções.
+
+O ensaio seguinte identificou ainda uma referência antiga ao texto «Ver catálogo»: ao regressar da revisão à lista, o editor não era recolhido. A navegação passou a reconhecer também «Lista de produtos», acionando o controlo original e preservando o rascunho. Os 14 testes de revisão passaram.
