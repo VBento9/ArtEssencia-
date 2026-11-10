@@ -81,6 +81,9 @@ new vm.Script(source,{filename:'product-technical-sheet.js'});
    assert(pages>=2,'A long technical sheet should span multiple PDF pages');
    // Simula o fecho do diálogo de impressão; o separador auxiliar é libertado
    // mesmo que a impressora continue fisicamente a imprimir.
+   // Printing starts after asynchronous image decoding and A4 layout fitting.
+   // Do not race the print handler: wait for the real print invocation.
+   await popup.waitForFunction(()=>window.__printRequested===true,null,{timeout:10000});
    assert.equal(await popup.evaluate(()=>window.__printRequested),true);
    const closed=popup.waitForEvent('close');
    await popup.evaluate(()=>window.dispatchEvent(new Event('afterprint')));
