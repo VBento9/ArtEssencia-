@@ -129,3 +129,6 @@
  #products .product-card-body>:not(.product-card-top):not(.product-card-flags):not(.product-card-collections){margin-inline:10px}
  #products .product-card-foot{margin-bottom:10px}
 }
+
+/* Footer has horizontal margins: auto width must subtract them from the grid area. */
+#products .product-card-body>.product-card-foot{width:auto}

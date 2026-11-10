@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.137">
+<meta name="artessencia-version" content="1.9.138">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -3988,6 +3988,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       </div>
     </div>
 
+    <button type="button" class="btn" onclick="aeProductionFragranceV2.configure()">Identificar fragrâncias no Stock</button>
     <div id="productionFlowV147" class="card production-flow-v147"></div>
     <div id="productionSummary" class="prod-summary"></div>
     <div id="productionDayAlertsV12653" class="prod-day-alerts-v12653"></div>
@@ -4110,6 +4111,27 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       <div class="btnrow" style="margin-top:10px"><button class="btn primary" onclick="go('settings')">Abrir Configuração → Precificação</button></div>
       <div hidden aria-hidden="true"><input id="costLaborRate" type="number"><input id="costLaborMinutes" type="number"><input id="costWasteRate" type="number"></div>
     </div></div>
+  </section>
+
+  <section id="technicalLibrary" class="screen">
+    <div class="card ae-fl-library-v1">
+      <div class="ae-fl-header-v1">
+        <div><h2>Biblioteca de Fragrâncias</h2><p>Arquivo técnico e de consulta da ArtEssencia. Não altera o Stock, Compras, Caixa nem a precificação.</p></div>
+        <div class="ae-fl-actions-v1">
+          <button class="btn primary" type="button" onclick="aeFragrancesV1.add()">+ Nova fragrância</button>
+          <button class="btn" type="button" onclick="aeFragrancesV1.importReceipt()">Importar recibo 67827</button>
+          <button class="btn" type="button" onclick="aeFragrancesV1.exportCsv()">Exportar CSV</button>
+        </div>
+      </div>
+      <div class="ae-fl-counts-v1" id="aeFlCountsV1"></div>
+      <div class="ae-fl-filters-v1">
+        <input id="aeFlSearchV1" type="search" placeholder="Pesquisar por nome, nome original ou fornecedor…" aria-label="Pesquisar fragrâncias" oninput="aeFragrancesV1.render()">
+        <select id="aeFlFamilyV1" aria-label="Família olfativa" onchange="aeFragrancesV1.render()"><option value="">Todas as famílias</option></select>
+        <select id="aeFlStatusV1" aria-label="Estado" onchange="aeFragrancesV1.render()"><option value="active">Ativas</option><option value="all">Todas</option><option value="archived">Arquivadas</option></select>
+      </div>
+      <div id="aeFlCardsV1" class="ae-fl-cards-v1" aria-live="polite"></div>
+      <p class="muted ae-fl-footnote-v1">A identificação de uma fragrância nesta biblioteca não cria, altera ou desconta artigos de stock. As informações técnicas devem ser confirmadas com o fabricante.</p>
+    </div>
   </section>
 
   <section id="stock" class="screen">
@@ -6413,7 +6435,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.137';
+const APP_VERSION='1.9.138';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -6497,7 +6519,7 @@ async function completeProductionAtomicV1926(run,orders){
   if(!state||stableStringify(operationalCloudSnapshotV139())!==stableStringify(operationalCloudRowSnapshotV1858(state)))throw new Error('O stock ou as fichas técnicas mudaram. Recebe os dados da Cloud antes de concluir.');
   const snapshots=orders.map(order=>{const row=remoteOrders.find(r=>r.id===order._rid);if(!row||productionComparableV1926(row.data)!==productionComparableV1926(order))throw new Error('A encomenda '+order.id+' mudou ou ainda não está sincronizada. Recebe os dados da Cloud.');return row});
   const used=new Map();for(const order of orders)for(const line of order.items||[]){if(productionLineIgnoredV148(line))continue;const product=productionProductForLineV130(line);const row=remoteProducts.find(r=>r.id===product?._rid);if(!row||productionComparableV1926(row.data,'product')!==productionComparableV1926(product,'product'))throw new Error('Um produto mudou ou ainda não está sincronizado. Recebe os dados da Cloud.');used.set(row.id,row)}
-  const pending={userId:user.id,args:{p_revision:state.revision,p_run:run,p_orders:snapshots,p_products:[...used.values()],p_device:getDeviceId()}};
+  const pending={userId:user.id,rpcVersion:run.fragranceSelections?.length?2:1,args:{p_revision:state.revision,p_run:run,p_orders:snapshots,p_products:[...used.values()],p_device:getDeviceId()}};
   // Persist before issuing the RPC: a lost response/restart must reuse this id.
   localStorage.setItem(PRODUCTION_PENDING_V1926,JSON.stringify(pending));
  }catch(error){document.getElementById('productionTransactionV1926')?.remove();toast(error.message||'Não foi possível preparar a produção');return false}
@@ -6512,7 +6534,9 @@ async function resumeProductionV1926(){
  try{
   const user=await ensureCloudSession();if(!user||user.id!==pending.userId)throw new Error('Inicia sessão com a conta que iniciou esta produção.');
   if(navigator.onLine===false)throw new Error('Sem internet. Liga a rede e volta a verificar.');
-  const {data,error}=await cloudClient.rpc('artessencia_complete_production_backoffice_v1',pending.args);
+  const {data,error}=pending.rpcVersion===2
+   ?await cloudClient.rpc('artessencia_complete_production_backoffice_v2',pending.args)
+   :await cloudClient.rpc('artessencia_complete_production_backoffice_v1',pending.args);
   if(error){
    // These are explicit PostgreSQL rejections: the transaction rolled back.
    if(['P0001','40001','22023','22P02','42501'].includes(error.code)){
@@ -7065,12 +7089,12 @@ function installNavKeyboard(){
 
 setTimeout(installNavKeyboard,0);
 
-const pages=[['dashboard','Dashboard'],['sale','Vendas'],['orders','Encomendas'],['quotes','Orçamentos'],['production','Produção'],['costs','Custos'],['stock','Stock'],['purchases','Compras'],['cash','Caixa'],['funds','Mapa de Fundos'],['clients','Clientes'],['email','Comunicações · Email'],['digitalStats','Estatísticas Digitais'],['reports','Relatórios'],['quantityPricing','Precificação em quantidade'],['products','Produtos'],['commercialCalendar','Calendário Comercial'],['publication','Publicação'],['catalogDigital','Catálogo Digital'],['visualCatalogs','Catálogos Visuais'],['catalogs','Catálogos'],['specialEditions','Edições Especiais'],['homepage','Homepage pública'],['socialAI','Redes Sociais / IA'],['campaigns','Campanhas'],['delivery','Entregas · futura Loja'],['legal','Informação Legal pública'],['settings','Configuração'],['cloud','Cloud Sync'],['backup','Backup']];
+const pages=[['dashboard','Dashboard'],['sale','Vendas'],['orders','Encomendas'],['quotes','Orçamentos'],['production','Produção'],['costs','Custos'],['technicalLibrary','Biblioteca Técnica'],['stock','Stock'],['purchases','Compras'],['cash','Caixa'],['funds','Mapa de Fundos'],['clients','Clientes'],['email','Comunicações · Email'],['digitalStats','Estatísticas Digitais'],['reports','Relatórios'],['quantityPricing','Precificação em quantidade'],['products','Produtos'],['commercialCalendar','Calendário Comercial'],['publication','Publicação'],['catalogDigital','Catálogo Digital'],['visualCatalogs','Catálogos Visuais'],['catalogs','Catálogos'],['specialEditions','Edições Especiais'],['homepage','Homepage pública'],['socialAI','Redes Sociais / IA'],['campaigns','Campanhas'],['delivery','Entregas · futura Loja'],['legal','Informação Legal pública'],['settings','Configuração'],['cloud','Cloud Sync'],['backup','Backup']];
 const pageIcons={
- dashboard:'🏠',sale:'➕',orders:'🧾',quotes:'📄',production:'🛠️',costs:'🧮',stock:'📦',purchases:'🛒',cash:'💶',funds:'📊',
+ dashboard:'🏠',sale:'➕',orders:'🧾',quotes:'📄',production:'🛠️',costs:'🧮',technicalLibrary:'🌿',stock:'📦',purchases:'🛒',cash:'💶',funds:'📊',
  clients:'👥',email:'✉️',digitalStats:'📈',reports:'📊',quantityPricing:'🧮',products:'🕯️',commercialCalendar:'🗓️',publication:'🌐',catalogDigital:'📱',visualCatalogs:'🖼️',catalogs:'🗂️',specialEditions:'🎉',homepage:'🖼️',socialAI:'✦',campaigns:'📣',delivery:'🚚',legal:'⚖️',settings:'⚙️',cloud:'☁️',backup:'💾'
 };
-const navGroupsV1857={dashboard:'Visão geral',sale:'Operação',costs:'Gestão',clients:'Clientes e comunicação',digitalStats:'Análise',products:'Conteúdo público',campaigns:'Marketing',delivery:'Loja e conformidade',settings:'Sistema'};
+const navGroupsV1857={dashboard:'Visão geral',sale:'Operação',costs:'Gestão',technicalLibrary:'Biblioteca Técnica',clients:'Clientes e comunicação',digitalStats:'Análise',products:'Conteúdo público',campaigns:'Marketing',delivery:'Loja e conformidade',settings:'Sistema'};
 document.getElementById('nav').innerHTML=pages.map(([id,l])=>{const group=navGroupsV1857[id]||'';return `<button data-page="${id}" ${group?`class="nav-group-start-v1857" data-group-label="${group}"`:''} onclick="go('${id}')"><span class="nav-icon">${pageIcons[id]||'•'}</span><span class="nav-label">${l}</span>${id==='orders'?'<span id="navOrderBadgeV12624" class="nav-order-badge-v12624 hidden">0</span>':''}${id==='email'?'<span id="navEmailBadgeV1716" class="nav-order-badge-v12624 hidden">0</span>':''}<span class="nav-active-dot"></span></button>`}).join('');
 // UX grouping is DOM-only: original navigation buttons, page ids and onclick handlers remain intact.
 (function groupNavigationVUX20261019(){
@@ -7803,7 +7827,7 @@ function go(id){
  requestAnimationFrame(()=>target.classList.add('screen-enter'));
  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
  document.getElementById('pageTitle').textContent=pages.find(x=>x[0]===id)?.[1]||'';
- const contextMap={dashboard:'VISÃO GERAL',sale:'ENCOMENDAS',orders:'ENCOMENDAS',quotes:'ORÇAMENTOS',production:'PRODUÇÃO',costs:'GESTÃO',stock:'GESTÃO',purchases:'GESTÃO',cash:'FINANCEIRO',funds:'FINANCEIRO',clients:'CLIENTES',email:'COMUNICAÇÕES',digitalStats:'ESTATÍSTICAS DIGITAIS',reports:'RELATÓRIOS',quantityPricing:'PRECIFICAÇÃO',products:'CATÁLOGO DIGITAL',commercialCalendar:'PLANEAMENTO COMERCIAL',publication:'PUBLICAÇÃO',catalogDigital:'CATÁLOGO DIGITAL',visualCatalogs:'CONTEÚDO',catalogs:'CATÁLOGO DIGITAL',specialEditions:'CONTEÚDO SAZONAL',homepage:'CONTEÚDO PÚBLICO',socialAI:'MARKETING',campaigns:'MARKETING',delivery:'LOJA ONLINE',legal:'CONFORMIDADE',settings:'SISTEMA',cloud:'SISTEMA',backup:'SISTEMA'};
+ const contextMap={dashboard:'VISÃO GERAL',sale:'ENCOMENDAS',orders:'ENCOMENDAS',quotes:'ORÇAMENTOS',production:'PRODUÇÃO',costs:'GESTÃO',technicalLibrary:'BIBLIOTECA TÉCNICA',stock:'GESTÃO',purchases:'GESTÃO',cash:'FINANCEIRO',funds:'FINANCEIRO',clients:'CLIENTES',email:'COMUNICAÇÕES',digitalStats:'ESTATÍSTICAS DIGITAIS',reports:'RELATÓRIOS',quantityPricing:'PRECIFICAÇÃO',products:'CATÁLOGO DIGITAL',commercialCalendar:'PLANEAMENTO COMERCIAL',publication:'PUBLICAÇÃO',catalogDigital:'CATÁLOGO DIGITAL',visualCatalogs:'CONTEÚDO',catalogs:'CATÁLOGO DIGITAL',specialEditions:'CONTEÚDO SAZONAL',homepage:'CONTEÚDO PÚBLICO',socialAI:'MARKETING',campaigns:'MARKETING',delivery:'LOJA ONLINE',legal:'CONFORMIDADE',settings:'SISTEMA',cloud:'SISTEMA',backup:'SISTEMA'};
  const pc=document.getElementById('pageContext');if(pc)pc.textContent=contextMap[id]||'GESTÃO ArtEssencia';
  renderAll();if(id==='socialAI')setTimeout(()=>{loadSocialPublicationsV7(false);loadSocialMetaStatusV11(false)},30);if(id==='email')setTimeout(()=>loadEmailModuleV177(false),30);if(id==='digitalStats')setTimeout(()=>loadDigitalStatsV1795(false),30);if(id==='campaigns')setTimeout(()=>loadCampaignDashboardV12626(false),50);
  if(id==='delivery'){renderShopDeliverySettings();renderShopCapacityAgenda();loadDeliveryZonesV197();}
@@ -9283,7 +9307,7 @@ function renderProduction(){
  const missingLabels=[...unresolved.map(x=>x.name+' ('+x.orderId+')'),...missing.map(x=>x.name)];const pr=document.getElementById('productionRecipe');if(pr)pr.innerHTML=blocked?`<div class="empty prod-warning">Não é seguro calcular o total: falta localizar/configurar ${missingLabels.map(escapeHtml).join(' · ')}.</div>`:needEntries.length?`<div class="prod-recipe-head"><span>Consumo total calculado</span><strong>${manufactured.length} produto(s)</strong></div>${needEntries.map(([name,q])=>{const st=stockByName(name),unit=st?.unit||'';return `<div class="prod-line"><span>${escapeHtml(name)}${productionOperationalHintV12633(name,q,unit)}</span><strong>${productionFmtQtyV12632(q)} ${escapeHtml(unit)}</strong></div>`}).join('')}`:'<div class="empty">Sem materiais a preparar.</div>';
  const stockBox=document.getElementById('productionStockCheck');if(stockBox){stockBox.innerHTML=blocked?'<div class="empty prod-warning">Verificação bloqueada enquanto existirem produtos por localizar ou fichas técnicas em falta.</div>':needEntries.length?needEntries.map(([name,need])=>{const x=stockByName(name),have=x?Number(x.qty)||0:0,unit=x?.unit||'',committedToDate=Number(committed[name])||0,prior=Math.max(0,committedToDate-(Number(need)||0)),availableAfterPrior=Math.max(0,have-prior),ok=!!x&&availableAfterPrior+1e-9>=need;return `<div class="prod-stock-line ${ok?'':'prod-stock-missing'}"><div><strong>${escapeHtml(name)}</strong><small>Hoje precisa ${productionFmtQtyV12632(need)} ${escapeHtml(unit)} · já comprometido antes/até à data ${productionFmtQtyV12632(prior)} ${escapeHtml(unit)}</small></div><div class="prod-stock-right"><strong>${productionFmtQtyV12632(availableAfterPrior)} ${escapeHtml(unit)} disponíveis</strong><span class="badge ${ok?'ok':'bad'}">${ok?'OK':'FALTA'}</span></div></div>`}).join(''):(ords.length?'<div class="empty">Esta produção não tem materiais para descontar.</div>':'<div class="empty">Sem necessidades de stock para esta data.</div>');}
  const pk=document.getElementById('productionPackaging');if(pk)pk.innerHTML=Object.keys(packs).length?`<div class="prod-recipe-head"><span>Total de embalagens</span><strong>${packTotal}</strong></div>${Object.entries(packs).map(([n,q])=>`<div class="prod-line"><span>${escapeHtml(n)}</span><strong>${q} un.</strong></div>`).join('')}`:'<div class="empty">Sem embalagens previstas.</div>';
- const runs=(db.productionRuns||[]).filter(r=>r.date===d),hist=document.getElementById('productionHistory');if(hist)hist.innerHTML=runs.length?runs.map((r,i)=>`<div class="prod-history"><div><strong>Sessão ${i+1}</strong><small>${(r.orders||[]).map(escapeHtml).join(', ')}</small></div><div><strong>${r.total||0} un.</strong><small>${r.createdAt?new Date(r.createdAt).toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'}):'Concluída'}</small></div></div>`).join(''):'<div class="empty">Ainda não há sessões concluídas neste dia.</div>';
+ const runs=(db.productionRuns||[]).filter(r=>r.date===d),hist=document.getElementById('productionHistory');if(hist)hist.innerHTML=runs.length?runs.map((r,i)=>`<div class="prod-history"><div><strong>Sessão ${i+1}</strong><small>${(r.orders||[]).map(escapeHtml).join(', ')}</small></div><div><strong>${r.total||0} un.</strong>${window.aeProductionFragranceV2?.history(r)||''}<small>${r.createdAt?new Date(r.createdAt).toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'}):'Concluída'}</small></div></div>`).join(''):'<div class="empty">Ainda não há sessões concluídas neste dia.</div>';
  renderProductionDailyCenterV12653(d)
 }
 function setStockSaveStateV143(type,title,detail){
@@ -13213,10 +13237,12 @@ async function consumeProduction(){
  const d=prodDate.value||todayISO(),done=orderAlreadyProducedIds(),ords=db.orders.filter(o=>o.delivery===d&&['Em produção','Produção'].includes(o.status)&&!done.has(o.id));if(!ords.length)return toast('Sem encomendas em produção para concluir');
  const unresolved=productionUnresolvedLinesV148(ords);if(unresolved.length)return toast('Produção bloqueada — produto não encontrado no catálogo: '+unresolved.map(x=>x.name+' ('+x.orderId+')').join(' · '));
  const products=new Map();ords.forEach(o=>(o.items||[]).forEach(line=>{if(productionLineIgnoredV148(line))return;const p=productionProductForLineV130(line),key=p?.code||line.code||line.name,cur=products.get(key)||{p,name:p?.name||line.name||'Produto',qty:0};cur.qty+=(Number(line.qty)||0);products.set(key,cur)}));const manufactured=[...products.values()].filter(x=>x.p&&productManufacturedV130(x.p)),missing=productionMissingRecipesV1757(ords);if(missing.length)return toast('Produção bloqueada — falta a ficha técnica de: '+missing.map(x=>x.name+' ('+x.orderId+')').join(' · '));
- const needs={},addNeed=(n,q)=>needs[n]=(needs[n]||0)+(Number(q)||0);ords.forEach(o=>Object.entries(productionOrderNeedsV12632(o)).forEach(([name,qty])=>addNeed(name,qty)));const committed=productionOtherCommitmentsV20261021(d,ords);const shortages=Object.entries(needs).filter(([name,need])=>{const x=stockByName(name),have=x?Number(x.qty)||0:0,prior=Math.max(0,Number(committed[name])||0);return !x||have-prior+1e-9<need});if(shortages.length){const msg=shortages.slice(0,5).map(([name,need])=>{const x=stockByName(name),have=x?Number(x.qty)||0:0,unit=x?.unit||'',prior=Math.max(0,Number(committed[name])||0),available=Math.max(0,have-prior);return name+': precisa '+Number(need).toLocaleString('pt-PT')+' '+unit+', disponível após compromissos '+available.toLocaleString('pt-PT')+' '+unit}).join(' · ');return toast('Produção bloqueada — stock comprometido/insuficiente. '+msg)}
+ let fragranceSelections;try{fragranceSelections=await window.aeProductionFragranceV2.choose(ords)}catch(e){return toast(e.message)}if(fragranceSelections===null)return;
+ let needs={};const addNeed=(n,q)=>needs[n]=(needs[n]||0)+(Number(q)||0);ords.forEach(o=>Object.entries(productionOrderNeedsV12632(o)).forEach(([name,qty])=>addNeed(name,qty)));try{needs=window.aeProductionFragranceV2.applySelections(needs,fragranceSelections,db.stock,db.settings.productionFragranceStockV2||[])}catch(e){return toast(e.message)}const committed=productionOtherCommitmentsV20261021(d,ords);const shortages=Object.entries(needs).filter(([name,need])=>{const x=stockByName(name),have=x?Number(x.qty)||0:0,prior=Math.max(0,Number(committed[name])||0);return !x||have-prior+1e-9<need});if(shortages.length){const msg=shortages.slice(0,5).map(([name,need])=>{const x=stockByName(name),have=x?Number(x.qty)||0:0,unit=x?.unit||'',prior=Math.max(0,Number(committed[name])||0),available=Math.max(0,have-prior);return name+': precisa '+Number(need).toLocaleString('pt-PT')+' '+unit+', disponível após compromissos '+available.toLocaleString('pt-PT')+' '+unit}).join(' · ');return toast('Produção bloqueada — stock comprometido/insuficiente. '+msg)}
  const orderMaterials={},orderProducts={};ords.forEach(o=>{orderMaterials[o.id]=productionNeedsSnapshotV148(productionOrderNeedsV12632(o));orderProducts[o.id]=(o.items||[]).filter(line=>!productionLineIgnoredV148(line)).map(line=>({code:line.code||'',name:line.name||'',qty:Number(line.qty)||0}))});
  const runId=uid('PROD');const total=ords.reduce((sum,o)=>sum+calcOrder(o).qty,0);const materialUnitCosts={};let materialCostTotal=0;Object.entries(needs).forEach(([name,need])=>{const uc=materialUnitCost(name);materialUnitCosts[name]=uc;materialCostTotal+=(Number(need)||0)*uc});
  const run={id:runId,date:d,createdAt:new Date().toISOString(),total,batches:0,orders:ords.map(o=>o.id),materials:{...needs},orderMaterials,orderProducts,materialUnitCosts,materialCostTotal,materialCostSnapshotAt:new Date().toISOString(),products:[...products.values()].map(x=>({code:x.p?.code||'',name:x.name,qty:x.qty,productionType:productProductionTypeV130(x.p)})),orderInstructions:ords.map(o=>({orderId:o.id,instructions:productionOrderInstructionsV136(o)})),missing:[]};
+ if(fragranceSelections.length)run.fragranceSelections=fragranceSelections;
  return completeProductionAtomicV1926(run,ords);
 
 }
@@ -17962,7 +17988,7 @@ function renderPublicationCenterV1812(){
    '<button class="btn" type="button" onclick="publicationOpenCostsV1812(decodeURIComponent(\''+encoded+'\'))">Custos / ficha</button></div></article>';
  }).join(''):'<div class="publication-empty-v1925 empty">Nenhum produto corresponde à pesquisa ou aos filtros.</div>';
 }
- function renderAll(){ensureQuotePaymentModel();ensureCostModel();syncPackagingSelect();renderTechnicalCategoriesV1863();renderClientSuggestions();renderDashboard();renderPicker();renderCart();renderOrders();renderProduction();renderCosts();renderStock();renderPurchases();renderCash();if(typeof renderFundsV1929==='function')renderFundsV1929();renderClients();renderQuotes();renderQuoteCart();renderProducts();renderProductWorkflowV1851(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null);renderProductPublicStatusV1850(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null);renderCommercialCalendarV1850();renderPublicationCenterV1812();renderCatalogs();renderVisualCatalogsV192();renderSpecialEditionsAdmin();renderCatalogDigitalCenterV160();renderSettings();renderAprecoImportV1753();renderBusinessSettings();if(!personalizationCategorySelectOpenV1794)renderPersonalizationLibraryV1791();renderReports();renderDigitalStatsV1795();renderLaunchStatsV1813();renderQuantityPricingV1750();renderLegalSummaryV1286();renderCloudUI();renderBackupInfo();renderOrderNotificationsV12624();renderPushStatusV12625();const s=sec();if(document.getElementById('lockMinutes'))document.getElementById('lockMinutes').value=String(s.lockMinutes??15)}
+ function renderAll(){ensureQuotePaymentModel();ensureCostModel();syncPackagingSelect();renderTechnicalCategoriesV1863();renderClientSuggestions();renderDashboard();renderPicker();renderCart();renderOrders();renderProduction();renderCosts();if(typeof window.renderTechnicalLibraryV1==='function')window.renderTechnicalLibraryV1();renderStock();renderPurchases();renderCash();if(typeof renderFundsV1929==='function')renderFundsV1929();renderClients();renderQuotes();renderQuoteCart();renderProducts();renderProductWorkflowV1851(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null);renderProductPublicStatusV1850(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null);renderCommercialCalendarV1850();renderPublicationCenterV1812();renderCatalogs();renderVisualCatalogsV192();renderSpecialEditionsAdmin();renderCatalogDigitalCenterV160();renderSettings();renderAprecoImportV1753();renderBusinessSettings();if(!personalizationCategorySelectOpenV1794)renderPersonalizationLibraryV1791();renderReports();renderDigitalStatsV1795();renderLaunchStatsV1813();renderQuantityPricingV1750();renderLegalSummaryV1286();renderCloudUI();renderBackupInfo();renderOrderNotificationsV12624();renderPushStatusV12625();const s=sec();if(document.getElementById('lockMinutes'))document.getElementById('lockMinutes').value=String(s.lockMinutes??15)}
 document.addEventListener('input',e=>{if(e.target&&['costPackQty','costPackPrice'].includes(e.target.id))updateCostPreview()});
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;installBtn.classList.remove('hidden');installBanner.classList.remove('hidden')});
 async function installApp(){if(!deferredPrompt)return toast('No Chrome: menu ⋮ → Adicionar ao ecrã principal / Instalar app');deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;installBtn.classList.add('hidden');installBanner.classList.add('hidden')}
@@ -18160,6 +18186,10 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 <script src="catalog-background-presets.js"></script>
 <script src="pwa-update.js"></script>
 <script defer src="./order-detail-compact-ui.js"></script>
+<link rel="stylesheet" href="./technical-fragrances-v1.css">
+<script defer src="./technical-fragrances-v1.js"></script>
+<link rel="stylesheet" href="./production-fragrance-v2.css">
+<script src="./production-fragrance-v2.js"></script>
 <script defer src="./production-compact-ui.js"></script>
 <script defer src="./product-editor-guide.js"></script>
 <script defer src="./clients-compact-ui.js"></script>

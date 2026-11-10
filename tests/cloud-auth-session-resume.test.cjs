@@ -32,6 +32,9 @@ function setup({session,validUser,offline=false,failSync=false}={}){
   initCloudClient:()=>({auth}),
   attachCloudAuthListenerV19134:()=>events.push('attachAuthListener'),
   boundedCloudAuthV19134:async action=>action(),
+  // Entry-lock helpers added in 1.9.135 are exercised separately in app-entry-lock-19135.
+  refreshLockMethodsV19135:()=>events.push('refreshLockMethods'),
+  finishAppUnlockV19135:()=>events.push('finishUnlock'),
   authGateHideV1880:()=>events.push('hide'),
   authGateShowV1880:()=>events.push('show'),
   authGateMessageV1880:()=>{},
