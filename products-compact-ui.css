@@ -129,3 +129,6 @@
  #products .product-card-body>:not(.product-card-top):not(.product-card-flags):not(.product-card-collections){margin-inline:10px}
  #products .product-card-foot{margin-bottom:10px}
 }
+
+/* The card footer already has horizontal margins; stretch inside them. */
+#products .product-card-body>.product-card-foot{width:auto}
