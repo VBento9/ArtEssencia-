@@ -9,6 +9,9 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
   assert.deepEqual(errors,[]);
   await page.evaluate(()=>{
    document.getElementById('authGateV1880')?.remove(); // fixture only: all remote requests are blocked
+   // The entry lock is deliberately active in production; this isolated browser
+   // fixture has no credentials and must not let its overlay intercept test clicks.
+   document.getElementById('lockScreen')?.remove();
    scheduleCloudPushV1860=()=>{};ensureCloudSession=async()=>({id:'fixture-owner'});cloudUser={id:'fixture-owner'};cloudStartupDone=true;cloudHydrating=false;cloudBusy=false;cloudPushRunning=false;
    cloudMeta=()=>({});relOrderPendingSet=()=>new Set();relDetectChangedOrders=()=>{};localStorage.removeItem(REL_DIRTY);
    db.stock=[{name:'Fixture wax',qty:100,unit:'g',unitCost:.01}];db.products=[{code:'FIXTURE',_rid:'fixture-product',name:'Fixture',manufactured:true,price:10,cost:1}];
