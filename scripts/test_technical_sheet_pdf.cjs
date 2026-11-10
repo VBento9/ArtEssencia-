@@ -10,7 +10,15 @@ new vm.Script(source,{filename:'product-technical-sheet.js'});
   const context=await browser.newContext({viewport:{width:760,height:900}});
   await context.addInitScript(()=>{window.print=()=>{window.__printRequested=true}});
   const page=await context.newPage();
-  await page.setContent('<!doctype html><html lang="pt-PT"><body><main>Ficha técnica · teste isolado</main></body></html>');
+  // Give the isolated document an HTTP origin: the shared logo resolves against location.href.
+  // All requests remain intercepted; this test cannot reach Cloud or production.
+  await context.route('**/*',route=>{
+   const url=new URL(route.request().url());
+   if(url.href==='https://fixture.invalid/technical-sheet')return route.fulfill({contentType:'text/html',body:'<!doctype html><html lang="pt-PT"><body><main>Ficha técnica · teste isolado</main></body></html>'});
+   if(url.href==='https://fixture.invalid/brand-artessencia-transparente.svg')return route.fulfill({contentType:'image/svg+xml',body:fs.readFileSync('brand-artessencia-transparente.svg','utf8')});
+   return route.abort();
+  });
+  await page.goto('https://fixture.invalid/technical-sheet');
   await page.evaluate(()=>{
    const image='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jgAAAAABJRU5ErkJggg==';
    const product={code:'AE-TESTE-001',name:'Vela artesanal de amostra com um título comprido',
