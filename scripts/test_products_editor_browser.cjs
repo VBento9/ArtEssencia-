@@ -19,7 +19,18 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
  assert.equal(await page.evaluate(()=>originalFile===document.getElementById('prodShopImageFile')),true);assert.equal(await page.locator('#prodShopImageFile').evaluate(e=>e.files[0].name),'fixture.png');
  assert.equal(await page.locator('#prodName').inputValue(),'Fixture editor');assert.equal(await page.locator('#prodProductionNotesV130').inputValue(),'Rascunho técnico');assert.equal(await page.evaluate(()=>JSON.stringify(db.products)===beforeProducts),true);
  await tab('photos').focus();await page.keyboard.press('ArrowRight');assert.equal(await tab('production').getAttribute('aria-selected'),'true');
- assert.equal(await page.locator('.product-editor-nav-v1762').evaluate(e=>e.scrollWidth<=e.clientWidth+2),true,'Tabs must fit at '+width+'px');
+ const navigation=page.locator('.product-editor-nav-v1762');
+ const bounds=await navigation.boundingBox();assert(bounds.x>=-1&&bounds.x+bounds.width<=width+1,'Tab bar remains inside viewport');
+ if(await navigation.evaluate(e=>e.scrollWidth>e.clientWidth+2))assert.equal(await navigation.evaluate(e=>getComputedStyle(e).overflowX),'auto','Intentional horizontal tab scrolling');
+ // Every current tab must remain reachable and visible after scrolling, without losing drafts.
+ for(const key of ['identity','photos','production','pricing','public']){
+  await tab(key).scrollIntoViewIfNeeded();await tab(key).click();
+  assert.equal(await tab(key).getAttribute('aria-selected'),'true');
+  const rect=await tab(key).boundingBox(),bar=await navigation.boundingBox();
+  assert(rect.x>=bar.x-2&&rect.x+rect.width<=bar.x+bar.width+2,'Selected tab is fully visible: '+key);
+ }
+ assert.equal(await page.locator('#prodName').inputValue(),'Fixture editor');
+ assert.equal(await page.locator('#prodProductionNotesV130').inputValue(),'Rascunho técnico');
  // Existing save handler with no pending upload. Stored URL is a local fixture reference.
  await page.locator('#prodShopImageFile').setInputFiles([]);await page.evaluate(()=>{document.getElementById('prodShopImageUrl').value='https://fixture.invalid/saved.png';saveProduct()});
  await page.waitForFunction(()=>db.products.some(p=>p.code==='FIX-EDITOR'));
