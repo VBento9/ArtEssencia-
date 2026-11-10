@@ -37,3 +37,7 @@ Comparação antes/depois da instalação: hashes idênticos do estado operacion
 - A ficha histórica sem custo guardado não permite recuperar o custo antigo; a origem da estimativa fica registada.
 - Ensaio físico simultâneo no computador, Honor Pad e telemóvel não efetuado nesta sessão. A evidência multidispositivo é automatizada/simulada.
 - A migração instala a nova função, mas não altera a v1 nem ativa clientes antigos. Publicação e estado final da PR devem ser confirmados pelos registos GitHub/Vercel.
+
+## Gates finais de publicação
+
+O CI detetou o contrato de cache sem sufixo e overflow do cartão a 320 px. A cache foi uniformizada para `artessencia-backoffice-1.9.138`; o rodapé do cartão usa largura automática para descontar as margens laterais, preservando os botões e os dados. Os testes de largura e cache mantêm as mesmas asserções.
