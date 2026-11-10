@@ -145,13 +145,13 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
    const rect=await input.boundingBox();assert.ok(rect.y>=0&&rect.y<1000);
   }
   await page.evaluate(()=>go('products'));
-  await page.locator('#aeProductsCompact').getByRole('button',{name:'Abrir editor',exact:true}).click();
+  await page.locator('#aeProductsCompact').getByRole('button',{name:/^(Abrir editor|Editor de produto)$/}).click();
   const field=page.locator('#products .products-form-card input:not([type=hidden])').first();
   const fieldId=await field.getAttribute('id');
   await page.evaluate(id=>{document.getElementById(id).value='Rascunho conservado'},fieldId);
   await page.waitForFunction(()=>document.getElementById('aeModuleSearch')?.getAttribute('aria-controls')==='productSearch');
   await button.click();assert.equal(await page.evaluate(()=>document.activeElement.id),'productSearch');
-  await page.locator('#aeProductsCompact').getByRole('button',{name:'Abrir editor',exact:true}).click();
+  await page.locator('#aeProductsCompact').getByRole('button',{name:/^(Abrir editor|Editor de produto)$/}).click();
   assert.equal(await page.locator('#'+fieldId).inputValue(),'Rascunho conservado');
   await page.evaluate(()=>go('dashboard'));await page.waitForFunction(()=>document.getElementById('aeModuleSearch').hidden);
   assert.equal(await button.isVisible(),false);
