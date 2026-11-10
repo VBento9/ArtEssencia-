@@ -1,6 +1,6 @@
 # Biblioteca de Fragrâncias manual
 
-Base: main 94f8b15f09623cf7b1fd27a0301758f6dd83bd54. PR anterior #204 não integrada. Sem SQL, RPC ou alterações de funções operacionais.
+Base: main 94f8b15f09623cf7b1fd27a0301758f6dd83bd54. PR anterior #204 não integrada. Sem alterações às RPCs de Produção. Inclui apenas um trigger SQL de proteção do histórico da biblioteca.
 
 ## Implementação
 
@@ -29,3 +29,5 @@ Após autorização explícita, a substituição do histórico é bloqueada nos 
 Testes adicionais: 6 cenários JavaScript de envio/receção forçados, preflight, falha de ligação e ausência de impacto sem biblioteca; 9 verificações PostgreSQL isoladas. Históricos divergentes são bloqueados para resolução manual, nunca somados automaticamente (isso poderia produzir saldos negativos ou contar um consumo duas vezes).
 
 Não foram ensaiados dispositivos físicos ou escritas em dados reais. A publicação depende da regressão completa. O estado READY de um preview não equivale a aprovação funcional.
+
+Proteção SQL instalada e ensaiada numa tabela temporária com rollback. Estado operacional antes/depois: c5959d8aace9e173f63726604dc6f0d8. Definições de Produção v1/v2 inalteradas. Advisor sem referência à nova função.

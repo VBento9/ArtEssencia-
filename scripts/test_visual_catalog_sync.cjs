@@ -6,7 +6,7 @@ const row=(id,title=id)=>({id,title,productIds:['P-TEST'],format:'A4',updatedAt:
 function device(legacy=[],data={}){
  const storage=new Map([['legacy',JSON.stringify(legacy)]]);let quota=false,saves=0;
  const c={db:JSON.parse(JSON.stringify(data)),KEY:'db',VISUAL_CATALOG_KEY_V192:'legacy',localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>{if(quota)throw Error('quota');storage.set(k,v)}},save:()=>{saves++;return true},relClone:x=>JSON.parse(JSON.stringify(x)),normalizeImportedDb:x=>x,ensureQuotePaymentModel(){},ensureCostModel(){},ensureRecordIds(){},ensureClientsFromOrders(){},APP_VERSION:'1.9.35',simpleHash:s=>s.length};
- vm.createContext(c);vm.runInContext(helpers,c);
+ vm.createContext(c);vm.runInContext(html.slice(html.indexOf('function assertManualFragranceHistoryV1('),html.indexOf('async function saveCloudStateSimple(')),c);vm.runInContext(helpers,c);
  vm.runInContext(html.slice(html.indexOf('const CLOUD_OPERATIONAL_KEYS_V139='),html.indexOf('async function validateCloudRevisionBeforePushV1860')),c);
  vm.runInContext(html.slice(html.indexOf('function mergeOperationalCloudSnapshotV139('),html.indexOf('async function pushOperationalCloudStateV139(')),c);
  vm.runInContext(html.split('\n').find(x=>x.startsWith('function backupPayload()')),c);
