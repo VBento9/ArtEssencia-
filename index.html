@@ -16387,7 +16387,7 @@ async function operationalCloudPushStateV1858(user){
 }
 function mergeOperationalCloudSnapshotV139(remoteData){
  if(!remoteData||typeof remoteData!=='object')return false;
- assertManualFragranceHistoryV1(db,remoteData);
+ if(remoteData.settings!==undefined)assertManualFragranceHistoryV1(db,remoteData);
  if(remoteData.visualCatalogsV1935!==undefined&&!visualCatalogStateValidV1935(remoteData.visualCatalogsV1935))throw new Error('Rascunhos Cloud inválidos; dados locais preservados');
  let changed=false;
  CLOUD_OPERATIONAL_KEYS_V139.forEach(k=>{

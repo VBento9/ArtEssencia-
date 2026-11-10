@@ -46,3 +46,8 @@ const restored=device([],a.c.backupPayload().data);assert.equal(restored.c.visua
  assert.match(html,/try\{visualCatalogsStoreV192\(next\)\}catch/);
  console.log('PASS: two-device snapshot, local migration without read writes, duplicate recovery, deletion/reload, backup/restore, missing legacy key, quota/malformed-data safety, revision conflict blocks writes.');
 })().catch(e=>{console.error(e);process.exitCode=1});
+
+// A partial operational payload that omits settings preserves the library.
+const partial=device([],{settings:{manualFragranceLibraryV1:[{id:"test",movements:[{id:"m",delta:1000}]}]}});
+partial.c.mergeOperationalCloudSnapshotV139({stock:[{qty:7}]});
+assert.equal(partial.c.db.settings.manualFragranceLibraryV1[0].movements.length,1);
