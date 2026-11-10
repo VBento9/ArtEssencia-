@@ -66,7 +66,7 @@ function render(){
   const meta=document.createElement('span');meta.textContent=(x.family||'Por classificar')+(x.archived?' · Arquivada':'');main.append(meta);
   const description=document.createElement('p');description.textContent=x.description||'Descrição aromática por preencher.';main.append(description);
   const edit=document.createElement('button');edit.type='button';edit.className='btn';edit.textContent='Abrir ficha';edit.addEventListener('click',()=>openEditor(x.id));
-  const level=ledger.tank(x), gauge=document.createElement('div');gauge.className='fl-gauge';
+  const level=ledger.tank(x), gauge=document.createElement('div');gauge.className='fl-gauge';gauge.dataset.level=level.percent===null?'unknown':level.percent<=5?'critical':level.percent<=20?'low':'normal';
   gauge.innerHTML='<div class="fl-tank" role="img" aria-label="'+text(level.percent===null?'Capacidade por definir':level.percent.toFixed(1)+'% disponível')+'"><i style="height:'+ (level.percent||0)+'%"></i></div><div><strong>'+level.available.toLocaleString('pt-PT')+' ml</strong><br>'+ (level.percent===null?'Capacidade por definir':level.percent.toFixed(1)+'% · referência '+level.capacity+' ml')+'<br><small>'+(level.percent===null?'Sem referência':level.percent<=5?'Nível crítico':level.percent<=20?'Nível baixo':level.available>level.capacity?'Acima da referência — ajustar capacidade':'Nível normal')+'</small></div>';
   if(x.photoUrl){const img=document.createElement('img');img.src=x.photoUrl;img.alt='';img.loading='lazy';img.className='fl-photo';main.append(img)}
   const actions=document.createElement('div');actions.className='fl-actions';
