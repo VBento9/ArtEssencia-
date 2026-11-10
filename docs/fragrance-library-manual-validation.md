@@ -22,8 +22,10 @@ Base: main 94f8b15f09623cf7b1fd27a0301758f6dd83bd54. PR anterior #204 não integ
 - scripts/test_fragrance_library_browser.cjs: interações reais em Chromium isolado, 390/800/1366 px, dados artificiais, nenhuma rota para Cloud; executado no workflow Manual fragrance library. Consultar resultado da revisão atual na PR.
 - Chromium local não iniciou (socket bloqueado pelo ambiente). O workflow usa Ubuntu 24.04, compatível com a versão fixada de Playwright.
 
-## Bloqueio de publicação
+## Proteção autorizada do histórico
 
-O mecanismo existente bloqueia o rebase automático quando duas cópias alteraram settings. Testes executam a função real trySafeOperationalRebaseV19102 sem a modificar. Contudo, cloudResolveConflict('local') permite explicitamente forçar o snapshot local, e a escolha remota pode descartar movimentos locais pendentes. Esta PR não altera essas funções, conforme o âmbito autorizado. Não existe garantia absoluta de preservação do histórico através desses comandos globais. A implementação deve permanecer em desenvolvimento até essa limitação ser resolvida sem violar o âmbito pedido.
+Após autorização explícita, a substituição do histórico é bloqueada nos envios, receções e resolução forçada. O envio conserva a revisão condicional existente (CAS). A função SQL de trigger é limitada a settings.manualFragranceLibraryV1; impede também envios de clientes antigos que retirem fichas ou alterem movimentos já confirmados. Sem alterações nas RPCs de Produção ou nas políticas RLS.
 
-Não foram ensaiados dispositivos físicos, sessões Cloud reais ou dados reais. Nenhuma alteração foi publicada em produção nesta missão. O estado READY de um preview não equivale a aprovação funcional.
+Testes adicionais: 6 cenários JavaScript de envio/receção forçados, preflight, falha de ligação e ausência de impacto sem biblioteca; 9 verificações PostgreSQL isoladas. Históricos divergentes são bloqueados para resolução manual, nunca somados automaticamente (isso poderia produzir saldos negativos ou contar um consumo duas vezes).
+
+Não foram ensaiados dispositivos físicos ou escritas em dados reais. A publicação depende da regressão completa. O estado READY de um preview não equivale a aprovação funcional.

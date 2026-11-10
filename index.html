@@ -15952,9 +15952,10 @@ async function subscribeCloud(){
    }
  })
 }
-function applyCloudRow(row,source='Cloud'){if(!row?.data||typeof row.data!=='object')return false;const incomingRev=Number(row.revision||0),m0=cloudMeta(),sh0=parseLocal(CLOUD_SHADOW),knownRev=Math.max(Number(m0.remoteRevision||0),Number(m0.baseRevision||0),Number(sh0?.revision||0));if(incomingRev<knownRev){cloudLogMsg(source+' ignorada: revisão '+incomingRev+' < revisão conhecida '+knownRev);return false}if(incomingRev===knownRev&&sh0?.data&&dataFingerprint(sh0.data)!==dataFingerprint(row.data)){cloudLogMsg(source+' ignorada: resposta inconsistente na revisão '+incomingRev);return false}cloudApplying=true;try{try{localStorage.setItem(CLOUD_SAFETY,JSON.stringify({at:new Date().toISOString(),source,data:db}))}catch(e){}db=normalizeImportedDb(JSON.parse(JSON.stringify(row.data)));ensureQuotePaymentModel();ensureCostModel();ensureRecordIds();ensureClientsFromOrders();saveFromCloud();saveConfirmedShadow(row);setCloudMeta({dirty:false,conflict:false,verified:true,lastSync:new Date().toISOString(),lastCloudAt:row.updated_at||null,remoteRevision:incomingRev,baseRevision:incomingRev,localFingerprint:dataFingerprint(row.data)});cloudConflict=null;cloudLogMsg(source+' aplicada · revisão '+incomingRev);return true}finally{cloudApplying=false;renderCloudUI()}}
+function applyCloudRow(row,source='Cloud'){if(!row?.data||typeof row.data!=='object')return false;assertManualFragranceHistoryV1(db,row.data);const incomingRev=Number(row.revision||0),m0=cloudMeta(),sh0=parseLocal(CLOUD_SHADOW),knownRev=Math.max(Number(m0.remoteRevision||0),Number(m0.baseRevision||0),Number(sh0?.revision||0));if(incomingRev<knownRev){cloudLogMsg(source+' ignorada: revisão '+incomingRev+' < revisão conhecida '+knownRev);return false}if(incomingRev===knownRev&&sh0?.data&&dataFingerprint(sh0.data)!==dataFingerprint(row.data)){cloudLogMsg(source+' ignorada: resposta inconsistente na revisão '+incomingRev);return false}cloudApplying=true;try{try{localStorage.setItem(CLOUD_SAFETY,JSON.stringify({at:new Date().toISOString(),source,data:db}))}catch(e){}db=normalizeImportedDb(JSON.parse(JSON.stringify(row.data)));ensureQuotePaymentModel();ensureCostModel();ensureRecordIds();ensureClientsFromOrders();saveFromCloud();saveConfirmedShadow(row);setCloudMeta({dirty:false,conflict:false,verified:true,lastSync:new Date().toISOString(),lastCloudAt:row.updated_at||null,remoteRevision:incomingRev,baseRevision:incomingRev,localFingerprint:dataFingerprint(row.data)});cloudConflict=null;cloudLogMsg(source+' aplicada · revisão '+incomingRev);return true}finally{cloudApplying=false;renderCloudUI()}}
 function forceApplyCloudRow(row,source='Cloud manual'){
  if(!row?.data||typeof row.data!=='object')return false;
+ assertManualFragranceHistoryV1(db,row.data);
  const incomingRev=Number(row.revision||0);
  cloudApplying=true;
  try{
@@ -16101,6 +16102,25 @@ async function fetchCloudRowAuthoritative(user){
  if(best)cloudLogMsg('Leitura autoritativa cloud · revisão '+Number(best.revision||0));
  return best
 }
+// Only the manual fragrance library is append-only across Cloud replacements.
+function assertManualFragranceHistoryV1(previous,next){
+ const key='manualFragranceLibraryV1',before=previous?.settings?.[key],after=next?.settings?.[key];
+ if(before===undefined&&after===undefined)return;
+ const reject=()=>{setCloudMeta({dirty:true,conflict:true,verified:false});const error=new Error('Conflito na Biblioteca de Fragrâncias: a substituição apagaria ou alteraria o histórico. Os dados foram preservados.');error.code='40001';throw error};
+ if(before!==undefined&&!Array.isArray(before)||after!==undefined&&!Array.isArray(after))return reject();
+ const target=new Map();
+ for(const row of after||[]){
+  if(!row?.id||target.has(row.id)||row.movements!==undefined&&!Array.isArray(row.movements))return reject();
+  const ids=new Set();for(const m of row.movements||[]){if(!m?.id||ids.has(m.id))return reject();ids.add(m.id)}
+  target.set(row.id,row);
+ }
+ for(const row of before||[]){
+  const replacement=target.get(row.id);if(!replacement)return reject();
+  const old=row.movements||[],current=replacement.movements||[];
+  if(current.length<old.length)return reject();
+  for(let i=0;i<old.length;i++)if(stableStringify(old[i])!==stableStringify(current[i]))return reject();
+ }
+}
 async function saveCloudStateSimple(user,localData,{force=false}={}){
  const meta=cloudMeta();
  let expectedRev=Number(meta.baseRevision||0);
@@ -16109,6 +16129,9 @@ async function saveCloudStateSimple(user,localData,{force=false}={}){
    remote=await fetchCloudRowAuthoritative(user);
    expectedRev=Number(remote?.revision||0);
  }
+ // Validate the same remote snapshot whose revision is used by the existing CAS write.
+ if(!remote)remote=await fetchCloudRowAuthoritative(user);
+ assertManualFragranceHistoryV1(remote?.data,localData);
  const payload={
    data:localData,
    app_version:APP_VERSION,
@@ -16207,6 +16230,7 @@ function trySafeOperationalRebaseV19102(remote,baseRevision){
  }
  const before=relClone(db);
  try{
+   assertManualFragranceHistoryV1(db,merged);
    for(const k of CLOUD_OPERATIONAL_KEYS_V139){
      if(merged[k]!==undefined)db[k]=relClone(merged[k]);
    }
@@ -16363,6 +16387,7 @@ async function operationalCloudPushStateV1858(user){
 }
 function mergeOperationalCloudSnapshotV139(remoteData){
  if(!remoteData||typeof remoteData!=='object')return false;
+ assertManualFragranceHistoryV1(db,remoteData);
  if(remoteData.visualCatalogsV1935!==undefined&&!visualCatalogStateValidV1935(remoteData.visualCatalogsV1935))throw new Error('Rascunhos Cloud inválidos; dados locais preservados');
  let changed=false;
  CLOUD_OPERATIONAL_KEYS_V139.forEach(k=>{
@@ -16966,6 +16991,15 @@ async function revalidateCloudConflictV19106(){
  return true;
 }
 async function cloudResolveConflict(choice){
+ // Preflight before clearing conflict flags or synchronising relational records.
+ if(choice==='local'||choice==='remote'){
+  try{
+   const user=cloudUser||await ensureCloudSession();if(!user)return false;
+   const remote=await fetchCloudRowAuthoritative(user);
+   if(choice==='local')assertManualFragranceHistoryV1(remote?.data,db);
+   else assertManualFragranceHistoryV1(db,remote?.data);
+  }catch(error){toast(error.message||'Não foi possível validar o histórico da biblioteca');return false}
+ }
  if(hasPendingProductEditsV19102()||cloudConflict?.type==='product'){toast('Resolve os campos na área de Produtos; as fichas pendentes estão protegidas');return false}
  const restorePending=hasRestorePendingV12645();
  if(restorePending&&choice==='remote'){
