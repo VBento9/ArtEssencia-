@@ -22,7 +22,7 @@ Os custos e impacto absoluto na margem ficam em `productionRuns[].fragranceActua
 - Navegador, fixture artificial sem Cloud: duas linhas do mesmo produto, Coco 22 g e Figo 9 g, custos e impacto apresentados corretamente, confirmação conserva ambas as escolhas.
 - Três contextos simulados executam a receção operacional real: convergem no stock/custos, rejeitam revisão antiga e protegem alterações locais e produção pendente. Não equivale a um ensaio nos dispositivos físicos do utilizador.
 
-O teste antigo de recuperação de sessão tinha quatro falhas também no commit inicial: faltavam os mocks das funções de bloqueio introduzidas em 1.9.135. Foram acrescentados os mocks, sem alterar o código de autenticação. Os testes próprios do bloqueio também passaram.
+O teste antigo de recuperação de sessão tinha quatro falhas também no commit inicial: faltavam os mocks das funções de bloqueio introduzidas em 1.9.135. Foram acrescentados os mocks, sem alterar o código de autenticação. Os testes próprios do bloqueio também passaram. Os gates de navegação ainda esperavam 30 módulos apesar de a Biblioteca Técnica ter sido acrescentada na PR #204; passaram a exigir os 31 identificadores únicos e a presença explícita da Biblioteca Técnica.
 
 ## Cloud
 
