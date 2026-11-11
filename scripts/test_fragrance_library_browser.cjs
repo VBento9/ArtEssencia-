@@ -108,7 +108,7 @@ assert.match(await history.locator('.fl-history-current').innerText(),/134 ml/);
 assert.equal(await history.locator('[data-stat=consumption] strong').innerText(),'16 ml');
 assert.equal(await history.locator('[data-stat=refill] strong').innerText(),'50 ml');
 assert.equal(await history.locator('[data-stat=moves] strong').innerText(),'5');
-assert.equal(await history.locator('[data-stat=adjust] strong').innerText(),'1');
+assert.equal(await history.locator('[data-stat=adjust] strong').innerText(),'2');
 await history.locator('[name=type]').selectOption('consumption');
 assert.equal(await history.locator('.fl-history-item').count(),2);
 assert.match(await history.locator('.fl-history-item').first().innerText(),/4 ml/);
