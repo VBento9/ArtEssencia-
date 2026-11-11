@@ -94,19 +94,23 @@ if(width===390){
  const downloadEvent=page.waitForEvent('download');
  await page.getByRole('button',{name:'PDF para clientes',exact:true}).click();
  const download=await downloadEvent;
- assert.equal(download.suggestedFilename(),'ArtEssencia_Fragrancias_Disponiveis.pdf');
+ assert.equal(download.suggestedFilename(),'ArtEssencia_Catalogo_Fragrancias.pdf');
  const pdf=fs.readFileSync(await download.path()).toString('latin1');
  assert.match(pdf,/^%PDF-1\.4/);
- assert.match(pdf,/\/Count 2\b/);
+ const totalPages=Number(pdf.match(/\/Count (\d+)\b/)?.[1]||0);
+ assert.ok(totalPages>=2&&totalPages<=6,'O catálogo não tem a paginação esperada');
  assert.match(pdf,/\/Width 1240 \/Height 1754/);
  assert.ok(pdf.length<400000,'O folheto sintético excedeu 400 kB');
  console.log('PDF folheto: '+pdf.length+' bytes');
  const drawn=await page.evaluate(()=>window.pdfText.join('\n'));
  assert.match(drawn,/cliente@example.test\n912345678/);
  assert.match(drawn,/Ficha preparada/);
- assert.match(drawn,/Seleção disponível para encomenda/);
- assert.match(drawn,/Doces/);
- assert.match(drawn,/Indica o nome da fragrância ao encomendar/);
+ assert.match(drawn,/Escolhe\no teu aroma\./);
+ assert.match(drawn,/Explora por famílias/);
+ assert.match(drawn,/Outras fragrâncias/);
+ assert.match(drawn,/Doces & gourmand/);
+ assert.match(drawn,/Uma descrição opcional de teste/);
+ assert.match(drawn,/Escolhe as tuas favoritas e indica os nomes quando fizeres o pedido/);
  assert.equal(await page.evaluate(()=>window.pdfImages),0);
  assert.doesNotMatch(drawn,/Aroma arquivado|Baunilha da Polinésia Francesa|Maçã & Canela|138 ml/);
 }
