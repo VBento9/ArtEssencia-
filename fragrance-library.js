@@ -1,4 +1,4 @@
-/* ArtEssencia — Biblioteca de Fragrâncias de Fragrâncias v1.
+/* ArtEssencia — Biblioteca de Fragrâncias v1.
    Arquivo de referência independente: não lê/escreve stock, compras, caixa ou produtos. */
 (function(){
 'use strict';
@@ -25,6 +25,7 @@ const RECEIPT=[
 const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-PT').replace(/[^a-z0-9]+/g,' ').trim();
 const text=s=>typeof escapeHtml==='function'?escapeHtml(String(s??'')):String(s??'').replace(/[&<>"']/g,'');
 const rows=()=>Array.isArray(db?.settings?.[FIELD])?db.settings[FIELD]:[];
+const ml=n=>n.toLocaleString('pt-PT',{maximumFractionDigits:3})+' ml';
 const time=()=>new Date().toISOString();
 const uid=()=>typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function'?crypto.randomUUID():'frag-'+Date.now()+'-'+Math.random().toString(36).slice(2);
 function duplicate(list,row,ignore){
@@ -71,7 +72,11 @@ function render(){
   if(x.photoUrl){const img=document.createElement('img');img.src=x.photoUrl;img.alt='';img.loading='lazy';img.className='fl-photo';main.append(img)}
   const actions=document.createElement('div');actions.className='fl-actions';
   for(const [label,type] of [['Registar utilização','consumption'],['Adicionar fragrância','refill']]){const b=document.createElement('button');b.type='button';b.className='btn'+(type==='consumption'?' primary':'');b.textContent=label;b.disabled=!!x.archived;b.onclick=()=>movement(x.id,type);actions.append(b)}
-  actions.append(edit);card.append(main,gauge,actions);box.append(card);
+  const secondary=document.createElement('div');secondary.className='fl-card-secondary';
+  const history=document.createElement('button');history.type='button';history.className='btn';history.textContent='Histórico';history.onclick=()=>showHistory(x.id);
+  secondary.append(edit,history);
+  if(level.percent===null&&!x.archived){const capacity=document.createElement('button');capacity.type='button';capacity.className='btn';capacity.textContent='Definir capacidade';capacity.onclick=()=>movement(x.id,'capacity');secondary.append(capacity)}
+  card.append(main,gauge,actions,secondary);box.append(card);
  }
 }
 function dialog(title,fields,existing){
@@ -80,6 +85,9 @@ function dialog(title,fields,existing){
  const h=document.createElement('h2');h.textContent=title;form.append(h);
  const info=document.createElement('p');info.className='muted';info.textContent='Ficha de referência técnica. Não altera a precificação nem movimentos de stock.';form.append(info);
  const grid=document.createElement('div');grid.className='ae-fl-edit-v1';
+ const details=document.createElement('details');details.className='fl-optional';
+ const summary=document.createElement('summary');summary.textContent='Descrição, fotografia e documentos';details.append(summary);
+ const extra=document.createElement('div');extra.className='ae-fl-edit-v1';details.append(extra);
  for(const [key,label,type] of fields){
   const wrapper=document.createElement('label');wrapper.textContent=label;
   let control;
@@ -87,9 +95,9 @@ function dialog(title,fields,existing){
   else if(type==='family'){control=document.createElement('select');for(const v of FAMILIES){const o=document.createElement('option');o.value=v;o.textContent=v;control.append(o)}}
   else{control=document.createElement('input');control.type=type==='url'?'url':'text';control.maxLength=type==='url'?600:220}
   control.name=key;control.value=existing?.[key]||'';if(key==='name')control.required=true;
-  wrapper.append(control);grid.append(wrapper);
+  wrapper.append(control);(['description','applications','technicalNotes','photoUrl','ifraUrl','sdsUrl'].includes(key)?extra:grid).append(wrapper);
  }
- form.append(grid);
+ form.append(grid,details);
  const actions=document.createElement('div');actions.className='ae-fl-dialog-actions-v1';
  const cancel=document.createElement('button');cancel.type='button';cancel.className='btn';cancel.textContent='Cancelar';cancel.addEventListener('click',()=>d.close());
  const submit=document.createElement('button');submit.type='submit';submit.className='btn primary';submit.textContent='Guardar ficha';actions.append(cancel,submit);
@@ -140,9 +148,22 @@ function exportCsv(){
 function movement(id,type){
  const existing=rows().find(x=>x.id===id), snapshot=JSON.stringify(existing),opId=uid();
  const names={consumption:'Registar utilização',refill:'Adicionar fragrância',correction:'Correção manual',capacity:'Capacidade de referência'};
- const d=document.createElement('dialog');d.className='ae-fl-dialog-v1';
+ const d=document.createElement('dialog');d.className='ae-fl-dialog-v1 fl-movement-dialog';d.setAttribute('aria-label',names[type]);
  d.innerHTML='<form><h2>'+names[type]+'</h2><p>'+text(existing.name)+' · Disponível: '+ledger.balance(existing)/1000+' ml</p><label>'+ (type==='correction'?'Novo saldo':type==='capacity'?'Capacidade de referência':'Quantidade')+' (ml)<input name="quantity" inputmode="decimal" required></label><label>Data<input name="date" type="date" required></label><label>Observação'+(['correction','capacity'].includes(type)?' / justificação obrigatória':' opcional')+'<textarea name="note"></textarea></label><p role="alert"></p><div class="fl-actions"><button type="button">Cancelar</button><button type="submit" class="btn primary">Confirmar</button></div></form>';
  const form=d.querySelector('form');form.elements.date.value=new Date().toLocaleDateString('sv-SE');
+ const preview=document.createElement('output');preview.className='fl-movement-preview';preview.setAttribute('aria-live','polite');
+ const hint=document.createElement('p');hint.className='muted';hint.textContent=type==='capacity'?'A referência define o tanque. Não altera os mililitros disponíveis.':'O saldo só muda depois de confirmares.';
+ form.querySelector('[role=alert]').before(preview,hint);
+ function updatePreview(){
+  const value=form.elements.quantity.value;
+  if(!value.trim()){preview.textContent='Disponível agora: '+ml(ledger.balance(existing)/1000);return}
+  try{
+   const next=ledger.apply(existing,{id:opId,type,quantity:value,date:form.elements.date.value,note:form.elements.note.value||'Pré-visualização'});
+   if(type==='capacity'){const level=ledger.tank(next);preview.textContent=level.percent===null?'Capacidade por definir':ml(level.available)+' disponíveis · referência '+ml(level.capacity)+' · '+level.percent.toLocaleString('pt-PT',{maximumFractionDigits:1})+'%'}
+   else preview.textContent=ml(ledger.balance(existing)/1000)+' → '+ml(ledger.balance(next)/1000)+' após confirmação';
+  }catch(error){preview.textContent=error.message}
+ }
+ form.addEventListener('input',updatePreview);updatePreview();
  form.querySelector('[type=button]').onclick=()=>d.close();
  let done=false;form.onsubmit=e=>{e.preventDefault();if(done)return;try{
  const current=rows().find(x=>x.id===id);if(JSON.stringify(current)!==snapshot)throw Error('A ficha mudou. Fecha e volta a abrir para usar o saldo atualizado.');
@@ -152,9 +173,10 @@ function movement(id,type){
  d.onclose=()=>d.remove();document.body.append(d);d.showModal();
 }
 function showHistory(id){
- const x=rows().find(x=>x.id===id),d=document.createElement('dialog');d.className='ae-fl-dialog-v1';
+ const x=rows().find(x=>x.id===id),d=document.createElement('dialog');d.className='ae-fl-dialog-v1 fl-history-dialog';d.setAttribute('aria-label','Histórico de '+x.name);
  d.innerHTML='<h2>Histórico · '+text(x.name)+'</h2><div class="fl-actions"></div><ol>'+[...(x.movements||[])].reverse().map(m=>'<li>'+text(m.date)+' · '+({consumption:'Consumo',refill:'Reposição',correction:'Correção manual',capacity:'Capacidade de referência'}[m.type])+' · '+m.before/1000+' → '+m.after/1000+' ml'+(m.type==='capacity'?' · referência '+(m.capacityAfter||0)/1000+' ml':'')+'<p>'+text(m.note)+'</p></li>').join('')+'</ol><button class="btn">Fechar</button>';
  for(const [label,type] of [['Corrigir saldo','correction'],['Ajustar capacidade','capacity']]){const b=document.createElement('button');b.className='btn';b.textContent=label;b.disabled=!!x.archived;b.onclick=()=>{d.close();movement(id,type)};d.querySelector('.fl-actions').append(b)}
+ if(!(x.movements||[]).length){const empty=document.createElement('p');empty.className='muted';empty.textContent='Ainda não existem movimentos. Adiciona a quantidade que tens disponível para começar.';d.querySelector('ol').replaceWith(empty)}
  d.lastElementChild.onclick=()=>d.close();d.onclose=()=>d.remove();document.body.append(d);d.showModal();
 }
 window.renderTechnicalLibraryV1=render;
