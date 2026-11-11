@@ -79,6 +79,13 @@ if(width===390){
   const row=db.settings.manualFragranceLibraryV1.find(item=>item.name==='Ficha preparada');
   for(let i=0;i<15;i++)db.settings.manualFragranceLibraryV1.push({...row,id:'pdf-'+i,name:'Aroma '+i});
   db.settings.manualFragranceLibraryV1.push({...row,id:'pdf-archived',name:'Aroma arquivado',archived:true});
+  row.photoData=document.createElement('canvas').toDataURL('image/jpeg');
+  window.pdfImages=0;
+  const draw=CanvasRenderingContext2D.prototype.drawImage;
+  CanvasRenderingContext2D.prototype.drawImage=function(image,...args){
+   if(image.src?.startsWith('data:image/jpeg'))window.pdfImages++;
+   return draw.call(this,image,...args);
+  };
   window.pdfText=[];
   const original=CanvasRenderingContext2D.prototype.fillText;
   CanvasRenderingContext2D.prototype.fillText=function(value,...args){window.pdfText.push(value);return original.call(this,value,...args)};
@@ -91,8 +98,9 @@ if(width===390){
  assert.match(pdf,/^%PDF-1\.4/);
  assert.match(pdf,/\/Count 2\b/);
  const drawn=await page.evaluate(()=>window.pdfText.join('\n'));
- assert.match(drawn,/cliente@example.test.*912345678/);
+ assert.match(drawn,/cliente@example.test\n912345678/);
  assert.match(drawn,/Ficha preparada/);
+ assert.equal(await page.evaluate(()=>window.pdfImages),1);
  assert.doesNotMatch(drawn,/Aroma arquivado|Baunilha da Polinésia Francesa|Maçã & Canela|138 ml/);
 }
 assert.deepEqual(errors,[]);console.log('PASS interactions, persistence, save failure, isolation, layout '+width);await context.close();
