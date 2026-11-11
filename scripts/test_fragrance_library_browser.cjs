@@ -87,9 +87,16 @@ if(width===390){
    return draw.call(this,image,...args);
   };
   row.family='Gourmand';
-  window.pdfText=[];
+  window.pdfText=[];window.pdfStyles=[];window.pdfPaper=[];
+  const originalRect=CanvasRenderingContext2D.prototype.fillRect;
+  CanvasRenderingContext2D.prototype.fillRect=function(x,y,w,h){
+   if(x===0&&y===0&&w===1240&&h===1754)window.pdfPaper.push(String(this.fillStyle));
+   return originalRect.call(this,x,y,w,h);
+  };
   const original=CanvasRenderingContext2D.prototype.fillText;
-  CanvasRenderingContext2D.prototype.fillText=function(value,...args){window.pdfText.push(value);return original.call(this,value,...args)};
+  CanvasRenderingContext2D.prototype.fillText=function(value,...args){
+   window.pdfText.push(value);window.pdfStyles.push({value,font:this.font});return original.call(this,value,...args)
+  };
  });
  const downloadEvent=page.waitForEvent('download');
  await page.getByRole('button',{name:'PDF para clientes',exact:true}).click();
@@ -110,6 +117,14 @@ if(width===390){
  assert.match(drawn,/Outras fragrâncias/);
  assert.match(drawn,/Doces & gourmand/);
  assert.match(drawn,/Uma descrição opcional de teste/);
+ assert.match(drawn,/DOCES & GOURMAND/);
+ const visual=await page.evaluate(()=>({styles:window.pdfStyles,paper:window.pdfPaper}));
+ assert.ok(visual.paper.length>=2&&visual.paper.every(color=>color==='#e6d1ad'),'Todas as páginas devem ter fundo kraft');
+ const familyStyle=visual.styles.find(item=>item.value==='DOCES & GOURMAND');
+ const nameStyle=visual.styles.find(item=>item.value==='Ficha preparada');
+ assert.match(familyStyle?.font||'',/bold 22px Arial/i,'Família deve ser sans-serif em negrito');
+ assert.match(nameStyle?.font||'',/34px Georgia/i,'Nome deve ser serifado e maior');
+ assert.doesNotMatch(nameStyle?.font||'',/bold/i,'Nome não deve ter o mesmo negrito da família');
  assert.match(drawn,/Escolhe as tuas favoritas e indica os nomes quando fizeres o pedido/);
  assert.equal(await page.evaluate(()=>window.pdfImages),0);
  assert.doesNotMatch(drawn,/Aroma arquivado|Baunilha da Polinésia Francesa|Maçã & Canela|138 ml/);
