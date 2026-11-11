@@ -99,7 +99,12 @@ function render(){
   const description=document.createElement('p');description.textContent=x.description||'Descrição aromática por preencher.';main.append(description);
   const edit=document.createElement('button');edit.type='button';edit.className='btn';edit.textContent='Abrir ficha';edit.addEventListener('click',()=>openEditor(x.id));
   const gauge=makeGauge(x);
-  if(x.photoUrl){const img=document.createElement('img');img.src=x.photoUrl;img.alt='';img.loading='lazy';img.className='fl-photo';main.append(img)}
+  const photo=document.createElement('button');
+  photo.type='button';photo.className='fl-photo-slot';
+  photo.setAttribute('aria-label','Fotografia de '+x.name);
+  photo.onclick=()=>openEditor(x.id,true);
+  renderPhoto(photo,x.photoData||x.photoUrl);
+  main.prepend(photo);
   const actions=document.createElement('div');actions.className='fl-actions';
   for(const [label,type] of [['Registar utilização','consumption'],['Adicionar fragrância','refill']]){const b=document.createElement('button');b.type='button';b.className='btn'+(type==='consumption'?' primary':'');b.textContent=label;b.disabled=!!x.archived;b.onclick=()=>movement(x.id,type);actions.append(b)}
   const secondary=document.createElement('div');secondary.className='fl-card-secondary';
@@ -113,7 +118,15 @@ function render(){
   card.append(main,gauge,actions,secondary);box.append(card);
  }
 }
-function dialog(title,fields,existing){
+function renderPhoto(container,source){
+ const empty=document.createElement('span');empty.textContent='Sem fotografia';
+ container.replaceChildren(empty);
+ if(!source)return;
+ const image=document.createElement('img');image.alt='';image.className='fl-photo';
+ image.addEventListener('error',()=>{if(image.parentNode===container)container.replaceChildren(empty)},{once:true});
+ image.src=source;container.replaceChildren(image);
+}
+function dialog(title,fields,existing,focusPhoto=false){
  const d=document.createElement('dialog');d.className='ae-fl-dialog-v1';d.setAttribute('aria-label',title);
  const form=document.createElement('form');form.method='dialog';
  const h=document.createElement('h2');h.textContent=title;form.append(h);
@@ -134,7 +147,39 @@ function dialog(title,fields,existing){
  if(!existing){
   grid.insertAdjacentHTML('beforeend','<label>Quantidade inicial (ml)<input name="initialQuantity" inputmode="decimal"></label><label>Capacidade de referência (ml)<input name="initialCapacity" inputmode="decimal"></label>');
  }
- form.append(grid,details);
+ const photo=document.createElement('fieldset');photo.className='fl-photo-editor';
+ photo.innerHTML='<legend>Fotografia</legend><div class="fl-photo-preview"></div><label>Escolher fotografia<input type="file" accept="image/jpeg,image/png,image/webp"></label><button type="button" class="btn">Remover fotografia</button><p role="status"></p>';
+ const file=photo.querySelector('input'),remove=photo.querySelector('button');
+ const preview=photo.querySelector('.fl-photo-preview'),status=photo.querySelector('[role=status]');
+ const url=form.elements.photoUrl||extra.querySelector('[name=photoUrl]');
+ let photoData=existing?.photoData||'',photoRequest=0,processingPhoto=false;
+ const refreshPhoto=()=>{
+  renderPhoto(preview,photoData||url.value);
+  remove.disabled=!photoData&&!url.value;
+ };
+ url.addEventListener('change',refreshPhoto);
+ remove.onclick=()=>{
+  photoRequest++;processingPhoto=false;submit.disabled=false;
+  photoData='';file.value='';url.value='';status.textContent='';refreshPhoto();
+ };
+ file.onchange=async()=>{
+  const selected=file.files[0];
+  if(!selected)return;
+  const request=++photoRequest;
+  processingPhoto=true;submit.disabled=true;status.textContent='A preparar fotografia…';
+  try{
+   if(!/^image\/(jpeg|png|webp)$/.test(selected.type)||selected.size>8*1024*1024)throw Error('Escolhe uma imagem JPG, PNG ou WebP até 8 MB.');
+   const data=await compressImageFile(selected,480,480,.76);
+   if(request!==photoRequest)return;
+   photoData=data;status.textContent='Fotografia pronta para guardar.';refreshPhoto();
+  }catch(error){
+   if(request===photoRequest){file.value='';status.textContent=error.message||'Não foi possível abrir a fotografia.'}
+  }finally{
+   if(request===photoRequest){processingPhoto=false;submit.disabled=false}
+  }
+ };
+ refreshPhoto();
+ form.append(photo,grid,details);
  const actions=document.createElement('div');actions.className='ae-fl-dialog-actions-v1';
  const cancel=document.createElement('button');cancel.type='button';cancel.className='btn';cancel.textContent='Cancelar';cancel.addEventListener('click',()=>d.close());
  const submit=document.createElement('button');submit.type='submit';submit.className='btn primary';submit.textContent='Guardar ficha';actions.append(cancel,submit);
@@ -142,7 +187,7 @@ function dialog(title,fields,existing){
  form.append(actions);d.append(form);document.body.append(d);d.addEventListener('close',()=>d.remove(),{once:true});
  form.addEventListener('submit',ev=>{
   ev.preventDefault();
-  if(!form.reportValidity())return;
+  if(processingPhoto||!form.reportValidity())return;
   const x=Object.fromEntries(new FormData(form).entries());
   x.name=String(x.name||'').trim();x.originalName=String(x.originalName||'').trim();
   if(!x.name)return;
@@ -153,9 +198,11 @@ function dialog(title,fields,existing){
   let updated=existing?{...existing,...x,updatedAt:time()}:{...metadata,id:uid(),source:'Registo manual',movements:[],capacityUnits:null,archived:false,createdAt:time(),updatedAt:time()};
   try{if(!existing)updated=initialize(updated,initialQuantity,initialCapacity)}
   catch(error){toast(error.message);return}
+  updated.photoData=photoData;
   if(saveRows(existing?rows().map(v=>v.id===existing.id?updated:v):[...rows(),updated]))d.close();
  });
  d.showModal();
+ if(focusPhoto)file.focus();
 }
 const FIELDS=[['name','Nome utilizado no atelier','text'],['originalName','Nome comercial / original','text'],
  ['family','Família olfativa','family'],['description','Descrição olfativa','textarea'],
@@ -163,7 +210,7 @@ const FIELDS=[['name','Nome utilizado no atelier','text'],['originalName','Nome 
  ['reference','Referência do fabricante','text'],['technicalNotes','Notas técnicas','textarea'],
  ['photoUrl','Ligação à fotografia (opcional)','url'],['ifraUrl','Ligação ao certificado IFRA (opcional)','url'],
  ['sdsUrl','Ligação à ficha de segurança (opcional)','url']];
-function openEditor(id){dialog(id?'Editar ficha de fragrância':'Nova fragrância',FIELDS,id?rows().find(x=>x.id===id):null)}
+function openEditor(id,focusPhoto=false){dialog(id?'Editar ficha de fragrância':'Nova fragrância',FIELDS,id?rows().find(x=>x.id===id):null,focusPhoto)}
 function importReceipt(){
  if(!confirm('Importar as 15 fragrâncias do recibo 67827 para a Biblioteca de Fragrâncias? Não serão criados artigos, custos ou movimentos de stock.'))return;
  let added=0,skipped=0;const next=rows().slice();
