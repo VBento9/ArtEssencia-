@@ -86,6 +86,7 @@ if(width===390){
    if(image.src?.startsWith('data:image/jpeg'))window.pdfImages++;
    return draw.call(this,image,...args);
   };
+  row.family='Gourmand';
   window.pdfText=[];
   const original=CanvasRenderingContext2D.prototype.fillText;
   CanvasRenderingContext2D.prototype.fillText=function(value,...args){window.pdfText.push(value);return original.call(this,value,...args)};
@@ -103,6 +104,9 @@ if(width===390){
  const drawn=await page.evaluate(()=>window.pdfText.join('\n'));
  assert.match(drawn,/cliente@example.test\n912345678/);
  assert.match(drawn,/Ficha preparada/);
+ assert.match(drawn,/Encontra o teu aroma/);
+ assert.match(drawn,/Doces/);
+ assert.match(drawn,/Indica o nome da fragrância ao encomendar/);
  assert.equal(await page.evaluate(()=>window.pdfImages),1);
  assert.doesNotMatch(drawn,/Aroma arquivado|Baunilha da Polinésia Francesa|Maçã & Canela|138 ml/);
 }
