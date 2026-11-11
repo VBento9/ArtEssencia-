@@ -8,12 +8,12 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
  await page.evaluate(()=>{document.getElementById('authGateV1880')?.remove();finishAppUnlockV19135();scheduleCloudPushV1860=()=>{};db.stock=Array.from({length:45},(_,i)=>({name:'Fixture '+String(i).padStart(2,'0'),qty:100,unit:'g',min:10,target:200,unitCost:.02,imageUrl:'',preferredSupplier:''}));go('stock');window.initialStock=JSON.stringify(db.stock)});
  const rows=page.locator('#stockBody tr:not([hidden])'),controls=page.locator('#aeStockCompactControls');
  assert.equal(await rows.count(),20);await page.getByLabel('Artigos por página',{exact:true}).selectOption('10');assert.equal(await rows.count(),10);
- await controls.getByRole('button',{name:'Seguinte',exact:true}).click();assert.match(await controls.locator('.ae-stock-pages span').innerText(),/11–20 de 45/);
+ await controls.getByRole('button',{name:'Página seguinte do stock',exact:true}).click();assert.match(await controls.locator('.ae-stock-pages span').innerText(),/11–20 de 45/);
  await rows.first().getByRole('button',{name:'Editar',exact:true}).click();await page.locator('#stockPreferredSupplier').fill('Fornecedor em rascunho');
  await page.locator('#stockImageFileV1771').setInputFiles({name:'fixture.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jgAAAAABJRU5ErkJggg==','base64')});
  await page.waitForFunction(()=>document.getElementById('stockImagePreviewV1771').src.startsWith('data:image/png'));
  await page.locator('.stock-create-section-v1736 .ae-stock-return').click();assert.equal(await page.locator('.stock-create-section-v1736').isVisible(),false);assert.match(await controls.locator('.ae-stock-pages span').innerText(),/11–20 de 45/);
- await controls.getByRole('button',{name:'Abrir formulário',exact:true}).click();assert.equal(await page.locator('#stockPreferredSupplier').inputValue(),'Fornecedor em rascunho');assert.equal(await page.locator('#stockImageFileV1771').evaluate(e=>e.files[0].name),'fixture.png');assert.equal(await page.evaluate(()=>JSON.stringify(db.stock)===initialStock),true);
+ await controls.getByRole('button',{name:'Novo artigo',exact:true}).click();assert.equal(await page.locator('#stockPreferredSupplier').inputValue(),'Fornecedor em rascunho');assert.equal(await page.locator('#stockImageFileV1771').evaluate(e=>e.files[0].name),'fixture.png');assert.equal(await page.evaluate(()=>JSON.stringify(db.stock)===initialStock),true);
  await page.locator('#stockCancelBtnV145').click();assert.match(await controls.locator('.ae-stock-pages span').innerText(),/11–20 de 45/);
  // Save via the original handler, using only fixture data.
  await rows.first().getByRole('button',{name:'Editar',exact:true}).click();await page.locator('#stockPreferredSupplier').fill('Fornecedor guardado');await page.locator('#stockSaveBtnV143').click();
