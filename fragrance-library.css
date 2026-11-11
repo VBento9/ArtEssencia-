@@ -160,3 +160,17 @@
 }
 @media(max-width:900px){#technicalLibrary .fl-library-summary{grid-template-columns:repeat(3,minmax(0,1fr))}#technicalLibrary .fl-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){#technicalLibrary .fl-library-summary{grid-template-columns:repeat(2,minmax(0,1fr))}#technicalLibrary .fl-library-cta{width:100%}#technicalLibrary .fl-library-cta .btn{flex:1 1 135px}#technicalLibrary .fl-filters{grid-template-columns:1fr 1fr}#technicalLibrary .fl-filters label:first-child{grid-column:1/-1}#technicalLibrary .fl-library-controls{padding:10px}#technicalLibrary .fl-library-viewbar{justify-content:space-between}#technicalLibrary .fl-view-switch .btn{padding:6px 8px}#technicalLibrary .fl-card-bottom{flex-wrap:wrap}}
+
+
+/* Inline manual consumption: no write until submission and a compact preview. */
+#technicalLibrary .fl-quick-use{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end;padding:10px;border:1px solid #deceb5;background:#faf4eb;border-radius:11px;min-width:0}
+#technicalLibrary .fl-quick-use label{display:grid;gap:5px;min-width:0;font-size:11px;font-weight:750;color:#584331}
+#technicalLibrary .fl-quick-use input{width:100%;height:42px;min-width:0;padding:8px 10px;border:1px solid #c9b697;border-radius:8px;background:#fffdfa;color:#382c1e;font-size:16px;box-sizing:border-box}
+#technicalLibrary .fl-quick-use .btn{min-height:42px;white-space:normal;font-size:12px;line-height:1.2;padding:7px 11px}
+#technicalLibrary .fl-quick-preview{grid-column:1/-1;color:#574936;font-size:12px;font-variant-numeric:tabular-nums;line-height:1.45;overflow-wrap:anywhere}
+#technicalLibrary .fl-quick-error{grid-column:1/-1;color:#9c3a2c;margin:0;font-size:12px;line-height:1.4;overflow-wrap:anywhere}
+#technicalLibrary .fl-quick-error:empty{display:none}
+#technicalLibrary .fl-card-refill{min-height:36px;font-size:12px}
+#technicalLibrary .fl-card-bottom{justify-content:flex-start;flex-wrap:wrap}
+#technicalLibrary .fl-card-more{margin-left:auto}
+@media(max-width:420px){#technicalLibrary .fl-quick-use{grid-template-columns:minmax(0,1fr) auto;padding:9px}#technicalLibrary .fl-quick-use .btn{max-width:118px}}

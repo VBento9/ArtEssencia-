@@ -107,6 +107,52 @@ function clearFilters(){
  select.value='active';render();
 }
 function setView(mode){if(mode==='cards'||mode==='list'){fragranceView=mode;render()}}
+function makeQuickConsumption(row){
+ if(row.archived||!hasBalance(row)||ledger.balance(row)<=0)return null;
+ const snapshot=JSON.stringify(row),opId=uid();
+ const form=document.createElement('form');form.className='fl-quick-use';form.noValidate=true;
+ form.setAttribute('aria-label','Utilização rápida de '+row.name);
+ const label=document.createElement('label');label.textContent='Uso rápido · hoje (ml)';
+ const input=document.createElement('input');input.type='text';input.inputMode='decimal';input.name='quickQuantity';
+ input.autocomplete='off';input.placeholder='Ex.: 7,5';input.required=true;
+ input.setAttribute('aria-label','Quantidade utilizada (ml) · '+row.name);
+ const button=document.createElement('button');button.type='submit';button.className='btn primary';
+ button.textContent='Registar utilização';
+ const preview=document.createElement('output');preview.className='fl-quick-preview';preview.setAttribute('aria-live','polite');
+ const error=document.createElement('p');error.className='fl-quick-error';error.setAttribute('aria-live','polite');
+ label.append(input);form.append(label,button,preview,error);
+ const operation=quantity=>({id:opId,type:'consumption',quantity,date:today(),note:'Registo rápido de utilização'});
+ function updatePreview(){
+  error.textContent='';
+  const value=input.value.trim();
+  if(!value){preview.textContent='Disponível: '+balanceLabel(row);return}
+  try{
+   const after=ledger.apply(row,operation(value));
+   preview.textContent=ml(ledger.balance(row)/1000)+' → '+ml(ledger.balance(after)/1000)+' após confirmação';
+  }catch(e){preview.textContent=e.message||'Quantidade inválida.'}
+ }
+ input.addEventListener('input',updatePreview);updatePreview();
+ let confirmed=false;
+ form.addEventListener('submit',event=>{
+  event.preventDefault();
+  if(confirmed)return;
+  const quantity=input.value.trim();
+  if(!quantity){error.textContent='Indica os ml utilizados.';input.focus();return}
+  confirmed=true;button.disabled=true;
+  try{
+   const current=rows().find(item=>item.id===row.id);
+   if(!current||JSON.stringify(current)!==snapshot)throw Error('A ficha foi alterada. Atualiza a lista antes de registar a utilização.');
+   const after=ledger.apply(current,operation(quantity));
+   if(!saveRows(rows().map(item=>item.id===row.id?after:item)))throw Error('Não foi possível guardar. Nenhum consumo foi confirmado.');
+   toast('Consumo guardado neste dispositivo: '+ml((ledger.balance(current)-ledger.balance(after))/1000)+
+    ' · restam '+ml(ledger.balance(after)/1000)+'. Confirma a sincronização Cloud no indicador da aplicação.');
+  }catch(e){
+   confirmed=false;button.disabled=false;
+   error.textContent=e.message||'Não foi possível registar a utilização.';
+  }
+ });
+ return form;
+}
 function render(){
  const root=document.getElementById('technicalLibrary');if(!root)return;
  const q=document.getElementById('aeFlSearchV1'),f=document.getElementById('aeFlFamilyV1'),s=document.getElementById('aeFlStatusV1');
@@ -151,13 +197,11 @@ function render(){
   const balancePanel=document.createElement('div');balancePanel.className='fl-card-balance';
   const statusBadge=document.createElement('span');statusBadge.className='fl-status-label';statusBadge.textContent=labels[state];
   balancePanel.append(statusBadge,makeGauge(x));
-  const actions=document.createElement('div');actions.className='fl-actions';
-  for(const [label,type] of [['Registar utilização','consumption'],['Adicionar fragrância','refill']]){
-   const b=document.createElement('button');b.type='button';b.className='btn'+(type==='consumption'?' primary':'');b.textContent=label;
-   b.disabled=!!x.archived||(type==='consumption'&&(!hasBalance(x)||ledger.balance(x)<=0));
-   b.onclick=()=>movement(x.id,type);actions.append(b);
-  }
+  const quick=makeQuickConsumption(x);
   const bottom=document.createElement('div');bottom.className='fl-card-bottom';
+  const refill=document.createElement('button');refill.type='button';refill.className='btn fl-card-refill';
+  refill.textContent='Adicionar fragrância';refill.disabled=!!x.archived;
+  refill.onclick=()=>movement(x.id,'refill');bottom.append(refill);
   const edit=document.createElement('button');edit.type='button';edit.className='btn fl-card-edit';edit.textContent='Abrir ficha';edit.onclick=()=>openEditor(x.id);bottom.append(edit);
   const more=document.createElement('details');more.className='fl-card-more';
   const moreSummary=document.createElement('summary');moreSummary.textContent='Mais opções';
@@ -165,13 +209,19 @@ function render(){
   const history=document.createElement('button');history.type='button';history.className='btn';history.textContent='Histórico';history.onclick=()=>showHistory(x.id);
   const manage=document.createElement('button');manage.type='button';manage.className='btn';manage.textContent='Gerir fragrância';manage.disabled=!!x.archived;
   manage.onclick=()=>movement(x.id,hasBalance(x)&&ledger.balance(x)>0?'consumption':'refill',null,true);
-  secondary.append(manage,history);
+  const detailed=document.createElement('button');detailed.type='button';detailed.className='btn';
+  detailed.textContent='Registo com data e observação';
+  detailed.disabled=!!x.archived||!hasBalance(x)||ledger.balance(x)<=0;
+  detailed.onclick=()=>movement(x.id,'consumption');
+  secondary.append(detailed,manage,history);
   if(level.percent===null&&!x.archived){
    const capacity=document.createElement('button');capacity.type='button';capacity.className='btn';
    capacity.textContent='Definir capacidade';capacity.onclick=()=>movement(x.id,'capacity');secondary.append(capacity);
   }
   more.append(moreSummary,secondary);bottom.append(more);
-  card.append(main,balancePanel,actions,bottom);box.append(card);
+  if(quick)card.append(main,balancePanel,quick,bottom);
+  else card.append(main,balancePanel,bottom);
+  box.append(card);
  }
 }
 function renderPhoto(container,source){
