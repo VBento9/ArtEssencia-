@@ -313,11 +313,11 @@ function customerPdfLines(ctx,value,width,maxLines){
  return displayed;
 }
 function customerPdfPrepareEntry(ctx,row){
- ctx.font='bold 30px Georgia, serif';
+ ctx.font='34px Georgia, serif';
  const names=customerPdfLines(ctx,row.name,PDF_CUSTOMER_LAYOUT.columnWidth,2);
- ctx.font='20px Arial, sans-serif';
+ ctx.font='19px Arial, sans-serif';
  const descriptions=customerPdfLines(ctx,row.description,PDF_CUSTOMER_LAYOUT.columnWidth,2);
- const height=names.length*38+(descriptions.length?descriptions.length*28+18:0)+38;
+ const height=names.length*43+(descriptions.length?descriptions.length*30+20:0)+35;
  return {kind:'entry',names,descriptions,height};
 }
 function customerPdfPaginate(groups){
@@ -382,46 +382,65 @@ function customerPdfBalanceLastPage(pages){
   }
  }
 }
+const PDF_KRAFT_PALETTE={
+ paper:'#e6d1ad',paperShade:'#dbc29a',panel:'#d3b78b',ink:'#342719',
+ accent:'#795638',muted:'#68533e',rule:'#bea27e'
+};
+function drawCustomerPdfKraft(ctx){
+ const {width,height}=PDF_CUSTOMER_LAYOUT;
+ ctx.fillStyle=PDF_KRAFT_PALETTE.paper;
+ ctx.fillRect(0,0,width,height);
+ // Subtle deterministic paper fibres, with no photographs or external assets.
+ ctx.save();
+ ctx.strokeStyle='rgba(104,73,40,0.065)';
+ ctx.lineWidth=1;
+ for(let i=0;i<560;i++){
+  const x=(i*271+43)%width,y=(i*619+113)%height;
+  ctx.beginPath();ctx.moveTo(x,y);
+  ctx.lineTo(x+5+i%9,y+(i%3)-1);ctx.stroke();
+ }
+ ctx.restore();
+}
 function drawCustomerPdfLogo(ctx,logo,x,y,maxWidth,maxHeight){
  if(logo){
   const scale=Math.min(maxWidth/logo.naturalWidth,maxHeight/logo.naturalHeight);
   const width=logo.naturalWidth*scale,height=logo.naturalHeight*scale;
   ctx.drawImage(logo,x,y+(maxHeight-height)/2,width,height);
  }else{
-  ctx.fillStyle='#29382f';ctx.font='bold 38px Georgia, serif';
+  ctx.fillStyle=PDF_KRAFT_PALETTE.ink;ctx.font='bold 38px Georgia, serif';
   ctx.fillText('ArtEssencia',x,y+maxHeight*.68,maxWidth);
  }
 }
 function drawCustomerPdfFooter(ctx,contacts,pageNumber,totalPages){
- ctx.fillStyle='#e1ded7';ctx.fillRect(76,1647,1088,2);
- ctx.fillStyle='#566359';ctx.textAlign='left';ctx.font='19px Arial, sans-serif';
+ ctx.fillStyle=PDF_KRAFT_PALETTE.rule;ctx.fillRect(76,1647,1088,2);
+ ctx.fillStyle=PDF_KRAFT_PALETTE.muted;ctx.textAlign='left';ctx.font='18px Arial, sans-serif';
  ctx.fillText('ARTESSENCIA  ·  CATÁLOGO DE FRAGRÂNCIAS',76,1691,520);
- ctx.textAlign='right';ctx.fillStyle='#29382f';ctx.font='19px Arial, sans-serif';
+ ctx.textAlign='right';ctx.fillStyle=PDF_KRAFT_PALETTE.ink;ctx.font='19px Arial, sans-serif';
  for(const [index,contact] of contacts.slice(0,2).entries())ctx.fillText(contact,1164,1678+index*27,485);
- ctx.fillStyle='#7d867c';ctx.font='17px Arial, sans-serif';
+ ctx.fillStyle=PDF_KRAFT_PALETTE.muted;ctx.font='17px Arial, sans-serif';
  ctx.fillText(String(pageNumber).padStart(2,'0')+' / '+String(totalPages).padStart(2,'0'),1164,1730);
  ctx.textAlign='left';
 }
 function drawCustomerPdfCover(ctx,logo,groups,pages,contacts,totalPages){
- const {width,height}=PDF_CUSTOMER_LAYOUT;
- ctx.fillStyle='#fffefa';ctx.fillRect(0,0,width,height);
+ const {width}=PDF_CUSTOMER_LAYOUT;
+ drawCustomerPdfKraft(ctx);
  drawCustomerPdfLogo(ctx,logo,76,62,277,140);
- ctx.fillStyle='#b8b1a3';ctx.fillRect(76,240,1088,2);
- ctx.strokeStyle='#e7e6e0';ctx.lineWidth=2;
+ ctx.fillStyle=PDF_KRAFT_PALETTE.rule;ctx.fillRect(76,240,1088,2);
+ ctx.strokeStyle='rgba(112,78,41,0.17)';ctx.lineWidth=2;
  for(const radius of [225,322,419]){
   ctx.beginPath();ctx.arc(1256,570,radius,0,Math.PI*2);ctx.stroke();
  }
- ctx.fillStyle='#69756b';ctx.font='bold 22px Arial, sans-serif';
+ ctx.fillStyle=PDF_KRAFT_PALETTE.accent;ctx.font='bold 22px Arial, sans-serif';
  ctx.fillText('CATÁLOGO DE FRAGRÂNCIAS',76,358);
- ctx.fillStyle='#29382f';ctx.font='bold 102px Georgia, serif';
+ ctx.fillStyle=PDF_KRAFT_PALETTE.ink;ctx.font='102px Georgia, serif';
  ctx.fillText('Escolhe',70,495);ctx.fillText('o teu aroma.',70,611);
- ctx.fillStyle='#657067';ctx.font='26px Arial, sans-serif';
+ ctx.fillStyle=PDF_KRAFT_PALETTE.muted;ctx.font='26px Arial, sans-serif';
  ctx.fillText('Uma seleção de aromas para dar personalidade',76,703);
  ctx.fillText('às tuas peças favoritas.',76,742);
- ctx.fillStyle='#bdad98';ctx.fillRect(76,847,65,4);
- ctx.fillStyle='#29382f';ctx.font='bold 38px Georgia, serif';
+ ctx.fillStyle=PDF_KRAFT_PALETTE.accent;ctx.fillRect(76,847,65,4);
+ ctx.fillStyle=PDF_KRAFT_PALETTE.ink;ctx.font='37px Georgia, serif';
  ctx.fillText('Explora por famílias',76,937);
- ctx.fillStyle='#657067';ctx.font='21px Arial, sans-serif';
+ ctx.fillStyle=PDF_KRAFT_PALETTE.muted;ctx.font='21px Arial, sans-serif';
  ctx.fillText('Encontra as fragrâncias que mais combinam contigo.',76,979);
  const firstPages=new Map();
  for(const [pageIndex,page] of pages.entries())for(const column of page.columns)for(const item of column){
@@ -431,45 +450,50 @@ function drawCustomerPdfCover(ctx,logo,groups,pages,contacts,totalPages){
  groups.forEach((group,index)=>{
   const column=Math.floor(index/lines),line=index%lines;
   const x=76+column*565,y=1088+line*72;
-  ctx.fillStyle='#29382f';ctx.font='26px Georgia, serif';
+  ctx.fillStyle=PDF_KRAFT_PALETTE.ink;ctx.font='23px Arial, sans-serif';
   ctx.fillText(group.title,x,y,423);
-  ctx.fillStyle='#69756b';ctx.font='20px Arial, sans-serif';
+  ctx.fillStyle=PDF_KRAFT_PALETTE.accent;ctx.font='bold 20px Arial, sans-serif';
   ctx.fillText(String(firstPages.get(group.key)||2).padStart(2,'0'),x+478,y);
-  ctx.fillStyle='#e4e1dc';ctx.fillRect(x,y+14,505,1);
+  ctx.fillStyle=PDF_KRAFT_PALETTE.rule;ctx.fillRect(x,y+14,505,1);
  });
- ctx.fillStyle='#566359';ctx.font='22px Arial, sans-serif';
+ ctx.fillStyle=PDF_KRAFT_PALETTE.muted;ctx.font='22px Arial, sans-serif';
  ctx.fillText('Escolhe as tuas favoritas e indica os nomes quando fizeres o pedido.',76,1535,1088);
  drawCustomerPdfFooter(ctx,contacts,1,totalPages);
 }
 function drawCustomerPdfPage(ctx,logo,page,contacts,pageNumber,totalPages){
- const {width,height,margin,columnWidth,columnGap}=PDF_CUSTOMER_LAYOUT;
- ctx.fillStyle='#fffefa';ctx.fillRect(0,0,width,height);
+ const {width,margin,columnWidth,columnGap}=PDF_CUSTOMER_LAYOUT;
+ drawCustomerPdfKraft(ctx);
  drawCustomerPdfLogo(ctx,logo,margin,43,185,100);
- ctx.textAlign='right';ctx.fillStyle='#657067';ctx.font='20px Arial, sans-serif';
+ ctx.textAlign='right';ctx.fillStyle=PDF_KRAFT_PALETTE.muted;ctx.font='20px Arial, sans-serif';
  ctx.fillText('CATÁLOGO DE FRAGRÂNCIAS',width-margin,95);
- ctx.textAlign='left';ctx.fillStyle='#dfdcd6';ctx.fillRect(margin,160,width-2*margin,2);
- ctx.fillStyle='#29382f';ctx.font='bold 47px Georgia, serif';
+ ctx.textAlign='left';ctx.fillStyle=PDF_KRAFT_PALETTE.rule;ctx.fillRect(margin,160,width-2*margin,2);
+ ctx.fillStyle=PDF_KRAFT_PALETTE.ink;ctx.font='46px Georgia, serif';
  ctx.fillText('Descobre as fragrâncias',margin,238);
+ // Quiet central rule signals the printed-magazine columns.
+ ctx.fillStyle='rgba(113,79,46,0.16)';ctx.fillRect(width/2,292,1,1294);
  page.columns.forEach((items,column)=>{
   const x=margin+column*(columnWidth+columnGap);
   for(const item of items){
    if(item.kind==='section'){
-    ctx.fillStyle='#b2a591';ctx.fillRect(x,item.y+8,4,36);
-    ctx.fillStyle='#69756b';ctx.font='bold 19px Arial, sans-serif';
-    ctx.fillText(String(item.index+1).padStart(2,'0'),x+18,item.y+36);
-    ctx.fillStyle='#29382f';ctx.font='bold 34px Georgia, serif';
-    ctx.fillText(item.group.title+(item.continued?' · continuação':''),x,item.y+77,columnWidth);
-    ctx.fillStyle='#657067';ctx.font='20px Arial, sans-serif';
-    ctx.fillText(item.group.subtitle,x,item.y+107,columnWidth);
+    ctx.fillStyle=PDF_KRAFT_PALETTE.panel;
+    ctx.fillRect(x,item.y+7,columnWidth,78);
+    ctx.fillStyle=PDF_KRAFT_PALETTE.accent;ctx.font='bold 19px Arial, sans-serif';
+    ctx.fillText(String(item.index+1).padStart(2,'0'),x+16,item.y+43);
+    ctx.fillStyle=PDF_KRAFT_PALETTE.ink;ctx.font='bold 22px Arial, sans-serif';
+    const family=item.group.title.toLocaleUpperCase('pt-PT')+(item.continued?' · CONT.':'');
+    ctx.fillText(family,x+65,item.y+43,columnWidth-78);
+    ctx.fillStyle=PDF_KRAFT_PALETTE.muted;ctx.font='italic 20px Georgia, serif';
+    ctx.fillText(item.group.subtitle,x+4,item.y+113,columnWidth-8);
    }else{
-    ctx.fillStyle='#29382f';ctx.font='bold 30px Georgia, serif';
-    item.names.forEach((line,index)=>ctx.fillText(line,x,item.y+31+index*38,columnWidth));
+    // Names use a larger, regular-weight serif; families use smaller bold sans-serif.
+    ctx.fillStyle=PDF_KRAFT_PALETTE.ink;ctx.font='34px Georgia, serif';
+    item.names.forEach((line,index)=>ctx.fillText(line,x,item.y+35+index*43,columnWidth));
     if(item.descriptions.length){
-     ctx.fillStyle='#657067';ctx.font='20px Arial, sans-serif';
-     const start=item.y+item.names.length*38+24;
-     item.descriptions.forEach((line,index)=>ctx.fillText(line,x,start+index*28,columnWidth));
+     ctx.fillStyle=PDF_KRAFT_PALETTE.muted;ctx.font='19px Arial, sans-serif';
+     const start=item.y+item.names.length*43+28;
+     item.descriptions.forEach((line,index)=>ctx.fillText(line,x,start+index*30,columnWidth));
     }
-    ctx.fillStyle='#e5e3de';ctx.fillRect(x,item.y+item.height-11,columnWidth,1);
+    ctx.fillStyle=PDF_KRAFT_PALETTE.rule;ctx.fillRect(x,item.y+item.height-11,columnWidth,1);
    }
   }
  });
