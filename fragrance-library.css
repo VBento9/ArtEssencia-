@@ -39,3 +39,30 @@
 .fl-gauge[data-level="low"] .fl-tank i{background:#b79b5b}
 .fl-gauge[data-level="critical"] .fl-tank{border-color:#98645c}
 .fl-gauge[data-level="critical"] .fl-tank i{background:#b17e73}
+/* Focused manual workflow: clear balance preview and direct history access. */
+#technicalLibrary .ae-fl-card-main-v1{position:relative}
+#technicalLibrary .ae-fl-card-main-v1:has(.fl-photo){padding-right:64px}
+#technicalLibrary .fl-photo{position:absolute;top:0;right:0}
+#technicalLibrary .ae-fl-card-main-v1 p{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.45}
+#technicalLibrary .fl-gauge{padding:12px;border-radius:12px;background:#f6f3ed}
+#technicalLibrary .fl-gauge strong{font-size:23px;letter-spacing:-.5px;color:#3e4938}
+#technicalLibrary .fl-tank{height:88px;width:38px;background:repeating-linear-gradient(to top,#eeebe4 0,#eeebe4 20px,#d6d0c5 21px,#eeebe4 22px)}
+#technicalLibrary .fl-actions{display:grid;grid-template-columns:1fr 1fr;margin:0;gap:8px}
+#technicalLibrary .fl-actions .btn{width:100%;min-height:44px;white-space:normal;line-height:1.3}
+#technicalLibrary .fl-card-secondary{display:flex;flex-wrap:wrap;gap:6px;padding-top:8px;border-top:1px solid #e9e1d6}
+#technicalLibrary .fl-card-secondary .btn{min-height:40px;font-size:12px;flex:1 1 auto}
+.ae-fl-dialog-v1 .fl-optional{border:1px solid #e6ded3;border-radius:12px;padding:12px;margin:12px 0 16px}
+.ae-fl-dialog-v1 .fl-optional summary{cursor:pointer;font-size:14px;font-weight:650;min-height:24px}
+.ae-fl-dialog-v1 .fl-optional .ae-fl-edit-v1{margin-bottom:0}
+.fl-movement-dialog{width:min(460px,calc(100vw - 28px));box-sizing:border-box}
+.fl-movement-dialog label{margin-top:12px;font-size:13px;font-weight:650}
+.fl-movement-dialog input,.fl-movement-dialog textarea{font:inherit;padding:11px;border:1px solid #d9d1c5;border-radius:10px;background:#fff;color:#302921}
+.fl-movement-dialog input[name=quantity]{font-size:24px;font-weight:700}
+.fl-movement-dialog textarea{min-height:66px;resize:vertical}
+.fl-movement-preview{display:block;margin-top:16px;padding:14px;background:#eef2e9;border:1px solid #d5dfca;border-radius:12px;font-size:17px;font-weight:700;color:#3e4938;overflow-wrap:anywhere}
+.fl-movement-dialog .fl-actions{justify-content:flex-end}
+.fl-movement-dialog button{min-height:44px}
+.fl-history-dialog ol{list-style:none;padding:0;display:grid;gap:8px}
+.fl-history-dialog li{border:1px solid #e6ded3;border-radius:10px;padding:12px;font-size:14px;overflow-wrap:anywhere}
+.fl-history-dialog li p{margin:6px 0 0;color:#74695f;font-size:12px}
+@media(prefers-reduced-motion:reduce){.fl-tank i{transition:none}}
