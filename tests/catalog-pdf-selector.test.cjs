@@ -12,7 +12,7 @@ const editions=[{id:'natal',name:'Natal',data:{products:[{id:'r1'},{id:'r2'},{id
 const db={products};const original=JSON.stringify(db);
 let stored=JSON.stringify({scope:'published',selected:null,images:false});
 function setup(){
-  const nodes=new Map();let ready,drawn=[],placements=[],pagesMade=0,rpcError=false,rpcCalls=0;
+  const nodes=new Map();let ready,drawn=[],placements=[],fills=[],pagesMade=0,rpcError=false,rpcCalls=0;
   class Node{
     constructor(){this.events={};this.dataset={};this.value='';this.hidden=false;this.options=[];}
     set id(v){this._id=v;nodes.set(v,this);}get id(){return this._id;}
@@ -30,7 +30,7 @@ function setup(){
     localStorage:{getItem:()=>stored,setItem:(k,v)=>{assert.equal(k,'artessencia.catalog.pdf.prefs.v2');stored=v;}},toast:()=>{},
     document:{readyState:'loading',getElementById:id=>nodes.get(id),querySelectorAll:()=>[card],createElement:()=>new Node(),head:new Node(),addEventListener:(event,fn)=>{ready=fn;}},
     drawArtEssenciaHeader:async(ctx,t,subtitle)=>{drawn.push(subtitle);},drawCatalogFooter:()=>{},
-    createCatalogPrintCanvas:()=>{pagesMade++;return {getContext:()=>({measureText:t=>({width:String(t).length*9}),fillText:(t,x,y)=>{drawn.push(String(t));placements.push({text:String(t),x,y,page:pagesMade});},fillRect(){},strokeRect(){},beginPath(){},moveTo(){},lineTo(){},stroke(){}}),toBlob:cb=>cb({})};},
+    createCatalogPrintCanvas:()=>{pagesMade++;return {getContext:()=>({measureText:t=>({width:String(t).length*9}),fillText:(t,x,y)=>{drawn.push(String(t));placements.push({text:String(t),x,y,page:pagesMade});},fillRect(x,y,w,h){fills.push({x,y,w,h,page:pagesMade,color:this.fillStyle});},strokeRect(){},beginPath(){},moveTo(){},lineTo(){},stroke(){}}),toBlob:cb=>cb({})};},
     jpegBlobsToPDF:async()=>drawn
   };
   vm.createContext(env);vm.runInContext(source,env);ready();
@@ -39,8 +39,8 @@ function setup(){
     async open(){card.querySelector('.catalog-actions').first.events.click();await new Promise(resolve=>setImmediate(resolve));},
     change(id,value){const n=nodes.get(id);if(typeof value==='boolean')n.checked=value;else n.value=value;panel.events.change({target:n});},
     click(action){panel.events.click({target:{closest:()=>({dataset:{aeAction:action}})}});},
-    placements:()=>placements.slice(),pageCount:()=>pagesMade,
-    async pdf(){drawn=[];placements=[];pagesMade=0;return env.window.buildMenuPdfBlob();}
+    placements:()=>placements.slice(),fills:()=>fills.slice(),pageCount:()=>pagesMade,
+    async pdf(){drawn=[];placements=[];fills=[];pagesMade=0;return env.window.buildMenuPdfBlob();}
   };
 }
 (async()=>{
@@ -61,7 +61,8 @@ function setup(){
   app.change('aePdfImages',true);text=await app.pdf();
   grid=app.placements();
   assert(grid.some(x=>x.text==='Vela Natal'));
-  assert(grid.every(x=>!Number.isFinite(x.y)||x.y<=1709),'No rendered text below the printed footer');
+  assert(grid.every(x=>!Number.isFinite(x.y)||x.y<=1754),'No text beyond the A4 canvas');
+  assert(grid.filter(x=>['Vela Natal','Arranjo Natal'].includes(x.text)).every(x=>x.y<1570),'Product names must stay above footer');
   app.change('aePdfSource','catalog:guardado');app.change('aePdfCandles',false);text=await app.pdf();assert(text.includes('Vela Natal'));assert(text.includes('Sabonete Natal'));assert(!text.includes('Arranjo Natal'));
   app.change('aePdfCategory','Sabonetes');app.click('replaceFiltered');text=await app.pdf();assert(text.includes('Sabonete Natal'));assert(!text.includes('Vela Natal'));
   app.click('auto');app.change('aePdfSource','collection:Outono');text=await app.pdf();assert(text.includes('Vela Outono'));assert(!text.includes('Vela Natal'));
@@ -79,6 +80,10 @@ function setup(){
   stored=JSON.stringify({scope:'published',selected:null,images:true,source:'',candles:false});
   const many=setup();await many.open();await many.pdf();
   assert(many.pageCount()>=2,'Large customer catalogues must paginate');
+  assert.equal(many.fills().filter(e=>e.x===0&&e.y===188&&e.w===1240&&e.h===1450&&e.color==='#e9d6b8').length,many.pageCount(),
+    'Every A4 page must include the kraft editorial sheet');
+  assert.equal(many.fills().filter(e=>e.x===0&&e.y===1570&&e.w===1240&&e.h===184&&e.color==='#e9d6b8').length,many.pageCount(),
+    'Every page must have a reserved kraft footer');
   const positions=many.placements();
   const columns=positions.filter(x=>x.text.startsWith('Produto Coluna '));
   assert.equal(columns.length,generated.length);
