@@ -52,15 +52,16 @@ function setup(){
   assert.match(app.nodes.get('aePdfSummary').textContent,/Natal · Só velas — 2 produto/);
   app=setup();await app.open();text=await app.pdf();assert(text.includes('Vela Natal'));assert(!text.includes('Vela Outono'));
   app.change('aePdfScope','all');app.change('aePdfSource','edition:natal');text=await app.pdf();assert(text.includes('Vela Natal rascunho'));assert(!text.includes('Arquivada'));
-  // Products in one category appear on the same A4 row, in two independent columns.
+  // Products in one category appear on the same A4 row in three compact columns.
   let grid=app.placements();
   const first=grid.find(x=>x.text==='Vela Natal'),second=grid.find(x=>x.text==='Vela Natal rascunho');
   assert(first&&second,'Both product names must be rendered');
   assert.equal(first.page,second.page);assert.equal(first.y,second.y);
-  assert(second.x>first.x+500,'Second product must occupy a distinct right-hand column');
+  assert(second.x>first.x+300&&second.x<first.x+400,'Second product must occupy a compact adjacent column');
   app.change('aePdfImages',true);text=await app.pdf();
   grid=app.placements();
   assert(grid.some(x=>x.text==='Vela Natal'));
+  assert(app.fills().some(e=>e.color==='#fffaf0'&&e.w===344&&e.h===297),'Photographic cards must be compact');
   assert(grid.every(x=>!Number.isFinite(x.y)||x.y<=1754),'No text beyond the A4 canvas');
   assert(grid.filter(x=>['Vela Natal','Arranjo Natal'].includes(x.text)).every(x=>x.y<1570),'Product names must stay above footer');
   app.change('aePdfSource','catalog:guardado');app.change('aePdfCandles',false);text=await app.pdf();assert(text.includes('Vela Natal'));assert(text.includes('Sabonete Natal'));assert(!text.includes('Arranjo Natal'));
@@ -88,8 +89,15 @@ function setup(){
   const columns=positions.filter(x=>x.text.startsWith('Produto Coluna '));
   assert.equal(columns.length,generated.length);
   assert(columns.every(x=>x.x>=80&&x.x<=1160&&x.y<1570));
-  assert(columns.some((x,i)=>columns.some((other,j)=>i!==j&&other.page===x.page&&other.y===x.y&&Math.abs(other.x-x.x)>500)),
-    'Product cards must share rows in two columns');
+  const firstThree=columns.filter(x=>['Produto Coluna 01','Produto Coluna 02','Produto Coluna 03'].includes(x.text));
+  assert.equal(firstThree.length,3,'Three synthetic products must be rendered');
+  assert.equal(new Set(firstThree.map(x=>x.page)).size,1,'Three cards must share one page');
+  assert.equal(new Set(firstThree.map(x=>x.y)).size,1,'Three cards must share one row');
+  assert.equal(new Set(firstThree.map(x=>x.x)).size,3,'Each card must occupy its own column');
+  assert.deepEqual(firstThree.map(x=>x.x).sort((a,b)=>a-b),[94,462,830],'Columns must be evenly spaced');
+  const renderedCards=many.fills().filter(e=>e.color==='#fffaf0'&&e.w===344&&e.h===297);
+  assert(renderedCards.length>=generated.length,'Photo cards must use the reduced three-column size');
+  assert(renderedCards.every(e=>e.x>=80&&e.x+e.w<=1160&&e.y+e.h<1570),'No card should spill outside the A4 print area');
   products.splice(originalLength);stored=lastPreferences;
   assert.equal(JSON.stringify(db),original);
   console.log('PASS: real UI handlers select Natal + candles, saved catalogue and collection; scoped PDF content, publication/archive limits, persistence, replace-filter action, missing/offline failures, no product writes.');

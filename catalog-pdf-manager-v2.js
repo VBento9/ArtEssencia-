@@ -274,8 +274,8 @@
     ctx.drawImage(img,x+(width-w)/2,y+(height-h)/2,w,h);
   }
   // Grelha editorial A4 em duas colunas, independente dos filtros de seleção.
-  const PDF_GRID={left:80,right:644,cardWidth:516,categoryHeight:57,
-    top:235,bottom:1570,withPhoto:374,withoutPhoto:168};
+  const PDF_GRID={columns:3,left:80,gap:24,cardWidth:344,categoryHeight:57,
+    top:235,bottom:1570,withPhoto:310,withoutPhoto:136};
   const PDF_PALETTE={paper:'#e9d6b8',paperAccent:'#ddc39e',ink:'#382b20',
     muted:'#79634d',line:'#cdb390',category:'#73563d',card:'#fffaf0'};
   function productNameLines(ctx,name,width){
@@ -345,27 +345,28 @@
       if(settings.images){
         const imageUrl=clean(p.shopImageUrl||p.imageUrl||p.image||p.photo);
         const img=await loadPhoto(imageUrl);
-        try{drawPhoto(ctx,img,x+15,top+13,width-30,201);}
-        catch(_){drawPhoto(ctx,null,x+15,top+13,width-30,201);}
+        // The image occupies most of the narrower card without stretching or cropping.
+        try{drawPhoto(ctx,img,x+12,top+12,width-24,165);}
+        catch(_){drawPhoto(ctx,null,x+12,top+12,width-24,165);}
       }
-      ctx.textAlign='left';ctx.fillStyle=PDF_PALETTE.ink;ctx.font='25px Georgia, serif';
-      const lines=productNameLines(ctx,p.name,width-38);
-      const titleY=top+(settings.images?247:42);
-      lines.forEach((line,index)=>ctx.fillText(line,x+19,titleY+index*31));
-      const separatorY=top+height-49;
-      ctx.fillStyle=PDF_PALETTE.line;ctx.fillRect(x+19,separatorY,width-38,1);
+      ctx.textAlign='left';ctx.fillStyle=PDF_PALETTE.ink;ctx.font='21px Georgia, serif';
+      const lines=productNameLines(ctx,p.name,width-28);
+      const titleY=top+(settings.images?210:31);
+      lines.forEach((line,index)=>ctx.fillText(line,x+14,titleY+index*26));
+      const separatorY=top+height-47;
+      ctx.fillStyle=PDF_PALETTE.line;ctx.fillRect(x+14,separatorY,width-28,1);
       const metaY=top+height-19;
-      ctx.fillStyle=PDF_PALETTE.muted;ctx.font='17px Arial';
-      ctx.fillText(fit(ctx,code(p),238),x+19,metaY);
-      ctx.textAlign='right';ctx.fillStyle=PDF_PALETTE.category;ctx.font='bold 22px Arial';
-      ctx.fillText(fit(ctx,priceText(p),215),x+width-19,metaY);
+      ctx.fillStyle=PDF_PALETTE.muted;ctx.font='15px Arial';
+      ctx.fillText(fit(ctx,code(p),125),x+14,metaY);
+      ctx.textAlign='right';ctx.fillStyle=PDF_PALETTE.category;ctx.font='bold 18px Arial';
+      ctx.fillText(fit(ctx,priceText(p),153),x+width-14,metaY);
       ctx.textAlign='left';
     }
     await startPage();
     for(const p of products){
       const cat=category(p);
       if(cat!==categoryOnPage){
-        if(column===1){column=0;y+=rowHeight;}
+        if(column!==0){column=0;y+=rowHeight;}
         // Never put a category heading on a page without its first product.
         if(y+PDF_GRID.categoryHeight+rowHeight>PDF_GRID.bottom){
           await finishPage();await startPage();
@@ -375,10 +376,10 @@
       if(column===0&&y+rowHeight>PDF_GRID.bottom){
         await finishPage();await startPage();heading(cat);
       }
-      const x=column===0?PDF_GRID.left:PDF_GRID.right;
+      const x=PDF_GRID.left+column*(PDF_GRID.cardWidth+PDF_GRID.gap);
       await drawCard(p,x,y);
       column++;
-      if(column===2){column=0;y+=rowHeight;}
+      if(column===PDF_GRID.columns){column=0;y+=rowHeight;}
     }
     await finishPage();
     return jpegBlobsToPDF(pages,pageWidth,pageHeight);
