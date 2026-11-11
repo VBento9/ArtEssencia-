@@ -280,6 +280,60 @@ function batchSetup(){
  d.onclose=()=>d.remove();
  document.body.append(d);d.showModal();
 }
+async function buildCustomerPdf(available,contacts){
+ const pages=[];
+ const perPage=14;
+ const pageCount=Math.ceil(available.length/perPage);
+ for(let page=0;page<pageCount;page++){
+  const canvas=createCatalogPrintCanvas();
+  const ctx=canvas.getContext('2d');
+  await drawArtEssenciaHeader(ctx,'FRAGRÂNCIAS','Seleção disponível');
+  ctx.textAlign='left';
+  ctx.fillStyle='#5a240b';
+  ctx.font='24px Arial';
+  ctx.fillText('Escolhe a fragrância para a tua encomenda.',70,225);
+  const entries=available.slice(page*perPage,(page+1)*perPage);
+  for(const [index,row] of entries.entries()){
+   const y=270+index*88;
+   ctx.fillStyle=index%2?'#fffdf9':'#f6f0e7';
+   ctx.fillRect(70,y,1100,83);
+   ctx.fillStyle='#422e23';
+   ctx.font='bold 29px Arial';
+   const name=String(row.name||'').replace(/\s+/g,' ').trim();
+   const lines=wrapCanvasText(ctx,name,1040);
+   for(const [lineIndex,line] of lines.slice(0,2).entries()){
+    ctx.fillText(line+(lineIndex===1&&lines.length>2?'…':''),92,y+32+lineIndex*31,1040);
+   }
+   if(lines.length===1&&FAMILY_EXAMPLES[row.family]){
+    ctx.font='21px Arial';
+    ctx.fillText(row.family,92,y+62);
+   }
+  }
+  ctx.fillStyle='#eee3d3';
+  ctx.fillRect(70,1540,1100,138);
+  ctx.fillStyle='#422e23';
+  ctx.font='bold 25px Arial';
+  ctx.fillText('Contactos e encomendas',94,1580);
+  ctx.font='22px Arial';
+  ctx.fillText(contacts.join('  ·  '),94,1620,1050);
+  ctx.fillText('Disponibilidade sujeita a confirmação.',94,1654);
+  ctx.textAlign='right';
+  ctx.fillText((page+1)+' / '+pageCount,1150,1710);
+  const jpeg=await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(Error('Não foi possível gerar a página.')),'image/jpeg',.92));
+  pages.push(jpeg);
+  canvas.width=0;canvas.height=0;
+ }
+ return jpegBlobsToPDF(pages,2480,3508);
+}
+function downloadCustomerPdf(){
+ const available=rows().filter(row=>!row.archived&&ledger.balance(row)>0)
+  .sort((a,b)=>String(a.name).localeCompare(String(b.name),'pt-PT'));
+ if(!available.length){toast('Regista uma quantidade positiva numa fragrância ativa para gerar o PDF.');return}
+ const phone=String(db.settings.businessPhone||'').trim();
+ const email=String(db.settings.businessEmail||'').trim()||'geral@artessenciatlier.pt';
+ const contacts=[email,phone].filter(Boolean);
+ return downloadPdfBlob(()=>buildCustomerPdf(available,contacts),'ArtEssencia_Fragrancias_Disponiveis.pdf');
+}
 function exportCsv(){
  const headers=['Disponível ml','Capacidade ml','Movimentos JSON','Nome','Nome original','Família','Descrição','Aplicações','Fornecedor','Referência','Notas técnicas','Origem','Estado','IFRA','FDS'];
  const csv=[headers,...rows().map(x=>[hasBalance(x)?ledger.balance(x)/1000:'',x.capacityUnits?x.capacityUnits/1000:'',JSON.stringify(x.movements||[]),x.name,x.originalName,x.family,x.description,x.applications,x.supplier,x.reference,[COMMON_NOTES,x.technicalNotes].filter(Boolean).join('\n'),x.source,x.archived?'Arquivada':'Ativa',x.ifraUrl,x.sdsUrl])]
@@ -336,6 +390,6 @@ function showHistory(id){
  d.lastElementChild.onclick=()=>d.close();d.onclose=()=>d.remove();document.body.append(d);d.showModal();
 }
 window.renderTechnicalLibraryV1=render;
-window.aeFragrancesV1={render,add:()=>openEditor(null),importReceipt,exportCsv};
+window.aeFragrancesV1={render,add:()=>openEditor(null),importReceipt,exportCsv,downloadCustomerPdf};
 render();
 })();

@@ -2,11 +2,17 @@
 const {chromium}=require('playwright'),fs=require('node:fs'),assert=require('node:assert/strict');
 const index=fs.readFileSync('index.html','utf8'),section=index.match(/<section id="technicalLibrary"[\s\S]*?<\/section>/)[0];
 const compressImage=index.match(/^async function compressImageFile\(.*$/m)[0];
+const pdfHelpers=['loadCanvasImage','drawArtEssenciaHeader','wrapCanvasText','jpegBlobToPDF','downloadPdfBlob'].map(name=>
+ index.split('\n').find(line=>line.startsWith('function '+name+'(')||line.startsWith('async function '+name+'('))
+).concat(
+ index.slice(index.indexOf('function createCatalogPrintCanvas('),index.indexOf('async function drawArtEssenciaHeader(')),
+ index.slice(index.indexOf('async function jpegBlobsToPDF('),index.indexOf('async function jpegBlobToPDF('))
+).join('\n');
 const seed={settings:{},stock:[{name:'untouched',qty:7}],orders:[{id:'old',price:20}],products:[{price:25}],productionRuns:[]};
-const fixture=`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{font:16px sans-serif;margin:12px}button,input,select{font:inherit;min-height:40px}*{box-sizing:border-box}.card{max-width:1200px;margin:auto}</style><link rel="stylesheet" href="/fragrance-library.css"></head><body>${section}<script>${compressImage}
+const fixture=`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{font:16px sans-serif;margin:12px}button,input,select{font:inherit;min-height:40px}*{box-sizing:border-box}.card{max-width:1200px;margin:auto}</style><link rel="stylesheet" href="/fragrance-library.css"></head><body>${section}<script>${compressImage}\n${pdfHelpers}
 const KEY='synthetic-library';let db=JSON.parse(localStorage.getItem(KEY)||'null')||${JSON.stringify(seed)};let fail=false;function cloudMeta(){return {conflict:false}}function save(){if(fail)return false;localStorage.setItem(KEY,JSON.stringify(db));return true}function toast(message){window.lastMessage=message}</script><script src="/fragrance-ledger.js"></script><script src="/fragrance-library.js"></script></body></html>`;
 (async()=>{const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH,args:['--no-sandbox']}:{} )});try{for(const width of [390,800,1366]){
-const context=await browser.newContext({viewport:{width,height:950}});await context.route('**/*',r=>{const p=new URL(r.request().url()).pathname;if(p==='/')return r.fulfill({contentType:'text/html',body:fixture});if(['/fragrance-ledger.js','/fragrance-library.js','/fragrance-library.css'].includes(p))return r.fulfill({contentType:p.endsWith('.css')?'text/css':'text/javascript',body:fs.readFileSync(p.slice(1),'utf8')});return r.abort()});const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('https://fixture.invalid/');
+const context=await browser.newContext({viewport:{width,height:950}});await context.route('**/*',r=>{const p=new URL(r.request().url()).pathname;if(p==='/brand-artessencia-transparente.svg')return r.fulfill({contentType:'image/svg+xml',body:fs.readFileSync(p.slice(1),'utf8')});if(p==='/')return r.fulfill({contentType:'text/html',body:fixture});if(['/fragrance-ledger.js','/fragrance-library.js','/fragrance-library.css'].includes(p))return r.fulfill({contentType:p.endsWith('.css')?'text/css':'text/javascript',body:fs.readFileSync(p.slice(1),'utf8')});return r.abort()});const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('https://fixture.invalid/');
 await page.getByRole('button',{name:'Nova fragrância',exact:true}).click();await page.locator('[name=name]').fill('Coco & Baunilha');assert.equal(await page.locator('[name=photoUrl]').isVisible(),false);await page.getByText('Descrição, fotografia e documentos',{exact:true}).click();await page.locator('[name=description]').fill('Uma descrição opcional de teste.');assert.equal(await page.locator('[name=photoUrl]').isVisible(),true);await page.getByRole('button',{name:'Guardar ficha',exact:true}).click();assert.match(await page.locator('#aeFlCardsV1').innerText(),/Capacidade por definir/);
 async function historyAction(name){await page.getByRole('button',{name:'Histórico',exact:true}).click();await page.getByRole('button',{name,exact:true}).click()}
 async function confirm(quantity,note=''){await page.locator('[name=quantity]').fill(quantity);await page.locator('[name=note]').fill(note);if(quantity==='12'){await page.locator('dialog form').evaluate(f=>{f.requestSubmit();f.requestSubmit()})}else await page.getByRole('button',{name:'Confirmar',exact:true}).click()}
@@ -66,5 +72,28 @@ await photoSlot.click();
 await page.getByRole('button',{name:'Remover fotografia',exact:true}).click();
 await page.getByRole('button',{name:'Guardar ficha',exact:true}).click();
 assert.match(await photoSlot.innerText(),/Sem fotografia/);
+if(width===390){
+ await page.evaluate(()=>{
+  db.settings.businessEmail='cliente@example.test';
+  db.settings.businessPhone='912345678';
+  const row=db.settings.manualFragranceLibraryV1.find(item=>item.name==='Ficha preparada');
+  for(let i=0;i<15;i++)db.settings.manualFragranceLibraryV1.push({...row,id:'pdf-'+i,name:'Aroma '+i});
+  db.settings.manualFragranceLibraryV1.push({...row,id:'pdf-archived',name:'Aroma arquivado',archived:true});
+  window.pdfText=[];
+  const original=CanvasRenderingContext2D.prototype.fillText;
+  CanvasRenderingContext2D.prototype.fillText=function(value,...args){window.pdfText.push(value);return original.call(this,value,...args)};
+ });
+ const downloadEvent=page.waitForEvent('download');
+ await page.getByRole('button',{name:'PDF para clientes',exact:true}).click();
+ const download=await downloadEvent;
+ assert.equal(download.suggestedFilename(),'ArtEssencia_Fragrancias_Disponiveis.pdf');
+ const pdf=fs.readFileSync(await download.path()).toString('latin1');
+ assert.match(pdf,/^%PDF-1\.4/);
+ assert.match(pdf,/\/Count 2\b/);
+ const drawn=await page.evaluate(()=>window.pdfText.join('\n'));
+ assert.match(drawn,/cliente@example.test.*912345678/);
+ assert.match(drawn,/Ficha preparada/);
+ assert.doesNotMatch(drawn,/Aroma arquivado|Baunilha da Polinésia Francesa|Maçã & Canela|138 ml/);
+}
 assert.deepEqual(errors,[]);console.log('PASS interactions, persistence, save failure, isolation, layout '+width);await context.close();
 }}finally{await browser.close()}})().catch(e=>{console.error(e);process.exit(1)});
