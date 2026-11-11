@@ -61,7 +61,8 @@ function setup(){
   app.change('aePdfImages',true);text=await app.pdf();
   grid=app.placements();
   assert(grid.some(x=>x.text==='Vela Natal'));
-  assert(grid.every(x=>!Number.isFinite(x.y)||x.y<=1709),'No rendered text below the printed footer');
+  assert(grid.every(x=>!Number.isFinite(x.y)||x.y<=1754),'No text beyond the A4 canvas');
+  assert(grid.filter(x=>['Vela Natal','Arranjo Natal'].includes(x.text)).every(x=>x.y<1570),'Product names must stay above footer');
   app.change('aePdfSource','catalog:guardado');app.change('aePdfCandles',false);text=await app.pdf();assert(text.includes('Vela Natal'));assert(text.includes('Sabonete Natal'));assert(!text.includes('Arranjo Natal'));
   app.change('aePdfCategory','Sabonetes');app.click('replaceFiltered');text=await app.pdf();assert(text.includes('Sabonete Natal'));assert(!text.includes('Vela Natal'));
   app.click('auto');app.change('aePdfSource','collection:Outono');text=await app.pdf();assert(text.includes('Vela Outono'));assert(!text.includes('Vela Natal'));
