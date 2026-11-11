@@ -139,7 +139,7 @@ const report=page.locator('dialog.fl-report-dialog');
 assert.equal(await report.locator('[data-stat=used] strong').innerText(),'35 ml');
 assert.equal(await report.locator('[data-stat=refill] strong').innerText(),'100 ml');
 assert.equal(await report.locator('[data-stat=fragrances] strong').innerText(),'3');
-assert.equal(await report.locator('.fl-report-item').count(),3);
+assert.equal(await report.locator('.fl-report-item').count(),4);
 assert.match(await report.locator('.fl-report-item').first().innerText(),/Ficha preparada[\s\S]*16 ml/);
 assert.match(await report.innerText(),/Arquivo de Teste/);
 await report.locator('[name=period]').selectOption('quarter');
