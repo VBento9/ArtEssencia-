@@ -5,6 +5,13 @@
 const FIELD='manualFragranceLibraryV1';
 const ledger=window.FragranceLedger;
 const FAMILIES=['Por classificar','Floral','Frutada','Cítrica','Gourmand','Amadeirada','Aromática','Especiada','Oriental','Outra'];
+const FAMILY_EXAMPLES={
+ Floral:'rosa, jasmim, peónia',Frutada:'maçã, figo, frutos vermelhos',
+ Cítrica:'limão, laranja, bergamota',Gourmand:'baunilha, chocolate, caramelo',
+ Amadeirada:'cedro, sândalo, vetiver',Aromática:'lavanda, alecrim, menta',
+ Especiada:'canela, cravinho, gengibre',Oriental:'âmbar, resinas, incenso'
+};
+const COMMON_NOTES='Dosagens de referência — Velas: 7% a 10%. Velas de massagem: 2%. Sabonetes: 0,5% a 1,5%. Confirma a adequação da fragrância e o limite para a aplicação na documentação do fornecedor antes de usar.';
 const RECEIPT=[
  ['Baunilha da Polinésia Francesa','VAINILLA DE LA POLINESIA FRANCESA'],
  ['Maçã & Canela — Manzana & Canela','MANZANA & CANELA'],
@@ -139,10 +146,16 @@ function dialog(title,fields,existing,focusPhoto=false){
   const wrapper=document.createElement('label');wrapper.textContent=label;
   let control;
   if(type==='textarea'){control=document.createElement('textarea');control.rows=3}
-  else if(type==='family'){control=document.createElement('select');for(const v of FAMILIES){const o=document.createElement('option');o.value=v;o.textContent=v;control.append(o)}}
+  else if(type==='family'){control=document.createElement('select');for(const v of FAMILIES){const o=document.createElement('option');o.value=v;o.textContent=FAMILY_EXAMPLES[v]?v+' — '+FAMILY_EXAMPLES[v]:v;control.append(o)}}
   else{control=document.createElement('input');control.type=type==='url'?'url':'text';control.maxLength=type==='url'?600:220}
-  control.name=key;control.value=existing?.[key]||'';if(key==='name')control.required=true;
-  wrapper.append(control);(['description','applications','technicalNotes','photoUrl','ifraUrl','sdsUrl'].includes(key)?extra:grid).append(wrapper);
+  control.name=key;control.value=existing?.[key]||(type==='family'?FAMILIES[0]:'');if(key==='name')control.required=true;
+  wrapper.append(control);
+  if(type==='family'){
+   const help=document.createElement('small');
+   help.textContent='Escolhe a nota que mais se destaca. Se tiveres dúvidas, deixa «Por classificar».';
+   wrapper.append(help);
+  }
+  (['description','applications','technicalNotes','photoUrl','ifraUrl','sdsUrl'].includes(key)?extra:grid).append(wrapper);
  }
  if(!existing){
   grid.insertAdjacentHTML('beforeend','<label>Quantidade inicial (ml)<input name="initialQuantity" inputmode="decimal"></label><label>Capacidade de referência (ml)<input name="initialCapacity" inputmode="decimal"></label>');
@@ -179,7 +192,12 @@ function dialog(title,fields,existing,focusPhoto=false){
   }
  };
  refreshPhoto();
- form.append(photo,grid,details);
+ const commonNotes=document.createElement('fieldset');
+ commonNotes.className='fl-technical-notes';
+ const legend=document.createElement('legend');legend.textContent='Notas técnicas comuns';
+ const note=document.createElement('p');note.textContent=COMMON_NOTES;
+ commonNotes.append(legend,note);
+ form.append(photo,grid,commonNotes,details);
  const actions=document.createElement('div');actions.className='ae-fl-dialog-actions-v1';
  const cancel=document.createElement('button');cancel.type='button';cancel.className='btn';cancel.textContent='Cancelar';cancel.addEventListener('click',()=>d.close());
  const submit=document.createElement('button');submit.type='submit';submit.className='btn primary';submit.textContent='Guardar ficha';actions.append(cancel,submit);
@@ -207,7 +225,7 @@ function dialog(title,fields,existing,focusPhoto=false){
 const FIELDS=[['name','Nome utilizado no atelier','text'],['originalName','Nome comercial / original','text'],
  ['family','Família olfativa','family'],['description','Descrição olfativa','textarea'],
  ['applications','Aplicações / recomendações confirmadas','textarea'],['supplier','Fornecedor','text'],
- ['reference','Referência do fabricante','text'],['technicalNotes','Notas técnicas','textarea'],
+ ['reference','Referência do fabricante','text'],['technicalNotes','Notas técnicas da fragrância','textarea'],
  ['photoUrl','Ligação à fotografia (opcional)','url'],['ifraUrl','Ligação ao certificado IFRA (opcional)','url'],
  ['sdsUrl','Ligação à ficha de segurança (opcional)','url']];
 function openEditor(id,focusPhoto=false){dialog(id?'Editar ficha de fragrância':'Nova fragrância',FIELDS,id?rows().find(x=>x.id===id):null,focusPhoto)}
@@ -264,7 +282,7 @@ function batchSetup(){
 }
 function exportCsv(){
  const headers=['Disponível ml','Capacidade ml','Movimentos JSON','Nome','Nome original','Família','Descrição','Aplicações','Fornecedor','Referência','Notas técnicas','Origem','Estado','IFRA','FDS'];
- const csv=[headers,...rows().map(x=>[hasBalance(x)?ledger.balance(x)/1000:'',x.capacityUnits?x.capacityUnits/1000:'',JSON.stringify(x.movements||[]),x.name,x.originalName,x.family,x.description,x.applications,x.supplier,x.reference,x.technicalNotes,x.source,x.archived?'Arquivada':'Ativa',x.ifraUrl,x.sdsUrl])]
+ const csv=[headers,...rows().map(x=>[hasBalance(x)?ledger.balance(x)/1000:'',x.capacityUnits?x.capacityUnits/1000:'',JSON.stringify(x.movements||[]),x.name,x.originalName,x.family,x.description,x.applications,x.supplier,x.reference,[COMMON_NOTES,x.technicalNotes].filter(Boolean).join('\n'),x.source,x.archived?'Arquivada':'Ativa',x.ifraUrl,x.sdsUrl])]
   .map(a=>a.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');
  const url=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
  const a=document.createElement('a');a.href=url;a.download='ArtEssencia_Biblioteca_Fragrancias.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
