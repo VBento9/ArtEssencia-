@@ -104,10 +104,10 @@ if(width===390){
  const drawn=await page.evaluate(()=>window.pdfText.join('\n'));
  assert.match(drawn,/cliente@example.test\n912345678/);
  assert.match(drawn,/Ficha preparada/);
- assert.match(drawn,/Encontra o teu aroma/);
+ assert.match(drawn,/Seleção disponível para encomenda/);
  assert.match(drawn,/Doces/);
  assert.match(drawn,/Indica o nome da fragrância ao encomendar/);
- assert.equal(await page.evaluate(()=>window.pdfImages),1);
+ assert.equal(await page.evaluate(()=>window.pdfImages),0);
  assert.doesNotMatch(drawn,/Aroma arquivado|Baunilha da Polinésia Francesa|Maçã & Canela|138 ml/);
 }
 assert.deepEqual(errors,[]);console.log('PASS interactions, persistence, save failure, isolation, layout '+width);await context.close();
