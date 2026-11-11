@@ -12,7 +12,7 @@ const editions=[{id:'natal',name:'Natal',data:{products:[{id:'r1'},{id:'r2'},{id
 const db={products};const original=JSON.stringify(db);
 let stored=JSON.stringify({scope:'published',selected:null,images:false});
 function setup(){
-  const nodes=new Map();let ready,drawn=[],rpcError=false,rpcCalls=0;
+  const nodes=new Map();let ready,drawn=[],placements=[],pagesMade=0,rpcError=false,rpcCalls=0;
   class Node{
     constructor(){this.events={};this.dataset={};this.value='';this.hidden=false;this.options=[];}
     set id(v){this._id=v;nodes.set(v,this);}get id(){return this._id;}
@@ -30,7 +30,7 @@ function setup(){
     localStorage:{getItem:()=>stored,setItem:(k,v)=>{assert.equal(k,'artessencia.catalog.pdf.prefs.v2');stored=v;}},toast:()=>{},
     document:{readyState:'loading',getElementById:id=>nodes.get(id),querySelectorAll:()=>[card],createElement:()=>new Node(),head:new Node(),addEventListener:(event,fn)=>{ready=fn;}},
     drawArtEssenciaHeader:async(ctx,t,subtitle)=>{drawn.push(subtitle);},drawCatalogFooter:()=>{},
-    createCatalogPrintCanvas:()=>({getContext:()=>({measureText:t=>({width:String(t).length*9}),fillText:t=>drawn.push(String(t)),fillRect(){},strokeRect(){},beginPath(){},moveTo(){},lineTo(){},stroke(){}}),toBlob:cb=>cb({})}),
+    createCatalogPrintCanvas:()=>{pagesMade++;return {getContext:()=>({measureText:t=>({width:String(t).length*9}),fillText:(t,x,y)=>{drawn.push(String(t));placements.push({text:String(t),x,y,page:pagesMade});},fillRect(){},strokeRect(){},beginPath(){},moveTo(){},lineTo(){},stroke(){}}),toBlob:cb=>cb({})};},
     jpegBlobsToPDF:async()=>drawn
   };
   vm.createContext(env);vm.runInContext(source,env);ready();
@@ -39,7 +39,8 @@ function setup(){
     async open(){card.querySelector('.catalog-actions').first.events.click();await new Promise(resolve=>setImmediate(resolve));},
     change(id,value){const n=nodes.get(id);if(typeof value==='boolean')n.checked=value;else n.value=value;panel.events.change({target:n});},
     click(action){panel.events.click({target:{closest:()=>({dataset:{aeAction:action}})}});},
-    async pdf(){drawn=[];return env.window.buildMenuPdfBlob();}
+    placements:()=>placements.slice(),pageCount:()=>pagesMade,
+    async pdf(){drawn=[];placements=[];pagesMade=0;return env.window.buildMenuPdfBlob();}
   };
 }
 (async()=>{
@@ -51,11 +52,40 @@ function setup(){
   assert.match(app.nodes.get('aePdfSummary').textContent,/Natal · Só velas — 2 produto/);
   app=setup();await app.open();text=await app.pdf();assert(text.includes('Vela Natal'));assert(!text.includes('Vela Outono'));
   app.change('aePdfScope','all');app.change('aePdfSource','edition:natal');text=await app.pdf();assert(text.includes('Vela Natal rascunho'));assert(!text.includes('Arquivada'));
+  // Products in one category appear on the same A4 row, in two independent columns.
+  let grid=app.placements();
+  const first=grid.find(x=>x.text==='Vela Natal'),second=grid.find(x=>x.text==='Vela Natal rascunho');
+  assert(first&&second,'Both product names must be rendered');
+  assert.equal(first.page,second.page);assert.equal(first.y,second.y);
+  assert(second.x>first.x+500,'Second product must occupy a distinct right-hand column');
+  app.change('aePdfImages',true);text=await app.pdf();
+  grid=app.placements();
+  assert(grid.some(x=>x.text==='Vela Natal'));
+  assert(grid.every(x=>!Number.isFinite(x.y)||x.y<=1709),'No rendered text below the printed footer');
   app.change('aePdfSource','catalog:guardado');app.change('aePdfCandles',false);text=await app.pdf();assert(text.includes('Vela Natal'));assert(text.includes('Sabonete Natal'));assert(!text.includes('Arranjo Natal'));
   app.change('aePdfCategory','Sabonetes');app.click('replaceFiltered');text=await app.pdf();assert(text.includes('Sabonete Natal'));assert(!text.includes('Vela Natal'));
   app.click('auto');app.change('aePdfSource','collection:Outono');text=await app.pdf();assert(text.includes('Vela Outono'));assert(!text.includes('Vela Natal'));
   app.change('aePdfSource','edition:missing');await assert.rejects(app.pdf(),/não está disponível/);
   app.change('aePdfSource','edition:natal');app.setError(true);await assert.rejects(app.pdf(),/ligação à Cloud/);
   assert(app.calls()>0);assert.equal(JSON.stringify(db),original);
+  // A long catalogue must paginate with section headings; never render outside the A4 content area.
+  const originalLength=products.length;
+  const generated=Array.from({length:29},(_,i)=>({
+    code:'GRID-'+String(i+1).padStart(2,'0'),name:'Produto Coluna '+String(i+1).padStart(2,'0'),
+    category:'Velas em molde',shopVisible:true,price:5
+  }));
+  products.push(...generated);
+  const lastPreferences=stored;
+  stored=JSON.stringify({scope:'published',selected:null,images:true,source:'',candles:false});
+  const many=setup();await many.open();await many.pdf();
+  assert(many.pageCount()>=2,'Large customer catalogues must paginate');
+  const positions=many.placements();
+  const columns=positions.filter(x=>x.text.startsWith('Produto Coluna '));
+  assert.equal(columns.length,generated.length);
+  assert(columns.every(x=>x.x>=80&&x.x<=1160&&x.y<1570));
+  assert(columns.some((x,i)=>columns.some((other,j)=>i!==j&&other.page===x.page&&other.y===x.y&&Math.abs(other.x-x.x)>500)),
+    'Product cards must share rows in two columns');
+  products.splice(originalLength);stored=lastPreferences;
+  assert.equal(JSON.stringify(db),original);
   console.log('PASS: real UI handlers select Natal + candles, saved catalogue and collection; scoped PDF content, publication/archive limits, persistence, replace-filter action, missing/offline failures, no product writes.');
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -1,0 +1,23 @@
+name: Catalog PDF two-column layout
+on:
+  pull_request:
+    paths:
+      - 'catalog-pdf-manager-v2.js'
+      - 'tests/catalog-pdf-selector.test.cjs'
+      - '.github/workflows/catalog-pdf-grid.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'catalog-pdf-manager-v2.js'
+      - 'tests/catalog-pdf-selector.test.cjs'
+      - '.github/workflows/catalog-pdf-grid.yml'
+jobs:
+  pdf-grid:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate product PDF grid and source selection
+        run: node tests/catalog-pdf-selector.test.cjs

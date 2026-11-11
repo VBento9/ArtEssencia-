@@ -273,54 +273,94 @@
     const w=img.naturalWidth*scale,h=img.naturalHeight*scale;
     ctx.drawImage(img,x+(width-w)/2,y+(height-h)/2,w,h);
   }
+  // Grelha editorial A4 em duas colunas, independente dos filtros de seleção.
+  const PDF_GRID={left:80,right:644,cardWidth:516,categoryHeight:57,
+    top:235,bottom:1570,withPhoto:318,withoutPhoto:157};
+  function productNameLines(ctx,name,width){
+    const words=clean(name).split(/\s+/).filter(Boolean),lines=[];let line='';
+    for(const word of words){
+      const candidate=line?line+' '+word:word;
+      if(ctx.measureText(candidate).width<=width){line=candidate;continue;}
+      if(line){lines.push(line);line=word;}
+      else{lines.push(fit(ctx,word,width));line='';}
+    }
+    if(line)lines.push(line);
+    if(lines.length>2){
+      const second=lines.slice(1).join(' ');
+      return [lines[0],fit(ctx,second,width)];
+    }
+    return lines.map(item=>fit(ctx,item,width));
+  }
   async function buildPdf(){
     if(settings.source.startsWith('edition:')){try{await refreshSources();}catch(_){throw new Error('Não foi possível confirmar os produtos da edição. Verifica a ligação à Cloud.');}}
     if(settings.source&&!chosenSource())throw new Error('O catálogo selecionado não está disponível. Abre «Escolher catálogo» e escolhe novamente.');
-    const rows=sorted(selection());
-    if(!rows.length)throw new Error('Seleciona pelo menos um produto para o PDF');
-    const pages=[];let canvas,ctx,y=235,currentCategory='';
-    const pageHeight=3508,pageWidth=2480,limit=1570,rowHeight=settings.images?150:82;
+    const products=sorted(selection());
+    if(!products.length)throw new Error('Seleciona pelo menos um produto para o PDF');
+    const pageHeight=3508,pageWidth=2480,pages=[];
+    const rowHeight=settings.images?PDF_GRID.withPhoto:PDF_GRID.withoutPhoto;
+    let canvas,ctx,y=PDF_GRID.top,categoryOnPage='',column=0;
     async function startPage(){
       canvas=createCatalogPrintCanvas();
       ctx=canvas.getContext('2d');
       if(!ctx)throw new Error('Não foi possível preparar a página PDF');
-      await drawArtEssenciaHeader(ctx,'CATÁLOGO',(sourceLabel()+(settings.candles?' · Só velas':'')).slice(0,65)+' · '+new Date().toLocaleDateString('pt-PT'));
-      y=235;currentCategory='';
+      await drawArtEssenciaHeader(ctx,'CATÁLOGO',
+        (sourceLabel()+(settings.candles?' · Só velas':'')).slice(0,65)+' · '+new Date().toLocaleDateString('pt-PT'));
+      y=PDF_GRID.top;categoryOnPage='';column=0;
     }
     async function finishPage(){
       drawCatalogFooter(ctx);
       ctx.fillStyle='#806b62';ctx.textAlign='right';ctx.font='18px Arial';
       ctx.fillText('Página '+(pages.length+1),1150,1603);ctx.textAlign='left';
-      const jpg=await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('Não foi possível gerar a página PDF')),'image/jpeg',0.98));
-      pages.push(jpg);
+      const jpeg=await new Promise((resolve,reject)=>canvas.toBlob(
+        blob=>blob?resolve(blob):reject(new Error('Não foi possível gerar a página PDF')),'image/jpeg',0.97));
+      pages.push(jpeg);
       canvas.width=0;canvas.height=0;
     }
-    await startPage();
-    for(const p of rows){
-      const cat=category(p);
-      if(y+(cat!==currentCategory?58:0)+rowHeight>limit){
-        await finishPage();await startPage();
-      }
-      if(cat!==currentCategory){
-        ctx.fillStyle='#75614f';ctx.fillRect(70,y,1100,43);
-        ctx.fillStyle='#fff';ctx.font='bold 21px Arial';
-        ctx.fillText(fit(ctx,cat.toLocaleUpperCase('pt-PT'),1050),88,y+29);
-        y+=57;currentCategory=cat;
-      }
-      const textX=settings.images?225:90;
+    function heading(cat){
+      ctx.fillStyle='#75614f';ctx.fillRect(80,y,1080,43);
+      ctx.fillStyle='#fff';ctx.font='bold 21px Arial';
+      ctx.fillText(fit(ctx,cat.toLocaleUpperCase('pt-PT'),1030),97,y+29);
+      y+=PDF_GRID.categoryHeight;categoryOnPage=cat;
+    }
+    async function drawCard(p,x,top){
+      const width=PDF_GRID.cardWidth,height=rowHeight-13;
+      ctx.fillStyle='#fffaf4';ctx.fillRect(x,top,width,height);
+      ctx.strokeStyle='#e0d2c2';ctx.lineWidth=1;ctx.strokeRect(x+.5,top+.5,width-1,height-1);
       if(settings.images){
         const imageUrl=clean(p.shopImageUrl||p.imageUrl||p.image||p.photo);
         const img=await loadPhoto(imageUrl);
-        try{drawPhoto(ctx,img,85,y,115,115);}catch(_){drawPhoto(ctx,null,85,y,115,115);}
+        try{drawPhoto(ctx,img,x+15,top+13,width-30,184);}
+        catch(_){drawPhoto(ctx,null,x+15,top+13,width-30,184);}
       }
-      ctx.fillStyle='#49382e';ctx.font='bold 26px Arial';
-      ctx.fillText(fit(ctx,p.name,settings.images?670:790),textX,y+35);
-      ctx.font='18px Arial';ctx.fillStyle='#806b62';
-      ctx.fillText(fit(ctx,code(p),settings.images?670:790),textX,y+69);
-      ctx.textAlign='right';ctx.fillStyle='#9a634c';ctx.font='bold 24px Arial';
-      ctx.fillText(fit(ctx,priceText(p),250),1150,y+35);ctx.textAlign='left';
-      ctx.strokeStyle='#e9dfd4';ctx.beginPath();ctx.moveTo(80,y+rowHeight-9);ctx.lineTo(1155,y+rowHeight-9);ctx.stroke();
-      y+=rowHeight;
+      ctx.textAlign='left';ctx.fillStyle='#49382e';ctx.font='bold 24px Arial';
+      const lines=productNameLines(ctx,p.name,width-38);
+      const titleY=top+(settings.images?229:42);
+      lines.forEach((line,index)=>ctx.fillText(line,x+19,titleY+index*30));
+      const metaY=top+(settings.images?289:126);
+      ctx.fillStyle='#806b62';ctx.font='18px Arial';
+      ctx.fillText(fit(ctx,code(p),240),x+19,metaY);
+      ctx.textAlign='right';ctx.fillStyle='#9a634c';ctx.font='bold 23px Arial';
+      ctx.fillText(fit(ctx,priceText(p),225),x+width-19,metaY);
+      ctx.textAlign='left';
+    }
+    await startPage();
+    for(const p of products){
+      const cat=category(p);
+      if(cat!==categoryOnPage){
+        if(column===1){column=0;y+=rowHeight;}
+        // Never put a category heading on a page without its first product.
+        if(y+PDF_GRID.categoryHeight+rowHeight>PDF_GRID.bottom){
+          await finishPage();await startPage();
+        }
+        heading(cat);
+      }
+      if(column===0&&y+rowHeight>PDF_GRID.bottom){
+        await finishPage();await startPage();heading(cat);
+      }
+      const x=column===0?PDF_GRID.left:PDF_GRID.right;
+      await drawCard(p,x,y);
+      column++;
+      if(column===2){column=0;y+=rowHeight;}
     }
     await finishPage();
     return jpegBlobsToPDF(pages,pageWidth,pageHeight);
