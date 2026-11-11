@@ -8,7 +8,8 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
   await page.goto('http://127.0.0.1:8765');await page.waitForFunction(()=>typeof consumeProduction==='function');await page.waitForTimeout(400);
   assert.deepEqual(errors,[]);
   await page.evaluate(()=>{
-   document.getElementById('authGateV1880')?.remove(); // fixture only: all remote requests are blocked
+   document.getElementById('authGateV1880')?.remove();finishAppUnlockV19135(); // authenticated synthetic fixture; remote requests remain blocked
+ // fixture only: all remote requests are blocked
    scheduleCloudPushV1860=()=>{};ensureCloudSession=async()=>({id:'fixture-owner'});cloudUser={id:'fixture-owner'};cloudStartupDone=true;cloudHydrating=false;cloudBusy=false;cloudPushRunning=false;
    cloudMeta=()=>({});relOrderPendingSet=()=>new Set();relDetectChangedOrders=()=>{};localStorage.removeItem(REL_DIRTY);
    db.stock=[{name:'Fixture wax',qty:100,unit:'g',unitCost:.01}];db.products=[{code:'FIXTURE',_rid:'fixture-product',name:'Fixture',manufactured:true,price:10,cost:1}];

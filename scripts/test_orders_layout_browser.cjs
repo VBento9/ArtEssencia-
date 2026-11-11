@@ -2,7 +2,7 @@
 const {chromium}=require('playwright'),assert=require('node:assert/strict');
 (async()=>{const browser=await chromium.launch({headless:true});try{
  async function open(width){const context=await browser.newContext({viewport:{width,height:1000},serviceWorkers:'block'}),page=await context.newPage();page.on('dialog',d=>d.accept());await page.route('**/*',r=>new URL(r.request().url()).origin==='http://127.0.0.1:8765'?r.continue():r.abort());await page.goto('http://127.0.0.1:8765');await page.waitForFunction(()=>typeof showOrder==='function');await page.waitForTimeout(400);await page.evaluate(()=>{
-  document.getElementById('authGateV1880')?.remove();scheduleCloudPushV1860=()=>{};queueOrderBusinessSyncV1757=()=>{};save=()=>{localStorage.setItem(KEY,JSON.stringify(db));renderOrders()};
+  document.getElementById('authGateV1880')?.remove();finishAppUnlockV19135();scheduleCloudPushV1860=()=>{};queueOrderBusinessSyncV1757=()=>{};save=()=>{localStorage.setItem(KEY,JSON.stringify(db));renderOrders()};
   db.clients=[];db.cash=[];db.productionRuns=[];db.packaging=[{name:'Fixture box',cost:0,capacity:1}];
   db.orders=Array.from({length:25},(_,i)=>({id:'FIX-'+String(i).padStart(2,'0'),client:'Álvaro '+i,contact:'900000000',created:'2026-10-01',delivery:'2026-11-01',status:'Pedido',payment:'Dinheiro',paid:0,box:'Fixture box',boxes:1,items:[{code:'FIX',name:'Fixture candle',qty:2,price:10,cost:2}],notes:'Fixture notes'}));
   db.orders.push({id:'HISTORY',client:'Outro',created:'2025-01-01',delivery:'2025-02-01',status:'Entregue',items:[],paid:0});go('orders');window.initialOrders=JSON.stringify(db.orders);
@@ -145,13 +145,13 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
    const rect=await input.boundingBox();assert.ok(rect.y>=0&&rect.y<1000);
   }
   await page.evaluate(()=>go('products'));
-  await page.locator('#aeProductsCompact').getByRole('button',{name:'Abrir editor',exact:true}).click();
+  await page.locator('#aeProductsCompact').getByRole('button',{name:/^(Abrir editor|Editor de produto)$/}).click();
   const field=page.locator('#products .products-form-card input:not([type=hidden])').first();
   const fieldId=await field.getAttribute('id');
   await page.evaluate(id=>{document.getElementById(id).value='Rascunho conservado'},fieldId);
   await page.waitForFunction(()=>document.getElementById('aeModuleSearch')?.getAttribute('aria-controls')==='productSearch');
   await button.click();assert.equal(await page.evaluate(()=>document.activeElement.id),'productSearch');
-  await page.locator('#aeProductsCompact').getByRole('button',{name:'Abrir editor',exact:true}).click();
+  await page.locator('#aeProductsCompact').getByRole('button',{name:/^(Abrir editor|Editor de produto)$/}).click();
   assert.equal(await page.locator('#'+fieldId).inputValue(),'Rascunho conservado');
   await page.evaluate(()=>go('dashboard'));await page.waitForFunction(()=>document.getElementById('aeModuleSearch').hidden);
   assert.equal(await button.isVisible(),false);

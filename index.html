@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.137">
+<meta name="artessencia-version" content="1.9.138">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -4112,6 +4112,13 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
     </div></div>
   </section>
 
+<section id="technicalLibrary" class="screen">
+ <div class="card"><h2>Biblioteca de Fragrâncias</h2><p>Consumos exclusivamente manuais, em ml. Independente do Stock e da Produção.</p>
+ <p class="muted">Os registos são guardados localmente e seguem a sincronização existente. Em caso de conflito Cloud, não forces o envio de uma cópia antiga. Exporta o histórico e resolve o conflito antes de continuar.</p>
+ <div class="fl-actions"><button class="btn primary" onclick="aeFragrancesV1.add()">Nova fragrância</button><button class="btn" onclick="aeFragrancesV1.importReceipt()">Importar recibo 67827</button><button class="btn" onclick="aeFragrancesV1.exportCsv()">Exportar CSV</button></div>
+ <div class="fl-filters"><label>Pesquisar<input id="aeFlSearchV1" type="search" oninput="aeFragrancesV1.render()"></label><label>Família<select id="aeFlFamilyV1" onchange="aeFragrancesV1.render()"><option value="">Todas as famílias</option></select></label><label>Estado<select id="aeFlStatusV1" onchange="aeFragrancesV1.render()"><option value="active">Ativas</option><option value="low">Nível baixo</option><option value="archived">Arquivadas</option><option value="all">Todas</option></select></label><label>Ordenar<select id="aeFlSort" onchange="aeFragrancesV1.render()"><option value="name">Nome</option><option value="quantity">Menor quantidade</option></select></label></div>
+ <p id="aeFlCountsV1" aria-live="polite"></p><div id="aeFlCardsV1" class="ae-fl-cards-v1"></div></div>
+</section>
   <section id="stock" class="screen">
     <div class="stock-hero card">
       <div>
@@ -6413,7 +6420,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.137';
+const APP_VERSION='1.9.138';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -7065,9 +7072,9 @@ function installNavKeyboard(){
 
 setTimeout(installNavKeyboard,0);
 
-const pages=[['dashboard','Dashboard'],['sale','Vendas'],['orders','Encomendas'],['quotes','Orçamentos'],['production','Produção'],['costs','Custos'],['stock','Stock'],['purchases','Compras'],['cash','Caixa'],['funds','Mapa de Fundos'],['clients','Clientes'],['email','Comunicações · Email'],['digitalStats','Estatísticas Digitais'],['reports','Relatórios'],['quantityPricing','Precificação em quantidade'],['products','Produtos'],['commercialCalendar','Calendário Comercial'],['publication','Publicação'],['catalogDigital','Catálogo Digital'],['visualCatalogs','Catálogos Visuais'],['catalogs','Catálogos'],['specialEditions','Edições Especiais'],['homepage','Homepage pública'],['socialAI','Redes Sociais / IA'],['campaigns','Campanhas'],['delivery','Entregas · futura Loja'],['legal','Informação Legal pública'],['settings','Configuração'],['cloud','Cloud Sync'],['backup','Backup']];
+const pages=[['dashboard','Dashboard'],['sale','Vendas'],['orders','Encomendas'],['quotes','Orçamentos'],['production','Produção'],['costs','Custos'],['technicalLibrary','Biblioteca de Fragrâncias'],['stock','Stock'],['purchases','Compras'],['cash','Caixa'],['funds','Mapa de Fundos'],['clients','Clientes'],['email','Comunicações · Email'],['digitalStats','Estatísticas Digitais'],['reports','Relatórios'],['quantityPricing','Precificação em quantidade'],['products','Produtos'],['commercialCalendar','Calendário Comercial'],['publication','Publicação'],['catalogDigital','Catálogo Digital'],['visualCatalogs','Catálogos Visuais'],['catalogs','Catálogos'],['specialEditions','Edições Especiais'],['homepage','Homepage pública'],['socialAI','Redes Sociais / IA'],['campaigns','Campanhas'],['delivery','Entregas · futura Loja'],['legal','Informação Legal pública'],['settings','Configuração'],['cloud','Cloud Sync'],['backup','Backup']];
 const pageIcons={
- dashboard:'🏠',sale:'➕',orders:'🧾',quotes:'📄',production:'🛠️',costs:'🧮',stock:'📦',purchases:'🛒',cash:'💶',funds:'📊',
+ dashboard:'🏠',sale:'➕',orders:'🧾',quotes:'📄',production:'🛠️',costs:'🧮',technicalLibrary:'🌿',stock:'📦',purchases:'🛒',cash:'💶',funds:'📊',
  clients:'👥',email:'✉️',digitalStats:'📈',reports:'📊',quantityPricing:'🧮',products:'🕯️',commercialCalendar:'🗓️',publication:'🌐',catalogDigital:'📱',visualCatalogs:'🖼️',catalogs:'🗂️',specialEditions:'🎉',homepage:'🖼️',socialAI:'✦',campaigns:'📣',delivery:'🚚',legal:'⚖️',settings:'⚙️',cloud:'☁️',backup:'💾'
 };
 const navGroupsV1857={dashboard:'Visão geral',sale:'Operação',costs:'Gestão',clients:'Clientes e comunicação',digitalStats:'Análise',products:'Conteúdo público',campaigns:'Marketing',delivery:'Loja e conformidade',settings:'Sistema'};
@@ -15945,9 +15952,10 @@ async function subscribeCloud(){
    }
  })
 }
-function applyCloudRow(row,source='Cloud'){if(!row?.data||typeof row.data!=='object')return false;const incomingRev=Number(row.revision||0),m0=cloudMeta(),sh0=parseLocal(CLOUD_SHADOW),knownRev=Math.max(Number(m0.remoteRevision||0),Number(m0.baseRevision||0),Number(sh0?.revision||0));if(incomingRev<knownRev){cloudLogMsg(source+' ignorada: revisão '+incomingRev+' < revisão conhecida '+knownRev);return false}if(incomingRev===knownRev&&sh0?.data&&dataFingerprint(sh0.data)!==dataFingerprint(row.data)){cloudLogMsg(source+' ignorada: resposta inconsistente na revisão '+incomingRev);return false}cloudApplying=true;try{try{localStorage.setItem(CLOUD_SAFETY,JSON.stringify({at:new Date().toISOString(),source,data:db}))}catch(e){}db=normalizeImportedDb(JSON.parse(JSON.stringify(row.data)));ensureQuotePaymentModel();ensureCostModel();ensureRecordIds();ensureClientsFromOrders();saveFromCloud();saveConfirmedShadow(row);setCloudMeta({dirty:false,conflict:false,verified:true,lastSync:new Date().toISOString(),lastCloudAt:row.updated_at||null,remoteRevision:incomingRev,baseRevision:incomingRev,localFingerprint:dataFingerprint(row.data)});cloudConflict=null;cloudLogMsg(source+' aplicada · revisão '+incomingRev);return true}finally{cloudApplying=false;renderCloudUI()}}
+function applyCloudRow(row,source='Cloud'){if(!row?.data||typeof row.data!=='object')return false;assertManualFragranceHistoryV1(db,row.data);const incomingRev=Number(row.revision||0),m0=cloudMeta(),sh0=parseLocal(CLOUD_SHADOW),knownRev=Math.max(Number(m0.remoteRevision||0),Number(m0.baseRevision||0),Number(sh0?.revision||0));if(incomingRev<knownRev){cloudLogMsg(source+' ignorada: revisão '+incomingRev+' < revisão conhecida '+knownRev);return false}if(incomingRev===knownRev&&sh0?.data&&dataFingerprint(sh0.data)!==dataFingerprint(row.data)){cloudLogMsg(source+' ignorada: resposta inconsistente na revisão '+incomingRev);return false}cloudApplying=true;try{try{localStorage.setItem(CLOUD_SAFETY,JSON.stringify({at:new Date().toISOString(),source,data:db}))}catch(e){}db=normalizeImportedDb(JSON.parse(JSON.stringify(row.data)));ensureQuotePaymentModel();ensureCostModel();ensureRecordIds();ensureClientsFromOrders();saveFromCloud();saveConfirmedShadow(row);setCloudMeta({dirty:false,conflict:false,verified:true,lastSync:new Date().toISOString(),lastCloudAt:row.updated_at||null,remoteRevision:incomingRev,baseRevision:incomingRev,localFingerprint:dataFingerprint(row.data)});cloudConflict=null;cloudLogMsg(source+' aplicada · revisão '+incomingRev);return true}finally{cloudApplying=false;renderCloudUI()}}
 function forceApplyCloudRow(row,source='Cloud manual'){
  if(!row?.data||typeof row.data!=='object')return false;
+ assertManualFragranceHistoryV1(db,row.data);
  const incomingRev=Number(row.revision||0);
  cloudApplying=true;
  try{
@@ -16094,6 +16102,25 @@ async function fetchCloudRowAuthoritative(user){
  if(best)cloudLogMsg('Leitura autoritativa cloud · revisão '+Number(best.revision||0));
  return best
 }
+// Only the manual fragrance library is append-only across Cloud replacements.
+function assertManualFragranceHistoryV1(previous,next){
+ const key='manualFragranceLibraryV1',before=previous?.settings?.[key],after=next?.settings?.[key];
+ if(before===undefined&&after===undefined)return;
+ const reject=()=>{setCloudMeta({dirty:true,conflict:true,verified:false});const error=new Error('Conflito na Biblioteca de Fragrâncias: a substituição apagaria ou alteraria o histórico. Os dados foram preservados.');error.code='40001';throw error};
+ if(before!==undefined&&!Array.isArray(before)||after!==undefined&&!Array.isArray(after))return reject();
+ const target=new Map();
+ for(const row of after||[]){
+  if(!row?.id||target.has(row.id)||row.movements!==undefined&&!Array.isArray(row.movements))return reject();
+  const ids=new Set();for(const m of row.movements||[]){if(!m?.id||ids.has(m.id))return reject();ids.add(m.id)}
+  target.set(row.id,row);
+ }
+ for(const row of before||[]){
+  const replacement=target.get(row.id);if(!replacement)return reject();
+  const old=row.movements||[],current=replacement.movements||[];
+  if(current.length<old.length)return reject();
+  for(let i=0;i<old.length;i++)if(stableStringify(old[i])!==stableStringify(current[i]))return reject();
+ }
+}
 async function saveCloudStateSimple(user,localData,{force=false}={}){
  const meta=cloudMeta();
  let expectedRev=Number(meta.baseRevision||0);
@@ -16102,6 +16129,9 @@ async function saveCloudStateSimple(user,localData,{force=false}={}){
    remote=await fetchCloudRowAuthoritative(user);
    expectedRev=Number(remote?.revision||0);
  }
+ // Validate the same remote snapshot whose revision is used by the existing CAS write.
+ if(!remote)remote=await fetchCloudRowAuthoritative(user);
+ assertManualFragranceHistoryV1(remote?.data,localData);
  const payload={
    data:localData,
    app_version:APP_VERSION,
@@ -16200,6 +16230,7 @@ function trySafeOperationalRebaseV19102(remote,baseRevision){
  }
  const before=relClone(db);
  try{
+   assertManualFragranceHistoryV1(db,merged);
    for(const k of CLOUD_OPERATIONAL_KEYS_V139){
      if(merged[k]!==undefined)db[k]=relClone(merged[k]);
    }
@@ -16356,6 +16387,7 @@ async function operationalCloudPushStateV1858(user){
 }
 function mergeOperationalCloudSnapshotV139(remoteData){
  if(!remoteData||typeof remoteData!=='object')return false;
+ if(remoteData.settings!==undefined)assertManualFragranceHistoryV1(db,remoteData);
  if(remoteData.visualCatalogsV1935!==undefined&&!visualCatalogStateValidV1935(remoteData.visualCatalogsV1935))throw new Error('Rascunhos Cloud inválidos; dados locais preservados');
  let changed=false;
  CLOUD_OPERATIONAL_KEYS_V139.forEach(k=>{
@@ -16959,6 +16991,15 @@ async function revalidateCloudConflictV19106(){
  return true;
 }
 async function cloudResolveConflict(choice){
+ // Preflight before clearing conflict flags or synchronising relational records.
+ if(choice==='local'||choice==='remote'){
+  try{
+   const user=cloudUser||await ensureCloudSession();if(!user)return false;
+   const remote=await fetchCloudRowAuthoritative(user);
+   if(choice==='local')assertManualFragranceHistoryV1(remote?.data,db);
+   else assertManualFragranceHistoryV1(db,remote?.data);
+  }catch(error){toast(error.message||'Não foi possível validar o histórico da biblioteca');return false}
+ }
  if(hasPendingProductEditsV19102()||cloudConflict?.type==='product'){toast('Resolve os campos na área de Produtos; as fichas pendentes estão protegidas');return false}
  const restorePending=hasRestorePendingV12645();
  if(restorePending&&choice==='remote'){
@@ -17962,7 +18003,7 @@ function renderPublicationCenterV1812(){
    '<button class="btn" type="button" onclick="publicationOpenCostsV1812(decodeURIComponent(\''+encoded+'\'))">Custos / ficha</button></div></article>';
  }).join(''):'<div class="publication-empty-v1925 empty">Nenhum produto corresponde à pesquisa ou aos filtros.</div>';
 }
- function renderAll(){ensureQuotePaymentModel();ensureCostModel();syncPackagingSelect();renderTechnicalCategoriesV1863();renderClientSuggestions();renderDashboard();renderPicker();renderCart();renderOrders();renderProduction();renderCosts();renderStock();renderPurchases();renderCash();if(typeof renderFundsV1929==='function')renderFundsV1929();renderClients();renderQuotes();renderQuoteCart();renderProducts();renderProductWorkflowV1851(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null);renderProductPublicStatusV1850(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null);renderCommercialCalendarV1850();renderPublicationCenterV1812();renderCatalogs();renderVisualCatalogsV192();renderSpecialEditionsAdmin();renderCatalogDigitalCenterV160();renderSettings();renderAprecoImportV1753();renderBusinessSettings();if(!personalizationCategorySelectOpenV1794)renderPersonalizationLibraryV1791();renderReports();renderDigitalStatsV1795();renderLaunchStatsV1813();renderQuantityPricingV1750();renderLegalSummaryV1286();renderCloudUI();renderBackupInfo();renderOrderNotificationsV12624();renderPushStatusV12625();const s=sec();if(document.getElementById('lockMinutes'))document.getElementById('lockMinutes').value=String(s.lockMinutes??15)}
+ function renderAll(){if(typeof window.renderTechnicalLibraryV1==='function')window.renderTechnicalLibraryV1();ensureQuotePaymentModel();ensureCostModel();syncPackagingSelect();renderTechnicalCategoriesV1863();renderClientSuggestions();renderDashboard();renderPicker();renderCart();renderOrders();renderProduction();renderCosts();renderStock();renderPurchases();renderCash();if(typeof renderFundsV1929==='function')renderFundsV1929();renderClients();renderQuotes();renderQuoteCart();renderProducts();renderProductWorkflowV1851(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null);renderProductPublicStatusV1850(editingProductCodeV147?findProductByCodeV147(editingProductCodeV147):null);renderCommercialCalendarV1850();renderPublicationCenterV1812();renderCatalogs();renderVisualCatalogsV192();renderSpecialEditionsAdmin();renderCatalogDigitalCenterV160();renderSettings();renderAprecoImportV1753();renderBusinessSettings();if(!personalizationCategorySelectOpenV1794)renderPersonalizationLibraryV1791();renderReports();renderDigitalStatsV1795();renderLaunchStatsV1813();renderQuantityPricingV1750();renderLegalSummaryV1286();renderCloudUI();renderBackupInfo();renderOrderNotificationsV12624();renderPushStatusV12625();const s=sec();if(document.getElementById('lockMinutes'))document.getElementById('lockMinutes').value=String(s.lockMinutes??15)}
 document.addEventListener('input',e=>{if(e.target&&['costPackQty','costPackPrice'].includes(e.target.id))updateCostPreview()});
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;installBtn.classList.remove('hidden');installBanner.classList.remove('hidden')});
 async function installApp(){if(!deferredPrompt)return toast('No Chrome: menu ⋮ → Adicionar ao ecrã principal / Instalar app');deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;installBtn.classList.add('hidden');installBanner.classList.add('hidden')}
@@ -18175,6 +18216,10 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 <script defer src="./boxes-atelier-ui-v1.js"></script>
 <link rel="stylesheet" href="./quantity-pricing-v2.css">
 <script defer src="./quantity-pricing-v2.js"></script>
+<link rel="stylesheet" href="./fragrance-library.css">
+<script defer src="./fragrance-ledger.js"></script>
+<script defer src="./fragrance-library.js"></script>
+
 </body></html>
 
 <style id="artessencia-v1-overrides">

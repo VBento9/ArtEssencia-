@@ -8,9 +8,19 @@ new vm.Script(source,{filename:'product-technical-sheet.js'});
  const browser=await chromium.launch({headless:true});
  try{
   const context=await browser.newContext({viewport:{width:760,height:900}});
-  await context.addInitScript(()=>{window.print=()=>{window.__printRequested=true}});
+
   const page=await context.newPage();
-  await page.setContent('<!doctype html><html lang="pt-PT"><body><main>Ficha técnica · teste isolado</main></body></html>');
+  await context.route('**/*',route=>{
+   const url=new URL(route.request().url());
+   if(url.href==='https://fixture.invalid/technical-sheet')return route.fulfill({contentType:'text/html; charset=utf-8',body:'<!doctype html><html lang="pt-PT"><meta charset="utf-8"><body><main>Ficha técnica · teste isolado</main></body></html>'});
+   if(url.href==='https://fixture.invalid/brand-artessencia-transparente.svg')return route.fulfill({contentType:'image/svg+xml',body:fs.readFileSync('brand-artessencia-transparente.svg','utf8')});
+   return route.abort();
+  });
+  await page.goto('https://fixture.invalid/technical-sheet');
+  await page.evaluate(()=>{
+   const nativeOpen=window.open.bind(window);window.__printRequests=0;
+   window.open=(...args)=>{const child=nativeOpen(...args);if(child)child.print=()=>{window.__printRequests++};return child};
+  });
   await page.evaluate(()=>{
    const image='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jgAAAAABJRU5ErkJggg==';
    const product={code:'AE-TESTE-001',name:'Vela artesanal de amostra com um título comprido',
@@ -32,6 +42,7 @@ new vm.Script(source,{filename:'product-technical-sheet.js'});
   await dialog.waitFor({state:'visible'});
   assert.equal(await dialog.locator('.ts-table tbody tr').count(),90);
   async function checkPrint(button,size,expectedCost){
+   const printCount=await page.evaluate(()=>window.__printRequests);
    const opened=context.waitForEvent('page');
    await dialog.getByRole('button',{name:button}).click();
    const popup=await opened;
@@ -65,6 +76,9 @@ new vm.Script(source,{filename:'product-technical-sheet.js'});
     }).map(el=>el.className||el.tagName);
    });
    assert.deepEqual(overflow,[],size+' content must stay within printable margins');
+   await page.waitForFunction(n=>window.__printRequests>n,printCount);
+   assert.equal(await page.evaluate(()=>window.__printRequests),printCount+1);
+   const closed=popup.waitForEvent('close');
    const pdf=await popup.pdf({preferCSSPageSize:true,printBackground:true});
    if(process.env.AE_PDF_OUTPUT){fs.mkdirSync(process.env.AE_PDF_OUTPUT,{recursive:true});fs.writeFileSync(process.env.AE_PDF_OUTPUT+'/'+size+'.pdf',pdf)}
    assert.equal(pdf.subarray(0,4).toString(),'%PDF');
@@ -73,9 +87,8 @@ new vm.Script(source,{filename:'product-technical-sheet.js'});
    assert(pages>=2,'A long technical sheet should span multiple PDF pages');
    // Simula o fecho do diálogo de impressão; o separador auxiliar é libertado
    // mesmo que a impressora continue fisicamente a imprimir.
-   assert.equal(await popup.evaluate(()=>window.__printRequested),true);
-   const closed=popup.waitForEvent('close');
-   await popup.evaluate(()=>window.dispatchEvent(new Event('afterprint')));
+   // Chromium PDF generation can itself emit afterprint and close this window.
+   if(!popup.isClosed())await popup.evaluate(()=>window.dispatchEvent(new Event('afterprint'))).catch(error=>{if(!popup.isClosed())throw error});
    await closed;
    return pages;
   }

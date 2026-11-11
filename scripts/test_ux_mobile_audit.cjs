@@ -7,8 +7,8 @@ const assert = require('node:assert/strict');
 const html = fs.readFileSync('index.html', 'utf8');
 const section = html.slice(html.indexOf('const pages='), html.indexOf('const pageIcons='));
 const pages = [...section.matchAll(/\['([^']+)','([^']+)'\]/g)].map(m=>m[1]);
-assert.equal(pages.length, 30, 'All 30 modules must remain in the navigation');
-assert.equal(new Set(pages).size,30,'No duplicated module identifiers');
+assert.equal(pages.length, 31, 'All 31 modules must remain in the navigation');
+assert.equal(new Set(pages).size,31,'No duplicated module identifiers');
 assert.ok(pages.includes('funds'),'Mapa de Fundos deve estar presente na navegação móvel');
 assert.match(html, /groupNavigationVUX20261019/, 'Navigation grouping must be present');
 assert.match(html, /aeUXOpenNavGroup/, 'Navigation must reopen the selected group');
@@ -33,3 +33,5 @@ const hasActiveVisibility = /scrollIntoView\s*\(|\.scrollTo\s*\(/.test(
 console.log('Static baseline OK: '+pages.length+' navigation modules, mobile overflow, same PWA version.');
 console.log('Selected-module auto-visibility: '+(hasActiveVisibility?'static implementation present; device review required':'NOT implemented; device verification required'));
 console.log('Required device checks: Honor Pad 9, Honor Magic 8 Pro, navigation to last module, print/PDF, passkey, page overlays, PWA update.');
+
+assert.ok(pages.includes('technicalLibrary'), 'Manual fragrance library is reachable');

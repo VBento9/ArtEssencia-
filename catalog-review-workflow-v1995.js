@@ -95,7 +95,7 @@ function edit(code){
  // O modo compacto esconde o formulário. Abrir primeiro o editor existente,
  // sem passar pela lista geral nem criar um segundo formulário de produtos.
  var compact=el('aeProductsCompact');
- var openButton=compact&&Array.from(compact.querySelectorAll('button')).find(b=>value(b.textContent)==='Abrir editor');
+ var openButton=compact&&Array.from(compact.querySelectorAll('button')).find(b=>value(b.textContent)==='Abrir editor'||value(b.textContent)==='Editor de produto');
  if(openButton)openButton.click();
  else{
   var fallback=el('products')?.querySelector('.products-form-card');
@@ -152,8 +152,8 @@ function init(){
   // Os separadores desta vista e o módulo compacto têm de mostrar a MESMA
   // listagem. Caso contrário a navegação assinala "Lista" mas a lista está hidden.
   var compact=el('aeProductsCompact');
-  var showListButton=compact&&Array.from(compact.querySelectorAll('button')).find(b=>value(b.textContent)==='Ver catálogo');
-  if(showListButton&&(list.hidden||showListButton.getAttribute('aria-pressed')!=='true'))showListButton.click();
+  var showListButton=compact&&Array.from(compact.querySelectorAll('button')).find(b=>value(b.textContent)==='Ver catálogo'||value(b.textContent)==='Lista de produtos');
+  if(showListButton)showListButton.click();
   else if(list.hidden)list.hidden=false;
   list.classList.toggle('ae-review-focus1995',reviewing);
   listNav.setAttribute('aria-pressed',String(!reviewing));

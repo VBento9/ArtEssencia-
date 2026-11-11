@@ -5,7 +5,7 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
  const context=await browser.newContext({viewport:{width,height:1000},serviceWorkers:'block',hasTouch:true}),page=await context.newPage();
  await page.route('**/*',r=>new URL(r.request().url()).origin==='http://127.0.0.1:8765'?r.continue():r.abort());page.on('dialog',d=>d.accept());
  await page.goto('http://127.0.0.1:8765');await page.waitForFunction(()=>typeof renderClients==='function');await page.waitForTimeout(400);
- await page.evaluate(()=>{document.getElementById('authGateV1880')?.remove();scheduleCloudPushV1860=()=>{};db.clients=Array.from({length:25},(_,i)=>({id:'CLI-FIX-'+i,name:'Álvaro '+i,phone:String(912340000+i),email:'fixture'+i+'@example.invalid',note:'Nota fixture'}));db.orders=[];db.quotes=[];go('clients');window.initialClients=JSON.stringify(db.clients)});
+ await page.evaluate(()=>{document.getElementById('authGateV1880')?.remove();finishAppUnlockV19135();scheduleCloudPushV1860=()=>{};db.clients=Array.from({length:25},(_,i)=>({id:'CLI-FIX-'+i,name:'Álvaro '+i,phone:String(912340000+i),email:'fixture'+i+'@example.invalid',note:'Nota fixture'}));db.orders=[];db.quotes=[];go('clients');window.initialClients=JSON.stringify(db.clients)});
  const cards=page.locator('#clientsCards > .client-card:not([hidden])'),pages=page.locator('#clients .ae-clients-pages').first();
  assert.equal(await cards.count(),10);assert.equal(await page.locator('.clients-form-card').isVisible(),false);
  await page.locator('#clientSearch').fill('alvaro');assert.equal(await cards.count(),10);await pages.getByRole('button',{name:'Seguinte',exact:true}).click();assert.match(await pages.locator('span').innerText(),/11–20 de 25/);

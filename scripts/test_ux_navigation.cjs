@@ -6,8 +6,8 @@ const all=[...html.matchAll(/\['([^']+)','([^']+)'\]/g)];
 const block=html.slice(html.indexOf('const pages='),html.indexOf('const pageIcons='));
 const pages=[...block.matchAll(/\['([^']+)','([^']+)'\]/g)].map(m=>m[1]);
 const group=html.slice(html.indexOf('(function groupNavigationVUX20261019()'),html.indexOf('function updateTopDateTimeV1906()'));
-assert.equal(pages.length,30);
-assert.equal(new Set(pages).size,30);
+assert.equal(pages.length,31);
+assert.equal(new Set(pages).size,31);
 assert.ok(pages.includes('funds'),'Mapa de Fundos presente na navegação');
 assert.ok(group.includes("nav.querySelectorAll(':scope > button[data-page]')"));
 assert.ok(group.includes('if(buttons.length!==pages.length)return'));
@@ -25,3 +25,5 @@ assert.ok(html.includes(".sidebar .nav .ae-ux-nav-group{display:contents}"));
 assert.ok(html.includes(".sidebar .nav .ae-ux-nav-group:not([open])>button{display:flex}"));
 assert.ok(html.includes("const APP_VERSION='"+JSON.parse(fs.readFileSync('version.json','utf8')).app+"'"));
 console.log('Navigation structural checks pass: '+pages.length+' original routes preserved');
+
+assert.ok(pages.includes('technicalLibrary'), 'Manual fragrance library is reachable');

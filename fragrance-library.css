@@ -1,0 +1,41 @@
+#technicalLibrary .ae-fl-header-v1{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+#technicalLibrary .ae-fl-header-v1 h2{font-size:21px;margin:0 0 5px}
+#technicalLibrary .ae-fl-header-v1 p{margin:0;color:var(--muted,#76685c);font-size:13px}
+#technicalLibrary .ae-fl-actions-v1{display:flex;flex-wrap:wrap;gap:8px}
+#technicalLibrary .ae-fl-counts-v1{margin:18px 0 10px;font-size:13px;font-weight:700}
+#technicalLibrary .ae-fl-filters-v1{display:grid;grid-template-columns:minmax(220px,2fr) 1fr 1fr;gap:10px;margin:12px 0 18px}
+#technicalLibrary .ae-fl-filters-v1 input,#technicalLibrary .ae-fl-filters-v1 select{width:100%;min-width:0;padding:10px;border:1px solid var(--line,#e3d6ca);border-radius:10px;background:white}
+#technicalLibrary .ae-fl-cards-v1{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:12px}
+#technicalLibrary .ae-fl-card-v1{border:1px solid var(--line,#e3d6ca);background:var(--card,white);border-radius:14px;padding:15px;display:flex;justify-content:space-between;gap:12px;flex-direction:column;min-width:0}
+#technicalLibrary .ae-fl-card-v1 h3{margin:0 0 5px;font-size:15px;overflow-wrap:anywhere}
+#technicalLibrary .ae-fl-card-v1 small{display:block;color:var(--muted,#76685c);overflow-wrap:anywhere}
+#technicalLibrary .ae-fl-card-v1 span{display:block;font-size:11px;font-weight:700;margin:10px 0 6px}
+#technicalLibrary .ae-fl-card-v1 p{margin:0;font-size:12px;color:var(--muted,#76685c)}
+#technicalLibrary .ae-fl-card-v1 button{align-self:flex-start}
+#technicalLibrary .ae-fl-footnote-v1{font-size:11px;margin:20px 0 0}
+.ae-fl-dialog-v1{border:1px solid #ded5c9;border-radius:18px;width:min(720px,calc(100vw - 25px));max-height:90dvh;overflow:auto;padding:22px;background:#fff;color:#302921}
+.ae-fl-dialog-v1::backdrop{background:rgba(29,22,17,.65)}
+.ae-fl-dialog-v1 h2{margin:0 0 6px;font-size:20px}
+.ae-fl-dialog-v1 .muted{font-size:12px;color:#74695f}
+.ae-fl-edit-v1{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0}
+.ae-fl-edit-v1 label{font-size:12px;font-weight:650;display:grid;gap:5px;min-width:0}
+.ae-fl-edit-v1 input,.ae-fl-edit-v1 textarea,.ae-fl-edit-v1 select{width:100%;min-width:0;border:1px solid #ded5c9;border-radius:10px;padding:10px;background:white;color:#302921}
+.ae-fl-dialog-actions-v1{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px}
+@media(max-width:700px){#technicalLibrary .ae-fl-filters-v1{grid-template-columns:1fr}.ae-fl-edit-v1{grid-template-columns:1fr}}
+/* Manual tank and compact responsive controls. */
+#technicalLibrary .fl-filters{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px;margin-top:16px}
+#technicalLibrary label,.ae-fl-dialog-v1 label{display:grid;gap:5px;min-width:0}
+.fl-actions{display:flex;flex-wrap:wrap;gap:8px;margin-block:10px}
+.fl-gauge{display:flex;align-items:center;gap:14px;font-size:14px}
+.fl-tank{position:relative;height:90px;width:42px;flex-shrink:0;border:2px solid #827763;border-radius:10px;overflow:hidden;background:#eeeae1}
+.fl-tank i{position:absolute;bottom:0;width:100%;background:#849776;transition:height .2s}
+.fl-photo{width:56px;height:56px;object-fit:cover;border-radius:8px}
+.ae-fl-dialog-v1 input,.ae-fl-dialog-v1 textarea{box-sizing:border-box;max-width:100%;width:100%}
+.ae-fl-dialog-v1 [role=alert]{color:#9b3224}
+@media(max-width:700px){#technicalLibrary .fl-filters{grid-template-columns:1fr 1fr}.fl-actions .btn{flex:1 1 120px}.ae-fl-dialog-v1{width:calc(100% - 28px);box-sizing:border-box}}
+#technicalLibrary .fl-filters input,#technicalLibrary .fl-filters select{width:100%;min-width:0;border:1px solid #ded5c9;border-radius:10px;padding:10px;background:white;color:#302921}
+
+.fl-gauge[data-level="low"] .fl-tank{border-color:#9b7c3b}
+.fl-gauge[data-level="low"] .fl-tank i{background:#b79b5b}
+.fl-gauge[data-level="critical"] .fl-tank{border-color:#98645c}
+.fl-gauge[data-level="critical"] .fl-tank i{background:#b17e73}
