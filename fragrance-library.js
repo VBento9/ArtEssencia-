@@ -280,9 +280,49 @@ function batchSetup(){
  d.onclose=()=>d.remove();
  document.body.append(d);d.showModal();
 }
+async function customerPdfPhoto(row){
+ // Gallery files are already compressed and can be drawn without remote requests.
+ if(!/^data:image\/jpeg;base64,/.test(row.photoData||''))return null;
+ try{return await loadCanvasImage(row.photoData)}catch{return null}
+}
+function drawCustomerPdfCard(ctx,row,photo,x,y){
+ ctx.fillStyle='#f5efe5';
+ ctx.fillRect(x,y,538,184);
+ ctx.fillStyle='#a78261';
+ ctx.fillRect(x,y,4,184);
+
+ const inset=22;
+ let textX=x+inset;
+ let textWidth=538-inset*2;
+ if(photo){
+  const size=132;
+  const scale=Math.min(size/photo.naturalWidth,size/photo.naturalHeight);
+  const width=photo.naturalWidth*scale,height=photo.naturalHeight*scale;
+  ctx.fillStyle='#fffdf9';
+  ctx.fillRect(textX,y+26,size,size);
+  ctx.drawImage(photo,textX+(size-width)/2,y+26+(size-height)/2,width,height);
+  textX+=size+18;
+  textWidth-=size+18;
+ }
+ ctx.fillStyle='#422e23';
+ ctx.font='bold 29px Georgia, serif';
+ const name=String(row.name||'').replace(/\s+/g,' ').trim();
+ const lines=wrapCanvasText(ctx,name,textWidth);
+ const family=Object.hasOwn(FAMILY_EXAMPLES,row.family)?row.family:'';
+ const visible=lines.slice(0,3);
+ const top=y+(184-visible.length*34-(family?30:0))/2+26;
+ for(const [index,line] of visible.entries()){
+  ctx.fillText(line+(index===2&&lines.length>3?'…':''),textX,top+index*34,textWidth);
+ }
+ if(family){
+  ctx.fillStyle='#705641';
+  ctx.font='22px Arial';
+  ctx.fillText(family,textX,top+visible.length*34,textWidth);
+ }
+}
 async function buildCustomerPdf(available,contacts){
  const pages=[];
- const perPage=14;
+ const perPage=12;
  const pageCount=Math.ceil(available.length/perPage);
  for(let page=0;page<pageCount;page++){
   const canvas=createCatalogPrintCanvas();
@@ -291,34 +331,23 @@ async function buildCustomerPdf(available,contacts){
   ctx.textAlign='left';
   ctx.fillStyle='#5a240b';
   ctx.font='24px Arial';
-  ctx.fillText('Escolhe a fragrância para a tua encomenda.',70,225);
+  ctx.fillText('Escolhe a fragrância para a tua encomenda.',70,228);
   const entries=available.slice(page*perPage,(page+1)*perPage);
+  const photos=await Promise.all(entries.map(customerPdfPhoto));
   for(const [index,row] of entries.entries()){
-   const y=270+index*88;
-   ctx.fillStyle=index%2?'#fffdf9':'#f6f0e7';
-   ctx.fillRect(70,y,1100,83);
-   ctx.fillStyle='#422e23';
-   ctx.font='bold 29px Arial';
-   const name=String(row.name||'').replace(/\s+/g,' ').trim();
-   const lines=wrapCanvasText(ctx,name,1040);
-   for(const [lineIndex,line] of lines.slice(0,2).entries()){
-    ctx.fillText(line+(lineIndex===1&&lines.length>2?'…':''),92,y+32+lineIndex*31,1040);
-   }
-   if(lines.length===1&&FAMILY_EXAMPLES[row.family]){
-    ctx.font='21px Arial';
-    ctx.fillText(row.family,92,y+62);
-   }
+   drawCustomerPdfCard(ctx,row,photos[index],70+(index%2)*562,270+Math.floor(index/2)*204);
   }
   ctx.fillStyle='#eee3d3';
-  ctx.fillRect(70,1540,1100,138);
+  ctx.fillRect(70,1510,1100,158);
   ctx.fillStyle='#422e23';
-  ctx.font='bold 25px Arial';
-  ctx.fillText('Contactos e encomendas',94,1580);
-  ctx.font='22px Arial';
-  ctx.fillText(contacts.join('  ·  '),94,1620,1050);
-  ctx.fillText('Disponibilidade sujeita a confirmação.',94,1654);
+  ctx.font='bold 27px Georgia, serif';
+  ctx.fillText('Contactos e encomendas',94,1550);
+  ctx.font='24px Arial';
+  for(const [index,contact] of contacts.entries())ctx.fillText(contact,94,1590+index*34,1050);
+  ctx.font='20px Arial';
+  ctx.fillText('Disponibilidade sujeita a confirmação.',70,1710);
   ctx.textAlign='right';
-  ctx.fillText((page+1)+' / '+pageCount,1150,1710);
+  ctx.fillText((page+1)+' / '+pageCount,1170,1710);
   const jpeg=await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(Error('Não foi possível gerar a página.')),'image/jpeg',.92));
   pages.push(jpeg);
   canvas.width=0;canvas.height=0;
