@@ -40,7 +40,7 @@ assert.match(await page.locator('#aeFlCardsV1').innerText(),/100 ml/);
 await page.getByRole('button',{name:'Gerir fragrância'}).click();
 await confirm('12');
 assert.match(await page.locator('.fl-work-panel .fl-gauge').innerText(),/88 ml/);
-await page.getByRole('button',{name:'Adicionar fragrância',exact:true}).click();
+await page.locator('.fl-work-panel').getByRole('button',{name:'Adicionar fragrância',exact:true}).click();
 await confirm('50');
 assert.match(await page.locator('.fl-work-panel .fl-gauge').innerText(),/138 ml/);
 await page.getByText('Últimos movimentos',{exact:true}).click();
