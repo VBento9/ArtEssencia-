@@ -99,6 +99,31 @@ assert.match(await page.locator('.fl-quick-error').innerText(),/ficha foi altera
 await page.reload();
 await page.locator('#aeFlSearchV1').fill('Ficha preparada');
 assert.match(await page.locator('#aeFlCardsV1').innerText(),/134 ml/);
+// History reports only immutable ledger consumption; manual corrections do not inflate use.
+const beforeHistory=await page.evaluate(()=>localStorage.getItem(KEY));
+await openCardOptions();
+await page.getByRole('button',{name:'Histórico',exact:true}).click();
+const history=page.locator('dialog.fl-history-dialog');
+assert.match(await history.locator('.fl-history-current').innerText(),/134 ml/);
+assert.equal(await history.locator('[data-stat=consumption] strong').innerText(),'16 ml');
+assert.equal(await history.locator('[data-stat=refill] strong').innerText(),'50 ml');
+assert.equal(await history.locator('[data-stat=moves] strong').innerText(),'5');
+assert.equal(await history.locator('[data-stat=adjust] strong').innerText(),'2');
+await history.locator('[name=type]').selectOption('consumption');
+assert.equal(await history.locator('.fl-history-item').count(),2);
+assert.match(await history.locator('.fl-history-item').first().innerText(),/4 ml/);
+await history.locator('[name=period]').selectOption('custom');
+await history.locator('[name=from]').fill('2001-01-01');
+await history.locator('[name=until]').fill('2001-01-31');
+assert.match(await history.locator('.fl-history-empty').innerText(),/Sem movimentos/);
+assert.equal(await history.locator('[data-stat=consumption] strong').innerText(),'0 ml');
+await history.locator('[name=from]').fill('2002-01-01');
+assert.match(await history.locator('.fl-history-empty').innerText(),/data inicial/);
+await history.locator('[name=period]').selectOption('all');
+assert.equal(await history.locator('.fl-history-item').count(),2);
+assert.equal(await page.evaluate(()=>localStorage.getItem(KEY)),beforeHistory);
+await history.getByRole('button',{name:'Fechar',exact:true}).click();
+await page.locator('dialog.fl-history-dialog').waitFor({state:'detached'});
 
 const photoSlot=page.getByRole('button',{name:'Fotografia de Ficha preparada',exact:true});
 assert.match(await photoSlot.innerText(),/Sem fotografia/);

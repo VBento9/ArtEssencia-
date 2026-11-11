@@ -677,11 +677,125 @@ function movement(id,type,host=null,panel=false){
  if(!host){d.onclose=()=>d.remove();document.body.append(d);d.showModal()}
 }
 function showHistory(id){
- const x=rows().find(x=>x.id===id),d=document.createElement('dialog');d.className='ae-fl-dialog-v1 fl-history-dialog';d.setAttribute('aria-label','Histórico de '+x.name);
- d.innerHTML='<h2>Histórico · '+text(x.name)+'</h2><div class="fl-actions"></div><ol>'+[...(x.movements||[])].reverse().map(m=>'<li>'+text(m.date)+' · '+({consumption:'Consumo',refill:'Reposição',correction:'Correção manual',capacity:'Capacidade de referência'}[m.type])+' · '+m.before/1000+' → '+m.after/1000+' ml'+(m.type==='capacity'?' · referência '+(m.capacityAfter||0)/1000+' ml':'')+'<p>'+text(m.note)+'</p></li>').join('')+'</ol><button class="btn">Fechar</button>';
- for(const [label,type] of [['Corrigir saldo','correction'],['Ajustar capacidade','capacity']]){const b=document.createElement('button');b.className='btn';b.textContent=label;b.disabled=!!x.archived;b.onclick=()=>{d.close();movement(id,type)};d.querySelector('.fl-actions').append(b)}
- if(!(x.movements||[]).length){const empty=document.createElement('p');empty.className='muted';empty.textContent='Ainda não existem movimentos. Adiciona a quantidade que tens disponível para começar.';d.querySelector('ol').replaceWith(empty)}
- d.lastElementChild.onclick=()=>d.close();d.onclose=()=>d.remove();document.body.append(d);d.showModal();
+ const row=rows().find(item=>item.id===id);
+ if(!row){toast('Esta fragrância deixou de estar disponível. Atualiza a biblioteca.');return}
+ const dialog=document.createElement('dialog');dialog.className='ae-fl-dialog-v1 fl-history-dialog';
+ dialog.setAttribute('aria-label','Histórico de '+row.name);
+ const heading=document.createElement('header');heading.className='fl-history-heading';
+ const title=document.createElement('h2');title.textContent='Histórico · '+row.name;
+ const subtitle=document.createElement('p');subtitle.className='muted';
+ subtitle.textContent='Movimentos manuais e totais por período. As correções não contam como consumo.';
+ const balance=document.createElement('span');balance.className='fl-history-current';
+ balance.textContent='Saldo atual · '+balanceLabel(row);
+ heading.append(title,subtitle,balance);
+ const controls=document.createElement('div');controls.className='fl-history-controls';
+ const field=(label,name,element)=>{
+  const wrapper=document.createElement('label');wrapper.textContent=label;
+  element.name=name;wrapper.append(element);return wrapper;
+ };
+ const period=document.createElement('select');
+ for(const [value,label] of [
+  ['month','Este mês'],['last30','Últimos 30 dias'],['last90','Últimos 90 dias'],
+  ['year','Este ano'],['all','Todo o histórico'],['custom','Escolher datas']
+ ])period.add(new Option(label,value));
+ controls.append(field('Período','period',period));
+ const type=document.createElement('select');
+ for(const [value,label] of [
+  ['all','Todos os movimentos'],['consumption','Consumos'],['refill','Reposições'],
+  ['correction','Correções'],['capacity','Capacidade']
+ ])type.add(new Option(label,value));
+ controls.append(field('Mostrar','type',type));
+ const dates=document.createElement('div');dates.className='fl-history-dates';dates.hidden=true;
+ const from=document.createElement('input');from.type='date';
+ const until=document.createElement('input');until.type='date';
+ const currentDay=today();from.value=currentDay.slice(0,7)+'-01';until.value=currentDay;
+ dates.append(field('De','from',from),field('Até','until',until));
+ controls.append(dates);
+ const stats=document.createElement('div');stats.className='fl-history-stats';
+ for(const [key,label] of [['consumption','Utilizado'],['refill','Reposto'],['moves','Movimentos'],['adjust','Ajustes']]){
+  const card=document.createElement('div');card.className='fl-history-stat';card.dataset.stat=key;
+  const small=document.createElement('span');small.textContent=label;
+  const value=document.createElement('strong');value.textContent='—';
+  card.append(small,value);stats.append(card);
+ }
+ const result=document.createElement('p');result.className='fl-history-result';result.setAttribute('aria-live','polite');
+ const movements=document.createElement('ol');movements.className='fl-history-list';
+ const more=document.createElement('button');more.className='btn fl-history-more';more.type='button';
+ more.textContent='Ver mais movimentos';more.hidden=true;
+ const actions=document.createElement('div');actions.className='ae-fl-dialog-actions-v1 fl-history-actions';
+ for(const [label,kind] of [['Corrigir saldo','correction'],['Ajustar capacidade','capacity']]){
+  const button=document.createElement('button');button.className='btn';button.type='button';
+  button.textContent=label;button.disabled=!!row.archived;
+  button.addEventListener('click',()=>{dialog.close();movement(id,kind)});
+  actions.append(button);
+ }
+ const close=document.createElement('button');close.className='btn primary';close.type='button';
+ close.textContent='Fechar';close.addEventListener('click',()=>dialog.close());actions.append(close);
+ dialog.append(heading,controls,stats,result,movements,more,actions);
+ let limit=10;
+ const sorted=[...(row.movements||[])].map((move,index)=>({move,index})).sort((a,b)=>
+  String(b.move.date||'').localeCompare(String(a.move.date||''))||b.index-a.index);
+ const names={consumption:'Consumo',refill:'Reposição',correction:'Correção de saldo',capacity:'Capacidade de referência'};
+ function range(){
+  const choice=period.value;
+  if(choice==='all')return {from:'',until:''};
+  if(choice==='custom')return {from:from.value,until:until.value};
+  if(choice==='month')return {from:currentDay.slice(0,7)+'-01',until:currentDay};
+  if(choice==='year')return {from:currentDay.slice(0,4)+'-01-01',until:currentDay};
+  const days=choice==='last90'?90:30;
+  const first=new Date();first.setDate(first.getDate()-(days-1));
+  return {from:first.toLocaleDateString('sv-SE'),until:currentDay};
+ }
+ function draw(){
+  dates.hidden=period.value!=='custom';
+  const bounds=range(),invalid=!bounds.from&&period.value==='custom'||!bounds.until&&period.value==='custom'||bounds.from>bounds.until;
+  const filtered=invalid?[]:sorted.filter(({move})=>(!bounds.from||move.date>=bounds.from)&&(!bounds.until||move.date<=bounds.until));
+  const total=(kind)=>filtered.reduce((sum,{move})=>sum+(move.type===kind?Number(move.delta)||0:0),0);
+  stats.querySelector('[data-stat=consumption] strong').textContent=ml(Math.abs(total('consumption'))/1000);
+  stats.querySelector('[data-stat=refill] strong').textContent=ml(total('refill')/1000);
+  stats.querySelector('[data-stat=moves] strong').textContent=String(filtered.length);
+  stats.querySelector('[data-stat=adjust] strong').textContent=String(filtered.filter(({move})=>move.type==='correction'||move.type==='capacity').length);
+  const visible=filtered.filter(({move})=>type.value==='all'||move.type===type.value);
+  const shown=visible.slice(0,limit);
+  movements.replaceChildren();
+  for(const {move} of shown){
+   const item=document.createElement('li');item.className='fl-history-item';item.dataset.type=move.type;
+   const top=document.createElement('div');top.className='fl-history-line';
+   const name=document.createElement('strong');name.textContent=names[move.type]||'Movimento';
+   const date=document.createElement('time');date.dateTime=move.date;
+   date.textContent=String(move.date||'Sem data');
+   const delta=document.createElement('span');delta.className='fl-history-delta';
+   if(move.type==='capacity')delta.textContent='Referência: '+ml((Number(move.capacityAfter)||0)/1000);
+   else delta.textContent=(move.delta>0?'+':move.delta<0?'−':'')+ml(Math.abs(Number(move.delta)||0)/1000);
+   top.append(name,date,delta);item.append(top);
+   if(move.type!=='capacity'){
+    const detail=document.createElement('div');detail.className='fl-history-flow';
+    detail.textContent='Saldo: '+ml((Number(move.before)||0)/1000)+' → '+ml((Number(move.after)||0)/1000);
+    item.append(detail);
+   }
+   if(move.note){
+    const note=document.createElement('p');note.className='fl-history-note';note.textContent=String(move.note);
+    item.append(note);
+   }
+   movements.append(item);
+  }
+  if(!shown.length){
+   const empty=document.createElement('li');empty.className='fl-history-empty';
+   empty.textContent=invalid?'A data inicial não pode ser posterior à final. Verifica o período.':
+    (row.movements||[]).length?'Sem movimentos neste período ou filtro.':'Ainda não existem movimentos para esta fragrância.';
+   movements.append(empty);
+  }
+  result.textContent=invalid?'Período inválido':visible.length+
+   ' movimentos encontrados · '+shown.length+' apresentados';
+  more.hidden=visible.length<=limit;more.textContent='Ver mais movimentos ('+(visible.length-limit)+' restantes)';
+ }
+ period.addEventListener('change',()=>{limit=10;draw()});
+ type.addEventListener('change',()=>{limit=10;draw()});
+ from.addEventListener('change',()=>{limit=10;draw()});
+ until.addEventListener('change',()=>{limit=10;draw()});
+ more.addEventListener('click',()=>{limit+=10;draw()});
+ dialog.addEventListener('close',()=>dialog.remove(),{once:true});
+ document.body.append(dialog);draw();dialog.showModal();
 }
 window.renderTechnicalLibraryV1=render;
 window.aeFragrancesV1={render,quickFilter,clearFilters,setView,batchSetup,add:()=>openEditor(null),importReceipt,exportCsv,downloadCustomerPdf};
