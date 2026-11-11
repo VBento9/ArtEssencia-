@@ -797,7 +797,192 @@ function showHistory(id){
  dialog.addEventListener('close',()=>dialog.remove(),{once:true});
  document.body.append(dialog);draw();dialog.showModal();
 }
+
+/* Reporting is read-only: all totals are derived from immutable manual ledger movements. */
+function fragranceReportBounds(choice,from,until,reference=today()){
+ const month=Number(reference.slice(5,7));
+ if(choice==='all')return {from:'',until:'',invalid:false};
+ if(choice==='custom'){
+  const validDate=value=>/^\d{4}-\d{2}-\d{2}$/.test(value)&&
+   !Number.isNaN(Date.parse(value+'T12:00:00Z'))&&new Date(value+'T12:00:00Z').toISOString().slice(0,10)===value;
+  return {from,until,invalid:!validDate(from)||!validDate(until)||from>until};
+ }
+ const prefix=reference.slice(0,4);
+ const start=choice==='quarter'?String(1+3*Math.floor((month-1)/3)).padStart(2,'0'):
+  choice==='semester'?(month<=6?'01':'07'):choice==='year'?'01':reference.slice(5,7);
+ const startDay=prefix+'-'+start+'-01';
+ return {from:startDay,until:reference,invalid:!['month','quarter','semester','year'].includes(choice)};
+}
+function fragranceGlobalUsage(data,bounds){
+ const result={rows:[],families:[],usedUnits:0,refillUnits:0,adjustments:0,movements:0,fragrances:0};
+ if(bounds.invalid)return result;
+ const familyMap=new Map();
+ for(const row of data){
+  let usedUnits=0,refillUnits=0,adjustments=0,movements=0;
+  for(const move of row.movements||[]){
+   if(typeof move.date!=='string'||(bounds.from&&move.date<bounds.from)||(bounds.until&&move.date>bounds.until))continue;
+   movements++;
+   const units=Number(move.delta)||0;
+   if(move.type==='consumption'&&units<0)usedUnits+=-units;
+   else if(move.type==='refill'&&units>0)refillUnits+=units;
+   else if(move.type==='correction'||move.type==='capacity')adjustments++;
+  }
+  if(!movements)continue;
+  const family=row.family||'Por classificar';
+  const entry={id:row.id,name:row.name,family,archived:!!row.archived,usedUnits,refillUnits,adjustments,movements};
+  result.rows.push(entry);
+  result.usedUnits+=usedUnits;result.refillUnits+=refillUnits;
+  result.adjustments+=adjustments;result.movements+=movements;
+  if(usedUnits>0)result.fragrances++;
+  const group=familyMap.get(family)||{name:family,usedUnits:0,refillUnits:0,fragrances:0};
+  group.usedUnits+=usedUnits;group.refillUnits+=refillUnits;
+  if(usedUnits>0)group.fragrances++;
+  familyMap.set(family,group);
+ }
+ result.rows.sort((a,b)=>b.usedUnits-a.usedUnits||b.refillUnits-a.refillUnits||a.name.localeCompare(b.name,'pt-PT'));
+ result.families=[...familyMap.values()].filter(item=>item.usedUnits>0||item.refillUnits>0)
+  .sort((a,b)=>b.usedUnits-a.usedUnits||a.name.localeCompare(b.name,'pt-PT'));
+ return result;
+}
+function exportFragranceUsageCsv(report,periodLabel){
+ const safeCell=value=>{
+  let valueText=String(value??'');
+  if(/^[\s]*[=+@-]/.test(valueText))valueText="'"+valueText;
+  return '"'+valueText.replace(/"/g,'""')+'"';
+ };
+ const lines=[
+  ['Relatório global de fragrâncias',periodLabel],
+  ['Fragrância','Família','Utilizado (ml)','Reposto (ml)','Ajustes','Movimentos','Estado'],
+  ...report.rows.map(row=>[row.name,row.family,(row.usedUnits/1000).toFixed(3).replace('.',','),
+   (row.refillUnits/1000).toFixed(3).replace('.',','),row.adjustments,row.movements,row.archived?'Arquivada':'Ativa'])
+ ];
+ const csv=lines.map(row=>row.map(safeCell).join(';')).join('\r\n');
+ const url=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
+ const download=document.createElement('a');download.href=url;download.download='ArtEssencia_Relatorio_Global_Fragrancias.csv';
+ download.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function showFragranceUsageReport(){
+ const d=document.createElement('dialog');d.className='ae-fl-dialog-v1 fl-report-dialog';
+ d.setAttribute('aria-label','Relatório global de consumos');
+ const h=document.createElement('header');h.className='fl-report-heading';
+ const title=document.createElement('h2');title.textContent='Relatório de consumos';
+ const subtitle=document.createElement('p');subtitle.className='muted';
+ subtitle.textContent='Comparação de todas as fragrâncias pelos movimentos manuais, incluindo as arquivadas. As correções não contam como consumo.';
+ h.append(title,subtitle);
+ const controls=document.createElement('div');controls.className='fl-report-controls';
+ const makeLabel=(caption,control)=>{
+  const label=document.createElement('label');label.textContent=caption;label.append(control);return label;
+ };
+ const period=document.createElement('select');period.name='period';
+ for(const [value,label] of [['month','Este mês'],['quarter','Este trimestre'],['semester','Este semestre'],
+  ['year','Este ano'],['all','Todo o histórico'],['custom','Escolher datas']]){
+  period.add(new Option(label,value));
+ }
+ controls.append(makeLabel('Período',period));
+ const dateControls=document.createElement('div');dateControls.className='fl-report-dates';
+ const start=document.createElement('input');start.type='date';start.name='from';
+ const end=document.createElement('input');end.type='date';end.name='until';
+ start.value=today().slice(0,7)+'-01';end.value=today();
+ dateControls.append(makeLabel('De',start),makeLabel('Até',end));dateControls.hidden=true;controls.append(dateControls);
+ const totals=document.createElement('div');totals.className='fl-report-totals';
+ for(const [key,label] of [['used','Utilizado'],['refill','Reposto'],['fragrances','Fragrâncias utilizadas'],['movements','Movimentos']]){
+  const card=document.createElement('div');card.className='fl-report-total';card.dataset.stat=key;
+  const textNode=document.createElement('span');textNode.textContent=label;
+  const value=document.createElement('strong');value.textContent='—';
+  card.append(textNode,value);totals.append(card);
+ }
+ const description=document.createElement('p');description.className='fl-report-description';description.setAttribute('aria-live','polite');
+ const sectionTitle=document.createElement('h3');sectionTitle.textContent='Fragrâncias mais utilizadas';
+ const ranked=document.createElement('ol');ranked.className='fl-report-ranking';
+ const more=document.createElement('button');more.type='button';more.className='btn fl-report-more';more.textContent='Ver mais fragrâncias';
+ const familyDetails=document.createElement('details');familyDetails.className='fl-report-families';
+ const familySummary=document.createElement('summary');familySummary.textContent='Consumo por família olfativa';
+ const familyList=document.createElement('div');familyList.className='fl-report-family-list';
+ familyDetails.append(familySummary,familyList);
+ const actions=document.createElement('div');actions.className='ae-fl-dialog-actions-v1 fl-report-actions';
+ const exportButton=document.createElement('button');exportButton.type='button';exportButton.className='btn';
+ exportButton.textContent='Exportar relatório CSV';
+ const close=document.createElement('button');close.type='button';close.className='btn primary';
+ close.textContent='Fechar';close.addEventListener('click',()=>d.close());
+ actions.append(exportButton,close);
+ d.append(h,controls,totals,description,sectionTitle,ranked,more,familyDetails,actions);
+ let current=null,currentBounds=null,limit=12;
+ function redraw(){
+  dateControls.hidden=period.value!=='custom';
+  currentBounds=fragranceReportBounds(period.value,start.value,end.value);
+  current=fragranceGlobalUsage(rows(),currentBounds);
+  const format=name=>ml(current[name]/1000);
+  totals.querySelector('[data-stat=used] strong').textContent=format('usedUnits');
+  totals.querySelector('[data-stat=refill] strong').textContent=format('refillUnits');
+  totals.querySelector('[data-stat=fragrances] strong').textContent=String(current.fragrances);
+  totals.querySelector('[data-stat=movements] strong').textContent=String(current.movements);
+  const periodName=period.options[period.selectedIndex].text;
+  const periodText=currentBounds.from&&currentBounds.until?currentBounds.from+' a '+currentBounds.until:'sem restrição de datas';
+  description.textContent=currentBounds.invalid?'Verifica as datas. A data inicial não pode ser posterior à final.':
+    periodName+' · '+periodText+' · '+current.adjustments+' ajustes não contabilizados como consumo';
+  ranked.replaceChildren();
+  for(const [index,row] of current.rows.slice(0,limit).entries()){
+   const item=document.createElement('li');item.className='fl-report-item';
+   const top=document.createElement('div');top.className='fl-report-item-top';
+   const caption=document.createElement('div');caption.className='fl-report-identity';
+   const family=document.createElement('span');family.textContent=row.family;
+   const name=document.createElement('strong');name.textContent=(index+1)+'. '+row.name;
+   caption.append(family,name);
+   if(row.archived){
+    const archive=document.createElement('small');archive.textContent='Arquivada';caption.append(archive);
+   }
+   const measure=document.createElement('div');measure.className='fl-report-measures';
+   const used=document.createElement('b');used.textContent=ml(row.usedUnits/1000)+' utilizados';
+   const replenished=document.createElement('span');replenished.textContent=ml(row.refillUnits/1000)+' repostos';
+   measure.append(used,replenished);top.append(caption,measure);
+   const bar=document.createElement('div');bar.className='fl-report-bar';bar.setAttribute('role','img');
+   bar.setAttribute('aria-label',row.name+': '+ml(row.usedUnits/1000)+' utilizados');
+   const fill=document.createElement('i');
+   fill.style.width=(current.usedUnits>0?Math.max(0,Math.min(100,row.usedUnits/current.usedUnits*100)):0)+'%';
+   bar.append(fill);
+   const bottom=document.createElement('div');bottom.className='fl-report-item-bottom';
+   const details=document.createElement('span');details.textContent=row.movements+' movimentos · '+row.adjustments+' ajustes';
+   const history=document.createElement('button');history.className='btn';history.type='button';
+   history.textContent='Ver histórico';
+   history.setAttribute('aria-label','Ver histórico de '+row.name);
+   history.addEventListener('click',()=>{d.close();showHistory(row.id)});
+   bottom.append(details,history);
+   item.append(top,bar,bottom);ranked.append(item);
+  }
+  if(!current.rows.length){
+   const empty=document.createElement('li');empty.className='fl-report-empty';
+   empty.textContent=currentBounds.invalid?'Corrige as datas para consultar o relatório.':
+    'Não há movimentos manuais registados neste período.';
+   ranked.append(empty);
+  }
+  more.hidden=current.rows.length<=limit;
+  more.textContent='Ver mais fragrâncias ('+(current.rows.length-limit)+' restantes)';
+  familyList.replaceChildren();
+  for(const row of current.families){
+   const line=document.createElement('div');line.className='fl-report-family-row';
+   const left=document.createElement('span');left.textContent=row.name+' · '+row.fragrances+' utilizadas';
+   const right=document.createElement('strong');right.textContent=ml(row.usedUnits/1000);
+   line.append(left,right);familyList.append(line);
+  }
+  if(!current.families.length){
+   const noData=document.createElement('p');noData.className='muted';noData.textContent='Sem consumo ou reposições no período.';
+   familyList.append(noData);
+  }
+  exportButton.disabled=currentBounds.invalid||!current.rows.length;
+ }
+ period.addEventListener('change',()=>{limit=12;redraw()});
+ start.addEventListener('change',()=>{limit=12;redraw()});
+ end.addEventListener('change',()=>{limit=12;redraw()});
+ more.addEventListener('click',()=>{limit+=12;redraw()});
+ exportButton.addEventListener('click',()=>{
+  if(!current||currentBounds.invalid)return;
+  exportFragranceUsageCsv(current,period.options[period.selectedIndex].text+' ('+
+   (currentBounds.from||'início')+' — '+(currentBounds.until||'sem fim')+')');
+ });
+ d.addEventListener('close',()=>d.remove(),{once:true});
+ document.body.append(d);redraw();d.showModal();
+}
 window.renderTechnicalLibraryV1=render;
-window.aeFragrancesV1={render,quickFilter,clearFilters,setView,batchSetup,add:()=>openEditor(null),importReceipt,exportCsv,downloadCustomerPdf};
+window.aeFragrancesV1={render,quickFilter,clearFilters,setView,batchSetup,showUsageReport:showFragranceUsageReport,add:()=>openEditor(null),importReceipt,exportCsv,downloadCustomerPdf};
 render();
 })();
