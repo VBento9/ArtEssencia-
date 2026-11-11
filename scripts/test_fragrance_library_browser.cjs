@@ -14,15 +14,16 @@ const KEY='synthetic-library';let db=JSON.parse(localStorage.getItem(KEY)||'null
 (async()=>{const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH,args:['--no-sandbox']}:{} )});try{for(const width of [390,800,1366]){
 const context=await browser.newContext({viewport:{width,height:950}});await context.route('**/*',r=>{const p=new URL(r.request().url()).pathname;if(p==='/brand-artessencia-transparente.svg')return r.fulfill({contentType:'image/svg+xml',body:fs.readFileSync(p.slice(1),'utf8')});if(p==='/')return r.fulfill({contentType:'text/html',body:fixture});if(['/fragrance-ledger.js','/fragrance-library.js','/fragrance-library.css'].includes(p))return r.fulfill({contentType:p.endsWith('.css')?'text/css':'text/javascript',body:fs.readFileSync(p.slice(1),'utf8')});return r.abort()});const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('https://fixture.invalid/');
 await page.getByRole('button',{name:'Nova fragrância',exact:true}).click();await page.locator('[name=name]').fill('Coco & Baunilha');assert.equal(await page.locator('[name=photoUrl]').isVisible(),false);await page.getByText('Descrição, fotografia e documentos',{exact:true}).click();await page.locator('[name=description]').fill('Uma descrição opcional de teste.');assert.equal(await page.locator('[name=photoUrl]').isVisible(),true);await page.getByRole('button',{name:'Guardar ficha',exact:true}).click();assert.match(await page.locator('#aeFlCardsV1').innerText(),/Capacidade por definir/);
-async function historyAction(name){await page.getByRole('button',{name:'Histórico',exact:true}).click();await page.getByRole('button',{name,exact:true}).click()}
+async function openCardOptions(){await page.locator('.fl-card-more:not([open]) > summary').first().click()}
+async function historyAction(name){await openCardOptions();await page.getByRole('button',{name:'Histórico',exact:true}).click();await page.getByRole('button',{name,exact:true}).click()}
 async function confirm(quantity,note=''){await page.locator('[name=quantity]').fill(quantity);await page.locator('[name=note]').fill(note);if(quantity==='12'){await page.locator('dialog form').evaluate(f=>{f.requestSubmit();f.requestSubmit()})}else await page.getByRole('button',{name:'Confirmar',exact:true}).click()}
-await historyAction('Corrigir saldo');await confirm('100','Contagem inicial');await page.getByRole('button',{name:'Definir capacidade',exact:true}).click();await confirm('100','Frasco 100 ml');
+await historyAction('Corrigir saldo');await confirm('100','Contagem inicial');await openCardOptions();await page.getByRole('button',{name:'Definir capacidade',exact:true}).click();await confirm('100','Frasco 100 ml');
 await page.getByRole('button',{name:'Registar utilização',exact:true}).click();
 const beforePreview=await page.evaluate(()=>localStorage.getItem(KEY));await page.locator('[name=quantity]').fill('12');assert.match(await page.locator('.fl-movement-preview').innerText(),/100 ml → 88 ml/);assert.equal(await page.evaluate(()=>localStorage.getItem(KEY)),beforePreview);assert.equal(await page.locator('dialog').evaluate(d=>d.scrollWidth<=d.clientWidth+1),true);await confirm('12');assert.match(await page.locator('#aeFlCardsV1').innerText(),/88 ml/);assert.match(await page.locator('#aeFlCardsV1').innerText(),/88.0%/);
 await page.getByRole('button',{name:'Adicionar fragrância',exact:true}).click();await confirm('50');assert.match(await page.locator('#aeFlCardsV1').innerText(),/138 ml/);await historyAction('Ajustar capacidade');await confirm('200','Mais capacidade');assert.match(await page.locator('#aeFlCardsV1').innerText(),/69.0%/);
 await page.getByRole('button',{name:'Registar utilização',exact:true}).click();await page.locator('[name=quantity]').fill('999');assert.match(await page.locator('.fl-movement-preview').innerText(),/superior/);await confirm('999');assert.match(await page.locator('[role=alert]').innerText(),/superior/);await page.getByRole('button',{name:'Cancelar',exact:true}).click();
 await page.evaluate(()=>{fail=true});await page.getByRole('button',{name:'Registar utilização',exact:true}).click();await confirm('1');assert.match(await page.locator('[role=alert]').innerText(),/não foi confirmada/);await page.getByRole('button',{name:'Cancelar',exact:true}).click();
-await page.reload();assert.match(await page.locator('#aeFlCardsV1').innerText(),/138 ml/);const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem(KEY)));for(const key of ['stock','orders','products','productionRuns'])assert.deepEqual(saved[key],seed[key]);assert.equal(saved.settings.manualFragranceLibraryV1[0].movements.length,5);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);page.on('dialog',d=>d.accept());await page.getByRole('button',{name:'Importar recibo 67827',exact:true}).click();assert.equal(await page.locator('.ae-fl-card-v1').count(),16);await page.getByRole('button',{name:'Importar recibo 67827',exact:true}).click();assert.equal(await page.locator('.ae-fl-card-v1').count(),16);assert.equal(await page.evaluate(()=>db.settings.manualFragranceLibraryV1.filter(x=>x.id.startsWith('receipt-')).every(x=>FragranceLedger.balance(x)===0&&FragranceLedger.tank(x).percent===null)),true);await page.locator('#aeFlSearchV1').fill('Coco & Baunilha');await historyAction('Corrigir saldo');await confirm('5','Contagem de teste');assert.equal(await page.locator('.fl-gauge').getAttribute('data-level'),'critical');assert.match(await page.locator('#aeFlCardsV1').innerText(),/Nível crítico/);
+await page.reload();assert.match(await page.locator('#aeFlCardsV1').innerText(),/138 ml/);const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem(KEY)));for(const key of ['stock','orders','products','productionRuns'])assert.deepEqual(saved[key],seed[key]);assert.equal(saved.settings.manualFragranceLibraryV1[0].movements.length,5);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);page.on('dialog',d=>d.accept());await page.locator('.fl-library-tools > summary').click();await page.getByRole('button',{name:'Importar recibo 67827',exact:true}).click();assert.equal(await page.locator('.ae-fl-card-v1').count(),16);await page.getByRole('button',{name:'Importar recibo 67827',exact:true}).click();assert.equal(await page.locator('.ae-fl-card-v1').count(),16);assert.equal(await page.evaluate(()=>db.settings.manualFragranceLibraryV1.filter(x=>x.id.startsWith('receipt-')).every(x=>FragranceLedger.balance(x)===0&&FragranceLedger.tank(x).percent===null)),true);await page.locator('#aeFlSearchV1').fill('Coco & Baunilha');await historyAction('Corrigir saldo');await confirm('5','Contagem de teste');assert.equal(await page.locator('.fl-gauge').getAttribute('data-level'),'critical');assert.match(await page.locator('#aeFlCardsV1').innerText(),/Nível crítico/);
 await page.locator('#aeFlSearchV1').fill('');
 await page.getByRole('button',{name:'Preencher quantidades em conjunto',exact:true}).click();
 await page.locator('[name=quantity0]').fill('0');
@@ -38,6 +39,20 @@ assert.equal(await page.locator('.ae-fl-card-v1').count(),1);
 await page.locator('#aeFlStatusV1').selectOption('pending');
 assert.equal(await page.locator('.ae-fl-card-v1').count(),14);
 await page.locator('#aeFlStatusV1').selectOption('active');
+assert.equal(await page.locator('#aeFlSummaryV2 [data-filter=active] strong').innerText(),'16');
+assert.equal(await page.locator('#aeFlSummaryV2 [data-filter=available] strong').innerText(),'1');
+await page.getByRole('button',{name:'Filtrar: Por registar'}).click();
+assert.equal(await page.locator('.ae-fl-card-v1').count(),14);
+await page.getByRole('button',{name:'Filtrar: Disponíveis'}).click();
+assert.equal(await page.locator('.ae-fl-card-v1').count(),1);
+await page.getByRole('button',{name:'Lista compacta'}).click();
+assert.equal(await page.locator('#aeFlCardsV1').getAttribute('data-view'),'list');
+await page.getByRole('button',{name:'Cartões',exact:true}).click();
+assert.equal(await page.locator('#aeFlCardsV1').getAttribute('data-view'),'cards');
+await page.locator('#aeFlSearchV1').fill('Fragrância inexistente');
+assert.match(await page.locator('.fl-library-empty').innerText(),/Nenhuma fragrância/);
+await page.locator('.fl-library-empty').getByRole('button',{name:'Limpar filtros'}).click();
+assert.equal(await page.locator('#aeFlStatusV1').inputValue(),'active');
 await page.getByRole('button',{name:'Nova fragrância',exact:true}).click();
 await page.locator('[name=name]').fill('Ficha preparada');
 await page.locator('[name=initialQuantity]').fill('100');
@@ -45,7 +60,7 @@ await page.locator('[name=initialCapacity]').fill('100');
 await page.getByRole('button',{name:'Guardar ficha',exact:true}).click();
 await page.locator('#aeFlSearchV1').fill('Ficha preparada');
 assert.match(await page.locator('#aeFlCardsV1').innerText(),/100 ml/);
-await page.getByRole('button',{name:'Gerir fragrância'}).click();
+await openCardOptions();await page.getByRole('button',{name:'Gerir fragrância'}).click();
 await confirm('12');
 assert.match(await page.locator('.fl-work-panel .fl-gauge').innerText(),/88 ml/);
 await page.locator('.fl-work-panel').getByRole('button',{name:'Adicionar fragrância',exact:true}).click();
