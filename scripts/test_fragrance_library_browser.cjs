@@ -110,7 +110,7 @@ if(width===390){
  assert.match(drawn,/Outras fragrâncias/);
  assert.match(drawn,/Doces & gourmand/);
  assert.match(drawn,/Uma descrição opcional de teste/);
- assert.match(drawn,/Indica o nome da fragrância ao encomendar/);
+ assert.match(drawn,/Escolhe as tuas favoritas e indica os nomes quando fizeres o pedido/);
  assert.equal(await page.evaluate(()=>window.pdfImages),0);
  assert.doesNotMatch(drawn,/Aroma arquivado|Baunilha da Polinésia Francesa|Maçã & Canela|138 ml/);
 }
