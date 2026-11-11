@@ -79,3 +79,5 @@
 .fl-work-panel details{margin-top:14px}
 #technicalLibrary .fl-tank-reference{display:inline;font-size:inherit;font-weight:inherit;margin:0}
 @media(max-width:560px){.fl-batch-row{grid-template-columns:repeat(2,minmax(0,1fr))}.fl-batch-row strong{grid-column:1/-1}}
+
+.fl-technical-notes{border:1px solid #e6ded3;border-radius:12px;padding:8px 12px;margin:12px 0;min-width:0}.fl-technical-notes p{font-size:13px;line-height:1.5;margin:0}.ae-fl-edit-v1 label small{font-weight:400;line-height:1.4}
