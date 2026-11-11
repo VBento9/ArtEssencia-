@@ -286,73 +286,89 @@ async function customerPdfPhoto(row){
  try{return await loadCanvasImage(row.photoData)}catch{return null}
 }
 function drawCustomerPdfCard(ctx,row,photo,x,y){
- ctx.fillStyle='#f5efe5';
- ctx.fillRect(x,y,538,184);
- ctx.fillStyle='#a78261';
- ctx.fillRect(x,y,4,184);
-
- const inset=22;
- let textX=x+inset;
- let textWidth=538-inset*2;
+ const width=360,height=188,textWidth=width-30,center=x+width/2;
+ ctx.fillStyle='#f4ede2';
+ ctx.fillRect(x,y,width,height);
  if(photo){
-  const size=132;
-  const scale=Math.min(size/photo.naturalWidth,size/photo.naturalHeight);
-  const width=photo.naturalWidth*scale,height=photo.naturalHeight*scale;
-  ctx.fillStyle='#fffdf9';
-  ctx.fillRect(textX,y+26,size,size);
-  ctx.drawImage(photo,textX+(size-width)/2,y+26+(size-height)/2,width,height);
-  textX+=size+18;
-  textWidth-=size+18;
+  const scale=Math.min((width-30)/photo.naturalWidth,90/photo.naturalHeight);
+  const w=photo.naturalWidth*scale,h=photo.naturalHeight*scale;
+  ctx.drawImage(photo,center-w/2,y+8+(90-h)/2,w,h);
  }
- ctx.fillStyle='#422e23';
- ctx.font='bold 29px Georgia, serif';
+ ctx.textAlign='center';
+ ctx.fillStyle='#36261e';
+ ctx.font='bold 27px Georgia, serif';
  const name=String(row.name||'').replace(/\s+/g,' ').trim();
  const lines=wrapCanvasText(ctx,name,textWidth);
  const family=Object.hasOwn(FAMILY_EXAMPLES,row.family)?row.family:'';
- const visible=lines.slice(0,3);
- const top=y+(184-visible.length*34-(family?30:0))/2+26;
+ const visible=lines.slice(0,2);
+ const top=photo?y+124:y+(height-visible.length*30-(family?24:0))/2+22;
  for(const [index,line] of visible.entries()){
-  ctx.fillText(line+(index===2&&lines.length>3?'…':''),textX,top+index*34,textWidth);
+  ctx.fillText(line+(index===1&&lines.length>2?'…':''),center,top+index*30,textWidth);
  }
  if(family){
   ctx.fillStyle='#705641';
-  ctx.font='22px Arial';
-  ctx.fillText(family,textX,top+visible.length*34,textWidth);
+  ctx.font='19px Arial';
+  ctx.fillText(family,center,top+visible.length*27,textWidth);
  }
+ ctx.textAlign='left';
+}
+async function drawCustomerPdfHeader(ctx){
+ ctx.fillStyle='#fffdf9';
+ ctx.fillRect(0,0,1240,1754);
+ try{
+  const logo=await loadCanvasImage('brand-artessencia-transparente.svg');
+  const scale=Math.min(272/logo.naturalWidth,132/logo.naturalHeight);
+  ctx.drawImage(logo,60,35,logo.naturalWidth*scale,logo.naturalHeight*scale);
+ }catch{
+  ctx.fillStyle='#36261e';
+  ctx.font='bold 38px Georgia, serif';
+  ctx.fillText('ArtEssencia',60,107);
+ }
+ ctx.textAlign='right';
+ ctx.fillStyle='#36261e';
+ ctx.font='bold 56px Georgia, serif';
+ ctx.fillText('Fragrâncias',1180,108);
+ ctx.font='23px Arial';
+ ctx.fillText('Seleção disponível para encomenda',1180,148);
+ ctx.textAlign='left';
+ ctx.fillStyle='#a78261';
+ ctx.fillRect(60,184,1120,2);
 }
 async function buildCustomerPdf(available,contacts){
  const pages=[];
- const perPage=12;
+ const perPage=18;
  const pageCount=Math.ceil(available.length/perPage);
+ const pageWidth=1240,pageHeight=1754;
  for(let page=0;page<pageCount;page++){
-  const canvas=createCatalogPrintCanvas();
-  const ctx=canvas.getContext('2d');
-  await drawArtEssenciaHeader(ctx,'FRAGRÂNCIAS','Seleção disponível');
-  ctx.textAlign='left';
-  ctx.fillStyle='#5a240b';
-  ctx.font='24px Arial';
-  ctx.fillText('Escolhe a fragrância para a tua encomenda.',70,228);
+  const canvas=document.createElement('canvas');
+  canvas.width=pageWidth;canvas.height=pageHeight;
+  const ctx=canvas.getContext('2d',{alpha:false});
+  await drawCustomerPdfHeader(ctx);
   const entries=available.slice(page*perPage,(page+1)*perPage);
   const photos=await Promise.all(entries.map(customerPdfPhoto));
   for(const [index,row] of entries.entries()){
-   drawCustomerPdfCard(ctx,row,photos[index],70+(index%2)*562,270+Math.floor(index/2)*204);
+   drawCustomerPdfCard(ctx,row,photos[index],60+(index%3)*380,220+Math.floor(index/3)*208);
   }
-  ctx.fillStyle='#eee3d3';
-  ctx.fillRect(70,1510,1100,158);
-  ctx.fillStyle='#422e23';
-  ctx.font='bold 27px Georgia, serif';
-  ctx.fillText('Contactos e encomendas',94,1550);
-  ctx.font='24px Arial';
-  for(const [index,contact] of contacts.entries())ctx.fillText(contact,94,1590+index*34,1050);
-  ctx.font='20px Arial';
-  ctx.fillText('Disponibilidade sujeita a confirmação.',70,1710);
+  const footerY=220+Math.ceil(entries.length/3)*208+18;
+  ctx.fillStyle='#36261e';
+  ctx.fillRect(60,footerY,1120,112);
+  ctx.fillStyle='#fffdf9';
+  ctx.font='bold 26px Georgia, serif';
+  ctx.fillText('Encomendas',84,footerY+43);
   ctx.textAlign='right';
-  ctx.fillText((page+1)+' / '+pageCount,1170,1710);
-  const jpeg=await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(Error('Não foi possível gerar a página.')),'image/jpeg',.92));
+  ctx.font='23px Arial';
+  for(const [index,contact] of contacts.entries())ctx.fillText(contact,1156,footerY+43+index*32,820);
+  ctx.textAlign='left';
+  ctx.font='18px Arial';
+  ctx.fillText('Disponibilidade sujeita a confirmação.',84,footerY+78);
+  ctx.fillStyle='#705641';
+  ctx.textAlign='right';
+  ctx.fillText((page+1)+' / '+pageCount,1180,footerY+145);
+  const jpeg=await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(Error('Não foi possível gerar a página.')),'image/jpeg',.82));
   pages.push(jpeg);
   canvas.width=0;canvas.height=0;
  }
- return jpegBlobsToPDF(pages,2480,3508);
+ return jpegBlobsToPDF(pages,pageWidth,pageHeight);
 }
 function downloadCustomerPdf(){
  const available=rows().filter(row=>!row.archived&&ledger.balance(row)>0)

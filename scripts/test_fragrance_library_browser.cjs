@@ -77,7 +77,7 @@ if(width===390){
   db.settings.businessEmail='cliente@example.test';
   db.settings.businessPhone='912345678';
   const row=db.settings.manualFragranceLibraryV1.find(item=>item.name==='Ficha preparada');
-  for(let i=0;i<15;i++)db.settings.manualFragranceLibraryV1.push({...row,id:'pdf-'+i,name:'Aroma '+i});
+  for(let i=0;i<18;i++)db.settings.manualFragranceLibraryV1.push({...row,id:'pdf-'+i,name:'Aroma '+i});
   db.settings.manualFragranceLibraryV1.push({...row,id:'pdf-archived',name:'Aroma arquivado',archived:true});
   row.photoData=document.createElement('canvas').toDataURL('image/jpeg');
   window.pdfImages=0;
@@ -97,6 +97,9 @@ if(width===390){
  const pdf=fs.readFileSync(await download.path()).toString('latin1');
  assert.match(pdf,/^%PDF-1\.4/);
  assert.match(pdf,/\/Count 2\b/);
+ assert.match(pdf,/\/Width 1240 \/Height 1754/);
+ assert.ok(pdf.length<400000,'O folheto sintético excedeu 400 kB');
+ console.log('PDF folheto: '+pdf.length+' bytes');
  const drawn=await page.evaluate(()=>window.pdfText.join('\n'));
  assert.match(drawn,/cliente@example.test\n912345678/);
  assert.match(drawn,/Ficha preparada/);
