@@ -123,7 +123,7 @@ await history.locator('[name=period]').selectOption('all');
 assert.equal(await history.locator('.fl-history-item').count(),2);
 assert.equal(await page.evaluate(()=>localStorage.getItem(KEY)),beforeHistory);
 await history.getByRole('button',{name:'Fechar',exact:true}).click();
-assert.equal(await page.locator('dialog.fl-history-dialog').count(),0);
+await page.locator('dialog.fl-history-dialog').waitFor({state:'detached'});
 
 const photoSlot=page.getByRole('button',{name:'Fotografia de Ficha preparada',exact:true});
 assert.match(await photoSlot.innerText(),/Sem fotografia/);
