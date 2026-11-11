@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.142">
+<meta name="artessencia-version" content="1.9.143">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -4115,7 +4115,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 <section id="technicalLibrary" class="screen">
  <div class="card"><h2>Biblioteca de Fragrâncias</h2><p>Consumos exclusivamente manuais, em ml. Independente do Stock e da Produção.</p>
  <p class="muted">Os registos são guardados localmente e seguem a sincronização existente. Em caso de conflito Cloud, não forces o envio de uma cópia antiga. Exporta o histórico e resolve o conflito antes de continuar.</p>
- <div class="fl-actions"><button class="btn primary" onclick="aeFragrancesV1.add()">Nova fragrância</button><button class="btn" onclick="aeFragrancesV1.importReceipt()">Importar recibo 67827</button><button class="btn" onclick="aeFragrancesV1.exportCsv()">Exportar CSV</button></div>
+ <div class="fl-actions"><button class="btn primary" onclick="aeFragrancesV1.add()">Nova fragrância</button><button class="btn" onclick="aeFragrancesV1.importReceipt()">Importar recibo 67827</button><button class="btn" onclick="aeFragrancesV1.exportCsv()">Exportar CSV</button><button class="btn" onclick="aeFragrancesV1.downloadCustomerPdf()">PDF para clientes</button></div>
  <div class="fl-filters"><label>Pesquisar<input id="aeFlSearchV1" type="search" oninput="aeFragrancesV1.render()"></label><label>Família<select id="aeFlFamilyV1" onchange="aeFragrancesV1.render()"><option value="">Todas as famílias</option></select></label><label>Estado<select id="aeFlStatusV1" onchange="aeFragrancesV1.render()"><option value="active">Ativas</option><option value="low">Nível baixo</option><option value="archived">Arquivadas</option><option value="all">Todas</option></select></label><label>Ordenar<select id="aeFlSort" onchange="aeFragrancesV1.render()"><option value="name">Nome</option><option value="quantity">Menor quantidade</option></select></label></div>
  <p id="aeFlCountsV1" aria-live="polite"></p><div id="aeFlCardsV1" class="ae-fl-cards-v1"></div></div>
 </section>
@@ -6420,7 +6420,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.142';
+const APP_VERSION='1.9.143';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
