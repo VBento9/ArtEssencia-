@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.149">
+<meta name="artessencia-version" content="1.9.150">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -4113,11 +4113,35 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
   </section>
 
 <section id="technicalLibrary" class="screen">
- <div class="card"><h2>Biblioteca de Fragrâncias</h2><p>Consumos exclusivamente manuais, em ml. Independente do Stock e da Produção.</p>
- <p class="muted">Os registos são guardados localmente e seguem a sincronização existente. Em caso de conflito Cloud, não forces o envio de uma cópia antiga. Exporta o histórico e resolve o conflito antes de continuar.</p>
- <div class="fl-actions"><button class="btn primary" onclick="aeFragrancesV1.add()">Nova fragrância</button><button class="btn" onclick="aeFragrancesV1.importReceipt()">Importar recibo 67827</button><button class="btn" onclick="aeFragrancesV1.exportCsv()">Exportar CSV</button><button class="btn" onclick="aeFragrancesV1.downloadCustomerPdf()">PDF para clientes</button></div>
- <div class="fl-filters"><label>Pesquisar<input id="aeFlSearchV1" type="search" oninput="aeFragrancesV1.render()"></label><label>Família<select id="aeFlFamilyV1" onchange="aeFragrancesV1.render()"><option value="">Todas as famílias</option></select></label><label>Estado<select id="aeFlStatusV1" onchange="aeFragrancesV1.render()"><option value="active">Ativas</option><option value="low">Nível baixo</option><option value="archived">Arquivadas</option><option value="all">Todas</option></select></label><label>Ordenar<select id="aeFlSort" onchange="aeFragrancesV1.render()"><option value="name">Nome</option><option value="quantity">Menor quantidade</option></select></label></div>
- <p id="aeFlCountsV1" aria-live="polite"></p><div id="aeFlCardsV1" class="ae-fl-cards-v1"></div></div>
+ <div class="card fl-library-shell">
+ <header class="fl-library-header">
+  <div class="fl-library-intro"><span class="fl-library-eyebrow">ATELIER · CONTROLO MANUAL</span><h2>Biblioteca de Fragrâncias</h2><p>Consulta os aromas, acompanha os saldos e regista manualmente cada utilização em ml.</p></div>
+  <div class="fl-library-cta"><button class="btn primary" onclick="aeFragrancesV1.add()">Nova fragrância</button><button class="btn" onclick="aeFragrancesV1.downloadCustomerPdf()">PDF para clientes</button></div>
+ </header>
+ <div id="aeFlSummaryV2" class="fl-library-summary" role="group" aria-label="Resumo rápido da biblioteca">
+  <button type="button" data-filter="active" aria-label="Filtrar: Ativas" onclick="aeFragrancesV1.quickFilter('active')"><span>Ativas</span><strong>0</strong></button>
+  <button type="button" data-filter="available" aria-label="Filtrar: Disponíveis" onclick="aeFragrancesV1.quickFilter('available')"><span>Disponíveis</span><strong>0</strong></button>
+  <button type="button" data-filter="low" aria-label="Filtrar: Nível baixo" onclick="aeFragrancesV1.quickFilter('low')"><span>Nível baixo</span><strong>0</strong></button>
+  <button type="button" data-filter="pending" aria-label="Filtrar: Por registar" onclick="aeFragrancesV1.quickFilter('pending')"><span>Por registar</span><strong>0</strong></button>
+  <button type="button" data-filter="empty" aria-label="Filtrar: Esgotadas" onclick="aeFragrancesV1.quickFilter('empty')"><span>Esgotadas</span><strong>0</strong></button>
+ </div>
+ <div class="fl-library-controls">
+  <div class="fl-filters">
+   <label>Pesquisar fragrância<input id="aeFlSearchV1" type="search" placeholder="Nome, fornecedor ou aroma…" oninput="aeFragrancesV1.render()"></label>
+   <label>Família<select id="aeFlFamilyV1" onchange="aeFragrancesV1.render()"><option value="">Todas as famílias</option></select></label>
+   <label>Estado<select id="aeFlStatusV1" onchange="aeFragrancesV1.render()"><option value="active">Ativas</option><option value="available">Disponíveis</option><option value="low">Nível baixo</option><option value="pending">Por registar</option><option value="empty">Esgotadas</option><option value="archived">Arquivadas</option><option value="all">Todas</option></select></label>
+   <label>Ordenar<select id="aeFlSort" onchange="aeFragrancesV1.render()"><option value="name">Nome A–Z</option><option value="quantity">Menor quantidade</option></select></label>
+  </div>
+  <div class="fl-library-viewbar">
+   <div class="fl-view-switch" role="group" aria-label="Apresentação de fragrâncias"><button type="button" class="btn" data-view="cards" aria-pressed="true" onclick="aeFragrancesV1.setView('cards')">Cartões</button><button type="button" class="btn" data-view="list" aria-pressed="false" onclick="aeFragrancesV1.setView('list')">Lista compacta</button></div>
+   <button type="button" class="btn fl-clear-filters" onclick="aeFragrancesV1.clearFilters()">Limpar filtros</button>
+  </div>
+ </div>
+ <div class="fl-library-results"><p id="aeFlCountsV1" aria-live="polite"></p><div id="aeFlCardsV1" class="ae-fl-cards-v1" data-view="cards"></div></div>
+ <details class="fl-library-tools"><summary>Ferramentas de gestão e segurança</summary><div class="fl-tools-body"><p>Importações, quantidades iniciais e cópias de segurança da biblioteca. Os consumos continuam exclusivamente manuais.</p>
+  <div class="fl-actions"><button class="btn" onclick="aeFragrancesV1.importReceipt()">Importar recibo 67827</button><button class="btn" onclick="aeFragrancesV1.batchSetup()">Preencher quantidades em conjunto</button><button class="btn" onclick="aeFragrancesV1.exportCsv()">Exportar CSV</button></div>
+  <p class="muted">Em caso de conflito Cloud, exporta uma cópia do histórico e resolve o conflito antes de continuar.</p></div></details>
+ </div>
 </section>
   <section id="stock" class="screen">
     <div class="stock-hero card">
@@ -6420,7 +6444,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.149';
+const APP_VERSION='1.9.150';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){

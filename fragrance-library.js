@@ -77,52 +77,101 @@ function makeGauge(x){
   }
  return gauge;
 }
+let fragranceView='cards';
+function statusOfFragrance(row){
+ if(row.archived)return 'archived';
+ if(!hasBalance(row))return 'pending';
+ if(ledger.balance(row)===0)return 'empty';
+ const percent=ledger.tank(row).percent;
+ return percent!==null&&percent<=20?'low':'available';
+}
+function matchesFragranceStatus(row,status){
+ const state=statusOfFragrance(row);
+ return status==='all'||status==='active'&&!row.archived||
+  status==='available'&&!row.archived&&hasBalance(row)&&ledger.balance(row)>0||
+  status===state;
+}
+function quickFilter(status){
+ const select=document.getElementById('aeFlStatusV1');
+ if(!select)return;
+ document.getElementById('aeFlSearchV1').value='';
+ document.getElementById('aeFlFamilyV1').value='';
+ select.value=status;render();
+}
+function clearFilters(){
+ const select=document.getElementById('aeFlStatusV1');
+ if(!select)return;
+ document.getElementById('aeFlSearchV1').value='';
+ document.getElementById('aeFlFamilyV1').value='';
+ document.getElementById('aeFlSort').value='name';
+ select.value='active';render();
+}
+function setView(mode){if(mode==='cards'||mode==='list'){fragranceView=mode;render()}}
 function render(){
  const root=document.getElementById('technicalLibrary');if(!root)return;
  const q=document.getElementById('aeFlSearchV1'),f=document.getElementById('aeFlFamilyV1'),s=document.getElementById('aeFlStatusV1');
- if(!s.querySelector('[value=pending]')){
-  s.add(new Option('Quantidade por registar','pending'));
-  s.add(new Option('Esgotadas','empty'));
-  const setup=document.createElement('button');setup.type='button';setup.className='btn';
-  setup.textContent='Preencher quantidades em conjunto';setup.onclick=batchSetup;
-  root.querySelector('.fl-actions').append(setup);
- }
- const family=f.value,used=[...new Set(rows().map(x=>x.family||FAMILIES[0]))].sort((a,b)=>a.localeCompare(b,'pt-PT'));
- f.innerHTML='<option value="">Todas as famílias</option>'+used.map(x=>'<option value="'+text(x)+'">'+text(x)+'</option>').join('');f.value=family;
- const list=rows(),search=norm(q.value),status=s.value;
- const shown=list.filter(x=>(!family||x.family===family)&&
-  (status==='all'||(status==='active'&&!x.archived)||(status==='archived'&&x.archived)||(status==='pending'&&!x.archived&&!hasBalance(x))||(status==='empty'&&!x.archived&&hasBalance(x)&&ledger.balance(x)===0)||(status==='low'&&!x.archived&&hasBalance(x)&&ledger.tank(x).percent!==null&&ledger.tank(x).percent<=20))&&
+ const family=f.value,list=rows(),used=[...new Set(list.map(x=>x.family||FAMILIES[0]))].sort((a,b)=>a.localeCompare(b,'pt-PT'));
+ f.replaceChildren(new Option('Todas as famílias',''),...used.map(x=>new Option(x,x)));f.value=family;
+ const search=norm(q.value),status=s.value;
+ const shown=list.filter(x=>(!family||x.family===family)&&matchesFragranceStatus(x,status)&&
   (!search||norm([x.name,x.originalName,x.supplier,x.description,x.family].join(' ')).includes(search)))
   .sort((a,b)=>document.getElementById('aeFlSort').value==='quantity'?ledger.balance(a)-ledger.balance(b):String(a.name).localeCompare(String(b.name),'pt-PT'));
- document.getElementById('aeFlCountsV1').textContent=list.filter(x=>!x.archived).length+' ativas · '+list.filter(x=>x.archived).length+' arquivadas · '+shown.length+' apresentadas';
- const box=document.getElementById('aeFlCardsV1');box.replaceChildren();
- if(!shown.length){const empty=document.createElement('p');empty.className='muted';empty.textContent=list.length?'Nenhuma fragrância corresponde à pesquisa.':'Ainda não existem fichas. Cria a primeira ou importa o recibo.';box.append(empty);return}
+ const summary=document.getElementById('aeFlSummaryV2');
+ if(summary)for(const b of summary.querySelectorAll('button[data-filter]')){
+  const value=b.dataset.filter;
+  b.querySelector('strong').textContent=String(list.filter(row=>matchesFragranceStatus(row,value)).length);
+  b.setAttribute('aria-pressed',String(value===status));
+ }
+ for(const button of root.querySelectorAll('.fl-view-switch [data-view]'))button.setAttribute('aria-pressed',String(button.dataset.view===fragranceView));
+ const box=document.getElementById('aeFlCardsV1');box.dataset.view=fragranceView;box.replaceChildren();
+ document.getElementById('aeFlCountsV1').textContent=shown.length+' fragrâncias apresentadas · '+list.filter(x=>!x.archived).length+' ativas · '+list.filter(x=>x.archived).length+' arquivadas';
+ if(!shown.length){
+  const empty=document.createElement('div');empty.className='fl-library-empty';
+  const message=document.createElement('p');message.textContent=list.length?'Nenhuma fragrância corresponde aos filtros selecionados.':'Ainda não existem fragrâncias registadas.';
+  const reset=document.createElement('button');reset.type='button';reset.className='btn';reset.textContent=list.length?'Limpar filtros':'Criar primeira fragrância';
+  reset.onclick=list.length?clearFilters:()=>openEditor(null);
+  empty.append(message,reset);box.append(empty);return;
+ }
  for(const x of shown){
-  const card=document.createElement('article');card.className='ae-fl-card-v1';
+  const card=document.createElement('article');card.className='ae-fl-card-v1';card.dataset.status=statusOfFragrance(x);
   const main=document.createElement('div');main.className='ae-fl-card-main-v1';
-  const title=document.createElement('h3');title.textContent=x.name;main.append(title);
-  const original=document.createElement('small');original.textContent=x.originalName||'Nome comercial não indicado';main.append(original);
-  const meta=document.createElement('span');meta.textContent=(x.family||'Por classificar')+(x.archived?' · Arquivada':'');main.append(meta);
-  const description=document.createElement('p');description.textContent=x.description||'Descrição aromática por preencher.';main.append(description);
-  const edit=document.createElement('button');edit.type='button';edit.className='btn';edit.textContent='Abrir ficha';edit.addEventListener('click',()=>openEditor(x.id));
-  const gauge=makeGauge(x);
-  const photo=document.createElement('button');
-  photo.type='button';photo.className='fl-photo-slot';
-  photo.setAttribute('aria-label','Fotografia de '+x.name);
-  photo.onclick=()=>openEditor(x.id,true);
+  const photo=document.createElement('button');photo.type='button';photo.className='fl-photo-slot';
+  photo.setAttribute('aria-label','Fotografia de '+x.name);photo.onclick=()=>openEditor(x.id,true);
   renderPhoto(photo,x.photoData||x.photoUrl);
-  main.prepend(photo);
+  const identity=document.createElement('div');identity.className='fl-card-identity';
+  const familyLabel=document.createElement('span');familyLabel.className='fl-family-label';familyLabel.textContent=x.family||'Por classificar';
+  const title=document.createElement('h3');title.textContent=x.name;identity.append(familyLabel,title);
+  if(x.originalName&&norm(x.originalName)!==norm(x.name)){
+   const original=document.createElement('small');original.textContent=x.originalName;identity.append(original);
+  }
+  if(x.description){const description=document.createElement('p');description.textContent=x.description;identity.append(description)}
+  main.append(photo,identity);
+  const level=ledger.tank(x),state=statusOfFragrance(x);
+  const labels={archived:'Arquivada',pending:'Por registar',empty:'Esgotada',low:'Nível baixo',available:level.percent===null?'Sem capacidade':'Disponível'};
+  const balancePanel=document.createElement('div');balancePanel.className='fl-card-balance';
+  const statusBadge=document.createElement('span');statusBadge.className='fl-status-label';statusBadge.textContent=labels[state];
+  balancePanel.append(statusBadge,makeGauge(x));
   const actions=document.createElement('div');actions.className='fl-actions';
-  for(const [label,type] of [['Registar utilização','consumption'],['Adicionar fragrância','refill']]){const b=document.createElement('button');b.type='button';b.className='btn'+(type==='consumption'?' primary':'');b.textContent=label;b.disabled=!!x.archived;b.onclick=()=>movement(x.id,type);actions.append(b)}
+  for(const [label,type] of [['Registar utilização','consumption'],['Adicionar fragrância','refill']]){
+   const b=document.createElement('button');b.type='button';b.className='btn'+(type==='consumption'?' primary':'');b.textContent=label;
+   b.disabled=!!x.archived||(type==='consumption'&&(!hasBalance(x)||ledger.balance(x)<=0));
+   b.onclick=()=>movement(x.id,type);actions.append(b);
+  }
+  const bottom=document.createElement('div');bottom.className='fl-card-bottom';
+  const edit=document.createElement('button');edit.type='button';edit.className='btn fl-card-edit';edit.textContent='Abrir ficha';edit.onclick=()=>openEditor(x.id);bottom.append(edit);
+  const more=document.createElement('details');more.className='fl-card-more';
+  const moreSummary=document.createElement('summary');moreSummary.textContent='Mais opções';
   const secondary=document.createElement('div');secondary.className='fl-card-secondary';
   const history=document.createElement('button');history.type='button';history.className='btn';history.textContent='Histórico';history.onclick=()=>showHistory(x.id);
-  const manage=document.createElement('button');manage.type='button';manage.className='btn';
-  manage.textContent='Gerir fragrância';manage.disabled=!!x.archived;
+  const manage=document.createElement('button');manage.type='button';manage.className='btn';manage.textContent='Gerir fragrância';manage.disabled=!!x.archived;
   manage.onclick=()=>movement(x.id,hasBalance(x)&&ledger.balance(x)>0?'consumption':'refill',null,true);
-  secondary.append(manage,edit,history);
-  const level=ledger.tank(x);
-  if(level.percent===null&&!x.archived){const capacity=document.createElement('button');capacity.type='button';capacity.className='btn';capacity.textContent='Definir capacidade';capacity.onclick=()=>movement(x.id,'capacity');secondary.append(capacity)}
-  card.append(main,gauge,actions,secondary);box.append(card);
+  secondary.append(manage,history);
+  if(level.percent===null&&!x.archived){
+   const capacity=document.createElement('button');capacity.type='button';capacity.className='btn';
+   capacity.textContent='Definir capacidade';capacity.onclick=()=>movement(x.id,'capacity');secondary.append(capacity);
+  }
+  more.append(moreSummary,secondary);bottom.append(more);
+  card.append(main,balancePanel,actions,bottom);box.append(card);
  }
 }
 function renderPhoto(container,source){
@@ -155,7 +204,7 @@ function dialog(title,fields,existing,focusPhoto=false){
    help.textContent='Escolhe a nota que mais se destaca. Se tiveres dúvidas, deixa «Por classificar».';
    wrapper.append(help);
   }
-  (['description','applications','technicalNotes','photoUrl','ifraUrl','sdsUrl'].includes(key)?extra:grid).append(wrapper);
+  (['description','applications','technicalNotes','photoUrl','ifraUrl','sdsUrl','supplier','reference'].includes(key)?extra:grid).append(wrapper);
  }
  if(!existing){
   grid.insertAdjacentHTML('beforeend','<label>Quantidade inicial (ml)<input name="initialQuantity" inputmode="decimal"></label><label>Capacidade de referência (ml)<input name="initialCapacity" inputmode="decimal"></label>');
@@ -197,7 +246,10 @@ function dialog(title,fields,existing,focusPhoto=false){
  const legend=document.createElement('legend');legend.textContent='Notas técnicas comuns';
  const note=document.createElement('p');note.textContent=COMMON_NOTES;
  commonNotes.append(legend,note);
- form.append(photo,grid,commonNotes,details);
+ details.insertBefore(photo,extra);
+ const notesDetails=document.createElement('details');notesDetails.className='fl-optional fl-notes-details';
+ const notesSummary=document.createElement('summary');notesSummary.textContent='Dosagens de referência';notesDetails.append(notesSummary,commonNotes);
+ form.append(grid,details,notesDetails);
  const actions=document.createElement('div');actions.className='ae-fl-dialog-actions-v1';
  const cancel=document.createElement('button');cancel.type='button';cancel.className='btn';cancel.textContent='Cancelar';cancel.addEventListener('click',()=>d.close());
  const submit=document.createElement('button');submit.type='submit';submit.className='btn primary';submit.textContent='Guardar ficha';actions.append(cancel,submit);
@@ -219,6 +271,7 @@ function dialog(title,fields,existing,focusPhoto=false){
   updated.photoData=photoData;
   if(saveRows(existing?rows().map(v=>v.id===existing.id?updated:v):[...rows(),updated]))d.close();
  });
+ if(focusPhoto)details.open=true;
  d.showModal();
  if(focusPhoto)file.focus();
 }
@@ -581,6 +634,6 @@ function showHistory(id){
  d.lastElementChild.onclick=()=>d.close();d.onclose=()=>d.remove();document.body.append(d);d.showModal();
 }
 window.renderTechnicalLibraryV1=render;
-window.aeFragrancesV1={render,add:()=>openEditor(null),importReceipt,exportCsv,downloadCustomerPdf};
+window.aeFragrancesV1={render,quickFilter,clearFilters,setView,batchSetup,add:()=>openEditor(null),importReceipt,exportCsv,downloadCustomerPdf};
 render();
 })();
