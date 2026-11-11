@@ -275,7 +275,9 @@
   }
   // Grelha editorial A4 em duas colunas, independente dos filtros de seleção.
   const PDF_GRID={left:80,right:644,cardWidth:516,categoryHeight:57,
-    top:235,bottom:1570,withPhoto:318,withoutPhoto:157};
+    top:235,bottom:1570,withPhoto:374,withoutPhoto:168};
+  const PDF_PALETTE={paper:'#e9d6b8',paperAccent:'#ddc39e',ink:'#382b20',
+    muted:'#79634d',line:'#cdb390',category:'#73563d',card:'#fffaf0'};
   function productNameLines(ctx,name,width){
     const words=clean(name).split(/\s+/).filter(Boolean),lines=[];let line='';
     for(const word of words){
@@ -305,42 +307,58 @@
       if(!ctx)throw new Error('Não foi possível preparar a página PDF');
       await drawArtEssenciaHeader(ctx,'CATÁLOGO',
         (sourceLabel()+(settings.candles?' · Só velas':'')).slice(0,65)+' · '+new Date().toLocaleDateString('pt-PT'));
+      // Preserve the original transparent logo in the existing header.
+      // A light kraft sheet starts below that header and ends above the footer.
+      ctx.fillStyle=PDF_PALETTE.paper;
+      ctx.fillRect(0,188,1240,1450);
+      ctx.fillStyle=PDF_PALETTE.paperAccent;
+      ctx.fillRect(0,188,1240,3);
       y=PDF_GRID.top;categoryOnPage='';column=0;
     }
     async function finishPage(){
-      drawCatalogFooter(ctx);
-      ctx.fillStyle='#806b62';ctx.textAlign='right';ctx.font='18px Arial';
-      ctx.fillText('Página '+(pages.length+1),1150,1603);ctx.textAlign='left';
+      ctx.fillStyle=PDF_PALETTE.paper;
+      ctx.fillRect(0,1570,1240,184);
+      ctx.fillStyle=PDF_PALETTE.line;
+      ctx.fillRect(80,1609,1080,2);
+      ctx.textAlign='left';ctx.fillStyle=PDF_PALETTE.muted;ctx.font='18px Arial';
+      const contact=clean(db.settings?.businessPhone);
+      ctx.fillText(contact?'ArtEssencia · '+fit(ctx,contact,380):'ArtEssencia Ateliê Artesanal',80,1670);
+      ctx.textAlign='right';
+      ctx.fillText('Preços sujeitos a confirmação de disponibilidade.',1160,1670);
+      ctx.font='18px Arial';ctx.fillText('Página '+(pages.length+1),1160,1711);
+      ctx.textAlign='left';
       const jpeg=await new Promise((resolve,reject)=>canvas.toBlob(
         blob=>blob?resolve(blob):reject(new Error('Não foi possível gerar a página PDF')),'image/jpeg',0.97));
       pages.push(jpeg);
       canvas.width=0;canvas.height=0;
     }
     function heading(cat){
-      ctx.fillStyle='#75614f';ctx.fillRect(80,y,1080,43);
-      ctx.fillStyle='#fff';ctx.font='bold 21px Arial';
+      ctx.fillStyle=PDF_PALETTE.category;ctx.fillRect(80,y,1080,43);
+      ctx.fillStyle='#fffaf2';ctx.font='bold 21px Arial';
       ctx.fillText(fit(ctx,cat.toLocaleUpperCase('pt-PT'),1030),97,y+29);
       y+=PDF_GRID.categoryHeight;categoryOnPage=cat;
     }
     async function drawCard(p,x,top){
       const width=PDF_GRID.cardWidth,height=rowHeight-13;
-      ctx.fillStyle='#fffaf4';ctx.fillRect(x,top,width,height);
-      ctx.strokeStyle='#e0d2c2';ctx.lineWidth=1;ctx.strokeRect(x+.5,top+.5,width-1,height-1);
+      ctx.fillStyle=PDF_PALETTE.card;ctx.fillRect(x,top,width,height);
+      ctx.strokeStyle=PDF_PALETTE.line;ctx.lineWidth=1;ctx.strokeRect(x+.5,top+.5,width-1,height-1);
       if(settings.images){
         const imageUrl=clean(p.shopImageUrl||p.imageUrl||p.image||p.photo);
         const img=await loadPhoto(imageUrl);
-        try{drawPhoto(ctx,img,x+15,top+13,width-30,184);}
-        catch(_){drawPhoto(ctx,null,x+15,top+13,width-30,184);}
+        try{drawPhoto(ctx,img,x+15,top+13,width-30,201);}
+        catch(_){drawPhoto(ctx,null,x+15,top+13,width-30,201);}
       }
-      ctx.textAlign='left';ctx.fillStyle='#49382e';ctx.font='bold 24px Arial';
+      ctx.textAlign='left';ctx.fillStyle=PDF_PALETTE.ink;ctx.font='25px Georgia, serif';
       const lines=productNameLines(ctx,p.name,width-38);
-      const titleY=top+(settings.images?229:42);
-      lines.forEach((line,index)=>ctx.fillText(line,x+19,titleY+index*30));
-      const metaY=top+(settings.images?289:126);
-      ctx.fillStyle='#806b62';ctx.font='18px Arial';
-      ctx.fillText(fit(ctx,code(p),240),x+19,metaY);
-      ctx.textAlign='right';ctx.fillStyle='#9a634c';ctx.font='bold 23px Arial';
-      ctx.fillText(fit(ctx,priceText(p),225),x+width-19,metaY);
+      const titleY=top+(settings.images?247:42);
+      lines.forEach((line,index)=>ctx.fillText(line,x+19,titleY+index*31));
+      const separatorY=top+height-49;
+      ctx.fillStyle=PDF_PALETTE.line;ctx.fillRect(x+19,separatorY,width-38,1);
+      const metaY=top+height-19;
+      ctx.fillStyle=PDF_PALETTE.muted;ctx.font='17px Arial';
+      ctx.fillText(fit(ctx,code(p),238),x+19,metaY);
+      ctx.textAlign='right';ctx.fillStyle=PDF_PALETTE.category;ctx.font='bold 22px Arial';
+      ctx.fillText(fit(ctx,priceText(p),215),x+width-19,metaY);
       ctx.textAlign='left';
     }
     await startPage();
