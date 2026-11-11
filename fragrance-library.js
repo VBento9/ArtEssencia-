@@ -751,7 +751,7 @@ function showHistory(id){
   const bounds=range(),invalid=!bounds.from&&period.value==='custom'||!bounds.until&&period.value==='custom'||bounds.from>bounds.until;
   const filtered=invalid?[]:sorted.filter(({move})=>(!bounds.from||move.date>=bounds.from)&&(!bounds.until||move.date<=bounds.until));
   const total=(kind)=>filtered.reduce((sum,{move})=>sum+(move.type===kind?Number(move.delta)||0:0),0);
-  stats.querySelector('[data-stat=consumption] strong').textContent=ml(-total('consumption')/1000);
+  stats.querySelector('[data-stat=consumption] strong').textContent=ml(Math.abs(total('consumption'))/1000);
   stats.querySelector('[data-stat=refill] strong').textContent=ml(total('refill')/1000);
   stats.querySelector('[data-stat=moves] strong').textContent=String(filtered.length);
   stats.querySelector('[data-stat=adjust] strong').textContent=String(filtered.filter(({move})=>move.type==='correction'||move.type==='capacity').length);
