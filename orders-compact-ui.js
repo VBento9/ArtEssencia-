@@ -128,7 +128,7 @@
   const host=document.getElementById('cart'),notes=document.getElementById('saleNotes');
   if(!host||!notes)return;
   window.__aeDirectOrderOptions19158=true;
-  const originalRender=renderCart,originalSave=saveOrder;
+  const originalRender=renderCart;
   const normalized=v=>String(v||'').trim().toLocaleLowerCase('pt-PT');
   const product=line=>(db.products||[]).find(p=>String(p.code||'')===String(line.code||''))||null;
   const profile=line=>product(line)?.personalizationV1773||product(line)?.personalization||{};
@@ -174,6 +174,7 @@
      content.append(pick((Array.isArray(co.labels)&&co.labels[j])|| (slots===1?'Cor (se aplicável)':'Cor '+(j+1)),colorValues,opts.colors?.[j]||'',value=>{
       const o=line.directSaleOptionsV19158||(line.directSaleOptionsV19158={colors:[],fragrance:'',notes:''});
       if(!Array.isArray(o.colors))o.colors=[];
+      o.colorLabels=Array.isArray(co.labels)?co.labels.slice(0,3):[];
       o.colors[j]=value;
       summary.textContent='Cores e fragrância · '+([...(o.colors||[]).filter(Boolean),o.fragrance].filter(Boolean).join(' / ')||'por definir');
      }));
@@ -206,24 +207,18 @@
    });
   }
   window.renderCart=function(...args){const result=originalRender.apply(this,args);renderOptions();return result};
-  function selectionsNote(){
-   const lines=[];
-   cart.forEach((line,i)=>{
-    const o=line.directSaleOptionsV19158||{},p=profile(line),co=p.colors||{},fr=p.fragrance||{};
-    const selections=(Array.isArray(o.colors)?o.colors:[]).map((v,j)=>v?((Array.isArray(co.labels)&&co.labels[j])||('Cor '+(j+1)))+': '+v:'').filter(Boolean);
-    if(!selections.length&&Number(co.max)>0)selections.push('Cores: por definir');
-    if(o.fragrance)selections.push('Fragrância: '+o.fragrance);
-    else if(fr.enabled&&fr.required)selections.push('Fragrância: por definir');
-    if(String(o.notes||'').trim())selections.push('Instruções: '+String(o.notes).trim().replace(/\s+/g,' '));
-    if(selections.length)lines.push((i+1)+'. '+String(line.name||line.code||'Produto')+' ('+Math.max(1,Number(line.qty)||1)+' un.): '+selections.join('; '));
-   });
-   return lines.length?'Escolhas dos artigos — '+lines.join(' | '):'';
-  }
-  window.saveOrder=async function(...args){
-   const before=notes.value,summary=selectionsNote(),count=(db.orders||[]).length;
-   if(summary)notes.value=[before.trim(),summary].filter(Boolean).join('\n\n');
-   try{return await originalSave.apply(this,args)}
-   finally{if((db.orders||[]).length===count)notes.value=before}
+  window.setDirectOrderLineQtyV19158=function(index,nextValue){
+   const line=cart[index];if(!line)return;
+   const oldQty=Math.max(1,Number(line.qty)||1),nextQty=Math.max(1,Math.floor(Number(nextValue)||1));
+   const opt=line.directSaleOptionsV19158||{};
+   const chosen=(Array.isArray(opt.colors)&&opt.colors.some(Boolean))||String(opt.fragrance||'').trim()||String(opt.notes||'').trim();
+   if(chosen&&nextQty>oldQty){
+    const newQty=nextQty-oldQty;
+    const available=cart.find((x,i)=>i!==index&&String(x.code||'')===String(line.code||'')&&Number(x.price)===Number(line.price)&&!(x.directSaleOptionsV19158?.colors||[]).some(Boolean)&&!x.directSaleOptionsV19158?.fragrance&&!x.directSaleOptionsV19158?.notes);
+    if(available)available.qty=(Number(available.qty)||0)+newQty;
+    else cart.splice(index+1,0,{...line,qty:newQty,directSaleOptionsV19158:{colors:[],fragrance:'',notes:'',open:true}});
+   }else line.qty=nextQty;
+   renderCart();renderPicker();
   };
   renderOptions();
  }
@@ -250,7 +245,9 @@
    const result=originalAdd.apply(this,arguments);
    if(hasChoices&&current&&Number(current.qty)>oldQty){
     current.qty=oldQty;
-    cart.push({...current,qty:1,directSaleOptionsV19158:{colors:[],fragrance:'',notes:'',open:true}});
+    const available=cart.find(x=>x!==current&&String(x.code||'')===String(current.code||'')&&Number(x.price)===Number(current.price)&&!(x.directSaleOptionsV19158?.colors||[]).some(Boolean)&&!x.directSaleOptionsV19158?.fragrance&&!x.directSaleOptionsV19158?.notes);
+    if(available)available.qty=(Number(available.qty)||0)+1;
+    else cart.push({...current,qty:1,directSaleOptionsV19158:{colors:[],fragrance:'',notes:'',open:true}});
     renderCart();
     renderPicker();
    }
