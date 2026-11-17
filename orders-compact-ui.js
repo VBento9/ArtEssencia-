@@ -156,7 +156,7 @@
    const rows=[...host.querySelectorAll(':scope > .sale-cart-row-v1754')];
    rows.forEach((row,index)=>{
     const line=cart[index];if(!line)return;
-    const opts=line.directSaleOptionsV19158||{};
+    const opts=line.directSaleOptionsV19158||(line.directSaleOptionsV19158={colors:[],fragrance:'',notes:'',open:false});
     const p=profile(line),co=p.colors||{},fr=p.fragrance||{},all=master();
     const slots=Math.min(3,Math.max(1,Number(co.max)||1));
     const colorValues=values(Array.isArray(co.palette)&&co.palette.length?co.palette:all.colors);
