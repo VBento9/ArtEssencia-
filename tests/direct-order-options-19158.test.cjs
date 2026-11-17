@@ -4,7 +4,7 @@ const source=fs.readFileSync('orders-compact-ui.js','utf8');
 function fixture({qty=1,required=true}={}){
  const dom=new JSDOM('<!doctype html><body><input id="saleClient"><div id="saleClientMatchesV1756"></div><div id="cart"></div><textarea id="saleNotes"></textarea></body>',{runScripts:'outside-only',url:'https://local.test'});
  dom.window.eval("var cart=[{code:'V-1',name:'Vela teste',price:10,qty:"+qty+"}];"+
- "var db={products:[{code:'V-1',personalizationV1773:{colors:{max:2,labels:['Cor da base','Cor dos detalhes'],palette:[{name:'Azul'},{name:'Branco'}]},fragrance:{enabled:true,required:"+required+",options:['Lavanda','Baunilha']}}}],settings:{personalizationLibraryV1791:{colors:[{name:'Verde'}],fragrances:['Rosa']}},orders:[],clients:[]};"+
+ "var db={products:[{code:'V-1',price:10,personalizationV1773:{colors:{max:2,labels:['Cor da base','Cor dos detalhes'],palette:[{name:'Azul'},{name:'Branco'}]},fragrance:{enabled:true,required:"+required+",options:['Lavanda','Baunilha']}}}],settings:{personalizationLibraryV1791:{colors:[{name:'Verde'}],fragrances:['Rosa']}},orders:[],clients:[]};"+
  "function isQuarantinedProductClient(){return false}"+
  "function uid(prefix){return prefix+'id'}function todayISO(){return '2026-11-17'}"+
  "function renderCart(){let host=document.getElementById('cart');host.innerHTML=cart.map((line,i)=>'<div class=\"sale-cart-row-v1754\">'+line.name+' × '+line.qty+'</div>').join('');}"+
