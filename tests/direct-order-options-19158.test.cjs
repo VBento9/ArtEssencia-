@@ -101,3 +101,25 @@ test('nova unidade sem escolhas pode aumentar a quantidade sem duplicar linhas',
  assert.equal(f.cart[0].qty,2);
  f.dom.window.close();
 });
+
+test('Cloud relacional conserva as opções na linha sem alterar o contrato das encomendas online',()=>{
+ const html=fs.readFileSync('index.html','utf8');
+ assert.match(html,/const orderRows=ordersToSync\.map\(o=>/);
+ assert.match(html,/data:relClone\(o\),updated_at:/);
+ assert.match(html,/\.from\(REL_TABLES\.orders\)\.upsert\(orderRows/);
+ assert.match(html,/notes:o\.notes\|\|null/);
+ const f=fixture();
+ f.cart[0].directSaleOptionsV19158={colors:['Azul','Branco'],fragrance:'Lavanda',notes:'Detalhes'};
+ const order={items:f.cart,notes:'Teste'};
+ const roundtrip=JSON.parse(JSON.stringify(order));
+ assert.equal(roundtrip.items[0].directSaleOptionsV19158.fragrance,'Lavanda');
+ assert.deepEqual(roundtrip.items[0].directSaleOptionsV19158.colors,['Azul','Branco']);
+ f.dom.window.close();
+});
+test('impressão existente contém observações da encomenda, mantendo linhas e notas por artigo',()=>{
+ const html=fs.readFileSync('index.html','utf8');
+ assert.match(html,/function printOrderCompleteV12634\(id\)/);
+ assert.ok(html.includes("h(o.notes||'—')"));
+ assert.match(html,/function showOrder\(id\)/);
+ assert.ok(html.includes("escapeHtml(o.notes||'—')"));
+});
