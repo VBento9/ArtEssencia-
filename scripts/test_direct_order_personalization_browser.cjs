@@ -108,6 +108,22 @@ const assert=require('node:assert/strict');
    assert.match(printed,/Entregar na segunda-feira/);
    assert.equal((printed.match(/Entregar na segunda-feira/g)||[]).length,1);
    await popup.close();
+   // Corrigir dados provisórios não pode alterar o ID nem renomear a pessoa com telefone igual.
+   const edited=await page.evaluate(()=>{
+    const order=db.orders.find(o=>o.id==='AS-2026-9999'),beforeId=order.clientId;
+    save=()=>{localStorage.setItem(KEY,JSON.stringify(db))};
+    document.getElementById('detailClient').value='João Confirmado';
+    document.getElementById('detailContact').value='934567890';
+    updateOrderDetails('AS-2026-9999');
+    const after=db.orders.find(o=>o.id==='AS-2026-9999');
+    return {beforeId,afterId:after.clientId,name:after.client,contact:after.contact,clientName:db.clients.find(c=>c.id===after.clientId)?.name,otherName:db.clients.find(c=>c.id==='CLI-EXIST')?.name};
+   });
+   assert.equal(edited.afterId,edited.beforeId);
+   assert.equal(edited.name,'João Confirmado');
+   assert.equal(edited.clientName,'João Confirmado');
+   assert.equal(edited.contact,'934567890');
+   assert.equal(edited.otherName,'Maria');
+
    assert.equal(errors.length,0,errors.join('\n'));
    await context.close();
    console.log('PASS: '+width+'px, cliente distinto com telefone repetido, guardar local, personalização por unidade, detalhe e impressão A4');
