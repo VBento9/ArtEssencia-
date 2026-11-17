@@ -257,3 +257,112 @@
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
  else install();
 })();
+
+
+/* V1.9.163 — estados visuais de encomendas, sem criar estados nem alterar pagamentos.
+   A produção determina a cor principal; o pagamento é informação independente. */
+(function(){
+ 'use strict';
+ if(window.__aeOrderColorsV19163)return;
+ window.__aeOrderColorsV19163=true;
+ function visualState(order){
+  const status=String(order?.status||'Pedido').trim();
+  let total=NaN;
+  try{if(typeof calcOrder==='function')total=Number(calcOrder(order)?.total)}catch(_){}
+  const rawPaid=Number(order?.paid);
+  const amountPaid=Number.isFinite(rawPaid)?Math.max(0,rawPaid):0;
+  const knownTotal=Number.isFinite(total)&&total>0;
+  const balance=knownTotal?Math.max(0,total-amountPaid):0;
+  const fullyPaid=knownTotal&&balance<=0.005;
+  const partial=knownTotal&&amountPaid>0.005&&!fullyPaid;
+  let state='other';
+  if(status==='Pedido')state='created';
+  else if(status==='Confirmada')state='confirmed';
+  else if(status==='Em produção'||status==='Produção')state='production';
+  else if(status==='Pronta')state=knownTotal&&balance>0.005?'ready-unpaid':fullyPaid?'ready-paid':'ready';
+  else if(status==='Entregue')state='delivered';
+  else if(status==='Cancelado'||status==='Cancelada')state='cancelled';
+  return {
+   state,
+   payment:fullyPaid?'paid':partial?'partial':knownTotal&&balance>0.005?'due':'unknown',
+   paymentLabel:fullyPaid?'Paga':partial?'Pagamento parcial':knownTotal&&balance>0.005?'Por pagar':'',
+   balance
+  };
+ }
+ window.aeOrderVisualStateV19163=visualState;
+ function init(){
+  const root=document.getElementById('orders'),cards=document.getElementById('ordersCards'),
+   table=document.getElementById('ordersBody'),detail=document.getElementById('orderDetail');
+  if(!root||!cards||!table)return;
+  function makeBadge(host){
+   let badge=host.querySelector(':scope > .ae-order-payment-v19163');
+   if(!badge){badge=document.createElement('span');badge.className='ae-order-payment-v19163';host.append(badge)}
+   return badge;
+  }
+  function setBadge(badge,info,hideIfAttention){
+   const label=hideIfAttention&&info.state==='ready-unpaid'?'':info.paymentLabel;
+   if(badge.textContent!==label)badge.textContent=label;
+   badge.dataset.payment=info.payment;
+   badge.hidden=!label;
+  }
+  function paint(){
+   const orders=typeof db!=='undefined'&&Array.isArray(db['orders'])?db['orders']:[];
+   const lookup=new Map(orders.map(o=>[String(o.id),o]));
+   cards.querySelectorAll('article.order-card').forEach(card=>{
+    const id=card.querySelector('[data-order-open]')?.dataset.orderOpen;
+    const order=lookup.get(String(id||''));if(!order)return;
+    const info=visualState(order);
+    card.dataset.aeOrderState=info.state;
+    card.dataset.aePaymentState=info.payment;
+    const header=card.querySelector('.order-card-head');
+    if(header)setBadge(makeBadge(header),info,!!header.querySelector('.order-attention-v1915'));
+   });
+   table.querySelectorAll('tr').forEach(row=>{
+    const id=row.querySelector('[data-order-open]')?.dataset.orderOpen;
+    const order=lookup.get(String(id||''));if(!order)return;
+    const info=visualState(order);
+    row.dataset.aeOrderState=info.state;
+    row.dataset.aePaymentState=info.payment;
+    const cell=row.cells?.[5];
+    if(cell)setBadge(makeBadge(cell),info,false);
+   });
+   if(detail){
+    const id=detail.dataset.orderId;
+    const order=lookup.get(String(id||''));
+    const heading=detail.querySelector('.ae-order-detail-customer');
+    if(order&&heading){
+     const info=visualState(order);
+     detail.dataset.aeOrderState=info.state;
+     setBadge(makeBadge(heading),info,false);
+    }
+   }
+  }
+  const legendAnchor=root.querySelector('.ae-orders-list-nav');
+  if(legendAnchor&&!root.querySelector('.ae-order-colors-legend-v19163')){
+   const legend=document.createElement('details');legend.className='ae-order-colors-legend-v19163';
+   const title=document.createElement('summary');title.textContent='Legenda de cores · estado e pagamento';legend.append(title);
+   const list=document.createElement('div');list.className='ae-order-colors-legend-list-v19163';
+   for(const [state,label] of [
+    ['created','Pedido efetuado'],['confirmed','Confirmada'],['production','Em produção'],
+    ['ready','Pronta'],['ready-unpaid','Pronta · por pagar'],['ready-paid','Pronta e paga']
+   ]){
+    const chip=document.createElement('span');chip.className='ae-order-colors-legend-chip-v19163';
+    chip.dataset.aeOrderState=state;chip.textContent=label;list.append(chip);
+   }
+   const note=document.createElement('p');
+   note.textContent='A cor indica a fase da encomenda. O indicador «Paga» identifica pagamentos concluídos, mesmo durante a produção.';
+   list.append(note);legend.append(list);legendAnchor.after(legend);
+  }
+  let pending=false;
+  function schedule(){
+   if(pending)return;pending=true;
+   queueMicrotask(()=>{pending=false;paint()});
+  }
+  const observer=new MutationObserver(schedule);
+  observer.observe(cards,{childList:true,subtree:true});
+  observer.observe(table,{childList:true,subtree:true});
+  if(detail)observer.observe(detail,{childList:true,subtree:true});
+  paint();
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
