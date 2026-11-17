@@ -123,7 +123,7 @@
    '<label class="ae-order-add-field-v19160"><span>Pesquisar produtos</span><input data-ae-order-search-v19160 type="search" autocomplete="off" placeholder="Nome ou referência do produto"></label>'+
    '<div class="ae-order-add-results-v19160" data-ae-order-results-v19160></div>'+
    '<h3>Artigos a acrescentar</h3><div data-ae-order-drafts-v19160 class="ae-order-add-drafts-v19160"></div></div>'+
-   '<footer class="ae-order-add-footer-v19160"><div data-ae-order-total-v19160 aria-live="polite"></div><div class="ae-order-add-actions-v19160"><button type="button" class="btn ghost" data-ae-order-cancel-v19160>Cancelar</button><button type="button" class="btn primary" data-ae-order-confirm-v19160>Guardar artigos</button></div></footer></div>';
+   '<div class="ae-order-add-footer-v19160"><div data-ae-order-total-v19160 aria-live="polite"></div><div class="ae-order-add-actions-v19160"><button type="button" class="btn ghost" data-ae-order-cancel-v19160>Cancelar</button><button type="button" class="btn primary" data-ae-order-confirm-v19160>Guardar artigos</button></div></div></div>';
   document.body.append(dialog);activeDialog=dialog;
   const drafts=[],search=$('[data-ae-order-search-v19160]',dialog),results=$('[data-ae-order-results-v19160]',dialog),
    rows=$('[data-ae-order-drafts-v19160]',dialog),total=$('[data-ae-order-total-v19160]',dialog),
