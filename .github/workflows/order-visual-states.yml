@@ -1,0 +1,24 @@
+name: Encomendas — estados visuais e pagamento
+on:
+  pull_request:
+    paths:
+      - 'orders-compact-ui.js'
+      - 'orders-compact-ui.css'
+      - 'tests/order-visual-states-19163.test.cjs'
+      - '.github/workflows/order-visual-states.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Verificar sintaxe
+        run: node --check orders-compact-ui.js
+      - name: Testar estados visuais e pagamentos
+        run: node --test tests/order-visual-states-19163.test.cjs
