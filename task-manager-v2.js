@@ -614,17 +614,54 @@ function render(){
 function mount(){
  if($(ROOT))return;
  const dash=$('dashboard');if(!dash)return;
- const shell=node('div','ae-task-shell');dash.prepend(shell);root=shell;root.id=ROOT; if(!document.getElementById('aeTaskManagerV2Styles')){const style=document.createElement('link');style.id='aeTaskManagerV2Styles';style.rel='stylesheet';style.href='/task-manager-v2.css';document.head.append(style)}
+ const screenId='taskPlanning';
+ let taskScreen=$(screenId);
+ if(!taskScreen){
+  taskScreen=node('section','screen ae-task-screen-v19165');
+  taskScreen.id=screenId;
+  const intro=node('div','ae-task-screen-intro-v19165');
+  const heading=node('div');
+  heading.append(node('span','dashboard-kicker','ORGANIZAÇÃO DO TRABALHO'));
+  heading.append(node('h2','','Planeamento de Tarefas'));
+  heading.append(node('p','','Organiza tarefas, rotinas, prazos e capacidade sem sair do gestor Cloud.'));
+  intro.append(heading,button('Voltar ao Dashboard',()=>go('dashboard')));
+  taskScreen.append(intro);
+  dash.after(taskScreen);
+ }
+ const shell=node('div','ae-task-shell');taskScreen.append(shell);root=shell;root.id=ROOT;
+ // Regista uma página real, reutilizando o router, sem duplicar o gestor nem os dados.
+ if(typeof pages!=='undefined'&&Array.isArray(pages)&&!pages.some(p=>p[0]===screenId))pages.splice(1,0,[screenId,'Planeamento de Tarefas']);
+ if(typeof pageIcons!=='undefined')pageIcons[screenId]='📋';
+ const dashboardNav=document.querySelector('#nav button[data-page="dashboard"]');
+ if(dashboardNav&&!document.querySelector('#nav button[data-page="'+screenId+'"]')){
+  const navButton=node('button','ae-task-nav-v19165');
+  navButton.type='button';navButton.dataset.page=screenId;
+  navButton.append(node('span','nav-icon','📋'),node('span','nav-label','Planeamento de Tarefas'),node('span','nav-active-dot'));
+  navButton.addEventListener('click',()=>go(screenId));
+  dashboardNav.after(navButton);
+ }
+ const guide=dash.querySelector('.ae-ux-daily-guide');
+ if(guide&&!$('aeTaskDashboardShortcutV19165')){
+  const shortcut=button('Abrir Planeamento de Tarefas',()=>go(screenId));
+  shortcut.id='aeTaskDashboardShortcutV19165';shortcut.classList.add('ae-task-shortcut-v19165');
+  guide.after(shortcut);
+ }
+ if(!document.getElementById('aeTaskManagerV2Styles')){
+  const style=document.createElement('link');style.id='aeTaskManagerV2Styles';
+  style.rel='stylesheet';style.href='/task-manager-v2.css';document.head.append(style);
+ }
  render();refresh();updateEditions();
- // Atualiza ao regressar ao Dashboard noutro dispositivo sem exigir fechar a PWA.
+ // Apenas o módulo de tarefas desencadeia a leitura ao regressar, sem afetar o Dashboard.
  let lastPull=0;
  function refreshOnReturn(){
-  if(!dash.classList.contains('active')||busy||refreshing)return;
+  if(!taskScreen.classList.contains('active')||busy||refreshing)return;
+  const heading=document.getElementById('pageContext');
+  if(heading)heading.textContent='PLANEAMENTO OPERACIONAL';
   if(Date.now()-lastPull<20000)return;
   lastPull=Date.now();
   refresh();
  }
- new MutationObserver(refreshOnReturn).observe(dash,{attributes:true,attributeFilter:['class']});
+ new MutationObserver(refreshOnReturn).observe(taskScreen,{attributes:true,attributeFilter:['class']});
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshOnReturn()});
  window.addEventListener('online',refreshOnReturn);
  window.addEventListener('pageshow',refreshOnReturn);
