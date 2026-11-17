@@ -32,3 +32,7 @@
 .ae-order-add-actions-v19160{display:flex;gap:8px;justify-content:flex-end}
 .ae-order-add-actions-v19160 .btn{min-height:44px}
 @media(max-width:600px){.ae-order-add-dialog-v19160{width:calc(100vw - 12px);max-height:calc(100dvh - 14px)}.ae-order-add-shell-v19160{max-height:calc(100dvh - 14px)}.ae-order-add-header-v19160,.ae-order-add-body-v19160,.ae-order-add-footer-v19160{padding-left:12px;padding-right:12px}.ae-order-add-results-v19160{grid-template-columns:repeat(2,minmax(0,1fr))}.ae-order-add-controls-v19160{grid-template-columns:1fr}.ae-order-add-actions-v19160 .btn{flex:1}.ae-order-add-header-v19160 h2{font-size:17px}}
+
+/* Manter o resumo e os botões de gravação visíveis com listas longas. */
+.ae-order-add-header-v19160,.ae-order-add-footer-v19160{flex:0 0 auto;min-width:0}
+.ae-order-add-body-v19160{flex:1 1 auto;overflow-y:auto;min-height:0}
