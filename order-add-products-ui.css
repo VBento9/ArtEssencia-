@@ -1,0 +1,38 @@
+/* ArtEssencia 1.9.160 · acrescentar artigos a encomendas existentes */
+.ae-existing-order-add-entry-v19160{display:flex;flex-wrap:wrap;gap:9px;align-items:center;padding:8px 0 13px}
+.ae-existing-order-add-entry-v19160 .btn{min-height:43px}
+.ae-existing-order-add-entry-v19160 small{font-size:12px;color:#75675f;line-height:1.35}
+.ae-order-add-dialog-v19160{border:0;border-radius:18px;padding:0;width:min(760px,calc(100vw - 20px));max-width:760px;max-height:calc(100dvh - 28px);margin:auto;background:#fffdf9;color:#3c2b24;box-shadow:0 22px 65px #0004}
+.ae-order-add-dialog-v19160::backdrop{background:rgba(26,19,15,.58)}
+.ae-order-add-shell-v19160{display:flex;flex-direction:column;max-height:calc(100dvh - 28px);min-height:0;overflow:hidden}
+.ae-order-add-header-v19160{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:17px 18px;border-bottom:1px solid #e6d8c9}
+.ae-order-add-header-v19160 h2{font-size:20px;line-height:1.25;margin:0 0 5px}
+.ae-order-add-header-v19160 p{font-size:12px;color:#746259;margin:0;line-height:1.4}
+.ae-order-add-close-v19160{flex:0 0 40px;border-radius:11px;border:1px solid #dacbbf;background:#fff;min-height:40px;font-size:24px;cursor:pointer}
+.ae-order-add-body-v19160{overflow-y:auto;padding:15px 18px;min-height:0;overscroll-behavior:contain}
+.ae-order-add-body-v19160>h3{font-size:15px;margin:16px 0 9px}
+.ae-order-add-field-v19160{min-width:0;display:flex;flex-direction:column;gap:5px}
+.ae-order-add-field-v19160>span{font-size:12px;line-height:1.4;font-weight:700;color:#59483d}
+.ae-order-add-field-v19160 :is(input,select,textarea){width:100%;min-width:0;min-height:43px;box-sizing:border-box;border:1px solid #d4c5b4;background:white;color:#34271f;padding:9px 11px;font-size:14px;font-weight:500;border-radius:10px}
+.ae-order-add-field-v19160 textarea{resize:vertical}
+.ae-order-add-results-v19160{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:7px;margin-top:9px;max-height:165px;overflow:auto}
+.ae-order-add-product-v19160{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0;min-height:51px;padding:9px 11px;border:1px solid #e5d7ca;border-radius:10px;background:#faf6ef;color:#382a22;cursor:pointer;text-align:left}
+.ae-order-add-product-v19160>strong{font-size:13px;overflow-wrap:anywhere}
+.ae-order-add-product-v19160>small{font-size:11px;color:#756153}
+.ae-order-add-empty-v19160{font-size:12px;color:#776a60;padding:10px}
+.ae-order-add-drafts-v19160{display:grid;gap:9px}
+.ae-order-add-line-v19160{background:#faf7f1;border:1px solid #e4d5c5;border-radius:12px;padding:11px;min-width:0}
+.ae-order-add-line-head-v19160{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:9px}
+.ae-order-add-line-head-v19160 strong{overflow-wrap:anywhere;font-size:14px}
+.ae-order-add-line-head-v19160 button{min-height:36px;padding:6px 10px;font-size:12px}
+.ae-order-add-controls-v19160{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.ae-order-add-notes-v19160{grid-column:1/-1}
+.ae-order-add-footer-v19160{border-top:1px solid #e6d8c9;background:#fffdf9;padding:12px 18px 15px;display:grid;gap:10px}
+.ae-order-add-footer-v19160 [data-ae-order-total-v19160]{font-size:12px;font-weight:700;line-height:1.5;overflow-wrap:anywhere}
+.ae-order-add-actions-v19160{display:flex;gap:8px;justify-content:flex-end}
+.ae-order-add-actions-v19160 .btn{min-height:44px}
+@media(max-width:600px){.ae-order-add-dialog-v19160{width:calc(100vw - 12px);max-height:calc(100dvh - 14px)}.ae-order-add-shell-v19160{max-height:calc(100dvh - 14px)}.ae-order-add-header-v19160,.ae-order-add-body-v19160,.ae-order-add-footer-v19160{padding-left:12px;padding-right:12px}.ae-order-add-results-v19160{grid-template-columns:repeat(2,minmax(0,1fr))}.ae-order-add-controls-v19160{grid-template-columns:1fr}.ae-order-add-actions-v19160 .btn{flex:1}.ae-order-add-header-v19160 h2{font-size:17px}}
+
+/* Manter o resumo e os botões de gravação visíveis com listas longas. */
+.ae-order-add-header-v19160,.ae-order-add-footer-v19160{flex:0 0 auto;min-width:0}
+.ae-order-add-body-v19160{flex:1 1 auto;overflow-y:auto;min-height:0}
