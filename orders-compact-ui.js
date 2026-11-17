@@ -230,4 +230,33 @@
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
  else install();
 })();
-
+/* V1.9.158 — impedir que uma nova unidade herde as opções de outra. */
+(function(){
+ 'use strict';
+ function install(){
+  if(window.__aeDirectSaleDistinctLines19158||typeof addProductToCartV1745!=='function'||typeof cart==='undefined')return;
+  window.__aeDirectSaleDistinctLines19158=true;
+  const originalAdd=addProductToCartV1745;
+  window.addProductToCartV1745=function(code){
+   const p=(db.products||[]).find(x=>String(x.code||'')===String(code||''));
+   const current=p?cart.find(x=>String(x.code||'')===String(code||'')&&Number(x.price)===Number(p.price)):null;
+   const oldQty=Number(current?.qty)||0;
+   const chosen=current?.directSaleOptionsV19158;
+   const hasChoices=!!(chosen&&(
+    (Array.isArray(chosen.colors)&&chosen.colors.some(Boolean))||
+    String(chosen.fragrance||'').trim()||
+    String(chosen.notes||'').trim()
+   ));
+   const result=originalAdd.apply(this,arguments);
+   if(hasChoices&&current&&Number(current.qty)>oldQty){
+    current.qty=oldQty;
+    cart.push({...current,qty:1,directSaleOptionsV19158:{colors:[],fragrance:'',notes:'',open:true}});
+    renderCart();
+    renderPicker();
+   }
+   return result;
+  };
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
+ else install();
+})();
