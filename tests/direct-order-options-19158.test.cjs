@@ -9,6 +9,7 @@ function fixture({qty=1,required=true}={}){
  "function uid(prefix){return prefix+'id'}function todayISO(){return '2026-11-17'}"+
  "function renderCart(){let host=document.getElementById('cart');host.innerHTML=cart.map((line,i)=>'<div class=\"sale-cart-row-v1754\">'+line.name+' × '+line.qty+'</div>').join('');}"+
  "async function saveOrder(){db.orders.push({items:cart.map(x=>({...x})),notes:document.getElementById('saleNotes').value});document.getElementById('saleNotes').value='';}"+
+ "function addProductToCartV1745(code){const p=db.products.find(x=>x.code===code),existing=cart.find(x=>x.code===code&&Number(x.price)===10);if(existing)existing.qty+=1;else cart.push({code,name:'Vela teste',price:10,qty:1});renderCart();}function renderPicker(){}"+
  "function chooseSaleClientV1756(){} function clearSale(){}");
  dom.window.eval(source);
  dom.window.document.dispatchEvent(new dom.window.Event('DOMContentLoaded'));
@@ -76,3 +77,27 @@ test('falha de validação não modifica permanentemente as notas manuais',async
  f.dom.window.close();
 });
 
+
+test('nova unidade não herda a cor ou fragrância já definida noutra linha',async()=>{
+ const f=fixture();
+ const select=f.w.document.querySelector('.ae-direct-order-options-v19158 select');
+ select.value='Azul';select.dispatchEvent(new f.w.Event('change'));
+ f.w.addProductToCartV1745('V-1');
+ assert.equal(f.cart.length,2);
+ assert.equal(f.cart[0].qty,1);
+ assert.equal(f.cart[1].qty,1);
+ assert.equal(f.cart[0].directSaleOptionsV19158.colors[0],'Azul');
+ assert.deepEqual(Array.from(f.cart[1].directSaleOptionsV19158.colors),[]);
+ assert.equal(f.cart.reduce((sum,x)=>sum+x.qty*x.price,0),20);
+ await f.w.saveOrder();
+ assert.match(f.db.orders[0].notes,/Cor da base: Azul/);
+ assert.equal((f.db.orders[0].notes.match(/Cor da base: Azul/g)||[]).length,1);
+ f.dom.window.close();
+});
+test('nova unidade sem escolhas pode aumentar a quantidade sem duplicar linhas',()=>{
+ const f=fixture();
+ f.w.addProductToCartV1745('V-1');
+ assert.equal(f.cart.length,1);
+ assert.equal(f.cart[0].qty,2);
+ f.dom.window.close();
+});
