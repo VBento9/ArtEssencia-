@@ -68,3 +68,13 @@
 #orders .ae-order-colors-legend-chip-v19163{display:inline-flex;padding:5px 9px;border-radius:999px;background:var(--ae-order-visual-bg,#f1f5f9);color:var(--ae-order-visual-ink,#334155);border:1px solid var(--ae-order-visual,#cbd5e1);font-size:11px;font-weight:650}
 #orders .ae-order-colors-legend-list-v19163 p{flex-basis:100%;margin:3px 0 0;font-size:11px;color:#6b5747}
 @media(max-width:650px){#orders .ae-order-colors-legend-list-v19163{gap:6px}#orders #ordersBody td:nth-child(6)>.ae-order-payment-v19163{margin-left:0}}
+
+/* 1.9.164: filtro financeiro e ação prioritária — sem alterar o modelo de dados. */
+#orders .orders-payment-filter-v19164{min-width:165px}
+#orders .orders-payment-filter-v19164 select{min-height:44px;width:100%;max-width:100%}
+#orders .orders-ready-due-shortcut-v19164{display:inline-flex;align-items:center;justify-content:center;max-width:100%;min-height:44px;white-space:normal;text-align:center;cursor:pointer;padding:8px 13px;border:1px solid #ea580c;border-radius:12px;background:#fff7ed;color:#9a3412;font-weight:700;font-size:12px;line-height:1.3}
+#orders .orders-ready-due-shortcut-v19164[aria-pressed="true"]{background:#9a3412;border-color:#9a3412;color:#fff}
+#orders .orders-ready-due-shortcut-v19164:focus-visible{outline:3px solid #0d9488;outline-offset:2px}
+#orders .orders-ready-due-shortcut-v19164:disabled{opacity:.5;cursor:not-allowed}
+#orders .orders-ready-due-shortcut-v19164[hidden]{display:none!important}
+@media(max-width:700px){#orders .orders-payment-filter-v19164{flex:1 1 140px}#orders .orders-ready-due-shortcut-v19164{width:100%;box-sizing:border-box}}

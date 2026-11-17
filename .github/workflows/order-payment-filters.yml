@@ -1,0 +1,43 @@
+name: Encomendas — filtros financeiros 1.9.164
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'orders-compact-ui.css'
+      - 'tests/order-payment-filters-19164.test.cjs'
+      - 'scripts/test_order_payment_filters_browser.cjs'
+      - '.github/workflows/order-payment-filters.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: node --test tests/order-payment-filters-19164.test.cjs
+      - run: node scripts/check_pwa_release_versions.cjs
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Preparar Chromium isolado
+        run: |
+          npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Servir fixture sem Cloud
+        run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/ae-local-http.log 2>&1 &
+      - name: Testar filtros e pagamentos
+        run: node scripts/test_order_payment_filters_browser.cjs
