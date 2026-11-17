@@ -69,6 +69,28 @@ const assert=require('node:assert/strict');
    assert.equal(snapshot.local[1].fragrance,'Coco & Baunilha');
    assert.notEqual(snapshot.orders[0].clientId,'CLI-EXIST');
    assert.equal(snapshot.clients.find(c=>c.id==='CLI-EXIST').name,'Maria');
+   // Simular o ciclo relacional: capturar as escritas reais da aplicação sem tocar em Supabase.
+   const synced=await page.evaluate(async()=>{
+    const writes={};
+    cloudUser={id:'fixture-user'};cloudBusy=false;cloudPushRunning=false;cloudPushPending=false;cloudStartupDone=false;
+    cloudClient={from(table){return {upsert:async rows=>{writes[table]=JSON.parse(JSON.stringify(rows));return {error:null}}}}};
+    relFetchAll=async()=>[];
+    const ok=await relationalSyncCore(false);
+    return {ok,writes,dirty:cloudMeta().dirty,orderPending:relOrderPendingSet().size};
+   });
+   assert.equal(synced.ok,true);
+   assert.equal(synced.orderPending,0);
+   assert.equal(synced.dirty,true,'a fase relacional não deve anunciar sincronização completa');
+   const remoteOrder=synced.writes.artessencia_v1_orders?.[0];
+   assert.ok(remoteOrder,'a encomenda deve ser enviada para a tabela relacional');
+   assert.equal(remoteOrder.data.clientId,snapshot.orders[0].clientId);
+   assert.equal(remoteOrder.data.items[0].directSaleOptionsV19158.fragrance,'Lavanda');
+   assert.equal(remoteOrder.data.items[1].directSaleOptionsV19158.fragrance,'Coco & Baunilha');
+   const remoteClient=synced.writes.artessencia_v1_clients?.find(c=>c.data.id===snapshot.orders[0].clientId);
+   assert.ok(remoteClient,'a ficha independente deve existir na escrita Cloud');
+   assert.equal(remoteOrder.client_id,remoteClient.id);
+   assert.equal(remoteClient.name,'João');
+
    await page.evaluate(()=>showOrder('AS-2026-9999'));
    const detail=await page.locator('#orderDetail').innerText();
    assert.match(detail,/Cor da base: Azul/);
