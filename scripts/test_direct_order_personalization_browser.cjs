@@ -36,6 +36,7 @@ const assert=require('node:assert/strict');
     document.getElementById('salePaid').value='0';
     document.getElementById('saleBoxes').value='1';
     document.getElementById('salePayment').value='Dinheiro';
+    go('sale');
     addProductToCartV1745('VELA-T');
    });
    assert.equal(await page.locator('#cart .ae-direct-order-options-v19158').count(),1);
