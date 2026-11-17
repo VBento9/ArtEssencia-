@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.164">
+<meta name="artessencia-version" content="1.9.165">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -3781,9 +3781,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div class="field"><label>Email</label><input id="saleEmail" type="email" autocomplete="email" placeholder="cliente@email.pt" oninput="invalidateSalePromoIfContextChangedV1813()"></div>
         <div class="field"><label>Data entrega</label><input id="saleDate" type="date"></div>
         <div class="field"><label>Pagamento</label><select id="salePayment"><option>Dinheiro</option><option>MB Way</option><option>Transferência</option><option>Outro</option></select></div>
-        <div class="field"><label>Embalagem</label><select id="saleBox"></select></div>
-        <div class="field"><label>N.º caixas</label><input id="saleBoxes" type="number" min="1" value="1"></div>
-        <div class="field"><label>Valor pago</label><input id="salePaid" type="number" step="0.01" value="0"></div><div class="field span2"><label>Código promocional / voucher</label><div style="display:flex;gap:7px"><input id="salePromoCodeV1813" maxlength="32" placeholder="AE-LANC-XXXXXXX" oninput="clearSalePromoV1813(false)"><button type="button" class="btn" onclick="validateSalePromoV1813()">Validar</button></div><small id="salePromoStatusV1813" class="muted">Opcional · válido em campanhas ArtEssencia.</small></div>
+        <div class="sale-legacy-packaging-v19165" hidden aria-hidden="true"><select id="saleBox" tabindex="-1"></select><input id="saleBoxes" type="hidden" value="0"></div>
+        <div class="field"><label>Valor pago</label><input id="salePaid" type="number" step="0.01" value="0"></div><div class="field span2 sale-promo-v19165"><label>Código promocional / voucher</label><div class="sale-promo-controls-v19165"><input id="salePromoCodeV1813" maxlength="32" placeholder="AE-LANC-XXXXXXX" oninput="clearSalePromoV1813(false)"><button type="button" class="btn" onclick="validateSalePromoV1813()">Validar</button></div><small id="salePromoStatusV1813" class="muted">Opcional · válido em campanhas ArtEssencia.</small></div>
         <div class="field sale-notes-v1727"><label>Notas / personalização da encomenda</label><textarea id="saleNotes" rows="3" placeholder="Ex.: nome a colocar, cor pretendida, fita, mensagem, acabamento ou outras instruções para produção"></textarea><small class="muted">Estas instruções seguem para a Produção e para a ordem de produção.</small></div>
       </div>
     </section>
@@ -3800,8 +3799,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           <div class="field"><label>Grupo / etiqueta</label><select id="saleProductTagV1754" onchange="renderPicker()"><option value="all">Todos os grupos</option></select></div>
           <div class="field"><label>Coleção / tema</label><select id="saleProductCollectionV1754" onchange="renderPicker()"><option value="all">Todas as coleções</option></select></div>
         </div>
-        <div class="sale-picker-meta-v1754"><span id="saleProductResultCountV1754">0 produtos</span><span id="saleSelectionStatusV1754">Nenhum produto selecionado</span></div>
-        <div class="product-picker sale-product-picker-v1754" id="productPicker"></div>
+        <div class="sale-picker-meta-v1754"><button type="button" class="btn ghost sale-clear-product-filters-v19165" onclick="clearSaleProductFiltersV19165()">Limpar filtros de produtos</button><span id="saleProductResultCountV1754">0 produtos</span><span id="saleSelectionStatusV1754">Nenhum produto selecionado</span></div>
+        <div class="product-picker sale-product-picker-v1754" id="productPicker"></div><div id="salePickerMoreV19165" class="sale-picker-more-v19165"></div>
       </section>
 
       <aside class="sale-cart-side-v1754">
@@ -6445,7 +6444,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.164';
+const APP_VERSION='1.9.165';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -8423,13 +8422,29 @@ function syncSaleProductFiltersV1754(){
  const data=saleProductFilterOptionsV1754(),sync=(id,items,allLabel)=>{const el=document.getElementById(id);if(!el)return;const current=el.value||'all';el.innerHTML=`<option value="all">${allLabel}</option>`+items.map(x=>`<option value="${escapeAttr(x)}">${escapeHtml(x)}</option>`).join('');el.value=items.includes(current)?current:'all'};
  sync('saleProductTypeV1754',data.types,'Todos os tipos');sync('saleProductTagV1754',data.tags,'Todos os grupos');sync('saleProductCollectionV1754',data.collections,'Todas as coleções');
 }
+let salePickerLimitV19165=24,salePickerFilterKeyV19165='';
 function renderPicker(){
  const el=document.getElementById('productPicker');if(!el)return;
  syncSaleProductFiltersV1754();
  const q=normText(document.getElementById('saleProductSearchV1754')?.value||''),type=document.getElementById('saleProductTypeV1754')?.value||'all',tag=document.getElementById('saleProductTagV1754')?.value||'all',collection=document.getElementById('saleProductCollectionV1754')?.value||'all';
+ const filterKey=JSON.stringify([q,type,tag,collection]);
+ if(filterKey!==salePickerFilterKeyV19165){salePickerFilterKeyV19165=filterKey;salePickerLimitV19165=24}
  const rows=(db.products||[]).filter(p=>{if(!productUsableV1803(p))return false;if(type!=='all'&&String(p.category||'')!==type)return false;const tags=Array.isArray(p.tagsV1753)?p.tagsV1753:[];if(tag!=='all'&&!tags.includes(tag))return false;const cols=productEditionNamesV138(p);if(collection!=='all'&&!cols.includes(collection))return false;if(!q)return true;const hay=normText([p.name,p.code,p.category,tags.join(' '),cols.join(' '),p.shopDescription].filter(Boolean).join(' '));return hay.includes(q)});
- const count=document.getElementById('saleProductResultCountV1754');if(count)count.textContent=`${rows.length} produto${rows.length===1?'':'s'}`;
- el.innerHTML=rows.length?rows.map(p=>{const inCart=cart.filter(x=>String(x.code||'')===String(p.code||'')).reduce((s,x)=>s+(Number(x.qty)||0),0),price=Number(p.price)||0,tags=(Array.isArray(p.tagsV1753)?p.tagsV1753:[]).slice(0,2);return `<button type="button" class="product-btn sale-product-btn-v1754${inCart?' selected':''}" onclick="addProductToCartV1745('${escapeAttr(p.code||'')}')"><span class="sale-product-main-v1754"><strong>${escapeHtml(p.name||p.code||'Produto')}</strong><small>${escapeHtml(p.category||'Sem tipo')}</small>${tags.length?`<span class="sale-product-tags-v1754">${tags.map(t=>`<em>${escapeHtml(t)}</em>`).join('')}</span>`:''}</span><span class="sale-product-action-v1754"><span class="price${price<=0?' zero':''}">${euro(price)}</span>${inCart?`<b>${inCart} no carrinho</b>`:'<b>＋ Adicionar</b>'}</span></button>`}).join(''):'<div class="empty">Nenhum produto corresponde aos filtros.</div>';
+ const count=document.getElementById('saleProductResultCountV1754');
+ const showing=Math.min(rows.length,salePickerLimitV19165);
+ if(count)count.textContent=`${rows.length} produto${rows.length===1?'':'s'} · a mostrar ${showing}`;
+ el.innerHTML=rows.length?rows.slice(0,salePickerLimitV19165).map(p=>{const inCart=cart.filter(x=>String(x.code||'')===String(p.code||'')).reduce((s,x)=>s+(Number(x.qty)||0),0),price=Number(p.price)||0,tags=(Array.isArray(p.tagsV1753)?p.tagsV1753:[]).slice(0,2);return `<button type="button" class="product-btn sale-product-btn-v1754${inCart?' selected':''}" onclick="addProductToCartV1745('${escapeAttr(p.code||'')}')"><span class="sale-product-main-v1754"><strong>${escapeHtml(p.name||p.code||'Produto')}</strong><small>${escapeHtml(p.category||'Sem tipo')}</small>${tags.length?`<span class="sale-product-tags-v1754">${tags.map(t=>`<em>${escapeHtml(t)}</em>`).join('')}</span>`:''}</span><span class="sale-product-action-v1754"><span class="price${price<=0?' zero':''}">${euro(price)}</span>${inCart?`<b>${inCart} no carrinho</b>`:'<b>＋ Adicionar</b>'}</span></button>`}).join(''):'<div class="empty">Nenhum produto corresponde aos filtros.</div>';
+ const more=document.getElementById('salePickerMoreV19165');
+ if(more)more.innerHTML=showing<rows.length?`<button type="button" class="btn ghost" onclick="salePickerLimitV19165+=24;renderPicker()">Mostrar mais produtos · ${rows.length-showing} restantes</button>`:'';
+}
+function clearSaleProductFiltersV19165(){
+ const search=document.getElementById('saleProductSearchV1754');
+ if(search)search.value='';
+ for(const id of ['saleProductTypeV1754','saleProductTagV1754','saleProductCollectionV1754']){
+  const select=document.getElementById(id);if(select)select.value='all';
+ }
+ renderPicker();
+ search?.focus({preventScroll:true});
 }
 function addProductToCartV1745(code){
  const p=(db.products||[]).find(x=>String(x.code||'')===String(code||''));if(!p)return toast('Produto não encontrado');if(productArchivedV1803(p))return toast('Este produto está arquivado. Reative-o antes de o adicionar a uma nova encomenda.');
@@ -8533,10 +8548,12 @@ async function saveOrder(){
  if(promoInput&&!(await validateSalePromoV1813()))return;
  const validatedPromo=promoInput&&salePromoContextValidV1813()?{...salePromoV1813}:null;
  const subtotal=saleSubtotalV1813(),discountTotal=validatedPromo?Math.max(0,Number(validatedPromo.discount_total)||0):0,total=Math.max(0,subtotal-discountTotal),paid=Number($('salePaid').value)||0;
- if(paid<0||paid>total)return toast('O valor pago deve estar entre 0 € e o total final da encomenda');if(!(db.packaging||[]).length||!$('saleBox').value)return toast('Configura pelo menos uma embalagem antes de guardar a encomenda');
+ if(paid<0||paid>total)return toast('O valor pago deve estar entre 0 € e o total final da encomenda');
 
- const id=await nextManualOrderId(),boxName=$('saleBox').value,pk=db.packaging.find(p=>p.name===boxName),clientName=$('saleClient').value.trim(),clientContact=$('saleContact').value.trim(),clientEmail=saleEmail,clientId=upsertClientFromOrder(clientName,clientContact,clientEmail),payMethod=$('salePayment').value,paymentHistory=paid>0?[{id:uid('PAY'),date:new Date().toISOString(),amount:paid,method:payMethod,type:'payment',source:'order_creation'}]:[];
- const order={id,created:todayISO(),client:clientName,contact:clientContact,email:clientEmail,clientId,delivery:$('saleDate').value,payment:payMethod,box:boxName,boxCostSnapshot:pk?+pk.cost||0:0,boxes:+$('saleBoxes').value||1,paid,status:'Pedido',notes:String($('saleNotes')?.value||'').trim(),promoCode:validatedPromo?.code||'',discountTotal,subtotal,total,items:cart.map(x=>({...ensureLineDetailedCostSnapshotV1769(ensureLineCostSnapshotV134(x,'sale_save_v134'),'sale_save_v1769')})),paymentHistory};
+ // A embalagem individual já está incluída no custo capturado em cada ficha técnica.
+ // Encomendas manuais novas não acrescentam uma embalagem global nem consomem caixas duplicadas.
+ const id=await nextManualOrderId(),boxName='',clientName=$('saleClient').value.trim(),clientContact=$('saleContact').value.trim(),clientEmail=saleEmail,clientId=upsertClientFromOrder(clientName,clientContact,clientEmail),payMethod=$('salePayment').value,paymentHistory=paid>0?[{id:uid('PAY'),date:new Date().toISOString(),amount:paid,method:payMethod,type:'payment',source:'order_creation'}]:[];
+ const order={id,created:todayISO(),client:clientName,contact:clientContact,email:clientEmail,clientId,delivery:$('saleDate').value,payment:payMethod,box:boxName,boxCostSnapshot:0,boxes:0,paid,status:'Pedido',notes:String($('saleNotes')?.value||'').trim(),promoCode:validatedPromo?.code||'',discountTotal,subtotal,total,items:cart.map(x=>({...ensureLineDetailedCostSnapshotV1769(ensureLineCostSnapshotV134(x,'sale_save_v134'),'sale_save_v1769')})),paymentHistory};
 
  relUuid(order);relMarkOrderPending(order);db.orders.push(order);if(paymentHistory.length)addOrderPaymentCash(order,paymentHistory[0]);
  localStorage.setItem(KEY,JSON.stringify(db));localStorage.setItem(REL_DIRTY,'1');setCloudMeta({dirty:true,verified:false,conflict:false,localChangedAt:new Date().toISOString()});
@@ -18331,6 +18348,7 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 <script defer src="./products-compact-ui.js" id="ae-products-compact-script"></script>
 <script defer src="./product-technical-sheet.js"></script>
 <script defer src="./orders-compact-ui.js" id="ae-orders-compact-script"></script>
+<link rel="stylesheet" href="./sale-tablet-ux-v19165.css">
 <script defer src="./catalog-pdf-manager-v2.js"></script>
 <script defer src="./boxes-atelier-ui-v1.js"></script>
 <link rel="stylesheet" href="./quantity-pricing-v2.css">

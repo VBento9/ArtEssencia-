@@ -1,0 +1,137 @@
+/* ArtEssencia V1.9.165 — Vendas: cliente/entrega e catálogo tátil.
+ * Apenas o módulo #sale: sem alterar outras secções ou cálculos. */
+#sale .sale-legacy-packaging-v19165[hidden] {display:none!important}
+#sale .sale-customer-grid-v1727{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:14px;
+  align-items:start;
+}
+#sale .sale-customer-grid-v1727>.field{min-width:0;max-width:100%}
+#sale .sale-customer-grid-v1727>.sale-client-v1727{grid-column:span 2}
+#sale .sale-customer-grid-v1727>.sale-notes-v1727{grid-column:span 2}
+#sale .sale-customer-grid-v1727>.sale-promo-v19165{grid-column:span 2}
+#sale .sale-customer-grid-v1727 .field>label,
+#sale .sale-product-filters-v1754 label{
+  font-size:12px!important;
+  font-weight:700!important;
+  line-height:1.4;
+  text-transform:none!important;
+  letter-spacing:0;
+}
+#sale .sale-customer-grid-v1727 input,
+#sale .sale-customer-grid-v1727 select,
+#sale .sale-customer-grid-v1727 textarea,
+#sale .sale-product-filters-v1754 input,
+#sale .sale-product-filters-v1754 select{
+  font-size:14px!important;
+  font-weight:500!important;
+  min-height:44px!important;
+  height:auto!important;
+  padding:10px 12px!important;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  box-sizing:border-box;
+}
+#sale .sale-customer-grid-v1727 textarea{min-height:110px!important;resize:vertical;line-height:1.5}
+#sale .sale-promo-controls-v19165{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch;min-width:0}
+#sale .sale-promo-controls-v19165 input{flex:1 1 150px;width:auto}
+#sale .sale-promo-controls-v19165 .btn{flex:0 0 auto;min-height:44px;min-width:100px;white-space:normal;word-break:normal;padding:9px 14px}
+#sale .sale-section-head-v1727 .section-title{font-size:18px!important;line-height:1.3}
+#sale .sale-section-head-v1727 small{font-size:12px!important;line-height:1.45}
+#sale .sale-product-filters-v1754{display:grid;grid-template-columns:minmax(180px,1.55fr) repeat(3,minmax(130px,1fr));gap:10px;margin:14px 0 12px}
+#sale .sale-product-filters-v1754>.field{min-width:0}
+#sale .sale-picker-meta-v1754{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px 14px;
+  align-items:center;
+  padding:10px 12px;
+  font-size:12px!important;
+  font-weight:650;
+  line-height:1.4;
+}
+#sale .sale-clear-product-filters-v19165{min-height:40px!important;padding:8px 12px!important;font-size:12px!important;order:3;margin-left:auto}
+#sale .sale-product-picker-v1754{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  max-height:560px;
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding:3px;
+}
+#sale .sale-product-btn-v1754{
+  min-width:0;
+  min-height:100px;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:12px;
+  padding:14px!important;
+  border-radius:13px;
+  align-items:center;
+}
+#sale .sale-product-main-v1754{min-width:0;overflow-wrap:anywhere}
+#sale .sale-product-main-v1754 strong{display:block;font-size:14px!important;line-height:1.3;font-weight:750}
+#sale .sale-product-main-v1754 small{font-size:11px!important;line-height:1.4;margin-top:4px}
+#sale .sale-product-tags-v1754{gap:5px;margin-top:8px}
+#sale .sale-product-tags-v1754 em{font-size:10px!important;line-height:1.4;padding:3px 7px}
+#sale .sale-product-action-v1754{align-items:flex-end;gap:8px;min-width:72px}
+#sale .sale-product-action-v1754 .price{font-size:15px!important;font-weight:800}
+#sale .sale-product-action-v1754 b{font-size:12px!important;line-height:1.25}
+#sale .sale-product-btn-v1754:focus-visible,
+#sale .sale-clear-product-filters-v19165:focus-visible{
+  outline:3px solid #0d9488;
+  outline-offset:2px;
+}
+#sale .sale-cart-row-v1754 .sale-cart-product-v1754 strong{font-size:13px!important;line-height:1.3}
+#sale .sale-cart-row-v1754 .sale-cart-product-v1754 small{font-size:11px!important}
+#sale .sale-cart-row-v1754 .sale-cart-mini-field-v1754 span{font-size:11px!important}
+#sale .sale-cart-row-v1754 .sale-cart-mini-field-v1754 input{font-size:13px!important;min-height:42px!important;height:42px}
+#sale .sale-cart-line-total-v1754{font-size:13px!important}
+/* Tablet, incluindo Honor Pad 9 na horizontal: catálogo inteiro antes do carrinho. */
+@media (min-width:701px) and (max-width:1199px){
+ #sale .sale-customer-grid-v1727{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+ #sale .sale-customer-grid-v1727>.sale-client-v1727,
+ #sale .sale-customer-grid-v1727>.sale-promo-v19165,
+ #sale .sale-customer-grid-v1727>.sale-notes-v1727{grid-column:1/-1}
+ #sale .sale-product-workspace-v1754{grid-template-columns:minmax(0,1fr)!important;gap:14px}
+ #sale .sale-products-browser-v1754{grid-row:1}
+ #sale .sale-cart-side-v1754{grid-row:2;position:static;max-height:none;overflow:visible}
+ #sale .sale-product-filters-v1754{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #sale .sale-product-filters-v1754 .sale-product-search-v1754{grid-column:1/-1}
+ #sale .sale-product-picker-v1754{grid-template-columns:repeat(2,minmax(0,1fr));max-height:none;overflow:visible}
+}
+@media (max-width:700px){
+ #sale .sale-customer-grid-v1727{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ #sale .sale-customer-grid-v1727>.sale-client-v1727,
+ #sale .sale-customer-grid-v1727>.sale-promo-v19165,
+ #sale .sale-customer-grid-v1727>.sale-notes-v1727{grid-column:1/-1}
+ #sale .sale-product-workspace-v1754{grid-template-columns:1fr!important;gap:12px}
+ #sale .sale-products-browser-v1754{grid-row:1}
+ #sale .sale-cart-side-v1754{grid-row:2;position:static;max-height:none;overflow:visible}
+ #sale .sale-product-filters-v1754{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #sale .sale-product-filters-v1754 .sale-product-search-v1754{grid-column:1/-1}
+ #sale .sale-product-picker-v1754{grid-template-columns:repeat(2,minmax(0,1fr));max-height:none;overflow:visible}
+ #sale .sale-product-btn-v1754{grid-template-columns:1fr;align-items:start;gap:10px}
+ #sale .sale-product-action-v1754{width:100%;flex-direction:row;align-items:center;justify-content:space-between}
+ #sale .sale-picker-meta-v1754{align-items:flex-start}
+ #sale .sale-clear-product-filters-v19165{margin-left:0;order:0}
+}
+@media (max-width:440px){
+ #sale .sale-customer-grid-v1727{grid-template-columns:1fr}
+ #sale .sale-customer-grid-v1727>.field{grid-column:1/-1}
+ #sale .sale-product-picker-v1754{grid-template-columns:1fr}
+ #sale .sale-product-filters-v1754{grid-template-columns:1fr}
+ #sale .sale-product-btn-v1754{grid-template-columns:minmax(0,1fr) auto;min-height:84px}
+ #sale .sale-product-action-v1754{width:auto;flex-direction:column;align-items:flex-end;justify-content:center}
+ #sale .sale-cart-row-v1754{grid-template-columns:minmax(0,1fr) 58px 72px 32px;gap:6px}
+ #sale .sale-cart-row-v1754 .sale-cart-mini-field-v1754{min-width:0}
+ #sale .sale-cart-row-v1754 .sale-cart-line-total-v1754{grid-column:1/4;text-align:right}
+ #sale .sale-promo-controls-v19165 input{flex-basis:100%}
+ #sale .sale-promo-controls-v19165 .btn{width:100%}
+}
+
+#sale .sale-picker-more-v19165{display:flex;justify-content:center;padding:12px 0 4px}
+#sale .sale-picker-more-v19165 .btn{min-height:44px;min-width:220px;max-width:100%;font-size:13px;font-weight:650}
+@media (max-width:1199px){#sale .sale-product-picker-v1754{max-height:none!important;overflow:visible!important}}
