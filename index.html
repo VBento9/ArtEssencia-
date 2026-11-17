@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.163">
+<meta name="artessencia-version" content="1.9.164">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -3834,10 +3834,11 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       <div class="orders-toolbar-controls orders-toolbar-controls-v1728">
         <div class="field orders-search"><label>Pesquisar</label><input id="orderSearch" placeholder="N.º, cliente ou telefone" oninput="renderOrders()"></div>
         <div class="field"><label>Estado</label><select id="orderFilter" onchange="renderOrders()"><option value="">Todos</option><option>Pedido</option><option>Confirmada</option><option>Em produção</option><option>Pronta</option><option>Entregue</option><option>Cancelado</option></select></div>
+        <div class="field orders-payment-filter-v19164"><label for="orderPaymentFilterV19164">Pagamento</label><select id="orderPaymentFilterV19164" aria-label="Filtrar por pagamento" onchange="renderOrders()"><option value="">Todos</option><option value="due">Com saldo por pagar</option><option value="unpaid">Não pagas</option><option value="partial">Pagamento parcial</option><option value="paid">Pagas</option><option value="ready-due">Prontas e por pagar</option></select></div>
         <div class="field orders-period-v1882"><label>De</label><input id="orderDateFromV1882" type="date" onchange="renderOrders()"></div>
         <div class="field orders-period-v1882"><label>Até</label><input id="orderDateToV1882" type="date" onchange="renderOrders()"></div>
         <div class="field"><label>Vista</label><div class="orders-view-switch"><button id="ordersCardsBtn" class="active" onclick="setOrdersView('cards')">▦ Cartões</button><button id="ordersTableBtn" onclick="setOrdersView('table')">☷ Tabela</button></div></div>
-        <div class="orders-filter-utility-v1915"><label class="orders-sort-control-v1940" for="ordersSortV1916">Ordenar encomendas ativas<select id="ordersSortV1916" aria-label="Ordenar encomendas ativas" onchange="renderOrders()"><option value="recent">Mais recentes</option><option value="due">Entrega mais próxima</option></select></label><button type="button" class="btn" id="ordersClearFiltersV1915" onclick="clearOrderFiltersV1915()" disabled>Limpar filtros</button><small id="ordersResultsV1915" role="status" aria-live="polite">—</small></div>
+        <div class="orders-filter-utility-v1915"><button type="button" class="orders-ready-due-shortcut-v19164" id="ordersReadyDueShortcutV19164" aria-pressed="false" onclick="showReadyDueOrdersV19164()" disabled>Prontas por receber · 0</button><label class="orders-sort-control-v1940" for="ordersSortV1916">Ordenar encomendas ativas<select id="ordersSortV1916" aria-label="Ordenar encomendas ativas" onchange="renderOrders()"><option value="recent">Mais recentes</option><option value="due">Entrega mais próxima</option></select></label><button type="button" class="btn" id="ordersClearFiltersV1915" onclick="clearOrderFiltersV1915()" disabled>Limpar filtros</button><small id="ordersResultsV1915" role="status" aria-live="polite">—</small></div>
         <div class="orders-new-wrap-v1728"><button class="btn primary orders-new" onclick="go('sale')">＋ Nova encomenda</button></div>
       </div>
     </div>
@@ -6444,7 +6445,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.163';
+const APP_VERSION='1.9.164';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -8691,7 +8692,7 @@ const ORDER_TERMINAL_STATUSES_V1882=new Set(['Entregue','Cancelado']);
 function isOrderHistoryV1882(o){return ORDER_TERMINAL_STATUSES_V1882.has(String(o?.status||''))}
 function setOrdersModeV1882(mode){
  ordersModeV1882=mode==='history'?'history':'active';
- const f=document.getElementById('orderFilter');if(f)f.value='';
+ for(const id of ['orderFilter','orderPaymentFilterV19164']){const field=document.getElementById(id);if(field)field.value='';}
  renderOrders();
 }
 function setOrdersView(view){
@@ -8723,7 +8724,7 @@ function viewOrderProductionV1915(id){
 }
 function clearOrderFiltersV1915(){
  const sort=document.getElementById('ordersSortV1916');if(sort)sort.value='recent';
- for(const id of ['orderSearch','orderFilter','orderDateFromV1882','orderDateToV1882']){const el=document.getElementById(id);if(el)el.value='';}
+ for(const id of ['orderSearch','orderFilter','orderPaymentFilterV19164','orderDateFromV1882','orderDateToV1882']){const el=document.getElementById(id);if(el)el.value='';}
  renderOrders();
 }
 // A consulta ordena uma cópia; nunca altera a ordem ou os dados guardados.
@@ -8742,21 +8743,58 @@ function orderAttentionLabelV1915(o){
  }
  return '';
 }
+/* 1.9.164 — filtros de pagamento independentes do estado operacional. */
+function orderPaymentPositionV19164(order){
+ const result=calcOrder(order);
+ const total=Number(result?.total);
+ const paid=Number(order?.paid);
+ if(!Number.isFinite(total)||total<=0||!Number.isFinite(paid)||paid<0){
+  return {kind:'unknown',due:0};
+ }
+ const due=Math.max(0,total-paid);
+ return {kind:due<=0.005?'paid':paid>0.005?'partial':'unpaid',due};
+}
+function orderPaymentMatchesV19164(order,filter){
+ if(!filter)return true;
+ const {kind,due}=orderPaymentPositionV19164(order);
+ if(filter==='ready-due')return order?.status==='Pronta'&&due>0.005;
+ if(filter==='due')return due>0.005;
+ return kind===filter;
+}
+function showReadyDueOrdersV19164(){
+ if(ordersModeV1882!=='active')return;
+ const current=document.getElementById('orderPaymentFilterV19164');
+ if(!current)return;
+ const next=current.value==='ready-due'?'':'ready-due';
+ for(const id of ['orderSearch','orderFilter','orderDateFromV1882','orderDateToV1882']){
+  const el=document.getElementById(id);if(el)el.value='';
+ }
+ const sort=document.getElementById('ordersSortV1916');if(sort)sort.value=next?'due':'recent';
+ current.value=next;
+ renderOrders();
+}
 function renderOrders(){
  const q=normalizeOrderSearchV1928(document.getElementById('orderSearch')?.value),f=document.getElementById('orderFilter')?.value||'';
  const from=document.getElementById('orderDateFromV1882')?.value||'',to=document.getElementById('orderDateToV1882')?.value||'';
+ const paymentSelect=document.getElementById('orderPaymentFilterV19164');
+ const paymentFilter=ordersModeV1882==='history'?'':paymentSelect?.value||'';
+ if(paymentSelect)paymentSelect.disabled=ordersModeV1882==='history';
  const activeAll=(db.orders||[]).filter(o=>!isOrderHistoryV1882(o));
  const historyAll=(db.orders||[]).filter(isOrderHistoryV1882);
  const base=ordersModeV1882==='history'?historyAll:activeAll;
  const rows=base.filter(o=>{
    const hay=normalizeOrderSearchV1928([o.id,o.client,o.contact,o.phone,o.email].map(v=>String(v||'')).join(' '));
    const d=orderFilterDateV1882(o);
-   return (!q||hay.includes(q))&&(!f||o.status===f)&&(!from||d>=from)&&(!to||d<=to)
+   return (!q||hay.includes(q))&&(!f||o.status===f)&&(!from||d>=from)&&(!to||d<=to)&&orderPaymentMatchesV19164(o,paymentFilter)
  }).slice().reverse();
  const sortControl=document.getElementById('ordersSortV1916'),sortMode=sortControl?.value||'recent';
  if(sortControl)sortControl.disabled=ordersModeV1882==='history';
  if(sortMode==='due'&&ordersModeV1882==='active')rows.sort((a,b)=>orderDeliverySortKeyV1940(a).localeCompare(orderDeliverySortKeyV1940(b)));
- const filtersActive=Boolean(q||f||from||to);
+ const filtersActive=Boolean(q||f||from||to||paymentFilter);
+ const readyDue=activeAll.filter(o=>orderPaymentMatchesV19164(o,'ready-due'));
+ const readyDueTotal=readyDue.reduce((sum,o)=>sum+orderPaymentPositionV19164(o).due,0);
+ const shortcut=document.getElementById('ordersReadyDueShortcutV19164');
+ if(shortcut){shortcut.hidden=ordersModeV1882==='history';shortcut.disabled=ordersModeV1882==='history'||!readyDue.length;shortcut.textContent='Prontas por receber · '+readyDue.length+' · '+euro(readyDueTotal);shortcut.setAttribute('aria-pressed',String(paymentFilter==='ready-due'));}
  const clearBtn=document.getElementById('ordersClearFiltersV1915'),results=document.getElementById('ordersResultsV1915');
  if(clearBtn)clearBtn.disabled=!filtersActive&&sortMode==='recent';
  if(results)results.textContent=rows.length+' de '+base.length+' encomendas'+(filtersActive?' · filtros ativos':'');
@@ -8785,7 +8823,7 @@ function renderOrders(){
    const counts=Object.fromEntries(statuses.map(s=>[s,(db.orders||[]).filter(o=>o.status===s).length]));
    flow.innerHTML=statuses.map((s,i)=>`<button class="orders-flow-step ${orderStatusClass(s)} ${f===s?'selected':''}" onclick="orderFilter.value='${s}';renderOrders()"><span>${i+1}</span><div><b>${s}</b><small>${counts[s]} encomenda${counts[s]===1?'':'s'}</small></div></button>`).join('')+`<button class="orders-flow-clear ${!f?'selected':''}" onclick="orderFilter.value='';renderOrders()">Todas</button>`;
  }
- const pageRows=orderPageRowsV1928(rows,JSON.stringify([ordersModeV1882,q,f,from,to,sortMode,document.getElementById('ordersPageSizeV1928')?.value]));
+ const pageRows=orderPageRowsV1928(rows,JSON.stringify([ordersModeV1882,q,f,from,to,paymentFilter,sortMode,document.getElementById('ordersPageSizeV1928')?.value]));
  const cards=document.getElementById('ordersCards');
  if(cards){
    cards.innerHTML=rows.length?pageRows.map(o=>{
