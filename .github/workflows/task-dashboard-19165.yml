@@ -1,0 +1,31 @@
+name: Dashboard - Planeamento e entregas
+on:
+  pull_request:
+    paths:
+      - 'task-manager-v2.js'
+      - 'task-manager-v2.css'
+      - 'dashboard-compact-ui.js'
+      - 'dashboard-delivery-focus-v19165.js'
+      - 'dashboard-delivery-focus-v19165.css'
+      - 'sw.js'
+      - 'index.html'
+      - 'version.json'
+      - 'tests/task-dashboard-19165.test.cjs'
+      - '.github/workflows/task-dashboard-19165.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check task-manager-v2.js
+      - run: node --check dashboard-delivery-focus-v19165.js
+      - run: node --check dashboard-compact-ui.js
+      - run: node --test tests/task-dashboard-19165.test.cjs
+      - run: node scripts/check_pwa_release_versions.cjs
