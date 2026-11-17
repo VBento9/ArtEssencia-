@@ -36,3 +36,8 @@
 /* Manter o resumo e os botões de gravação visíveis com listas longas. */
 .ae-order-add-header-v19160,.ae-order-add-footer-v19160{flex:0 0 auto;min-width:0}
 .ae-order-add-body-v19160{flex:1 1 auto;overflow-y:auto;min-height:0}
+
+/* Pesquisa: resumo de resultados e paginação incremental compactos. */
+.ae-order-add-results-v19160 .ae-order-add-results-count-v19162{grid-column:1/-1;font-size:12px;color:#65554b;font-weight:650;padding:2px 0}
+.ae-order-add-results-v19160 .ae-order-add-show-more-v19162{grid-column:1/-1;min-height:40px;border:1px solid #d8c6b4;border-radius:10px;background:#fff;color:#49372a;font-size:13px;font-weight:700;cursor:pointer}
+.ae-order-add-results-v19160 .ae-order-add-selected-v19162{color:#285e47;font-weight:700}
