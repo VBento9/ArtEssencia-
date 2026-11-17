@@ -168,7 +168,7 @@
     const name=normal(p.name),code=normal(p.code);
     if(name===query||code===query)return 0;
     if(name.startsWith(query)||code.startsWith(query))return 1;
-    if(name.split(/\\s+/).some(word=>word.startsWith(query)))return 2;
+    if(name.split(/\s+/).some(word=>word.startsWith(query)))return 2;
     return 3;
    };
    const matches=arr(db.products).filter(p=>
