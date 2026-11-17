@@ -39,3 +39,32 @@
 /* Correção 1.9.159: checkbox de nova ficha não herda a largura/altura dos campos. */
 .sale-customer-card-v1727 .sale-client-new-v19157{display:flex;align-items:center;justify-content:flex-start;gap:10px;width:100%;min-height:24px;margin-top:8px;font-size:13px;line-height:1.4;overflow-wrap:normal;word-break:normal}
 .sale-customer-card-v1727 .sale-client-new-v19157 input[type="checkbox"]{appearance:auto!important;width:18px!important;height:18px!important;min-width:18px!important;min-height:18px!important;max-width:18px!important;max-height:18px!important;padding:0!important;margin:0!important;flex:0 0 18px!important;box-sizing:border-box!important}
+
+
+/* V1.9.163 — leitura de estados com legenda e texto; não depender apenas da cor. */
+#orders [data-ae-order-state="created"],#orderDetail[data-ae-order-state="created"]{--ae-order-visual:#64748b;--ae-order-visual-bg:#f1f5f9;--ae-order-visual-ink:#334155}
+#orders [data-ae-order-state="confirmed"],#orderDetail[data-ae-order-state="confirmed"]{--ae-order-visual:#2563eb;--ae-order-visual-bg:#eff6ff;--ae-order-visual-ink:#1e40af}
+#orders [data-ae-order-state="production"],#orderDetail[data-ae-order-state="production"]{--ae-order-visual:#ca8a04;--ae-order-visual-bg:#fefce8;--ae-order-visual-ink:#854d0e}
+#orders [data-ae-order-state="ready"],#orderDetail[data-ae-order-state="ready"]{--ae-order-visual:#16a34a;--ae-order-visual-bg:#f0fdf4;--ae-order-visual-ink:#166534}
+#orders [data-ae-order-state="ready-unpaid"],#orderDetail[data-ae-order-state="ready-unpaid"]{--ae-order-visual:#ea580c;--ae-order-visual-bg:#fff7ed;--ae-order-visual-ink:#9a3412}
+#orders [data-ae-order-state="ready-paid"],#orderDetail[data-ae-order-state="ready-paid"]{--ae-order-visual:#0d9488;--ae-order-visual-bg:#f0fdfa;--ae-order-visual-ink:#115e59}
+#orders [data-ae-order-state="delivered"]{--ae-order-visual:#64748b;--ae-order-visual-bg:#f8fafc;--ae-order-visual-ink:#334155}
+#orders [data-ae-order-state="cancelled"]{--ae-order-visual:#b91c1c;--ae-order-visual-bg:#fef2f2;--ae-order-visual-ink:#991b1b}
+#orders article.order-card[data-ae-order-state]{border-inline-start:5px solid var(--ae-order-visual,#cbd5e1)!important}
+#orders article.order-card[data-ae-order-state] .order-status-pill{background:var(--ae-order-visual-bg,#f1f5f9)!important;color:var(--ae-order-visual-ink,#334155)!important;border:1px solid var(--ae-order-visual,#cbd5e1)}
+#orders #ordersBody tr[data-ae-order-state] td:first-child{border-inline-start:5px solid var(--ae-order-visual,#cbd5e1)}
+#orders #ordersBody tr[data-ae-order-state] td:nth-child(6)>.badge{background:var(--ae-order-visual-bg,#f1f5f9);color:var(--ae-order-visual-ink,#334155);border:1px solid var(--ae-order-visual,#cbd5e1)}
+#orders [data-ae-order-state="ready-unpaid"] .order-attention-v1915{background:#fff7ed!important;color:#9a3412!important;border:1px solid #ea580c}
+.ae-order-payment-v19163{display:inline-flex;align-items:center;justify-content:center;width:max-content;max-width:100%;border:1px solid #0d9488;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:750;white-space:normal;line-height:1.3;background:#f0fdfa;color:#115e59}
+.ae-order-payment-v19163[data-payment="partial"]{background:#fffbeb;color:#92400e;border-color:#d97706}
+.ae-order-payment-v19163[data-payment="due"]{background:#fff7ed;color:#9a3412;border-color:#ea580c}
+.ae-order-payment-v19163[hidden]{display:none!important}
+#orders .order-card-head{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+#orders #ordersBody td:nth-child(6)>.ae-order-payment-v19163{margin:4px 0 0 4px}
+#orderDetail .ae-order-detail-customer>.ae-order-payment-v19163{align-self:center}
+#orders .ae-order-colors-legend-v19163{margin:8px 0 12px;border:1px solid #e4d8ca;border-radius:10px;padding:0 12px;background:#fffdf9}
+#orders .ae-order-colors-legend-v19163>summary{padding:10px 0;cursor:pointer;font-size:12px;font-weight:650;color:#514638}
+#orders .ae-order-colors-legend-list-v19163{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:4px 0 12px}
+#orders .ae-order-colors-legend-chip-v19163{display:inline-flex;padding:5px 9px;border-radius:999px;background:var(--ae-order-visual-bg,#f1f5f9);color:var(--ae-order-visual-ink,#334155);border:1px solid var(--ae-order-visual,#cbd5e1);font-size:11px;font-weight:650}
+#orders .ae-order-colors-legend-list-v19163 p{flex-basis:100%;margin:3px 0 0;font-size:11px;color:#6b5747}
+@media(max-width:650px){#orders .ae-order-colors-legend-list-v19163{gap:6px}#orders #ordersBody td:nth-child(6)>.ae-order-payment-v19163{margin-left:0}}
