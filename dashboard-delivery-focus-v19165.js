@@ -9,11 +9,12 @@
   return p.year+'-'+p.month+'-'+p.day;
  };
  const shift=iso=>{const d=new Date(iso+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+1);return d.toISOString().slice(0,10)};
+ const validISO=iso=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(String(iso||'')))return false;const date=new Date(iso+'T12:00:00Z');return Number.isFinite(date.getTime())&&date.toISOString().slice(0,10)===iso};
  let selected='all',installed=false;
  function source(){
   if(typeof db==='undefined'||!db||!Array.isArray(db.orders)||typeof calcOrder!=='function')return [];
   const today=dateISO(),tomorrow=shift(today);
-  return db.orders.filter(o=>o&&!o.voidedAt&&o.status!=='Cancelado'&&o.status!=='Entregue'&&/^\d{4}-\d{2}-\d{2}$/.test(String(o.delivery||'')))
+  return db.orders.filter(o=>o&&!o.voidedAt&&o.status!=='Cancelado'&&o.status!=='Entregue'&&validISO(o.delivery))
    .map(o=>{
     const calc=calcOrder(o),due=Math.max(0,(Number(calc.total)||0)-(Number(o.paid)||0));
     const bucket=o.delivery<today?'late':o.delivery===today?'today':o.delivery===tomorrow?'tomorrow':'next';
@@ -29,6 +30,7 @@
   if(!tools){
    tools=document.createElement('div');tools.id='aeDeliveryFocusControlsV19165';tools.className='ae-delivery-focus-controls';
    const heading=card.querySelector('.dashboard-today-head');
+   const headingTitle=heading?.querySelector('strong');if(headingTitle)headingTitle.textContent='Entregas e prazos';
    heading?.after(tools);
   }
   tools.replaceChildren();
