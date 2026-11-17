@@ -45,11 +45,13 @@
   const html=filtered.map(({o,calc,due,bucket})=>{
    const dateText=new Date(o.delivery+'T12:00:00Z').toLocaleDateString('pt-PT',{timeZone:'UTC',day:'2-digit',month:'short'});
    const priority=bucket==='late'?'Em atraso':bucket==='today'?'Hoje':bucket==='tomorrow'?'Amanhã':dateText;
+   const productionAllowed=['Confirmada','Em produção','Produção','Confirmado'].includes(o.status);
+   const productionButton=productionAllowed?'<button type="button" class="ae-delivery-focus-open ae-delivery-focus-production" data-dashboard-production="'+escaped(o.id)+'" aria-label="Abrir produção da encomenda '+escaped(o.id)+'">Produção</button>':'';
    return '<div class="ae-delivery-focus-row '+bucket+'">'
     +'<div class="ae-delivery-focus-date"><b>'+escaped(priority)+'</b><small>'+escaped(dateText)+'</small></div>'
     +'<div class="ae-delivery-focus-person"><b>'+escaped(o.client||'Cliente')+'</b><small>'+escaped(o.id||'')+'</small></div>'
     +'<div class="ae-delivery-focus-detail"><b>'+escaped(o.status||'Estado por definir')+'</b><small class="'+(due>.001?'unpaid':'')+'">'+(due>.001?'Por receber '+money(due):'Pagamento OK')+'</small></div>'
-    +'<button type="button" class="ae-delivery-focus-open" data-dashboard-order="'+escaped(o.id)+'" aria-label="Abrir encomenda '+escaped(o.id)+'">Abrir</button>'
+    +'<div class="ae-delivery-focus-actions">'+productionButton+'<button type="button" class="ae-delivery-focus-open" data-dashboard-order="'+escaped(o.id)+'" aria-label="Abrir encomenda '+escaped(o.id)+'">Abrir</button></div>'
     +'</div>';
   }).join('');
   const nextHTML=html||'<div class="dashboard-today-empty">'+(data.length?'Sem encomendas neste filtro.':'Não existem entregas pendentes com data definida.')+'</div>';
