@@ -1,5 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
 const {JSDOM}=require('jsdom');
+const vm=require('node:vm');
+function lineSummary(line,db){const html=fs.readFileSync('index.html','utf8'),a=html.indexOf('function directOrderLineInstructionsV19158('),b=html.indexOf('function printOrderCompleteV12634(',a);assert.ok(a>=0&&b>a);const ctx={db};vm.createContext(ctx);vm.runInContext(html.slice(a,b),ctx);return [...ctx.directOrderLineInstructionsV19158(line)]}
 const source=fs.readFileSync('orders-compact-ui.js','utf8');
 function fixture({qty=1,required=true}={}){
  const dom=new JSDOM('<!doctype html><body><input id="saleClient"><div id="saleClientMatchesV1756"></div><div id="cart"></div><textarea id="saleNotes"></textarea></body>',{runScripts:'outside-only',url:'https://local.test'});
@@ -26,7 +28,7 @@ test('apresenta controlos das cores e fragrâncias configuradas no produto',()=>
  assert.deepEqual([...selects[2].options].map(o=>o.value),['','Lavanda','Baunilha','Sem fragrância']);
  f.dom.window.close();
 });
-test('grava as escolhas por artigo, preserva notas manuais e imprime no campo de observações',async()=>{
+test('grava as escolhas por artigo e mantém as notas manuais independentes',async()=>{
  const f=fixture();
  const doc=f.w.document;
  const selects=doc.querySelectorAll('.ae-direct-order-options-v19158 select');
@@ -40,11 +42,9 @@ test('grava as escolhas por artigo, preserva notas manuais e imprime no campo de
  const saved=f.db.orders[0];
  assert.deepEqual(Array.from(saved.items[0].directSaleOptionsV19158.colors),['Azul','Branco']);
  assert.equal(saved.items[0].directSaleOptionsV19158.fragrance,'Lavanda');
- assert.match(saved.notes,/Entregar segunda-feira/);
- assert.match(saved.notes,/Cor da base: Azul/);
- assert.match(saved.notes,/Cor dos detalhes: Branco/);
- assert.match(saved.notes,/Fragrância: Lavanda/);
- assert.match(saved.notes,/Gorro em contraste/);
+ assert.equal(saved.notes,'Entregar segunda-feira');
+ assert.deepEqual(lineSummary(saved.items[0],f.db),['Cor da base: Azul','Cor dos detalhes: Branco','Fragrância: Lavanda','Instruções: Gorro em contraste']);
+ assert.deepEqual([...saved.items[0].directSaleOptionsV19158.colorLabels],['Cor da base','Cor dos detalhes']);
  f.dom.window.close();
 });
 test('duas unidades podem receber escolhas distintas mantendo quantidades e total',async()=>{
@@ -58,22 +58,24 @@ test('duas unidades podem receber escolhas distintas mantendo quantidades e tota
  all[0].querySelector('select').value='Azul';all[0].querySelector('select').dispatchEvent(new f.w.Event('change'));
  all[1].querySelector('select').value='Branco';all[1].querySelector('select').dispatchEvent(new f.w.Event('change'));
  await f.w.saveOrder();
- assert.match(f.db.orders[0].notes,/1\. Vela teste/);
- assert.match(f.db.orders[0].notes,/2\. Vela teste/);
  assert.equal(f.db.orders[0].items.length,2);
+ assert.deepEqual(lineSummary(f.db.orders[0].items[0],f.db),['Cor da base: Azul','Fragrância: por definir']);
+ assert.deepEqual(lineSummary(f.db.orders[0].items[1],f.db),['Cor da base: Branco','Fragrância: por definir']);
+ assert.equal(f.db.orders[0].notes,'');
  f.dom.window.close();
 });
 test('preferências ainda por definir permanecem explícitas para os produtos que as exigem',async()=>{
  const f=fixture({required:true});
  await f.w.saveOrder();
- assert.match(f.db.orders[0].notes,/Cores: por definir/);
- assert.match(f.db.orders[0].notes,/Fragrância: por definir/);
+ assert.deepEqual(lineSummary(f.db.orders[0].items[0],f.db),['Cores: por definir','Fragrância: por definir']);
+ assert.equal(f.db.orders[0].notes,'');
  f.dom.window.close();
 });
-test('falha de validação não modifica permanentemente as notas manuais',async()=>{
+test('as notas manuais são preservadas independentemente da personalização',async()=>{
  const f=fixture();
- f.w.saveOrder=async()=>false; // original closure remains unaltered; another test covers rollback via abort in script
- assert.equal(f.w.document.getElementById('saleNotes').value,'');
+ f.w.document.getElementById('saleNotes').value='Entregar às 11h';
+ await f.w.saveOrder();
+ assert.equal(f.db.orders[0].notes,'Entregar às 11h');
  f.dom.window.close();
 });
 
@@ -90,8 +92,9 @@ test('nova unidade não herda a cor ou fragrância já definida noutra linha',as
  assert.deepEqual(Array.from(f.cart[1].directSaleOptionsV19158.colors),[]);
  assert.equal(f.cart.reduce((sum,x)=>sum+x.qty*x.price,0),20);
  await f.w.saveOrder();
- assert.match(f.db.orders[0].notes,/Cor da base: Azul/);
- assert.equal((f.db.orders[0].notes.match(/Cor da base: Azul/g)||[]).length,1);
+ assert.equal(lineSummary(f.db.orders[0].items[0],f.db).includes('Cor da base: Azul'),true);
+ assert.equal(lineSummary(f.db.orders[0].items[1],f.db).includes('Cor da base: Azul'),false);
+ assert.equal(f.db.orders[0].notes,'');
  f.dom.window.close();
 });
 test('nova unidade sem escolhas pode aumentar a quantidade sem duplicar linhas',()=>{
@@ -122,4 +125,32 @@ test('impressão existente contém observações da encomenda, mantendo linhas e
  assert.ok(html.includes("h(o.notes||'—')"));
  assert.match(html,/function showOrder\(id\)/);
  assert.ok(html.includes("escapeHtml(o.notes||'—')"));
+});
+
+test('aumento de quantidade de artigo personalizado cria unidade sem preferências',()=>{
+ const f=fixture();
+ const select=f.w.document.querySelector('.ae-direct-order-options-v19158 select');
+ select.value='Azul';select.dispatchEvent(new f.w.Event('change'));
+ f.w.setDirectOrderLineQtyV19158(0,3);
+ assert.equal(f.cart.length,2);
+ assert.equal(f.cart[0].qty,1);
+ assert.equal(f.cart[1].qty,2);
+ assert.deepEqual(Array.from(f.cart[1].directSaleOptionsV19158.colors),[]);
+ assert.equal(f.cart.reduce((t,x)=>t+x.qty*x.price,0),30);
+ f.dom.window.close();
+});
+test('linhas sem personalização na Cloud não inventam cores nem fragrâncias',()=>{
+ const f=fixture();
+ assert.deepEqual(lineSummary({code:'V-1',name:'Vela',qty:1},f.db),[]);
+ f.dom.window.close();
+});
+test('versão PWA e impressão estruturada pertencem ao mesmo release',()=>{
+ const html=fs.readFileSync('index.html','utf8');
+ const version=JSON.parse(fs.readFileSync('version.json','utf8')).app;
+ const sw=fs.readFileSync('sw.js','utf8');
+ assert.match(html,new RegExp('content="'+version.replaceAll('.','\\.')+'"'));
+ assert.ok(html.includes("const APP_VERSION='"+version+"'"));
+ assert.ok(sw.includes("artessencia-backoffice-"+version));
+ assert.ok(html.includes("directOrderLineInstructionsV19158(i).map(h).join(' · ')"));
+ assert.ok(html.includes("directOrderLineInstructionsV19158(i).map(escapeHtml).join(' · ')"));
 });
