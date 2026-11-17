@@ -128,22 +128,28 @@
   const drafts=[],search=$('[data-ae-order-search-v19160]',dialog),results=$('[data-ae-order-results-v19160]',dialog),
    rows=$('[data-ae-order-drafts-v19160]',dialog),total=$('[data-ae-order-total-v19160]',dialog),
    confirm=$('[data-ae-order-confirm-v19160]',dialog);
-  let submitting=false;
+  let submitting=false,visibleLimit=20,previousQuery='';
   const close=()=>{if(submitting)return;dialog.close();dialog.remove();if(activeDialog===dialog)activeDialog=null};
   dialog.addEventListener('cancel',event=>{event.preventDefault();close()});
   $('.ae-order-add-close-v19160',dialog).addEventListener('click',close);
   $('[data-ae-order-cancel-v19160]',dialog).addEventListener('click',close);
   dialog.addEventListener('click',event=>{if(event.target===dialog)close()});
   function updateSummary(){
-   const delta=drafts.reduce((sum,draft)=>{
-    const p=productFor(draft.code),qty=Number(draft.qty);
-    return sum+(p&&Number.isFinite(qty)&&qty>=1?Number(p.price||0)*qty:0);
-   },0);
-   const old=calcOrder(order);
+   const valid=drafts.every(d=>{
+    const p=productFor(d.code),q=Number(d.qty),price=Number(p?.price);
+    return !!p&&activeProduct(p)&&Number.isSafeInteger(q)&&q>=1&&q<=999&&Number.isFinite(price)&&price>=0;
+   });
+   const units=drafts.reduce((n,d)=>n+(Number.isSafeInteger(Number(d.qty))&&Number(d.qty)>0?Number(d.qty):0),0);
+   const existing=calcOrder(order);
+   const projected=valid?calcOrder({...order,items:[
+    ...arr(order.items),
+    ...drafts.map(d=>({code:d.code,qty:Number(d.qty),price:Number(productFor(d.code).price)}))
+   ]}):null;
    total.textContent=drafts.length+
-    ' artigo(s) · Acrescentar '+euroLocal(delta)+' · Novo total '+euroLocal(old.total+delta)+
-    ' · Por pagar '+euroLocal(Math.max(0,old.total+delta-(Number(order.paid)||0)));
-   confirm.disabled=!drafts.length||submitting;
+    ' linha(s) · '+units+' unidade(s) · Novo total '+euroLocal(projected?.total??existing.total)+
+    ' · Falta pagar '+euroLocal(Math.max(0,(projected?.total??existing.total)-(Number(order.paid)||0)))+
+    (!valid&&drafts.length?' · Confirma as quantidades (1–999) e os preços.':'');
+   confirm.disabled=!drafts.length||!valid||submitting;
   }
   function renderDrafts(){
    rows.replaceChildren();
@@ -151,25 +157,48 @@
    drafts.forEach((draft,index)=>rows.append(
     renderDraftCard(dialog,draft,index,i=>{drafts.splice(i,1);renderDrafts()},updateSummary)));
    updateSummary();
+   renderResults();
   }
   function renderResults(){
    results.replaceChildren();
    const query=normal(search.value);
-   const products=(db.products||[]).filter(p=>
+   if(query!==previousQuery){visibleLimit=20;previousQuery=query}
+   const rank=p=>{
+    if(!query)return 4;
+    const name=normal(p.name),code=normal(p.code);
+    if(name===query||code===query)return 0;
+    if(name.startsWith(query)||code.startsWith(query))return 1;
+    if(name.split(/\s+/).some(word=>word.startsWith(query)))return 2;
+    return 3;
+   };
+   const matches=arr(db.products).filter(p=>
     activeProduct(p)&&p.code&&(!query||normal(p.name).includes(query)||normal(p.code).includes(query))
-   ).slice(0,20);
-   if(!products.length)results.append(create('span','ae-order-add-empty-v19160','Nenhum produto disponível.'));
-   products.forEach(product=>{
+   ).sort((a,b)=>rank(a)-rank(b)||txt(a.name).localeCompare(txt(b.name),'pt-PT'));
+   const shown=matches.slice(0,visibleLimit);
+   const count=create('span','ae-order-add-results-count-v19162',
+    matches.length?('A mostrar '+shown.length+' de '+matches.length+' produto(s)'):'Nenhum produto disponível.');
+   count.setAttribute('aria-live','polite');results.append(count);
+   shown.forEach(product=>{
     const btn=create('button','ae-order-add-product-v19160');
     btn.type='button';
+    const selected=drafts.filter(d=>String(d.code)===String(product.code)).length;
     btn.append(create('strong','',txt(product.name||product.code)),
                create('small','',txt(product.code)+' · '+euroLocal(product.price)));
+    if(selected)btn.append(create('small','ae-order-add-selected-v19162','Já selecionado: '+selected+' linha(s)'));
     btn.addEventListener('click',()=>{
-     drafts.push(createDraft(product));renderDrafts();search.value='';renderResults();
+     drafts.push(createDraft(product));renderDrafts();
      rows.lastElementChild?.scrollIntoView({block:'nearest',behavior:'smooth'});
     });
     results.append(btn);
    });
+   if(shown.length<matches.length){
+    const more=create('button','ae-order-add-show-more-v19162',
+     'Mostrar mais produtos ('+(matches.length-shown.length)+' restantes)');
+    more.type='button';
+    more.setAttribute('data-ae-order-show-more-v19162','');
+    more.addEventListener('click',()=>{visibleLimit+=20;renderResults()});
+    results.append(more);
+   }
   }
   confirm.addEventListener('click',()=>{
    if(submitting||!drafts.length)return;
@@ -200,7 +229,7 @@
   });
   search.addEventListener('input',renderResults);
   search.addEventListener('search',renderResults);
-  renderResults();renderDrafts();dialog.showModal();search.focus();
+  renderDrafts();dialog.showModal();search.focus();
  }
  document.addEventListener('click',event=>{
   const target=event.target.closest?.('[data-existing-order-add-v19160]');
