@@ -9,7 +9,7 @@
   return p.year+'-'+p.month+'-'+p.day;
  };
  const shift=iso=>{const d=new Date(iso+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+1);return d.toISOString().slice(0,10)};
- let selected='all',busy=false,installed=false;
+ let selected='all',installed=false;
  function source(){
   if(typeof db==='undefined'||!db||!Array.isArray(db.orders)||typeof calcOrder!=='function')return [];
   const today=dateISO(),tomorrow=shift(today);
@@ -50,9 +50,8 @@
     +'<button type="button" class="ae-delivery-focus-open" data-dashboard-order="'+escaped(o.id)+'" aria-label="Abrir encomenda '+escaped(o.id)+'">Abrir</button>'
     +'</div>';
   }).join('');
-  busy=true;
-  list.innerHTML=html||'<div class="dashboard-today-empty">'+(data.length?'Sem encomendas neste filtro.':'Não existem entregas pendentes com data definida.')+'</div>';
-  busy=false;
+  const nextHTML=html||'<div class="dashboard-today-empty">'+(data.length?'Sem encomendas neste filtro.':'Não existem entregas pendentes com data definida.')+'</div>';
+  if(list.innerHTML!==nextHTML)list.innerHTML=nextHTML;
   const label=document.getElementById('dashboardTodayLabel');
   if(label)label.textContent=data.length+' encomenda(s) por tratar · '+counts.late+' atrasada(s)';
   let foot=card.querySelector('#aeDeliveryFocusFooterV19165');
@@ -64,8 +63,11 @@
  function init(){
   const list=document.getElementById(HOST);if(!list||installed)return;
   installed=true;
-  // O render principal conserva as suas funções; apenas se substitui a vista resumida.
-  new MutationObserver(()=>{if(!busy)display()}).observe(list,{childList:true});
+  // Interceta apenas o renderizador já existente. Não observar mutações criadas por esta vista.
+  const original=window.renderDashboardDaily;
+  if(typeof original==='function'){
+   window.renderDashboardDaily=function(...args){const result=original.apply(this,args);display();return result};
+  }
   display();
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
