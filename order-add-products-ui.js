@@ -7,7 +7,7 @@
  const ALLOWED_STATUS=new Set(['Pedido','Confirmada']);
  const $=(selector,root=document)=>root.querySelector(selector);
  const txt=(value)=>String(value==null?'':value).trim();
- const normal=(value)=>txt(value).toLocaleLowerCase('pt-PT');
+ const normal=(value)=>txt(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-PT');
  const arr=(value)=>Array.isArray(value)?value:[];
  const euroLocal=(v)=>Number(v||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
  const create=(tag,className,textValue)=>{
@@ -198,6 +198,8 @@
     toast(error.message||'Não foi possível guardar os artigos.');
    }finally{submitting=false;confirm.disabled=!drafts.length}
   });
+  search.addEventListener('input',renderResults);
+  search.addEventListener('search',renderResults);
   renderResults();renderDrafts();dialog.showModal();search.focus();
  }
  document.addEventListener('click',event=>{
