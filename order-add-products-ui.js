@@ -26,7 +26,7 @@
   return {colors:distinctNames(cfg.colors),fragrances:distinctNames(cfg.fragrances)};
  };
  function canAdd(order){
-  if(!order||order.voidedAt||order.deletedAt||order.deleted||order.clientDeleted)return false;
+  if(!order||order.source==='online_store'||order.voidedAt||order.deletedAt||order.deleted||order.clientDeleted)return false;
   if(!ALLOWED_STATUS.has(txt(order.status||'Pedido')))return false;
   return !isOrderProduced(order.id);
  }
@@ -181,21 +181,13 @@
    let newLines;
    try{newLines=drafts.map(d=>buildLine(productFor(d.code),d))}
    catch(error){toast(error.message||'Confirma os artigos e quantidades.');return}
-   if(freshOrder.source==='online_store'&&!confirmOnlineChange(freshOrder,newLines))return;
+
    const oldItems=arr(freshOrder.items),oldSubtotal=freshOrder.subtotal,oldTotal=freshOrder.total;
-   const oldCalc=calcOrder(freshOrder);
-   const delta=newLines.reduce((sum,line)=>sum+Number(line.qty)*Number(line.price),0);
    submitting=true;confirm.disabled=true;
    try{
     freshOrder.items=oldItems.concat(newLines);
-    if(freshOrder.source==='online_store'){
-     const priorSub=Number(oldSubtotal),priorTotal=Number(oldTotal);
-     freshOrder.subtotal=(Number.isFinite(priorSub)?priorSub:oldCalc.subtotal)+delta;
-     freshOrder.total=(Number.isFinite(priorTotal)?priorTotal:oldCalc.total)+delta;
-    }else{
-     freshOrder.subtotal=freshOrder.items.reduce((sum,line)=>sum+(Number(line.qty)||0)*(Number(line.price)||0),0);
-     freshOrder.total=calcOrder(freshOrder).total;
-    }
+    freshOrder.subtotal=freshOrder.items.reduce((sum,line)=>sum+(Number(line.qty)||0)*(Number(line.price)||0),0);
+    freshOrder.total=calcOrder(freshOrder).total;
     if(!save())throw new Error('Não foi possível confirmar a gravação local. Os artigos não foram acrescentados.');
     relMarkOrderPending(freshOrder);
     dialog.close();dialog.remove();activeDialog=null;
@@ -207,10 +199,6 @@
    }finally{submitting=false;confirm.disabled=!drafts.length}
   });
   renderResults();renderDrafts();dialog.showModal();search.focus();
- }
- function confirmOnlineChange(order,lines){
-  return window.confirm('Esta encomenda veio da Loja Online. Acrescentar '+lines.length+
-    ' artigo(s) altera o total no Backoffice, mas não altera o checkout original. Continuar?');
  }
  document.addEventListener('click',event=>{
   const target=event.target.closest?.('[data-existing-order-add-v19160]');
