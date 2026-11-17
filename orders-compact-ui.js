@@ -212,4 +212,22 @@
     const o=line.directSaleOptionsV19158||{},p=profile(line),co=p.colors||{},fr=p.fragrance||{};
     const selections=(Array.isArray(o.colors)?o.colors:[]).map((v,j)=>v?((Array.isArray(co.labels)&&co.labels[j])||('Cor '+(j+1)))+': '+v:'').filter(Boolean);
     if(!selections.length&&Number(co.max)>0)selections.push('Cores: por definir');
-    if(o.fragrance)selections.push('F
+    if(o.fragrance)selections.push('Fragrância: '+o.fragrance);
+    else if(fr.enabled&&fr.required)selections.push('Fragrância: por definir');
+    if(String(o.notes||'').trim())selections.push('Instruções: '+String(o.notes).trim().replace(/\s+/g,' '));
+    if(selections.length)lines.push((i+1)+'. '+String(line.name||line.code||'Produto')+' ('+Math.max(1,Number(line.qty)||1)+' un.): '+selections.join('; '));
+   });
+   return lines.length?'Escolhas dos artigos — '+lines.join(' | '):'';
+  }
+  window.saveOrder=async function(...args){
+   const before=notes.value,summary=selectionsNote(),count=(db.orders||[]).length;
+   if(summary)notes.value=[before.trim(),summary].filter(Boolean).join('\n\n');
+   try{return await originalSave.apply(this,args)}
+   finally{if((db.orders||[]).length===count)notes.value=before}
+  };
+  renderOptions();
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
+ else install();
+})();
+
