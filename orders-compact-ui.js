@@ -118,3 +118,53 @@
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
  else install();
 })();
+/* V1.9.158 — escolhas estruturadas por artigo, apenas em encomendas manuais.
+   Os valores são guardados na própria linha e resumidos nas notas já impressas. */
+(function(){
+ 'use strict';
+ function install(){
+  if(window.__aeDirectOrderOptions19158)return;
+  if(typeof renderCart!=='function'||typeof saveOrder!=='function'||typeof cart==='undefined')return;
+  const host=document.getElementById('cart'),notes=document.getElementById('saleNotes');
+  if(!host||!notes)return;
+  window.__aeDirectOrderOptions19158=true;
+  const originalRender=renderCart,originalSave=saveOrder;
+  const normalized=v=>String(v||'').trim().toLocaleLowerCase('pt-PT');
+  const product=line=>(db.products||[]).find(p=>String(p.code||'')===String(line.code||''))||null;
+  const profile=line=>product(line)?.personalizationV1773||product(line)?.personalization||{};
+  const master=()=>{
+   const raw=db.settings?.personalizationLibraryV1791||{};
+   return {colors:Array.isArray(raw.colors)?raw.colors:[],fragrances:Array.isArray(raw.fragrances)?raw.fragrances:[]};
+  };
+  const labelFor=(value)=>String(typeof value==='string'?value:value?.name||'').trim();
+  const values=(list)=>[...new Set((Array.isArray(list)?list:[]).map(labelFor).filter(Boolean))];
+  const pick=(title,list,current,onChange)=>{
+   const label=document.createElement('label');label.className='ae-direct-option-field-v19158';
+   const head=document.createElement('span');head.textContent=title;label.append(head);
+   const select=document.createElement('select');
+   const option=(value,text)=>{const o=document.createElement('option');o.value=value;o.textContent=text;select.append(o)};
+   option('','Por definir');
+   values(list).forEach(v=>option(v,v));
+   if(current&&!Array.from(select.options).some(x=>x.value===current))option(current,current+' (valor guardado)');
+   select.value=current||'';
+   select.addEventListener('change',()=>onChange(select.value));
+   label.append(select);
+   return label;
+  };
+  function renderOptions(){
+   if(!document.getElementById('cart'))return;
+   const rows=[...host.querySelectorAll(':scope > .sale-cart-row-v1754')];
+   rows.forEach((row,index)=>{
+    const line=cart[index];if(!line)return;
+    const opts=line.directSaleOptionsV19158||{};
+    const p=profile(line),co=p.colors||{},fr=p.fragrance||{},all=master();
+    const slots=Math.min(3,Math.max(1,Number(co.max)||1));
+    const colorValues=values(Array.isArray(co.palette)&&co.palette.length?co.palette:all.colors);
+    const fragranceValues=values(Array.isArray(fr.options)&&fr.options.length?fr.options:all.fragrances);
+    const details=document.createElement('details');
+    details.className='ae-direct-order-options-v19158';
+    details.open=!!opts.open;
+    const summary=document.createElement('summary');
+    const parts=[...(Array.isArray(opts.colors)?opts.colors:[]).filter(Boolean)];
+    if(opts.fragrance)parts.push(opts.fragrance);
+    summary.textContent='Cores e fragrância'+(parts.length?' · '+parts.join(' / '):' · por definir');
