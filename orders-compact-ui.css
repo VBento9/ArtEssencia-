@@ -24,3 +24,14 @@
 /* Ficha independente para contactos provisórios e clientes homónimos. */
 .sale-customer-card-v1727 .sale-client-new-v19157{display:flex;align-items:center;gap:8px;font-size:12px;line-height:1.4;margin-top:8px;cursor:pointer;color:var(--muted,#64574c)}
 .sale-customer-card-v1727 .sale-client-new-v19157 input{flex:0 0 auto;min-width:18px;min-height:18px}
+
+/* Personalização por linha no carrinho de encomendas manuais. */
+.ae-direct-order-options-v19158{margin:0 0 10px;padding:10px 12px;border:1px solid #d7c7b6;border-radius:12px;background:#faf7f1;min-width:0}
+.ae-direct-order-options-v19158>summary{cursor:pointer;list-style-position:inside;font-size:13px;font-weight:600;overflow-wrap:anywhere}
+.ae-direct-order-options-content-v19158{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:10px;margin-top:12px}
+.ae-direct-option-field-v19158{display:flex;flex-direction:column;gap:5px;min-width:0}
+.ae-direct-option-field-v19158 span{font-size:12px;font-weight:600;color:#514638}
+.ae-direct-option-field-v19158 select,.ae-direct-option-field-v19158 textarea{width:100%;min-width:0;box-sizing:border-box}
+.ae-direct-order-options-content-v19158 button{justify-self:start;grid-column:1/-1}
+@media(max-width:650px){.ae-direct-order-options-content-v19158{grid-template-columns:1fr}}
+
