@@ -46,22 +46,7 @@ jobs:
       - run: npm install --no-save playwright@1.56.1
       - run: npx playwright install --with-deps chromium
       - run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/ae-dash-http.log 2>&1 &
-      - run: node scripts/test_dashboard_tasks_browser.cjs
-  browser:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 12
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version: '22'
-      - name: Preparar Chromium isolado
+      - name: Validar tarefas e entregas no navegador
         run: |
-          npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
-          npx playwright install --with-deps chromium
-      - name: Servir o Backoffice sem Cloud
-        run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/ae-task-dashboard-test.log 2>&1 &
-      - name: Validar navegação e entregas com dados fictícios
-        run: node scripts/test_task_dashboard_browser_19165.cjs
+          node scripts/test_dashboard_tasks_browser.cjs
+          node scripts/test_task_dashboard_browser_19165.cjs
