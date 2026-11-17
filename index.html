@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.156">
+<meta name="artessencia-version" content="1.9.157">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -6444,7 +6444,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.156';
+const APP_VERSION='1.9.157';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -10569,7 +10569,38 @@ function showOrder(id){
  orderDialog.showModal();
 }
 
-function updateOrderDetails(id){const o=db.orders.find(x=>x.id===id);if(!o)return;o.client=detailClient.value.trim();o.contact=detailContact.value.trim();o.clientId=upsertClientFromOrder(o.client,o.contact,o.email||'');o.clientDeleted=false;if(!isOrderProduced(id)){if(!detailDelivery.value)return toast('A encomenda necessita de data de entrega para permanecer no planeamento de produção');o.delivery=detailDelivery.value;if(document.getElementById('detailNotes'))o.notes=detailNotes.value.trim()}const pay=detailPayment.value;o.payment=pay==='Por definir'?'A definir':pay;const box=detailBox.value;o.box=box==='Sem embalagem definida'?'':box;o.boxes=o.box?Math.max(1,+detailBoxes.value||1):0;const pk=(db.packaging||[]).find(p=>p.name===o.box);o.boxCostSnapshot=pk?+pk.cost||0:0;save();showOrder(id);toast('Encomenda corrigida')}
+function updateOrderDetails(id){
+ const o=db.orders.find(x=>x.id===id);if(!o)return;
+ const name=String(detailClient.value||'').trim(),contact=String(detailContact.value||'').trim();
+ if(!name)return toast('Indica o nome do cliente');
+ if(!isOrderProduced(id)&&!detailDelivery.value)return toast('A encomenda necessita de data de entrega para permanecer no planeamento de produção');
+ // Uma edição nunca pode substituir silenciosamente a ficha de um cliente pelo telefone provisório.
+ const previous=(db.clients||[]).find(c=>!isQuarantinedProductClient(c)&&String(c.id)===String(o.clientId||''));
+ let notice='';
+ if(previous){
+   if(normText(previous.name)===normText(o.client)){
+     const otherNames=(db.orders||[]).some(x=>x!==o&&String(x.clientId||'')===String(previous.id)&&normText(x.client)!==normText(o.client));
+     if(normText(name)!==normText(o.client)){
+       if(otherNames)return toast('Esta ficha está ligada a encomendas com nomes diferentes. Revê o cliente antes de alterar a identidade.');
+       previous.name=name;
+     }
+     if(!previous.phone||customerPhoneKey(previous.phone)===customerPhoneKey(o.contact))previous.phone=contact;
+   }else notice='A ficha ligada tem um nome diferente. Confirma a associação em Clientes.';
+   o.clientId=previous.id;
+ }else{
+   o.clientId=upsertClientFromOrder(name,contact,o.email||'');
+ }
+ o.client=name;o.contact=contact;o.clientDeleted=false;
+ if(!isOrderProduced(id)){
+   o.delivery=detailDelivery.value;
+   if(document.getElementById('detailNotes'))o.notes=detailNotes.value.trim();
+ }
+ const pay=detailPayment.value;o.payment=pay==='Por definir'?'A definir':pay;
+ const box=detailBox.value;o.box=box==='Sem embalagem definida'?'':box;
+ o.boxes=o.box?Math.max(1,+detailBoxes.value||1):0;
+ const pk=(db.packaging||[]).find(p=>p.name===o.box);o.boxCostSnapshot=pk?+pk.cost||0:0;
+ save();showOrder(id);toast(notice||'Encomenda corrigida')
+}
 
 function ensureOrderPaymentCashLedger(target){
  const d=target||db;d.cash=Array.isArray(d.cash)?d.cash:[];d.orders=Array.isArray(d.orders)?d.orders:[];
