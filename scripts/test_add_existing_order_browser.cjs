@@ -25,7 +25,22 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
    await add.click();
    const dialog=page.locator('.ae-order-add-dialog-v19160');
    await dialog.waitFor({state:'visible'});
-   await dialog.locator('[data-ae-order-search-v19160]').fill('Nova vela');
+   const search=dialog.locator('[data-ae-order-search-v19160]');
+   const results=dialog.locator('[data-ae-order-results-v19160] .ae-order-add-product-v19160');
+   assert.equal(await results.count(),2);
+   await search.fill('inexistente');
+   await page.waitForFunction(()=>document.querySelectorAll('.ae-order-add-results-v19160 .ae-order-add-product-v19160').length===0);
+   assert.match(await dialog.locator('[data-ae-order-results-v19160]').innerText(),/Nenhum produto disponível/);
+   await search.fill('velá'); // pesquisa sem acentos deve encontrar 'Vela'
+   assert.equal(await results.count(),2);
+   await search.fill('P-NEW'); // pesquisa por referência
+   assert.equal(await results.count(),1);
+   assert.match(await results.first().innerText(),/Nova vela/);
+   await search.fill('NÓVA'); // pesquisa por nome e sem acentos
+   assert.equal(await results.count(),1);
+   await search.fill('');
+   assert.equal(await results.count(),2);
+   await search.fill('Nova vela');
    await dialog.getByRole('button',{name:/Nova vela/}).click();
    const row=dialog.locator('.ae-order-add-line-v19160');
    await row.locator('input[type=number]').fill('2');
