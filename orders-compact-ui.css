@@ -35,3 +35,7 @@
 .ae-direct-order-options-content-v19158 button{justify-self:start;grid-column:1/-1}
 @media(max-width:650px){.ae-direct-order-options-content-v19158{grid-template-columns:1fr}}
 
+
+/* Correção 1.9.159: checkbox de nova ficha não herda a largura/altura dos campos. */
+.sale-customer-card-v1727 .sale-client-new-v19157{display:flex;align-items:center;justify-content:flex-start;gap:10px;width:100%;min-height:24px;margin-top:8px;font-size:13px;line-height:1.4;overflow-wrap:normal;word-break:normal}
+.sale-customer-card-v1727 .sale-client-new-v19157 input[type="checkbox"]{appearance:auto!important;width:18px!important;height:18px!important;min-width:18px!important;min-height:18px!important;max-width:18px!important;max-height:18px!important;padding:0!important;margin:0!important;flex:0 0 18px!important;box-sizing:border-box!important}
