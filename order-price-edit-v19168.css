@@ -1,0 +1,19 @@
+#orderDetail .ae-order-price-unit-v19168{display:block;margin-top:5px;color:#6c5442;font-size:12px;line-height:1.45}
+#orderDetail .ae-order-price-open-v19168{display:inline-flex;margin-top:8px;min-height:42px;padding:8px 11px;align-items:center;justify-content:center;font-size:12px;white-space:normal}
+#orderDetail .ae-order-price-history-v19168{margin:12px 0;padding:11px;border:1px solid #e3d5c7;border-radius:12px;background:#fffaf4}
+#orderDetail .ae-order-price-history-v19168 summary{cursor:pointer;font-size:13px;font-weight:650}
+#orderDetail .ae-order-price-history-v19168 li{margin:7px 0;overflow-wrap:anywhere;font-size:12px;line-height:1.45}
+.ae-order-price-dialog-v19168{width:min(470px,calc(100vw - 24px));max-height:90vh;overflow:auto;border:1px solid #dbc9b8;border-radius:16px;padding:0;background:#fffdf9;color:#322820}
+.ae-order-price-dialog-v19168::backdrop{background:#24181299}
+.ae-order-price-dialog-v19168 form{display:grid;gap:12px;padding:18px}
+.ae-order-price-dialog-v19168 h2{font-size:20px;margin:0}
+.ae-order-price-dialog-v19168 p{font-size:13px;line-height:1.5;margin:0}
+.ae-order-price-dialog-v19168 label:not(.ae-order-price-ack-v19168){display:grid;gap:6px;font-size:13px;font-weight:650}
+.ae-order-price-dialog-v19168 input[type=text]{box-sizing:border-box;width:100%;min-height:44px;border:1px solid #cab8a8;border-radius:9px;padding:9px 11px;font-size:16px}
+.ae-order-price-dialog-v19168 .ae-order-price-preview-v19168{padding:11px;border-radius:10px;background:#f5eee6;font-size:13px;line-height:1.5}
+.ae-order-price-dialog-v19168 .ae-order-price-ack-v19168{display:flex;gap:9px;align-items:flex-start;font-size:12px;line-height:1.45}
+.ae-order-price-dialog-v19168 .ae-order-price-ack-v19168 input{width:18px;height:18px;flex-shrink:0;margin:2px 0 0}
+.ae-order-price-dialog-v19168 .ae-order-price-error-v19168{color:#a32c24}
+.ae-order-price-dialog-v19168 .ae-order-price-actions-v19168{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ae-order-price-dialog-v19168 .ae-order-price-actions-v19168 button{min-height:44px;font-size:13px;white-space:normal}
+@media(max-width:430px){.ae-order-price-dialog-v19168 form{padding:14px}.ae-order-price-dialog-v19168 .ae-order-price-actions-v19168{grid-template-columns:1fr}}
