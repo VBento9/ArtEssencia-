@@ -29,3 +29,143 @@
  #stock .stock-table .badge{font-size:10px;min-height:30px}
  #stock .stock-form-head{gap:8px}
 }
+
+/* Stock — adaptação de cartões à largura real disponível no tablet/PWA.
+   Apenas apresentação: não interfere com as ações e os registos de stock. */
+.app #stock,
+.app #stock :is(.stock-hero,.stock-list-card,.stock-tablewrap,.stock-create-section-v1736,.stock-move-section-v1721){
+  min-width:0;
+  max-width:100%;
+}
+.app #stock .stock-list-card{container-type:inline-size}
+.app #stock .stock-kpi{min-width:0;padding:12px}
+.app #stock .stock-kpi strong{font-size:clamp(18px,2vw,22px);line-height:1.25;overflow-wrap:break-word}
+.app #stock .stock-kpi :is(span,small){font-size:11px;line-height:1.4}
+.app #stock .stock-name-cell-v1771,
+.app #stock .stock-name-cell-v1771 > div{
+  min-width:0;
+  white-space:normal;
+  overflow-wrap:break-word;
+  word-break:normal;
+  line-height:1.4;
+}
+.app #stock :is(.stock-list-head,.stock-form-head,.stock-form-actions){min-width:0;gap:8px;flex-wrap:wrap}
+.app #stock .ae-stock-compact-controls{gap:8px}
+.app #stock .ae-stock-compact-controls :is(button,select){
+  max-width:100%;
+  min-height:42px;
+  padding:8px 10px;
+  font-size:12px;
+  line-height:1.3;
+  white-space:normal;
+}
+.app #stock .stock-actions{gap:6px}
+.app #stock .stock-actions .btn{
+  padding:8px 10px;
+  min-height:42px;
+  font-size:12px;
+  line-height:1.3;
+  white-space:normal;
+}
+
+/* A mudança para cartões depende da largura útil do Stock, não apenas
+   da largura do ecrã; também funciona no tablet em modo horizontal com menu. */
+@container (max-width: 1000px){
+  .app #stock .stock-list-card .stock-tablewrap{overflow:visible;max-width:100%}
+  .app #stock .stock-list-card .stock-table,
+  .app #stock .stock-list-card .stock-table tbody{
+    display:block;
+    width:100%;
+    min-width:0!important;
+  }
+  .app #stock .stock-list-card .stock-table thead{
+    position:absolute;
+    width:1px;
+    height:1px;
+    overflow:hidden;
+    clip-path:inset(50%);
+  }
+  .app #stock .stock-list-card .stock-table tbody{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+  }
+  .app #stock .stock-list-card .stock-table tr{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:2px 10px;
+    min-width:0;
+    margin:0;
+    padding:10px 12px;
+    background:#fff;
+    border:1px solid #dfd4c8;
+    border-radius:12px;
+    box-shadow:none;
+  }
+  .app #stock .stock-list-card .stock-table tr.stock-row-low{border-left:4px solid #aa701b}
+  .app #stock .stock-list-card .stock-table tr.stock-row-out{border-left:4px solid #a54536}
+  .app #stock .stock-list-card .stock-table td{
+    display:block;
+    min-width:0!important;
+    padding:6px 0;
+    border:0;
+    font-size:12px;
+    line-height:1.4;
+    white-space:normal;
+    overflow-wrap:break-word;
+    word-break:normal;
+  }
+  .app #stock .stock-list-card .stock-table td::before{
+    content:attr(data-stock-label);
+    display:block;
+    margin-bottom:3px;
+    font-size:11px;
+    line-height:1.25;
+    color:#6b5747;
+  }
+  .app #stock .stock-list-card .stock-table td:first-child,
+  .app #stock .stock-list-card .stock-table td:last-child,
+  .app #stock .stock-list-card .stock-table td[colspan]{grid-column:1/-1}
+  .app #stock .stock-list-card .stock-table td:first-child::before,
+  .app #stock .stock-list-card .stock-table td:last-child::before,
+  .app #stock .stock-list-card .stock-table td[colspan]::before{display:none}
+  .app #stock .stock-list-card .stock-table td strong{font-size:14px;line-height:1.35;white-space:normal}
+  .app #stock .stock-list-card .stock-table .badge{
+    max-width:100%;
+    white-space:normal;
+    padding:5px 8px;
+    font-size:11px;
+    line-height:1.3;
+  }
+  .app #stock .stock-list-card .stock-table .stock-actions{
+    display:grid;
+    width:100%;
+    min-width:0;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:6px;
+  }
+  .app #stock .stock-list-card .stock-table .stock-actions .btn{
+    width:100%;
+    min-width:0;
+    margin:0;
+    min-height:42px;
+    padding:8px 6px;
+    font-size:12px;
+    line-height:1.3;
+  }
+  .app #stock .stock-list-card .stock-table .stock-actions .btn.danger{grid-column:1/-1}
+}
+@container (max-width: 780px){
+  .app #stock .stock-list-card .stock-table tbody{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width: 650px){
+  .app #stock .stock-hero{min-width:0}
+  .app #stock .ae-stock-compact-controls{align-items:stretch}
+  .app #stock .ae-stock-compact-controls .ae-stock-action-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .app #stock .ae-stock-compact-controls .ae-stock-page-size{justify-content:center;flex-wrap:wrap}
+  .app #stock :is(.stock-form-actions,.stock-form-head){align-items:stretch}
+}
+@media (min-width: 1101px){
+  .app #stock .stock-tablewrap{overflow-x:auto;overscroll-behavior-inline:contain}
+  .app #stock .stock-table td{white-space:normal;overflow-wrap:break-word;word-break:normal}
+}
