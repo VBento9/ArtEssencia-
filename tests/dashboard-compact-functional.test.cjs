@@ -45,3 +45,48 @@ test('abre a encomenda exata após redesenhar a lista, sem handlers inline',()=>
  add(daily,'dashboardOrder');add(daily,'dashboardProduction');
  assert.deepEqual(calls,[['detail',id],['detail',id],['daily',id],['production',id]]);dom.window.close();
 });
+
+test('o Planeamento só lê a Cloud e gera as rotinas quando se abre o módulo',async t=>{
+ const dom=new JSDOM('<section id="dashboard" class="active"></section>',{runScripts:'outside-only'});
+ const w=dom.window;
+ t.after(()=>w.close());
+ const records=new Map();
+ const calls={sessions:0,editions:0};
+ w.loadSpecialEditionsAdmin=async()=>{calls.editions++};
+ w.cloudClient={
+  auth:{async getSession(){calls.sessions++;return {data:{session:{user:{id:'teste'}}}}}},
+  from(){
+   return {
+    select(){return this},eq(){return this},is(){return this},order(){return this},
+    async limit(){return {data:[]}},
+    async range(){return {data:[...records.values()]}},
+    upsert(record){
+     assert.ok(!records.has(record.record_id),'cada rotina ou ocorrência deve ser criada uma só vez');
+     records.set(record.record_id,record);
+     return {select:async()=>({data:[{record_id:record.record_id}]})};
+    }
+   };
+  }
+ };
+ const manager=fs.readFileSync(require('node:path').resolve(__dirname,'../task-manager-v2.js'),'utf8');
+ w.eval(manager);
+ const tick=()=>new Promise(resolve=>setImmediate(resolve));
+ await tick();
+ const screen=w.document.getElementById('taskPlanning');
+ assert.ok(screen);
+ w.dispatchEvent(new w.Event('focus'));
+ await tick();
+ assert.deepEqual(calls,{sessions:0,editions:0});
+ assert.equal(records.size,0);
+ screen.classList.add('active');
+ await tick();
+ assert.deepEqual(calls,{sessions:1,editions:1});
+ assert.equal([...records.values()].filter(r=>r.data.kind==='recurring_rule').length,2);
+ assert.equal([...records.values()].filter(r=>r.data.origin_rule_id).length,2);
+ screen.classList.remove('active');
+ await tick();
+ screen.classList.add('active');
+ await tick();
+ assert.deepEqual(calls,{sessions:1,editions:1});
+ assert.equal(records.size,4);
+});
