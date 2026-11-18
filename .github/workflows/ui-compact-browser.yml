@@ -5,6 +5,9 @@ on:
       - 'tests/ui-compact-browser.spec.cjs'
       - '*-compact-ui.js'
       - '*-compact-ui.css'
+      - 'scripts/test_cash_layout_browser.cjs'
+      - 'scripts/test_purchases_layout_browser.cjs'
+      - 'tests/cash-purchases-responsive-layout.test.cjs'
       - '.github/workflows/ui-compact-browser.yml'
   workflow_dispatch:
 permissions:
@@ -28,3 +31,10 @@ jobs:
         run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/ae-local-http.log 2>&1 &
       - name: Run browser smoke without Cloud
         run: npx playwright test tests/ui-compact-browser.spec.cjs --workers=1 --reporter=line
+
+      - name: Confirm responsive contract without production data
+        run: node --test tests/cash-purchases-responsive-layout.test.cjs
+      - name: Check Caixa and Compras with synthetic records (desktop/tablet/mobile)
+        run: |
+          node scripts/test_cash_layout_browser.cjs
+          node scripts/test_purchases_layout_browser.cjs
