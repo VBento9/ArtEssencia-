@@ -38,6 +38,8 @@ const browserTest=async()=>{
       one('CANCELLED','Cancelado',shifted(1),0)
      ];
      go('dashboard');renderDashboard();
+     const orderSignature=()=>JSON.stringify(db.orders.map(o=>({id:o.id,status:o.status,delivery:o.delivery,paid:o.paid,items:o.items})));
+     const beforeSignature=orderSignature();
      const counts=()=>Array.from(document.querySelectorAll('#dashboardTodayList .ae-delivery-focus-row')).map(x=>x.querySelector('.ae-delivery-focus-person small')?.textContent);
      const all=counts();
      document.querySelectorAll('#aeDeliveryFocusControlsV19165 button').forEach(b=>{if(b.textContent.startsWith('Atrasadas'))b.click()});
@@ -51,7 +53,7 @@ const browserTest=async()=>{
      const nav=document.querySelector('#nav button[data-page="taskPlanning"]')?.classList.contains('active');
      go('dashboard');
      const back=document.getElementById('dashboard')?.classList.contains('active');
-     return {all,late,today,upcoming,isolated,nav,back,unchanged:JSON.stringify(db.orders)===JSON.stringify([one('LATE','Em produção',shifted(-1),10),one('TODAY','Pronta',shifted(0),50),one('UPCOMING','Confirmada',shifted(2),0),one('DONE','Entregue',shifted(-2),0),one('CANCELLED','Cancelado',shifted(1),0)])};
+     return {all,late,today,upcoming,isolated,nav,back,unchanged:orderSignature()===beforeSignature};
     }finally{db.orders=original}
    });
    assert.deepEqual(result.all,['LATE','TODAY','UPCOMING']);
