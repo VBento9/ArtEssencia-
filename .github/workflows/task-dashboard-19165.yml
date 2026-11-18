@@ -44,7 +44,8 @@ jobs:
         with:
           node-version: '22'
       - run: npm install --no-save playwright@1.56.1
-      - run: npx playwright install --with-deps chromium
+      - name: Preparar Chromium de testes
+        run: npx playwright install chromium
       - run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/ae-dash-http.log 2>&1 &
       - name: Validar tarefas e entregas no navegador
         run: |
