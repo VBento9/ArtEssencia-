@@ -46,11 +46,18 @@ async function testFreshOrderCache(){
  let installation;
  handlers.install({waitUntil(promise){installation=promise}});
  await installation;
- for(const file of ['order-add-products-ui.js','order-add-products-ui.css','task-manager-v2.js','task-manager-v2.css']){
+ for(const file of ['manifest.webmanifest','order-add-products-ui.js','order-add-products-ui.css','task-manager-v2.js','task-manager-v2.css']){
   const path='/'+file;
   let response;
   handlers.fetch({request:new Request(origin+path),respondWith(promise){response=promise}});
   assert.equal(await (await response).text(),readFileSync(file,'utf8'),path+' disponível offline');
+ }
+ for(const path of ['/version.json?t=1','/api/status','/sw.js']){
+  const request=new Request(origin+path);
+  cached.set(request.url,new Response('stale'));
+  let response;
+  handlers.fetch({request,respondWith(promise){response=promise}});
+  await assert.rejects(response,/offline/,path+' requer rede mesmo quando existe uma cópia local');
  }
  for(const file of ['task-recurring-cloud-v1.js','task-planner-cloud-v1.js','task-planner-cloud-v1.css']){
   assert.equal(cached.has(origin+'/'+file),false,file+' fora da instalação');
