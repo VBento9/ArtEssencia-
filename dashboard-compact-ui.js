@@ -89,3 +89,9 @@ if(!document.getElementById('aeTasksCloudScriptV1')){
  const script=document.createElement('script');script.id='aeTasksCloudScriptV1';
  script.src='/task-manager-v2.js';script.defer=true;document.head.append(script);
 }
+
+/* Entregas compactas, apenas apresentação. */
+(function(){
+ const css=document.createElement('link');css.rel='stylesheet';css.href='/dashboard-delivery-focus-v19165.css';css.id='aeDeliveryFocusStylesV19165';if(!document.getElementById(css.id))document.head.append(css);
+ const script=document.createElement('script');script.src='/dashboard-delivery-focus-v19165.js';script.id='aeDeliveryFocusScriptV19165';if(!document.getElementById(script.id))document.head.append(script);
+})();

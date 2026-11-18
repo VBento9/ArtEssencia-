@@ -1,0 +1,29 @@
+/* Dashboard 1.9.165: leitura compacta de entregas, sem alterar os dados. */
+#dashboard .dashboard-today-card{overflow:hidden}
+#dashboard .dashboard-today-head{gap:12px}
+#dashboard .dashboard-today-head strong{font-size:15px}
+#dashboard .dashboard-today-head span{font-size:11px}
+#dashboard .ae-delivery-focus-controls{display:flex;gap:6px;overflow-x:auto;padding:10px 12px;background:#fffdf9;border-bottom:1px solid #eee3d8}
+#dashboard .ae-delivery-focus-controls button{white-space:nowrap;min-height:34px;padding:6px 12px;border:1px solid #ded3c9;border-radius:99px;background:white;color:#685041;font-size:12px;cursor:pointer}
+#dashboard .ae-delivery-focus-controls button.active{background:#655044;color:white;border-color:#655044}
+#dashboard .dashboard-today-list{display:block}
+#dashboard .ae-delivery-focus-row{display:grid;grid-template-columns:minmax(95px,.7fr) minmax(150px,1.5fr) minmax(150px,1.2fr) auto;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #efe8e1;min-height:66px}
+#dashboard .ae-delivery-focus-row.late{border-left:3px solid #ae5037}
+#dashboard .ae-delivery-focus-row.today{border-left:3px solid #a57a32}
+#dashboard .ae-delivery-focus-row>div{min-width:0;overflow-wrap:anywhere}
+#dashboard .ae-delivery-focus-row b{display:block;font-size:12px;line-height:1.4;color:#493629}
+#dashboard .ae-delivery-focus-row small{display:block;font-size:11px;line-height:1.5;color:#817063}
+#dashboard .ae-delivery-focus-row .unpaid{color:#ae4a32;font-weight:700}
+#dashboard .ae-delivery-focus-open{min-height:40px;min-width:70px;border-radius:9px;border:1px solid #dfd1c2;color:#4d3b2f;background:#fff;cursor:pointer;font-size:12px;font-weight:700}
+#dashboard .ae-delivery-focus-open:hover{background:#f7f0e8}
+#dashboard .ae-delivery-focus-footer{display:flex;justify-content:flex-end;padding:10px 12px}
+#dashboard .ae-delivery-focus-footer .btn{font-size:12px}
+@media(max-width:700px){#dashboard .ae-delivery-focus-row{grid-template-columns:minmax(90px,.75fr) minmax(100px,1.25fr) auto;gap:7px;padding:10px;min-height:70px}#dashboard .ae-delivery-focus-detail{grid-column:2/3;grid-row:2}#dashboard .ae-delivery-focus-date{grid-column:1;grid-row:1/3}#dashboard .ae-delivery-focus-person{grid-column:2;grid-row:1}#dashboard .ae-delivery-focus-open{grid-column:3;grid-row:1/3;min-width:58px}}
+@media(max-width:380px){#dashboard .ae-delivery-focus-row b{font-size:11px}#dashboard .ae-delivery-focus-row small{font-size:10px}}
+
+#dashboard .ae-delivery-focus-actions{display:flex;gap:6px;justify-content:flex-end;align-items:center;flex-wrap:wrap}
+#dashboard .ae-delivery-focus-production{background:#fff3df;border-color:#e9d4b2}
+@media(max-width:700px){
+ #dashboard .ae-delivery-focus-actions{grid-column:3;grid-row:1/3;display:grid;grid-template-columns:minmax(65px,1fr);gap:7px;min-width:0;align-self:stretch;align-content:center}
+ #dashboard .ae-delivery-focus-actions .ae-delivery-focus-open{grid-column:auto;grid-row:auto;min-width:65px;min-height:40px;position:relative}
+}
