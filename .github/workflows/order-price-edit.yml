@@ -4,6 +4,7 @@ on:
     paths:
       - 'order-price-edit-v19168.*'
       - 'tests/order-price-edit-19168.test.cjs'
+      - 'tests/order-sync-inflight-19170.test.cjs'
       - 'scripts/test_order_price_browser.cjs'
       - 'index.html'
       - 'sw.js'
@@ -26,7 +27,7 @@ jobs:
       - name: Syntax, rules and PWA version parity
         run: |
           node --check order-price-edit-v19168.js
-          node --test tests/order-price-edit-19168.test.cjs
+          node --test tests/order-price-edit-19168.test.cjs tests/order-sync-inflight-19170.test.cjs
           node scripts/check_pwa_release_versions.cjs
       - name: Install isolated browser
         run: |

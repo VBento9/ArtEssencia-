@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.169">
+<meta name="artessencia-version" content="1.9.170">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -6444,7 +6444,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.169';
+const APP_VERSION='1.9.170';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -17722,7 +17722,20 @@ async function relationalSyncCore(showToast=false){
    if(orderRows.length){
      const {error}=await cloudClient.from(REL_TABLES.orders).upsert(orderRows,{onConflict:'id'});
      if(error)throw error;
-     ordersToSync.forEach(o=>{relShadowRememberOrder(o);relClearOrderPending(o)})
+     // V1.9.170: a encomenda pode ser editada enquanto o upsert está em curso.
+     // Confirmar apenas a fotografia efetivamente enviada; caso contrário manter
+     // a fila pendente para o próximo envio, sem perder preço ou notas mais recentes.
+     orderRows.forEach(row=>{
+       relShadowRememberOrder(row.data);
+       const live=(db.orders||[]).find(o=>String(o?._rid||'')===String(row.id));
+       if(live&&relOrderFingerprint(live)===relOrderFingerprint(row.data)){
+         relClearOrderPending(live);
+       }else{
+         if(live)relMarkOrderPending(live);
+         cloudPushPending=true;
+         cloudLogMsg('Encomenda alterada durante envio: nova sincronização necessária');
+       }
+     })
    }
 
    const quoteRows=(db.quotes||[]).map(q=>{
