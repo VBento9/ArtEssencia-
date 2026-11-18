@@ -137,3 +137,10 @@
 #aeTaskManagerV2 .ae-season-card .btn{justify-self:start;min-height:36px}
 #aeTaskManagerV2 .ae-season-notice{padding:9px;border-radius:8px;background:#f7f2e9;font-size:12px;margin:8px 0}
 @media(max-width:680px){#aeTaskManagerV2 .ae-season-grid{grid-template-columns:1fr}#aeTaskManagerV2 .ae-season-tools .btn{flex:1 1 auto}}
+
+/* Navegação independente para o gestor Cloud. */
+.ae-task-screen-v19165 .ae-task-screen-intro-v19165{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:16px;margin-bottom:14px;background:#fbf8f4;border:1px solid #e6d8c9;border-radius:14px}
+.ae-task-screen-v19165 .ae-task-screen-intro-v19165 h2{margin:5px 0;font:600 24px/1.3 Georgia,serif;color:#493527}
+.ae-task-screen-v19165 .ae-task-screen-intro-v19165 p{font-size:13px;color:#756451;margin:0}
+#dashboard .ae-task-shortcut-v19165{margin:2px 0 14px;min-height:40px;border-radius:10px;background:#f8f2ea;color:#654d3b;border:1px solid #d9cabb;font-weight:700}
+@media(max-width:600px){.ae-task-screen-v19165 .ae-task-screen-intro-v19165{align-items:stretch}.ae-task-screen-v19165 .ae-task-screen-intro-v19165 h2{font-size:21px}}
