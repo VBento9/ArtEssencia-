@@ -30,14 +30,19 @@ function historicalFingerprint(line){
 function verifiedHistoricalPriceFingerprintV19169(line,order,index,recordedFingerprint){
  if(recordedFingerprint===historicalFingerprint(line))return true;
  const events=Array.isArray(order?.priceAdjustmentHistoryV19168)?order.priceAdjustmentHistoryV19168:[];
- return events.some(event=>{
-  if(Number(event?.lineIndex)!==index||
-    String(event?.productCode??'')!==String(line?.code??'')||
+ let currentPrice=Number(line?.price);
+ for(let i=events.length-1;i>=0;i--){
+  const event=events[i];
+  if(Number(event?.lineIndex)!==index)continue;
+  if(String(event?.productCode??'')!==String(line?.code??'')||
     String(event?.productName??'')!==String(line?.name??''))return false;
-  const price=Number(event?.previousPrice),next=Number(event?.newPrice);
-  if(!Number.isFinite(price)||price<0||!Number.isFinite(next)||next<0)return false;
-  return recordedFingerprint===historicalFingerprint({...line,price});
- });
+  const previous=Number(event.previousPrice),updated=Number(event.newPrice);
+  if(!Number.isFinite(previous)||previous<0||!Number.isFinite(updated)||updated<0||
+    Math.abs(updated-currentPrice)>0.000001)return false;
+  if(recordedFingerprint===historicalFingerprint({...line,price:previous}))return true;
+  currentPrice=previous;
+ }
+ return false;
 }
 function historicalRecords(){
  const meta=db?.costMeta;
