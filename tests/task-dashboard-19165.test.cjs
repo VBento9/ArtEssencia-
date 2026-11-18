@@ -21,8 +21,8 @@ test('Dashboard mostra atrasadas e exclui encomendas entregues ou anuladas',()=>
 test('Ficheiros novos são carregados e cache PWA renovada',()=>{
  assert.match(read('dashboard-compact-ui.js'),/dashboard-delivery-focus-v19165\.js/);
  const sw=read('sw.js'),manifest=JSON.parse(read('version.json')),html=read('index.html');
- assert.match(sw,/artessencia-backoffice-1\.9\.165/);
- assert.match(sw,/dashboard-delivery-focus-v19165\.css/);
- assert.equal(manifest.app,'1.9.165');
- assert.match(html,/name="artessencia-version" content="1\.9\.165"/);
+ assert.equal(sw.match(/const CACHE='artessencia-backoffice-([0-9.]+)'/)?.[1],manifest.app);
+ assert.ok(sw.includes('dashboard-delivery-focus-v19165.css'));
+ assert.match(read('dashboard-delivery-focus-v19165.js'),/data-dashboard-production/);
+ assert.equal(html.match(/name="artessencia-version" content="([0-9.]+)"/)?.[1],manifest.app);
 });

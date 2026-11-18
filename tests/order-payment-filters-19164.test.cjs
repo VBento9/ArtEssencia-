@@ -44,8 +44,8 @@ test('filtro incluído nas combinações de pesquisa, paginação e limpeza',()=
  }
  assert.ok(css.includes('.orders-ready-due-shortcut-v19164[aria-pressed="true"]'));
 });
-test('versão PWA consistente entre os ficheiros',()=>{
- assert.match(version.app,/^1\.9\.\d+$/);
+test('versão PWA consistente com o lançamento atual',()=>{
+ assert.match(version.app,/^\d+\.\d+\.\d+$/);
  assert.ok(worker.includes('artessencia-backoffice-'+version.app));
  assert.ok(html.includes("const APP_VERSION='"+version.app+"'"));
  assert.ok(html.includes('name="artessencia-version" content="'+version.app+'"'));
