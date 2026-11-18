@@ -24,6 +24,21 @@ function historicalKey(order){return String(order?.id||'').trim()}
 function historicalFingerprint(line){
  return JSON.stringify([String(line?.code??''),String(line?.name??''),Number(line?.qty)||0,Number(line?.price)||0,Number(line?.cost)||0,String(line?.type||'')]);
 }
+/* 1.9.169 — A revisão do preço altera receita, não o custo comprovado.
+   Aceitar a conciliação anterior apenas se o histórico da própria encomenda
+   documentar esse preço e TODO o resto do fingerprint permanecer idêntico. */
+function verifiedHistoricalPriceFingerprintV19169(line,order,index,recordedFingerprint){
+ if(recordedFingerprint===historicalFingerprint(line))return true;
+ const events=Array.isArray(order?.priceAdjustmentHistoryV19168)?order.priceAdjustmentHistoryV19168:[];
+ return events.some(event=>{
+  if(Number(event?.lineIndex)!==index||
+    String(event?.productCode??'')!==String(line?.code??'')||
+    String(event?.productName??'')!==String(line?.name??''))return false;
+  const price=Number(event?.previousPrice),next=Number(event?.newPrice);
+  if(!Number.isFinite(price)||price<0||!Number.isFinite(next)||next<0)return false;
+  return recordedFingerprint===historicalFingerprint({...line,price});
+ });
+}
 function historicalRecords(){
  const meta=db?.costMeta;
  const value=meta&&typeof meta==='object'&&!Array.isArray(meta)?meta[HISTORY_KEY]:null;
@@ -32,7 +47,7 @@ function historicalRecords(){
 function manualHistoricalLineCost(line,order,index){
  if(!order?.id||!Number.isInteger(index))return null;
  const rec=historicalRecords()?.[historicalKey(order)]?.[String(index)];
- if(!rec||rec.source!=='manual_historical_verified'||rec.fingerprint!==historicalFingerprint(line)||typeof rec.confirmedAt!=='string')return null;
+ if(!rec||rec.source!=='manual_historical_verified'||!verifiedHistoricalPriceFingerprintV19169(line,order,index,rec.fingerprint)||typeof rec.confirmedAt!=='string')return null;
  const qty=Number(line?.qty),cost=Number(line?.cost);
  if(!Number.isFinite(qty)||qty<=0||!Number.isFinite(cost)||cost<0)return null;
  const fields=['materials','labor','fixed','other'];
