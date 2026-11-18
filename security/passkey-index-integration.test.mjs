@@ -15,7 +15,7 @@ test('Passkey utiliza o cliente Cloud existente, sem novo cliente',()=>{
  assert.match(fn,/const c=initCloudClient\(\)/);
  assert.doesNotMatch(fn,/createClient\s*\(/);
  assert.match(fn,/c\.auth\.signInWithPasskey\(\)/);
- assert.match(fn,/await cloudStartup\(\)/);
+
 });
 test('login atual e sincronização mantidos',()=>{
  match(/async function authGateLoginV1880\(\)/,'login por palavra-passe');

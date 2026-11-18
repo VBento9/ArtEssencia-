@@ -63,7 +63,7 @@ test('Evento Auth não renderiza nem faz chamadas Cloud dentro do callback',()=>
 });
 
 test('Sem sessão, não marca utilizador autenticado no evento SIGNED_OUT',()=>{
- const {ctx,client,tasks,getListener}=setup();
+ const {ctx,events,client,tasks,getListener}=setup();
  ctx.initCloudClient();
  ctx.attachCloudAuthListenerV19134(client);
  ctx.cloudUser={id:'owner'};
