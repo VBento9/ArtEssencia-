@@ -650,7 +650,7 @@ function mount(){
   const style=document.createElement('link');style.id='aeTaskManagerV2Styles';
   style.rel='stylesheet';style.href='/task-manager-v2.css';document.head.append(style);
  }
- render();refresh();updateEditions();
+ render();
  // Apenas o módulo de tarefas desencadeia a leitura ao regressar, sem afetar o Dashboard.
  let lastPull=0;
  function refreshOnReturn(){
@@ -658,6 +658,7 @@ function mount(){
   const heading=document.getElementById('pageContext');
   if(heading)heading.textContent='PLANEAMENTO OPERACIONAL';
   if(Date.now()-lastPull<20000)return;
+  if(!lastPull)updateEditions();
   lastPull=Date.now();
   refresh();
  }
@@ -666,6 +667,7 @@ function mount(){
  window.addEventListener('online',refreshOnReturn);
  window.addEventListener('pageshow',refreshOnReturn);
  window.addEventListener('focus',refreshOnReturn);
+ refreshOnReturn();
 }
 function start(){
  if($('dashboard'))mount();
