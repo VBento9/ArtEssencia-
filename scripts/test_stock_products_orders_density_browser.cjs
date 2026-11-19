@@ -1,0 +1,28 @@
+const {chromium}=require('playwright'),assert=require('node:assert/strict'),path=require('node:path');
+const base='<html><head><meta charset="utf-8"><style>*{box-sizing:border-box}body{margin:0;font-family:Arial}.app{display:grid;grid-template-columns:205px minmax(0,1fr)}.sidebar{background:#eee;min-height:100vh}.main{min-width:0;padding:20px}.card{padding:14px;min-width:0;border:1px solid #ddd;margin-bottom:14px}.tablewrap{overflow:auto;max-width:100%}.stock-table{border-collapse:collapse}.stock-table th,.stock-table td{border:1px solid #ddd;padding:8px}.products-cards,.orders-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.product-card{display:grid;grid-template-columns:90px minmax(0,1fr)}.product-card-img{height:95px}.product-card-body{display:contents}.product-card-top{grid-column:2}.product-card-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.product-card-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.product-card-foot{grid-column:1/-1}.order-card{border:1px solid #ddd}.order-card-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}.order-card-actions{display:flex}.orders-toolbar-controls-v1728{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.btn{border:1px solid #aaa;background:white;padding:8px 10px;border-radius:8px}@media(max-width:650px){.app{grid-template-columns:1fr}.sidebar{display:none}.main{padding:12px}}</style></head><body><div class="app"><aside class="sidebar"></aside><main class="main">';
+const productCard='<article class="product-card"><div class="product-card-img"></div><div class="product-card-body"><div class="product-card-top"><h3>Casal Entrelaçado</h3><small class="product-card-code">ART-2026</small></div><div class="product-card-metrics"><div><small>Custo</small><strong>3,45 €</strong></div><div><small>PVP</small><strong>13,50 €</strong></div><div><small>Margem</small><strong>70%</strong></div></div><div class="product-card-foot"><div class="product-card-actions"><button class="btn">Ver ficha</button><button class="btn">Editar</button></div></div></div></article>';
+const orderCard='<article class="order-card"><div class="order-card-head"><span class="order-ref">AS-2026-0012</span><span class="order-status-pill">Em produção</span></div><button class="order-card-main"><div class="order-client"><div><b>Cliente de teste</b><small>Telefone fictício</small></div></div><div class="order-card-grid"><div><span>Entrega</span><b>19/11/2026</b></div><div><span>Unidades</span><b>3</b></div><div><span>Total</span><b>23,40 €</b></div><div><span>Pagamento</span><b>Por pagar</b></div></div></button><div class="order-card-actions"><button class="btn">Abrir encomenda</button><details class="ae-order-more"><summary>Mais ações</summary></details></div></article>';
+const cols=['Produto','Disponível','Unidade','Mínimo','Alvo','Comprar','Custo','Valor stock','Estado','Ações'];
+const values=['Cera de soja','150','g','100','500','350','0,03 €','4,50 €','Baixo','Editar'];
+const html=base+'<section id="products"><div class="card products-list-card"><div id="productsCards" class="products-cards">'+productCard.repeat(2)+'</div></div></section><section id="orders"><div class="card orders-toolbar-v1728"><div class="orders-toolbar-controls-v1728"><div class="orders-search"><input></div><div>Estado</div><div>Pagamento</div></div></div><div class="card orders-list-card-v1728"><div id="ordersCards" class="orders-cards">'+orderCard.repeat(2)+'</div></div></section><section id="stock"><div class="card stock-list-card"><div class="tablewrap stock-tablewrap"><table class="stock-table"><thead><tr>'+cols.map(x=>'<th>'+x+'</th>').join('')+'</tr></thead><tbody id="stockBody"><tr>'+values.map((v,i)=>'<td data-stock-label="'+cols[i]+'">'+v+'</td>').join('')+'</tr></tbody></table></div></div></section></main></div></body></html>';
+(async()=>{const browser=await chromium.launch({headless:true});try{
+ for(const width of [1440,1024,800,390]){
+  const page=await browser.newPage({viewport:{width,height:900},serviceWorkers:'block'});
+  await page.setContent(html);
+  for(const file of ['stock-compact-ui.css','products-compact-ui.css','orders-compact-ui.css'])await page.addStyleTag({path:path.resolve(__dirname,'..',file)});
+  const layout=await page.evaluate(()=>{
+   const $=s=>document.querySelector(s),grid=s=>getComputedStyle($(s)).gridTemplateColumns.split(' ').filter(Boolean).length;
+   const scroll=s=>$(s).scrollWidth-$(s).clientWidth;
+   return {products:grid('#productsCards'),orders:grid('#ordersCards'),stock:getComputedStyle($('#stockBody tr')).display,productOverflow:scroll('#productsCards'),orderOverflow:scroll('#ordersCards'),stockOverflow:scroll('.stock-tablewrap'),titleBreak:getComputedStyle($('#productsCards h3')).wordBreak,buttonHeight:$('#orders .order-card-actions .btn').getBoundingClientRect().height};
+  });
+  assert.equal(layout.products,width===1440?2:1,JSON.stringify({width,layout}));
+  assert.equal(layout.orders,width===1440?2:1,JSON.stringify({width,layout}));
+  assert.equal(layout.stock,width===1440?'table-row':'grid',JSON.stringify({width,layout}));
+  assert.ok(layout.productOverflow<=2&&layout.orderOverflow<=2,JSON.stringify({width,layout}));
+  if(width!==1440)assert.ok(layout.stockOverflow<=2,JSON.stringify({width,layout}));
+  assert.equal(layout.titleBreak,'normal');
+  assert.ok(layout.buttonHeight>=44,JSON.stringify({width,layout}));
+  await page.close();
+ }
+ console.log('PASS: Stock, Produtos e Encomendas / 1440, 1024, 800, 390 px');
+}finally{await browser.close()}})().catch(e=>{console.error(e);process.exitCode=1});
