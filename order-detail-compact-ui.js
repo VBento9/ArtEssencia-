@@ -62,7 +62,20 @@ function init(){
   layout.append(...intro,customer);
   const totals=root.querySelector('.totalbox');if(totals){layout.append(totals);for(const g of groups)g.nodes=g.nodes.filter(n=>n!==totals)}
   const print=root.querySelector('button[onclick*="printOrderCompleteV12634"]');
-  if(print){const toolbar=document.createElement('div');toolbar.className='ae-order-detail-tools';toolbar.append(print);layout.append(toolbar)}
+  if(print){
+   const toolbar=document.createElement('div');toolbar.className='ae-order-detail-tools';toolbar.append(print);
+   if(document.getElementById('orders')?.classList.contains('active')){
+    const agenda=document.createElement('button');agenda.type='button';agenda.className='btn';agenda.textContent='Ver agenda de produção';
+    let edited=false;
+    layout.addEventListener('input',()=>{edited=true});
+    agenda.addEventListener('click',()=>{
+     if(edited&&!window.confirm('Sair do detalhe e descartar as alterações por guardar?'))return;
+     viewOrderProductionV1915(id);
+    });
+    toolbar.append(agenda);
+   }
+   layout.append(toolbar);
+  }
   const priority=['Fluxo da encomenda','Produtos','Conjuntos Temáticos','Entrega e pagamento','Saldo após entrega','Conclusão'];
   const ordered=[...priority.map(label=>groups.find(g=>g.label===label)).filter(Boolean),...groups.filter(g=>!priority.includes(g.label))];
   for(const g of ordered){
@@ -87,10 +100,7 @@ function init(){
  dialog?.addEventListener('close',()=>{
   if(typeof orderListReturnV1928==='undefined'||!orderListReturnV1928)return;
   const position=orderListReturnV1928;orderListReturnV1928=null;
-  requestAnimationFrame(()=>{if(!document.getElementById('orders')?.classList.contains('active'))return;
-   const button=[...document.querySelectorAll('#orders [data-order-open]')].find(e=>e.dataset.orderOpen===position.id&&e.getClientRects().length);
-   button?.focus({preventScroll:true});window.scrollTo({top:position.scroll,behavior:'instant'});
-  });
+  focusOrderInListV1928(position);
  });
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
