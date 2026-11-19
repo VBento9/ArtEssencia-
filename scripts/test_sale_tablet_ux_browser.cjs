@@ -21,10 +21,13 @@ const assert=require('node:assert/strict');
     syncOrderBusinessStateV1757=async()=>false;
     nextManualOrderId=async()=> 'AS-2026-6500';
     cloudClient=null;cloudUser=null;
-    db.orders=[];db.clients=[];db.cash=[];db.productionRuns=[];db.stock=[];db.packaging=[];
+    db.orders=[];db.clients=[];db.cash=[];db.productionRuns=[];
+    db.stock=[{name:'Caixa individual',unit:'un',qty:10,unitCost:2}];
+    db.packaging=[{name:'Caixa individual',cost:2,capacity:1}];
+    db.productRecipes={'VELA-000':[{item:'Caixa individual',qty:1}]};
     db.products=Array.from({length:52},(_,i)=>({
       code:'VELA-'+String(i).padStart(3,'0'),name:'Vela de teste '+String(i),
-      category:'Velas',price:12,cost:3,active:true,tagsV1753:[i%2?'Presente':'Decoração']
+      category:'Velas',manufactured:true,price:12,cost:3,active:true,tagsV1753:[i%2?'Presente':'Decoração']
     }));
     cart=[];
     document.getElementById('saleClient').value='Cliente de teste';
@@ -75,6 +78,28 @@ const assert=require('node:assert/strict');
     return {box:o.box,boxes:o.boxes,boxCost:o.boxCostSnapshot,total:o.total,items:o.items.length,stored:!!storage};
    });
    assert.deepEqual(saved,{box:'',boxes:0,boxCost:0,total:12,items:1,stored:true});
+   const edited=await page.evaluate(()=>{
+    const order=db.orders.find(o=>o.id==='AS-2026-6500');
+    showOrder(order.id);
+    const hasBoxControls=!!document.querySelector('#detailBox, #detailBoxes');
+    document.getElementById('detailNotes').value='Entregar de manhã';
+    updateOrderDetails(order.id);
+    const stored=JSON.parse(localStorage.getItem(KEY)).orders.find(o=>o.id===order.id);
+    return {hasBoxControls,notes:stored.notes,box:stored.box,boxes:stored.boxes,
+     extraCost:stored.boxCostSnapshot,globalBoxes:productionOrderBoxesV12653(stored),
+     required:productionOrderNeedsV12632(stored)['Caixa individual']};
+   });
+   assert.deepEqual(edited,{hasBoxControls:false,notes:'Entregar de manhã',box:'',boxes:0,
+    extraCost:0,globalBoxes:0,required:1});
+   const historical=await page.evaluate(()=>{
+    const order=db.orders.find(o=>o.id==='AS-2026-6500');
+    Object.assign(order,{box:'Caixa antiga',boxes:2,boxCostSnapshot:0.75});
+    showOrder(order.id);
+    const selected=document.getElementById('detailBox').value;
+    updateOrderDetails(order.id);
+    return [selected,order.box,order.boxes,order.boxCostSnapshot];
+   });
+   assert.deepEqual(historical,['Caixa antiga','Caixa antiga',2,0.75]);
    assert.deepEqual(errors,[]);
    await context.close();
   }
