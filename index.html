@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.174">
+<meta name="artessencia-version" content="1.9.175">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -3964,7 +3964,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
   <section id="production" class="screen">
     <div id="orderProductionContextV1915" class="card" hidden style="margin-bottom:12px">
       <span id="orderProductionMessageV1915" style="flex:1"></span>
-      <button type="button" class="btn" onclick="document.getElementById('orderProductionContextV1915').hidden=true;go('orders')">← Voltar às encomendas</button>
+      <button type="button" class="btn" onclick="returnFromOrderProductionV1915()">← Voltar às encomendas</button>
     </div>
     <div class="card prod-head">
       <div class="prod-head-main">
@@ -6444,7 +6444,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.174';
+const APP_VERSION='1.9.175';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -8724,11 +8724,30 @@ function orderStatusClass(status){
  return status==='Entregue'?'done':status==='Cancelado'?'cancel':status==='Pronta'?'ready':status==='Em produção'?'production':status==='Confirmada'?'confirmed':'request';
 }
 function orderFilterDateV1882(o){return String(o?.created||o?.orderDate||o?.delivery||'').slice(0,10)}
+let productionListOriginV1915=null;
+function focusOrderInListV1928(position){
+ requestAnimationFrame(()=>{
+  if(!document.getElementById('orders')?.classList.contains('active'))return;
+  const button=[...document.querySelectorAll('#orders [data-order-open]')].find(el=>el.dataset.orderOpen===position.id&&el.getClientRects().length);
+  button?.focus({preventScroll:true});
+  window.scrollTo({top:position.scroll,behavior:'instant'});
+ });
+}
+function returnFromOrderProductionV1915(){
+ document.getElementById('orderProductionContextV1915').hidden=true;
+ const position=productionListOriginV1915;
+ productionListOriginV1915=null;
+ go('orders');
+ if(position)focusOrderInListV1928(position);
+}
 function viewOrderProductionV1915(id){
  const order=(db.orders||[]).find(o=>o.id===id);
  if(!order)return;
  const date=String(order.delivery||'').slice(0,10);
+ productionListOriginV1915=document.getElementById('orderDialog')?.open&&orderListReturnV1928
+  ?orderListReturnV1928:{id:String(id),scroll:window.scrollY};
  go('production');
+ document.querySelector('#aeProductionTabs button')?.click();
  const el=document.getElementById('prodDate');
  const validDate=/^\d{4}-\d{2}-\d{2}$/.test(date)&&!Number.isNaN(Date.parse(date))&&new Date(date+'T12:00:00').toISOString().slice(0,10)===date;
  if(el&&validDate){el.value=date;renderProduction();}
