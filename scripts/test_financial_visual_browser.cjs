@@ -20,7 +20,8 @@ const html='<!doctype html><html lang="pt-PT"><head><meta charset="utf-8"><style
    const $=s=>document.querySelector(s),cs=s=>getComputedStyle($(s));
    const columns=s=>cs(s).gridTemplateColumns.split(/\s+/).filter(Boolean).length;
    const overflow=s=>$(s).scrollWidth-$(s).clientWidth;
-   return {quotesWidth:$('.quotes-history-card-v1730').clientWidth,quotesCols:columns('.qh-toolbar-1965'),quotesScroll:overflow('.quotes-history-table-v1730'),reportsWidth:$('#reports').clientWidth,reportsCols:columns('.reports-stack-v1725'),reportsKpis:columns('.reports-kpis'),fundsWidth:$('#funds .funds-card-v1929').clientWidth,fundsCardRow:cs('#fundsTableBodyV1929 tr').display,movementCardRow:cs('#fundsMovementBodyV1929 tr').display,fundsScroll:overflow('#funds .funds-tablewrap-v1929'),movementScroll:overflow('#funds .funds-movement-table-v1929'),reportLineValue:cs('.report-line strong').whiteSpace};
+   const quoteCard=$('.quotes-history-card-v1730'),quoteStyle=cs('.quotes-history-card-v1730'),quoteContentWidth=quoteCard.clientWidth-parseFloat(quoteStyle.paddingLeft)-parseFloat(quoteStyle.paddingRight);
+   return {quotesWidth:quoteContentWidth,quotesCols:columns('.qh-toolbar-1965'),quotesScroll:overflow('.quotes-history-table-v1730'),reportsWidth:$('#reports').clientWidth,reportsCols:columns('.reports-stack-v1725'),reportsKpis:columns('.reports-kpis'),fundsWidth:$('#funds .funds-card-v1929').clientWidth,fundsCardRow:cs('#fundsTableBodyV1929 tr').display,movementCardRow:cs('#fundsMovementBodyV1929 tr').display,fundsScroll:overflow('#funds .funds-tablewrap-v1929'),movementScroll:overflow('#funds .funds-movement-table-v1929'),reportLineValue:cs('.report-line strong').whiteSpace};
   });
   assert.equal(layout.quotesCols,layout.quotesWidth<=540?1:layout.quotesWidth<=820?2:3,JSON.stringify({width,layout}));
   assert.equal(layout.reportsCols,layout.reportsWidth<=960?1:2,JSON.stringify({width,layout}));
