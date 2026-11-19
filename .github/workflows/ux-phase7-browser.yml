@@ -1,0 +1,30 @@
+name: ArtEssencia UX phase 7 — módulos restantes
+on:
+  pull_request:
+    paths:
+      - 'backoffice-visual.css'
+      - 'tests/backoffice-phase7-responsive-contract.test.cjs'
+      - 'scripts/test_backoffice_phase7_visual_browser.cjs'
+      - '.github/workflows/ux-phase7-browser.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  phase7-visual:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - name: Validar seletores e ações críticas
+        run: node --test tests/backoffice-phase7-responsive-contract.test.cjs
+      - name: Instalar Chromium
+        run: |
+          npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Verificar quatro resoluções sem dados reais
+        run: node scripts/test_backoffice_phase7_visual_browser.cjs
