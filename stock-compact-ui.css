@@ -196,4 +196,16 @@
    .app #stock .stock-list-card .stock-table{min-width:0!important;width:100%;table-layout:auto}
    .app #stock .stock-list-card .stock-table td{padding:6px 0;white-space:normal!important}
  }
+ @container (min-width:480px) and (max-width:1000px) {
+   .app #stock .stock-list-card .stock-table tbody{grid-template-columns:minmax(0,1fr);gap:6px}
+   .app #stock .stock-list-card .stock-table tr{grid-template-columns:repeat(6,minmax(0,1fr));align-items:center;gap:4px 10px}
+   .app #stock .stock-list-card .stock-table td{padding:2px 0}
+   .app #stock .stock-list-card .stock-table td:first-child{grid-column:span 3}
+   .app #stock .stock-list-card .stock-table td:nth-child(9){grid-row:1;grid-column:6}
+   .app #stock .stock-list-card .stock-table td:last-child{grid-column:1/-1}
+   .app #stock .stock-list-card .stock-table td[colspan]{grid-column:1/-1}
+   .app #stock .stock-list-card .stock-table .stock-actions{display:flex;flex-wrap:wrap}
+   .app #stock .stock-list-card .stock-table .stock-actions .btn{width:auto;flex:0 1 auto}
+ }
+
 }

@@ -9,6 +9,11 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
  });return {context,page}}
  const {context,page}=await open(1000),errors=[];page.on('pageerror',e=>errors.push(e.message));
  assert.ok(await page.locator('#ordersTableWrap').isVisible());assert.equal(await page.locator('#ordersBody tr').count(),10);assert.equal(await page.locator('#ordersCards article').count(),10);
+ await page.setViewportSize({width:800,height:1280});
+ const table=page.locator('#ordersTableWrap');
+ assert.ok(await table.evaluate(el=>el.scrollWidth<=el.clientWidth+2),'Tabela de encomendas em tablet vertical');
+ assert.equal(await page.locator('#ordersBody tr').first().evaluate(el=>getComputedStyle(el).display),'grid');
+ await page.setViewportSize({width:1000,height:1000});
  await page.locator('#orderSearch').fill('alvaro');assert.match(await page.locator('#ordersResultsV1915').innerText(),/25 de 25/);
  await page.locator('[data-orders-next]').first().click();assert.match(await page.locator('[data-orders-page-count]').first().innerText(),/11–20 de 25/);
  const button=page.locator('#ordersBody [data-order-open]').first(),id=await button.getAttribute('data-order-open');await button.click();await page.locator('#orderDetail > .ae-order-detail-layout').waitFor();
