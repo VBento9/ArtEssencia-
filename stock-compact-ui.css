@@ -169,3 +169,31 @@
   .app #stock .stock-tablewrap{overflow-x:auto;overscroll-behavior-inline:contain}
   .app #stock .stock-table td{white-space:normal;overflow-wrap:break-word;word-break:normal}
 }
+
+
+/* Revisão visual: tipografia e largura das 10 colunas, sem alterar registos. */
+@media screen {
+ .app #stock .stock-list-card .stock-table{width:100%;min-width:1120px;table-layout:fixed}
+ .app #stock .stock-list-card .stock-table th{font-size:11px;line-height:1.35;white-space:nowrap}
+ .app #stock .stock-list-card .stock-table td{font-size:12px;line-height:1.4;overflow-wrap:break-word;word-break:normal}
+ .app #stock .stock-list-card .stock-table td strong{font-size:13px;line-height:1.35}
+ .app #stock .stock-list-card .stock-table th:nth-child(1){width:177px}
+ .app #stock .stock-list-card .stock-table th:nth-child(2){width:89px}
+ .app #stock .stock-list-card .stock-table th:nth-child(3){width:65px}
+ .app #stock .stock-list-card .stock-table th:nth-child(4){width:72px}
+ .app #stock .stock-list-card .stock-table th:nth-child(5){width:72px}
+ .app #stock .stock-list-card .stock-table th:nth-child(6){width:102px}
+ .app #stock .stock-list-card .stock-table th:nth-child(7){width:103px}
+ .app #stock .stock-list-card .stock-table th:nth-child(8){width:111px}
+ .app #stock .stock-list-card .stock-table th:nth-child(9){width:109px}
+ .app #stock .stock-list-card .stock-table th:nth-child(10){width:220px}
+ .app #stock .stock-list-card .stock-table td:nth-child(n+2):nth-child(-n+8){font-variant-numeric:tabular-nums}
+ .app #stock .stock-list-card .stock-table td:nth-child(3),
+ .app #stock .stock-list-card .stock-table td:nth-child(4),
+ .app #stock .stock-list-card .stock-table td:nth-child(5){white-space:nowrap}
+ .app #stock .stock-list-card .stock-table .stock-actions .btn{min-height:44px;padding:8px 7px;font-size:12px;line-height:1.3}
+ @container (max-width: 1000px) {
+   .app #stock .stock-list-card .stock-table{min-width:0!important;width:100%;table-layout:auto}
+   .app #stock .stock-list-card .stock-table td{padding:6px 0;white-space:normal!important}
+ }
+}

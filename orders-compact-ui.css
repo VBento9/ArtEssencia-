@@ -78,3 +78,42 @@
 #orders .orders-ready-due-shortcut-v19164:disabled{opacity:.5;cursor:not-allowed}
 #orders .orders-ready-due-shortcut-v19164[hidden]{display:none!important}
 @media(max-width:700px){#orders .orders-payment-filter-v19164{flex:1 1 140px}#orders .orders-ready-due-shortcut-v19164{width:100%;box-sizing:border-box}}
+
+
+/* Revisão visual: cartões e filtros de Encomendas, sem modificar os estados. */
+@media screen {
+ .app #orders .orders-toolbar-v1728,
+ .app #orders .orders-list-card-v1728{container-type:inline-size;min-width:0}
+ .app #orders .orders-list-card-v1728 .orders-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;min-width:0}
+ .app #orders .orders-list-card-v1728 article.order-card{min-width:0}
+ .app #orders .orders-list-card-v1728 .order-card-head{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;padding:9px 11px}
+ .app #orders .orders-list-card-v1728 .order-ref{font-size:12px;line-height:1.35;overflow-wrap:break-word;word-break:normal}
+ .app #orders .orders-list-card-v1728 .order-status-pill{font-size:11px;line-height:1.35;max-width:100%;white-space:normal}
+ .app #orders .orders-list-card-v1728 .order-card-main{width:100%;min-width:0;padding:8px 11px}
+ .app #orders .orders-list-card-v1728 .order-client b{font-size:15px;line-height:1.35;overflow-wrap:break-word;word-break:normal}
+ .app #orders .orders-list-card-v1728 .order-client small{font-size:12px;line-height:1.4;overflow-wrap:break-word;word-break:normal}
+ .app #orders .orders-list-card-v1728 .order-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+ .app #orders .orders-list-card-v1728 .order-card-grid>div{min-width:0;padding:8px}
+ .app #orders .orders-list-card-v1728 .order-card-grid span{font-size:11px;line-height:1.3}
+ .app #orders .orders-list-card-v1728 .order-card-grid b{font-size:13px;line-height:1.35;overflow-wrap:break-word;word-break:normal}
+ .app #orders .orders-list-card-v1728 .order-card-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:9px 11px;align-items:stretch}
+ .app #orders .orders-list-card-v1728 .order-card-actions>.btn,
+ .app #orders .orders-list-card-v1728 .order-card-actions>.ae-order-more{width:100%;min-width:0;max-width:100%;margin:0}
+ .app #orders .orders-list-card-v1728 .order-card-actions>.btn,
+ .app #orders .orders-list-card-v1728 .ae-order-more>summary{min-height:44px;display:flex;align-items:center;justify-content:center;text-align:center;padding:9px 8px;font-size:12px;line-height:1.3;white-space:normal}
+ .app #orders .orders-toolbar-v1728 .orders-toolbar-controls-v1728{grid-template-columns:minmax(180px,2fr) repeat(2,minmax(140px,1fr));gap:10px}
+ @container (max-width: 1100px) {
+   .app #orders .orders-list-card-v1728 .orders-cards{grid-template-columns:minmax(0,1fr)}
+ }
+ @container (max-width: 780px) {
+   .app #orders .orders-toolbar-v1728 .orders-toolbar-controls-v1728{grid-template-columns:repeat(2,minmax(0,1fr))}
+   .app #orders .orders-toolbar-v1728 .orders-search{grid-column:1/-1}
+ }
+ @container (max-width: 520px) {
+   .app #orders .orders-toolbar-v1728 .orders-toolbar-controls-v1728{grid-template-columns:minmax(0,1fr)}
+   .app #orders .orders-toolbar-v1728 .orders-search{grid-column:1}
+ }
+ @container (max-width: 300px) {
+   .app #orders .orders-list-card-v1728 .order-card-actions{grid-template-columns:minmax(0,1fr)}
+ }
+}
