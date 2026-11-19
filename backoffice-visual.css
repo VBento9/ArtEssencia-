@@ -206,16 +206,14 @@
     font-size: 12px; line-height: 1.5; color: #6b5747;
   }
   .app #costs .costs-kpi strong,.app #reports .report-kpi strong { font-size: 25px; line-height: 1.25; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-  .app #costs .cost-tabs-v1927 { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 8px; }
-  .app #costs .cost-tabs-v1927 button { min-width: 0; min-height: 46px; padding: 10px; font-size: 13px; white-space: normal; line-height: 1.4; }
-  .app #costs .cost-list-tools-v1927 { display: grid; grid-template-columns: minmax(0,1fr) 110px; padding: 12px; border: 1px solid #e2d9cf; border-radius: 12px; background: #faf7f2; }
+  .app #costs .cost-list-tools-v1927 { display: grid; border: 1px solid #e2d9cf; border-radius: 12px; background: #faf7f2; }
   .app #costs .cost-list-tools-v1927 label { min-width: 0; font-size: 12px; color: #59483b; }
-  .app #costs .cost-list-tools-v1927 :is(input,select) { width: 100%; min-width: 0; font-size: 14px; background: #fffdf9; }
+  .app #costs .cost-list-tools-v1927 :is(input,select) { width: 100%; background: #fffdf9; }
   .app #costs .cost-details-toggle-v1927 { min-height: 46px; padding: 10px; border: 1px solid #e2d9cf; border-radius: 10px; background: #faf7f2; font-size: 13px; line-height: 1.5; cursor: pointer; }
   .app #costs .cost-details-toggle-v1927 input { flex: 0 0 20px; width: 20px; height: 20px; accent-color: #72533d; }
-  .app #costs .costs-table-card td { font-size: 13px; line-height: 1.5; font-variant-numeric: tabular-nums; }
+  .app #costs .costs-table-card td { font-variant-numeric: tabular-nums; }
   .app #costs .costs-table-card td:first-child { min-width: 160px; overflow-wrap: anywhere; }
-  .app #costs .cost-list-pages-v1927 { display: grid; grid-template-columns: auto minmax(0,1fr) auto; padding: 12px 0; }
+  .app #costs .cost-list-pages-v1927 { display: grid; grid-template-columns: auto minmax(0,1fr) auto; }
   .app #costs .cost-list-pages-v1927 span { font-size: 13px; line-height: 1.4; }
   .app #costs .cost-manual-details-v1927 summary { min-height: 46px; font-size: 13px; line-height: 1.5; }
   .app #costs .recipe-choice-display-v1763 { min-height: 48px; }
@@ -244,15 +242,12 @@
     .app #reports .reports-stack-v1725 { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; align-items: start; }
   }
   @media (max-width: 700px) {
-    .app #costs .cost-tabs-v1927 { grid-template-columns: repeat(2,minmax(0,1fr)); }
     .app #costs .cost-tabs-v1927 button:last-child { grid-column: 1/-1; }
-    .app #costs .cost-list-tools-v1927 { grid-template-columns: minmax(0,1fr) 95px; gap: 10px; }
     .app #costs .cost-list-tools-v1927 :is(input,select),.app #reports .report-period-fields-v1927 :is(input,select) { font-size: 16px; }
     .app #reports .reports-actions { display: grid; grid-template-columns: minmax(0,1fr); width: 100%; }
     .app #reports .reports-stack-v1725 { grid-template-columns: minmax(0,1fr); }
   }
   @media (max-width: 400px) {
-    .app #costs .cost-list-tools-v1927 { grid-template-columns: minmax(0,1fr); }
     .app #costs .cost-list-pages-v1927 { grid-template-columns: repeat(2,minmax(0,1fr)); }
     .app #costs .cost-list-pages-v1927 span { grid-row: 1; grid-column: 1/-1; }
   }
@@ -326,11 +321,10 @@
   .app #catalogs .btn { font-size: 13px; min-height: 46px; }
   .app #catalogs .catalog-dashboard { gap: 16px; flex-wrap: wrap; }
   .app #catalogs .catalog-top-actions { gap: 10px; flex-wrap: wrap; }
-  .app #catalogs .catalog-document-card-v1731 { min-width: 0; padding: 16px; }
   .app #catalogs .catalog-doc-kicker { font-size: 11px; color: #6b5747; letter-spacing: .08em; }
   .app #catalogs .catalog-document-card-v1731 .muted { font-size: 13px; line-height: 1.5; }
-  .app #catalogs .catalog-actions-v1731 { display: flex; flex-wrap: wrap; gap: 10px; }
-  .app #catalogs .catalog-actions-v1731 .btn { flex: 1 1 110px; min-width: 0; }
+  .app #catalogs .catalog-actions-v1731 { flex-wrap: wrap; }
+  .app #catalogs .catalog-actions-v1731 .btn { flex: 1 1 110px; }
   .app #aeBoxesHubV1 :is(h2,h3) { font-family: var(--ae-ui-font); font-size: 20px; line-height: 1.35; }
   .app #aeBoxesHubV1 .ae-hub-tabs { gap: 10px; padding: 10px; border: 1px solid #e2d9cf; border-radius: 12px; background: #faf7f2; }
   .app #aeBoxesHubV1 .ae-hub-tabs .btn { font-size: 13px; min-height: 46px; }

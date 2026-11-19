@@ -26,6 +26,12 @@ const cols=(node,selector)=>node.locator(selector).evaluate(e=>getComputedStyle(
   assert.equal(v.filters,v.f<=395?1:v.f<=1000?2:4,JSON.stringify({width,v}));
   assert.equal(v.editions,v.sp<=1050?1:2,JSON.stringify({width,v}));
   assert.equal(v.productPicker,v.sp<=650?1:2,JSON.stringify({width,v}));
+  const costButton=page.locator('.cost-tabs-v1927 button').first();
+  assert.equal(await costButton.evaluate(el=>getComputedStyle(el).minHeight),'44px');
+  assert.equal(await costButton.evaluate(el=>getComputedStyle(el).fontSize),'12px');
+  const catalogActions=page.locator('.catalog-actions-v1731').first();
+  assert.equal(await catalogActions.evaluate(el=>getComputedStyle(el).display),'grid');
+  assert.equal(await catalogActions.evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),v.catalog<=470?1:v.catalog<=730?2:3);
   assert.equal(v.costTabs,v.cost<=470?1:v.cost<=730?2:v.cost<=1150?3:5,JSON.stringify({width,v}));
   assert.equal(v.catalogs,v.catalog<=1150?1:2,JSON.stringify({width,v}));
   assert.equal(v.visualColumns,v.visual<=1150?1:2,JSON.stringify({width,v}));
