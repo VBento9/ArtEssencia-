@@ -38,6 +38,7 @@
   .app .main .tablewrap td { line-height: 1.45; font-variant-numeric: tabular-nums; }
   .app .main .tablewrap tbody tr:hover { background: #faf7f2; }
   .app .main .muted { color: #6e5e51; line-height: 1.5; }
+  #dashboard .dashboard-hero { flex-wrap: wrap; }
   #dashboard .dashboard-hero h2 { font-family: var(--ae-ui-font); font-size: 26px; font-weight: 650; letter-spacing: -.025em; }
   #dashboard .dashboard-section-head h3 { font-family: var(--ae-ui-font) !important; font-size: 18px !important; font-weight: 650 !important; }
   #dashboard .dashboard-section-head span { color: #735d4b !important; font-size: 10px; letter-spacing: .1em !important; }

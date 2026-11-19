@@ -19,7 +19,7 @@
   text-transform:none!important;
   letter-spacing:0;
 }
-#sale .sale-customer-grid-v1727 input,
+#sale .sale-customer-grid-v1727 input:where(:not([type="checkbox"])),
 #sale .sale-customer-grid-v1727 select,
 #sale .sale-customer-grid-v1727 textarea,
 #sale .sale-product-filters-v1754 input,
