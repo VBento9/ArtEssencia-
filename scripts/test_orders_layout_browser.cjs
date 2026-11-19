@@ -18,6 +18,15 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
  await page.locator('[data-orders-next]').first().click();assert.match(await page.locator('[data-orders-page-count]').first().innerText(),/11–20 de 25/);
  const button=page.locator('#ordersBody [data-order-open]').first(),id=await button.getAttribute('data-order-open');await button.click();await page.locator('#orderDetail > .ae-order-detail-layout').waitFor();
  assert.equal(await page.locator('#orderDetail .ae-order-detail-customer strong').innerText(),'Álvaro 14');
+ const dialog=page.getByRole('dialog',{name:'Encomenda '+id,exact:true});
+ for(const [width,height] of [[1440,900],[1280,800],[800,1280],[390,844]]){
+  await page.setViewportSize({width,height});
+  const box=await dialog.boundingBox();
+  assert.ok(Math.abs(box.x+box.width-width)<=1&&Math.abs(box.height-height)<=1);
+  assert.ok(width>=1024?box.x>=width*0.44:box.x<=1,'Posição do detalhe a '+width+' px');
+  assert.ok(await dialog.evaluate(el=>el.scrollWidth<=el.clientWidth+1),'Detalhe sem deslocação horizontal a '+width+' px');
+ }
+ await page.setViewportSize({width:1000,height:1000});
  assert.deepEqual(await page.locator('#orderDetail .ae-order-detail-primary').evaluateAll(es=>es.map(e=>e.dataset.section)),['Fluxo da encomenda','Produtos']);
  assert.equal(await page.locator('#detailClient').isVisible(),false);assert.equal(await page.locator('#orderDetail .totalbox').isVisible(),true);
  assert.equal(await page.evaluate(()=>JSON.stringify(db.orders)===initialOrders),true);
