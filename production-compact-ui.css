@@ -1,1 +1,28 @@
 #production .ae-production-tabs{display:flex;gap:7px;overflow-x:auto;padding:8px 0 12px;scrollbar-width:thin}#production .ae-production-tabs button{flex:0 0 auto;border:1px solid #d6c7b5;border-radius:9px;background:#fff;padding:9px 12px;color:#5e4e41;cursor:pointer}#production .ae-production-tabs button[aria-pressed=true]{background:#f5eadf;border-color:#a87851;font-weight:700}#production .production-section-v1729[hidden]{display:none!important}
+
+/* Fase 4 — Produção: controlo diário legível, sem interferir na baixa de stock. */
+@media screen {
+ .app #production .prod-head{container-type:inline-size;min-width:0}
+ .app #production .prod-head-main{min-width:0}
+ .app #production .prod-head-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;min-width:0}
+ .app #production .prod-head-actions .field{grid-column:1/-1;min-width:0}
+ .app #production .prod-head-actions .field :is(label,input){min-width:0;width:100%;max-width:100%}
+ .app #production .prod-head-actions .btn{min-width:0;min-height:44px;font-size:12px;line-height:1.35;padding:9px 8px;white-space:normal}
+ .app #production .prod-head-actions .production-complete-action{grid-column:1/-1;min-height:48px;font-size:13px}
+ .app #production .ae-production-tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,136px),1fr));gap:7px;overflow:visible}
+ .app #production .ae-production-tabs button{min-width:0;min-height:44px;font-size:12px;line-height:1.35;white-space:normal;padding:9px}
+ .app #production .prod-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:9px}
+ .app #production .prod-kpi{min-width:0;padding:11px}
+ .app #production .prod-kpi strong{font-size:22px;line-height:1.25;font-variant-numeric:tabular-nums;overflow-wrap:break-word;word-break:normal}
+ .app #production .prod-order-main{min-width:0;gap:8px}
+ .app #production .prod-order-main strong{overflow-wrap:break-word;word-break:normal}
+ .app #production .prod-order-actions{gap:7px}
+ .app #production .prod-order-actions .btn{min-height:44px;font-size:12px}
+ @container (max-width: 680px) {
+  .app #production .prod-head-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .app #production .prod-head-actions .field{grid-column:1/-1}
+ }
+ @container (max-width: 340px) {
+  .app #production .prod-head-actions{grid-template-columns:minmax(0,1fr)}
+ }
+}
