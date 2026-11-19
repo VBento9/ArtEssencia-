@@ -323,8 +323,13 @@
     const info=visualState(order);
     row.dataset.aeOrderState=info.state;
     row.dataset.aePaymentState=info.payment;
-    const cell=row.cells?.[5];
-    if(cell)setBadge(makeBadge(cell),info,false);
+    const balanceCell=row.cells?.[4];
+    if(balanceCell){
+     const badge=makeBadge(balanceCell);
+     setBadge(badge,info,false);
+     // O saldo liquidado já apresenta «Pago» no próprio valor.
+     badge.hidden=badge.hidden||info.payment==='paid';
+    }
    });
    if(detail){
     const id=detail.dataset.orderId;

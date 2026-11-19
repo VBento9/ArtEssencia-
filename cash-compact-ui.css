@@ -62,6 +62,25 @@
 @container (max-width:780px){
  #cash.ae-cash-compact .cash-list-card .cash-table tbody{grid-template-columns:minmax(0,1fr)}
 }
+/* Uma faixa por movimento quando há espaço para comparar os valores. */
+#cash.ae-cash-compact .cash-table :is(th,td):nth-child(5){text-align:right}
+@container (min-width:480px) and (max-width:1060px){
+ #cash.ae-cash-compact .cash-list-card .cash-table tbody{grid-template-columns:minmax(0,1fr);gap:6px}
+ #cash.ae-cash-compact .cash-list-card .cash-table tr{
+  grid-template-columns:6.3em minmax(0,1fr) minmax(7em,.45fr) minmax(8em,.55fr);
+  grid-template-areas:"date description amount actions" "type method origin actions";
+  align-items:center;gap:3px 12px;padding:8px 12px
+ }
+ #cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(1){grid-area:date}
+ #cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(2){grid-area:type}
+ #cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(3){grid-area:description;border:0;padding:0}
+ #cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(4){grid-area:method}
+ #cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(5){grid-area:amount}
+ #cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(6){grid-area:origin;text-align:right}
+ #cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(7){grid-area:actions;border:0;padding:0}
+ #cash.ae-cash-compact .cash-list-card .cash-table td::before{display:none}
+ #cash.ae-cash-compact .cash-list-card .cash-table td[colspan]{grid-area:auto;grid-column:1/-1}
+}
 @media (max-width:650px){
  #cash.ae-cash-compact .ae-cash-pages{justify-content:center}
  #cash.ae-cash-compact .ae-cash-pages label{margin-left:0;justify-content:center;width:100%}

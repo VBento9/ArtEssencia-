@@ -14,6 +14,33 @@
 #orders .orders-table-wrap :is(th,td){padding:11px 9px}
 #orders .orders-table-wrap td:nth-child(2){min-width:140px;max-width:240px;overflow-wrap:anywhere}
 #orders .orders-table-wrap .btn{min-height:40px}
+@media screen {
+ #orders #ordersTableWrap{container-type:inline-size}
+ @container (max-width:650px){
+  #orders #ordersTableWrap table{display:block;width:100%;min-width:0}
+  #orders #ordersTableWrap thead{position:absolute;clip-path:inset(50%);width:1px;height:1px;overflow:hidden}
+  #orders #ordersBody{display:grid;gap:6px}
+  #orders #ordersBody tr{
+   display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;
+   grid-template-areas:"client client open" "reference delivery open" "total balance state";
+   align-items:center;gap:3px 8px;padding:8px;border:1px solid #dfd4c8;border-radius:8px
+  }
+  #orders #ordersBody td{min-width:0;max-width:none;padding:2px 0;border:0;overflow-wrap:anywhere}
+  #orders #ordersBody td:first-child{grid-area:reference}
+  #orders #ordersBody td:nth-child(2){grid-area:client}
+  #orders #ordersBody td:nth-child(3){grid-area:delivery;white-space:normal}
+  #orders #ordersBody td:nth-child(4){grid-area:total;text-align:start}
+  #orders #ordersBody td:nth-child(5){grid-area:balance;text-align:start}
+  #orders #ordersBody td:nth-child(4)::before,#orders #ordersBody td:nth-child(5)::before{
+   display:block;font-size:11px;font-weight:500;color:#65584d
+  }
+  #orders #ordersBody td:nth-child(4)::before{content:"Total"}
+  #orders #ordersBody td:nth-child(5)::before{content:"Saldo"}
+  #orders #ordersBody td:nth-child(6){grid-area:state}
+  #orders #ordersBody td:nth-child(7){grid-area:open;text-align:end}
+  #orders #ordersBody td[colspan]{grid-area:auto;grid-column:1/-1}
+ }
+}
 #orders .order-card-main{padding:10px 12px}
 #orders .order-card-grid{gap:8px}
 #orders .order-card-head{padding:9px 12px}
@@ -60,14 +87,21 @@
 .ae-order-payment-v19163[data-payment="due"]{background:#fff7ed;color:#9a3412;border-color:#ea580c}
 .ae-order-payment-v19163[hidden]{display:none!important}
 #orders .order-card-head{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-#orders #ordersBody td:nth-child(6)>.ae-order-payment-v19163{margin:4px 0 0 4px}
+@media screen {
+ #orders #ordersTableWrap :is(th,td):is(:nth-child(4),:nth-child(5)){text-align:right;font-variant-numeric:tabular-nums}
+ #orders #ordersBody td:is(:nth-child(3),:nth-child(4)){white-space:nowrap}
+ #orders #ordersBody td:nth-child(5)>strong{display:block;white-space:nowrap}
+ #orders #ordersBody td:nth-child(5)>.ae-order-payment-v19163{margin-top:3px;font-size:11px}
+ #orders #ordersBody td:nth-child(2){font-weight:650}
+ #orders #ordersBody .btn{min-height:44px}
+}
 #orderDetail .ae-order-detail-customer>.ae-order-payment-v19163{align-self:center}
 #orders .ae-order-colors-legend-v19163{margin:8px 0 12px;border:1px solid #e4d8ca;border-radius:10px;padding:0 12px;background:#fffdf9}
 #orders .ae-order-colors-legend-v19163>summary{padding:10px 0;cursor:pointer;font-size:12px;font-weight:650;color:#514638}
 #orders .ae-order-colors-legend-list-v19163{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:4px 0 12px}
 #orders .ae-order-colors-legend-chip-v19163{display:inline-flex;padding:5px 9px;border-radius:999px;background:var(--ae-order-visual-bg,#f1f5f9);color:var(--ae-order-visual-ink,#334155);border:1px solid var(--ae-order-visual,#cbd5e1);font-size:11px;font-weight:650}
 #orders .ae-order-colors-legend-list-v19163 p{flex-basis:100%;margin:3px 0 0;font-size:11px;color:#6b5747}
-@media(max-width:650px){#orders .ae-order-colors-legend-list-v19163{gap:6px}#orders #ordersBody td:nth-child(6)>.ae-order-payment-v19163{margin-left:0}}
+@media(max-width:650px){#orders .ae-order-colors-legend-list-v19163{gap:6px}}
 
 /* 1.9.164: filtro financeiro e ação prioritária — sem alterar o modelo de dados. */
 #orders .orders-payment-filter-v19164{min-width:165px}

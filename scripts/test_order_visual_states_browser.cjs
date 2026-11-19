@@ -46,6 +46,9 @@ const assert=require('node:assert/strict');
     const row=page.locator('#ordersBody tr').filter({has:page.locator('[data-order-open="'+id+'"]')});
     assert.equal(await row.getAttribute('data-ae-order-state'),state,id+' tabela');
     assert.equal(await row.getAttribute('data-ae-payment-state'),payment,id+' pagamento tabela');
+    const balanceBadge=row.locator('td').nth(4).locator('.ae-order-payment-v19163');
+    assert.equal(await balanceBadge.getAttribute('data-payment'),payment);
+    assert.equal(await row.locator('td').nth(5).locator('.ae-order-payment-v19163').count(),0);
     const border=await card.evaluate(el=>getComputedStyle(el).borderInlineStartColor);
     assert.notEqual(border,'rgba(0, 0, 0, 0)','sem borda colorida');
    }
