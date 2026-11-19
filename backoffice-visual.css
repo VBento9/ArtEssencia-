@@ -680,3 +680,38 @@
   .app #dashboard .ae-dash-compact-nav button{flex:1 1 130px}
  }
 }
+
+
+/* Auditoria visual — Relatórios: módulos compactos conforme largura útil do painel.
+   Isolado ao ecrã, preservando geração de PDF/CSV. */
+@media screen {
+ #reports{container-type:inline-size;min-width:0}
+ .app #reports .reports-stack-v1725{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+ .app #reports .reports-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+ .app #reports .reports-kpis .report-kpi{min-width:0;padding:11px 12px}
+ .app #reports .reports-kpis .report-kpi strong{font-size:clamp(18px,2vw,23px);line-height:1.25;font-variant-numeric:tabular-nums;overflow-wrap:break-word;word-break:normal}
+ .app #reports .reports-kpis .report-kpi :is(span,small){font-size:12px;line-height:1.4}
+ .app #reports .reports-section-v1725{min-width:0;padding:12px}
+ .app #reports .reports-section-v1725 .report-line{display:grid;grid-template-columns:minmax(0,1fr) max-content;gap:8px;padding:8px 0;min-width:0}
+ .app #reports .reports-section-v1725 .report-line span{min-width:0;font-size:13px;line-height:1.45;overflow-wrap:break-word;word-break:normal}
+ .app #reports .reports-section-v1725 .report-line strong{font-size:13px;line-height:1.4;white-space:nowrap;font-variant-numeric:tabular-nums}
+ .app #reports .reports-section-v1725 .report-product{min-width:0;grid-template-columns:28px minmax(0,1fr) max-content;gap:8px}
+ .app #reports .reports-section-v1725 .report-product>div{min-width:0}
+ .app #reports .reports-section-v1725 .report-product strong{overflow-wrap:break-word;word-break:normal}
+ .app #reports .reports-section-v1725 .report-product>strong:last-child{font-variant-numeric:tabular-nums;white-space:nowrap}
+ .app #reports .reports-section-v1725 .report-activity strong{font-variant-numeric:tabular-nums}
+ .app #reports .reports-export-card .btnrow{display:flex;gap:8px;flex-wrap:wrap}
+ .app #reports .reports-export-card .btnrow>.btn{flex:1 1 160px;min-height:44px}
+ @container (max-width: 960px) {
+  .app #reports .reports-stack-v1725{grid-template-columns:minmax(0,1fr)}
+  .app #reports .reports-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .app #reports .reports-actions{display:flex;flex-wrap:wrap;gap:8px}
+ }
+ @container (max-width: 520px) {
+  .app #reports .reports-kpis{grid-template-columns:minmax(0,1fr)}
+  .app #reports .reports-actions{display:grid;grid-template-columns:minmax(0,1fr)}
+  .app #reports .reports-actions .btn{width:100%}
+  .app #reports .reports-section-v1725 .report-product{grid-template-columns:24px minmax(0,1fr)}
+  .app #reports .reports-section-v1725 .report-product>strong:last-child{grid-column:2;justify-self:start}
+ }
+}
