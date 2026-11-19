@@ -1,0 +1,36 @@
+name: ArtEssencia UX phase 5 — Venda, Custos, Fragrâncias, Catálogos, Edições
+on:
+  pull_request:
+    paths:
+      - 'sale-tablet-ux-v19165.css'
+      - 'fragrance-library.css'
+      - 'special-editions-compact-v1962.css'
+      - 'special-editions-overview-v1964.css'
+      - 'backoffice-visual.css'
+      - 'tests/backoffice-phase5-responsive-contract.test.cjs'
+      - 'scripts/test_backoffice_phase5_visual_browser.cjs'
+      - '.github/workflows/ux-phase5-browser.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  phase5-visual:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - name: Testar contratos visuais e preservação de IDs
+        run: |
+          node --test tests/backoffice-phase5-responsive-contract.test.cjs
+          node --test tests/sale-tablet-ux-19165.test.cjs
+      - name: Instalar navegador de teste
+        run: |
+          npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Testar no computador, tablet e telemóvel sem Cloud
+        run: node scripts/test_backoffice_phase5_visual_browser.cjs

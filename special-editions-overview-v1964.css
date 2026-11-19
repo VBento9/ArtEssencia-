@@ -68,3 +68,33 @@
   #specialEditions .special-pro-foot .btn {min-height:36px}
   #specialEditions .special-editor-close-v1964 {width:100%;margin-left:0}
 }
+
+
+/* Fase 5 · Edições Especiais: cartões guardados e filtros com hierarquia compacta. */
+@media screen {
+ #specialEditions .special-saved-filters-v1964{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) auto;gap:8px;padding:10px}
+ #specialEditions .special-saved-filters-v1964 :is(input,select){min-width:0;min-height:44px;font-size:14px}
+ #specialEditions .special-editions-grid-pro{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;min-width:0}
+ #specialEditions .special-pro-card{min-width:0;grid-template-columns:96px minmax(0,1fr)!important}
+ #specialEditions .special-pro-cover{width:96px;min-height:145px!important}
+ #specialEditions .special-pro-card h3{font-size:15px;line-height:1.35;word-break:normal;overflow-wrap:break-word}
+ #specialEditions .special-pro-metrics{gap:6px}
+ #specialEditions .special-pro-metrics>div{min-width:0;padding:7px}
+ #specialEditions .special-pro-metrics strong{font-size:13px;font-variant-numeric:tabular-nums;word-break:normal}
+ #specialEditions .special-pro-foot{gap:7px;flex-wrap:wrap}
+ #specialEditions .special-pro-foot .btn{min-height:44px;font-size:12px!important;padding:8px 10px!important}
+ @container (max-width: 1050px) {
+  #specialEditions .special-editions-grid-pro{grid-template-columns:minmax(0,1fr)}
+ }
+ @container (max-width: 670px) {
+  #specialEditions .special-saved-filters-v1964{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #specialEditions .special-saved-filters-v1964 :is(.special-saved-search-v1964,.special-saved-result-v1964){grid-column:1/-1}
+ }
+ @container (max-width: 460px) {
+  #specialEditions .special-saved-filters-v1964{grid-template-columns:minmax(0,1fr)}
+  #specialEditions .special-saved-filters-v1964 :is(.special-saved-search-v1964,.special-saved-result-v1964){grid-column:1}
+  #specialEditions .special-pro-card{grid-template-columns:72px minmax(0,1fr)!important}
+  #specialEditions .special-pro-cover{width:72px;min-height:120px!important}
+  #specialEditions .special-pro-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+ }
+}

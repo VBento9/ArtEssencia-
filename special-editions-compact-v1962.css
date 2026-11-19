@@ -89,3 +89,32 @@
   #specialEditions .special-editor-actions-v1734 .btn{width:100%;min-width:0;white-space:normal}
   #specialEditions .special-step-nav-v1963{min-width:0}
 }
+
+
+/* Fase 5 · Edições Especiais: seleção de produtos adaptada ao espaço disponível. */
+@media screen {
+ #specialEditions{container-type:inline-size;min-width:0}
+ #specialEditions .special-picker-tools-v1962{gap:8px;padding:10px;min-width:0}
+ #specialEditions .special-picker-tools-v1962 label{font-size:12px;line-height:1.35}
+ #specialEditions .special-picker-tools-v1962 :is(input,select){min-width:0;min-height:44px;font-size:14px}
+ #specialEditions #specialEditionProducts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px;max-height:420px}
+ #specialEditions #specialEditionProducts .special-product-option{min-width:0;padding:8px;gap:7px}
+ #specialEditions #specialEditionProducts .special-product-option b{font-size:12px;line-height:1.4;overflow-wrap:break-word;word-break:normal}
+ #specialEditions #specialEditionProducts .special-product-option small{font-size:11px}
+ #specialEditions .special-compact-tabs-v1962{gap:7px}
+ #specialEditions .special-compact-tab-v1962{min-height:44px;font-size:12px;line-height:1.3;white-space:normal}
+ @container (max-width: 950px) {
+  #specialEditions .special-picker-tools-v1962{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #specialEditions .special-picker-tools-v1962 :is(.special-picker-search-v1962,.special-picker-status-v1962){grid-column:1/-1}
+ }
+ @container (max-width: 650px) {
+  #specialEditions #specialEditionProducts{grid-template-columns:minmax(0,1fr)!important;max-height:350px}
+ }
+ @container (max-width: 490px) {
+  #specialEditions .special-picker-tools-v1962{grid-template-columns:minmax(0,1fr)}
+  #specialEditions .special-picker-tools-v1962> :is(button,label){min-width:0;width:100%}
+  #specialEditions .special-picker-tools-v1962 :is(.special-picker-search-v1962,.special-picker-category-v1962,.special-picker-status-v1962){grid-column:1}
+  #specialEditions .special-compact-tab-v1962{font-size:11px;padding:8px 5px;gap:4px}
+  #specialEditions .special-tab-number-v1962{width:20px;height:20px}
+ }
+}
