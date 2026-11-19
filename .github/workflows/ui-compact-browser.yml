@@ -7,6 +7,9 @@ on:
       - '*-compact-ui.css'
       - 'scripts/test_stock_products_orders_density_browser.cjs'
       - 'tests/stock-products-orders-responsive-contract.test.cjs'
+      - 'scripts/test_cash_layout_browser.cjs'
+      - 'scripts/test_purchases_layout_browser.cjs'
+      - 'tests/cash-purchases-responsive-layout.test.cjs'
       - '.github/workflows/ui-compact-browser.yml'
   workflow_dispatch:
 permissions:
@@ -35,3 +38,9 @@ jobs:
         run: |
           node --test tests/stock-products-orders-responsive-contract.test.cjs
           node scripts/test_stock_products_orders_density_browser.cjs
+
+      - name: Validar Caixa e Compras com dados sintéticos
+        run: |
+          node --test tests/cash-purchases-responsive-layout.test.cjs
+          node scripts/test_cash_layout_browser.cjs
+          node scripts/test_purchases_layout_browser.cjs
