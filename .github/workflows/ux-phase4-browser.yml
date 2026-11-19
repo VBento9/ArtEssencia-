@@ -1,0 +1,36 @@
+name: ArtEssencia UX phase 4 — visual compact modules
+on:
+  pull_request:
+    paths:
+      - 'clients-compact-ui.css'
+      - 'production-compact-ui.css'
+      - 'dashboard-compact-ui.css'
+      - 'digital-stats-decisions-v1966.css'
+      - 'backoffice-visual.css'
+      - 'scripts/test_backoffice_phase4_visual_browser.cjs'
+      - 'tests/backoffice-phase4-density.test.cjs'
+      - '.github/workflows/ux-phase4-browser.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  phase4-visual:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '20'
+      - name: CSS contract without production data
+        run: |
+          node --test tests/backoffice-phase4-density.test.cjs
+          node --test tests/production-compact-contract.test.cjs
+      - name: Install Chromium
+        run: |
+          npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Layout smoke in Chromium without Cloud
+        run: node scripts/test_backoffice_phase4_visual_browser.cjs

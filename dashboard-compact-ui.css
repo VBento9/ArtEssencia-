@@ -1,2 +1,31 @@
 #dashboard .ae-dash-compact-nav{display:flex;gap:8px;overflow-x:auto;margin:16px 0 8px;padding-bottom:3px}#dashboard .ae-dash-compact-nav button,#dashboard .ae-dash-compact-kpis button,#dashboard .ae-dash-analysis-toggle{padding:10px 13px;border-radius:11px;border:1px solid #dccfc4;background:#fff;color:inherit;font:inherit;cursor:pointer;white-space:nowrap}#dashboard .ae-dash-compact-nav button[aria-selected=true]{background:#795746;color:#fff}#dashboard .ae-dash-compact-kpis{margin:8px 0 15px}#dashboard .ae-dash-analysis-toggle{margin:14px 0;width:100%;text-align:left}#dashboard [hidden]{display:none!important}@media(max-width:700px){#dashboard .ae-dash-compact-nav{position:relative}#dashboard .ae-dash-compact-nav button{flex:0 0 auto;font-size:12px}#dashboard .ae-dash-compact-kpis button{width:100%}}
 #dashboard .dashboard-order-open{min-height:44px;min-width:44px;white-space:normal;overflow-wrap:anywhere}#dashboard .dashboard-mini-btn{min-height:44px;min-width:44px}#dashboard .dashboard-today-id,#dashboard .dashboard-today-client{min-width:0;overflow-wrap:anywhere}
+
+
+/* Fase 4 — Dashboard: linha operacional adapta-se à largura da secção. */
+@media screen {
+ .app #dashboard .dashboard-today-card{container-type:inline-size;min-width:0}
+ .app #dashboard .dashboard-today-card .ae-delivery-focus-row{display:grid;grid-template-columns:minmax(95px,.7fr) minmax(120px,1.3fr) minmax(140px,1.1fr) auto;gap:8px;min-width:0;padding:9px 12px;align-items:center}
+ .app #dashboard .dashboard-today-card .ae-delivery-focus-row>div{min-width:0;overflow-wrap:break-word;word-break:normal}
+ .app #dashboard .dashboard-today-card .ae-delivery-focus-row b{font-size:12px;line-height:1.35}
+ .app #dashboard .dashboard-today-card .ae-delivery-focus-row small{font-size:11px;line-height:1.4}
+ .app #dashboard .dashboard-today-card .ae-delivery-focus-open{min-height:44px;min-width:70px;white-space:normal}
+ .app #dashboard .dashboard-today-card .ae-delivery-focus-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:flex-end}
+ .app #dashboard .dashboard-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:9px}
+ .app #dashboard .dashboard-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,165px),1fr))!important;gap:9px}
+ .app #dashboard .dashboard-actions .dashboard-action{min-width:0;min-height:64px;padding:10px}
+ @container (max-width: 780px) {
+  .app #dashboard .dashboard-today-card .ae-delivery-focus-row{grid-template-columns:minmax(90px,.8fr) minmax(0,1.4fr) auto;gap:7px;padding:9px}
+  .app #dashboard .dashboard-today-card .ae-delivery-focus-date{grid-column:1;grid-row:1/3}
+  .app #dashboard .dashboard-today-card .ae-delivery-focus-person{grid-column:2;grid-row:1}
+  .app #dashboard .dashboard-today-card .ae-delivery-focus-detail{grid-column:2;grid-row:2}
+  .app #dashboard .dashboard-today-card .ae-delivery-focus-actions{grid-column:3;grid-row:1/3;display:grid;min-width:0}
+ }
+ @container (max-width: 480px) {
+  .app #dashboard .dashboard-today-card .ae-delivery-focus-row{grid-template-columns:90px minmax(0,1fr)}
+  .app #dashboard .dashboard-today-card .ae-delivery-focus-date{grid-column:1;grid-row:1}
+  .app #dashboard .dashboard-today-card .ae-delivery-focus-person{grid-column:2;grid-row:1}
+  .app #dashboard .dashboard-today-card .ae-delivery-focus-detail{grid-column:1/-1;grid-row:2}
+  .app #dashboard .dashboard-today-card .ae-delivery-focus-actions{grid-column:1/-1;grid-row:3;display:flex;justify-content:flex-start}
+ }
+}

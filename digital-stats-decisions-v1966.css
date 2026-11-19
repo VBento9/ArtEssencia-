@@ -45,3 +45,36 @@
 #digitalStats .ds-state-v1966{font-size:11px;color:#79675b}
 @media(max-width:900px){#digitalStats .ds-insight-kpis-v1966{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){#digitalStats .ds-summary-list-v1966{grid-template-columns:1fr}#digitalStats .ds-dashboard-v1966{padding:9px}#digitalStats .ds-sample-v1966{max-width:78px;text-align:right}#digitalStats .ds-ranked-item-v1966{grid-template-columns:18px minmax(0,1fr) 78px}}
+
+
+/* Fase 4 — Estatísticas Digitais: painéis com densidade consistente no tablet. */
+@media screen {
+ .app #digitalStats .ds-dashboard-v1966,
+ .app #digitalStats .ae-compare-v1967,
+ .app #digitalStats .ae-advisor-panel{container-type:inline-size;min-width:0}
+ .app #digitalStats .ds-dashboard-v1966{padding:11px}
+ .app #digitalStats .ds-insight-kpis-v1966{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+ .app #digitalStats .ds-insight-kpi-v1966{padding:10px;min-width:0;gap:4px}
+ .app #digitalStats .ds-insight-kpi-v1966 strong{font-size:21px;line-height:1.3;font-variant-numeric:tabular-nums;overflow-wrap:break-word;word-break:normal}
+ .app #digitalStats .ds-insight-kpi-v1966 :is(span,small){font-size:12px;line-height:1.4}
+ .app #digitalStats .ds-summary-list-v1966{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .app #digitalStats .ds-takeaway-v1966{min-width:0;padding:10px}
+ .app #digitalStats .ds-takeaway-v1966 strong{font-size:13px}
+ .app #digitalStats .ds-takeaway-v1966 span{font-size:12px;line-height:1.45;overflow-wrap:break-word}
+ .app #digitalStats .ae-compare-grid-v1967{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .app #digitalStats .ae-compare-metric-v1967{min-width:0;padding:10px}
+ .app #digitalStats .ae-compare-metric-v1967 strong{font-size:21px;font-variant-numeric:tabular-nums}
+ .app #digitalStats .ae-advisor-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .app #digitalStats .ae-advisor-action{min-width:0;padding:10px}
+ .app #digitalStats .ds-tab-v1966{min-height:44px}
+ @container (max-width: 880px) {
+  .app #digitalStats .ds-insight-kpis-v1966,
+  .app #digitalStats .ae-compare-grid-v1967{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .app #digitalStats .ds-summary-list-v1966,
+  .app #digitalStats .ae-advisor-list{grid-template-columns:minmax(0,1fr)}
+ }
+ @container (max-width: 390px) {
+  .app #digitalStats .ds-insight-kpis-v1966,
+  .app #digitalStats .ae-compare-grid-v1967{grid-template-columns:minmax(0,1fr)}
+ }
+}

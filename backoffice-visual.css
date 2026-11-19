@@ -715,3 +715,38 @@
   .app #reports .reports-section-v1725 .report-product>strong:last-child{grid-column:2;justify-self:start}
  }
 }
+
+
+/* Fase 4 — Publicação: cartões e filtros dependem do espaço disponível, não da viewport.
+   Sem alterações ao estado público dos produtos, catálogo ou loja. */
+@media screen {
+ .app #publication .publication-v1812,
+ .app #publication .publication-search-card-v1925,
+ .app #publication .publication-table-v1812{container-type:inline-size;min-width:0}
+ .app #publication .publication-kpis-v1812{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+ .app #publication .publication-kpi-v1812{padding:10px;min-width:0}
+ .app #publication .publication-kpi-v1812 strong{font-size:21px;font-variant-numeric:tabular-nums}
+ .app #publication .publication-kpi-v1812 :is(span,small){font-size:12px;line-height:1.4;overflow-wrap:break-word}
+ .app #publication .publication-search-card-v1925 .publication-tools-v1812{display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,230px);gap:8px}
+ .app #publication .publication-filter-fields-v1925{gap:8px}
+ .app #publication .publication-table-v1812 .publication-results-v1925{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .app #publication .publication-item-v1925{min-width:0;padding:10px;gap:8px}
+ .app #publication .publication-item-v1925 .publication-product-v1812 b{font-size:15px;line-height:1.35;word-break:normal}
+ .app #publication .publication-item-v1925 .publication-item-quick-v1925{gap:6px}
+ .app #publication .publication-item-v1925 .publication-item-quick-v1925>div{padding:7px;min-width:0}
+ .app #publication .publication-item-v1925 .publication-actions-v1812{gap:7px}
+ .app #publication .publication-item-v1925 .publication-actions-v1812 .btn{min-height:44px;font-size:12px}
+ .app #publication .publication-item-v1925 .publication-item-more-v1925>summary{min-height:44px}
+ @container (max-width: 1040px) {
+  .app #publication .publication-table-v1812 .publication-results-v1925{grid-template-columns:minmax(0,1fr)}
+ }
+ @container (max-width: 760px) {
+  .app #publication .publication-kpis-v1812{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .app #publication .publication-search-card-v1925 .publication-tools-v1812{grid-template-columns:minmax(0,1fr)}
+ }
+ @container (max-width: 440px) {
+  .app #publication .publication-filter-fields-v1925{grid-template-columns:minmax(0,1fr)}
+  .app #publication .publication-item-v1925 .publication-item-quick-v1925{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .app #publication .publication-item-v1925 .publication-actions-v1812{grid-template-columns:minmax(0,1fr)}
+ }
+}
