@@ -44,11 +44,14 @@ function materialPreview(orderId,expanded,onToggle){
 
 function init(){
  const root=document.getElementById('orderDetail'),dialog=document.getElementById('orderDialog');if(!root)return;
+ const title=dialog?.querySelector('h2');
+ if(title){title.id='orderDetailTitle';dialog.setAttribute('aria-labelledby',title.id)}
  const remembered=new Map();
  function decorate(){
   if(!root.children.length||root.querySelector(':scope > .ae-order-detail-layout'))return;
   observer.disconnect();
   const id=root.dataset.orderId||'',expanded=remembered.get(id)||new Set(),layout=document.createElement('div');layout.className='ae-order-detail-layout';
+  if(title)title.textContent=id?'Encomenda '+id:'Detalhe da encomenda';
   const groups=[],intro=[];let group=null;
   for(const node of [...root.children]){
    if(node.classList.contains('section-title')){group={label:node.textContent.trim(),heading:node,nodes:[]};groups.push(group)}
