@@ -965,3 +965,105 @@
   .app #catalogDigital .catalog-center-workflow{grid-template-columns:minmax(0,1fr)}
  }
 }
+
+
+/* ArtEssencia UX fase 7 — Simulador, Homepage, Redes/IA, Legal, Definições,
+   Cloud e Backup. Apenas apresentação no ecrã; os estados/avisos continuam visíveis. */
+@media screen {
+ .app #quantityPricing,.app #homepage,.app #socialAI,.app #legal,
+ .app #settings,.app #cloud,.app #backup{container-type:inline-size;min-width:0}
+ .app #quantityPricing :is(.quantity-pricing-base-grid-v1750,.quantity-pricing-cost-grid-v1750,.quantity-pricing-reference-v1750,.quantity-pricing-results-v1750){
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+ .app #quantityPricing :is(.quantity-pricing-base-grid-v1750,.quantity-pricing-cost-grid-v1750)>.field{min-width:0;padding:10px}
+ .app #quantityPricing :is(input,select){min-width:0;min-height:44px;font-size:14px}
+ .app #quantityPricing .quantity-pricing-results-v1750>div{min-width:0;padding:10px}
+ .app #quantityPricing .quantity-pricing-results-v1750 span,
+ .app #quantityPricing .quantity-pricing-reference-v1750 span{font-size:11px;line-height:1.35}
+ .app #quantityPricing .quantity-pricing-results-v1750 strong{font-size:16px;line-height:1.35;font-variant-numeric:tabular-nums;word-break:normal;overflow-wrap:break-word}
+ .app #quantityPricing .quantity-pricing-actions-v1750 .btn{min-height:44px}
+ .app #homepage .homepage-workspace-v12649{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:12px}
+ .app #homepage .homepage-workspace-v12649>*{min-width:0}
+ .app #homepage .homepage-hero{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+ .app #homepage .homepage-hero>div:first-child{min-width:0;flex:1 1 260px}
+ .app #homepage .homepage-hero .btnrow{display:flex;gap:8px;flex-wrap:wrap}
+ .app #homepage .homepage-card{min-width:0;padding:12px}
+ .app #homepage .homepage-block-head-v12649{gap:9px}
+ .app #homepage .homepage-block-head-v12649 .section-title{font-size:16px;line-height:1.35;word-break:normal}
+ .app #homepage .homepage-form-v12649{gap:9px}
+ .app #homepage :is(input,select,textarea){min-width:0;max-width:100%}
+ .app #homepage .homepage-hero .btn,.app #homepage .homepage-card .btn{min-height:44px}
+ .app #socialAI>.card{min-width:0;padding:12px}
+ .app #socialAI .reports-hero{display:flex;flex-wrap:wrap;gap:9px;align-items:center;justify-content:space-between}
+ .app #socialAI .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .app #socialAI .form-grid>.field{min-width:0}
+ .app #socialAI :is(input,select,textarea){min-width:0;max-width:100%}
+ .app #socialAI .btnrow{display:flex;gap:8px;flex-wrap:wrap}
+ .app #socialAI .btnrow .btn{min-height:44px;font-size:12px}
+ .app #socialAI #socialSuggestionsV1>*{min-width:0;max-width:100%;overflow-wrap:break-word}
+ .app #legal .legal-summary-v1286{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+ .app #legal .legal-summary-v1286>*{min-width:0}
+ .app #legal .legal-section-v1286{padding:12px}
+ .app #legal .legal-section-head-v1286{display:flex;gap:9px;flex-wrap:wrap;align-items:flex-start}
+ .app #legal .legal-section-head-v1286>div:first-child{min-width:0;flex:1 1 270px}
+ .app #legal .legal-section-head-v1286 small{font-size:12px;line-height:1.4}
+ .app #legal .legal-doc-grid-v1286{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .app #legal .legal-doc-v1286{min-width:0;padding:11px}
+ .app #legal .legal-doc-v1286 textarea{width:100%;min-width:0;max-width:100%;font-size:14px;line-height:1.5}
+ .app #legal .legal-warning-v1286,.app #legal .legal-check-v1286{font-size:13px;line-height:1.5;overflow-wrap:break-word}
+ .app #legal .btn{min-height:44px}
+ .app #settings .settings-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+ .app #settings .settings-summary>*{min-width:0}
+ .app #settings .settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .app #settings .settings-grid>.card{min-width:0}
+ .app #settings .settings-card{min-width:0;padding:12px}
+ .app #settings .settings-card-head{gap:9px;flex-wrap:wrap}
+ .app #settings .settings-card-head small{font-size:12px;line-height:1.4}
+ .app #settings .settings-form-grid-v1732{gap:9px}
+ .app #settings .field label{font-size:12px;line-height:1.35}
+ .app #settings .field :is(input,select,textarea){min-width:0;max-width:100%;min-height:44px;font-size:14px}
+ .app #settings .btn{min-height:44px;font-size:12px}
+ .app #settings .settings-kpi :is(span,small){font-size:11px;line-height:1.4}
+ .app #cloud .cloud-pro-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+ .app #cloud .cloud-pro-summary>*{min-width:0}
+ .app #cloud .cloud-pro-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .app #cloud .cloud-pro-card{min-width:0;padding:12px}
+ .app #cloud .cloud-pro-card-head small{font-size:12px;line-height:1.4}
+ .app #cloud .field label{font-size:12px;line-height:1.4}
+ .app #cloud .field input{min-width:0;max-width:100%;min-height:44px;font-size:14px}
+ .app #cloud .btn{min-height:44px;font-size:12px}
+ .app #cloud .cloud-hero-status,.app #cloud .cloud-state-pro{font-size:12px;line-height:1.4;white-space:normal;overflow-wrap:break-word}
+ .app #cloud .cloud-log{font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+ .app #cloud .cloud-pro-kpi :is(span,small){font-size:11px;line-height:1.4}
+ .app #cloud .cloud-pro-kpi strong{font-size:14px;line-height:1.35;overflow-wrap:break-word}
+ .app #backup .backup-pro-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+ .app #backup .backup-pro-summary>*{min-width:0}
+ .app #backup .backup-pro-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .app #backup .backup-pro-card{min-width:0;padding:12px}
+ .app #backup .backup-card-head small{font-size:12px;line-height:1.4}
+ .app #backup .backup-main-action{gap:9px;min-width:0}
+ .app #backup .backup-main-action>div:last-child{min-width:0;overflow-wrap:break-word}
+ .app #backup .backup-actions{display:flex;flex-wrap:wrap;gap:8px}
+ .app #backup .backup-actions .btn{min-height:44px;font-size:12px;flex:1 1 150px;white-space:normal}
+ .app #backup :is(.backup-safety-note,.security-note,.backup-preview){font-size:12px;line-height:1.5;overflow-wrap:break-word}
+ .app #backup .backup-kpi :is(span,small){font-size:11px;line-height:1.4}
+ .app #backup .backup-kpi strong{font-size:14px;line-height:1.35;overflow-wrap:break-word}
+ @container (max-width: 1100px){
+  .app #homepage .homepage-workspace-v12649{grid-template-columns:minmax(0,1fr)}
+  .app #legal .legal-doc-grid-v1286{grid-template-columns:minmax(0,1fr)}
+  .app #settings .settings-grid{grid-template-columns:minmax(0,1fr)}
+  .app #cloud .cloud-pro-grid,.app #backup .backup-pro-grid{grid-template-columns:minmax(0,1fr)}
+ }
+ @container (max-width: 940px){
+  .app #quantityPricing :is(.quantity-pricing-base-grid-v1750,.quantity-pricing-cost-grid-v1750,.quantity-pricing-reference-v1750,.quantity-pricing-results-v1750){grid-template-columns:repeat(2,minmax(0,1fr))}
+  .app #settings .settings-summary,.app #cloud .cloud-pro-summary,.app #backup .backup-pro-summary,.app #legal .legal-summary-v1286{grid-template-columns:repeat(2,minmax(0,1fr))}
+ }
+ @container (max-width: 540px){
+  .app #quantityPricing :is(.quantity-pricing-base-grid-v1750,.quantity-pricing-cost-grid-v1750){grid-template-columns:minmax(0,1fr)}
+  .app #socialAI .form-grid{grid-template-columns:minmax(0,1fr)}
+  .app #socialAI .form-grid>.field{grid-column:1}
+ }
+ @container (max-width: 405px){
+  .app #quantityPricing :is(.quantity-pricing-reference-v1750,.quantity-pricing-results-v1750){grid-template-columns:minmax(0,1fr)}
+  .app #settings .settings-summary,.app #cloud .cloud-pro-summary,.app #backup .backup-pro-summary,.app #legal .legal-summary-v1286{grid-template-columns:minmax(0,1fr)}
+ }
+}
