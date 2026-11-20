@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.176">
+<meta name="artessencia-version" content="1.9.177">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -3770,10 +3770,11 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 
     <div class="grid4 sale-kpis-v1727" id="quoteKpis"></div>
 
-    <section class="card sale-customer-card-v1727">
+    <section tabindex="-1" class="card sale-customer-card-v1727">
       <div class="sale-section-head-v1727">
         <div class="section-title" style="margin:0">Cliente e entrega</div>
         <small>Dados essenciais da encomenda e instruções para produção.</small>
+        <button type="button" class="btn ghost sale-step-link-v19166" onclick="saleNavigateV19166('products')">Escolher produtos</button>
       </div>
       <div class="form-grid sale-customer-grid-v1727">
         <div class="field sale-client-v1727 sale-client-autocomplete-v1756"><label>Cliente</label><input id="saleClient" list="clientSuggestions" placeholder="Começa a escrever o nome do cliente" autocomplete="off" onfocus="renderSaleClientMatchesV1756()" oninput="handleSaleClientInputV1756();invalidateSalePromoIfContextChangedV1813()" onblur="hideSaleClientMatchesV1756()"><datalist id="clientSuggestions"></datalist><div id="saleClientMatchesV1756" class="sale-client-matches-v1756 hidden"></div></div>
@@ -3788,7 +3789,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
     </section>
 
     <div class="sale-product-workspace-v1754">
-      <section class="card sale-products-card-v1727 sale-products-browser-v1754">
+      <section tabindex="-1" class="card sale-products-card-v1727 sale-products-browser-v1754">
         <div class="sale-section-head-v1727">
           <div class="section-title" style="margin:0">Escolher produtos</div>
           <small>Pesquisa e filtra o catálogo. Tocar num produto adiciona-o imediatamente ao carrinho.</small>
@@ -3800,14 +3801,16 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
           <div class="field"><label>Coleção / tema</label><select id="saleProductCollectionV1754" onchange="renderPicker()"><option value="all">Todas as coleções</option></select></div>
         </div>
         <div class="sale-picker-meta-v1754"><button type="button" class="btn ghost sale-clear-product-filters-v19165" onclick="clearSaleProductFiltersV19165()">Limpar filtros de produtos</button><span id="saleProductResultCountV1754">0 produtos</span><span id="saleSelectionStatusV1754">Nenhum produto selecionado</span></div>
+        <div id="saleCartShortcutV19166" class="sale-cart-shortcut-v19166" hidden><span id="saleCartShortcutTextV19166" role="status" aria-live="polite">Carrinho vazio</span><button type="button" class="btn sale-cart-open-v19166" aria-controls="cart" onclick="saleNavigateV19166('cart')">Ver carrinho</button></div>
         <div class="product-picker sale-product-picker-v1754" id="productPicker"></div><div id="salePickerMoreV19165" class="sale-picker-more-v19165"></div>
       </section>
 
-      <aside class="sale-cart-side-v1754">
+      <aside tabindex="-1" class="sale-cart-side-v1754">
         <section class="card sale-cart-card-v1727">
           <div class="sale-section-head-v1727">
             <div class="section-title" style="margin:0">Carrinho da encomenda</div>
             <small>Quantidades e preço unitário podem ser ajustados antes de guardar.</small>
+            <div class="sale-cart-nav-v19166"><button type="button" class="btn ghost" onclick="saleNavigateV19166('products')">Voltar aos produtos</button><button type="button" class="btn ghost" onclick="saleNavigateV19166('client')">Rever cliente e entrega</button></div>
           </div>
           <div id="cart"></div>
         </section>
@@ -6445,7 +6448,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.176';
+const APP_VERSION='1.9.177';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -8537,6 +8540,22 @@ function renderDashboard(){
 }
 function setDirectOrderLineQtyV19158(i,value){const line=cart[i];if(!line)return;line.qty=Math.max(1,Math.floor(Number(value)||1));renderCart();renderPicker()}
 function renderCart(){const el=document.getElementById('cart');if(!el)return;el.innerHTML=cart.length?cart.map((x,i)=>`<div class="cart-row sale-cart-row-v1754"><div class="sale-cart-product-v1754"><strong>${escapeHtml(x.name||'Produto')}</strong><small>${escapeHtml(x.category||'')}</small></div><label class="sale-cart-mini-field-v1754"><span>Qtd.</span><input type="number" min="1" step="1" value="${Number(x.qty)||1}" onchange="setDirectOrderLineQtyV19158(${i},this.value)"></label><label class="sale-cart-mini-field-v1754"><span>Preço/un.</span><input type="number" min="0" step="0.01" value="${Number(x.price)||0}" onchange="cart[${i}].price=Math.max(0,+this.value||0);renderCart();renderPicker()"></label><strong class="sale-cart-line-total-v1754">${euro((Number(x.qty)||0)*(Number(x.price)||0))}</strong><button type="button" class="btn danger sale-cart-remove-v1754" aria-label="Remover ${escapeAttr(x.name||'produto')}" onclick="cart.splice(${i},1);renderCart();renderPicker()">×</button></div>`).join(''):'<div class="empty">Escolhe um produto à esquerda. O carrinho fica sempre visível nesta área.</div>';const q=cart.reduce((s,x)=>s+(Number(x.qty)||0),0),t=cart.reduce((s,x)=>s+(Number(x.qty)||0)*(Number(x.price)||0),0),final=saleFinalTotalV1813(),c=cart.reduce((s,x)=>s+(Number(x.qty)||0)*(Number(x.cost)||0),0),p=final-c;$('cartQty').textContent=q;$('cartTotal').textContent=euro(t);$('cartProfit').textContent=euro(p);$('cartMargin').textContent=pct(final?p/final:0);renderSalePromoV1813()}
+function saleUpdateCartShortcutV19166(totalText){
+ const bar=document.getElementById('saleCartShortcutV19166'),label=document.getElementById('saleCartShortcutTextV19166');
+ if(!bar)return;
+ const qty=cart.reduce((n,line)=>n+Math.max(0,Number(line.qty)||0),0);
+ bar.hidden=qty===0;
+ if(label)label.textContent=qty+' unidade'+(qty===1?'':'s')+' · '+totalText;
+}
+function saleNavigateV19166(section){
+ const el=section==='cart'?document.querySelector('#sale .sale-cart-side-v1754'):
+  section==='client'?document.querySelector('#sale .sale-customer-card-v1727'):
+  document.querySelector('#sale .sale-products-browser-v1754');
+ if(!el)return;
+ el.focus({preventScroll:true});
+ const reduce=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+ el.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});
+}
 function clearSale(){cart=[];$('saleClient').value='';$('saleContact').value='';if($('saleEmail'))$('saleEmail').value='';$('salePaid').value=0;if($('saleNotes'))$('saleNotes').value='';clearSalePromoV1813();const st=document.getElementById('saleSelectionStatusV1754');if(st)st.textContent='Nenhum produto selecionado';renderCart();renderPicker()}
 async function saveOrder(){
  if(!$('saleClient').value.trim())return toast('Indique o cliente');
@@ -14224,7 +14243,9 @@ function saleFinalTotalV1813(){const sub=saleSubtotalV1813(),disc=salePromoConte
 function renderSalePromoV1813(){
  const d=document.getElementById('salePromoDiscountV1813'),t=document.getElementById('saleFinalTotalV1813'),st=document.getElementById('salePromoStatusV1813');
  const valid=salePromoContextValidV1813(),disc=valid?Math.max(0,Number(salePromoV1813?.discount_total)||0):0;
- if(d)d.textContent=euro(disc);if(t)t.textContent=euro(Math.max(0,saleSubtotalV1813()-disc));
+ const totalText=euro(Math.max(0,saleSubtotalV1813()-disc));
+ if(d)d.textContent=euro(disc);if(t)t.textContent=totalText;
+ saleUpdateCartShortcutV19166(totalText);
  if(st&&salePromoV1813&&valid)st.textContent='✓ '+(salePromoV1813.label||salePromoV1813.code)+' · desconto '+euro(disc);
 }
 function clearSalePromoV1813(clearInput=true,message='Opcional · válido em campanhas ArtEssencia.'){
@@ -18406,6 +18427,7 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 <script defer src="./product-technical-sheet.js"></script>
 <script defer src="./orders-compact-ui.js" id="ae-orders-compact-script"></script>
 <link rel="stylesheet" href="./sale-tablet-ux-v19165.css">
+<link rel="stylesheet" href="./sale-cart-shortcuts-v19166.css">
 <script defer src="./catalog-pdf-manager-v2.js"></script>
 <script defer src="./boxes-atelier-ui-v1.js"></script>
 <link rel="stylesheet" href="./quantity-pricing-v2.css">

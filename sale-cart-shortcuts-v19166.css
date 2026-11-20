@@ -1,0 +1,52 @@
+/* ArtEssencia 1.9.166 — navegação operacional em Vendas no tablet/telemóvel.
+   Não altera o carrinho, pagamentos ou fichas técnicas. */
+#sale .sale-cart-shortcut-v19166[hidden]{display:none!important}
+#sale .sale-cart-shortcut-v19166{display:none}
+#sale .sale-step-link-v19166{display:none}
+#sale .sale-cart-nav-v19166{display:none}
+#sale .sale-products-browser-v1754,
+#sale .sale-cart-side-v1754,
+#sale .sale-customer-card-v1727{scroll-margin-top:90px}
+@media(max-width:1199px){
+ #sale .sale-customer-card-v1727 .sale-section-head-v1727{
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px
+ }
+ #sale .sale-customer-card-v1727 .sale-section-head-v1727 .section-title,
+ #sale .sale-customer-card-v1727 .sale-section-head-v1727 small{flex-basis:100%}
+ #sale .sale-step-link-v19166{
+  display:inline-flex;align-items:center;justify-content:center;
+  margin-left:auto;min-height:44px;padding:9px 16px;
+  font-size:13px!important;font-weight:700!important
+ }
+ #sale .sale-cart-shortcut-v19166:not([hidden]){
+  position:sticky;top:78px;z-index:7;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:10px;
+  margin:8px 0 12px;padding:10px 12px;
+  background:#fbf4ec;border:1px solid #c8aa89;border-radius:14px;
+  box-shadow:0 5px 14px rgba(68,48,35,.10);
+ }
+ #sale .sale-cart-shortcut-v19166 [role=status]{
+  font-size:14px;font-weight:750;color:#493a30;
+  line-height:1.4;min-width:0;overflow-wrap:anywhere
+ }
+ #sale .sale-cart-shortcut-v19166 .sale-cart-open-v19166{
+  min-height:44px;padding:9px 16px;border-radius:11px;
+  border:1px solid #6c4734;background:#6c4734;color:#fff;
+  font-size:13px;font-weight:750;white-space:nowrap
+ }
+ #sale .sale-cart-nav-v19166{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+ #sale .sale-cart-nav-v19166 .btn{
+  min-height:44px;min-width:0;padding:9px 12px;
+  font-size:12px!important;line-height:1.35;font-weight:650!important;white-space:normal
+ }
+ #sale .sale-cart-shortcut-v19166 button:focus-visible,
+ #sale .sale-cart-nav-v19166 button:focus-visible,
+ #sale .sale-step-link-v19166:focus-visible{outline:3px solid #0d9488;outline-offset:2px}
+}
+@media(max-width:480px){
+ #sale .sale-cart-shortcut-v19166:not([hidden]){top:70px;gap:8px}
+ #sale .sale-cart-shortcut-v19166 [role=status]{font-size:12px}
+ #sale .sale-cart-shortcut-v19166 .sale-cart-open-v19166{font-size:12px;min-width:120px}
+ #sale .sale-cart-nav-v19166 .btn{flex:1 1 130px}
+}
