@@ -1,7 +1,7 @@
 // Local fixtures only: never contact Cloud or modify real stock.
 const {chromium}=require('playwright'),assert=require('node:assert/strict');
 (async()=>{const browser=await chromium.launch({headless:true});try{
- for(const width of [1000,390]){
+ for(const width of [1000,768,390]){
  const context=await browser.newContext({viewport:{width,height:1000},serviceWorkers:'block'}),page=await context.newPage();
  await page.route('**/*',r=>new URL(r.request().url()).origin==='http://127.0.0.1:8765'?r.continue():r.abort());page.on('dialog',d=>d.accept());
  await page.goto('http://127.0.0.1:8765');await page.waitForFunction(()=>typeof renderStock==='function');await page.waitForTimeout(400);
@@ -19,8 +19,8 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
  await rows.first().getByRole('button',{name:'Editar',exact:true}).click();await page.locator('#stockPreferredSupplier').fill('Fornecedor guardado');await page.locator('#stockSaveBtnV143').click();
  await page.waitForFunction(()=>db.stock[10].preferredSupplier==='Fornecedor guardado');await page.locator('.stock-create-section-v1736 .ae-stock-return').click();assert.match(await controls.locator('.ae-stock-pages span').innerText(),/11–20 de 45/);
  await rows.first().getByRole('button',{name:'Histórico',exact:true}).click();assert.ok(await page.locator('dialog[open]').count());await page.keyboard.press('Escape');
- assert.equal(await rows.first().evaluate(e=>getComputedStyle(e).display),width<650?'grid':'table-row');
- if(width<650){assert.equal(await page.locator('.stock-tablewrap').evaluate(e=>e.scrollWidth<=e.clientWidth+2),true);assert.equal(await rows.first().locator('td').nth(1).getAttribute('data-stock-label'),'Disponível')}
+ assert.equal(await rows.first().evaluate(e=>getComputedStyle(e).display),'grid');
+ if(width<=1000){assert.equal(await page.locator('.stock-tablewrap').evaluate(e=>e.scrollWidth<=e.clientWidth+2),true);assert.equal(await rows.first().locator('td').nth(1).getAttribute('data-stock-label'),'Disponível')}
  await page.locator('#stockSearch').fill('Fixture 44');assert.equal(await rows.count(),1);assert.match(await rows.first().innerText(),/Fixture 44/);await page.locator('#stockSearch').fill('inexistente');assert.match(await page.locator('#stockBody').innerText(),/Nenhum artigo/);
  await page.locator('#stockSearch').fill('');
  await page.evaluate(()=>{db.stock[0].qty=0;db.stock[1].qty=5;db.stock[2].qty=10;db.stock[3].qty=-1;window.beforeReplenish=JSON.stringify(db.stock);window.filterWrites=0;save=()=>{window.filterWrites++};renderStock()});

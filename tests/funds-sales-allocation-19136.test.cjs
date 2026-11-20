@@ -152,3 +152,54 @@ test('Retificar uma conciliação mantém a composição original no histórico'
  assert.equal(valuesPaid.materials,900);
  assert.equal(Object.values(valuesPaid).reduce((x,y)=>x+y,0),4000);
 });
+
+test('Ajuste documentado apenas do preço conserva conciliação manual histórica',()=>{
+ const line={type:'product',name:'Peça histórica',code:'H1',qty:5,cost:4.292003580246914,price:9};
+ const a=make({order:{items:[line],total:45,priceAdjustmentHistoryV19168:[
+  {lineIndex:0,productName:'Peça histórica',productCode:'H1',previousPrice:8,newPrice:9,
+   reason:'Preço acordado',changedAt:'2026-11-18T11:00:00Z'}]}});
+ const key='__fundsHistoricalLineCostsV1';
+ a.ctx.db.costMeta[key]={'ORD-1':{'0':{materials:1000,labor:600,fixed:300,other:246,
+  originalCostCents:2146,fingerprint:a.ctx.historicalFingerprint({...line,price:8}),
+  source:'manual_historical_verified',confirmedAt:'2026-11-05T12:00:00Z'}}};
+ const split=plain(a.split({value:15}).amounts);
+ assert.equal(Object.hasOwn(split,'unclassified'),false);
+ assert.equal(Object.values(split).reduce((sum,v)=>sum+v,0),1500);
+ assert.equal(a.ctx.manualHistoricalLineCost(line,a.order,0).total,5*line.cost);
+});
+test('Uma mudança de custo ou quantidade não pode aproveitar prova de preço histórico',()=>{
+ const line={type:'product',name:'Peça histórica',code:'H1',qty:5,cost:4.292003580246914,price:9};
+ const a=make({order:{items:[line],total:45,priceAdjustmentHistoryV19168:[
+  {lineIndex:0,productName:'Peça histórica',productCode:'H1',previousPrice:8,newPrice:9}]}});
+ const key='__fundsHistoricalLineCostsV1';
+ a.ctx.db.costMeta[key]={'ORD-1':{'0':{materials:1000,labor:600,fixed:300,other:246,
+  originalCostCents:2146,fingerprint:a.ctx.historicalFingerprint({...line,price:8}),
+  source:'manual_historical_verified',confirmedAt:'2026-11-05T12:00:00Z'}}};
+ line.qty=6;assert.deepEqual(plain(a.split({value:15}).amounts),{unclassified:1500});
+ line.qty=5;line.cost=5;assert.deepEqual(plain(a.split({value:15}).amounts),{unclassified:1500});
+ line.cost=4.292003580246914;line.name='Produto diferente';assert.deepEqual(plain(a.split({value:15}).amounts),{unclassified:1500});
+});
+test('Sem histórico de preço verificado, a conciliação continua bloqueada',()=>{
+ const line={type:'product',name:'Peça histórica',code:'H1',qty:5,cost:4.292003580246914,price:9};
+ const a=make({order:{items:[line],total:45}});
+ const key='__fundsHistoricalLineCostsV1';
+ a.ctx.db.costMeta[key]={'ORD-1':{'0':{materials:1000,labor:600,fixed:300,other:246,
+  originalCostCents:2146,fingerprint:a.ctx.historicalFingerprint({...line,price:8}),
+  source:'manual_historical_verified',confirmedAt:'2026-11-05T12:00:00Z'}}};
+ assert.deepEqual(plain(a.split({value:15}).amounts),{unclassified:1500});
+});
+
+test('Várias alterações consecutivas de preço preservam a composição comprovada',()=>{
+ const line={type:'product',name:'Peça histórica',code:'H1',qty:5,cost:4.292003580246914,price:10};
+ const a=make({order:{items:[line],total:50,priceAdjustmentHistoryV19168:[
+  {lineIndex:0,productName:'Peça histórica',productCode:'H1',previousPrice:8,newPrice:9},
+  {lineIndex:0,productName:'Peça histórica',productCode:'H1',previousPrice:9,newPrice:10}
+ ]}});
+ const key='__fundsHistoricalLineCostsV1';
+ a.ctx.db.costMeta[key]={'ORD-1':{'0':{materials:1000,labor:600,fixed:300,other:246,
+  originalCostCents:2146,fingerprint:a.ctx.historicalFingerprint({...line,price:8}),
+  source:'manual_historical_verified',confirmedAt:'2026-11-05T12:00:00Z'}}};
+ assert.equal(Object.values(plain(a.split({value:20}).amounts)).reduce((a,b)=>a+b,0),2000);
+ a.order.priceAdjustmentHistoryV19168[1].previousPrice=9.5;
+ assert.deepEqual(plain(a.split({value:20}).amounts),{unclassified:2000});
+});

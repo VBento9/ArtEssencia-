@@ -48,3 +48,13 @@ test('o service worker prefere rede e só recupera código da cache da versão a
     offline=true;handlers.fetch({request,respondWith:p=>response=p});assert.equal(await(await response).text(),'current-network-code');
   }
 });
+
+test('Stock: cartões responsivos pela largura útil da lista, incluindo tablet',()=>{
+  assert.match(css,/container-type:inline-size/);
+  assert.match(css,/@container \(max-width: 1000px\)/);
+  assert.match(css,/@container \(max-width: 780px\)/);
+  assert.match(css,/\.stock-table tbody\{grid-template-columns:minmax\(0,1fr\)\}/);
+  assert.match(css,/\.stock-table td::before\{/);
+  assert.match(css,/\.stock-actions \.btn\.danger\{grid-column:1\/-1\}/);
+  assert.match(css,/word-break:normal/);
+});

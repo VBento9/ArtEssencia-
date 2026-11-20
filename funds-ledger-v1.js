@@ -24,6 +24,26 @@ function historicalKey(order){return String(order?.id||'').trim()}
 function historicalFingerprint(line){
  return JSON.stringify([String(line?.code??''),String(line?.name??''),Number(line?.qty)||0,Number(line?.price)||0,Number(line?.cost)||0,String(line?.type||'')]);
 }
+/* 1.9.169 — A revisão do preço altera receita, não o custo comprovado.
+   Aceitar a conciliação anterior apenas se o histórico da própria encomenda
+   documentar esse preço e TODO o resto do fingerprint permanecer idêntico. */
+function verifiedHistoricalPriceFingerprintV19169(line,order,index,recordedFingerprint){
+ if(recordedFingerprint===historicalFingerprint(line))return true;
+ const events=Array.isArray(order?.priceAdjustmentHistoryV19168)?order.priceAdjustmentHistoryV19168:[];
+ let currentPrice=Number(line?.price);
+ for(let i=events.length-1;i>=0;i--){
+  const event=events[i];
+  if(Number(event?.lineIndex)!==index)continue;
+  if(String(event?.productCode??'')!==String(line?.code??'')||
+    String(event?.productName??'')!==String(line?.name??''))return false;
+  const previous=Number(event.previousPrice),updated=Number(event.newPrice);
+  if(!Number.isFinite(previous)||previous<0||!Number.isFinite(updated)||updated<0||
+    Math.abs(updated-currentPrice)>0.000001)return false;
+  if(recordedFingerprint===historicalFingerprint({...line,price:previous}))return true;
+  currentPrice=previous;
+ }
+ return false;
+}
 function historicalRecords(){
  const meta=db?.costMeta;
  const value=meta&&typeof meta==='object'&&!Array.isArray(meta)?meta[HISTORY_KEY]:null;
@@ -32,7 +52,7 @@ function historicalRecords(){
 function manualHistoricalLineCost(line,order,index){
  if(!order?.id||!Number.isInteger(index))return null;
  const rec=historicalRecords()?.[historicalKey(order)]?.[String(index)];
- if(!rec||rec.source!=='manual_historical_verified'||rec.fingerprint!==historicalFingerprint(line)||typeof rec.confirmedAt!=='string')return null;
+ if(!rec||rec.source!=='manual_historical_verified'||!verifiedHistoricalPriceFingerprintV19169(line,order,index,rec.fingerprint)||typeof rec.confirmedAt!=='string')return null;
  const qty=Number(line?.qty),cost=Number(line?.cost);
  if(!Number.isFinite(qty)||qty<=0||!Number.isFinite(cost)||cost<0)return null;
  const fields=['materials','labor','fixed','other'];

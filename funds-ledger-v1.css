@@ -85,3 +85,51 @@
 #funds .funds-history-verified-v1 .funds-history-list-v1{margin-top:9px}
 #funds .funds-history-reason-v1{display:grid;gap:7px;font-weight:750;font-size:12px;margin-top:11px}
 #funds .funds-history-reason-v1 textarea{font:inherit;font-size:13px;width:100%;max-width:100%;min-height:76px;padding:9px;border:1px solid #e2d3c7;border-radius:9px;box-sizing:border-box}
+
+
+/* Auditoria visual — Mapa de Fundos: grelhas pelos contentores, sem tocar nos cálculos. */
+@media screen {
+ #funds{container-type:inline-size}
+ #funds .funds-card-v1929{container-type:inline-size}
+ #funds .funds-kpi-v1929 strong{font-variant-numeric:tabular-nums;overflow-wrap:normal;word-break:normal}
+ #funds .funds-tablewrap-v1929{max-width:100%}
+ #funds .funds-card-v1929 .funds-card-head-v1929{gap:8px}
+ #funds .funds-card-v1929 .funds-card-head-v1929 button{min-height:44px}
+ #funds .funds-dept-v1929{min-height:44px;max-width:100%}
+ #funds .funds-movement-table-v1929 td:nth-child(2){overflow-wrap:break-word;word-break:normal}
+ @container (max-width: 880px) {
+  #funds .funds-card-v1929 .funds-tablewrap-v1929{overflow:visible}
+  #funds .funds-card-v1929 .funds-tablewrap-v1929>table{display:block;width:100%;min-width:0}
+  #funds .funds-card-v1929 .funds-tablewrap-v1929>table>thead{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+  #funds .funds-card-v1929 .funds-tablewrap-v1929>table>tbody{display:grid;grid-template-columns:minmax(0,1fr);gap:9px}
+  #funds .funds-card-v1929 .funds-tablewrap-v1929>table>tbody>tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 12px;min-width:0;padding:11px 12px;border:1px solid #e5d8ce;border-radius:11px;background:#fffdfb}
+  #funds .funds-card-v1929 .funds-tablewrap-v1929>table>tbody>tr>td,
+  #funds .funds-card-v1929 .funds-tablewrap-v1929>table>tbody>tr>th{display:block;min-width:0!important;width:auto!important;padding:0;border:0;text-align:left;white-space:normal;font-size:13px;overflow-wrap:break-word}
+  #funds .funds-card-v1929 .funds-tablewrap-v1929>table>tbody>tr>td::before{display:block;margin:0 0 3px;font-size:11px;font-weight:650;line-height:1.3;color:#715b4d}
+  #funds #fundsTableBodyV1929>tr>th{grid-column:1/-1;border-bottom:1px solid #eee2d9!important;padding:0 0 7px!important;font-size:14px}
+  #funds #fundsTableBodyV1929>tr>td:nth-child(2)::before{content:"Saldo inicial"}
+  #funds #fundsTableBodyV1929>tr>td:nth-child(3)::before{content:"Entradas"}
+  #funds #fundsTableBodyV1929>tr>td:nth-child(4)::before{content:"Saídas"}
+  #funds #fundsTableBodyV1929>tr>td:nth-child(5)::before{content:"Saldo final"}
+  #funds #fundsTableBodyV1929>tr>td:nth-child(5)>strong{font-size:15px;font-variant-numeric:tabular-nums}
+  #funds #fundsMovementBodyV1929>tr>td:nth-child(1)::before{content:"Data"}
+  #funds #fundsMovementBodyV1929>tr>td:nth-child(2)::before{content:"Movimento"}
+  #funds #fundsMovementBodyV1929>tr>td:nth-child(3)::before{content:"Departamento"}
+  #funds #fundsMovementBodyV1929>tr>td:nth-child(4)::before{content:"Montante"}
+  #funds #fundsMovementBodyV1929>tr>td:nth-child(2),
+  #funds #fundsMovementBodyV1929>tr>td:nth-child(3){grid-column:1/-1}
+  #funds #fundsMovementBodyV1929>tr>td:nth-child(4){font-size:15px;font-weight:750;white-space:nowrap}
+  #funds #fundsMovementBodyV1929>tr>td[colspan]{grid-column:1/-1}
+ }
+ @container (max-width: 780px) {
+  #funds .funds-controls-v1929{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #funds .funds-kpis-v1929{grid-template-columns:repeat(2,minmax(0,1fr))}
+ }
+ @container (max-width: 470px) {
+  #funds .funds-controls-v1929{grid-template-columns:minmax(0,1fr)}
+  #funds .funds-kpis-v1929{grid-template-columns:minmax(0,1fr)}
+  #funds .funds-card-v1929 .funds-card-head-v1929{align-items:stretch}
+  #funds .funds-card-v1929 .funds-card-head-v1929 button{width:100%}
+  #funds #fundsMovementBodyV1929>tr>td:nth-child(1){white-space:nowrap}
+ }
+}

@@ -10,6 +10,14 @@ on:
       - 'cloud.js'
       - 'views.js'
       - '.github/workflows/passkey-tests.yml'
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'security/passkey-*'
+      - 'tests/app-entry-lock-*.test.cjs'
+      - 'tests/cloud-auth-session-resume.test.cjs'
+      - 'tests/cloud-startup-auth-listener-*.test.cjs'
+      - '.github/workflows/passkey-tests.yml'
   workflow_dispatch:
 jobs:
   passkey-tests:
@@ -22,4 +30,4 @@ jobs:
         with:
           node-version: '22'
       - name: Run isolated Passkey tests
-        run: node --test security/passkey-capabilities.test.mjs security/passkey-supabase-adapter.test.mjs security/passkey-index-integration.test.mjs
+        run: node --test security/passkey-capabilities.test.mjs security/passkey-supabase-adapter.test.mjs security/passkey-index-integration.test.mjs tests/app-entry-lock-*.test.cjs tests/cloud-auth-session-resume.test.cjs tests/cloud-startup-auth-listener-*.test.cjs

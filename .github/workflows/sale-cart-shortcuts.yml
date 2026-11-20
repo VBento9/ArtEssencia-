@@ -1,4 +1,4 @@
-name: Vendas atalhos de carrinho 1.9.166
+name: Vendas — atalhos do carrinho
 on:
   pull_request:
     paths:

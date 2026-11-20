@@ -1,7 +1,7 @@
 // Local synthetic purchases only; external requests and real Cloud writes are blocked.
 const {chromium}=require('playwright'),assert=require('node:assert/strict');
 (async()=>{const browser=await chromium.launch({headless:true});try{
- for(const width of [1000,390]){
+ for(const width of [1680,1000,390]){
  const context=await browser.newContext({viewport:{width,height:1000},serviceWorkers:'block',hasTouch:true}),page=await context.newPage();
  await page.route('**/*',r=>new URL(r.request().url()).origin==='http://127.0.0.1:8765'?r.continue():r.abort());page.on('dialog',d=>d.accept());
  await page.goto('http://127.0.0.1:8765');await page.waitForFunction(()=>typeof renderPurchases==='function');await page.waitForTimeout(400);
@@ -13,7 +13,15 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
  await page.locator('#purchaseSaveBtn').click();await page.waitForFunction(()=>db.purchases.find(p=>p.id==='PUR-FIX-14')?.note==='Rascunho compra');assert.equal(await page.evaluate(()=>db.stock[0].qty),100);assert.equal(await page.evaluate(()=>db.cash.length),0);
  await page.getByRole('button',{name:'Voltar ao histórico',exact:true}).click();assert.match(await pages.locator('span').innerText(),/11–20 de 25/);
  await rows.first().getByRole('button',{name:'Receber',exact:true}).click();await page.waitForFunction(()=>db.stock[0].qty===102);assert.equal(await page.evaluate(()=>db.cash.length),1);assert.equal(await page.evaluate(()=>db.cash[0].value),10);assert.ok(Math.abs(await page.evaluate(()=>db.stock[0].unitCost)-110/102)<1e-9);
- assert.equal(await rows.first().evaluate(e=>getComputedStyle(e).display),width<650?'grid':'table-row');if(width<650)assert.equal(await page.locator('.purchase-tablewrap').evaluate(e=>e.scrollWidth<=e.clientWidth+2),true);
+ const containerWidth=await page.locator('#purchases .purchase-list-card').evaluate(e=>e.clientWidth);
+ const usesCards=containerWidth<=1220;
+ assert.equal(await rows.first().evaluate(e=>getComputedStyle(e).display),usesCards?'grid':'table-row');
+ if(usesCards){
+  assert.equal(await page.locator('#purchases .purchase-tablewrap').evaluate(e=>e.scrollWidth<=e.clientWidth+2),true);
+  assert.equal(await rows.first().locator('td').first().evaluate(e=>getComputedStyle(e).whiteSpace),'nowrap');
+  assert.equal(await rows.first().locator('td').first().getAttribute('data-purchase-label'),'Data');
+ }
+
  await page.getByLabel('Estado da compra',{exact:true}).selectOption('received');assert.equal(await rows.count(),1);await page.getByLabel('Estado da compra',{exact:true}).selectOption('ordered');await page.getByLabel('Compras por página',{exact:true}).selectOption('20');assert.equal(await rows.count(),20);await page.locator('#purchaseMethodFilter').selectOption('Cartão');assert.match(await page.locator('#purchasesBody').innerText(),/Sem compras/);await page.locator('#purchaseMethodFilter').selectOption('all');await page.locator('#purchaseSearch').fill('supplier 24');assert.equal(await rows.count(),1);
  // Exercise actual cross-module Stock → Compras preselection and reveal.
  await page.evaluate(()=>{go('stock');stockGoPurchase(0)});await page.waitForFunction(()=>document.getElementById('purchaseItem').value==='Fixture item'&&!document.querySelector('.purchase-form-card').hidden);assert.equal(await page.locator('#purchaseItem').isVisible(),true);

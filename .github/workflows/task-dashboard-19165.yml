@@ -1,0 +1,53 @@
+name: Dashboard - Planeamento e entregas
+on:
+  pull_request:
+    paths:
+      - 'task-manager-v2.js'
+      - 'task-manager-v2.css'
+      - 'dashboard-compact-ui.js'
+      - 'dashboard-delivery-focus-v19165.js'
+      - 'dashboard-delivery-focus-v19165.css'
+      - 'sw.js'
+      - 'index.html'
+      - 'version.json'
+      - 'tests/task-dashboard-19165.test.cjs'
+      - 'scripts/test_task_dashboard_browser_19165.cjs'
+      - 'scripts/test_dashboard_tasks_browser.cjs'
+      - '.github/workflows/task-dashboard-19165.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: node --check task-manager-v2.js
+      - run: node --check dashboard-delivery-focus-v19165.js
+      - run: node --check dashboard-compact-ui.js
+      - run: node --test tests/task-dashboard-19165.test.cjs
+      - run: node scripts/check_pwa_release_versions.cjs
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright@1.56.1
+      - name: Preparar Chromium de testes
+        run: npx playwright install chromium
+      - run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/ae-dash-http.log 2>&1 &
+      - name: Validar tarefas e entregas no navegador
+        run: |
+          node scripts/test_dashboard_tasks_browser.cjs
+          node scripts/test_task_dashboard_browser_19165.cjs

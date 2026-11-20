@@ -1,28 +1,87 @@
-#cash.ae-cash-compact .ae-cash-toolbar,#cash.ae-cash-compact .ae-cash-pages{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:12px 0}
+/* ArtEssencia — Caixa: densidade e adaptação pela largura útil do módulo.
+   Apenas apresentação: preserva linhas, ações, filtros e impressão. */
+#cash.ae-cash-compact .ae-cash-toolbar,
+#cash.ae-cash-compact .ae-cash-pages{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:10px 0}
+#cash.ae-cash-compact .ae-cash-pages{padding:8px 10px}
 #cash.ae-cash-compact .ae-cash-pages span{font-size:12px;min-width:120px;text-align:center}
 #cash.ae-cash-compact .ae-cash-pages label{display:flex;align-items:center;gap:8px;margin-left:auto;font-size:12px}
-#cash.ae-cash-compact .ae-cash-pages select{width:auto;min-height:40px}
+#cash.ae-cash-compact .ae-cash-pages select{width:auto;min-height:44px}
 #cash.ae-cash-compact .ae-cash-pages button:disabled{opacity:.45;cursor:not-allowed}
-#cash.ae-cash-compact .cash-form-card[hidden],#cash.ae-cash-compact #cashBody tr[hidden]{display:none!important}
-#cash.ae-cash-compact .cash-list-card{scroll-margin-top:90px}
+#cash.ae-cash-compact .cash-form-card[hidden],
+#cash.ae-cash-compact #cashBody tr[hidden]{display:none!important}
+#cash.ae-cash-compact .cash-list-card{scroll-margin-top:90px;container-type:inline-size}
 #cash.ae-cash-compact .cash-form-head{display:flex;justify-content:space-between;align-items:start;gap:12px;flex-wrap:wrap}
-#cash.ae-cash-compact .cash-actions .btn{min-height:40px;font-size:11px}
 #cash.ae-cash-compact .cash-tools{display:flex!important;flex-wrap:wrap;gap:8px}
 #cash.ae-cash-compact .cash-tools>*{width:auto;min-width:0;flex:1 1 160px}
-@media(max-width:650px){
- #cash.ae-cash-compact .cash-tablewrap{overflow:visible}
- #cash.ae-cash-compact .cash-table,#cash.ae-cash-compact .cash-table tbody{display:block;width:100%;min-width:0}
- #cash.ae-cash-compact .cash-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
- #cash.ae-cash-compact .cash-table tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 10px;margin:10px 0;padding:12px;border:1px solid #dfd4c8;border-radius:12px;background:#fff}
- #cash.ae-cash-compact .cash-table td{display:block;min-width:0!important;border:0;padding:7px 0;font-size:12px;overflow-wrap:anywhere}
- #cash.ae-cash-compact .cash-table td::before{content:attr(data-cash-label);display:block;color:#796e64;font-size:10px;margin-bottom:3px}
- #cash.ae-cash-compact .cash-table td:nth-child(3),#cash.ae-cash-compact .cash-table td:last-child,#cash.ae-cash-compact .cash-table td[colspan]{grid-column:1/-1}
- #cash.ae-cash-compact .cash-table td:last-child::before{display:none}
- #cash.ae-cash-compact .cash-table td strong{font-size:13px}
- #cash.ae-cash-compact .cash-actions{grid-template-columns:repeat(3,minmax(0,1fr));min-width:0}
- #cash.ae-cash-compact .cash-actions .btn{min-height:44px;font-size:11px;white-space:normal}
- #cash.ae-cash-compact .cash-table .badge{font-size:10px;white-space:normal}
- #cash.ae-cash-compact .ae-cash-pages label{margin-left:0;width:100%}
-}
-
 #cash.ae-cash-compact .ae-cash-summary-note{font-size:12px;color:#796e64;margin:10px 0}
+#cash.ae-cash-compact .cash-list-card .cash-tablewrap{max-width:100%;overflow-x:auto}
+#cash.ae-cash-compact .cash-list-card .cash-table{width:100%;min-width:985px;table-layout:fixed}
+#cash.ae-cash-compact .cash-list-card .cash-table th,
+#cash.ae-cash-compact .cash-list-card .cash-table td{padding:9px 8px;line-height:1.35;vertical-align:middle;word-break:normal}
+#cash.ae-cash-compact .cash-list-card .cash-table th{font-size:11px;white-space:nowrap}
+#cash.ae-cash-compact .cash-list-card .cash-table td{font-size:12px;overflow-wrap:normal}
+#cash.ae-cash-compact .cash-list-card .cash-table td strong{font-size:12px;font-weight:650;line-height:1.35}
+#cash.ae-cash-compact .cash-list-card .cash-table th:nth-child(1),
+#cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(1){width:102px;white-space:nowrap;font-variant-numeric:tabular-nums}
+#cash.ae-cash-compact .cash-list-card .cash-table th:nth-child(2),
+#cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(2){width:84px}
+#cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(3){overflow-wrap:break-word;white-space:normal}
+#cash.ae-cash-compact .cash-list-card .cash-table th:nth-child(4),
+#cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(4){width:122px;white-space:nowrap}
+#cash.ae-cash-compact .cash-list-card .cash-table th:nth-child(5),
+#cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(5){width:112px;white-space:nowrap;font-variant-numeric:tabular-nums}
+#cash.ae-cash-compact .cash-list-card .cash-table th:nth-child(6),
+#cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(6){width:112px}
+#cash.ae-cash-compact .cash-list-card .cash-table th:nth-child(7),
+#cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(7){width:170px}
+#cash.ae-cash-compact .cash-list-card .cash-table .badge{display:inline-flex;max-width:100%;padding:4px 7px;font-size:11px;line-height:1.3;white-space:nowrap;word-break:normal}
+#cash.ae-cash-compact .cash-list-card .cash-table .cash-locked{font-size:11px;line-height:1.35;overflow-wrap:break-word}
+#cash.ae-cash-compact .cash-list-card .cash-actions{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+#cash.ae-cash-compact .cash-list-card .cash-actions .btn{flex:1 1 68px;min-width:0;min-height:44px;font-size:11px;padding:8px 7px;line-height:1.25;white-space:normal}
+@container (max-width:1060px){
+ #cash.ae-cash-compact .cash-list-card .cash-tablewrap{overflow:visible;border:0;background:transparent}
+ #cash.ae-cash-compact .cash-list-card .cash-table{display:block;width:100%;min-width:0!important;table-layout:auto}
+ #cash.ae-cash-compact .cash-list-card .cash-table thead{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+ #cash.ae-cash-compact .cash-list-card .cash-table tbody{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;min-width:0}
+ #cash.ae-cash-compact .cash-list-card .cash-table tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 12px;align-content:start;min-width:0;margin:0;padding:12px;border:1px solid #dfd4c8;border-radius:12px;background:#fff}
+ #cash.ae-cash-compact .cash-list-card .cash-table td{display:block;width:auto!important;max-width:100%;min-width:0!important;padding:0;border:0;white-space:normal!important;font-size:12px;overflow-wrap:break-word}
+ #cash.ae-cash-compact .cash-list-card .cash-table td::before{content:attr(data-cash-label);display:block;color:#796e64;font-size:11px;line-height:1.25;margin:0 0 3px}
+ #cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(1){white-space:nowrap!important}
+ #cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(3),
+ #cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(7),
+ #cash.ae-cash-compact .cash-list-card .cash-table td[colspan]{grid-column:1/-1}
+ #cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(3){border-block:1px solid #eee6dd;padding:8px 0;font-size:13px}
+ #cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(3) strong{font-size:13px}
+ #cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(5){white-space:nowrap!important}
+ #cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(5) strong{font-size:14px;white-space:nowrap}
+ #cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(7){border-top:1px solid #eee6dd;padding-top:8px}
+ #cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(7)::before{display:none}
+ #cash.ae-cash-compact .cash-list-card .cash-table .cash-actions{width:100%}
+ #cash.ae-cash-compact .cash-list-card .cash-table .badge{font-size:11px;padding:4px 7px}
+}
+@container (max-width:780px){
+ #cash.ae-cash-compact .cash-list-card .cash-table tbody{grid-template-columns:minmax(0,1fr)}
+}
+/* Uma faixa por movimento quando há espaço para comparar os valores. */
+#cash.ae-cash-compact .cash-table :is(th,td):nth-child(5){text-align:right}
+@container (min-width:480px) and (max-width:1060px){
+ #cash.ae-cash-compact .cash-list-card .cash-table tbody{grid-template-columns:minmax(0,1fr);gap:6px}
+ #cash.ae-cash-compact .cash-list-card .cash-table tr{
+  grid-template-columns:6.3em minmax(0,1fr) minmax(7em,.45fr) minmax(8em,.55fr);
+  grid-template-areas:"date description amount actions" "type method origin actions";
+  align-items:center;gap:3px 12px;padding:8px 12px
+ }
+ #cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(1){grid-area:date}
+ #cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(2){grid-area:type}
+ #cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(3){grid-area:description;border:0;padding:0}
+ #cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(4){grid-area:method}
+ #cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(5){grid-area:amount}
+ #cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(6){grid-area:origin;text-align:right}
+ #cash.ae-cash-compact .cash-list-card .cash-table td:nth-child(7){grid-area:actions;border:0;padding:0}
+ #cash.ae-cash-compact .cash-list-card .cash-table td::before{display:none}
+ #cash.ae-cash-compact .cash-list-card .cash-table td[colspan]{grid-area:auto;grid-column:1/-1}
+}
+@media (max-width:650px){
+ #cash.ae-cash-compact .ae-cash-pages{justify-content:center}
+ #cash.ae-cash-compact .ae-cash-pages label{margin-left:0;justify-content:center;width:100%}
+}

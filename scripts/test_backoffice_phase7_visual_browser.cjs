@@ -1,0 +1,26 @@
+'use strict';
+const {chromium}=require('playwright'),assert=require('node:assert/strict'),path=require('node:path');
+const html='<!doctype html><html><head><meta charset="utf-8"><style>*{box-sizing:border-box}body{margin:0;font-family:Arial}.app{display:grid;grid-template-columns:205px minmax(0,1fr)}.side{background:#eee}.main{min-width:0;padding:20px}.screen{min-width:0;margin-bottom:12px}.card{min-width:0;border:1px solid #ddd;padding:12px}.field{min-width:0}.quantity-pricing-base-grid-v1750,.quantity-pricing-results-v1750,.settings-summary,.cloud-pro-summary,.backup-pro-summary,.legal-summary-v1286{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}.homepage-workspace-v12649,.settings-grid,.cloud-pro-grid,.backup-pro-grid,.legal-doc-grid-v1286{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.btn{min-height:44px}.hidden{display:none!important}@media(max-width:650px){.app{grid-template-columns:1fr}.side{display:none}.main{padding:12px}}</style></head><body><div class="app"><aside class="side"></aside><main class="main">'+
+'<section id="quantityPricing" class="screen"><div class="quantity-pricing-base-grid-v1750"><div class="field"><input></div><div class="field"><input></div><div class="field"><input></div><div class="field"><input></div></div><div class="quantity-pricing-results-v1750"><div><span>Preço</span><strong>20,00 €</strong></div><div><span>Custo</span><strong>12,00 €</strong></div><div><span>Lucro</span><strong>8,00 €</strong></div><div><span>Margem</span><strong>40%</strong></div></div></section>'+
+'<section id="homepage" class="screen"><div class="homepage-workspace-v12649"><div class="card homepage-card">Editor</div><div class="card homepage-card">Pré-visualização</div></div></section>'+
+'<section id="socialAI" class="screen"><div class="card"><div class="form-grid"><div class="field"><select><option>Instagram</option></select></div><div class="field"><select><option>Story</option></select></div></div></div></section>'+
+'<section id="legal" class="screen"><div class="legal-summary-v1286">'+Array(4).fill('<div class="card">Estado</div>').join('')+'</div><div class="legal-doc-grid-v1286"><div class="card legal-doc-v1286"><textarea>Termos</textarea></div><div class="card legal-doc-v1286"><textarea>Privacidade</textarea></div></div></section>'+
+'<section id="settings" class="screen"><div class="settings-summary">'+Array(4).fill('<div class="card">Configuração</div>').join('')+'</div><div class="settings-grid"><div class="card settings-card"><div class="field"><label>Embalagem</label><input></div></div><div class="card settings-card"><button class="btn">Guardar</button></div></div></section>'+
+'<section id="cloud" class="screen"><div class="cloud-pro-summary">'+Array(4).fill('<div class="card">Cloud</div>').join('')+'</div><div class="cloud-pro-grid"><div class="card cloud-pro-card"><div class="field"><input></div><button class="btn">Entrar</button></div><div class="card cloud-pro-card"><div class="cloud-state-pro">Sincronizado</div></div></div></section>'+
+'<section id="backup" class="screen"><div class="backup-pro-summary">'+Array(4).fill('<div class="card">Backup</div>').join('')+'</div><div class="backup-pro-grid"><div class="card backup-pro-card"><div class="backup-actions"><button class="btn">Criar cópia</button></div></div><div class="card backup-pro-card"><div class="backup-preview">Pré-visualização da recuperação</div><div class="backup-actions"><button class="btn">Restaurar</button></div></div></div></section>'+
+'</main></div></body></html>';
+(async()=>{const browser=await chromium.launch({headless:true});try{for(const width of [1440,1024,800,390]){
+ const p=await browser.newPage({viewport:{width,height:900},serviceWorkers:'block'});await p.setContent(html);await p.addStyleTag({path:path.resolve(__dirname,'..','backoffice-visual.css')});
+ const r=await p.evaluate(()=>{
+  const $=s=>document.querySelector(s),col=s=>getComputedStyle($(s)).gridTemplateColumns.split(/\s+/).filter(Boolean).length,w=s=>$(s).clientWidth;
+  return {w:w('#backup'),qty:col('.quantity-pricing-base-grid-v1750'),results:col('.quantity-pricing-results-v1750'),home:col('.homepage-workspace-v12649'),legal:col('.legal-doc-grid-v1286'),settings:col('.settings-grid'),cloud:col('.cloud-pro-grid'),backup:col('.backup-pro-grid'),summary:col('.backup-pro-summary'),restorationVisible:$('.backup-preview').getBoundingClientRect().height>0,overflow:document.querySelector('.main').scrollWidth-document.querySelector('.main').clientWidth};
+ });
+ assert.equal(r.qty,r.w<=540?1:r.w<=940?2:4,JSON.stringify({width,r}));
+ assert.equal(r.results,r.w<=405?1:r.w<=940?2:4,JSON.stringify({width,r}));
+ for(const key of ['home','legal','settings','cloud','backup'])assert.equal(r[key],r.w<=1100?1:2,JSON.stringify({width,key,r}));
+ assert.equal(r.summary,r.w<=405?1:r.w<=940?2:4,JSON.stringify({width,r}));
+ assert.ok(r.restorationVisible,'O aviso do backup desapareceu');
+ assert.ok(r.overflow<=2,'Scroll lateral da página '+JSON.stringify({width,r}));
+ await p.close();
+ }console.log('PASS: Simulador, Homepage, Legal, Definições, Cloud e Backup — 1440/1024/800/390px');
+}finally{await browser.close()}})().catch(e=>{console.error(e);process.exitCode=1});

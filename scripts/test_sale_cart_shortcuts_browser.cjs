@@ -3,8 +3,8 @@ const assert=require('node:assert/strict'),{chromium}=require('playwright');
 (async()=>{
  const browser=await chromium.launch({headless:true});
  try{
-  for(const width of [390,768,1024,1280]){
-   const context=await browser.newContext({viewport:{width,height:950},serviceWorkers:'block'});
+  for(const width of [390,768,800,1024,1280]){
+   const context=await browser.newContext({viewport:{width,height:width===800?1280:950},reducedMotion:'reduce',serviceWorkers:'block'});
    const page=await context.newPage(),errors=[];
    page.on('dialog',d=>d.accept());page.on('pageerror',e=>errors.push(e.message));
    await page.route('**/*',r=>new URL(r.request().url()).origin==='http://127.0.0.1:8765'?r.continue():r.abort());
@@ -28,13 +28,22 @@ const assert=require('node:assert/strict'),{chromium}=require('playwright');
    await page.evaluate(()=>setDirectOrderLineQtyV19158(0,3));
    assert.match(await page.locator('#saleCartShortcutTextV19166').innerText(),/4 unidades/);
    assert.match(await page.locator('#saleCartShortcutTextV19166').innerText(),/44,00/);
+   await page.evaluate(()=>{salePromoV1813={discount_total:3,_context:salePromoContextV1813()};renderSalePromoV1813()});
+   assert.match(await page.locator('#saleCartShortcutTextV19166').textContent(),/41,00/);
+   await page.evaluate(()=>clearSalePromoV1813());
+   assert.match(await page.locator('#saleCartShortcutTextV19166').textContent(),/44,00/);
    if(width<=1199){
     await page.locator('.sale-cart-open-v19166').click();
+    assert.ok(await page.locator('.sale-cart-side-v1754').evaluate(el=>el===document.activeElement));
     const section=await page.evaluate(()=>document.querySelector('#sale .sale-cart-side-v1754').getBoundingClientRect().top);
     assert.ok(section<950,'cart scroll');
     await page.locator('.sale-cart-nav-v19166').getByText('Voltar aos produtos').click();
     const products=await page.evaluate(()=>document.querySelector('#sale .sale-products-browser-v1754').getBoundingClientRect().top);
     assert.ok(products<950,'products scroll');
+    await page.getByRole('button',{name:'Rever cliente e entrega'}).click();
+    assert.ok(await page.locator('.sale-customer-card-v1727').evaluate(el=>el===document.activeElement));
+    await page.getByRole('button',{name:'Escolher produtos',exact:true}).click();
+    assert.ok(await page.locator('.sale-products-browser-v1754').evaluate(el=>el===document.activeElement));
    }
    await page.evaluate(()=>{cart=[];renderCart()});
    assert.equal(await bar.isVisible(),false);
@@ -42,6 +51,6 @@ const assert=require('node:assert/strict'),{chromium}=require('playwright');
    assert.deepEqual(errors,[]);
    await context.close();
   }
-  console.log('PASS resumo e navegação 390/768/1024/1280');
+  console.log('PASS resumo e navegação 390/768/800/1024/1280');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

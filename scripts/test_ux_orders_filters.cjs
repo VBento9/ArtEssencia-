@@ -31,6 +31,21 @@ assert.match(html,/id="orderProductionContextV1915"/);
 assert.match(html,/id="orderProductionMessageV1915"/);
 assert.match(html,/Voltar às encomendas/);
 assert.match(html,/A agenda pode incluir outras encomendas da mesma data/);
-assert.match(html,/new Date\(date\+'T12:00:00'\)\.toISOString\(\)\.slice\(0,10\)===date/);
-assert.match(html,/if\(el&&validDate\)\{el.value=date;renderProduction\(\);\}/);
+// Exercise the real navigation functions: invalid deliveries must leave the agenda on its current day.
+const agendaSource=html.slice(html.indexOf('function viewOrderProductionV1915('),html.indexOf('function clearOrderFiltersV1915('));
+const order={id:'A',delivery:''};
+const prodDate={value:''};
+const agendaContext={hidden:true};
+let renders=0;
+const agenda={db:{orders:[order]},prodDate,productionListOriginV1915:null,window:{scrollY:0},
+ document:{getElementById:id=>id==='orderProductionContextV1915'?agendaContext:null,querySelector:()=>null},
+ go:page=>assert.equal(page,'production'),renderProduction:()=>{renders++}};
+vm.runInNewContext(agendaSource,agenda);
+for(const [delivery,expected] of [['2028-02-29','2028-02-29'],['2026-02-29','2026-10-01'],['','2026-10-01']]){
+ order.delivery=delivery;prodDate.value='2026-10-01';renders=0;agendaContext.hidden=true;
+ agenda.viewOrderProductionV1915(order.id);
+ assert.equal(prodDate.value,expected);
+ assert.equal(renders,1);
+ assert.equal(agendaContext.hidden,false);
+}
 console.log('Orders filters and read-only attention labels structural checks passed');

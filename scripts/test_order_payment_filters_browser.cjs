@@ -9,7 +9,7 @@ const assert=require('node:assert/strict');
    const page=await context.newPage();
    page.on('dialog',d=>d.accept());
    await page.route('**/*',route=>new URL(route.request().url()).origin==='http://127.0.0.1:8765'?route.continue():route.abort());
-   await page.goto('http://127.0.0.1:8765');
+   await page.goto('http://127.0.0.1:8765',{waitUntil:'domcontentloaded',timeout:30000});
    await page.waitForFunction(()=>typeof showReadyDueOrdersV19164==='function'&&typeof renderOrders==='function');
    await page.evaluate(()=>{
     document.getElementById('authGateV1880')?.remove();finishAppUnlockV19135();

@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.166">
+<meta name="artessencia-version" content="1.9.177">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -3770,7 +3770,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 
     <div class="grid4 sale-kpis-v1727" id="quoteKpis"></div>
 
-    <section class="card sale-customer-card-v1727">
+    <section tabindex="-1" class="card sale-customer-card-v1727">
       <div class="sale-section-head-v1727">
         <div class="section-title" style="margin:0">Cliente e entrega</div>
         <small>Dados essenciais da encomenda e instruções para produção.</small>
@@ -3782,14 +3782,14 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div class="field"><label>Email</label><input id="saleEmail" type="email" autocomplete="email" placeholder="cliente@email.pt" oninput="invalidateSalePromoIfContextChangedV1813()"></div>
         <div class="field"><label>Data entrega</label><input id="saleDate" type="date"></div>
         <div class="field"><label>Pagamento</label><select id="salePayment"><option>Dinheiro</option><option>MB Way</option><option>Transferência</option><option>Outro</option></select></div>
-        <div class="sale-legacy-packaging-v19165" hidden aria-hidden="true"><select id="saleBox" tabindex="-1"></select><input id="saleBoxes" type="hidden" value="0"></div>
+        <div class="sale-legacy-packaging-v19165" hidden aria-hidden="true"><input id="saleBox" type="hidden" value=""><input id="saleBoxes" type="hidden" value="0"></div>
         <div class="field"><label>Valor pago</label><input id="salePaid" type="number" step="0.01" value="0"></div><div class="field span2 sale-promo-v19165"><label>Código promocional / voucher</label><div class="sale-promo-controls-v19165"><input id="salePromoCodeV1813" maxlength="32" placeholder="AE-LANC-XXXXXXX" oninput="clearSalePromoV1813(false)"><button type="button" class="btn" onclick="validateSalePromoV1813()">Validar</button></div><small id="salePromoStatusV1813" class="muted">Opcional · válido em campanhas ArtEssencia.</small></div>
         <div class="field sale-notes-v1727"><label>Notas / personalização da encomenda</label><textarea id="saleNotes" rows="3" placeholder="Ex.: nome a colocar, cor pretendida, fita, mensagem, acabamento ou outras instruções para produção"></textarea><small class="muted">Estas instruções seguem para a Produção e para a ordem de produção.</small></div>
       </div>
     </section>
 
     <div class="sale-product-workspace-v1754">
-      <section class="card sale-products-card-v1727 sale-products-browser-v1754">
+      <section tabindex="-1" class="card sale-products-card-v1727 sale-products-browser-v1754">
         <div class="sale-section-head-v1727">
           <div class="section-title" style="margin:0">Escolher produtos</div>
           <small>Pesquisa e filtra o catálogo. Tocar num produto adiciona-o imediatamente ao carrinho.</small>
@@ -3805,7 +3805,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div class="product-picker sale-product-picker-v1754" id="productPicker"></div><div id="salePickerMoreV19165" class="sale-picker-more-v19165"></div>
       </section>
 
-      <aside class="sale-cart-side-v1754">
+      <aside tabindex="-1" class="sale-cart-side-v1754">
         <section class="card sale-cart-card-v1727">
           <div class="sale-section-head-v1727">
             <div class="section-title" style="margin:0">Carrinho da encomenda</div>
@@ -3966,8 +3966,9 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 
   <section id="production" class="screen">
     <div id="orderProductionContextV1915" class="card" hidden style="margin-bottom:12px">
-      <span id="orderProductionMessageV1915" style="flex:1"></span>
-      <button type="button" class="btn" onclick="document.getElementById('orderProductionContextV1915').hidden=true;go('orders')">← Voltar às encomendas</button>
+      <span id="orderProductionMessageV1915" role="status" style="flex:1"></span>
+      <button id="orderProductionDeliveryDay" type="button" class="btn" hidden onclick="showOrderDeliveryDay()">Ver dia da entrega</button>
+      <button type="button" class="btn" onclick="returnFromOrderProductionV1915()">← Voltar às encomendas</button>
     </div>
     <div class="card prod-head">
       <div class="prod-head-main">
@@ -6447,7 +6448,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.166';
+const APP_VERSION='1.9.177';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -8538,19 +8539,20 @@ function renderDashboard(){
  document.getElementById('pendingOrders').innerHTML=rows.length?rows.map(o=>{const c=calcOrder(o);return`<tr><td><button type="button" class="btn dashboard-order-open" data-dashboard-order="${escapeAttr(o.id)}" aria-label="Abrir encomenda ${escapeAttr(o.id)}">${escapeHtml(o.id)}</button>${o.source==='online_store'?'<br><span class="badge ok">ONLINE</span>':''}</td><td>${escapeHtml(o.client||'—')}</td><td>${escapeHtml(o.delivery||'—')}</td><td>${euro(c.total)}</td><td>${euro(o.paid)}</td><td><span class="badge warn">${escapeHtml(o.status)}</span></td></tr>`}).join(''):`<tr><td colspan="6" class="empty">Sem encomendas pendentes</td></tr>`;renderDashboardDaily();renderReceivables();renderQuotePipeline();renderTrend()
 }
 function setDirectOrderLineQtyV19158(i,value){const line=cart[i];if(!line)return;line.qty=Math.max(1,Math.floor(Number(value)||1));renderCart();renderPicker()}
-function renderCart(){const el=document.getElementById('cart');if(!el)return;el.innerHTML=cart.length?cart.map((x,i)=>`<div class="cart-row sale-cart-row-v1754"><div class="sale-cart-product-v1754"><strong>${escapeHtml(x.name||'Produto')}</strong><small>${escapeHtml(x.category||'')}</small></div><label class="sale-cart-mini-field-v1754"><span>Qtd.</span><input type="number" min="1" step="1" value="${Number(x.qty)||1}" onchange="setDirectOrderLineQtyV19158(${i},this.value)"></label><label class="sale-cart-mini-field-v1754"><span>Preço/un.</span><input type="number" min="0" step="0.01" value="${Number(x.price)||0}" onchange="cart[${i}].price=Math.max(0,+this.value||0);renderCart();renderPicker()"></label><strong class="sale-cart-line-total-v1754">${euro((Number(x.qty)||0)*(Number(x.price)||0))}</strong><button type="button" class="btn danger sale-cart-remove-v1754" aria-label="Remover ${escapeAttr(x.name||'produto')}" onclick="cart.splice(${i},1);renderCart();renderPicker()">×</button></div>`).join(''):'<div class="empty">Escolhe um produto à esquerda. O carrinho fica sempre visível nesta área.</div>';const q=cart.reduce((s,x)=>s+(Number(x.qty)||0),0),t=cart.reduce((s,x)=>s+(Number(x.qty)||0)*(Number(x.price)||0),0),final=saleFinalTotalV1813(),c=cart.reduce((s,x)=>s+(Number(x.qty)||0)*(Number(x.cost)||0),0),p=final-c;$('cartQty').textContent=q;$('cartTotal').textContent=euro(t);$('cartProfit').textContent=euro(p);$('cartMargin').textContent=pct(final?p/final:0);renderSalePromoV1813();saleUpdateCartShortcutV19166()}
-function saleUpdateCartShortcutV19166(){
+function renderCart(){const el=document.getElementById('cart');if(!el)return;el.innerHTML=cart.length?cart.map((x,i)=>`<div class="cart-row sale-cart-row-v1754"><div class="sale-cart-product-v1754"><strong>${escapeHtml(x.name||'Produto')}</strong><small>${escapeHtml(x.category||'')}</small></div><label class="sale-cart-mini-field-v1754"><span>Qtd.</span><input type="number" min="1" step="1" value="${Number(x.qty)||1}" onchange="setDirectOrderLineQtyV19158(${i},this.value)"></label><label class="sale-cart-mini-field-v1754"><span>Preço/un.</span><input type="number" min="0" step="0.01" value="${Number(x.price)||0}" onchange="cart[${i}].price=Math.max(0,+this.value||0);renderCart();renderPicker()"></label><strong class="sale-cart-line-total-v1754">${euro((Number(x.qty)||0)*(Number(x.price)||0))}</strong><button type="button" class="btn danger sale-cart-remove-v1754" aria-label="Remover ${escapeAttr(x.name||'produto')}" onclick="cart.splice(${i},1);renderCart();renderPicker()">×</button></div>`).join(''):'<div class="empty">Escolhe um produto à esquerda. O carrinho fica sempre visível nesta área.</div>';const q=cart.reduce((s,x)=>s+(Number(x.qty)||0),0),t=cart.reduce((s,x)=>s+(Number(x.qty)||0)*(Number(x.price)||0),0),final=saleFinalTotalV1813(),c=cart.reduce((s,x)=>s+(Number(x.qty)||0)*(Number(x.cost)||0),0),p=final-c;$('cartQty').textContent=q;$('cartTotal').textContent=euro(t);$('cartProfit').textContent=euro(p);$('cartMargin').textContent=pct(final?p/final:0);renderSalePromoV1813()}
+function saleUpdateCartShortcutV19166(totalText){
  const bar=document.getElementById('saleCartShortcutV19166'),label=document.getElementById('saleCartShortcutTextV19166');
  if(!bar)return;
  const qty=cart.reduce((n,line)=>n+Math.max(0,Number(line.qty)||0),0);
  bar.hidden=qty===0;
- if(label)label.textContent=qty+' unidade'+(qty===1?'':'s')+' · '+euro(saleFinalTotalV1813());
+ if(label)label.textContent=qty+' unidade'+(qty===1?'':'s')+' · '+totalText;
 }
 function saleNavigateV19166(section){
  const el=section==='cart'?document.querySelector('#sale .sale-cart-side-v1754'):
   section==='client'?document.querySelector('#sale .sale-customer-card-v1727'):
   document.querySelector('#sale .sale-products-browser-v1754');
  if(!el)return;
+ el.focus({preventScroll:true});
  const reduce=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
  el.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});
 }
@@ -8742,20 +8744,54 @@ function orderStatusClass(status){
  return status==='Entregue'?'done':status==='Cancelado'?'cancel':status==='Pronta'?'ready':status==='Em produção'?'production':status==='Confirmada'?'confirmed':'request';
 }
 function orderFilterDateV1882(o){return String(o?.created||o?.orderDate||o?.delivery||'').slice(0,10)}
+let productionListOriginV1915=null;
+function focusOrderInListV1928(position){
+ requestAnimationFrame(()=>{
+  if(!document.getElementById('orders')?.classList.contains('active'))return;
+  const button=[...document.querySelectorAll('#orders [data-order-open]')].find(el=>el.dataset.orderOpen===position.id&&el.getClientRects().length);
+  button?.focus({preventScroll:true});
+  window.scrollTo({top:position.scroll,behavior:'instant'});
+ });
+}
+function returnFromOrderProductionV1915(){
+ document.getElementById('orderProductionContextV1915').hidden=true;
+ const position=productionListOriginV1915;
+ productionListOriginV1915=null;
+ go('orders');
+ if(position)focusOrderInListV1928(position);
+}
 function viewOrderProductionV1915(id){
  const order=(db.orders||[]).find(o=>o.id===id);
  if(!order)return;
- const date=String(order.delivery||'').slice(0,10);
+ productionListOriginV1915=document.getElementById('orderDialog')?.open&&orderListReturnV1928
+  ?orderListReturnV1928:{id:String(id),scroll:window.scrollY};
  go('production');
- const el=document.getElementById('prodDate');
- const validDate=/^\d{4}-\d{2}-\d{2}$/.test(date)&&!Number.isNaN(Date.parse(date))&&new Date(date+'T12:00:00').toISOString().slice(0,10)===date;
- if(el&&validDate){el.value=date;renderProduction();}
+ document.querySelector('#aeProductionTabs button')?.click();
+ document.getElementById('orderProductionContextV1915').hidden=false;
+ showOrderDeliveryDay();
+}
+function productionOriginDeliveryDay(){
+ const order=(db.orders||[]).find(o=>String(o.id)===productionListOriginV1915?.id);
+ const day=String(order?.delivery||'').slice(0,10);
+ const parsed=new Date(day+'T12:00:00Z');
+ return /^\d{4}-\d{2}-\d{2}$/.test(day)&&Number.isFinite(parsed.getTime())&&parsed.toISOString().slice(0,10)===day?day:'';
+}
+function showOrderDeliveryDay(){
+ const day=productionOriginDeliveryDay();
+ if(day)prodDate.value=day;
+ renderProduction();
+}
+function renderOrderAgendaContext(day){
  const context=document.getElementById('orderProductionContextV1915');
+ if(!context||context.hidden||!productionListOriginV1915)return;
+ const delivery=productionOriginDeliveryDay(),id=productionListOriginV1915.id;
  const message=document.getElementById('orderProductionMessageV1915');
- if(context&&message){
-  message.textContent=validDate?'Consulta da agenda de '+date+' a partir da encomenda '+String(order.id||'')+'. A agenda pode incluir outras encomendas da mesma data.':'Encomenda '+String(order.id||'')+' sem data de entrega válida. Consulta a agenda sem filtro específico desta encomenda.';
-  context.hidden=false;
- }
+ const formatDay=iso=>iso.split('-').reverse().join('/');
+ const text='Agenda de '+formatDay(day)+' · Encomenda '+id+'. '+(delivery===day
+  ?'A agenda pode incluir outras encomendas da mesma data.'
+  :delivery?'Entrega prevista para '+formatDay(delivery)+'.':'Sem data de entrega válida para esta encomenda.');
+ if(message.textContent!==text)message.textContent=text;
+ document.getElementById('orderProductionDeliveryDay').hidden=!delivery||delivery===day;
 }
 function clearOrderFiltersV1915(){
  const sort=document.getElementById('ordersSortV1916');if(sort)sort.value='recent';
@@ -9258,7 +9294,7 @@ function productionDayOrdersV12653(date){
 }
 function productionOrderBoxesV12653(o){
  if(Array.isArray(o.thematicBoxes)&&o.thematicBoxes.length)return o.thematicBoxes.length;
- return Math.max(1,Number(o.boxes)||1);
+ return o.box?Math.max(1,Number(o.boxes)||1):0;
 }
 function productionOrderPersonalizationV12653(o){
  const arr=[];
@@ -9372,6 +9408,7 @@ function productionOrderInstructionsV136(o){
 function renderProduction(){
  setTimeout(renderProductionFlowV147,0);
  const d=prodDate.value||todayISO(),done=orderAlreadyProducedIds();
+ renderOrderAgendaContext(d);
  const ords=db.orders.filter(o=>o.delivery===d&&['Confirmada','Em produção','Confirmado','Produção'].includes(o.status)&&!done.has(o.id));
  const grouped=new Map();
  ords.forEach(o=>(o.items||[]).forEach(line=>{if(productionLineIgnoredV148(line))return;const p=productionProductForLineV130(line),key=p?.code||line.code||line.name||'Produto',cur=grouped.get(key)||{p,name:p?.name||line.name||line.code||'Produto',qty:0};cur.qty+=(Number(line.qty)||0);grouped.set(key,cur)}));
@@ -9381,9 +9418,9 @@ function renderProduction(){
  const needs={};const addNeed=(name,qty)=>needs[name]=(needs[name]||0)+(Number(qty)||0);
  ords.forEach(o=>Object.entries(productionOrderNeedsV12632(o)).forEach(([name,qty])=>addNeed(name,qty)));
  const needEntries=Object.entries(needs).filter(([,q])=>Number(q)>0),committed=productionOtherCommitmentsV20261021(d,ords),shortages=needEntries.filter(([name,need])=>{const x=stockByName(name),have=x?Number(x.qty)||0:0,prior=Math.max(0,Number(committed[name])||0);return !x||have-prior+1e-9<need});
- const packs={};ords.forEach(o=>{const n=o.box||'Sem embalagem';packs[n]=(packs[n]||0)+(Number(o.boxes)||1)});const packTotal=Object.values(packs).reduce((a,v)=>a+v,0);
+ const packs={};ords.forEach(o=>{if(!o.box)return;const n=o.box;packs[n]=(packs[n]||0)+(Number(o.boxes)||1)});const packTotal=Object.values(packs).reduce((a,v)=>a+v,0);
  const sum=document.getElementById('productionSummary');if(sum)sum.innerHTML=[['Encomendas',ords.length,'Para produzir'],['Peças',total,'Total do dia'],['Fichas técnicas',Math.max(0,manufactured.length-Math.min(manufactured.length,missingProductCount))+'/'+manufactured.length,blocked?'Existem produtos por localizar/configurar':'Produtos fabricados configurados'],['Stock',!ords.length?'—':blocked?'PRODUTO/FICHA EM FALTA':shortages.length?shortages.length+' falta(s)':'OK',!ords.length?'Sem produção para verificar':blocked?'Corrija os produtos e fichas antes de produzir':shortages.length?'Repor antes de concluir':'Consumos disponíveis']].map(([label,value,note])=>`<div class="card prod-kpi ${(label==='Stock'&&(blocked||shortages.length))?'prod-kpi-alert':''}"><span>${label}</span><strong>${value}</strong><small>${note}</small></div>`).join('');
- const po=document.getElementById('productionOrders');if(po)po.innerHTML=ords.length?ords.map(o=>{const c=calcOrder(o),inProd=['Em produção','Produção'].includes(o.status),orderNeeds=productionOrderNeedsV12632(o);const orderMissing=productionMissingRecipesV1757([o]);const prep=Object.entries(orderNeeds).map(([name,q])=>{const st=stockByName(name);return `<div class="prod-line"><span>${escapeHtml(name)}${productionOperationalHintV12633(name,q,st?.unit||'')}</span><strong>${productionFmtQtyV12632(q)} ${escapeHtml(st?.unit||'')}</strong></div>`}).join('');const tech=(o.items||[]).map(line=>{const p=productionProductForLineV130(line);return p?`<div class="prod-notes-v130"><strong>${escapeHtml(p.name)} × ${Number(line.qty)||0}</strong><span class="prod-tech-v130">${escapeHtml(productionProfileSummaryV130(p))}</span>${p.productionNotes?`<span class="prod-tech-v130"><b>Produção:</b> ${escapeHtml(p.productionNotes)}</span>`:''}${p.qualityNotes?`<span class="prod-tech-v130"><b>Qualidade:</b> ${escapeHtml(p.qualityNotes)}</span>`:''}</div>`:''}).join(''),instructions=productionOrderInstructionsV136(o),instructionsHtml=instructions.length?`<div class="soft-note" style="margin:8px 0"><strong>Personalização / instruções</strong><br>${instructions.map(escapeHtml).join('<br>')}</div>`:'';return `<div class="prod-order-card ${orderMissing.length?'prod-missing-v130':''}"><button class="prod-order-main" onclick="showOrder('${escapeHtml(o.id)}')"><span class="prod-order-id"><strong>${escapeHtml(o.id)}</strong><small>${escapeHtml(o.client||'—')}</small></span><span><small>Peças</small><strong>${c.qty} un.</strong></span><span><small>Embalagem</small><strong>${escapeHtml(o.box||'—')} × ${Number(o.boxes)||1}</strong></span></button><div class="prod-order-foot"><span class="badge ${inProd?'warn':'ok'}">${escapeHtml(o.status||'—')}</span><div class="prod-order-actions"><button class="btn" onclick="showOrder('${escapeHtml(o.id)}')">Ver detalhe</button>${inProd?'':`<button class="btn primary" onclick="setStatus('${escapeHtml(o.id)}','Em produção')">Iniciar produção</button>`}</div></div><details class="prod-order-prep-v12632" open><summary><strong>Preparação desta encomenda</strong><span>${c.qty} peças</span></summary>${instructionsHtml}${tech}<div class="prod-order-recipe-v12632">${orderMissing.length?`<div class="empty prod-warning">Ficha técnica em falta: ${orderMissing.map(p=>escapeHtml(p.name)).join(' · ')}</div>`:prep||'<div class="empty">Sem materiais a descontar.</div>'}</div></details></div>`}).join(''):'<div class="empty">Sem encomendas para esta data.</div>';
+ const po=document.getElementById('productionOrders');if(po)po.innerHTML=ords.length?ords.map(o=>{const c=calcOrder(o),inProd=['Em produção','Produção'].includes(o.status),orderNeeds=productionOrderNeedsV12632(o);const orderMissing=productionMissingRecipesV1757([o]);const prep=Object.entries(orderNeeds).map(([name,q])=>{const st=stockByName(name);return `<div class="prod-line"><span>${escapeHtml(name)}${productionOperationalHintV12633(name,q,st?.unit||'')}</span><strong>${productionFmtQtyV12632(q)} ${escapeHtml(st?.unit||'')}</strong></div>`}).join('');const tech=(o.items||[]).map(line=>{const p=productionProductForLineV130(line);return p?`<div class="prod-notes-v130"><strong>${escapeHtml(p.name)} × ${Number(line.qty)||0}</strong><span class="prod-tech-v130">${escapeHtml(productionProfileSummaryV130(p))}</span>${p.productionNotes?`<span class="prod-tech-v130"><b>Produção:</b> ${escapeHtml(p.productionNotes)}</span>`:''}${p.qualityNotes?`<span class="prod-tech-v130"><b>Qualidade:</b> ${escapeHtml(p.qualityNotes)}</span>`:''}</div>`:''}).join(''),instructions=productionOrderInstructionsV136(o),instructionsHtml=instructions.length?`<div class="soft-note" style="margin:8px 0"><strong>Personalização / instruções</strong><br>${instructions.map(escapeHtml).join('<br>')}</div>`:'';return `<div class="prod-order-card ${orderMissing.length?'prod-missing-v130':''}"><button class="prod-order-main" onclick="showOrder('${escapeHtml(o.id)}')"><span class="prod-order-id"><strong>${escapeHtml(o.id)}</strong><small>${escapeHtml(o.client||'—')}</small></span><span><small>Peças</small><strong>${c.qty} un.</strong></span><span><small>Embalagem</small><strong>${o.box?escapeHtml(o.box)+' × '+(Number(o.boxes)||1):'—'}</strong></span></button><div class="prod-order-foot"><span class="badge ${inProd?'warn':'ok'}">${escapeHtml(o.status||'—')}</span><div class="prod-order-actions"><button class="btn" onclick="showOrder('${escapeHtml(o.id)}')">Ver detalhe</button>${inProd?'':`<button class="btn primary" onclick="setStatus('${escapeHtml(o.id)}','Em produção')">Iniciar produção</button>`}</div></div><details class="prod-order-prep-v12632" open><summary><strong>Preparação desta encomenda</strong><span>${c.qty} peças</span></summary>${instructionsHtml}${tech}<div class="prod-order-recipe-v12632">${orderMissing.length?`<div class="empty prod-warning">Ficha técnica em falta: ${orderMissing.map(p=>escapeHtml(p.name)).join(' · ')}</div>`:prep||'<div class="empty">Sem materiais a descontar.</div>'}</div></details></div>`}).join(''):'<div class="empty">Sem encomendas para esta data.</div>';
  const ppd=document.getElementById('productionProducts');if(ppd)ppd.innerHTML=products.length?products.sort((a,b)=>b.qty-a.qty).map(x=>`<div class="prod-line ${!x.p?'prod-missing-v130':''}"><span><strong>${escapeHtml(x.name)}</strong><small class="prod-tech-v130">${escapeHtml(productionProfileSummaryV130(x.p))}${x.p&&!productManufacturedV130(x.p)?' · sem desconto de materiais':''}</small></span><strong>${x.qty} un.</strong></div>`).join(''):'<div class="empty">Sem produção pendente para esta data.</div>';
  const missingLabels=[...unresolved.map(x=>x.name+' ('+x.orderId+')'),...missing.map(x=>x.name)];const pr=document.getElementById('productionRecipe');if(pr)pr.innerHTML=blocked?`<div class="empty prod-warning">Não é seguro calcular o total: falta localizar/configurar ${missingLabels.map(escapeHtml).join(' · ')}.</div>`:needEntries.length?`<div class="prod-recipe-head"><span>Consumo total calculado</span><strong>${manufactured.length} produto(s)</strong></div>${needEntries.map(([name,q])=>{const st=stockByName(name),unit=st?.unit||'';return `<div class="prod-line"><span>${escapeHtml(name)}${productionOperationalHintV12633(name,q,unit)}</span><strong>${productionFmtQtyV12632(q)} ${escapeHtml(unit)}</strong></div>`}).join('')}`:'<div class="empty">Sem materiais a preparar.</div>';
  const stockBox=document.getElementById('productionStockCheck');if(stockBox){stockBox.innerHTML=blocked?'<div class="empty prod-warning">Verificação bloqueada enquanto existirem produtos por localizar ou fichas técnicas em falta.</div>':needEntries.length?needEntries.map(([name,need])=>{const x=stockByName(name),have=x?Number(x.qty)||0:0,unit=x?.unit||'',committedToDate=Number(committed[name])||0,prior=Math.max(0,committedToDate-(Number(need)||0)),availableAfterPrior=Math.max(0,have-prior),ok=!!x&&availableAfterPrior+1e-9>=need;return `<div class="prod-stock-line ${ok?'':'prod-stock-missing'}"><div><strong>${escapeHtml(name)}</strong><small>Hoje precisa ${productionFmtQtyV12632(need)} ${escapeHtml(unit)} · já comprometido antes/até à data ${productionFmtQtyV12632(prior)} ${escapeHtml(unit)}</small></div><div class="prod-stock-right"><strong>${productionFmtQtyV12632(availableAfterPrior)} ${escapeHtml(unit)} disponíveis</strong><span class="badge ${ok?'ok':'bad'}">${ok?'OK':'FALTA'}</span></div></div>`}).join(''):(ords.length?'<div class="empty">Esta produção não tem materiais para descontar.</div>':'<div class="empty">Sem necessidades de stock para esta data.</div>');}
@@ -10563,7 +10600,7 @@ th{font-size:8px}.muted,small{font-size:7.5px}
 @media print{.print-toolbar{display:none!important}.card,.product{break-inside:auto}.product h4,.card h3{break-after:avoid}tr{break-inside:avoid}body{font-size:9px}}
 .print-toolbar{padding:12px;margin:0 0 12px;border-bottom:1px solid #ddd;background:#fff;position:sticky;top:0;z-index:10}.print-toolbar button{padding:10px 18px;cursor:pointer;background:#552f35;color:#fff;border:0;border-radius:7px;font-size:14px}@media print{.print-toolbar{display:none!important}}</style></head><body><div class="print-toolbar"><button type="button" id="ae-print-order-action">🖨️ Imprimir / Guardar PDF</button><p id="ae-print-help" style="font:12px Arial,sans-serif;margin:6px 0 0;color:#655">No Safari do iPhone/iPad, se não abrir a impressão, usa Partilhar → Imprimir. Para PDF, escolhe Guardar em Ficheiros na pré-visualização de impressão.</p></div><header><div>${logo?`<img class="logo" src="${h(logo)}">`:'<strong style="font-size:22px">ArtEssencia</strong>'}</div><div class="doc-title"><h1>Ficha completa da encomenda</h1><b>${h(o.id)}</b><br><span class="badge">${h(o.status||'—')}</span></div></header>
  <div class="grid"><section class="card"><h3>Cliente</h3><div class="line"><b>Nome</b><span>${h(o.client||'—')}</span></div><div class="line"><b>Contacto</b><span>${h(o.contact||'—')}</span></div><div class="line"><b>Email</b><span>${h(o.email||'—')}</span></div><div class="line"><b>Origem</b><span>${o.source==='online_store'?'Loja Online':'Backoffice'}</span></div></section>
- <section class="card"><h3>Entrega</h3><div class="line"><b>Data</b><span>${h(datePt(o.delivery))}${o.deliveryTime?' · '+h(o.deliveryTime):''}</span></div><div class="line"><b>Método</b><span>${h(deliveryMethod)}</span></div>${o.deliveryMethod==='local_delivery'?`<div class="line"><b>Morada</b><span>${h(o.address||'—')}</span></div><div class="line"><b>Cód. postal</b><span>${h(o.postalCode||'—')}</span></div>`:''}<div class="line"><b>Embalagem</b><span>${h(o.box||((o.thematicBoxes||[])[0]?.box)||'—')} · ${h(o.boxes||1)} caixa(s)</span></div></section>
+ <section class="card"><h3>Entrega</h3><div class="line"><b>Data</b><span>${h(datePt(o.delivery))}${o.deliveryTime?' · '+h(o.deliveryTime):''}</span></div><div class="line"><b>Método</b><span>${h(deliveryMethod)}</span></div>${o.deliveryMethod==='local_delivery'?`<div class="line"><b>Morada</b><span>${h(o.address||'—')}</span></div><div class="line"><b>Cód. postal</b><span>${h(o.postalCode||'—')}</span></div>`:''}<div class="line"><b>Embalagem</b><span>${h(o.box||((o.thematicBoxes||[])[0]?.box)||'—')}${productionOrderBoxesV12653(o)?' · '+h(productionOrderBoxesV12653(o))+' caixa(s)':''}</span></div></section>
  <section class="card"><h3>Pagamento</h3><div class="line"><b>Pretendido</b><span>${h(paymentRequested)}</span></div><div class="line"><b>Registado</b><span>${h(o.payment||'Por definir')}</span></div><div class="line"><b>Estado</b><span>${remaining<=0.001&&c.total>0?'PAGO':'PENDENTE'}</span></div><div class="line"><b>Produção</b><span>${produced?'Concluída':'Pendente'}</span></div></section>
  <section class="card"><h3>Observações</h3><div>${h(o.notes||'—')}</div></section></div>
  <section class="card"><h3>Produtos da encomenda</h3><table><thead><tr><th>Produto</th><th class="num">Qtd.</th><th class="num">Preço un.</th><th class="num">Total</th></tr></thead><tbody>${itemRows}</tbody></table><div class="totals" style="margin-top:7px"><div><span>Unidades</span><strong>${h(qty)}</strong></div><div><span>Total</span><strong>${h(euro(c.total))}</strong></div><div><span>Pago</span><strong>${h(euro(o.paid||0))}</strong></div><div><span>Falta</span><strong>${h(euro(remaining))}</strong></div></div></section>
@@ -10597,8 +10634,8 @@ function showOrder(id){
  const c=calcOrder(o),remaining=Math.max(c.total-(+o.paid||0),0),produced=isOrderProduced(id),isOnline=o.source==='online_store';
  const payOptions=(isOnline?['Por definir','Dinheiro','MB Way','Transferência','Outro']:['Dinheiro','MB Way','Transferência','Outro']);
  const currentPayment=isOnline&&(!o.payment||o.payment==='A definir')?'Por definir':(o.payment||payOptions[0]);
- const boxOptions=(isOnline?['Sem embalagem definida',...(db.packaging||[]).map(p=>p.name)]:(db.packaging||[]).map(p=>p.name));
- const currentBox=isOnline&&!o.box?'Sem embalagem definida':(o.box||boxOptions[0]||'');
+ const currentBox=o.box||'';
+ const boxOptions=[...new Set([currentBox,...(db.packaging||[]).map(p=>p.name)].filter(Boolean))];
  const deliveredInfo=o.status==='Entregue'?`<div class="section-title">Conclusão</div><div class="soft-note" style="line-height:1.65"><strong>Encomenda entregue ✅</strong><br><strong>Data/hora:</strong> ${o.deliveredAt?String(o.deliveredAt).slice(0,16).replace('T',' '):'—'}<br><strong>Saldo:</strong> ${Math.max(c.total-(+o.paid||0),0)<=0?'Pago':'Por liquidar '+euro(Math.max(c.total-(+o.paid||0),0))}</div>`:'';
  const onlineInfo=isOnline?`<div class="section-title">Dados da Loja Online</div>
  <div class="soft-note" style="line-height:1.65">
@@ -10651,7 +10688,9 @@ function showOrder(id){
  `:''}
  <div class="section-title">Dados da encomenda</div><div class="form-grid">
  <div class="field span2"><label>Cliente</label><input id="detailClient" value="${escapeHtml(o.client||'')}"></div><div class="field"><label>Contacto</label><input id="detailContact" value="${escapeHtml(o.contact||'')}"></div><div class="field"><label>Entrega</label><input id="detailDelivery" type="date" value="${o.delivery||''}" ${(produced||o.status==='Entregue')?'disabled':''}></div>
- <div class="field"><label>Pagamento</label><select id="detailPayment">${payOptions.map(v=>`<option ${v===currentPayment?'selected':''}>${v}</option>`).join('')}</select></div><div class="field"><label>Embalagem</label><select id="detailBox">${boxOptions.map(v=>`<option ${v===currentBox?'selected':''}>${v}</option>`).join('')}</select></div><div class="field"><label>N.º caixas</label><input id="detailBoxes" type="number" min="0" value="${isOnline&&!o.box?0:(+o.boxes||1)}"></div><div class="field span2"><label>Notas / personalização</label><textarea id="detailNotes" rows="3" ${produced?'disabled':''}>${escapeHtml(o.notes||'')}</textarea><small class="muted">Segue para Produção e para a ordem de produção.</small></div><div class="field"><label>&nbsp;</label><button class="btn primary" onclick="updateOrderDetails('${o.id}')">Guardar dados</button></div></div>
+ <div class="field"><label>Pagamento</label><select id="detailPayment">${payOptions.map(v=>`<option ${v===currentPayment?'selected':''}>${v}</option>`).join('')}</select></div>
+ ${isOnline||currentBox?`<div class="field"><label for="detailBox">Embalagem</label><select id="detailBox"><option value="">Sem embalagem definida</option>${boxOptions.map(v=>`<option value="${escapeAttr(v)}" ${v===currentBox?'selected':''}>${escapeHtml(v)}</option>`).join('')}</select></div><div class="field"><label for="detailBoxes">N.º caixas</label><input id="detailBoxes" type="number" min="0" value="${currentBox?Math.max(1,Number(o.boxes)||1):0}"></div>`:''}
+ <div class="field span2"><label>Notas / personalização</label><textarea id="detailNotes" rows="3" ${produced?'disabled':''}>${escapeHtml(o.notes||'')}</textarea><small class="muted">Segue para Produção e para a ordem de produção.</small></div><div class="field"><label>&nbsp;</label><button class="btn primary" onclick="updateOrderDetails('${o.id}')">Guardar dados</button></div></div>
  ${produced?'<div class="badge warn" style="margin-top:10px">Produção já concluída: quantidades e data de entrega ficam bloqueadas.</div>':''}<div class="btnrow"><button class="btn primary" onclick="printOrderCompleteV12634('${o.id}')">🖨️ Imprimir encomenda completa</button><button class="btn" onclick="sendWhatsApp('${o.id}')">Enviar WhatsApp</button><button class="btn" onclick="shareOrderMessage('${o.id}')">Partilhar</button><button class="btn" onclick="copyOrderMessage('${o.id}')">Copiar mensagem</button></div>
  <div class="section-title">Produtos</div>${!produced&&['Pedido','Confirmada'].includes(String(o.status||'Pedido'))&&o.source!=='online_store'&&!o.voidedAt?`<div class="ae-existing-order-add-entry-v19160"><button type="button" class="btn primary" data-existing-order-add-v19160="${escapeAttr(o.id)}">+ Adicionar artigos</button><small>Antes de iniciar a produção · mantém a encomenda e os pagamentos</small></div>`:''}${o.items.map((i,ix)=>produced?`<div class="cart-row" style="grid-template-columns:1fr 90px 100px"><span>${escapeHtml(i.name||'')}${directOrderLineInstructionsV19158(i).length?`<small class="muted" style="display:block;margin-top:3px;line-height:1.4">${directOrderLineInstructionsV19158(i).map(escapeHtml).join(' · ')}</small>`:''}</span><strong>${Number(i.qty)||0} un.</strong><strong>${euro(i.qty*i.price)}</strong></div>`:`<div class="cart-row" style="grid-template-columns:1fr 90px 100px 74px"><span>${escapeHtml(i.name||'')}${directOrderLineInstructionsV19158(i).length?`<small class="muted" style="display:block;margin-top:3px;line-height:1.4">${directOrderLineInstructionsV19158(i).map(escapeHtml).join(' · ')}</small>`:''}</span><input type="number" min="1" value="${Number(i.qty)||1}" onchange="editOrderQty('${o.id}',${ix},this.value)"><strong>${euro(i.qty*i.price)}</strong><button class="btn danger" onclick="removeOrderItem('${o.id}',${ix})">Remover</button></div>`).join('')}
  <div class="totalbox"><div class="mini"><span>Total</span><strong>${euro(c.total)}</strong></div><div class="mini"><span>Pago</span><strong>${euro(o.paid)}</strong></div><div class="mini"><span>Falta</span><strong>${euro(remaining)}</strong></div><div class="mini"><span>Margem</span><strong>${pct(c.margin)}</strong></div></div>
@@ -10688,9 +10727,15 @@ function updateOrderDetails(id){
    if(document.getElementById('detailNotes'))o.notes=detailNotes.value.trim();
  }
  const pay=detailPayment.value;o.payment=pay==='Por definir'?'A definir':pay;
- const box=detailBox.value;o.box=box==='Sem embalagem definida'?'':box;
- o.boxes=o.box?Math.max(1,+detailBoxes.value||1):0;
- const pk=(db.packaging||[]).find(p=>p.name===o.box);o.boxCostSnapshot=pk?+pk.cost||0:0;
+ const boxField=document.getElementById('detailBox');
+ if(boxField){
+   const box=boxField.value;
+   if(box!==(o.box||'')){
+     o.box=box;
+     o.boxCostSnapshot=Number((db.packaging||[]).find(p=>p.name===box)?.cost)||0;
+   }
+   o.boxes=box?Math.max(1,Number(document.getElementById('detailBoxes').value)||1):0;
+ }
  save();showOrder(id);toast(notice||'Encomenda corrigida')
 }
 
@@ -10958,7 +11003,7 @@ function savePackaging(){
  save();packName.value=packCapacity.value=packCost.value='';syncPackagingSelect();toast('Embalagem guardada')
 }
 function editPack(i){const p=db.packaging[i];packName.value=p.name;packCapacity.value=p.capacity;packCost.value=p.cost}
-function syncPackagingSelect(){const opts=(db.packaging||[]).map(p=>`<option>${p.name}</option>`).join('');const sale=document.getElementById('saleBox');if(sale){const cur=sale.value;sale.innerHTML=opts;if(db.packaging.some(p=>p.name===cur))sale.value=cur}const quote=document.getElementById('quoteBox');if(quote){const cur=quote.value;quote.innerHTML=opts;if(db.packaging.some(p=>p.name===cur))quote.value=cur}}
+function syncPackagingSelect(){const opts=(db.packaging||[]).map(p=>`<option>${p.name}</option>`).join('');const quote=document.getElementById('quoteBox');if(quote){const cur=quote.value;quote.innerHTML=opts;if(db.packaging.some(p=>p.name===cur))quote.value=cur}}
 function editOrderQty(id,ix,val){const o=db.orders.find(x=>x.id===id);if(!o)return;if(isOrderProduced(id))return toast('Produção já concluída: quantidade bloqueada');o.items[ix].qty=Math.max(1,+val||1);save();showOrder(id)}
 function removeOrderItem(id,ix){const o=db.orders.find(x=>x.id===id);if(!o)return;if(isOrderProduced(id))return toast('Produção já concluída: produtos bloqueados');if(o.items.length<=1)return toast('A encomenda não pode ficar sem produtos');o.items.splice(ix,1);save();showOrder(id)}
 
@@ -11959,7 +12004,7 @@ function quantityPricingToOrderV1751(){
  const notes=document.getElementById('saleNotes');if(notes)notes.value=`Criada a partir da Precificação em quantidade · ${snap.units} un · custo simulado ${euro(snap.costUnit)}/un · preço ${euro(snap.finalUnit)}/un · margem ${pct(snap.marginReal)}.`;
  go('sale');
  setTimeout(()=>document.getElementById('saleClient')?.focus(),40);
- toast('Simulação transferida para Nova encomenda. Confirma cliente, entrega, pagamento e embalagem antes de guardar.');
+ toast('Simulação transferida para Nova encomenda. Confirma o cliente, a entrega e o pagamento antes de guardar.');
 }
 function batchPriceRoundV1743(value){const step=artessenciaPricingRoundStepV1251();value=Math.max(0,Number(value)||0);return value?Math.ceil((value-1e-9)/step)*step:0}
 function refreshBatchPricingV1744(){
@@ -14198,7 +14243,9 @@ function saleFinalTotalV1813(){const sub=saleSubtotalV1813(),disc=salePromoConte
 function renderSalePromoV1813(){
  const d=document.getElementById('salePromoDiscountV1813'),t=document.getElementById('saleFinalTotalV1813'),st=document.getElementById('salePromoStatusV1813');
  const valid=salePromoContextValidV1813(),disc=valid?Math.max(0,Number(salePromoV1813?.discount_total)||0):0;
- if(d)d.textContent=euro(disc);if(t)t.textContent=euro(Math.max(0,saleSubtotalV1813()-disc));
+ const totalText=euro(Math.max(0,saleSubtotalV1813()-disc));
+ if(d)d.textContent=euro(disc);if(t)t.textContent=totalText;
+ saleUpdateCartShortcutV19166(totalText);
  if(st&&salePromoV1813&&valid)st.textContent='✓ '+(salePromoV1813.label||salePromoV1813.code)+' · desconto '+euro(disc);
 }
 function clearSalePromoV1813(clearInput=true,message='Opcional · válido em campanhas ArtEssencia.'){
@@ -17740,7 +17787,20 @@ async function relationalSyncCore(showToast=false){
    if(orderRows.length){
      const {error}=await cloudClient.from(REL_TABLES.orders).upsert(orderRows,{onConflict:'id'});
      if(error)throw error;
-     ordersToSync.forEach(o=>{relShadowRememberOrder(o);relClearOrderPending(o)})
+     // V1.9.170: a encomenda pode ser editada enquanto o upsert está em curso.
+     // Confirmar apenas a fotografia efetivamente enviada; caso contrário manter
+     // a fila pendente para o próximo envio, sem perder preço ou notas mais recentes.
+     orderRows.forEach(row=>{
+       relShadowRememberOrder(row.data);
+       const live=(db.orders||[]).find(o=>String(o?._rid||'')===String(row.id));
+       if(live&&relOrderFingerprint(live)===relOrderFingerprint(row.data)){
+         relClearOrderPending(live);
+       }else{
+         if(live)relMarkOrderPending(live);
+         cloudPushPending=true;
+         cloudLogMsg('Encomenda alterada durante envio: nova sincronização necessária');
+       }
+     })
    }
 
    const quoteRows=(db.quotes||[]).map(q=>{
@@ -18749,7 +18809,9 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 <link rel="stylesheet" href="digital-stats-decisions-v1966.css">
 <script src="digital-stats-decisions-v1966.js" defer></script>
 <link rel="stylesheet" href="digital-stats-compare-v1967.css"><script src="digital-stats-compare-v1967.js" defer></script>
+<link rel="stylesheet" href="order-price-edit-v19168.css">
 <link rel="stylesheet" href="order-add-products-ui.css">
 <script src="order-add-products-ui.js" defer></script>
+<script src="order-price-edit-v19168.js" defer></script>
 <link rel="stylesheet" href="module-search-shortcut.css">
 <script src="module-search-shortcut.js"></script>

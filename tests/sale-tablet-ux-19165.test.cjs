@@ -40,8 +40,9 @@ test('estilo da venda limitado ao módulo e com tamanho legível',()=>{
  assert.match(css,/@media \(min-width:701px\) and \(max-width:1199px\)/);
 });
 test('app, meta, cache e version.json alinhados',()=>{
- assert.equal(version.app.split('.').length,3);
- assert.ok(html.includes("const APP_VERSION='"+version.app+"'"));
- assert.ok(html.includes('name="artessencia-version" content="'+version.app+'"'));
- assert.ok(worker.includes('artessencia-backoffice-'+version.app));
+ const app=version.app;
+ assert.match(app,/^\d+\.\d+\.\d+$/);
+ assert.equal(html.match(/const APP_VERSION='([\d.]+)'/)?.[1],app);
+ assert.equal(html.match(/name="artessencia-version" content="([\d.]+)"/)?.[1],app);
+ assert.equal(worker.match(/const CACHE='artessencia-backoffice-([\d.]+)'/)?.[1],app);
 });

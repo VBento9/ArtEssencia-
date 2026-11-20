@@ -132,3 +132,31 @@
 
 /* The card footer already has horizontal margins; stretch inside them. */
 #products .product-card-body>.product-card-foot{width:auto}
+
+
+/* Revisão visual: cartões de Produtos pela largura útil do painel, não do ecrã. */
+@media screen {
+ .app #products .products-list-card{container-type:inline-size;min-width:0}
+ .app #products .products-list-card .products-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;min-width:0}
+ .app #products .products-list-card .product-card{min-width:0}
+ .app #products .products-list-card .product-card-top h3{font-size:17px;line-height:1.3;word-break:normal;overflow-wrap:break-word;hyphens:manual}
+ .app #products .products-list-card .product-card-metrics{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+ .app #products .products-list-card .product-card-metrics strong{font-size:14px;line-height:1.35;font-variant-numeric:tabular-nums;word-break:normal}
+ .app #products .products-list-card .product-card-actions{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .app #products .products-list-card .product-card-actions>.btn{min-height:44px;min-width:0;padding:9px 10px;font-size:12px}
+ @container (max-width: 1000px) {
+   .app #products .products-list-card .products-cards{grid-template-columns:minmax(0,1fr)}
+ }
+ @container (max-width: 560px) {
+   .app #products .products-list-card .product-card{grid-template-columns:76px minmax(0,1fr)}
+   .app #products .products-list-card .product-card-img{width:76px;max-height:140px;object-fit:contain}
+   .app #products .products-list-card .product-card-top{padding:10px}
+   .app #products .products-list-card .product-card-top h3{font-size:16px}
+   .app #products .products-list-card .product-card-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+ }
+ @container (max-width: 360px) {
+   .app #products .products-list-card .product-card{grid-template-columns:62px minmax(0,1fr)}
+   .app #products .products-list-card .product-card-img{width:62px}
+   .app #products .products-list-card .product-card-top h3{font-size:15px}
+ }
+}

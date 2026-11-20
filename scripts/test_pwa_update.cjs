@@ -22,3 +22,46 @@ const html=readFileSync('index.html','utf8'),sw=readFileSync('sw.js','utf8'),upd
  handlers.fetch({request:{method:'GET',url:'https://fixture.test/',mode:'navigate'},respondWith:p=>result=p});assert.match(await(await result).text(),/fixture/);
  assert(handlers.push&&handlers.notificationclick);console.log('PASS: scoped cache cleanup, offline navigation, no HTML fallback for image requests, notification handlers retained.');
 })().catch(e=>{console.error(e);process.exitCode=1});
+
+// Uma instalação limpa deve disponibilizar os recursos antes da primeira visita a Encomendas.
+async function testFreshOrderCache(){
+ const origin='https://atelier.test';
+ const cached=new Map();
+ const handlers={};
+ const cache={
+  async addAll(paths){
+   for(const path of paths){
+    const url=new URL(path,origin);
+    if(url.origin!==origin)throw new Error('CDN indisponível na fixture');
+    const filename=url.pathname==='/'?'index.html':url.pathname.slice(1);
+    cached.set(url.href,new Response(readFileSync(filename)));
+   }
+  },
+  async match(request){return cached.get(request.url)}
+ };
+ vm.runInNewContext(sw,{
+  URL,Response,self:{location:{origin},skipWaiting(){},addEventListener(type,handler){handlers[type]=handler}},
+  caches:{open:async()=>cache},fetch:async()=>{throw new Error('offline')}
+ });
+ let installation;
+ handlers.install({waitUntil(promise){installation=promise}});
+ await installation;
+ for(const file of ['manifest.webmanifest','order-add-products-ui.js','order-add-products-ui.css','task-manager-v2.js','task-manager-v2.css']){
+  const path='/'+file;
+  let response;
+  handlers.fetch({request:new Request(origin+path),respondWith(promise){response=promise}});
+  assert.equal(await (await response).text(),readFileSync(file,'utf8'),path+' disponível offline');
+ }
+ for(const path of ['/version.json?t=1','/api/status','/sw.js']){
+  const request=new Request(origin+path);
+  cached.set(request.url,new Response('stale'));
+  let response;
+  handlers.fetch({request,respondWith(promise){response=promise}});
+  await assert.rejects(response,/offline/,path+' requer rede mesmo quando existe uma cópia local');
+ }
+ for(const file of ['task-recurring-cloud-v1.js','task-planner-cloud-v1.js','task-planner-cloud-v1.css']){
+  assert.equal(cached.has(origin+'/'+file),false,file+' fora da instalação');
+ }
+ console.log('PASS: primeira abertura offline de Encomendas e recursos do Planeamento atual.');
+}
+testFreshOrderCache().catch(error=>{console.error(error);process.exitCode=1});

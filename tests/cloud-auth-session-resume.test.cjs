@@ -32,6 +32,8 @@ function setup({session,validUser,offline=false,failSync=false}={}){
   initCloudClient:()=>({auth}),
   attachCloudAuthListenerV19134:()=>events.push('attachAuthListener'),
   boundedCloudAuthV19134:async action=>action(),
+  refreshLockMethodsV19135:()=>events.push('refreshLock'),
+  finishAppUnlockV19135:()=>events.push('unlock'),
   authGateHideV1880:()=>events.push('hide'),
   authGateShowV1880:()=>events.push('show'),
   authGateMessageV1880:()=>{},
@@ -47,7 +49,7 @@ test('Recarregar com sessão válida restaura Auth e retoma a Cloud',async()=>{
  const {ctx,events}=setup();
  assert.equal(await ctx.authGateStartupV1880(),true);
  assert.equal(ctx.cloudUser.id,'valid-user');
- assert.deepEqual(events.filter(x=>['getSession','getUser','cloudStartup','hide','show'].includes(x)),['getSession','getUser','hide','cloudStartup']);
+ assert.deepEqual(events.filter(x=>['getSession','getUser','cloudStartup','hide','show','refreshLock','unlock'].includes(x)),['getSession','getUser','hide','refreshLock','cloudStartup']);
 });
 test('Sem sessão guardada mantém o ecrã de entrada',async()=>{
  const {ctx,events}=setup({session:null});
@@ -83,6 +85,21 @@ test('Palavra-passe correta mantém sessão mesmo se a sincronização falhar',a
  assert.equal(ctx.cloudUser.id,'valid-user');
  assert.ok(events.includes('hide'));
  assert.ok(!events.includes('show'));
+ assert.ok(events.includes('unlock'));
  assert.equal(inputs.authGateButtonV1880.disabled,false);
  assert.equal(inputs.authGatePasswordV1880.value,'');
+});
+
+test('Entrada por passkey desbloqueia a aplicação e inicia a sincronização uma vez',async()=>{
+ const {ctx,events}=setup();
+ ctx.PASSKEY_PREVIEW_V20261008=true;
+ ctx.location={protocol:'https:',hostname:'art-essencia.vercel.app'};
+ const auth=ctx.initCloudClient().auth;
+ auth.signInWithPasskey=async()=>{
+  events.push('passkey');
+  return {data:{session:{access_token:'fixture'},user:{id:'valid-user'}},error:null};
+ };
+ assert.equal(await ctx.authGatePasskeyLoginV20261008(),true);
+ assert.equal(ctx.cloudUser.id,'valid-user');
+ assert.deepEqual(events,['passkey','attachAuthListener','hide','unlock','cloudStartup']);
 });
