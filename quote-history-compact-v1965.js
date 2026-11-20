@@ -13,7 +13,7 @@
     if(createCard)screen.insertBefore(section,createCard);
     const toolbar=document.createElement('div');
     toolbar.className='qh-toolbar-1965';
-    toolbar.innerHTML='<label class="qh-search-1965">Pesquisar<input type="search" placeholder="Cliente, referência ou evento" aria-label="Pesquisar orçamentos"></label>'+
+    toolbar.innerHTML='<label class="qh-search-1965">Pesquisar<input type="search" placeholder="Nome, referência, contacto ou data" aria-label="Pesquisar orçamentos"></label>'+
       '<label>Estado<select aria-label="Filtrar estado"><option value="">Todos</option><option value="Rascunho">Rascunhos</option><option value="Enviado">Enviados</option><option value="Aceite">Aceites</option><option value="Recusado">Recusados</option><option value="Expirado">Expirados</option><option value="Convertido">Convertidos</option></select></label>'+
       '<label>Por página<select aria-label="Orçamentos por página"><option value="8">8</option><option value="16">16</option><option value="32">32</option></select></label>';
     const counter=document.createElement('p');counter.className='qh-counter-1965';counter.setAttribute('role','status');
@@ -45,24 +45,31 @@
       more.append(summary,secondary);
       actions.replaceChildren(primary,more);
     }
+    function normalise(value) {
+      return value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-PT');
+    }
     function refresh() {
       const rows=[...tbody.rows];
       rows.forEach(enhance);
-      const query=search.value.trim().toLocaleLowerCase('pt-PT'),filter=status.value;
+      const query=normalise(search.value.trim()),filter=status.value;
+      const phone=/^[+\d\s().-]+$/.test(query)?query.replace(/\D/g,''):'';
       const results=rows.filter(row=>{
-        if(row.cells.length!==8)return !query&&!filter;
-        const text=[0,1,2].map(i=>row.cells[i]?.textContent||'').join(' ').toLocaleLowerCase('pt-PT');
+        if(row.cells.length!==8)return false;
+        const fields=[0,1,2].map(i=>row.cells[i].textContent);
+        const contact=row.dataset.contact||'';
+        const matches=fields.concat(contact,row.dataset.email||'').some(value=>normalise(value).includes(query))
+          || (phone && contact.replace(/\D/g,'').includes(phone));
         const cell=row.cells[6];
         const actual=cell?.querySelector('select')?.value||cell?.textContent.trim()||'';
-        return (!query||text.includes(query))&&(!filter||filter===actual);
+        return matches&&(!filter||filter===actual);
       });
       const per=Number(size.value)||8,maximum=Math.max(1,Math.ceil(results.length/per));
       page=Math.max(1,Math.min(maximum,page));
       const offset=(page-1)*per;
       const current=new Set(results.slice(offset,offset+per));
-      rows.forEach(row=>{row.hidden=!current.has(row)});
+      rows.forEach(row=>{row.hidden=row.cells.length===8?!current.has(row):Boolean(query||filter)});
       const start=results.length?offset+1:0,end=results.length?Math.min(results.length,offset+per):0;
-      counter.textContent=results.length?'A mostrar '+start+'–'+end+' de '+results.length+' orçamento(s)':'Sem orçamentos para estes filtros.';
+      counter.textContent=results.length?'A mostrar '+start+'–'+end+' de '+results.length+(results.length===1?' orçamento':' orçamentos'):(query||filter?'Sem orçamentos para estes filtros.':'');
       pageText.textContent='Página '+page+' de '+maximum;
       previous.disabled=page<=1;next.disabled=page>=maximum;
       nav.hidden=maximum===1;

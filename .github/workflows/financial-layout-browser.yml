@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'quote-history-compact-v1965.css'
+      - 'quote-history-compact-v1965.js'
+      - 'scripts/test_quote_history_search.cjs'
       - 'funds-ledger-v1.css'
       - 'backoffice-visual.css'
       - 'tests/financial-responsive-layout.test.cjs'
@@ -32,3 +34,5 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Testar responsividade financeira sem dados reais
         run: node scripts/test_financial_visual_browser.cjs
+      - name: Testar pesquisa e paginação de orçamentos
+        run: node scripts/test_quote_history_search.cjs
