@@ -90,6 +90,40 @@ const {chromium} = require('playwright');
       await page.evaluate(() => { db.quotes = []; renderQuotes(); });
       await page.waitForFunction(() => document.querySelector('#quotes .qh-counter-1965').textContent === '');
       assert.equal(await visible.innerText(), 'Sem orçamentos');
+      if (width === 800) {
+        page.on('dialog', dialog => dialog.accept());
+        const converted = await page.evaluate(async () => {
+          const quote = {
+            id:'Q-CONVERTER', status:'Aceite', client:'Cliente de teste', eventDate:'2027-02-01',
+            items:[{type:'free',name:'Vela',qty:2,price:12,cost:3}], discount:4,
+            depositPaid:10, paymentTerms:'50_50', depositPct:50, box:'', boxes:0,
+            paymentHistory:[{id:'P-SINAL', amount:10, method:'MB Way'}]
+          };
+          db.quotes=[quote]; db.orders=[]; db.cash=[];
+          addQuotePaymentCash(quote,quote.paymentHistory[0]);
+          let release, calls=0;
+          const gate=new Promise(resolve => { release=resolve; });
+          nextManualOrderId=async () => { const number=++calls; await gate; return 'TEST-'+number; };
+          const first=convertQuoteToOrder(quote.id);
+          const second=convertQuoteToOrder(quote.id);
+          release();
+          await Promise.all([first,second]);
+          await convertQuoteToOrder(quote.id);
+          const order=db.orders[0];
+          return [calls,db.orders.length,quote.orderId,order.sourceQuoteId,order.boxes,
+            calcOrder(order).total,order.paid,db.cash.length,db.cash[0].value];
+        });
+        assert.deepEqual(converted,[1,1,'TEST-1','Q-CONVERTER',0,20,10,1,10]);
+        const skipped = await page.evaluate(async () => {
+          const previous=db.quotes[0];
+          const q={...previous,id:'Q-ARTIGO',orderId:null,status:'Aceite',
+            items:[...previous.items,{code:'REMOVIDO',name:'Artigo antigo',qty:1,price:9}],depositPaid:20};
+          db.quotes.push(q);
+          await convertQuoteToOrder(q.id);
+          return [db.orders.length,db.cash.length,q.orderId,q.status];
+        });
+        assert.deepEqual(skipped,[1,1,null,'Aceite']);
+      }
       await page.close();
     }
   } finally { await browser.close(); }
