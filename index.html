@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.180">
+<meta name="artessencia-version" content="1.9.181">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -6448,7 +6448,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.180';
+const APP_VERSION='1.9.181';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -15455,8 +15455,9 @@ async function previewQuotePDF(id){const q=(db.quotes||[]).find(x=>x.id===id);if
 async function quotePDF(id){const q=(db.quotes||[]).find(x=>x.id===id);if(!q)return;try{const blob=await buildQuotePdfBlob(q),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=quoteFileName(q);document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2500);toast('PDF guardado')}catch(e){toast('Não foi possível gerar o PDF')}}
 async function shareQuotePDF(id){const q=(db.quotes||[]).find(x=>x.id===id);if(!q)return;try{const blob=await buildQuotePdfBlob(q),file=new File([blob],quoteFileName(q),{type:'application/pdf'}),text=`Olá ${q.client||''}! Segue em anexo o orçamento ${q.id} da ${db.settings.businessName||'ArtEssencia'}.`;if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({title:'Orçamento '+q.id,text,files:[file]});if(q.status==='Rascunho'){const prev=q.status;q.status='Enviado';q.statusHistory=Array.isArray(q.statusHistory)?q.statusHistory:[];q.statusHistory.push({date:new Date().toISOString(),status:'Enviado',from:prev,to:'Enviado',source:'share'});save()}toast('Orçamento partilhado')}else{await quotePDF(id);toast('O dispositivo não permite anexar diretamente. O PDF foi guardado para anexares no WhatsApp ou email.')}}catch(e){if(e.name!=='AbortError')toast('Não foi possível partilhar o PDF')}}
 function quotePdfLines(q){const c=quoteCalc(q),lines=['ArtEssencia ATELIÊ ARTESANAL - ORCAMENTO',q.id,'Emitido em: '+q.created,'Cliente: '+(q.client||'-'),'Contacto cliente: '+(q.contact||'-'),q.eventDate?'Data do evento: '+q.eventDate:'',q.validUntil?'Valido ate: '+q.validUntil:'','','ITENS'];(q.items||[]).forEach(i=>lines.push(`${i.qty} x ${i.name} | ${euro(i.price)}/un | ${euro(i.qty*i.price)}`));lines.push('','Subtotal: '+euro(c.sub));if(c.disc)lines.push('Desconto'+(q.discountType==='percent'?' ('+Number(q.discountValue||0).toLocaleString('pt-PT')+'%)':'')+': '+euro(c.disc));if(q.box)lines.push('Embalagem: '+q.box+' x '+Math.max(1,Number(q.boxes)||1));lines.push('TOTAL: '+euro(c.total),'','Pagamento: '+quotePaymentLabel(q),'Para confirmar: '+euro(quoteDepositRequired(q)));const due=quoteBalanceDueDate(q);if(due)lines.push('Saldo ate: '+due);if(db.settings.businessPhone)lines.push('Contacto / MB Way: '+db.settings.businessPhone);if(db.settings.iban)lines.push('IBAN: '+db.settings.iban);if(db.settings.paymentNote)lines.push(db.settings.paymentNote);if(q.notes)lines.push('','Observacoes: '+q.notes);lines.push('','Estado: '+(q.orderId?'Convertido':q.status),'Este documento e um orcamento e nao substitui fatura.');return lines.filter(Boolean)}
+const pendingQuoteConversions=new Set();
 async function convertQuoteToOrder(id){
- const q=(db.quotes||[]).find(x=>x.id===id);if(!q||q.orderId)return;
+ const q=(db.quotes||[]).find(x=>x.id===id);if(!q||q.orderId||pendingQuoteConversions.has(id))return;
  if(q.status!=='Aceite')return toast('Marque primeiro o orçamento como Aceite');
  if(!q.eventDate)return toast('Defina a data do evento/entrega no orçamento antes de converter em encomenda');
  const required=quoteDepositRequired(q),paid=Math.max(0,Number(q.depositPaid)||0),target=quoteCalc(q).total;
@@ -15469,12 +15470,18 @@ Total: ${euro(target)}
 Recebido: ${euro(paid)}
 
 O orçamento ficará ligado à nova encomenda e deixa de poder ser alterado.`))return;
- const oid=await nextManualOrderId();
+ const confirmedQuote=JSON.stringify(q);
+ pendingQuoteConversions.add(id);
+ let oid;
+ try{oid=await nextManualOrderId()}finally{pendingQuoteConversions.delete(id)}
+ if(!(db.quotes||[]).includes(q)||JSON.stringify(q)!==confirmedQuote)return toast('O orçamento mudou. Reveja os dados antes de converter.');
+ const missing=(q.items||[]).find(item=>item.type!=='free'&&!db.products.some(product=>product.code===item.code));
+ if(missing)return toast('Reveja o artigo no orçamento antes de converter: '+(missing.name||missing.code));
  const items=[];(q.items||[]).forEach((i,n)=>{if(i.type==='free'){items.push({code:'ORC-EXTRA-'+String(n+1).padStart(2,'0'),name:i.name,qty:Number(i.qty)||1,price:Number(i.price)||0,cost:Number(i.cost)||0,type:'quote_extra'})}else{const p=db.products.find(x=>x.code===i.code);if(p){const baseSnap=Number.isFinite(Number(i.cost))?{cost:Number(i.cost)||0,costSnapshotAt:i.costSnapshotAt||q.created||new Date().toISOString(),costSnapshotSource:i.costSnapshotSource||'quote',...(i.costBreakdownSnapshotV1769?{costBreakdownSnapshotV1769:{...i.costBreakdownSnapshotV1769}}:{})}:productCostSnapshotV134(p,'quote_conversion_fallback');const snap=ensureLineDetailedCostSnapshotV1769({code:i.code,name:i.name,...baseSnap},i.costBreakdownSnapshotV1769?'quote_snapshot_v1783':'quote_conversion_legacy_v1783');items.push({code:i.code,name:i.name,qty:Number(i.qty)||1,price:Number(i.price)||0,...snap})}}});
  if(!items.length)return toast('O orçamento não tem linhas convertíveis');
  const qdisc=quoteCalc(q).disc;if(qdisc>0)items.push({code:'ORC-DESCONTO',name:'Desconto do orçamento',qty:1,price:-Math.abs(qdisc),cost:0,type:'quote_discount'});
  const current=items.reduce((a,i)=>a+i.qty*i.price,0),roundAdjust=Math.round((target-current)*100)/100;if(Math.abs(roundAdjust)>0.009)items.push({code:'ORC-AJUSTE',name:'Ajuste do orçamento',qty:1,price:roundAdjust,cost:0,type:'quote_adjustment'});
- const newOrder={id:oid,clientId:q.clientId,client:q.client,contact:q.contact,delivery:q.eventDate||'',payment:q.paymentMethod||'MB Way',box:q.box||'',boxCostSnapshot:q.boxCostSnapshot!=null?Number(q.boxCostSnapshot)||0:((db.packaging||[]).find(p=>p.name===(q.box||''))?.cost||0),boxes:Math.max(1,Number(q.boxes)||1),paid:Math.min(paid,target),status:'Confirmada',created:todayISO(),items,sourceQuoteId:q.id,notes:q.notes||'',quotePaymentTerms:q.paymentTerms,quoteBalanceDue:quoteBalanceDueDate(q),paymentHistory:(q.paymentHistory||[]).map(x=>({...x,source:'quote'})),statusHistory:[{date:new Date().toISOString(),from:'—',to:'Confirmada',status:'Confirmada',source:'quote_conversion',quoteId:q.id}]};
+ const newOrder={id:oid,clientId:q.clientId,client:q.client,contact:q.contact,delivery:q.eventDate||'',payment:q.paymentMethod||'MB Way',box:q.box||'',boxCostSnapshot:q.boxCostSnapshot!=null?Number(q.boxCostSnapshot)||0:((db.packaging||[]).find(p=>p.name===(q.box||''))?.cost||0),boxes:q.box?Math.max(1,Number(q.boxes)||1):0,paid:Math.min(paid,target),status:'Confirmada',created:todayISO(),items,sourceQuoteId:q.id,notes:q.notes||'',quotePaymentTerms:q.paymentTerms,quoteBalanceDue:quoteBalanceDueDate(q),paymentHistory:(q.paymentHistory||[]).map(x=>({...x,source:'quote'})),statusHistory:[{date:new Date().toISOString(),from:'—',to:'Confirmada',status:'Confirmada',source:'quote_conversion',quoteId:q.id}]};
  captureOrderTechnicalSnapshotV1757(newOrder,false);db.orders.push(newOrder);ensureOrderPaymentCashLedger(db);q.orderId=oid;q.convertedAt=new Date().toISOString();q.status='Convertido';q.statusHistory=Array.isArray(q.statusHistory)?q.statusHistory:[];q.statusHistory.push({date:q.convertedAt,status:'Convertido',from:'Aceite',to:'Convertido',source:'conversion',orderId:oid});save();queueOrderBusinessSyncV1757(newOrder,'conversão de orçamento');toast('Orçamento convertido em '+oid);go('orders')
 }
 
