@@ -28,8 +28,24 @@ const {chromium} = require('playwright');
       const search = page.getByRole('searchbox', {name: 'Pesquisar orçamentos'});
       const counter = page.locator('#quotes .qh-counter-1965');
       const visible = page.locator('#quotesBody tr:visible');
+      await search.fill('Q-');
       await page.locator('#quotes .qh-nav-1965').getByText('Seguinte').click();
       assert.equal(await visible.count(), 2);
+      const original = await page.evaluate(() => JSON.stringify(db.quotes));
+      await visible.last().getByRole('button', {name: 'Editar', exact: true}).click();
+      const heading = page.getByRole('heading', {name: 'Editar orçamento Q-0', exact: true});
+      await heading.waitFor();
+      assert.ok(await heading.evaluate(el => el === document.activeElement));
+      await page.waitForFunction(() => {
+        const top = document.getElementById('quoteEditorTitle').getBoundingClientRect().top;
+        return top >= 0 && top < innerHeight / 2;
+      });
+      assert.equal(await page.locator('#quoteClient').inputValue(), 'Inês Simões');
+      assert.equal(await search.inputValue(), 'Q-');
+      assert.equal(await visible.count(), 2);
+      await page.evaluate(() => clearQuoteForm());
+      assert.equal(await page.locator('#quoteEditorTitle').textContent(), 'Criar orçamento');
+      assert.equal(await page.evaluate(() => JSON.stringify(db.quotes)), original);
       for (const term of ['ines simoes', '912345678', '912-345-678', 'INES@EXAMPLE.TEST', 'Q-0']) {
         await search.fill(term);
         assert.equal(await visible.count(), 1);
