@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.175">
+<meta name="artessencia-version" content="1.9.176">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -3963,7 +3963,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 
   <section id="production" class="screen">
     <div id="orderProductionContextV1915" class="card" hidden style="margin-bottom:12px">
-      <span id="orderProductionMessageV1915" style="flex:1"></span>
+      <span id="orderProductionMessageV1915" role="status" style="flex:1"></span>
+      <button id="orderProductionDeliveryDay" type="button" class="btn" hidden onclick="showOrderDeliveryDay()">Ver dia da entrega</button>
       <button type="button" class="btn" onclick="returnFromOrderProductionV1915()">← Voltar às encomendas</button>
     </div>
     <div class="card prod-head">
@@ -6444,7 +6445,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.175';
+const APP_VERSION='1.9.176';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -8743,20 +8744,35 @@ function returnFromOrderProductionV1915(){
 function viewOrderProductionV1915(id){
  const order=(db.orders||[]).find(o=>o.id===id);
  if(!order)return;
- const date=String(order.delivery||'').slice(0,10);
  productionListOriginV1915=document.getElementById('orderDialog')?.open&&orderListReturnV1928
   ?orderListReturnV1928:{id:String(id),scroll:window.scrollY};
  go('production');
  document.querySelector('#aeProductionTabs button')?.click();
- const el=document.getElementById('prodDate');
- const validDate=/^\d{4}-\d{2}-\d{2}$/.test(date)&&!Number.isNaN(Date.parse(date))&&new Date(date+'T12:00:00').toISOString().slice(0,10)===date;
- if(el&&validDate){el.value=date;renderProduction();}
+ document.getElementById('orderProductionContextV1915').hidden=false;
+ showOrderDeliveryDay();
+}
+function productionOriginDeliveryDay(){
+ const order=(db.orders||[]).find(o=>String(o.id)===productionListOriginV1915?.id);
+ const day=String(order?.delivery||'').slice(0,10);
+ const parsed=new Date(day+'T12:00:00Z');
+ return /^\d{4}-\d{2}-\d{2}$/.test(day)&&Number.isFinite(parsed.getTime())&&parsed.toISOString().slice(0,10)===day?day:'';
+}
+function showOrderDeliveryDay(){
+ const day=productionOriginDeliveryDay();
+ if(day)prodDate.value=day;
+ renderProduction();
+}
+function renderOrderAgendaContext(day){
  const context=document.getElementById('orderProductionContextV1915');
+ if(!context||context.hidden||!productionListOriginV1915)return;
+ const delivery=productionOriginDeliveryDay(),id=productionListOriginV1915.id;
  const message=document.getElementById('orderProductionMessageV1915');
- if(context&&message){
-  message.textContent=validDate?'Consulta da agenda de '+date+' a partir da encomenda '+String(order.id||'')+'. A agenda pode incluir outras encomendas da mesma data.':'Encomenda '+String(order.id||'')+' sem data de entrega válida. Consulta a agenda sem filtro específico desta encomenda.';
-  context.hidden=false;
- }
+ const formatDay=iso=>iso.split('-').reverse().join('/');
+ const text='Agenda de '+formatDay(day)+' · Encomenda '+id+'. '+(delivery===day
+  ?'A agenda pode incluir outras encomendas da mesma data.'
+  :delivery?'Entrega prevista para '+formatDay(delivery)+'.':'Sem data de entrega válida para esta encomenda.');
+ if(message.textContent!==text)message.textContent=text;
+ document.getElementById('orderProductionDeliveryDay').hidden=!delivery||delivery===day;
 }
 function clearOrderFiltersV1915(){
  const sort=document.getElementById('ordersSortV1916');if(sort)sort.value='recent';
@@ -9373,6 +9389,7 @@ function productionOrderInstructionsV136(o){
 function renderProduction(){
  setTimeout(renderProductionFlowV147,0);
  const d=prodDate.value||todayISO(),done=orderAlreadyProducedIds();
+ renderOrderAgendaContext(d);
  const ords=db.orders.filter(o=>o.delivery===d&&['Confirmada','Em produção','Confirmado','Produção'].includes(o.status)&&!done.has(o.id));
  const grouped=new Map();
  ords.forEach(o=>(o.items||[]).forEach(line=>{if(productionLineIgnoredV148(line))return;const p=productionProductForLineV130(line),key=p?.code||line.code||line.name||'Produto',cur=grouped.get(key)||{p,name:p?.name||line.name||line.code||'Produto',qty:0};cur.qty+=(Number(line.qty)||0);grouped.set(key,cur)}));
