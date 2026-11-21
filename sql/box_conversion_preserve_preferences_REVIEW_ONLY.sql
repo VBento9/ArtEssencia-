@@ -117,7 +117,7 @@ begin
   'boxes',1,'boxCostSnapshot',cost,'subtotal',amount,'total',amount,
   'discountTotal',0,
   'boxCustomerPreferences',coalesce(r.preferences,'{}'::jsonb),
-  'notes',concat_ws(E'\\n',
+  'notes',concat_ws(chr(10),
     nullif(btrim(coalesce(r.customer_note,'')),''),
     nullif('Cores: '||coalesce(r.preferences->>'colors',''),'Cores: '),
     nullif('Fragrâncias: '||coalesce(r.preferences->>'scents',''),'Fragrâncias: '),
