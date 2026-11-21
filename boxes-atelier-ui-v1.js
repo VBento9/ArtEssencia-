@@ -601,8 +601,18 @@ async function convertAcceptedBoxRequestV1(record,row){
  if(error)throw error;
  if(data?.ok!==true||!data.public_order_id)throw Error('Não houve confirmação da criação da encomenda na Cloud.');
  await loadBoxRequestsV2();
- toast(data.already_converted?'Já convertida: '+data.public_order_id:
-  'Encomenda '+data.public_order_id+' criada. Confirma os dados no módulo Encomendas antes de iniciar a produção.');
+ // O servidor é a fonte de verdade. Só receber dados relacionais se não
+ // houver sincronizações/alterações locais pendentes; nunca criar cópia local.
+ let visibleLocally=(db.orders||[]).some(o=>String(o?._rid||'')===String(data.order_id||''));
+ if(!visibleLocally&&typeof relationalHydrateCore==='function'&&
+    typeof cloudBusy!=='undefined'&&!cloudBusy&&
+    typeof cloudHydrating!=='undefined'&&!cloudHydrating&&
+    typeof cloudPushRunning!=='undefined'&&!cloudPushRunning){
+  const received=await relationalHydrateCore(false,false);
+  visibleLocally=received===true&&(db.orders||[]).some(o=>String(o?._rid||'')===String(data.order_id||''));
+ }
+ if(visibleLocally)toast('Encomenda '+data.public_order_id+' disponível no módulo Vendas/Encomendas. Confirma antes de produzir.');
+ else toast('Encomenda '+data.public_order_id+' confirmada na Cloud. A receção neste dispositivo ficou pendente; verifica a sincronização antes de produzir.');
 }
 async function loadBoxRequestsV2(){
  const root=$('aeBoxRequestList');if(!root)return;
