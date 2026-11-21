@@ -400,6 +400,13 @@ function install(){
   toast('Ficha privada preparada. Define a receita, o tempo de trabalho e guarda a Box.');
   return;
  }
+ if(action==='convert'){
+  button.disabled=true;
+  try{await convertAcceptedBoxRequestV1(record,row)}
+  catch(error){console.error('Conversão de Box',error);toast(error.message||'Não foi possível converter a Box')}
+  finally{button.disabled=false}
+  return;
+ }
  if(action==='reply'||action==='copylink'){
   if(!['quoted','sent'].includes(record.status)||!record.response_token||!record.quote_valid_until||new Date(record.quote_valid_until)<=new Date()){toast('Prepara um orçamento válido antes de enviar.');return;}
   const url='https://catalogo.artessenciatlier.pt/proposta-box.html#proposta='+encodeURIComponent(record.response_token);
@@ -539,6 +546,64 @@ function install(){
 }
 
 let requestsCache=[];
+function aeTodayLisbonBoxV1(){
+ const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Lisbon',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+ const value=key=>parts.find(p=>p.type===key)?.value||'';
+ return [value('year'),value('month'),value('day')].join('-');
+}
+function aeBoxMatchesAcceptedRequestV1(box,request){
+ if(!box||String(box.originRequestId||'')!==String(request.request_id))return false;
+ if(box.active!==false||box.technicalV2?.mode!=='finished')return false;
+ const revision=box.technicalRevisionV4;
+ if(!Number.isInteger(Number(revision?.version))||Number(revision.version)<1)return false;
+ if(!Number.isFinite(Number(revision.snapshot?.total))||Number(revision.snapshot.total)<=0)return false;
+ const price=Number(request.quoted_total);
+ if(!Number.isFinite(price)||price<=0||!Number.isFinite(Number(box.price))||Math.round(Number(box.price)*100)!==Math.round(price*100))return false;
+ const expected=Array.isArray(request.items)?request.items:[];
+ const actual=Array.isArray(box.items)?box.items:[];
+ if(expected.length<1||expected.length>12||expected.length!==actual.length)return false;
+ const encode=rows=>rows.map(x=>String(x?.code||'')+':'+String(x?.qty||'')).sort();
+ const a=encode(expected),b=encode(actual);
+ return a.every((value,i)=>value===b[i])&&new Set(a.map(x=>x.split(':')[0])).size===a.length;
+}
+async function convertAcceptedBoxRequestV1(record,row){
+ if(record.status!=='accepted'||!record.responded_at)throw Error('A proposta ainda não foi aceite pelo cliente.');
+ const boxId=row?.querySelector('[data-box-private-id]')?.value||'';
+ const due=row?.querySelector('[data-box-delivery-date]')?.value||'';
+ const box=(db.themedBoxes||[]).find(x=>String(x.id)===boxId);
+ if(!aeBoxMatchesAcceptedRequestV1(box,record))throw Error('Guarda uma ficha privada compatível com o orçamento aceite e sincroniza-a com a Cloud.');
+ const today=aeTodayLisbonBoxV1();
+ const maxDate=new Date(Date.UTC(+today.slice(0,4),+today.slice(5,7)-1,+today.slice(8,10)+365)).toISOString().slice(0,10);
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(due)||due<today||due>maxDate)throw Error('Escolhe uma data de entrega válida, entre hoje e os próximos 365 dias.');
+ const {c}=await publicClient();
+ const {data:linked,error:linkedError}=await c.from('artessencia_box_order_links_v1')
+  .select('public_order_id').eq('request_id',record.request_id).maybeSingle();
+ if(linkedError)throw linkedError;
+ if(linked){await loadBoxRequestsV2();toast('Esta proposta já foi convertida na encomenda '+linked.public_order_id);return;}
+ const {data:fresh,error:freshError}=await c.from('artessencia_box_requests_v1')
+  .select('request_id,status,responded_at,quote_version,quoted_total,items').eq('request_id',record.request_id).single();
+ if(freshError)throw freshError;
+ if(fresh.status!=='accepted'||!fresh.responded_at||fresh.quote_version!==record.quote_version||
+    Number(fresh.quoted_total)!==Number(record.quoted_total)||JSON.stringify(fresh.items)!==JSON.stringify(record.items)){
+  await loadBoxRequestsV2();
+  throw Error('A proposta foi alterada noutro dispositivo. Confirma os dados atualizados antes de converter.');
+ }
+ const question='Criar uma encomenda a partir da proposta aceite?\n\nCliente: '+record.customer_name+
+  '\nBox: '+box.name+'\nPreço aprovado: '+money(record.quoted_total)+
+  '\nEntrega: '+due+'\n\nA encomenda ficará por confirmar. Não será efetuada cobrança nem reserva de stock.';
+ if(!confirm(question))return;
+ const {data,error}=await c.rpc('artessencia_owner_convert_box_v1',{
+  p_request_id:record.request_id,
+  p_box_id:String(box.id),
+  p_expected_box_version:Number(box.technicalRevisionV4.version),
+  p_delivery_date:due
+ });
+ if(error)throw error;
+ if(data?.ok!==true||!data.public_order_id)throw Error('Não houve confirmação da criação da encomenda na Cloud.');
+ await loadBoxRequestsV2();
+ toast(data.already_converted?'Já convertida: '+data.public_order_id:
+  'Encomenda '+data.public_order_id+' criada. Confirma os dados no módulo Encomendas antes de iniciar a produção.');
+}
 async function loadBoxRequestsV2(){
  const root=$('aeBoxRequestList');if(!root)return;
  try{
@@ -553,6 +618,12 @@ async function loadBoxRequestsV2(){
   ]);
   if(reqs.error)throw reqs.error;
   requestsCache=Array.isArray(reqs.data)?reqs.data:[];
+  const requestIds=requestsCache.map(x=>x.request_id);
+  const linkResult=requestIds.length
+   ?await c.from('artessencia_box_order_links_v1').select('request_id,public_order_id,order_id').in('request_id',requestIds)
+   :{data:[],error:null};
+  if(linkResult.error)throw linkResult.error; // Falhar fechado: nunca converter sem consultar ligações existentes.
+  const linkedOrders=new Map((linkResult.data||[]).map(x=>[String(x.request_id),x]));
   const history=hist.error?[]:(hist.data||[]);
   const labels={new:'Novo',reviewing:'Em análise',quoted:'Orçamento preparado',sent:'Proposta enviada',accepted:'Aceite pelo cliente',declined:'Recusado',revision_requested:'Alterações solicitadas'};
   root.innerHTML=requestsCache.length?requestsCache.map(r=>{
@@ -562,6 +633,8 @@ async function loadBoxRequestsV2(){
     .map(([k,v])=>'<small>'+safe(k)+': '+safe(typeof v==='object'?JSON.stringify(v):v)+'</small>').join('');
    const canQuote=['new','reviewing','quoted','sent','revision_requested'].includes(r.status);
    const canSend=['quoted','sent'].includes(r.status)&&r.response_token&&r.quote_valid_until&&new Date(r.quote_valid_until)>new Date();
+   const linked=linkedOrders.get(String(r.request_id));
+   const privateBoxes=(db.themedBoxes||[]).filter(box=>aeBoxMatchesAcceptedRequestV1(box,r));
    const previous=history.filter(h=>h.request_id===r.request_id).slice(0,8)
     .map(h=>'v'+safe(h.quote_version)+' · '+safe(h.event_type)+' · '+safe(new Date(h.created_at).toLocaleDateString('pt-PT'))).join(' | ');
    const metadata='<b>'+safe(r.customer_name)+'</b><small>'+safe(r.phone)+' · '+safe(r.email||'Sem email')+' · '+safe(r.source)+'</small>'+
@@ -584,7 +657,15 @@ async function loadBoxRequestsV2(){
      (r.status==='quoted'?'<button class="btn" data-box-request-action="marksent" data-id="'+safe(r.request_id)+'">Marcar enviado</button>':'')+
     '</div>'+
     (previous?'<small class="muted">Histórico: '+previous+'</small>':'')+
-    (r.status==='accepted'?'<p class="ae-box-estimate">Aceite: a conversão em encomenda depende da confirmação interna; o stock permanece inalterado.</p>':'')+
+    (linked?'<p class="ae-box-estimate">Encomenda criada: <strong>'+safe(linked.public_order_id)+'</strong> · Confirma os dados no módulo Encomendas. O stock não foi reservado automaticamente.</p>':'')+
+    (r.status==='accepted'&&!linked?'<div class="ae-box-composition" data-box-conversion><strong>Converter proposta aceite em encomenda</strong>'+
+      '<p class="muted">É necessária uma ficha técnica privada guardada e sincronizada, com composição e preço iguais à proposta aceite. A conversão exige confirmação interna.</p>'+
+      (privateBoxes.length?'<div class="ae-custom-grid"><label>Ficha técnica privada<select data-box-private-id aria-label="Ficha técnica da Box">'+
+         privateBoxes.map(box=>'<option value="'+safe(box.id)+'">'+safe(box.name)+' · revisão '+safe(box.technicalRevisionV4.version)+'</option>').join('')+
+         '</select></label><label>Data de entrega<input type="date" data-box-delivery-date aria-label="Data de entrega" min="'+aeTodayLisbonBoxV1()+'" required></label></div>'+
+         '<div class="ae-custom-actions"><button type="button" class="btn primary" data-box-request-action="convert" data-id="'+safe(r.request_id)+'">Converter em encomenda</button></div>':
+         '<p class="ae-box-estimate">Ainda não existe uma ficha privada compatível. Usa «Criar ficha técnica da Box», guarda a revisão técnica e sincroniza-a antes de converter.</p>')+
+      '</div>':'')+
     '</article>';
   }).join(''):'<div class="soft-note">Sem pedidos de Boxes. Quando um cliente enviar uma proposta, aparecerá aqui.</div>';
  }catch(error){
