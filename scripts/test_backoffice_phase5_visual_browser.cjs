@@ -26,6 +26,12 @@ const cols=(node,selector)=>node.locator(selector).evaluate(e=>getComputedStyle(
   assert.equal(v.filters,v.f<=395?1:v.f<=1000?2:4,JSON.stringify({width,v}));
   assert.equal(v.editions,v.sp<=1050?1:2,JSON.stringify({width,v}));
   assert.equal(v.productPicker,v.sp<=650?1:2,JSON.stringify({width,v}));
+  const costNumber=await page.locator('.costs-kpi strong').evaluate(el=>{
+    const style=getComputedStyle(el);
+    return [style.fontSize,style.lineHeight,style.fontVariantNumeric,style.overflowWrap];
+  });
+  assert.deepEqual(costNumber,['22px','28.6px','tabular-nums','anywhere']);
+  assert.equal(await page.locator('.cost-list-tools-v1927 input').evaluate(el=>getComputedStyle(el).fontSize),'14px');
   const costButton=page.locator('.cost-tabs-v1927 button').first();
   assert.equal(await costButton.evaluate(el=>getComputedStyle(el).minHeight),'44px');
   assert.equal(await costButton.evaluate(el=>getComputedStyle(el).fontSize),'12px');
