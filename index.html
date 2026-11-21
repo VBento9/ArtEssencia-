@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.181">
+<meta name="artessencia-version" content="1.9.182">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -6448,7 +6448,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.181';
+const APP_VERSION='1.9.182';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -15470,10 +15470,13 @@ Total: ${euro(target)}
 Recebido: ${euro(paid)}
 
 O orçamento ficará ligado à nova encomenda e deixa de poder ser alterado.`))return;
+ if(!navigator.onLine)return toast('Ligue-se à internet para confirmar a conversão nos seus dispositivos.');
  const confirmedQuote=JSON.stringify(q);
  pendingQuoteConversions.add(id);
- let oid;
- try{oid=await nextManualOrderId()}finally{pendingQuoteConversions.delete(id)}
+ try{
+ const user=cloudUser||await ensureCloudSession();
+ if(!user||!cloudClient)return toast('Entre na Cloud para converter o orçamento.');
+ const oid=await nextManualOrderId();
  if(!(db.quotes||[]).includes(q)||JSON.stringify(q)!==confirmedQuote)return toast('O orçamento mudou. Reveja os dados antes de converter.');
  const missing=(q.items||[]).find(item=>item.type!=='free'&&!db.products.some(product=>product.code===item.code));
  if(missing)return toast('Reveja o artigo no orçamento antes de converter: '+(missing.name||missing.code));
@@ -15482,7 +15485,27 @@ O orçamento ficará ligado à nova encomenda e deixa de poder ser alterado.`))r
  const qdisc=quoteCalc(q).disc;if(qdisc>0)items.push({code:'ORC-DESCONTO',name:'Desconto do orçamento',qty:1,price:-Math.abs(qdisc),cost:0,type:'quote_discount'});
  const current=items.reduce((a,i)=>a+i.qty*i.price,0),roundAdjust=Math.round((target-current)*100)/100;if(Math.abs(roundAdjust)>0.009)items.push({code:'ORC-AJUSTE',name:'Ajuste do orçamento',qty:1,price:roundAdjust,cost:0,type:'quote_adjustment'});
  const newOrder={id:oid,clientId:q.clientId,client:q.client,contact:q.contact,delivery:q.eventDate||'',payment:q.paymentMethod||'MB Way',box:q.box||'',boxCostSnapshot:q.boxCostSnapshot!=null?Number(q.boxCostSnapshot)||0:((db.packaging||[]).find(p=>p.name===(q.box||''))?.cost||0),boxes:q.box?Math.max(1,Number(q.boxes)||1):0,paid:Math.min(paid,target),status:'Confirmada',created:todayISO(),items,sourceQuoteId:q.id,notes:q.notes||'',quotePaymentTerms:q.paymentTerms,quoteBalanceDue:quoteBalanceDueDate(q),paymentHistory:(q.paymentHistory||[]).map(x=>({...x,source:'quote'})),statusHistory:[{date:new Date().toISOString(),from:'—',to:'Confirmada',status:'Confirmada',source:'quote_conversion',quoteId:q.id}]};
- captureOrderTechnicalSnapshotV1757(newOrder,false);db.orders.push(newOrder);ensureOrderPaymentCashLedger(db);q.orderId=oid;q.convertedAt=new Date().toISOString();q.status='Convertido';q.statusHistory=Array.isArray(q.statusHistory)?q.statusHistory:[];q.statusHistory.push({date:q.convertedAt,status:'Convertido',from:'Aceite',to:'Convertido',source:'conversion',orderId:oid});save();queueOrderBusinessSyncV1757(newOrder,'conversão de orçamento');toast('Orçamento convertido em '+oid);go('orders')
+ captureOrderTechnicalSnapshotV1757(newOrder,false);
+ const {data,error}=await cloudClient.rpc('artessencia_convert_quote_once_v1',{
+   p_account:user.id,p_quote:JSON.parse(confirmedQuote),p_order:newOrder
+ });
+ if(error)throw error;
+ if(cloudUser?.id!==user.id)return;
+ const order=data.order,linked=data.quote;
+ if(order.sourceQuoteId!==id||linked.id!==id||linked.orderId!==order.id)throw new Error('Resposta de conversão inválida.');
+ const local=db.orders.find(item=>item.id===order.id||item._rid===order._rid);
+ if(local&&local.sourceQuoteId!==id)throw new Error('Conflito de referência. Sincronize as encomendas.');
+ if(!local)db.orders.push(order);
+ const localQuote=db.quotes.find(item=>item.id===id);
+ if(localQuote)Object.assign(localQuote,linked);else db.quotes.push(linked);
+ ensureOrderPaymentCashLedger(db);
+ save();
+ toast(data.reused?'Encomenda já existente: '+order.id:'Orçamento convertido em '+order.id);
+ go('orders');
+ showOrder(order.id);
+ }catch(error){
+   toast('Conversão por confirmar. '+(error?.message||'Verifique a ligação e volte a tentar.'));
+ }finally{pendingQuoteConversions.delete(id)}
 }
 
 function showQuoteHistory(id){

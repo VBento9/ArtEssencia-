@@ -5,6 +5,8 @@ on:
       - 'quote-history-compact-v1965.css'
       - 'quote-history-compact-v1965.js'
       - 'scripts/test_quote_history_search.cjs'
+      - 'scripts/test_quote_conversion_cloud.cjs'
+      - 'sql/quote_conversion_once_v1.sql'
       - 'funds-ledger-v1.css'
       - 'backoffice-visual.css'
       - 'tests/financial-responsive-layout.test.cjs'
@@ -17,6 +19,15 @@ jobs:
   financial-visual:
     runs-on: ubuntu-24.04
     timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: quote_conversion_test
+          POSTGRES_PASSWORD: local
+        ports:
+          - 55338:5432
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -30,9 +41,11 @@ jobs:
           node --test tests/funds-period-balances-19137.test.cjs
       - name: Instalar Playwright e Chromium
         run: |
-          npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
+          npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1 pg@8.23.1
           npx playwright install --with-deps chromium
       - name: Testar responsividade financeira sem dados reais
         run: node scripts/test_financial_visual_browser.cjs
       - name: Testar pesquisa e paginação de orçamentos
         run: node scripts/test_quote_history_search.cjs
+      - name: Testar conversão simultânea em duas sessões
+        run: node scripts/test_quote_conversion_cloud.cjs
