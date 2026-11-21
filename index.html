@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.184">
+<meta name="artessencia-version" content="1.9.185">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -5709,7 +5709,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
     </div>
 
 <div class="card report-period-v1927">
- <div class="report-period-fields-v1927">
+ <div class="report-period-fields-v1927" oninput="reportPeriodEditedV1927()" onchange="reportPeriodEditedV1927()">
   <label>Período<select id="reportPeriodModeV1927" onchange="reportModeChangedV1927()"><option value="month">Mês</option><option value="quarter">Trimestre</option><option value="year">Ano completo</option><option value="custom">Período personalizado</option></select></label>
   <label id="reportMonthFieldV1927">Mês<input id="reportMonthV1927" type="month"></label>
   <label id="reportQuarterFieldV1938" hidden>Trimestre<select id="reportQuarterV1938"><option value="1">1.º · Jan–Mar</option><option value="2">2.º · Abr–Jun</option><option value="3">3.º · Jul–Set</option><option value="4">4.º · Out–Dez</option></select></label>
@@ -6448,7 +6448,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.184';
+const APP_VERSION='1.9.185';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -15077,18 +15077,40 @@ function buildReportPeriodV1927(mode,month,year,start,end,quarter){
  if(start>end)throw new Error('A data inicial não pode ser posterior à data final.');
  return {mode,y,m,pref,start,end,matchDate:value=>{const date=String(value||'').slice(0,10);return validDate(date)&&date>=start&&date<=end}};
 }
+function readReportPeriodFieldsV1927(){
+ const value=id=>document.getElementById(id).value;
+ return buildReportPeriodV1927(value('reportPeriodModeV1927'),value('reportMonthV1927'),
+  value('reportYearV1927'),value('reportStartV1927'),value('reportEndV1927'),value('reportQuarterV1938'));
+}
+function reportPeriodEditedV1927(){
+ const error=document.getElementById('reportPeriodErrorV1927');
+ error.hidden=true;
+ error.textContent='';
+ if(!reportSelectionV1927)return;
+ let pending=true;
+ try{
+  const draft=readReportPeriodFieldsV1927();
+  pending=draft.mode!==reportSelectionV1927.mode||draft.pref!==reportSelectionV1927.pref;
+ }catch{
+  // Uma data incompleta continua a ser uma alteração por aplicar.
+ }
+ const label=document.getElementById('reportPeriodAppliedV1927');
+ const message='Período aplicado: '+reportSelectionV1927.pref+
+  (pending?' · Alterações por aplicar. O relatório e as exportações mantêm este período.':'');
+ if(label.textContent!==message)label.textContent=message;
+}
 function reportPeriodV1927(){
  if(!reportSelectionV1927){
   const today=todayISO(),month=today.slice(0,7),year=today.slice(0,4);
   reportSelectionV1927=buildReportPeriodV1927('month',month,year,'','');
   for(const [id,value] of [['Month',month],['Year',year],['Start',reportSelectionV1927.start],['End',reportSelectionV1927.end]]){const field=document.getElementById('report'+id+'V1927');if(field)field.value=value}
+  reportPeriodEditedV1927();
  }
- const label=document.getElementById('reportPeriodAppliedV1927');if(label)label.textContent='Período aplicado: '+reportSelectionV1927.pref;
  return reportSelectionV1927;
 }
 function applyReportPeriodV1927(){
- const value=id=>document.getElementById('report'+id+'V1927').value,error=document.getElementById('reportPeriodErrorV1927');
- try{const next=buildReportPeriodV1927(value('PeriodMode'),value('Month'),value('Year'),value('Start'),value('End'),document.getElementById('reportQuarterV1938')?.value);reportSelectionV1927=next;error.hidden=true;error.textContent='';renderReports();return true}
+ const error=document.getElementById('reportPeriodErrorV1927');
+ try{reportSelectionV1927=readReportPeriodFieldsV1927();reportPeriodEditedV1927();renderReports();return true}
  catch(e){error.textContent=e.message;error.hidden=false;return false}
 }
 function exportReportCSVV1927(kind){
