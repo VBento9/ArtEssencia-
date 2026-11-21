@@ -1,4 +1,6 @@
 -- PostgreSQL-only fixture assertions. This file must NEVER execute in production.
+-- Each psql -f call opens a separate session; restore fake owner identity here.
+SET request.jwt.claim.sub = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 DO $$
 DECLARE v jsonb; row_data jsonb; row_notes text; cnt integer;
 BEGIN
