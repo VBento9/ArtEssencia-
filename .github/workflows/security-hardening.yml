@@ -1,0 +1,26 @@
+name: Seguranca API e analitica ArtEssencia
+on:
+  pull_request:
+    paths:
+      - 'sql/artessencia_analytics_ingestion_guard_v2.sql'
+      - 'tests/security-hardening-20261109.test.cjs'
+      - 'vercel.json'
+      - '.github/workflows/security-hardening.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  security-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Testes estaticos sem acesso a producao
+        run: node --test tests/security-hardening-20261109.test.cjs
