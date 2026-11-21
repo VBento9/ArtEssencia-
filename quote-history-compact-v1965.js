@@ -39,7 +39,7 @@
       const secondary=document.createElement('div');secondary.className='qh-secondary-1965';
       buttons.forEach(button=>{
         const label=button.textContent.trim();
-        if(label==='Ver PDF'||label==='Editar'||label==='Converter em encomenda')primary.append(button);
+        if(label==='Ver PDF'||label==='Editar'||label==='Converter em encomenda'||button.hasAttribute('data-order-id'))primary.append(button);
         else secondary.append(button);
       });
       more.append(summary,secondary);

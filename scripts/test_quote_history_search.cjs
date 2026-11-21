@@ -90,6 +90,26 @@ const {chromium} = require('playwright');
       await page.evaluate(() => { db.quotes = []; renderQuotes(); });
       await page.waitForFunction(() => document.querySelector('#quotes .qh-counter-1965').textContent === '');
       assert.equal(await visible.innerText(), 'Sem orçamentos');
+      await page.evaluate(() => {
+        db.orders=[{id:'AS-ENS-01',client:'Ensaio',status:'Confirmada',items:[],paid:0}];
+        db.quotes=[{id:'Q-LIGADO',orderId:'AS-ENS-01',status:'Convertido',items:[]}];
+        renderQuotes();
+      });
+      await search.fill('Q-LIGADO');
+      await page.getByLabel('Filtrar estado').selectOption('Convertido');
+      const openOrder=visible.locator('.qh-primary-1965').getByRole('button',{name:'Ver encomenda'});
+      await openOrder.click();
+      assert.equal(await page.locator('#orderDetail').getAttribute('data-order-id'),'AS-ENS-01');
+      await page.locator('#orderDialog').getByRole('button',{name:'Fechar',exact:true}).first().click();
+      assert.equal(await search.inputValue(),'Q-LIGADO');
+      assert.equal(await page.getByLabel('Filtrar estado').inputValue(),'Convertido');
+      await page.evaluate(()=>{db.orders=[]});
+      await openOrder.click();
+      assert.match(await page.locator('#toast').textContent(),/AS-ENS-01.*sincronização/);
+      assert.equal(await page.locator('#orderDialog').evaluate(d=>d.open),false);
+      assert.equal(await page.evaluate(()=>db.orders.length),0);
+      await search.fill('');
+      await page.getByLabel('Filtrar estado').selectOption('');
       if (width === 800) {
         page.on('dialog', dialog => dialog.accept());
         const converted = await page.evaluate(async () => {
