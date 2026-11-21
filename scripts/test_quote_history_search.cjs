@@ -101,6 +101,12 @@ const {chromium} = require('playwright');
           };
           db.quotes=[quote]; db.orders=[]; db.cash=[];
           addQuotePaymentCash(quote,quote.paymentHistory[0]);
+          cloudUser={id:'local-test'};
+          cloudClient={rpc:async (name,{p_quote,p_order})=>{
+            assertRpcName(name);
+            return {data:{order:{...p_order,_rid:'order-test'},quote:{...p_quote,orderId:p_order.id,status:'Convertido'},reused:false}};
+          }};
+          function assertRpcName(name){if(name!=='artessencia_convert_quote_once_v1')throw Error(name)}
           let release, calls=0;
           const gate=new Promise(resolve => { release=resolve; });
           nextManualOrderId=async () => { const number=++calls; await gate; return 'TEST-'+number; };
