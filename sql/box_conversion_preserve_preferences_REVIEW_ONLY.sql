@@ -19,7 +19,7 @@ declare
  line jsonb; code text; name text; seen text[]:=array[]::text[];
  qty integer; n integer; matches integer; found_products integer;
  ver integer; cost numeric; amount numeric; order_id uuid; public_id text;
- ts timestamptz:=now(); body jsonb;
+ ts timestamptz:=now(); body jsonb; order_notes text;
 begin
  u:=(select auth.uid());
  if u is null or not (select public.artessencia_is_owner_v1()) then
@@ -107,6 +107,16 @@ begin
  order_id:=gen_random_uuid();
  public_id:='BX-'||to_char(ts at time zone 'Europe/Lisbon','YYYY')||'-'||
     upper(substr(replace(p_request_id::text,'-',''),1,16));
+ order_notes:=concat_ws(chr(10),
+    nullif(btrim(coalesce(r.customer_note,'')),''),
+    nullif('Cores: '||coalesce(r.preferences->>'colors',''),'Cores: '),
+    nullif('Fragrâncias: '||coalesce(r.preferences->>'scents',''),'Fragrâncias: '),
+    nullif('Dedicatória: '||coalesce(r.preferences->>'dedication',''),'Dedicatória: '),
+    nullif('Ocasião: '||coalesce(r.preferences->>'occasion',''),'Ocasião: '),
+    nullif('Apresentação pretendida: '||coalesce(r.preferences->>'packaging',''),'Apresentação pretendida: '),
+    nullif('Orçamento indicativo do cliente: '||coalesce(r.preferences->>'budget',''),'Orçamento indicativo do cliente: '),
+    nullif('Outras preferências: '||coalesce(r.preferences->>'notes',''),'Outras preferências: ')
+  );
  body:=jsonb_build_object(
   'id',public_id,'_rid',order_id,
   'created',(ts at time zone 'Europe/Lisbon')::date,
@@ -117,16 +127,7 @@ begin
   'boxes',1,'boxCostSnapshot',cost,'subtotal',amount,'total',amount,
   'discountTotal',0,
   'boxCustomerPreferences',coalesce(r.preferences,'{}'::jsonb),
-  'notes',concat_ws(chr(10),
-    nullif(btrim(coalesce(r.customer_note,'')),''),
-    nullif('Cores: '||coalesce(r.preferences->>'colors',''),'Cores: '),
-    nullif('Fragrâncias: '||coalesce(r.preferences->>'scents',''),'Fragrâncias: '),
-    nullif('Dedicatória: '||coalesce(r.preferences->>'dedication',''),'Dedicatória: '),
-    nullif('Ocasião: '||coalesce(r.preferences->>'occasion',''),'Ocasião: '),
-    nullif('Apresentação pretendida: '||coalesce(r.preferences->>'packaging',''),'Apresentação pretendida: '),
-    nullif('Orçamento indicativo do cliente: '||coalesce(r.preferences->>'budget',''),'Orçamento indicativo do cliente: '),
-    nullif('Outras preferências: '||coalesce(r.preferences->>'notes',''),'Outras preferências: ')
-  ),
+  'notes',order_notes,
   'originBoxRequestId',p_request_id,'originBoxQuoteVersion',r.quote_version,
   'sourceBoxId',p_box_id,'sourceBoxTechnicalVersion',ver,
   'boxTechnicalSnapshot',snapshot,'boxTechnicalItems',box->'items',
@@ -136,7 +137,7 @@ begin
  (id,user_id,status,order_date,due_at,subtotal,total,notes,data)
  values(order_id,u,'Pedido',(ts at time zone 'Europe/Lisbon')::date,
   (p_delivery_date::text||'T12:00:00Z')::timestamptz,
-  amount,amount,'Proposta de Box aceite '||p_request_id::text,body);
+  amount,amount,order_notes,body);
  insert into public.artessencia_box_order_links_v1
  (request_id,user_id,order_id,public_order_id,quote_version,box_id,technical_version)
  values(p_request_id,u,order_id,public_id,r.quote_version,p_box_id,ver);
