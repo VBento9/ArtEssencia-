@@ -62,7 +62,9 @@ test('receção após conversão usa sincronização relacional segura, sem for�
 test('proposta SQL preserva preferências para produção e não toca stock',()=>{
  assert.match(sql,/REVISÃO MANUAL — NÃO APLICAR AUTOMATICAMENTE/);
  assert.match(sql,/'boxCustomerPreferences',coalesce\(r\.preferences/);
- assert.match(sql,/'notes',concat_ws\(chr\(10\),/);
+ assert.match(sql,/order_notes:=concat_ws\(chr\(10\),/);
+ assert.match(sql,/'notes',order_notes/);
+ assert.match(sql,/amount,amount,order_notes,body\)/);
  for(const k of ['colors','scents','dedication','occasion','packaging','budget','notes'])
   assert.ok(sql.includes("r.preferences->>'"+k+"'"),'Preferência em falta: '+k);
  assert.match(sql,/security definer/i);
