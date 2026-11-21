@@ -608,8 +608,14 @@ async function convertAcceptedBoxRequestV1(record,row){
     typeof cloudBusy!=='undefined'&&!cloudBusy&&
     typeof cloudHydrating!=='undefined'&&!cloudHydrating&&
     typeof cloudPushRunning!=='undefined'&&!cloudPushRunning){
-  const received=await relationalHydrateCore(false,false);
-  visibleLocally=received===true&&(db.orders||[]).some(o=>String(o?._rid||'')===String(data.order_id||''));
+  try{
+   const received=await relationalHydrateCore(false,false);
+   visibleLocally=received===true&&(db.orders||[]).some(o=>String(o?._rid||'')===String(data.order_id||''));
+  }catch(syncError){
+   // A RPC já confirmou a criação. Uma falha de receção nunca pode
+   // ser comunicada como falha de criação, evitando nova conversão manual.
+   console.warn('Encomenda criada, receção relacional pendente',syncError);
+  }
  }
  if(visibleLocally)toast('Encomenda '+data.public_order_id+' disponível no módulo Vendas/Encomendas. Confirma antes de produzir.');
  else toast('Encomenda '+data.public_order_id+' confirmada na Cloud. A receção neste dispositivo ficou pendente; verifica a sincronização antes de produzir.');
