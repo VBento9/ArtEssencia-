@@ -370,7 +370,12 @@ function render(){
 }
 function modeChange(){
  const nextMode=document.getElementById('fundsPeriodV1929')?.value||'month';
- const nextYear=Number(document.getElementById('fundsYearV1929')?.value)||TODAY.getFullYear();
+ const yearField=document.getElementById('fundsYearV1929');
+ if(!yearField.value||!yearField.validity.valid){
+  yearField.value=String(state.year);
+  toast('Indique um ano entre 2000 e 2200. Mantém-se '+state.year+'.');
+ }
+ const nextYear=Number(yearField.value);
  if(nextMode!==state.mode)state.slot=nextMode==='month'&&nextYear===TODAY.getFullYear()?TODAY.getMonth()+1:1;
  state.mode=nextMode;state.year=nextYear;state.page=1;slotOptions();render();
 }
@@ -382,6 +387,34 @@ function classify(id,dept){
  c.fundsDepartmentV1929=dept;
  if(!save()){c.fundsDepartmentV1929=was;render();return toast('Classificação não guardada.')}
  render();toast('Departamento atualizado: '+LABEL[dept]);
+}
+function printSummary(){
+ const preview=window.open('','_blank');
+ if(!preview)return toast('Permita abrir uma janela para imprimir o resumo.');
+ const doc=preview.document;
+ doc.open();
+ doc.write(`<!doctype html><html lang="pt-PT"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+ <title>Mapa de Fundos · ArtEssencia</title><style>
+ @page{size:A4;margin:14mm}
+ body{font:15px/1.4 system-ui,sans-serif;color:#332a24;max-width:900px;margin:auto;padding:16px}
+ h1{font-size:22px} h2,h3{font-size:16px} p{margin:8px 0}
+ table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+ th,td{padding:5px;border-bottom:1px solid #ccc;text-align:right}
+ th:first-child{text-align:left}td{white-space:nowrap}
+ .table-scroll,.funds-tablewrap-v1929{overflow-x:auto}
+ button{min-height:44px;padding:8px 16px}
+ @media print{body{padding:0;font-size:10pt}button{display:none}.table-scroll,.funds-tablewrap-v1929{overflow:visible}tr{break-inside:avoid}h2,h3{break-after:avoid}}
+ </style></head><body>
+ <button type="button">Imprimir / Guardar PDF</button><h1>ArtEssencia · Mapa de Fundos</h1>
+ <p id="period"></p><h2>Saldo por departamento</h2><div class="table-scroll"></div><p id="quality"></p>
+ </body></html>`);
+ doc.close();
+ doc.getElementById('period').textContent=document.getElementById('fundsAppliedV1929').textContent;
+ doc.querySelector('.table-scroll').append(doc.importNode(document.getElementById('fundsTableBodyV1929').closest('table'),true));
+ doc.getElementById('quality').textContent=document.getElementById('fundsQualityV1929').textContent;
+ const annual=document.getElementById('fundsAnnualBreakdownV1930');
+ if(annual&&!annual.hidden)doc.body.append(doc.importNode(annual,true));
+ doc.querySelector('button').addEventListener('click',()=>preview.print());
 }
 function exportCsv(){
  const r=calculate(),fmt=n=>(n/100).toFixed(2).replace('.',',');
@@ -399,6 +432,7 @@ function bind(){
  document.getElementById('fundsPeriodV1929')?.addEventListener('change',modeChange);
  document.getElementById('fundsYearV1929')?.addEventListener('change',modeChange);
  document.getElementById('fundsSlotV1929')?.addEventListener('change',e=>{state.slot=Number(e.target.value)||1;state.page=1;render()});
+ document.getElementById('fundsPrint')?.addEventListener('click',printSummary);
  document.getElementById('fundsExportV1929')?.addEventListener('click',exportCsv);
  document.getElementById('fundsMovementBodyV1929')?.addEventListener('change',e=>{if(e.target?.classList.contains('funds-dept-v1929'))classify(e.target.dataset.cashid,e.target.value)});
  document.getElementById('fundsPaginationV1929')?.addEventListener('click',e=>{const btn=e.target.closest('button[data-funds-page]');if(!btn)return;state.page+=Number(btn.dataset.fundsPage)||0;render()});
