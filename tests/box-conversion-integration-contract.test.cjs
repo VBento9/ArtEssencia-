@@ -55,7 +55,7 @@ test('conversão é manual, idempotente no servidor e não faz cópias locais',(
 test('receção após conversão usa sincronização relacional segura, sem forçar hidratação',()=>{
  assert.match(client,/relationalHydrateCore\(false,false\)/);
  assert.match(client,/catch\(syncError\)/);
- assert.match(client,/Encomenda .* confirmada na Cloud/);
+ assert.match(client,/confirmada na Cloud\. A receção neste dispositivo ficou pendente/);
  assert.match(backoffice,/REL_TABLES=\{clients:'artessencia_v1_clients',products:'artessencia_v1_products',orders:'artessencia_v1_orders'/);
  assert.match(backoffice,/db\.orders=remoteHydratedOrders\.map/);
 });
@@ -69,4 +69,98 @@ test('proposta SQL preserva preferências para produção e não toca stock',()=
  assert.match(sql,/artessencia_is_owner_v1/);
  assert.match(sql,/already_converted/);
  assert.doesNotMatch(sql,/\b(?:insert into|update|delete from)\s+public\.(?:store_payments|artessencia_v1_sales|stock_movements)\b/i);
+});
+
+
+function fixtureConvert({alreadyLinked=false,confirmResult=true,hydrate='ok'}={}){
+ const ctx={console,Date,Number,String,Math,JSON,Set,Intl,Promise,
+  db:{themedBoxes:[box()],orders:[]},
+  cloudBusy:false,cloudHydrating:false,cloudPushRunning:false,
+  notes:[],rpcCalls:[],reads:[],confirmCalls:[],loads:0,
+  money:n=>Number(n).toFixed(2)+' EUR',
+  confirm:message=>{ctx.confirmCalls.push(message);return confirmResult;},
+  toast:message=>ctx.notes.push(message),
+  loadBoxRequestsV2:async()=>{ctx.loads++;return true;},
+  publicClient:async()=>({c:{
+   from(name){
+    return {select(){
+     return {eq(){
+      return {
+       async maybeSingle(){
+        ctx.reads.push(name);
+        return {data:alreadyLinked?{public_order_id:'BX-2026-EXISTING'}:null,error:null};
+       },
+       async single(){
+        ctx.reads.push(name);
+        return {data:{request_id:'fake-request-01',status:'accepted',
+          responded_at:'2026-11-21T12:00:00Z',quote_version:1,quoted_total:25,items:request().items},error:null};
+       }
+      };
+     }};
+    }};
+   },
+   async rpc(name,args){
+    ctx.rpcCalls.push({name,args});
+    return {data:{ok:true,order_id:'fixture-order-uuid',public_order_id:'BX-2026-00001'},error:null};
+   }
+  }}),
+  relationalHydrateCore:async(a,b)=>{
+   ctx.hydrateArgs=[a,b];
+   if(hydrate==='error')throw new Error('offline');
+   if(hydrate==='ok')ctx.db.orders.push({_rid:'fixture-order-uuid',id:'BX-2026-00001'});
+   return hydrate==='ok';
+  },
+  aeBoxMatchesAcceptedRequestV1:validate,
+  aeTodayLisbonBoxV1:()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Lisbon',
+    year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()),
+ };
+ // The date helper used in production is also exercised from the real code.
+ const currentDate=extractFunction(client,
+  'function aeTodayLisbonBoxV1(){','function aeBoxMatchesAcceptedRequestV1(');
+ vm.createContext(ctx);
+ vm.runInContext(currentDate+extractFunction(client,
+  'async function convertAcceptedBoxRequestV1(','async function loadBoxRequestsV2(')+
+  ';globalThis.convertAcceptedBoxRequestV1=convertAcceptedBoxRequestV1;',ctx);
+ const date=ctx.aeTodayLisbonBoxV1();
+ const row={querySelector:selector=>({value:selector==='[data-box-private-id]'?'box-fixture':date})};
+ return {ctx,row};
+}
+
+test('conversão válida invoca RPC uma vez e sincroniza por hidratação segura',async()=>{
+ const {ctx,row}=fixtureConvert();
+ await ctx.convertAcceptedBoxRequestV1(request(),row);
+ assert.equal(ctx.rpcCalls.length,1);
+ assert.equal(ctx.rpcCalls[0].name,'artessencia_owner_convert_box_v1');
+ assert.equal(ctx.rpcCalls[0].args.p_expected_box_version,3);
+ assert.deepEqual([...ctx.hydrateArgs],[false,false]);
+ assert.equal(ctx.db.orders.length,1);
+ assert.ok(ctx.notes.some(x=>x.includes('disponível no módulo')));
+ assert.equal(ctx.confirmCalls.length,1);
+});
+test('uma proposta previamente convertida não volta a invocar RPC',async()=>{
+ const {ctx,row}=fixtureConvert({alreadyLinked:true});
+ await ctx.convertAcceptedBoxRequestV1(request(),row);
+ assert.equal(ctx.rpcCalls.length,0);
+ assert.equal(ctx.confirmCalls.length,0);
+ assert.ok(ctx.notes.some(x=>x.includes('já foi convertida')));
+});
+test('cancelamento da confirmação impede a conversão',async()=>{
+ const {ctx,row}=fixtureConvert({confirmResult:false});
+ await ctx.convertAcceptedBoxRequestV1(request(),row);
+ assert.equal(ctx.rpcCalls.length,0);
+ assert.equal(ctx.db.orders.length,0);
+});
+test('falha de receção depois de confirmação da Cloud não gera segunda encomenda',async()=>{
+ const {ctx,row}=fixtureConvert({hydrate:'error'});
+ await ctx.convertAcceptedBoxRequestV1(request(),row);
+ assert.equal(ctx.rpcCalls.length,1);
+ assert.equal(ctx.db.orders.length,0);
+ assert.ok(ctx.notes.some(x=>x.includes('confirmada na Cloud')));
+});
+test('a proposta não aceite é recusada antes de consultar ou alterar a Cloud',async()=>{
+ const {ctx,row}=fixtureConvert();
+ await assert.rejects(()=>ctx.convertAcceptedBoxRequestV1({...request(),status:'sent'},row),
+  /não foi aceite/);
+ assert.equal(ctx.rpcCalls.length,0);
+ assert.equal(ctx.reads.length,0);
 });
