@@ -1,0 +1,37 @@
+name: Box order presentation and print
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'boxes-atelier-ui-v1.js'
+      - 'order-add-products-ui.js'
+      - 'order-price-edit-v19168.js'
+      - 'tests/box-order-presentation-contract.test.cjs'
+      - 'scripts/test_box_order_presentation_browser.cjs'
+      - '.github/workflows/box-order-presentation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  box-order-presentation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Static contracts
+        run: node --test tests/box-order-presentation-contract.test.cjs
+      - name: Install isolated browser testing
+        run: |
+          npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Serve repository locally
+        run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/artessencia-box-browser.log 2>&1 &
+      - name: Test desktop tablet and phone without Cloud
+        run: node scripts/test_box_order_presentation_browser.cjs
