@@ -114,3 +114,11 @@ test('consulta requer sessão Cloud e não tem operações de escrita',()=>{
  assert.match(src,/if\(!user\)throw Error/);
  assert.doesNotMatch(src,/\.\s*(?:insert|update|upsert|delete)\s*\(/);
 });
+
+test('Centro de Publicação integrado na lista compacta, não por cima do editor',()=>{
+ const fs=require('node:fs');
+ const src=fs.readFileSync('catalog-publication-overview-v1.js','utf8');
+ assert.match(src,/list\.prepend\(section\)/);
+ assert.doesNotMatch(src,/nav\.insertAdjacentElement\('afterend',section\)/);
+ assert.match(src,/new MutationObserver\(/);
+});

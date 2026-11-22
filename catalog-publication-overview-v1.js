@@ -114,9 +114,10 @@ function install(){
  '<div id="aePublicationResultsV1" class="ae-publication-results-v1" aria-live="polite"></div>'+
  '<div class="ae-publication-paging-v1"><button class="btn ghost" type="button" id="aePublicationPrevV1">Anterior</button><span id="aePublicationPageV1"></span><button class="btn ghost" type="button" id="aePublicationNextV1">Seguinte</button></div>'+
  '<p class="ae-publication-disclaimer-v1">Os estados referem-se a este dispositivo. A marcação shopVisible não confirma presença no feed. Os dois canais usam o mesmo feed e aplicam regras de visibilidade próprias. O checkout da Loja permanece fechado.</p>';
- const nav=E('aeProductsViews1997');
- if(nav)nav.insertAdjacentElement('afterend',section);
- else list.parentNode.insertBefore(section,list);
+ // A vista compacta gere visibilidade apenas de .products-list-card e do editor.
+ // O painel tem de estar DENTRO da lista, não entre a navegação e a lista.
+ // Na vista de revisão, a regra .ae-review-focus1995 mostra apenas o módulo editorial.
+ list.prepend(section);
  E('aePublicationRefreshV1').addEventListener('click',render);
  E('aePublicationCheckV1').addEventListener('click',checkPublicFeed);
  E('aePublicationFilterV1').addEventListener('change',e=>{filter=e.target.value;page=0;render()});
@@ -127,6 +128,17 @@ function install(){
   const btn=e.target.closest('[data-ae-publication-review]');
   if(btn)openReview(btn.dataset.aePublicationReview);
  });
+ // A edição/Cloud pode refrescar os cartões sem focar novamente a janela.
+ // Recalcular somente a apresentação, sem alterar db nem criar escrita Cloud.
+ const cards=E('productsCards');
+ if(cards){
+  let scheduled=false;
+  new MutationObserver(()=>{
+   if(scheduled)return;
+   scheduled=true;
+   queueMicrotask(()=>{scheduled=false;render()});
+  }).observe(cards,{childList:true});
+ }
  window.addEventListener('focus',render);
  window.addEventListener('pageshow',render);
  render();

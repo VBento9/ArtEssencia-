@@ -10,6 +10,7 @@ on:
       - '.github/workflows/publication-overview-readonly.yml'
       - 'tests/publication-overview-browser-fixture.html'
       - 'scripts/test_publication_overview_browser.cjs'
+      - 'scripts/test_publication_overview_integrated_browser.cjs'
   workflow_dispatch:
 permissions:
   contents: read
@@ -34,3 +35,5 @@ jobs:
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/publication-overview-http.log 2>&1 &
           node scripts/test_publication_overview_browser.cjs
+      - name: Testar navegação no Backoffice completo sem Cloud
+        run: node scripts/test_publication_overview_integrated_browser.cjs
