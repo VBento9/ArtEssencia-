@@ -9,7 +9,7 @@ function parsePrice(raw){
  return Number.isSafeInteger(cents)&&cents>=0&&cents<=999999999?cents/100:null;
 }
 function editable(order,produced){
- return !!order&&!produced&&!order.voidedAt&&order.source!=='online_store'&&
+ return !!order&&!produced&&!order.voidedAt&&!['online_store','box_quote'].includes(order.source)&&
   ['Pedido','Confirmada','Em produção'].includes(String(order.status||'Pedido'));
 }
 function preview(order,index,raw,calculator){

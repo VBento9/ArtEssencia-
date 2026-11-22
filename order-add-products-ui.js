@@ -26,7 +26,7 @@
   return {colors:distinctNames(cfg.colors),fragrances:distinctNames(cfg.fragrances)};
  };
  function canAdd(order){
-  if(!order||order.source==='online_store'||order.voidedAt||order.deletedAt||order.deleted||order.clientDeleted)return false;
+  if(!order||['online_store','box_quote'].includes(order.source)||order.voidedAt||order.deletedAt||order.deleted||order.clientDeleted)return false;
   if(!ALLOWED_STATUS.has(txt(order.status||'Pedido')))return false;
   return !isOrderProduced(order.id);
  }

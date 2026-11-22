@@ -1,0 +1,54 @@
+name: Box conversion integration contracts
+on:
+  pull_request:
+    paths:
+      - 'boxes-atelier-ui-v1.js'
+      - 'sql/box_conversion_preserve_preferences_REVIEW_ONLY.sql'
+      - 'tests/box-conversion-integration-contract.test.cjs'
+      - 'tests/fixtures/box_conversion_schema.sql'
+      - 'tests/fixtures/box_conversion_assertions.sql'
+      - '.github/workflows/box-conversion-integration-contract.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-box-conversion:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: fixture-only
+          POSTGRES_DB: box_fixture
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d box_fixture"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: fixture-only
+      PGDATABASE: box_fixture
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install Node runtime
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Verify JavaScript syntax
+        run: node --check boxes-atelier-ui-v1.js
+      - name: Execute isolated conversion contracts
+        run: node --test tests/box-conversion-integration-contract.test.cjs
+      - name: Verify PostgreSQL implementation with synthetic records
+        run: |
+          psql -v ON_ERROR_STOP=1 -f tests/fixtures/box_conversion_schema.sql
+          psql -v ON_ERROR_STOP=1 -f sql/box_conversion_preserve_preferences_REVIEW_ONLY.sql
+          psql -v ON_ERROR_STOP=1 -f tests/fixtures/box_conversion_assertions.sql
