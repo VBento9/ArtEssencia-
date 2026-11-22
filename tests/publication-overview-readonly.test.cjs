@@ -111,7 +111,7 @@ test('registos do feed sem identificador próprio são sinalizados',()=>{
 test('consulta requer sessão Cloud e não tem operações de escrita',()=>{
  const fs=require('node:fs'),src=fs.readFileSync('catalog-publication-overview-v1.js','utf8');
  assert.match(src,/ensureCloudSession\(\)/);
- assert.match(src,/if\(!user\)throw Error/);
+ assert.match(src,/if\(!user\?\.id\)throw Error/);
  assert.doesNotMatch(src,/\.\s*(?:insert|update|upsert|delete)\s*\(/);
 });
 
