@@ -67,3 +67,10 @@ test('painel consulta apenas as RPC de leitura e não modifica dados',()=>{
  for(const proc of ['store_public_catalog_v1','store_public_content_v3','store_public_config_v1'])assert.ok(src.includes("call('"+proc+"')"));
  assert.doesNotMatch(src,/\.\s*(?:insert|update|upsert|delete)\s*\(/);
 });
+
+test('o diagnóstico inicia depois do script editorial, sem corrida de carregamento',()=>{
+ const fs=require('node:fs'),src=fs.readFileSync('catalog-classification-bulk-v192.js','utf8');
+ assert.match(src,/review\.addEventListener\('load',loadOverview/);
+ assert.match(src,/review\.addEventListener\('error',loadOverview/);
+ assert.match(src,/review\.src='\/catalog-review-workflow-v1995\.js'/);
+});

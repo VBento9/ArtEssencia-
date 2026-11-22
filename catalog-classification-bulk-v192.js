@@ -65,13 +65,14 @@ function init(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
 
-/* Módulo de revisão isolado: mantém a classificação em lote intacta. */
+/* Revisão editorial existente primeiro; o diagnóstico apenas a complementa. */
 (function(){
  var css=document.createElement('link');css.rel='stylesheet';css.href='/catalog-review-workflow-v1995.css';document.head.appendChild(css);
- var script=document.createElement('script');script.src='/catalog-review-workflow-v1995.js';document.head.appendChild(script);
-})();
-
-/* Diagnóstico editorial somente leitura: reutiliza a revisão existente. */
-(function(){
- var script=document.createElement('script');script.src='/catalog-publication-overview-v1.js';document.head.appendChild(script);
+ var review=document.createElement('script');review.src='/catalog-review-workflow-v1995.js';
+ function loadOverview(){
+  var script=document.createElement('script');script.src='/catalog-publication-overview-v1.js';document.head.appendChild(script);
+ }
+ review.addEventListener('load',loadOverview,{once:true});
+ review.addEventListener('error',loadOverview,{once:true});
+ document.head.appendChild(review);
 })();
