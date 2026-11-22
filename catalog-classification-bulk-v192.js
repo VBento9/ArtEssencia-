@@ -70,3 +70,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  var css=document.createElement('link');css.rel='stylesheet';css.href='/catalog-review-workflow-v1995.css';document.head.appendChild(css);
  var script=document.createElement('script');script.src='/catalog-review-workflow-v1995.js';document.head.appendChild(script);
 })();
+
+/* Diagnóstico editorial somente leitura: reutiliza a revisão existente. */
+(function(){
+ var script=document.createElement('script');script.src='/catalog-publication-overview-v1.js';document.head.appendChild(script);
+})();
