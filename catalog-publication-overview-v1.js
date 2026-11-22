@@ -35,7 +35,33 @@ function auditProducts(products,reviewer){
   reviewUnknown:records.filter(x=>x.review==='unknown').length
  }};
 }
-if(typeof module==='object'&&module.exports)module.exports={auditProducts};
+
+function comparePublicFeed(localProducts,feedProducts){
+ const local=auditProducts(localProducts).records;
+ if(!Array.isArray(feedProducts))return {status:'unavailable',rows:[],feedCount:0};
+ if(feedProducts.length===0)return {status:'empty',rows:[],feedCount:0};
+ const remote=feedProducts.filter(p=>p&&typeof p==='object');
+ const countByCode=new Map(),localCodes=new Map();
+ for(const p of remote){const c=trim(p.code);if(c)countByCode.set(c,(countByCode.get(c)||0)+1)}
+ for(const x of local){if(x.code)localCodes.set(x.code,(localCodes.get(x.code)||0)+1)}
+ const rows=local.map(x=>{
+  const p=x.product,id=trim(p._rid||p.id||p.product_id);
+  const exact=id?remote.filter(r=>[r.backoffice_product_id,r.product_id,r.id].some(v=>trim(v)===id)):[];
+  let matches=exact,ambiguous=exact.length>1;
+  if(!matches.length&&x.code){
+   if(localCodes.get(x.code)>1||countByCode.get(x.code)>1)ambiguous=true;
+   else matches=remote.filter(r=>trim(r.code)===x.code);
+  }
+  const status=ambiguous?'ambiguous':matches.length===1?'present':!x.code&&!id?'unmatched':'absent';
+  return {code:x.code,name:x.name,marked:x.catalogMarked,status};
+ });
+ return {status:'ok',rows,feedCount:remote.length,
+  present:rows.filter(r=>r.status==='present').length,
+  missingMarked:rows.filter(r=>r.marked&&r.status==='absent').length,
+  unexpectedPresent:rows.filter(r=>!r.marked&&r.status==='present').length,
+  ambiguous:rows.filter(r=>r.status==='ambiguous'||r.status==='unmatched').length};
+}
+if(typeof module==='object'&&module.exports)module.exports={auditProducts,comparePublicFeed};
 if(typeof document==='undefined')return;
 const escapeHtml=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const E=id=>document.getElementById(id);
@@ -60,6 +86,7 @@ function install(){
  section.className='ae-publication-overview-v1';
  section.innerHTML='<div class="ae-publication-head-v1"><div><h3>Centro de Publicação · diagnóstico</h3><p>Consulta editorial de produtos e sinalizações por canal. Não publica, não altera produtos e não confirma visibilidade pública.</p></div><button type="button" class="btn ghost" id="aePublicationRefreshV1">Atualizar</button></div>'+
  '<div id="aePublicationMetricsV1" class="ae-publication-metrics-v1"></div>'+
+ '<section class="ae-publication-public-v1" id="aePublicationPublicV1"><div class="ae-publication-public-head-v1"><div><h4>Verificação do feed público</h4><p>Consulta a Cloud sem alterar produtos. Estar no feed não garante visibilidade no canal.</p></div><button type="button" class="btn ghost" id="aePublicationCheckV1">Consultar</button></div><div id="aePublicationPublicResultV1" role="status" aria-live="polite">Ainda não consultado.</div></section>'+
  '<div class="ae-publication-tools-v1"><label>Filtrar <select id="aePublicationFilterV1"><option value="attention">A exigir atenção</option><option value="ready">Revistos e completos</option><option value="catalog">Sinalizados para Catálogo</option><option value="shop">Sinalizados para Loja</option><option value="all">Todos</option></select></label><label>Pesquisar <input type="search" id="aePublicationSearchV1" placeholder="Nome ou código"></label></div>'+
  '<div id="aePublicationResultsV1" class="ae-publication-results-v1" aria-live="polite"></div>'+
  '<div class="ae-publication-paging-v1"><button class="btn ghost" type="button" id="aePublicationPrevV1">Anterior</button><span id="aePublicationPageV1"></span><button class="btn ghost" type="button" id="aePublicationNextV1">Seguinte</button></div>'+
@@ -68,6 +95,7 @@ function install(){
  if(nav)nav.insertAdjacentElement('afterend',section);
  else list.parentNode.insertBefore(section,list);
  E('aePublicationRefreshV1').addEventListener('click',render);
+ E('aePublicationCheckV1').addEventListener('click',checkPublicFeed);
  E('aePublicationFilterV1').addEventListener('change',e=>{filter=e.target.value;page=0;render()});
  E('aePublicationSearchV1').addEventListener('input',e=>{query=e.target.value;page=0;render()});
  E('aePublicationPrevV1').addEventListener('click',()=>{page=Math.max(0,page-1);render()});
@@ -79,6 +107,54 @@ function install(){
  window.addEventListener('focus',render);
  window.addEventListener('pageshow',render);
  render();
+}
+
+async function checkPublicFeed(){
+ const button=E('aePublicationCheckV1'),host=E('aePublicationPublicResultV1');
+ if(!button||!host)return;
+ button.disabled=true;
+ host.textContent='A consultar dados públicos…';
+ try{
+  const client=typeof initCloudClient==='function'?initCloudClient():null;
+  if(!client||typeof client.rpc!=='function')throw Error('Ligação Cloud indisponível');
+  const call=async name=>{try{return await client.rpc(name,{})}catch(error){return {error}}};
+  const [catalog,content,store]=await Promise.all([
+   call('store_public_catalog_v1'),call('store_public_content_v3'),call('store_public_config_v1')
+  ]);
+  if(catalog.error)throw catalog.error;
+  if(!catalog.data||!Array.isArray(catalog.data.products))throw Error('Resposta inválida do feed de produtos');
+  const report=comparePublicFeed(typeof db==='undefined'?[]:db.products,catalog.data.products);
+  const catalogMode=content.error?'Não confirmado':String(content.data?.catalog_status?.mode||'Não confirmado');
+  const shopMode=store.error?'Não confirmado':String(store.data?.store_status?.mode||'Não confirmado');
+  const statusLine='Consulta em '+new Date().toLocaleString('pt-PT')+
+   ' · Feed público: '+report.feedCount+' produtos · Catálogo: '+catalogMode+' · Loja: '+shopMode;
+  if(report.status!=='ok'){
+   host.textContent=statusLine+'. Feed sem artigos: não é possível concluir que existam publicações em falta.';
+   return;
+  }
+  const discrepancies=report.rows.filter(r=>
+   (r.marked&&r.status==='absent')||(!r.marked&&r.status==='present')||
+   r.status==='ambiguous'||r.status==='unmatched').slice(0,16);
+  const warning=typeof cloudBusy!=='undefined'&&cloudBusy?
+   '<p>Atenção: sincronização local em curso. A comparação pode utilizar dados locais desatualizados.</p>':'';
+  const issueLabel=r=>r.status==='ambiguous'?'Identificação ambígua':
+   r.status==='unmatched'?'Sem identificador fiável':
+   r.status==='absent'?'Assinalado no Backoffice, não encontrado no feed':
+   'Encontrado no feed, sem marcação local';
+  host.innerHTML='<p>'+escapeHtml(statusLine)+'</p>'+
+   '<div class="ae-publication-feed-metrics-v1">'+
+    [['Correspondências',report.present],['Assinalados mas ausentes',report.missingMarked],
+     ['No feed sem marcação local',report.unexpectedPresent],['Identificação incerta',report.ambiguous]]
+      .map(([label,count])=>'<span><b>'+count+'</b> '+escapeHtml(label)+'</span>').join('')+
+   '</div>'+warning+
+   (discrepancies.length?'<details><summary>Examinar até 16 divergências</summary><div class="ae-publication-public-list-v1">'+
+    discrepancies.map(r=>'<div><strong>'+escapeHtml(r.name)+'</strong><small>'+
+      escapeHtml(r.code||'Sem código')+' · '+escapeHtml(issueLabel(r))+'</small></div>').join('')+
+    '</div></details>':'<p>Sem divergências detetadas para os artigos identificados.</p>')+
+   '<p class="ae-publication-disclaimer-v1">Comparação apenas com o feed partilhado. Edições, filtros e estados dos canais podem ocultar produtos. Não confirma visibilidade na página nem sincronização completa entre dispositivos. O checkout da Loja permanece fechado.</p>';
+ }catch(error){
+  host.textContent='Verificação não concluída: '+String(error?.message||error)+'. Não foram alterados dados.';
+ }finally{button.disabled=false}
 }
 function render(){
  if(!E('aePublicationOverviewV1'))return;

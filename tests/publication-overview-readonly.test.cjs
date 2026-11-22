@@ -1,6 +1,6 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict');
-const {auditProducts}=require('../catalog-publication-overview-v1.js');
+const {auditProducts,comparePublicFeed}=require('../catalog-publication-overview-v1.js');
 function product(overrides={}){return {
  code:'AE1',name:'Vela fictícia',category:'Vela',catalogGroupV191:'velas-recipiente',
  shopDescription:'Descrição fictícia',shopImageUrl:'https://example.invalid/photo.jpg',
@@ -40,4 +40,30 @@ test('sem auditoria editorial carregada mantém diagnóstico conservador',()=>{
  const r=auditProducts([product()]);
  assert.equal(r.summary.reviewUnknown,1);
  assert.equal(r.summary.ready,0);
+});
+
+test('feed vazio não gera falsas faltas de publicação',()=>{
+ const r=comparePublicFeed([product({published:true})],[]);
+ assert.equal(r.status,'empty');assert.equal(r.rows.length,0);
+});
+test('compara por código sem tomar nome como identidade',()=>{
+ const r=comparePublicFeed([product({published:true}),product({code:'AE2',published:false,name:'Vela fictícia'})],[{code:'AE1',name:'Nome diferente'}]);
+ assert.equal(r.status,'ok');assert.equal(r.present,1);assert.equal(r.missingMarked,0);
+});
+test('diferenças entre sinalização local e feed são detetadas',()=>{
+ const r=comparePublicFeed([product({published:true}),product({code:'AE2',published:false})],[{code:'AE2'}]);
+ assert.equal(r.missingMarked,1);assert.equal(r.unexpectedPresent,1);
+});
+test('códigos repetidos nunca são reconciliados automaticamente',()=>{
+ const r=comparePublicFeed([product({published:true}),product({published:true,name:'Outra peça'})],[{code:'AE1'}]);
+ assert.equal(r.ambiguous,2);assert.equal(r.missingMarked,0);
+});
+test('identificador da origem permite comparação com código diferente',()=>{
+ const r=comparePublicFeed([product({code:'NOVO',id:'abc-123',published:true})],[{code:'ANTIGO',backoffice_product_id:'abc-123'}]);
+ assert.equal(r.present,1);
+});
+test('painel consulta apenas as RPC de leitura e não modifica dados',()=>{
+ const fs=require('node:fs'),src=fs.readFileSync('catalog-publication-overview-v1.js','utf8');
+ for(const proc of ['store_public_catalog_v1','store_public_content_v3','store_public_config_v1'])assert.ok(src.includes("call('"+proc+"')"));
+ assert.doesNotMatch(src,/\.\s*(?:insert|update|upsert|delete)\s*\(/);
 });
