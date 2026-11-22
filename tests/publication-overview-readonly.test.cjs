@@ -92,3 +92,25 @@ test('o diagnóstico inicia depois do script editorial, sem corrida de carregame
  assert.match(src,/review\.addEventListener\('error',loadOverview/);
  assert.match(src,/review\.src='\/catalog-review-workflow-v1995\.js'/);
 });
+
+test('artigos do feed sem ligação são expostos só como diagnóstico',()=>{
+ const p=product({_rid:'local-a',code:'A001',shopVisible:true});
+ const r=comparePublicFeed([p],[{code:'A001',backoffice_product_id:'local-a',name:'Produto normal'},
+  {code:'X001',name:'Vela teste 1',backoffice_product_id:'id-inexistente'}]);
+ assert.equal(r.originNotInDevice,1);
+ assert.equal(r.unlinkedRemote.length,1);
+ assert.deepEqual(r.unlinkedRemote[0],{
+  code:'X001',name:'Vela teste 1',reason:'Origem não encontrada no dispositivo'
+ });
+});
+test('registos do feed sem identificador próprio são sinalizados',()=>{
+ const r=comparePublicFeed([product({_rid:'abc'})],[{code:'A001',name:'Sem ligação',backoffice_product_id:null}]);
+ assert.equal(r.unlinkedRemote.length,1);
+ assert.equal(r.unlinkedRemote[0].reason,'Sem identificador de origem');
+});
+test('consulta requer sessão Cloud e não tem operações de escrita',()=>{
+ const fs=require('node:fs'),src=fs.readFileSync('catalog-publication-overview-v1.js','utf8');
+ assert.match(src,/ensureCloudSession\(\)/);
+ assert.match(src,/if\(!user\)throw Error/);
+ assert.doesNotMatch(src,/\.\s*(?:insert|update|upsert|delete)\s*\(/);
+});

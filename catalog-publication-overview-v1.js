@@ -66,8 +66,17 @@ function comparePublicFeed(localProducts,feedProducts){
   }else if(!id)status='unmatched';
   return {code:row.code,name:row.name,marked:row.publicIntent,status};
  });
+ // Produtos remotos sem ligação ao conjunto carregado: apenas diagnóstico,
+ // nunca retirar/editar os registos a partir deste painel.
+ const unlinkedRemote=remote.filter(item=>{
+  const origin=trim(item.backoffice_product_id);
+  return !origin||!localIds.has(origin);
+ }).map(item=>({
+  code:trim(item.code),name:trim(item.name)||'Sem nome',
+  reason:trim(item.backoffice_product_id)?'Origem não encontrada no dispositivo':'Sem identificador de origem'
+ }));
  const present=rows.filter(r=>r.status==='present').length;
- return {status:'ok',rows,feedCount:remote.length,present,
+ return {status:'ok',rows,feedCount:remote.length,present,unlinkedRemote,
   missingMarked:rows.filter(r=>r.marked===true&&r.status==='absent').length,
   unexpectedPresent:rows.filter(r=>r.marked===false&&r.status==='present').length,
   uncertain:rows.filter(r=>['ambiguous','unmatched','code_only'].includes(r.status)).length,
@@ -129,6 +138,10 @@ async function checkPublicFeed(){
  button.disabled=true;
  host.textContent='A consultar dados públicos…';
  try{
+  // Respeita o bloqueio e a sessão do Backoffice antes de consultar RPC públicas.
+  const user=(typeof cloudUser!=='undefined'&&cloudUser)||
+   (typeof ensureCloudSession==='function'?await ensureCloudSession():null);
+  if(!user)throw Error('Inicia sessão na ArtEssencia Cloud antes de consultar');
   const client=typeof initCloudClient==='function'?initCloudClient():null;
   if(!client||typeof client.rpc!=='function')throw Error('Ligação Cloud indisponível');
   const call=async name=>{try{return await client.rpc(name,{})}catch(error){return {error}}};
@@ -162,6 +175,11 @@ async function checkPublicFeed(){
      ['No feed sem origem identificada',report.withoutOrigin],['Origem não encontrada neste dispositivo',report.originNotInDevice]]
       .map(([label,count])=>'<span><b>'+count+'</b> '+escapeHtml(label)+'</span>').join('')+
    '</div>'+warning+
+   (report.unlinkedRemote.length?
+    '<details><summary>Produtos no feed sem ligação confirmada ('+report.unlinkedRemote.length+')</summary><div class="ae-publication-public-list-v1">'+
+    report.unlinkedRemote.slice(0,16).map(item=>'<div><strong>'+escapeHtml(item.name)+'</strong><small>'+
+    escapeHtml(item.code||'Sem código')+' · '+escapeHtml(item.reason)+'</small></div>').join('')+
+    '</div></details>':'')+
    (discrepancies.length?'<details><summary>Examinar até 16 divergências</summary><div class="ae-publication-public-list-v1">'+
     discrepancies.map(r=>'<div><strong>'+escapeHtml(r.name)+'</strong><small>'+
       escapeHtml(r.code||'Sem código')+' · '+escapeHtml(issueLabel(r))+'</small></div>').join('')+

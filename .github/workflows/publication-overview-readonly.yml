@@ -8,13 +8,15 @@ on:
       - 'catalog-review-workflow-v1995.js'
       - 'tests/publication-overview-readonly.test.cjs'
       - '.github/workflows/publication-overview-readonly.yml'
+      - 'tests/publication-overview-browser-fixture.html'
+      - 'scripts/test_publication_overview_browser.cjs'
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   audit-readonly:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 18
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -24,3 +26,11 @@ jobs:
           node-version: '22'
       - run: node --check catalog-publication-overview-v1.js
       - run: node --test tests/publication-overview-readonly.test.cjs
+      - name: Instalar Chromium para teste isolado
+        run: |
+          npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Testar desktop, tablet e telemóvel em fixture local
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/publication-overview-http.log 2>&1 &
+          node scripts/test_publication_overview_browser.cjs
