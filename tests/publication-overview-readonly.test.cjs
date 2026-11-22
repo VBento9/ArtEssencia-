@@ -4,15 +4,15 @@ const {auditProducts,comparePublicFeed}=require('../catalog-publication-overview
 function product(overrides={}){return {
  code:'AE1',name:'Vela fictícia',category:'Vela',catalogGroupV191:'velas-recipiente',
  shopDescription:'Descrição fictícia',shopImageUrl:'https://example.invalid/photo.jpg',
- price:15,published:false,shopVisible:false,...overrides
+ price:15,shopVisible:false,...overrides
 }}
 test('resumo não confunde sinalização local com publicação real',()=>{
- const items=[product({published:true,shopVisible:true})];
+ const items=[product({shopVisible:true})];
  const result=auditProducts(items,()=>({kind:'reviewed'}));
  assert.equal(result.summary.ready,1);
- assert.equal(result.summary.markedCatalog,1);
- assert.equal(result.summary.markedShop,1);
- assert.equal(result.records[0].catalogMarked,true);
+ assert.equal(result.summary.markedPublic,1);
+ assert.equal(result.summary.unknownPublicIntent,0);
+ assert.equal(result.records[0].publicIntent,true);
 });
 test('revisão obsoleta impede estado pronto, mesmo com dados completos',()=>{
  const result=auditProducts([product()],()=>({kind:'ready'}));
@@ -42,24 +42,42 @@ test('sem auditoria editorial carregada mantém diagnóstico conservador',()=>{
  assert.equal(r.summary.ready,0);
 });
 
+test('a marcação publicada inexistente não cria contagem falsa para Catálogo',()=>{
+ const a=auditProducts([product({published:true,shopVisible:false})],()=>({kind:'reviewed'}));
+ assert.equal(a.summary.markedPublic,0);
+});
+test('marcação pública desconhecida não é interpretada como falso',()=>{
+ const p=product();delete p.shopVisible;
+ const a=auditProducts([p],()=>({kind:'reviewed'}));
+ assert.equal(a.summary.unknownPublicIntent,1);
+});
+test('identificação por origem é obrigatória para correspondência confirmada',()=>{
+ const r=comparePublicFeed([product({id:'owner-123',shopVisible:true})],[{code:'AE1',backoffice_product_id:'different'}]);
+ assert.equal(r.present,0);assert.equal(r.uncertain,1);assert.equal(r.missingMarked,0);
+ assert.equal(r.originNotInDevice,1);
+});
+test('artigos do feed sem origem são quantificados separadamente',()=>{
+ const r=comparePublicFeed([product({shopVisible:false})],[{code:'AE1',backoffice_product_id:null}]);
+ assert.equal(r.withoutOrigin,1);assert.equal(r.uncertain,1);
+});
 test('feed vazio não gera falsas faltas de publicação',()=>{
- const r=comparePublicFeed([product({published:true})],[]);
+ const r=comparePublicFeed([product({shopVisible:true})],[]);
  assert.equal(r.status,'empty');assert.equal(r.rows.length,0);
 });
 test('compara por código sem tomar nome como identidade',()=>{
- const r=comparePublicFeed([product({published:true}),product({code:'AE2',published:false,name:'Vela fictícia'})],[{code:'AE1',name:'Nome diferente'}]);
- assert.equal(r.status,'ok');assert.equal(r.present,1);assert.equal(r.missingMarked,0);
+ const r=comparePublicFeed([product({shopVisible:true}),product({code:'AE2',shopVisible:false,name:'Vela fictícia'})],[{code:'AE1',name:'Nome diferente'}]);
+ assert.equal(r.status,'ok');assert.equal(r.present,0);assert.equal(r.uncertain,1);assert.equal(r.missingMarked,0);
 });
 test('diferenças entre sinalização local e feed são detetadas',()=>{
- const r=comparePublicFeed([product({published:true}),product({code:'AE2',published:false})],[{code:'AE2'}]);
- assert.equal(r.missingMarked,1);assert.equal(r.unexpectedPresent,1);
+ const r=comparePublicFeed([product({id:'origin-a',shopVisible:true}),product({id:'origin-b',code:'AE2',shopVisible:false})],[{code:'AE2',backoffice_product_id:'origin-b'}]);
+ assert.equal(r.missingMarked,1);assert.equal(r.unexpectedPresent,1);assert.equal(r.uncertain,0);
 });
 test('códigos repetidos nunca são reconciliados automaticamente',()=>{
- const r=comparePublicFeed([product({published:true}),product({published:true,name:'Outra peça'})],[{code:'AE1'}]);
- assert.equal(r.ambiguous,2);assert.equal(r.missingMarked,0);
+ const r=comparePublicFeed([product({shopVisible:true}),product({published:true,name:'Outra peça'})],[{code:'AE1'}]);
+ assert.equal(r.uncertain,2);assert.equal(r.missingMarked,0);
 });
 test('identificador da origem permite comparação com código diferente',()=>{
- const r=comparePublicFeed([product({code:'NOVO',id:'abc-123',published:true})],[{code:'ANTIGO',backoffice_product_id:'abc-123'}]);
+ const r=comparePublicFeed([product({code:'NOVO',id:'abc-123',shopVisible:true})],[{code:'ANTIGO',backoffice_product_id:'abc-123'}]);
  assert.equal(r.present,1);
 });
 test('painel consulta apenas as RPC de leitura e não modifica dados',()=>{
