@@ -43,6 +43,20 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
    assert.equal(await page.locator('#aePublicationOverviewV1').isVisible(),false,'Painel oculto na revisão '+width);
    assert.equal(await page.locator('#aeReviewSearch1995').inputValue(),'TEST-001','Pesquisa sincronizada '+width);
    assert.equal(await page.locator('.ae-review-item').count(),1,'Produto encontrado na revisão '+width);
+   // A revisão deve devolver a lista original sem deixar o painel escondido.
+   await page.locator('#aeProductsListNav1997').click();
+   assert.equal(await page.locator('#aePublicationOverviewV1').isVisible(),true,'Regresso à lista '+width);
+   assert.equal(await page.locator('.products-list-card').evaluate(e=>e.classList.contains('ae-review-focus1995')),false,'Revisão terminada '+width);
+   // Alterações locais de apresentação não podem escrever na Cloud; a listagem
+   // existente emite mutações de DOM quando se atualiza.
+   await page.evaluate(()=>{
+    db.products[0].name='Vela de demonstração atualizada';
+    document.getElementById('productsCards').appendChild(document.createElement('span'));
+   });
+   await page.waitForFunction(()=>document.querySelector('#aePublicationResultsV1')?.textContent.includes('Vela de demonstração atualizada'));
+   assert.equal(await page.locator('#aePublicationResultsV1').innerText().then(t=>t.includes('Vela de demonstração atualizada')),true,'Indicadores reativos '+width);
+   await page.evaluate(()=>{db.products[0].name='Vela de demonstração'});
+   await page.locator('#aePublicationRefreshV1').click();
    assert.equal(await page.evaluate(()=>JSON.stringify(db.products)),before,'Nenhuma alteração aos produtos '+width);
    await context.close();
   }
