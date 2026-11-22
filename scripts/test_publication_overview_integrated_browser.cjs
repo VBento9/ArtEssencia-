@@ -14,7 +14,7 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
    });
    await page.goto('http://127.0.0.1:8765/');
    await page.waitForFunction(()=>typeof go==='function'&&!!document.getElementById('aeProductsCompact'));
-   await page.locator('#aePublicationOverviewV1').waitFor();
+   await page.locator('#aePublicationOverviewV1').waitFor({state:'attached'});
    await page.evaluate(()=>{
     document.getElementById('authGateV1880')?.remove();
     finishAppUnlockV19135();
