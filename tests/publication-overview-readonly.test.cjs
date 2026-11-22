@@ -122,3 +122,13 @@ test('Centro de Publicação integrado na lista compacta, não por cima do edito
  assert.doesNotMatch(src,/nav\.insertAdjacentElement\('afterend',section\)/);
  assert.match(src,/new MutationObserver\(/);
 });
+
+test('consulta Cloud não confia em utilizador memorizado e valida bloqueio e identidade',()=>{
+ const fs=require('node:fs'),src=fs.readFileSync('catalog-publication-overview-v1.js','utf8');
+ assert.match(src,/function publicationAccessAllowed\(\)/);
+ assert.match(src,/await ensureCloudSession\(\)/);
+ assert.match(src,/await client\.auth\.getUser\(\)/);
+ assert.doesNotMatch(src,/const user=\(typeof cloudUser/);
+ assert.match(src,/Consulta interrompida: Backoffice bloqueado/);
+ assert.match(src,/hasPendingProductEditsV19102\(\)/);
+});

@@ -144,22 +144,45 @@ function install(){
  render();
 }
 
+function publicationAccessAllowed(){
+ const gate=E('authGateV1880'),lock=E('lockScreen');
+ const app=document.querySelector('.app');
+ return !(gate&&!gate.classList.contains('hidden'))&&
+  !(lock&&!lock.classList.contains('hidden'))&&
+  !(app&&app.inert);
+}
 async function checkPublicFeed(){
  const button=E('aePublicationCheckV1'),host=E('aePublicationPublicResultV1');
  if(!button||!host)return;
+ if(!publicationAccessAllowed()){
+  host.textContent='Desbloqueia o Backoffice antes de consultar os canais públicos.';
+  return;
+ }
  button.disabled=true;
- host.textContent='A consultar dados públicos…';
+ host.textContent='A validar a sessão Cloud e a consultar dados públicos…';
  try{
-  // Respeita o bloqueio e a sessão do Backoffice antes de consultar RPC públicas.
-  const user=(typeof cloudUser!=='undefined'&&cloudUser)||
-   (typeof ensureCloudSession==='function'?await ensureCloudSession():null);
-  if(!user)throw Error('Inicia sessão na ArtEssencia Cloud antes de consultar');
+  // Nunca usar cloudUser em cache para autorizar a consulta. A identidade é
+  // confirmada pelo Auth e não por uma propriedade local ou código de acesso.
+  if(typeof ensureCloudSession!=='function')throw Error('Validação de sessão Cloud indisponível');
+  const user=await ensureCloudSession();
+  if(!publicationAccessAllowed())throw Error('Consulta interrompida: Backoffice bloqueado');
+  if(!user?.id)throw Error('Inicia sessão na ArtEssencia Cloud antes de consultar');
   const client=typeof initCloudClient==='function'?initCloudClient():null;
-  if(!client||typeof client.rpc!=='function')throw Error('Ligação Cloud indisponível');
+  if(!client||typeof client.rpc!=='function'||typeof client.auth?.getUser!=='function')
+   throw Error('Validação de identidade Cloud indisponível');
+  const verified=await client.auth.getUser();
+  if(verified?.error)throw verified.error;
+  if(!verified?.data?.user?.id||String(verified.data.user.id)!==String(user.id))
+   throw Error('Sessão Cloud expirada ou alterada; volta a autenticar');
+  if(!publicationAccessAllowed())throw Error('Consulta interrompida: Backoffice bloqueado');
   const call=async name=>{try{return await client.rpc(name,{})}catch(error){return {error}}};
   const [catalog,content,store]=await Promise.all([
    call('store_public_catalog_v1'),call('store_public_content_v3'),call('store_public_config_v1')
   ]);
+  // Um bloqueio ou fim de sessão durante o pedido invalida o resultado obtido.
+  if(!publicationAccessAllowed())throw Error('Consulta interrompida: Backoffice bloqueado');
+  if(typeof cloudUser!=='undefined'&&(!cloudUser||String(cloudUser.id)!==String(user.id)))
+   throw Error('Consulta interrompida: a sessão Cloud foi alterada');
   if(catalog.error)throw catalog.error;
   if(!catalog.data||!Array.isArray(catalog.data.products))throw Error('Resposta inválida do feed de produtos');
   const report=comparePublicFeed(typeof db==='undefined'?[]:db.products,catalog.data.products);
@@ -174,8 +197,12 @@ async function checkPublicFeed(){
   const discrepancies=report.rows.filter(r=>
    (r.marked&&r.status==='absent')||(!r.marked&&r.status==='present')||
    r.status==='ambiguous'||r.status==='unmatched'||r.status==='code_only').slice(0,16);
-  const warning=typeof cloudBusy!=='undefined'&&cloudBusy?
-   '<p>Atenção: sincronização local em curso. A comparação pode utilizar dados locais desatualizados.</p>':'';
+  const meta=typeof cloudMeta==='function'?cloudMeta():null;
+  const unconfirmed=!!((typeof cloudBusy!=='undefined'&&cloudBusy)||
+   (meta&&(meta.dirty||meta.conflict||!meta.verified))||
+   (typeof hasPendingProductEditsV19102==='function'&&hasPendingProductEditsV19102()));
+  const warning=unconfirmed?
+   '<p>Atenção: sincronização local/Cloud por confirmar. As divergências podem refletir dados desatualizados neste dispositivo; não constituem prova de falha de publicação.</p>':'';
   const issueLabel=r=>r.status==='code_only'?'Código coincide, mas origem não confirmada':r.status==='ambiguous'?'Identificação ambígua':
    r.status==='unmatched'?'Sem identificador fiável':
    r.status==='absent'?'Assinalado no Backoffice, não encontrado no feed':

@@ -4,9 +4,9 @@
 <style>
 *{box-sizing:border-box}body{font:15px system-ui,sans-serif;margin:0;padding:12px;color:#342d27;background:#fffaf5}
 main{width:100%;max-width:1400px;margin:auto}.btn{padding:9px 12px;border:1px solid #bdad9a;border-radius:8px;background:#fff;cursor:pointer}
-#aeProductsViews1997{min-height:1px}
+#aeProductsViews1997{min-height:1px}.hidden{display:none!important}
 </style></head><body>
-<main id="products"><h1>Fixture editorial</h1><nav id="aeProductsViews1997"></nav>
+<div id="authGateV1880" class="hidden"></div><div id="lockScreen" class="hidden"></div><main id="products" class="app"><h1>Fixture editorial</h1><nav id="aeProductsViews1997"></nav>
 <section class="products-list-card"></section></main>
 <script>
 window.db={products:[
@@ -15,11 +15,26 @@ window.db={products:[
 ]};
 window.aeCatalogReviewAssessmentV1995=p=>({kind:p.code==='A001'?'reviewed':'pending'});
 window.__rpcCalls=[];
+window.__authCalls=[];
 window.__isLoggedIn=true;
+window.__authFail=false;
+window.__holdFeed=false;
 window.cloudBusy=false;
-window.ensureCloudSession=async()=>window.__isLoggedIn?{id:'fixture-owner'}:null;
-window.initCloudClient=()=>({rpc:async(name)=>{
+window.ensureCloudSession=async()=>{
+ window.__authCalls.push('getSession');
+ return window.__isLoggedIn?{id:'fixture-owner'}:null;
+};
+window.initCloudClient=()=>({
+ auth:{getUser:async()=>{
+  window.__authCalls.push('getUser');
+  return window.__authFail?{data:{user:null},error:{message:'Sessão Cloud expirada'}}:
+   {data:{user:window.__isLoggedIn?{id:'fixture-owner'}:null},error:null};
+ }},
+ rpc:async(name)=>{
  window.__rpcCalls.push(name);
+ if(name==='store_public_catalog_v1'&&window.__holdFeed){
+  await new Promise(resolve=>{window.__resolveFeed=resolve});
+ }
  if(name==='store_public_catalog_v1')return {data:{products:[
   {code:'A001',backoffice_product_id:'local-a',name:'Vela fictícia'},
   {code:'X001',backoffice_product_id:'retired-origin',name:'Vela teste 1'}
