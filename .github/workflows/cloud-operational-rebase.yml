@@ -1,0 +1,25 @@
+name: Cloud operational rebase regression
+
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'tests/cloud-operational-rebase-v19186.test.cjs'
+      - '.github/workflows/cloud-operational-rebase.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  safe-rebase:
+    name: Safe operational reconciliation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test three-way operational merges against index.html
+        run: node --test tests/cloud-operational-rebase-v19186.test.cjs
