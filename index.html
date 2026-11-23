@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.185">
+<meta name="artessencia-version" content="1.9.186">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -6448,7 +6448,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.185';
+const APP_VERSION='1.9.186';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -16535,6 +16535,14 @@ function trySafeOperationalRebaseV19102(remote,baseRevision){
  }
  const before=relClone(db);
  try{
+  // Uma conciliação automática deve conservar a versão operacional anterior.
+  // Falhar ao criar esta cópia bloqueia o rebase em vez de arriscar perda de dados.
+  if(stableStringify(localOps)!==stableStringify(remoteOps)){
+   localStorage.setItem('artessencia_v9_pre_operational_rebase_v19186',JSON.stringify({
+    at:new Date().toISOString(),baseRevision:expectedBase,remoteRevision:remoteRev,
+    operations:localOps
+   }));
+  }
   assertManualFragranceHistoryV1(db,merged);
   for(const k of CLOUD_OPERATIONAL_KEYS_V139){
    if(merged[k]!==undefined)db[k]=relClone(merged[k]);
