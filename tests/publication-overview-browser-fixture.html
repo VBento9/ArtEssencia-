@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="pt-PT"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ArtEssencia — fixture isolada do Centro de Publicação</title>
+<style>
+*{box-sizing:border-box}body{font:15px system-ui,sans-serif;margin:0;padding:12px;color:#342d27;background:#fffaf5}
+main{width:100%;max-width:1400px;margin:auto}.btn{padding:9px 12px;border:1px solid #bdad9a;border-radius:8px;background:#fff;cursor:pointer}
+#aeProductsViews1997{min-height:1px}.hidden{display:none!important}
+</style></head><body>
+<div id="authGateV1880" class="hidden"></div><div id="lockScreen" class="hidden"></div><main id="products" class="app"><h1>Fixture editorial</h1><nav id="aeProductsViews1997"></nav>
+<section class="products-list-card"></section></main>
+<script>
+window.db={products:[
+ {_rid:'local-a',code:'A001',name:'Vela fictícia',category:'Velas',catalogGroupV191:'velas-decorativas',shopDescription:'Descrição de teste',shopImageUrl:'https://example.invalid/a.jpg',price:15,shopVisible:true},
+ {_rid:'local-b',code:'A002',name:'Sabonete fictício',category:'Sabonetes',catalogGroupV191:'sabonetes',shopDescription:'Descrição de teste',shopImageUrl:'',price:7,shopVisible:false}
+]};
+window.aeCatalogReviewAssessmentV1995=p=>({kind:p.code==='A001'?'reviewed':'pending'});
+window.__rpcCalls=[];
+window.__authCalls=[];
+window.__isLoggedIn=true;
+window.__authFail=false;
+window.__holdFeed=false;
+window.cloudBusy=false;
+window.ensureCloudSession=async()=>{
+ window.__authCalls.push('getSession');
+ return window.__isLoggedIn?{id:'fixture-owner'}:null;
+};
+window.initCloudClient=()=>({
+ auth:{getUser:async()=>{
+  window.__authCalls.push('getUser');
+  return window.__authFail?{data:{user:null},error:{message:'Sessão Cloud expirada'}}:
+   {data:{user:window.__isLoggedIn?{id:'fixture-owner'}:null},error:null};
+ }},
+ rpc:async(name)=>{
+ window.__rpcCalls.push(name);
+ if(name==='store_public_catalog_v1'&&window.__holdFeed){
+  await new Promise(resolve=>{window.__resolveFeed=resolve});
+ }
+ if(name==='store_public_catalog_v1')return {data:{products:[
+  {code:'A001',backoffice_product_id:'local-a',name:'Vela fictícia'},
+  {code:'X001',backoffice_product_id:'retired-origin',name:'Vela teste 1'}
+ ]},error:null};
+ if(name==='store_public_content_v3')return {data:{catalog_status:{mode:'open'}},error:null};
+ if(name==='store_public_config_v1')return {data:{store_status:{mode:'closed',accepting_orders:false}},error:null};
+ return {data:null,error:{message:'RPC não esperada'}};
+ }});
+</script>
+<script src="/catalog-publication-overview-v1.js"></script>
+</body></html>

@@ -48,6 +48,8 @@ function assessment(p){
   changed:prior.status==='reviewed'&&!same};
 }
 function data(){return rows().map(assessment)}
+// API somente leitura para painéis editoriais; conserva os critérios únicos de revisão.
+window.aeCatalogReviewAssessmentV1995=assessment;
 function labelOf(a){return a.kind==='reviewed'?'Revisto':a.kind==='ready'?'Pronto para validar':'Por tratar'}
 function render(){
  var root=el('aeReviewWorkflow1995');if(!root)return;
