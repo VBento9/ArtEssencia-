@@ -60,7 +60,7 @@
   try{return typeof KEY==='string'&&typeof db!=='undefined'&&localStorage.getItem(KEY)===JSON.stringify(db)}
   catch(_){return false}
  }
- let backupRequestedV19187=false;
+ let backupRequestedV19187=false,backupSnapshotV19187='';
  function pwaExportBeforeUpdateV19187(){
   try{
    if(typeof backupBlob!=='function'||typeof backupFileName!=='function'||typeof downloadBlob!=='function')throw new Error('Backup indisponível');
@@ -68,12 +68,14 @@
    if(!blob||!blob.size)throw new Error('Backup vazio');
    downloadBlob(blob,backupFileName('ArtEssencia_ANTES_ATUALIZAR'));
    backupRequestedV19187=true;
+   try{backupSnapshotV19187=JSON.stringify(db)}catch(_){backupSnapshotV19187=''}
    bannerMessage('Cópia dos dados em memória preparada. Confirma que o ficheiro JSON ficou guardado antes de continuar.');
    return true;
-  }catch(error){backupRequestedV19187=false;bannerMessage('Não foi possível criar o backup: '+String(error?.message||error));return false}
+  }catch(error){backupRequestedV19187=false;backupSnapshotV19187='';bannerMessage('Não foi possível criar o backup: '+String(error?.message||error));return false}
  }
  function pwaPersistBeforeUpdateV19187(){
   if(!backupRequestedV19187){bannerMessage('Primeiro descarrega uma cópia dos dados em memória.');return false}
+  try{if(!backupSnapshotV19187||backupSnapshotV19187!==JSON.stringify(db)){backupRequestedV19187=false;bannerMessage('Os dados mudaram depois do backup. Descarrega uma cópia atualizada antes de guardar.');return false}}catch(_){backupRequestedV19187=false;bannerMessage('Não foi possível verificar o backup. Não atualizar.');return false}
   if((typeof cloudBusy==='boolean'&&cloudBusy)||
      (typeof cloudPushRunning==='boolean'&&cloudPushRunning)||
      (typeof productSyncBusyV19104==='boolean'&&productSyncBusyV19104)||
@@ -88,7 +90,7 @@
     return false;
    }
   }catch(error){bannerMessage('Falha de gravação local: '+String(error?.message||error)+'. Não atualizar.');return false}
-  backupRequestedV19187=false;
+  backupRequestedV19187=false;backupSnapshotV19187='';
   reloadFresh();
   return true;
  }
