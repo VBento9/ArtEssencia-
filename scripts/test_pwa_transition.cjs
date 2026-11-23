@@ -38,7 +38,7 @@ const targetVersion=JSON.parse(fs.readFileSync('version.json','utf8')).app;
   assert.equal(await page.evaluate(()=>APP_VERSION),'1.9.45');
   assert.equal(await page.locator('#stockName').inputValue(),'UNSAVED MATERIAL');
   // The worker may initiate a second navigation; assert the resulting version explicitly.
-  await page.locator('#ae-update-available button').click({noWaitAfter:true});
+  await page.locator('#ae-update-available > button.btn.primary').click({noWaitAfter:true});
   await page.waitForFunction(version=>typeof APP_VERSION==='string'&&APP_VERSION===version,targetVersion);
   assert.deepEqual(await page.evaluate(()=>[localStorage.getItem('release-preserve'),sessionStorage.getItem('release-preserve')]),['local-value','session-value']);
   assert.equal(await page.evaluate(()=>new Promise((resolve,reject)=>{const r=indexedDB.open('release-preserve');r.onerror=()=>reject(r.error);r.onsuccess=()=>{const db=r.result,q=db.transaction('values').objectStore('values').get('key');q.onsuccess=()=>{db.close();resolve(q.result)}}})),'idb-value');
@@ -47,7 +47,7 @@ const targetVersion=JSON.parse(fs.readFileSync('version.json','utf8')).app;
   await page.waitForSelector('#authGateV1880',{state:'visible'});
   future=true;await page.evaluate(()=>window.dispatchEvent(new Event('online')));
   await page.waitForSelector('#ae-update-available');
-  assert.equal(await page.locator('#ae-update-available button').evaluate(el=>{const r=el.getBoundingClientRect();return document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)===el}),true);
+  assert.equal(await page.locator('#ae-update-available > button.btn.primary').evaluate(el=>{const r=el.getBoundingClientRect();return document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)===el}),true);
   console.log('PASS: real Chromium worker 1.9.45 → '+targetVersion+'; unsaved form retained until explicit refresh; localStorage/sessionStorage/IndexedDB preserved; new Stock picker loaded without reinstall.');
   await context.close();
  }finally{await browser.close();await new Promise(r=>server.close(r))}
