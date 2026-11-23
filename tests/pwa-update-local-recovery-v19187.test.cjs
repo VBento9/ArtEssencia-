@@ -26,7 +26,7 @@ function makeFixture({initial,live,saveResult=true,backupAvailable=true,busy=fal
  };
  const names=Object.keys(context),values=Object.values(context);
  const get=new Function(...names,definitions+'\nreturn {durable:pwaDurableSnapshotV19187,backup:pwaExportBeforeUpdateV19187,persist:pwaPersistBeforeUpdateV19187};')(...values);
- return {get,storage,messages,downloads,stats:()=>({saves,reloads,confirmed})};
+ return {get,live:context.db,storage,messages,downloads,stats:()=>({saves,reloads,confirmed})};
 }
 test('estado diferente exige backup antes de guardar',()=>{
  const f=makeFixture({initial:{a:1},live:{a:2}});
@@ -41,6 +41,17 @@ test('backup e gravação local permitem atualizar sem limpar o armazenamento',(
  assert.equal(f.get.persist(),true);
  assert.equal(f.get.durable(),true);
  assert.equal(f.stats().reloads,1);
+});
+test('mudança posterior ao backup exige novo ficheiro de recuperação',()=>{ 
+ const f=makeFixture({initial:{a:1},live:{a:2}});
+ assert.equal(f.get.backup(),true);
+ f.get.durable();
+ // Mutação de memória após o download torna a cópia anterior obsoleta.
+ f.live.a=3;
+ assert.equal(f.get.persist(),false);
+ assert.equal(f.stats().saves,0);
+ assert.equal(f.stats().reloads,0);
+ assert.match(f.messages.at(-1),/mudaram depois do backup/);
 });
 test('falha de gravação não permite atualizar',()=>{
  const f=makeFixture({initial:{a:1},live:{a:2},saveResult:false});
