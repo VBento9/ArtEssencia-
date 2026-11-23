@@ -16478,6 +16478,28 @@ function operationalCloudRowSnapshotV1858(row){
 
 /* Uma revisão operacional não deve bloquear uma edição de um produto independente.
    Reconciliar apenas chaves operacionais sem alterações concorrentes, com base confirmada. */
+/* A receita pertence ao estado operacional global, mas as suas entradas são
+   independentes por código de produto. Só conciliamos quando existe uma base
+   local confirmada e cada código tem uma alteração não concorrente. */
+function mergeOperationalProductRecipesV19186(base,local,remote){
+ const valid=x=>x===undefined||(x!==null&&typeof x==='object'&&!Array.isArray(x));
+ if(!valid(base)||!valid(local)||!valid(remote))return {ok:false,code:'estrutura'};
+ const merged={};
+ const codes=new Set([...Object.keys(base||{}),...Object.keys(local||{}),...Object.keys(remote||{})]);
+ for(const code of codes){
+  const ours=local?.[code],theirs=remote?.[code],previous=base?.[code];
+  let chosen;
+  if(stableStringify(ours)===stableStringify(theirs))chosen=ours;
+  else if(stableStringify(ours)===stableStringify(previous))chosen=theirs;
+  else if(stableStringify(theirs)===stableStringify(previous))chosen=ours;
+  else return {ok:false,code};
+  if(chosen!==undefined)merged[code]=relClone(chosen);
+ }
+ return {ok:true,merged};
+}
+
+/* Uma revisão operacional não deve bloquear uma edição de um produto independente.
+   Reconciliar apenas chaves operacionais sem alterações concorrentes, com base confirmada. */
 function trySafeOperationalRebaseV19102(remote,baseRevision){
  if(!remote?.data)return false;
  const remoteRev=Number(remote.revision||0);
@@ -16487,36 +16509,51 @@ function trySafeOperationalRebaseV19102(remote,baseRevision){
  const expectedBase=Number(baseRevision||0)||Number(shadow?.revision||0);
  const matchingBase=shadow&&Number(shadow.revision||0)===expectedBase;
  const baseOps=matchingBase?operationalCloudRowSnapshotV1858({data:shadow.data}):null;
- // Sem shadow, só é seguro alinhar uma revisão se o snapshot operacional
- // coincidir exatamente, nunca substituir valores locais desconhecidos.
- if(!baseOps&&stableStringify(localOps)!==stableStringify(remoteOps))return false;
+ if(!baseOps&&stableStringify(localOps)!==stableStringify(remoteOps)){
+  const changed=CLOUD_OPERATIONAL_KEYS_V139.filter(k=>stableStringify(localOps[k])!==stableStringify(remoteOps[k]));
+  cloudLogMsg('Rebase operacional sem base confirmada · chaves: '+changed.join(', ')+' · dados preservados');
+  return false;
+ }
  const merged={};
  for(const k of CLOUD_OPERATIONAL_KEYS_V139){
-   const ours=localOps[k],theirs=remoteOps[k],base=baseOps?.[k];
-   if(stableStringify(ours)===stableStringify(theirs))merged[k]=ours;
-   else if(baseOps&&stableStringify(ours)===stableStringify(base))merged[k]=theirs;
-   else if(baseOps&&stableStringify(theirs)===stableStringify(base))merged[k]=ours;
-   else return false;
+  const ours=localOps[k],theirs=remoteOps[k],base=baseOps?.[k];
+  if(stableStringify(ours)===stableStringify(theirs))merged[k]=ours;
+  else if(baseOps&&stableStringify(ours)===stableStringify(base))merged[k]=theirs;
+  else if(baseOps&&stableStringify(theirs)===stableStringify(base))merged[k]=ours;
+  else if(baseOps&&k==='productRecipes'){
+   const result=mergeOperationalProductRecipesV19186(base,ours,theirs);
+   if(!result.ok){
+    cloudLogMsg('Conflito em receitas técnicas · produto '+result.code+' · dados preservados');
+    return false;
+   }
+   merged[k]=result.merged;
+  }
+  else{
+   cloudLogMsg('Conflito operacional na chave '+k+' · dados preservados');
+   return false;
+  }
  }
  const before=relClone(db);
  try{
-   assertManualFragranceHistoryV1(db,merged);
-   for(const k of CLOUD_OPERATIONAL_KEYS_V139){
-     if(merged[k]!==undefined)db[k]=relClone(merged[k]);
-   }
-   localStorage.setItem(KEY,JSON.stringify(db));
+  assertManualFragranceHistoryV1(db,merged);
+  for(const k of CLOUD_OPERATIONAL_KEYS_V139){
+   if(merged[k]!==undefined)db[k]=relClone(merged[k]);
+  }
+  localStorage.setItem(KEY,JSON.stringify(db));
  }catch(e){
-   db=before;
-   cloudLogMsg('Rebase operacional não guardado: '+cloudErrText(e));
-   return false;
+  db=before;
+  cloudLogMsg('Rebase operacional não guardado: '+cloudErrText(e));
+  return false;
  }
+ // Alterações locais que não constam da revisão remota continuam por enviar.
+ const localOperationalPending=stableStringify(operationalCloudSnapshotV139())!==stableStringify(remoteOps);
+ if(localOperationalPending)localStorage.setItem(REL_DIRTY,'1');
  saveConfirmedShadow(remote);
- setCloudMeta({baseRevision:remoteRev,remoteRevision:remoteRev,lastCloudAt:remote.updated_at||null,conflict:false,verified:false});
+ setCloudMeta({baseRevision:remoteRev,remoteRevision:remoteRev,lastCloudAt:remote.updated_at||null,conflict:false,verified:false,...(localOperationalPending?{dirty:true}:{})});
  cloudConflict=null;
- cloudLogMsg('Revisão operacional reconciliada sem substituir alterações locais · Cloud '+remoteRev);
+ cloudLogMsg('Revisão operacional reconciliada por chave/produto · Cloud '+remoteRev+(localOperationalPending?' · alterações locais ainda por enviar':''));
  return true;
 }
-
 
 /* V1.9.103: recuperação conservadora de uma revisão persistida.
    Só é automática quando a Cloud contém exatamente os mesmos dados operacionais
