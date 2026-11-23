@@ -1,6 +1,6 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict');
-const {auditProducts,comparePublicFeed}=require('../catalog-publication-overview-v1.js');
+const {auditProducts,comparePublicFeed,publicationReadWithin}=require('../catalog-publication-overview-v1.js');
 function product(overrides={}){return {
  code:'AE1',name:'Vela fictícia',category:'Vela',catalogGroupV191:'velas-recipiente',
  shopDescription:'Descrição fictícia',shopImageUrl:'https://example.invalid/photo.jpg',
@@ -131,4 +131,16 @@ test('consulta Cloud não confia em utilizador memorizado e valida bloqueio e id
  assert.doesNotMatch(src,/const user=\(typeof cloudUser/);
  assert.match(src,/Consulta interrompida: Backoffice bloqueado/);
  assert.match(src,/hasPendingProductEditsV19102\(\)/);
+});
+
+test('leitura Cloud com prazo limite e limpeza do estado',async()=>{
+ assert.equal(await publicationReadWithin(async()=>42,'teste',100),42);
+ await assert.rejects(publicationReadWithin(()=>new Promise(()=>{}),'Consulta fictícia',25),/Consulta fictícia excedeu o limite de espera/);
+});
+test('offline e simultaneidade são tratados sem introduzir operações de escrita',()=>{
+ const fs=require('node:fs'),src=fs.readFileSync('catalog-publication-overview-v1.js','utf8');
+ assert.match(src,/navigator\.onLine===false/);
+ assert.match(src,/publicFeedInFlight/);
+ assert.match(src,/publicationReadWithin\(\(\)=>Promise\.all/);
+ assert.doesNotMatch(src,/\.\s*(?:insert|update|upsert|delete)\s*\(/);
 });

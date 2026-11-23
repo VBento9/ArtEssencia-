@@ -84,7 +84,14 @@ function comparePublicFeed(localProducts,feedProducts){
   originNotInDevice:remote.filter(r=>trim(r.backoffice_product_id)&&!localIds.has(trim(r.backoffice_product_id))).length
  };
 }
-if(typeof module==='object'&&module.exports)module.exports={auditProducts,comparePublicFeed};
+function publicationReadWithin(task,label,ms=12000){
+ let timeout;
+ const alarm=new Promise((_,reject)=>{
+  timeout=setTimeout(()=>reject(new Error(label+' excedeu o limite de espera. Verifica a ligação Cloud e volta a consultar.')),ms);
+ });
+ return Promise.race([Promise.resolve().then(task),alarm]).finally(()=>clearTimeout(timeout));
+}
+if(typeof module==='object'&&module.exports)module.exports={auditProducts,comparePublicFeed,publicationReadWithin};
 if(typeof document==='undefined')return;
 const escapeHtml=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const E=id=>document.getElementById(id);
@@ -151,34 +158,40 @@ function publicationAccessAllowed(){
   !(lock&&!lock.classList.contains('hidden'))&&
   !(app&&app.inert);
 }
+let publicFeedInFlight=false;
 async function checkPublicFeed(){
  const button=E('aePublicationCheckV1'),host=E('aePublicationPublicResultV1');
- if(!button||!host)return;
+ if(!button||!host||publicFeedInFlight)return;
  if(!publicationAccessAllowed()){
   host.textContent='Desbloqueia o Backoffice antes de consultar os canais públicos.';
   return;
  }
+ if(typeof navigator!=='undefined'&&navigator.onLine===false){
+  host.textContent='Sem ligação à internet. Os estados dos canais públicos não podem ser verificados offline.';
+  return;
+ }
+ publicFeedInFlight=true;
  button.disabled=true;
  host.textContent='A validar a sessão Cloud e a consultar dados públicos…';
  try{
   // Nunca usar cloudUser em cache para autorizar a consulta. A identidade é
   // confirmada pelo Auth e não por uma propriedade local ou código de acesso.
   if(typeof ensureCloudSession!=='function')throw Error('Validação de sessão Cloud indisponível');
-  const user=await ensureCloudSession();
+  const user=await publicationReadWithin(()=>ensureCloudSession(),'Verificação da sessão',10000);
   if(!publicationAccessAllowed())throw Error('Consulta interrompida: Backoffice bloqueado');
   if(!user?.id)throw Error('Inicia sessão na ArtEssencia Cloud antes de consultar');
   const client=typeof initCloudClient==='function'?initCloudClient():null;
   if(!client||typeof client.rpc!=='function'||typeof client.auth?.getUser!=='function')
    throw Error('Validação de identidade Cloud indisponível');
-  const verified=await client.auth.getUser();
+  const verified=await publicationReadWithin(()=>client.auth.getUser(),'Confirmação da identidade',10000);
   if(verified?.error)throw verified.error;
   if(!verified?.data?.user?.id||String(verified.data.user.id)!==String(user.id))
    throw Error('Sessão Cloud expirada ou alterada; volta a autenticar');
   if(!publicationAccessAllowed())throw Error('Consulta interrompida: Backoffice bloqueado');
   const call=async name=>{try{return await client.rpc(name,{})}catch(error){return {error}}};
-  const [catalog,content,store]=await Promise.all([
+  const [catalog,content,store]=await publicationReadWithin(()=>Promise.all([
    call('store_public_catalog_v1'),call('store_public_content_v3'),call('store_public_config_v1')
-  ]);
+  ]),'Consulta aos canais',12000);
   // Um bloqueio ou fim de sessão durante o pedido invalida o resultado obtido.
   if(!publicationAccessAllowed())throw Error('Consulta interrompida: Backoffice bloqueado');
   if(typeof cloudUser!=='undefined'&&(!cloudUser||String(cloudUser.id)!==String(user.id)))
@@ -226,7 +239,7 @@ async function checkPublicFeed(){
    '<p class="ae-publication-disclaimer-v1">Comparação com o feed público partilhado, sem aceder à apresentação real dos canais. Origem não encontrada neste dispositivo pode significar sincronização incompleta. Edições, filtros e estados dos canais podem ocultar produtos. Não confirma visibilidade na página nem sincronização completa entre dispositivos. O checkout da Loja permanece fechado.</p>';
  }catch(error){
   host.textContent='Verificação não concluída: '+String(error?.message||error)+'. Não foram alterados dados.';
- }finally{button.disabled=false}
+ }finally{publicFeedInFlight=false;button.disabled=false}
 }
 function render(){
  if(!E('aePublicationOverviewV1'))return;

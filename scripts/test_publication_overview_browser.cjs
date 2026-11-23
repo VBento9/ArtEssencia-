@@ -59,12 +59,26 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
     document.getElementById('aePublicationCheckV1').click();});
    assert.match(await page.locator('#aePublicationPublicResultV1').innerText(),/Desbloqueia o Backoffice/);
    await page.evaluate(()=>document.getElementById('authGateV1880').classList.add('hidden'));
+   // Offline: nem autenticação nem chamada ao feed.
+   await page.evaluate(()=>{
+    Object.defineProperty(navigator,'onLine',{configurable:true,get:()=>false});
+    window.__authCalls=[];window.__rpcCalls=[];
+    document.getElementById('aePublicationCheckV1').click();
+   });
+   assert.match(await page.locator('#aePublicationPublicResultV1').innerText(),/Sem ligação à internet/);
+   assert.deepEqual(await page.evaluate(()=>__authCalls),[]);
+   assert.deepEqual(await page.evaluate(()=>__rpcCalls),[]);
+   await page.evaluate(()=>Object.defineProperty(navigator,'onLine',{configurable:true,get:()=>true}));
    // Bloquear durante RPC impede apresentar dados que chegaram tarde.
    await page.evaluate(()=>{
     window.__holdFeed=true;window.__rpcCalls=[];window.__authCalls=[];
     document.getElementById('aePublicationCheckV1').click();
    });
    await page.waitForFunction(()=>typeof __resolveFeed==='function');
+   await page.evaluate(()=>document.getElementById('aePublicationCheckV1').click());
+   assert.deepEqual(await page.evaluate(()=>__rpcCalls),[
+    'store_public_catalog_v1','store_public_content_v3','store_public_config_v1'
+   ]);
    await page.evaluate(()=>{
     document.getElementById('lockScreen').classList.remove('hidden');
     window.__resolveFeed();
