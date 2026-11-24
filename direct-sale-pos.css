@@ -1,1 +1,31 @@
-#directSalePOS{width:min(760px,95vw);max-height:92vh;padding:0;overflow:auto;border-radius:16px}#directSalePOS header{display:flex;justify-content:space-between;align-items:center;padding:14px;gap:10px}#directSalePOS h2,#directSalePOS h3{margin:0}#directSalePOS .pos-body{padding:12px 16px 18px}#directSalePOS nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}#directSalePOS label{display:grid;gap:4px;margin:10px 0}#directSalePOS .pos-products{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:7px;max-height:26vh;overflow:auto;margin:10px 0}#directSalePOS .pos-line{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto auto;align-items:center;gap:7px;padding:7px 0;border-bottom:1px solid #d9cfc5}#directSalePOS .pos-line .btn{min-width:38px;min-height:38px}#directSalePOS .pos-total{display:flex;justify-content:space-between;font-size:1.25rem;padding:10px 0}#directSalePOS .pos-confirm{display:flex;align-items:center;gap:8px}#directSalePOS .pos-confirm input{width:auto}#posFinish{width:100%}#directSalePOS .pos-record{border-bottom:1px solid #d9cfc5;padding:10px 0}#directSalePOS .pos-record small{display:block;overflow-wrap:anywhere}#directSalePOS [hidden]{display:none!important}
+/* POS e produtos acabados: layout compacto, responsivo e sem alterações globais. */
+#directSalePOS,#readyStockDialog{width:min(1050px,96vw);max-width:96vw;max-height:94dvh;padding:0;overflow:auto;border:1px solid #dbcfc1;border-radius:18px;background:#fffdf9;color:#35271e}
+#directSalePOS::backdrop,#readyStockDialog::backdrop{background:#261b15a8;backdrop-filter:blur(2px)}
+#directSalePOS header,#readyStockDialog header{display:flex;justify-content:space-between;align-items:center;padding:13px 18px;gap:10px;background:#f2e7d9;border-bottom:1px solid #dfd2c2;position:sticky;top:0;z-index:2}
+#directSalePOS header small,#readyStockDialog header small{font-size:10px;letter-spacing:.12em;color:#77614e;font-weight:700}
+#directSalePOS h2,#directSalePOS h3,#readyStockDialog h2,#readyStockDialog h3{margin:0;color:inherit}#directSalePOS h2,#readyStockDialog h2{font-size:23px}#directSalePOS h3,#readyStockDialog h3{font-size:15px}
+#directSalePOS .pos-body,#readyStockDialog .ready-body{padding:12px 16px 18px}
+#directSalePOS nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+#directSalePOS .pos-layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:15px;align-items:start}
+#directSalePOS .pos-catalog,#directSalePOS .pos-checkout{min-width:0;border:1px solid #e4d9cc;border-radius:12px;padding:12px;background:#fff}
+#directSalePOS label,#readyStockDialog label{display:grid;gap:4px;margin:10px 0;font-size:12px;font-weight:600}
+#directSalePOS input:not([type=checkbox]),#directSalePOS select,#readyStockDialog input:not([type=checkbox]),#readyStockDialog select{width:100%;min-width:0;min-height:40px}
+#directSalePOS .pos-products{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:7px;max-height:46dvh;overflow:auto;margin:10px 0}
+#directSalePOS .pos-product{min-width:0;min-height:78px;display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:4px;white-space:normal;background:#faf4eb;border:1px solid #e3d7c7;padding:9px}
+#directSalePOS .pos-product strong{font-size:12px;line-height:1.25;overflow-wrap:anywhere}#directSalePOS .pos-product small{font-size:10px;color:#78685b}#directSalePOS .pos-product b{font-size:14px;color:#493523;margin-top:auto}
+#directSalePOS .pos-line{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto auto;align-items:center;gap:5px;padding:8px 0;border-bottom:1px solid #e9dfd3;font-size:12px}
+#directSalePOS .pos-line strong{overflow-wrap:anywhere}#directSalePOS .pos-line .btn{min-width:34px;min-height:38px;padding:4px}
+#directSalePOS .pos-total{display:flex;justify-content:space-between;font-size:22px;padding:12px;background:#f2e7d9;border-radius:10px;margin:10px 0}
+#directSalePOS .pos-confirm,#readyStockDialog .ready-confirm{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:400}
+#directSalePOS .pos-confirm input,#readyStockDialog .ready-confirm input{width:auto}
+#posFinish,#readySubmit{width:100%;min-height:46px}
+#directSalePOS .pos-record,#readyStockDialog .ready-row{border-bottom:1px solid #e4d9cc;padding:10px 0}
+#directSalePOS .pos-record small{display:block;overflow-wrap:anywhere}#readyStockDialog{width:min(560px,96vw)}#readyStockDialog .ready-row{display:flex;justify-content:space-between;gap:12px}#readyPreview{padding:10px;background:#f5eee4;border-radius:9px;min-height:36px;font-size:12px}
+#directSalePOS [hidden],#readyStockDialog [hidden]{display:none!important}
+@media(max-width:650px){#directSalePOS,#readyStockDialog{width:96vw;max-height:94dvh}#directSalePOS .pos-body,#readyStockDialog .ready-body{padding:9px}#directSalePOS .pos-layout{grid-template-columns:1fr;gap:8px}#directSalePOS .pos-products{max-height:26dvh;grid-template-columns:repeat(2,minmax(0,1fr))}#directSalePOS .pos-catalog,#directSalePOS .pos-checkout{padding:9px}#directSalePOS header{padding:10px}#directSalePOS .pos-product{min-height:63px}#directSalePOS .pos-total{font-size:19px}}
+#posProducts img,#readyList summary img{width:42px;height:42px;object-fit:cover;border-radius:6px}
+#readyList details{padding:8px 0;border-bottom:1px solid #e4d9cc}
+#readyList summary{cursor:pointer;font-size:13px;overflow-wrap:anywhere}
+#readyList summary img{vertical-align:middle;margin-right:7px}
+#readyList summary small{display:block;margin-top:4px}
+#readyList details p{margin:4px 0;font-size:12px}

@@ -1,0 +1,34 @@
+name: Ready stock checks
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  ready-stock:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: fixture
+          POSTGRES_DB: ready_fixture
+        ports:
+          - 55432:5432
+        options: --health-cmd "pg_isready -U postgres" --health-interval 3s --health-timeout 3s --health-retries 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: node --check ready-stock.js && node --check direct-sale-pos.js
+      - run: node --test tests/ready-stock.test.cjs tests/direct-sale-pos.test.cjs tests/funds-sales-allocation-19136.test.cjs
+      - run: npm install --no-save --package-lock=false --ignore-scripts @electric-sql/pglite@0.3.16 pg@8.16.3 playwright@1.56.1
+      - run: node scripts/test_ready_stock_sql.cjs && node scripts/test_production_atomic_sql.cjs
+      - run: node scripts/test_ready_stock_sql.cjs --postgres
+      - run: npx playwright install chromium
+      - run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/ready-stock-http.log 2>&1 &
+          node scripts/test_ready_stock_browser.cjs
