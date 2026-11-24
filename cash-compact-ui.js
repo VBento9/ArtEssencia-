@@ -12,6 +12,22 @@ function init(){
  function show(open){form.hidden=!open;editor.setAttribute('aria-expanded',String(open))}
  function back(){show(false);list.scrollIntoView({block:'start'});[...body.querySelectorAll('button[onclick]')].find(b=>b.getAttribute('onclick')===lastAction&&!b.closest('tr').hidden)?.focus({preventScroll:true})}
  history.addEventListener('click',back);editor.addEventListener('click',()=>{show(form.hidden);if(!form.hidden)document.getElementById('cashDesc')?.focus()});
+ if(document.documentElement.classList.contains('business-account')){
+   const month=root.querySelector('#accountCashMonth');
+   month.closest('label').hidden=false;
+   const expense=button('Registar despesa');
+   expense.classList.add('primary');
+   bar.prepend(expense);
+   expense.addEventListener('click',()=>{
+     const editing=!document.getElementById('cashCancelBtn').classList.contains('hidden');
+     if(editing&&!confirm('Terminar a edição atual e iniciar uma despesa?'))return;
+     if(editing)cancelCashEdit();
+     document.getElementById('cashType').value='Despesa';
+     show(true);
+     document.getElementById('cashDesc').focus();
+   });
+   month.addEventListener('change',()=>{page=0;preservePage=false});
+ }
  const returnButton=button('Voltar aos movimentos');returnButton.addEventListener('click',back);form.querySelector('.cash-form-head').append(returnButton);
 
  const pages=[];

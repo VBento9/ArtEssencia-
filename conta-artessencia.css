@@ -17,3 +17,12 @@ html.business-account .topbar {position:static!important;background:transparent!
 .business-account #accountHeader nav button {background:transparent;color:white;border:1px solid #b1c8bb;border-radius:10px;padding:10px 16px;min-height:44px;font-weight:700;cursor:pointer}
 .business-account #accountHeader nav [aria-current] {background:#eaf1e4;color:#214b3b}
 .business-account #cashKpis .cash-kpi:last-child {order:-1;border:2px solid #416e56}
+
+.business-account .account-period {display:grid;gap:3px;color:#314d42;font-size:14px;font-weight:650}
+.business-account .cash-tools input,.business-account .cash-tools select {min-height:44px}
+@media(max-width:650px){
+  html.business-account #cashKpis {display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .business-account #cashKpis .cash-kpi:last-child {grid-column:1/-1;background:#e8f0e7}
+  .business-account #cashKpis .cash-kpi:last-child .value {font-size:30px}
+  .business-account #aeCashToolbar button {min-height:44px}
+}

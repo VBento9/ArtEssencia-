@@ -5512,6 +5512,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 
       </div>
       <div class="cash-tools">
+        <label class="account-period" hidden>Mês dos movimentos<input id="accountCashMonth" type="month" onchange="renderCash()"></label>
         <input id="cashSearch" aria-label="Pesquisar movimentos de caixa" placeholder="Pesquisar descrição…" oninput="renderCash()">
         <select id="cashTypeFilter" aria-label="Tipo de movimento de caixa" onchange="renderCash()">
           <option value="all">Todos os tipos</option>
@@ -9814,10 +9815,14 @@ function loadStock(i){
  setStockSaveStateV143('dirty','Edição em curso',x.name+' · correções de quantidade/custo ficarão no histórico.');document.getElementById('stock')?.scrollIntoView({behavior:'smooth',block:'start'})
 }
 function addCash(){
- const v=+cashValue.value||0;if(!v)return toast('Indique o valor');
+ const v=Number(cashValue.value);
+ if(!Number.isFinite(v)||v<=0||cashValue.validity?.stepMismatch)return toast('Indique um valor positivo com até duas casas decimais');
  if(editingCashId){const x=db.cash.find(x=>x.id===editingCashId);if(!x)return cancelCashEdit();Object.assign(x,{date:cashDate.value||todayISO(),type:cashType.value,desc:cashDesc.value.trim(),method:cashMethod.value,value:v});toast('Movimento corrigido')}
  else db.cash.push({id:uid('CASH'),date:cashDate.value||todayISO(),type:cashType.value,desc:cashDesc.value.trim(),method:cashMethod.value,value:v,source:'manual'});
- editingCashId=null;save();cancelCashEdit(false)
+ editingCashId=null;
+ const stored=save();
+ cancelCashEdit();
+ if(stored)toast('Movimento guardado');
 }
 function editCash(id){const x=db.cash.find(x=>x.id===id);if(!x)return;if(x.source==='purchase')return toast('Corrija este movimento através da compra associada');if(x.source==='quote_payment')return toast(x.orderId?'Corrija este movimento através da encomenda associada':'Corrija este movimento através do orçamento associado');if(['order_payment','order_payment_correction','gateway_fee'].includes(x.source))return toast('Corrija este movimento através da encomenda associada');editingCashId=id;cashDate.value=x.date||todayISO();cashType.value=x.type;cashDesc.value=x.desc||'';cashMethod.value=x.method||'Dinheiro';cashValue.value=x.value;cashSaveBtn.textContent='Guardar correção';cashCancelBtn.classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'})}
 function cancelCashEdit(clear=true){editingCashId=null;if(clear){cashDate.value=todayISO();cashType.value='Entrada';cashDesc.value='';cashMethod.value='Dinheiro';cashValue.value=''}cashSaveBtn.textContent='Registar';cashCancelBtn.classList.add('hidden')}
@@ -9840,6 +9845,7 @@ function renderCash(){
    ['Saldo líquido',euro(balance),'Entradas menos saídas']
  ].map(([l,v,n])=>`<div class="card kpi cash-kpi"><div class="label">${l}</div><div class="value">${v}</div><small>${n}</small></div>`).join('');
 
+ const month=document.documentElement.classList.contains('business-account') ? document.getElementById('accountCashMonth').value : '';
  const q=(document.getElementById('cashSearch')?.value||'').trim().toLowerCase();
  const type=document.getElementById('cashTypeFilter')?.value||'all';
  const method=document.getElementById('cashMethodFilter')?.value||'all';
@@ -9848,7 +9854,7 @@ function renderCash(){
    const mq=!q||String(x.desc||'').toLowerCase().includes(q)||String(x.method||'').toLowerCase().includes(q);
    const mt=type==='all'||x.type===type;
    const mm=method==='all'||x.method===method;
-   return mq&&mt&&mm;
+   return mq&&mt&&mm&&(!month||String(x.date||'').slice(0,7)===month);
  });
 
  const count=document.getElementById('cashResultCount');
