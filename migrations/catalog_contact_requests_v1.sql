@@ -12,6 +12,7 @@ declare
  v_personalization jsonb; v_products jsonb := '[]'::jsonb;
 begin
  if jsonb_typeof(p_payload) is distinct from 'object' then raise exception 'Pedido inválido'; end if;
+ if pg_catalog.octet_length(p_payload::text)>5000 then raise exception 'Pedido demasiado extenso'; end if;
  if coalesce(p_payload->>'website','') <> '' then raise exception 'Pedido inválido'; end if;
  if coalesce(p_payload->>'privacy_consent','false') <> 'true' then raise exception 'Consentimento obrigatório'; end if;
  select user_id into v_owner from public.store_owner where active is true order by created_at limit 1;
