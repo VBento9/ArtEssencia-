@@ -91,12 +91,24 @@
    row.status=status;render();state.textContent='Estado guardado na Cloud.';
   }catch(e){state.textContent='Não foi possível guardar: '+String(e?.message||e)}
  }
- button.addEventListener('click',load);
  let lastRefresh=0;
- setInterval(()=>{
-  const quotes=document.getElementById('quotes');
-  if(quotes&&!quotes.classList.contains('hidden')&&quotes.getClientRects().length&&Date.now()-lastRefresh>90000&&!pending){
-   lastRefresh=Date.now();load();
-  }
- },30000);
+ const quotes=document.getElementById('quotes');
+ function refreshIfVisible(){
+  if(!quotes||document.visibilityState==='hidden'||quotes.classList.contains('hidden')||!quotes.getClientRects().length)return;
+  if(pending||Date.now()-lastRefresh<90000)return;
+  lastRefresh=Date.now();
+  void load();
+ }
+ button.addEventListener('click',()=>{
+  lastRefresh=Date.now();
+  void load();
+ });
+ // Atualizar ao entrar no módulo; a verificação periódica é apenas uma salvaguarda.
+ if(quotes&&typeof MutationObserver!=='undefined'){
+  const observer=new MutationObserver(refreshIfVisible);
+  observer.observe(quotes,{attributes:true,attributeFilter:['class','hidden','style']});
+ }
+ document.addEventListener('visibilitychange',refreshIfVisible);
+ setInterval(refreshIfVisible,30000);
+ refreshIfVisible();
 })();
