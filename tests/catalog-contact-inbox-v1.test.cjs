@@ -1,0 +1,31 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const html=fs.readFileSync('index.html','utf8');
+const module=fs.readFileSync('catalog-contact-inbox-v1.js','utf8');
+const sw=fs.readFileSync('sw.js','utf8');
+const sql=fs.readFileSync('migrations/catalog_contact_requests_v1.sql','utf8');
+test('Backoffice inbox script parses and its view is mounted in Orçamentos',()=>{
+ new vm.Script(module,{filename:'catalog-contact-inbox-v1.js'});
+ assert.match(html,/id="catalogContactInboxSectionV1"/);
+ assert.match(html,/src="\.\/catalog-contact-inbox-v1\.js"/);
+ assert.match(sw,/catalog-contact-inbox-v1\.js/);
+});
+test('Owner identity must be verified before reading or updating requests',()=>{
+ assert.match(module,/cloudClient\.auth\.getUser/);
+ assert.match(module,/\.eq\('user_id',user\.id\)/);
+ assert.match(module,/\.eq\('personalization->>request_kind','catalog_contact'\)/);
+ assert.doesNotMatch(module,/localStorage\.clear\(/);
+});
+test('Client names and notes are rendered as text not HTML',()=>{
+ assert.match(module,/\.textContent=String\(text\)/);
+ assert.doesNotMatch(module,/innerHTML/);
+});
+test('Migration limits anonymous to a narrow, non-read RPC',()=>{
+ assert.match(sql,/security definer/);
+ assert.match(sql,/set search_path = ''/);
+ assert.match(sql,/grant execute on function public\.catalog_submit_contact_request_v1\(jsonb\) to anon/);
+ assert.doesNotMatch(sql,/grant select.+ to anon/);
+ assert.match(sql,/pg_advisory_xact_lock/);
+ assert.match(sql,/privacy_consent/);
+ assert.match(sql,/already received recently|Já recebemos um pedido/);
+});
