@@ -5,7 +5,7 @@ permissions:
   contents: read
 jobs:
   ready-stock:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 12
     services:
       postgres:
@@ -15,7 +15,7 @@ jobs:
           POSTGRES_DB: ready_fixture
         ports:
           - 55432:5432
-        options: --health-cmd pg_isready --health-interval 3s --health-timeout 3s --health-retries 12
+        options: --health-cmd "pg_isready -U postgres" --health-interval 3s --health-timeout 3s --health-retries 12
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
