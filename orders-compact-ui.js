@@ -84,7 +84,7 @@
   window.ensureClientsFromOrders=function(){
    db.clients=db.clients||[];
    (db.orders||[]).forEach(order=>{
-    if(!order.client||order.clientDeleted)return;
+    if(order.source==='direct_sale'||!order.client||order.clientDeleted)return;
     if(order.clientId&&db.clients.some(c=>safe(c)&&String(c.id)===String(order.clientId)))return;
     const name=String(order.client).trim();
     let c=exact(name);
