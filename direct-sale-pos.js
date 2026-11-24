@@ -19,9 +19,21 @@
  function refundOrder(o,now,paymentId){
   if(!o||o.source!=='direct_sale'||o.status!=='Entregue'||o.voidedAt||!(o.paid>0))throw Error('Venda já anulada ou inválida.');
   const paid=o.paid;
+  if(Math.round(paid*100)!==Math.round(o.total*100))throw Error('Pagamento não coincide com o total da venda.');
   return {...o,status:'Cancelado',voidedAt:now,voidedFrom:'Entregue',voidedPaid:paid,paid:0,paymentHistory:[...o.paymentHistory,{id:paymentId,date:now,amount:-paid,method:o.payment,type:'correction',source:'direct_sale',note:'Devolução integral confirmada'}]};
  }
- if(typeof module!=='undefined'&&module.exports){module.exports={buildOrder,refundOrder};return}
+ function cashForPayment(order,payment,day){
+  const correction=payment.type==='correction';
+  return {id:'CASH-'+payment.id,date:day,type:payment.amount<0?'Saída':'Entrada',desc:(correction?'Devolução venda direta ':'Venda direta ')+order.id,method:payment.method,value:Math.abs(payment.amount),source:correction?'order_payment_correction':'order_payment',orderId:order.id,paymentId:payment.id};
+ }
+ function stageSale(orders,cash,order,previous,day){
+  const current=orders.find(o=>o.id===order.id);
+  if(previous?current!==previous:!!current)throw Error('A venda foi alterada. Reabra o histórico.');
+  const p=order.paymentHistory[order.paymentHistory.length-1],move=cashForPayment(order,p,day);
+  if(cash.some(c=>c.paymentId===p.id||c.id===move.id))throw Error('Pagamento já registado.');
+  return {orders:previous?orders.map(o=>o===previous?order:o):[...orders,order],cash:[...cash,move]};
+ }
+ if(typeof module!=='undefined'&&module.exports){module.exports={buildOrder,refundOrder,cashForPayment,stageSale};return}
  let lines=[],busy=false,dialog;
  const h=v=>escapeHtml(String(v??''));
  const get=id=>document.getElementById(id);
@@ -65,13 +77,18 @@
  function persistOrder(order,previous=null){
   // Persistir encomenda e caixa juntos no mesmo snapshot local, antes da sincronização.
   const oldOrders=db.orders,oldCash=db.cash;
+  const staged=stageSale(oldOrders,oldCash||[],order,previous,todayISO());
   const oldRaw=localStorage.getItem(KEY);
-  db.orders=previous?oldOrders.map(o=>o===previous?order:o):[...oldOrders,order];
-  db.cash=[...(oldCash||[])];
-  if(previous)ensureOrderPaymentCashLedger(db);else addOrderPaymentCash(order,order.paymentHistory[0]);
-  try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){db.orders=oldOrders;db.cash=oldCash;throw e}
+  const stored=oldRaw?JSON.parse(oldRaw):null;
+  // Não substituir uma venda recebida/alterada noutra janela por uma cópia desatualizada.
+  if(stored){
+   const signature=rows=>JSON.stringify((rows||[]).filter(o=>o.source==='direct_sale').map(o=>[o.id,o.status,o.paid,o.paymentHistory]));
+   if(signature(stored.orders)!==signature(oldOrders))throw Error('Vendas alteradas noutro ecrã. Atualize a aplicação antes de continuar.');
+  }
+  localStorage.setItem(KEY,JSON.stringify({...db,orders:staged.orders,cash:staged.cash}));
+  db.orders=staged.orders;db.cash=staged.cash;
   try{relMarkOrderPending(order);localStorage.setItem(REL_DIRTY,'1');setCloudMeta({dirty:true,verified:false,localChangedAt:new Date().toISOString()})}catch(e){cloudLogMsg('Venda guardada localmente; metadados Cloud pendentes: '+order.id)}
-  try{refreshOperationalViewsV1413('direct_sale');scheduleRelationalSync();queueOrderBusinessSyncV1757(order,'venda direta')}catch(e){cloudLogMsg('Venda guardada localmente; atualização pendente: '+order.id)}
+  try{refreshOperationalViewsV1413('direct_sale');if(typeof renderFundsV1929==='function')renderFundsV1929();scheduleRelationalSync();queueOrderBusinessSyncV1757(order,'venda direta')}catch(e){cloudLogMsg('Venda guardada localmente; atualização pendente: '+order.id)}
   return true;
  }
  function finish(){
@@ -88,7 +105,7 @@
     return ensureLineDetailedCostSnapshotV1769({...l,cost,type:'product'},'direct_sale');
    });
    const rid=relUuid({}),day=todayISO(),now=new Date().toISOString(),identity={rid,id:'VD-'+day.replace(/-/g,'')+'-'+rid.replace(/-/g,'').slice(0,16).toUpperCase()};
-   const order=buildOrder(prepared,get('posMethod').value,identity,day,now,uid('PAY'));
+   const order=buildOrder(prepared,get('posMethod').value,identity,day,now,'PAY-'+rid+'-SALE');
    if((db.orders||[]).some(o=>o.id===order.id))throw Error('Identificador já utilizado.');
    persistOrder(order);
    lines=[];get('posStockConfirmed').checked=false;get('posSearch').value='';renderProducts();toast('Venda direta guardada: '+euro(order.total));
@@ -106,7 +123,7 @@
    row.innerHTML='<strong>'+h(o.created)+' · '+euro(calcOrder(o).total)+' · '+h(o.status==='Cancelado'?'Anulada':'Paga')+'</strong><small>'+h(o.id)+' · '+h(o.payment)+'</small><p>'+h(o.items.map(i=>i.qty+' × '+i.name).join(' · '))+'</p>';
    if(o.status!=='Cancelado'){
     const btn=document.createElement('button');btn.type='button';btn.className='btn danger';btn.textContent='Anular e registar devolução';
-    btn.onclick=()=>{if(busy||!confirm('Confirma que devolveu integralmente o pagamento ao cliente?'))return;busy=true;try{const next=refundOrder(o,new Date().toISOString(),uid('PAY'));persistOrder(next,o);viewHistory(id);toast('Venda anulada e devolução registada.')}catch(e){toast(e.message)}finally{busy=false}};
+    btn.onclick=()=>{if(busy)return;if(productionBlockedV1926())return toast('Resolva primeiro a produção pendente.');const current=(db.orders||[]).find(x=>x.id===o.id);if(current!==o||current.status!=='Entregue')return viewHistory(id);if(!confirm('Confirma que devolveu integralmente o pagamento ao cliente?'))return;busy=true;try{const next=refundOrder(current,new Date().toISOString(),'PAY-'+current._rid+'-REFUND');persistOrder(next,current);viewHistory(id);toast('Venda anulada e devolução registada.')}catch(e){toast(e.message)}finally{busy=false}};
     row.append(btn);
    }
    host.append(row);

@@ -1,0 +1,18 @@
+name: Direct sale POS checks
+on:
+  pull_request:
+  push:
+    branches:
+      - feature/venda-direta-pos-20261124
+permissions:
+  contents: read
+jobs:
+  direct-sale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check direct-sale-pos.js
+      - run: node --test tests/direct-sale-pos.test.cjs tests/funds-sales-allocation-19136.test.cjs

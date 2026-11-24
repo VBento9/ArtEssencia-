@@ -120,7 +120,12 @@ function orderReserveCosts(o){
 }
 function paymentBreakdown(c){
  const n=cents(c.value)*(c.type==='Entrada'?1:-1),o=matchedOrder(c);
- if(!o||o.status==='Cancelado'||o.voidedAt)return {amounts:{unclassified:n},why:'Sem encomenda histórica válida associada'};
+ // Preservar a classificação histórica de uma venda presencial integralmente devolvida.
+ const refundedDirect=o?.source==='direct_sale'&&o.status==='Cancelado'&&!!o.voidedAt&&Number(o.paid)===0&&
+   Array.isArray(o.paymentHistory)&&o.paymentHistory.length===2&&o.paymentHistory[0].type==='payment'&&o.paymentHistory[1].type==='correction'&&
+   cents(o.paymentHistory[0].amount)===cents(calcOrder(o).total)&&cents(o.paymentHistory[1].amount)===-cents(o.paymentHistory[0].amount)&&
+   o.paymentHistory.some(p=>p.id===c.paymentId&&cents(p.amount)===n);
+ if(!o||((o.status==='Cancelado'||o.voidedAt)&&!refundedDirect))return {amounts:{unclassified:n},why:'Sem encomenda histórica válida associada'};
  const gross=cents(calcOrder(o).total),cost=orderReserveCosts(o);
  if(gross<=0||!cost||Math.abs(n)>gross+1)return {amounts:{unclassified:n},why:'É necessária a conciliação dos custos históricos desta venda'};
  const amount=Math.abs(n),sign=n<0?-1:1;
