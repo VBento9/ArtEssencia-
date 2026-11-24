@@ -1,0 +1,25 @@
+name: Catalog contact inbox
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'sw.js'
+      - 'version.json'
+      - 'catalog-contact-inbox-v1.js'
+      - 'tests/catalog-contact-inbox-v1.test.cjs'
+      - 'migrations/catalog_contact_requests_v1.sql'
+      - '.github/workflows/catalog-contact-inbox.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  secure-inbox:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/catalog-contact-inbox-v1.test.cjs
+      - run: node scripts/check_pwa_release_versions.cjs
