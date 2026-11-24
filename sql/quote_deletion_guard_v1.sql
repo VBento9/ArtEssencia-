@@ -53,12 +53,12 @@ grant execute on function public.artessencia_guard_quote_write_v1() to authentic
 create trigger artessencia_guard_quote_write_v1 before insert or update on public.artessencia_v1_quotes for each row execute function public.artessencia_guard_quote_write_v1();
 -- Old installed versions still issue a direct DELETE. Record that deletion too.
 create or replace function public.artessencia_record_quote_delete_v1()
-returns trigger language plpgsql security invoker set search_path='' as $
+returns trigger language plpgsql security invoker set search_path='' as $$
 begin
  insert into public.artessencia_quote_deletions_v1(user_id,quote_id)
  values(old.user_id,old.id) on conflict do nothing;
  return old;
-end $;
+end $$;
 revoke all on function public.artessencia_record_quote_delete_v1() from public, anon;
 grant execute on function public.artessencia_record_quote_delete_v1() to authenticated;
 create trigger artessencia_record_quote_delete_v1 before delete on public.artessencia_v1_quotes for each row execute function public.artessencia_record_quote_delete_v1();
