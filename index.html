@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.190">
+<meta name="artessencia-version" content="1.9.191">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -3766,6 +3766,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div class="section-title" style="margin:0">Nova encomenda</div>
         <small>Regista cliente, entrega, produtos e pagamento numa única sequência.</small>
         <button type="button" class="btn primary" onclick="openDirectSalePOS()">Venda direta</button>
+        <button type="button" class="btn" onclick="openReadyStock()">Produtos acabados</button>
       </div>
     </div>
 
@@ -3988,6 +3989,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         <div>
           <div class="section-title" style="margin:0">Produção do dia</div>
           <small>Planeia cada encomenda a partir da ficha técnica individual de cada produto.</small>
+          <button class="btn primary" type="button" onclick="openReadyStock()">Registar peças prontas</button>
         </div>
         <div class="prod-head-actions">
           <div class="field">
@@ -6462,7 +6464,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.190';
+const APP_VERSION='1.9.191';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -6561,7 +6563,7 @@ async function resumeProductionV1926(){
  try{
   const user=await ensureCloudSession();if(!user||user.id!==pending.userId)throw new Error('Inicia sessão com a conta que iniciou esta produção.');
   if(navigator.onLine===false)throw new Error('Sem internet. Liga a rede e volta a verificar.');
-  const {data,error}=await cloudClient.rpc('artessencia_complete_production_backoffice_v1',pending.args);
+  const {data,error}=await cloudClient.rpc(pending.kind==='ready_stock'?'artessencia_register_ready_stock_v1':'artessencia_complete_production_backoffice_v1',pending.args);
   if(error){
    // These are explicit PostgreSQL rejections: the transaction rolled back.
    if(['P0001','40001','22023','22P02','42501'].includes(error.code)){
@@ -6578,7 +6580,7 @@ async function resumeProductionV1926(){
   localStorage.setItem(KEY,JSON.stringify(db));saveConfirmedShadow(data.state);
   setCloudMeta({baseRevision:Number(data.state.revision),remoteRevision:Number(data.state.revision),lastCloudAt:data.state.updated_at,lastSync:new Date().toISOString(),dirty:false,verified:true,conflict:false});
   localStorage.removeItem(REL_DIRTY);localStorage.removeItem(PRODUCTION_PENDING_V1926);
-  document.getElementById('productionTransactionV1926')?.remove();renderAll();toast('Produção confirmada na Cloud · stock descontado · encomendas Prontas');return true;
+  document.getElementById('productionTransactionV1926')?.remove();renderAll();toast(pending.kind==='ready_stock'?'Peças prontas registadas na Cloud':'Produção confirmada na Cloud · stock descontado · encomendas Prontas');return true;
  }catch(error){productionOverlayV1926((committed?'A produção ficou confirmada na Cloud, mas a cópia local não foi guardada. ':'O resultado ainda não foi confirmado. ')+(error.message||'Tenta novamente.')+' Verificar novamente não desconta o stock duas vezes.',true);return false}
  finally{productionBusyV1926=false}
 }
@@ -6973,6 +6975,7 @@ function configureLock(){
  if(!ls)return;
  clearTimeout(idleTimer);unlocked=false;
  if(typeof window.closeDirectSalePOSOnLock==='function')window.closeDirectSalePOSOnLock();
+ if(typeof window.closeReadyStockOnLock==='function')window.closeReadyStockOnLock();
  const app=document.querySelector('.app');if(app)app.inert=true;
  const input=document.getElementById('pinInput');
  const password=document.getElementById('cloudUnlockPasswordV19135');
@@ -19021,4 +19024,5 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 <link rel="stylesheet" href="module-search-shortcut.css">
 <script src="module-search-shortcut.js"></script>
 <link rel="stylesheet" href="direct-sale-pos.css">
+<script src="ready-stock.js" defer></script>
 <script src="direct-sale-pos.js" defer></script>

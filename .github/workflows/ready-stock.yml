@@ -1,0 +1,17 @@
+name: Ready stock checks
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  ready-stock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: node --check ready-stock.js && node --check direct-sale-pos.js
+      - run: node --test tests/ready-stock.test.cjs tests/direct-sale-pos.test.cjs tests/funds-sales-allocation-19136.test.cjs

@@ -43,7 +43,7 @@
  function mount(){
   if(dialog)return;
   dialog=document.createElement('dialog');dialog.id='directSalePOS';
-  dialog.innerHTML='<header><h2>Venda direta</h2><button class="btn" data-pos-close type="button">Fechar</button></header><div class="pos-body"><nav><button class="btn" data-pos-new>Nova venda</button><button class="btn" data-pos-history>Histórico de vendas diretas</button></nav><section data-pos-entry><p class="muted">Consumidor final · artigos prontos para entrega. Não desconta novamente matérias-primas.</p><label>Pesquisar produto<input id="posSearch" placeholder="Nome ou código" autocomplete="off"></label><div id="posProducts" class="pos-products"></div><h3>Artigos selecionados</h3><div id="posLines"></div><label>Método de pagamento<select id="posMethod">'+methods.map(m=>'<option>'+h(m)+'</option>').join('')+'</select></label><div class="pos-total"><strong>Total</strong><strong id="posTotal">0 €</strong></div><label class="pos-confirm"><input type="checkbox" id="posStockConfirmed"> As peças estão prontas e os materiais já foram contabilizados.</label><button type="button" class="btn primary" id="posFinish">Confirmar pagamento e finalizar</button></section><section data-pos-list hidden></section></div>';
+  dialog.innerHTML='<header><div><small>PONTO DE VENDA</small><h2>Venda direta</h2></div><button class="btn" data-pos-close type="button">Fechar</button></header><div class="pos-body"><nav><button class="btn" data-pos-new>Nova venda</button><button class="btn" data-pos-history>Histórico de vendas diretas</button></nav><section data-pos-entry><div class="pos-layout"><div class="pos-catalog"><p class="muted">Consumidor final · sem ficha de cliente.</p><label>Pesquisar produto<input id="posSearch" placeholder="Nome ou código" autocomplete="off"></label><div id="posProducts" class="pos-products"></div></div><div class="pos-checkout"><h3>Artigos selecionados</h3><div id="posLines"></div><label>Método de pagamento<select id="posMethod">'+methods.map(m=>'<option>'+h(m)+'</option>').join('')+'</select></label><div class="pos-total"><strong>Total</strong><strong id="posTotal">0 €</strong></div><label class="pos-confirm"><input type="checkbox" id="posStockConfirmed"> As peças estão prontas e os materiais já foram contabilizados.</label><button type="button" class="btn primary" id="posFinish">Confirmar pagamento e finalizar</button></div></div></section><section data-pos-list hidden></section></div>';
   document.body.append(dialog);
   dialog.querySelector('[data-pos-close]').onclick=()=>{if(!busy)dialog.close()};
   dialog.addEventListener('cancel',e=>{if(busy)e.preventDefault()});
@@ -59,7 +59,7 @@
   const products=(db.products||[]).filter(p=>productUsableV1803(p)&&Number(p.price)>0&&[p.name,p.code].join(' ').toLowerCase().includes(q)).slice(0,30);
   get('posProducts').replaceChildren();
   for(const p of products){
-   const b=document.createElement('button');b.type='button';b.className='btn';b.textContent=p.name+' · '+euro(Number(p.price));b.onclick=()=>{const existing=lines.find(l=>l.code===p.code);if(existing)existing.qty++;else lines.push({code:p.code,name:p.name,category:p.category||'',qty:1,price:Number(p.price)});renderLines()};get('posProducts').append(b);
+   const b=document.createElement('button');b.type='button';b.className='btn';const ready=window.readyStockInventory?.().get(p.code);b.classList.add('pos-product');const title=document.createElement('strong'),sub=document.createElement('small'),price=document.createElement('b');title.textContent=p.name;sub.textContent=(ready?ready.available+' prontas':p.category||'Sem registo de peças prontas');price.textContent=euro(Number(p.price));b.append(title,sub,price);b.onclick=()=>{const existing=lines.find(l=>l.code===p.code);if(ready&&ready.available<=(existing?.qty||0))return toast('Sem peças prontas suficientes. Registe a produção.');if(existing)existing.qty++;else lines.push({code:p.code,name:p.name,category:p.category||'',qty:1,price:Number(p.price)});renderLines()};get('posProducts').append(b);
   }
   if(!products.length)get('posProducts').textContent='Nenhum produto encontrado.';
  }
@@ -70,10 +70,11 @@
    const less=document.createElement('button'),more=document.createElement('button'),qty=document.createElement('span');
    less.type=more.type='button';less.className=more.className='btn';less.textContent='−';more.textContent='+';qty.textContent=String(line.qty);
    less.setAttribute('aria-label','Retirar uma unidade de '+line.name);more.setAttribute('aria-label','Adicionar uma unidade de '+line.name);
-   less.onclick=()=>{line.qty--;if(line.qty===0)lines=lines.filter(l=>l!==line);renderLines()};more.onclick=()=>{line.qty++;renderLines()};
+   less.onclick=()=>{line.qty--;if(line.qty===0)lines=lines.filter(l=>l!==line);renderLines()};more.onclick=()=>{const ready=window.readyStockInventory?.().get(line.code);if(ready&&line.qty>=ready.available)return toast('Sem peças prontas suficientes.');line.qty++;renderLines()};
    row.append(less,qty,more);host.append(row);
   }
   if(!lines.length)host.textContent='Adicione artigos.';
+  const tracked=lines.length&&lines.every(l=>window.readyStockInventory?.().has(l.code));get('posStockConfirmed').closest('label').hidden=!!tracked;
   get('posTotal').textContent=euro(lines.reduce((n,l)=>n+Math.round(l.price*100)*l.qty,0)/100);
   get('posFinish').disabled=busy||!lines.length;
  }
@@ -97,7 +98,7 @@
  }
  function finish(){
   if(busy||!authorized())return;
-  if(!get('posStockConfirmed').checked)return toast('Confirme que os materiais das peças prontas já foram contabilizados.');
+  if(lines.some(l=>!window.readyStockInventory?.().has(l.code))&&!get('posStockConfirmed').checked)return toast('Confirme que os materiais das peças prontas não registadas já foram contabilizados.');
   if(productionBlockedV1926())return toast('Resolva primeiro a produção pendente.');
   busy=true;renderLines();
   try{
@@ -106,7 +107,7 @@
     if(!p||Number(p.price)!==l.price)throw Error('Produto ou preço alterado. Volte a selecionar o artigo.');
     const cost=Number(effectiveProduct(p).cost);
     if(!Number.isFinite(cost)||cost<0)throw Error('Custo indisponível: '+p.name);
-    return ensureLineDetailedCostSnapshotV1769({...l,cost,type:'product'},'direct_sale');
+    const ready=window.readyStockInventory?.().get(l.code);if(ready&&ready.available<l.qty)throw Error('Peças prontas insuficientes: '+l.name);return ensureLineDetailedCostSnapshotV1769({...l,cost,type:'product',readyStockTracked:!!ready},'direct_sale');
    });
    const rid=relUuid({}),day=todayISO(),now=new Date().toISOString(),identity={rid,id:'VD-'+day.replace(/-/g,'')+'-'+rid.replace(/-/g,'').slice(0,16).toUpperCase()};
    const order=buildOrder(prepared,get('posMethod').value,identity,day,now,'PAY-'+rid+'-SALE');
@@ -127,7 +128,7 @@
    row.innerHTML='<strong>'+h(o.created)+' · '+euro(calcOrder(o).total)+' · '+h(o.status==='Cancelado'?'Anulada':'Paga')+'</strong><small>'+h(o.id)+' · '+h(o.payment)+'</small><p>'+h(o.items.map(i=>i.qty+' × '+i.name).join(' · '))+'</p>';
    if(o.status!=='Cancelado'){
     const btn=document.createElement('button');btn.type='button';btn.className='btn danger';btn.textContent='Anular e registar devolução';
-    btn.onclick=()=>{if(busy||!authorized())return;if(productionBlockedV1926())return toast('Resolva primeiro a produção pendente.');const current=(db.orders||[]).find(x=>x.id===o.id);if(current!==o||current.status!=='Entregue')return viewHistory(id);if(!confirm('Confirma que devolveu integralmente o pagamento ao cliente?'))return;busy=true;try{const next=refundOrder(current,new Date().toISOString(),'PAY-'+current._rid+'-REFUND',todayISO());persistOrder(next,current);viewHistory(id);toast('Venda anulada e devolução registada.')}catch(e){toast(e.message)}finally{busy=false}};
+    btn.onclick=()=>{if(busy||!authorized())return;if(productionBlockedV1926())return toast('Resolva primeiro a produção pendente.');const current=(db.orders||[]).find(x=>x.id===o.id);if(current!==o||current.status!=='Entregue')return viewHistory(id);if(!confirm('Confirma que devolveu integralmente o pagamento ao cliente?'))return;busy=true;try{const next=refundOrder(current,new Date().toISOString(),'PAY-'+current._rid+'-REFUND',todayISO());if(current.items.some(i=>i.readyStockTracked))next.readyRestocked=confirm('As peças devolvidas estão fisicamente disponíveis e em condições de voltar a vender?');persistOrder(next,current);viewHistory(id);toast('Venda anulada e devolução registada.')}catch(e){toast(e.message)}finally{busy=false}};
     row.append(btn);
    }
    host.append(row);
