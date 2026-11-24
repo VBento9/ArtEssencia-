@@ -3765,6 +3765,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       <div>
         <div class="section-title" style="margin:0">Nova encomenda</div>
         <small>Regista cliente, entrega, produtos e pagamento numa única sequência.</small>
+        <button type="button" class="btn primary" onclick="openDirectSalePOS()">Venda direta</button>
       </div>
     </div>
 
@@ -8265,7 +8266,7 @@ function clientByPhoneThenEmailV1713(phoneValue,emailValue=''){
 function ensureClientsFromOrders(){
  db.clients=db.clients||[];
  db.orders.forEach(o=>{
-   if(!o.client||o.clientDeleted)return;
+   if(o.source==='direct_sale'||!o.client||o.clientDeleted)return;
    const phone=customerPhoneKey(o.contact),mail=String(o.email||'').trim().toLowerCase(),name=String(o.client).trim(),nn=normText(name);
    let c=clientByPhoneThenEmailV1713(o.contact,o.email);
    if(!c&&!phone&&!mail)c=db.clients.find(x=>!isQuarantinedProductClient(x)&&normText(x.name)===nn);
@@ -8862,8 +8863,8 @@ function renderOrders(){
  const paymentSelect=document.getElementById('orderPaymentFilterV19164');
  const paymentFilter=ordersModeV1882==='history'?'':paymentSelect?.value||'';
  if(paymentSelect)paymentSelect.disabled=ordersModeV1882==='history';
- const activeAll=(db.orders||[]).filter(o=>!isOrderHistoryV1882(o));
- const historyAll=(db.orders||[]).filter(isOrderHistoryV1882);
+ const activeAll=(db.orders||[]).filter(o=>o.source!=='direct_sale'&&!isOrderHistoryV1882(o));
+ const historyAll=(db.orders||[]).filter(o=>o.source!=='direct_sale'&&isOrderHistoryV1882(o));
  const base=ordersModeV1882==='history'?historyAll:activeAll;
  const rows=base.filter(o=>{
    const hay=normalizeOrderSearchV1928([o.id,o.client,o.contact,o.phone,o.email].map(v=>String(v||'')).join(' '));
@@ -8944,8 +8945,8 @@ function renderOrders(){
  if(body)body.innerHTML=rows.length?pageRows.map(o=>{const c=calcOrder(o),remaining=Math.max(0,c.total-(Number(o.paid)||0));return `<tr><td>${escapeHtml(o.id)}${o.source==='online_store'?'<br><span class="badge ok">ONLINE</span>':''}</td><td>${escapeHtml(o.client||'—')}</td><td>${escapeHtml(o.delivery||'—')}${o.deliveryTime?'<br>'+escapeHtml(o.deliveryTime):''}</td><td>${euro(c.total)}</td><td><strong class="${remaining>0.005?'due':'paid'}">${remaining>0.005?euro(remaining):'Pago'}</strong></td><td><span class="badge ${o.status==='Entregue'?'ok':o.status==='Cancelado'?'bad':'warn'}">${escapeHtml(o.status)}</span></td><td><button class="btn primary" data-order-open="${escapeHtml(o.id)}" onclick="showOrder('${escapeHtml(o.id)}')">Abrir</button></td></tr>`}).join(''):`<tr><td colspan="7" class="empty">Sem encomendas</td></tr>`;
  setOrdersView(ordersView);
 }
-function setStatus(id,s){const o=db.orders.find(x=>x.id===id);if(!o)return;if(s==='Cancelado'&&o.status!=='Cancelado')return voidOrder(id);if(typeof setOrderStatus==='function')return setOrderStatus(id,s);o.status=s;save();toast('Estado atualizado')}
-function voidOrder(id){const o=db.orders.find(x=>x.id===id);if(!o)return;const produced=isOrderProduced(id),paid=+o.paid||0;let msg='Anular esta encomenda? Ela deixa de contar na faturação, lucro e valores por receber.';if(paid>0)msg+=' O pagamento já recebido mantém-se no Caixa até ser registada uma devolução/correção; anular a encomenda não devolve dinheiro automaticamente.';if(produced)msg+=' A produção já foi concluída, por isso o stock consumido NÃO será reposto.';if(!confirm(msg)){renderOrders();return}o.voidedAt=new Date().toISOString();o.voidedFrom=o.status;o.voidedPaid=paid;o.status='Cancelado';save();toast('Encomenda anulada')}
+function setStatus(id,s){const o=db.orders.find(x=>x.id===id);if(!o)return;if(o.source==='direct_sale')return openDirectSalePOS(id);if(s==='Cancelado'&&o.status!=='Cancelado')return voidOrder(id);if(typeof setOrderStatus==='function')return setOrderStatus(id,s);o.status=s;save();toast('Estado atualizado')}
+function voidOrder(id){const o=db.orders.find(x=>x.id===id);if(!o)return;if(o.source==='direct_sale')return openDirectSalePOS(id);const produced=isOrderProduced(id),paid=+o.paid||0;let msg='Anular esta encomenda? Ela deixa de contar na faturação, lucro e valores por receber.';if(paid>0)msg+=' O pagamento já recebido mantém-se no Caixa até ser registada uma devolução/correção; anular a encomenda não devolve dinheiro automaticamente.';if(produced)msg+=' A produção já foi concluída, por isso o stock consumido NÃO será reposto.';if(!confirm(msg)){renderOrders();return}o.voidedAt=new Date().toISOString();o.voidedFrom=o.status;o.voidedPaid=paid;o.status='Cancelado';save();toast('Encomenda anulada')}
 function supabaseDetailedError(e){
  if(!e)return 'Erro desconhecido';
  const parts=[];
@@ -10385,6 +10386,7 @@ function orderStatusOptions(o){
 }
 function setOrderStatus(id,status){
  const o=db.orders.find(x=>x.id===id);if(!o)return;
+ if(o.source==='direct_sale')return openDirectSalePOS(id);
  if(!orderStatusOptions(o).includes(status))return;
  if(!onlineOrderPaymentGuard(o,status)){showOrder(id);return}
  const prev=o.status||'Pedido';
@@ -10640,6 +10642,7 @@ th{font-size:8px}.muted,small{font-size:7.5px}
 
 function showOrder(id){
  const o=db.orders.find(x=>x.id===id);if(!o)return;
+ if(o.source==='direct_sale')return openDirectSalePOS(id);
  if(o.source==='online_store')markOrderNotificationSeenV12624(o.id,o._rid||'');
  if(!orderDialog.open&&document.getElementById('orders')?.classList.contains('active'))orderListReturnV1928={id:String(id),scroll:window.scrollY};
  orderDetail.dataset.orderId=String(id);
@@ -17554,8 +17557,8 @@ async function syncSingleOrderToCloud(order){
  if(order.id)await bindOrderRidFromCloud(order,u);
  relUuid(order);
 
- const client=(db.clients||[]).find(c=>c.id===order.clientId)||
-              (db.clients||[]).find(c=>normText(c.name)===normText(order.client||''));
+ const client=order.source==='direct_sale'?null:((db.clients||[]).find(c=>c.id===order.clientId)||
+              (db.clients||[]).find(c=>normText(c.name)===normText(order.client||'')));
  let clientRid=null;
  if(client){
    clientRid=relUuid(client);
@@ -17937,7 +17940,7 @@ async function relationalSyncCore(showToast=false){
    const orderRows=ordersToSync.map(o=>{
      const cc=calcOrder(o);
      return {
-       id:relUuid(o),user_id:u.id,client_id:relClientRid(o.clientId,o.client),
+       id:relUuid(o),user_id:u.id,client_id:o.source==='direct_sale'?null:relClientRid(o.clientId,o.client),
        status:o.status||'Pedido',order_date:relDate(o.created),due_at:relDue(o.delivery),
        subtotal:Number(cc.total)||0,total:Number(cc.total)||0,notes:o.notes||null,
        data:relClone(o),updated_at:new Date().toISOString()
@@ -18975,3 +18978,5 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 <script src="order-price-edit-v19168.js" defer></script>
 <link rel="stylesheet" href="module-search-shortcut.css">
 <script src="module-search-shortcut.js"></script>
+<link rel="stylesheet" href="direct-sale-pos.css">
+<script src="direct-sale-pos.js" defer></script>
