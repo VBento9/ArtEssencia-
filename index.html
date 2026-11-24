@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.189">
+<meta name="artessencia-version" content="1.9.190">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -6355,7 +6355,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         </div>
         <div class="push-card-v12625">
           <div class="push-head-v12625"><div><strong>🔔 Notificações Push</strong><small>Recebe avisos de novas encomendas e pedidos de orçamento mesmo com a ArtEssencia fechada.</small></div><span id="pushStatusV12625" class="push-status-v12625">A verificar…</span></div>
-          <div class="push-actions-v12625"><button id="pushEnableBtnV12625" class="btn primary" onclick="enablePushV12625()">Ativar neste dispositivo</button><button id="pushDisableBtnV12625" class="btn hidden" onclick="disablePushV12625()">Desativar</button></div>
+          <div class="push-actions-v12625"><button id="pushEnableBtnV12625" class="btn primary" onclick="enablePushV12625()">Ativar neste dispositivo</button><button id="pushDisableBtnV12625" class="btn hidden" onclick="disablePushV12625()">Desativar</button><button id="pushTestBtnV19190" class="btn" type="button" onclick="testPushDeviceV19190()">Testar neste dispositivo</button></div>
           <div id="pushNoteV12625" class="push-note-v12625">No iPhone/iPad, instala primeiro a ArtEssencia no ecrã principal. O iOS só permite pedir autorização depois de tocares em “Ativar”.</div>
         </div>
       </div>
@@ -6460,7 +6460,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.189';
+const APP_VERSION='1.9.190';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -18573,6 +18573,7 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 
 <script src="catalog-background-presets.js"></script>
 <script src="pwa-update.js"></script>
+<script src="push-device-diagnostics-v19190.js" defer></script>
 <script defer src="./order-detail-compact-ui.js"></script>
 <script defer src="./production-compact-ui.js"></script>
 <script defer src="./product-editor-guide.js"></script>
