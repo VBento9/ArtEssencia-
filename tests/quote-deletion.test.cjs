@@ -1,0 +1,17 @@
+'use strict';
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const html=fs.readFileSync('index.html','utf8');
+const start=html.indexOf('function isMisfiledProductQuoteV19189('),end=html.indexOf('async function fetchQuoteDeletionIdsV19189(',start);
+assert.ok(start>=0&&end>start);
+const ctx=vm.createContext({});vm.runInContext(html.slice(start,end),ctx);
+const bad={code:'APR-TEST',category:'Velas',price:2,cost:1,productionType:'manual',items:[],status:'Rascunho',depositPaid:0};
+assert.equal(ctx.isMisfiledProductQuoteV19189(bad),true);
+for(const q of [{...bad,client:'Cliente'},{...bad,items:[{qty:1}]},{...bad,orderId:'ORDER'},{...bad,depositPaid:1},{...bad,eventRequestId:'REQ'},{items:[],status:'Rascunho'}])assert.equal(ctx.isMisfiledProductQuoteV19189(q),false);
+const local=[{_rid:'deleted',id:'Q-1'},{_rid:'new',id:'Q-1'},{id:'offline'}];
+assert.deepEqual(Array.from(ctx.quoteDeletionFilterV19189(local,new Set(['deleted'])),x=>x._rid),['new',undefined]);
+assert.deepEqual(Array.from(ctx.quoteDeletionFilterV19189([{id:'deleted'},{id:'new'}],new Set(['deleted']),true),x=>x.id),['new']);
+assert.match(html,/rpc\('artessencia_delete_quote_v1'/);
+assert.match(html,/confirmed!==true/);
+assert.match(html,/quoteDeletionFilterV19189\(localQuotes,deletedQuoteIds\)/);
+assert.match(html,/filter\(q=>!isMisfiledProductQuoteV19189\(q\)\)\.map/);
+console.log('PASS: quote isolation, deletion UUID, retained offline and new quotes');
