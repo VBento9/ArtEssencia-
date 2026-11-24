@@ -30,3 +30,11 @@ test('Migration limits anonymous to a narrow, non-read RPC',()=>{
  assert.match(sql,/pg_catalog\.octet_length\(p_payload::text\)>5000/);
  assert.match(sql,/already received recently|Já recebemos um pedido/);
 });
+
+test('Inbox refreshes on entering Orçamentos without excessive polling',()=>{
+ assert.match(inboxSource,/new MutationObserver\(refreshIfVisible\)/);
+ assert.match(inboxSource,/attributeFilter:\['class','hidden','style'\]/);
+ assert.match(inboxSource,/document\.addEventListener\('visibilitychange',refreshIfVisible\)/);
+ assert.match(inboxSource,/Date\.now\(\)-lastRefresh<90000/);
+ assert.match(inboxSource,/refreshIfVisible\(\);/);
+});
