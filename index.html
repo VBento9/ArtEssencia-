@@ -5487,6 +5487,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
         </select>
         <select id="cashMethodFilter" aria-label="Meio de pagamento do movimento" onchange="renderCash()">
           <option value="all">Todos os meios</option>
+          <option>Multibanco</option>
           <option>Dinheiro</option>
           <option>MB Way</option>
           <option>Transferência</option>
@@ -6971,6 +6972,7 @@ function configureLock(){
  const ls=document.getElementById('lockScreen');
  if(!ls)return;
  clearTimeout(idleTimer);unlocked=false;
+ if(typeof window.closeDirectSalePOSOnLock==='function')window.closeDirectSalePOSOnLock();
  const app=document.querySelector('.app');if(app)app.inert=true;
  const input=document.getElementById('pinInput');
  const password=document.getElementById('cloudUnlockPasswordV19135');
@@ -16019,6 +16021,7 @@ function authGateShowV1880(message=''){
  if(email&&!email.value)email.value=cloudCfg().email||'';
  if(password)password.value='';
  authGateMessageV1880(message);gate.classList.remove('hidden');
+ if(typeof window.closeDirectSalePOSOnLock==='function')window.closeDirectSalePOSOnLock();
  document.getElementById('authGatePasskeyV20261008')?.classList.toggle('hidden',!PASSKEY_PREVIEW_V20261008);
  setTimeout(()=>{(email?.value?password:email)?.focus()},80)
 }

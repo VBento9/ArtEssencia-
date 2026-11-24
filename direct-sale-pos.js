@@ -38,6 +38,8 @@
  window.addEventListener('storage',e=>{if(e.key===KEY||e.key===null)externalWrite=true});
  const h=v=>escapeHtml(String(v??''));
  const get=id=>document.getElementById(id);
+ const authorized=()=>unlocked===true&&(!get('authGateV1880')||get('authGateV1880').classList.contains('hidden'));
+ window.closeDirectSalePOSOnLock=function(){if(dialog?.open)dialog.close()};
  function mount(){
   if(dialog)return;
   dialog=document.createElement('dialog');dialog.id='directSalePOS';
@@ -94,7 +96,7 @@
   return true;
  }
  function finish(){
-  if(busy)return;
+  if(busy||!authorized())return;
   if(!get('posStockConfirmed').checked)return toast('Confirme que os materiais das peças prontas já foram contabilizados.');
   if(productionBlockedV1926())return toast('Resolva primeiro a produção pendente.');
   busy=true;renderLines();
@@ -125,11 +127,11 @@
    row.innerHTML='<strong>'+h(o.created)+' · '+euro(calcOrder(o).total)+' · '+h(o.status==='Cancelado'?'Anulada':'Paga')+'</strong><small>'+h(o.id)+' · '+h(o.payment)+'</small><p>'+h(o.items.map(i=>i.qty+' × '+i.name).join(' · '))+'</p>';
    if(o.status!=='Cancelado'){
     const btn=document.createElement('button');btn.type='button';btn.className='btn danger';btn.textContent='Anular e registar devolução';
-    btn.onclick=()=>{if(busy)return;if(productionBlockedV1926())return toast('Resolva primeiro a produção pendente.');const current=(db.orders||[]).find(x=>x.id===o.id);if(current!==o||current.status!=='Entregue')return viewHistory(id);if(!confirm('Confirma que devolveu integralmente o pagamento ao cliente?'))return;busy=true;try{const next=refundOrder(current,new Date().toISOString(),'PAY-'+current._rid+'-REFUND',todayISO());persistOrder(next,current);viewHistory(id);toast('Venda anulada e devolução registada.')}catch(e){toast(e.message)}finally{busy=false}};
+    btn.onclick=()=>{if(busy||!authorized())return;if(productionBlockedV1926())return toast('Resolva primeiro a produção pendente.');const current=(db.orders||[]).find(x=>x.id===o.id);if(current!==o||current.status!=='Entregue')return viewHistory(id);if(!confirm('Confirma que devolveu integralmente o pagamento ao cliente?'))return;busy=true;try{const next=refundOrder(current,new Date().toISOString(),'PAY-'+current._rid+'-REFUND',todayISO());persistOrder(next,current);viewHistory(id);toast('Venda anulada e devolução registada.')}catch(e){toast(e.message)}finally{busy=false}};
     row.append(btn);
    }
    host.append(row);
   }
  }
- window.openDirectSalePOS=function(id){mount();if(!dialog.open)dialog.showModal();if(id)viewHistory(id);else viewEntry()};
+ window.openDirectSalePOS=function(id){if(!authorized())return;mount();if(!dialog.open)dialog.showModal();if(id)viewHistory(id);else viewEntry()};
 })();
