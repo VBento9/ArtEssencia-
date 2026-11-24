@@ -27,5 +27,6 @@ test('Migration limits anonymous to a narrow, non-read RPC',()=>{
  assert.doesNotMatch(sql,/grant select.+ to anon/);
  assert.match(sql,/pg_advisory_xact_lock/);
  assert.match(sql,/privacy_consent/);
+ assert.match(sql,/pg_catalog\.octet_length\(p_payload::text\)>5000/);
  assert.match(sql,/already received recently|Já recebemos um pedido/);
 });
