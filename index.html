@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.186">
+<meta name="artessencia-version" content="1.9.188">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -3869,6 +3869,18 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
   </section>
 
   <section id="quotes" class="screen">
+    <section class="card" id="catalogContactInboxSectionV1" style="padding:16px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div><h2 class="section-title" style="margin:0">Contactos do Catálogo Digital</h2>
+          <small class="muted">Pedidos realmente submetidos pelo formulário; os cliques do WhatsApp não são encomendas.</small></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="badge" id="catalogDirectInboxCountV1">—</span>
+          <button type="button" class="btn" id="catalogDirectInboxRefreshV1">Atualizar contactos</button>
+        </div>
+      </div>
+      <p id="catalogDirectInboxStateV1" role="status" aria-live="polite" class="muted">Seleciona Atualizar contactos para consultar a Cloud.</p>
+      <div id="catalogDirectInboxV1"></div>
+    </section>
     <section class="card quotes-events-card-v1730">
       <div class="quotes-section-head-v1730">
         <div>
@@ -6448,7 +6460,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.186';
+const APP_VERSION='1.9.188';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -18558,6 +18570,7 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 <script defer src="./fragrance-ledger.js"></script>
 <script defer src="./fragrance-library.js"></script>
 
+<script defer src="./catalog-contact-inbox-v1.js"></script>
 </body></html>
 
 <style id="artessencia-v1-overrides">
