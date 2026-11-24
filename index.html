@@ -6568,7 +6568,9 @@ async function resumeProductionV1926(){
    // These are explicit PostgreSQL rejections: the transaction rolled back.
    if(['P0001','40001','22023','22P02','42501'].includes(error.code)){
     localStorage.removeItem(PRODUCTION_PENDING_V1926);document.getElementById('productionTransactionV1926')?.remove();
-    toast('Produção não concluída: '+(error.message||'dados alterados na Cloud')+'. Recebe os dados da Cloud e verifica a produção.');return false;
+    const operation=pending.kind==='ready_sale'?'Venda ou devolução':pending.kind==='ready_stock'?'Movimento de stock':'Produção';
+    const reasons={cloud_revision_conflict:'Outro dispositivo alterou os dados.',INSUFFICIENT_READY_STOCK:'As unidades disponíveis já não chegam.',READY_STOCK_CHANGED:'A disponibilidade deste artigo mudou.',PRODUCT_CHANGED:'O produto foi alterado.',INSUFFICIENT_OR_AMBIGUOUS_STOCK:'Verifica as quantidades e os nomes das matérias-primas.'};
+    toast(operation+' sem confirmação. '+(reasons[error.message]||error.message||'Dados alterados na Cloud.')+' Recebe os dados da Cloud e revê o registo.');return false;
    }
    throw new Error(error.message||'A Cloud não confirmou o resultado.');
   }
@@ -9443,7 +9445,7 @@ function renderProduction(){
  const missingLabels=[...unresolved.map(x=>x.name+' ('+x.orderId+')'),...missing.map(x=>x.name)];const pr=document.getElementById('productionRecipe');if(pr)pr.innerHTML=blocked?`<div class="empty prod-warning">Não é seguro calcular o total: falta localizar/configurar ${missingLabels.map(escapeHtml).join(' · ')}.</div>`:needEntries.length?`<div class="prod-recipe-head"><span>Consumo total calculado</span><strong>${manufactured.length} produto(s)</strong></div>${needEntries.map(([name,q])=>{const st=stockByName(name),unit=st?.unit||'';return `<div class="prod-line"><span>${escapeHtml(name)}${productionOperationalHintV12633(name,q,unit)}</span><strong>${productionFmtQtyV12632(q)} ${escapeHtml(unit)}</strong></div>`}).join('')}`:'<div class="empty">Sem materiais a preparar.</div>';
  const stockBox=document.getElementById('productionStockCheck');if(stockBox){stockBox.innerHTML=blocked?'<div class="empty prod-warning">Verificação bloqueada enquanto existirem produtos por localizar ou fichas técnicas em falta.</div>':needEntries.length?needEntries.map(([name,need])=>{const x=stockByName(name),have=x?Number(x.qty)||0:0,unit=x?.unit||'',committedToDate=Number(committed[name])||0,prior=Math.max(0,committedToDate-(Number(need)||0)),availableAfterPrior=Math.max(0,have-prior),ok=!!x&&availableAfterPrior+1e-9>=need;return `<div class="prod-stock-line ${ok?'':'prod-stock-missing'}"><div><strong>${escapeHtml(name)}</strong><small>Hoje precisa ${productionFmtQtyV12632(need)} ${escapeHtml(unit)} · já comprometido antes/até à data ${productionFmtQtyV12632(prior)} ${escapeHtml(unit)}</small></div><div class="prod-stock-right"><strong>${productionFmtQtyV12632(availableAfterPrior)} ${escapeHtml(unit)} disponíveis</strong><span class="badge ${ok?'ok':'bad'}">${ok?'OK':'FALTA'}</span></div></div>`}).join(''):(ords.length?'<div class="empty">Esta produção não tem materiais para descontar.</div>':'<div class="empty">Sem necessidades de stock para esta data.</div>');}
  const pk=document.getElementById('productionPackaging');if(pk)pk.innerHTML=Object.keys(packs).length?`<div class="prod-recipe-head"><span>Total de embalagens</span><strong>${packTotal}</strong></div>${Object.entries(packs).map(([n,q])=>`<div class="prod-line"><span>${escapeHtml(n)}</span><strong>${q} un.</strong></div>`).join('')}`:'<div class="empty">Sem embalagens previstas.</div>';
- const runs=(db.productionRuns||[]).filter(r=>r.date===d),hist=document.getElementById('productionHistory');if(hist)hist.innerHTML=runs.length?runs.map((r,i)=>`<div class="prod-history"><div><strong>Sessão ${i+1}</strong><small>${(r.orders||[]).map(escapeHtml).join(', ')}</small></div><div><strong>${r.total||0} un.</strong><small>${r.createdAt?new Date(r.createdAt).toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'}):'Concluída'}</small></div></div>`).join(''):'<div class="empty">Ainda não há sessões concluídas neste dia.</div>';
+ const runs=(db.productionRuns||[]).filter(r=>r.date===d&&r.kind!=='ready_stock'),hist=document.getElementById('productionHistory');if(hist)hist.innerHTML=runs.length?runs.map((r,i)=>`<div class="prod-history"><div><strong>Sessão ${i+1}</strong><small>${(r.orders||[]).map(escapeHtml).join(', ')}</small></div><div><strong>${r.total||0} un.</strong><small>${r.createdAt?new Date(r.createdAt).toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'}):'Concluída'}</small></div></div>`).join(''):'<div class="empty">Ainda não há sessões concluídas neste dia.</div>';
  renderProductionDailyCenterV12653(d)
 }
 function setStockSaveStateV143(type,title,detail){
@@ -9517,6 +9519,7 @@ function renameStockReferencesV1737(oldName,newName){
  }
 
  (db.productionRuns||[]).forEach(run=>{
+   if(run.kind==='ready_stock')return; // O lote conserva os nomes da ficha no dia da produção.
    renameObjectKeyV1737(run.materials,oldName,newName);
    renameObjectKeyV1737(run.materialUnitCosts,oldName,newName);
    if(run.orderMaterials&&typeof run.orderMaterials==='object'){
