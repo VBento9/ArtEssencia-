@@ -25,6 +25,10 @@ jobs:
           node-version: '22'
       - run: node --check ready-stock.js && node --check direct-sale-pos.js
       - run: node --test tests/ready-stock.test.cjs tests/direct-sale-pos.test.cjs tests/funds-sales-allocation-19136.test.cjs
-      - run: npm install --no-save --package-lock=false --ignore-scripts @electric-sql/pglite@0.3.16 pg@8.16.3
+      - run: npm install --no-save --package-lock=false --ignore-scripts @electric-sql/pglite@0.3.16 pg@8.16.3 playwright@1.56.1
       - run: node scripts/test_ready_stock_sql.cjs && node scripts/test_production_atomic_sql.cjs
       - run: node scripts/test_ready_stock_sql.cjs --postgres
+      - run: npx playwright install chromium
+      - run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/ready-stock-http.log 2>&1 &
+          node scripts/test_ready_stock_browser.cjs

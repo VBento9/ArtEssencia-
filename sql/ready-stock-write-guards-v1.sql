@@ -7,6 +7,11 @@ DECLARE
   writer text := coalesce(current_setting('artessencia.ready_writer',true),'');
 BEGIN
   IF writer='sale' THEN RETURN NEW; END IF;
+  -- PostgreSQL runs BEFORE INSERT even for the update arm of a relational upsert.
+  -- Its BEFORE UPDATE trigger still verifies all persisted fields.
+  IF TG_OP='INSERT' AND EXISTS (SELECT 1 FROM public.artessencia_v1_orders o
+    WHERE o.user_id=NEW.user_id AND o.id=NEW.id AND o.data=NEW.data AND o.status=NEW.status)
+    THEN RETURN NEW; END IF;
   IF TG_OP<>'INSERT' AND OLD.data->>'source'='direct_sale'
     AND (OLD.data->>'readySaleVersion'='1' OR EXISTS (SELECT 1 FROM jsonb_array_elements(OLD.data->'items') i WHERE i->'readyStockTracked'='true'::jsonb)) THEN
     IF TG_OP='UPDATE' AND (to_jsonb(OLD)-'updated_at')=(to_jsonb(NEW)-'updated_at') THEN RETURN NEW; END IF;

@@ -30,25 +30,10 @@ async function main() {
     await db.exec('set role authenticated');
   };
   try {
-    await db.exec(`
-      create role anon; create role authenticated; create schema auth;
-      create function auth.uid() returns uuid language sql as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
-      grant usage on schema auth to authenticated;
-      create table artessencia_v1_state(user_id uuid primary key,data jsonb,revision bigint,updated_at timestamptz,device_id text,app_version text);
-      create table artessencia_v1_products(id uuid primary key,user_id uuid,data jsonb,updated_at timestamptz);
-      create table artessencia_v1_orders(id uuid primary key,user_id uuid,client_id uuid,status text,order_date date,due_at timestamptz,subtotal numeric,total numeric,notes text,data jsonb,created_at timestamptz,updated_at timestamptz);
-      grant select,insert,update on all tables in schema public to authenticated;
-    `);
-    for (const table of ['state','products','orders']) {
-      await db.exec(`alter table artessencia_v1_${table} enable row level security;
-        create policy owner on artessencia_v1_${table} to authenticated using(user_id=auth.uid()) with check(user_id=auth.uid())`);
-    }
-    for (const file of ['register-ready-stock-v1','commit-ready-sale-v1','ready-stock-write-guards-v1']) {
-      await db.exec(fs.readFileSync('sql/' + file + '.sql','utf8'));
-    }
+    await require('./ready_stock_sql_fixture.cjs')(db);
     const initial = {stock:[{name:'Cera',qty:100}], productRecipes:{A:[{item:'Cera',qty:10}]}, productionRuns:[], stockMoves:[], cash:[]};
     await query('insert into artessencia_v1_state(user_id,data,revision) values($1,$2,0)', [owner, JSON.stringify(initial)]);
-    await query('insert into artessencia_v1_products values($1,$2,$3,now())', [productId,owner,JSON.stringify({code:'A',name:'Vela'})]);
+    await query('insert into artessencia_v1_products values($1,$2,$3,now())', [productId,owner,JSON.stringify({code:'A',name:'Vela',price:8})]);
     await login(owner);
     // Match the PostgREST JSON representation, including PostgreSQL microseconds.
     const product = (await query('select to_jsonb(p) as product from artessencia_v1_products p'))[0].product;
@@ -86,6 +71,8 @@ async function main() {
     }
     await assert.rejects(commit(2,second),/INSUFFICIENT_READY_STOCK/);
     assert.equal((await state()).cash.length,1);
+    await query('insert into artessencia_v1_orders select * from artessencia_v1_orders where id=$1 on conflict (id) do update set data=excluded.data,status=excluded.status',[sale._rid]);
+    assert.equal((await state()).cash.length,1);
     await db.close();
     db = await connect();
     await login(owner);
@@ -107,6 +94,7 @@ async function main() {
     const already = {...run,id:'lote-B',mode:'already',materials:{}};
     await assert.rejects(register(4,already),/cloud_revision_conflict/);
     const done = (await register(5,already)).state.data;
+    await assert.rejects(commit(6,{...second,_rid:'00000000-0000-4000-8000-000000000031',items:[{...second.items[0],price:7}]}),/PRODUCT_CHANGED/);
     assert.equal(done.stock[0].qty,90);
     assert.equal(done.stockMoves.length,1);
     assert.equal(done.cash.reduce((sum,m)=>sum+(m.type==='Entrada'?m.value:-m.value),0),0);

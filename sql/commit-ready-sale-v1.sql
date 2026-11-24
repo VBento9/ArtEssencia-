@@ -5,7 +5,7 @@ DECLARE
  a uuid:=auth.uid(); s public.artessencia_v1_state%rowtype; o public.artessencia_v1_orders%rowtype;
  rid uuid; saleid text; line jsonb; pay jsonb; result_data jsonb; cash jsonb; movement jsonb;
  refund boolean; found_order boolean; code text; qty numeric; price numeric; total_amount numeric:=0;
- available numeric; tracked boolean; paymentid text; method text; day date;
+ product_data jsonb; available numeric; tracked boolean; paymentid text; method text; day date;
  stamp timestamptz:=clock_timestamp();
 BEGIN
  IF a IS NULL THEN RAISE EXCEPTION 'AUTH_REQUIRED'; END IF;
@@ -41,6 +41,13 @@ BEGIN
      code:=line->>'code';qty:=(line->>'qty')::numeric;price:=(line->>'price')::numeric;
      IF coalesce(code,'')='' OR qty IS NULL OR qty='NaN'::numeric OR qty<1 OR qty>100000 OR qty<>trunc(qty)
       OR price IS NULL OR price='NaN'::numeric OR price<0 OR price<>round(price,2) THEN RAISE EXCEPTION 'INVALID_LINE'; END IF;
+     BEGIN
+       SELECT p.data INTO STRICT product_data FROM public.artessencia_v1_products p
+         WHERE p.user_id=a AND p.data->>'code'=code FOR SHARE;
+     EXCEPTION WHEN no_data_found OR too_many_rows THEN RAISE EXCEPTION 'PRODUCT_CHANGED';
+     END;
+     IF product_data->'active'='false'::jsonb OR product_data->'archivedV1803'='true'::jsonb
+       OR round((product_data->>'price')::numeric,2) IS DISTINCT FROM price THEN RAISE EXCEPTION 'PRODUCT_CHANGED'; END IF;
      available:=public.artessencia_ready_balance_v1(s.data,code);
      tracked:=available IS NOT NULL;
      IF coalesce(line->'readyStockTracked'='true'::jsonb,false) IS DISTINCT FROM tracked THEN RAISE EXCEPTION 'READY_STOCK_CHANGED'; END IF;
