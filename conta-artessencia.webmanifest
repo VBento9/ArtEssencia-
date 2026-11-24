@@ -1,0 +1,25 @@
+{
+  "id": "/conta/",
+  "name": "Conta ArtEssencia",
+  "short_name": "Conta Atelier",
+  "description": "Caixa e compras do atelier ArtEssencia",
+  "start_url": "/conta/",
+  "scope": "/conta/",
+  "display": "standalone",
+  "background_color": "#f7f1ec",
+  "theme_color": "#254b40",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

@@ -78,5 +78,15 @@
         }
       ]
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/conta",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/conta/",
+      "destination": "/index.html"
+    }
   ]
 }

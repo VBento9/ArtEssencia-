@@ -1,0 +1,19 @@
+.business-account body {background:#f4f6f2}
+html.business-account .app {display:block!important}
+html.business-account .main {width:min(100%,1050px)!important;margin:0 auto!important;padding:clamp(12px,3vw,32px)!important}
+html.business-account .sidebar,
+html.business-account .ae-ux-module-panel,
+html.business-account #aeTabletMenu,
+html.business-account #orderNotificationPanelV12624,
+html.business-account .topbar > :not(.top-actions),
+html.business-account .top-actions > :not(#cloudStatus):not(#installBtn),
+html.business-account .screen:not(#cash):not(#purchases) {display:none!important}
+html.business-account .topbar {position:static!important;background:transparent!important;min-height:0!important;box-shadow:none!important;padding:6px 0!important;margin:0!important}
+.business-account #accountHeader {border-radius:20px;background:#254b40;color:#fff;padding:20px}
+.business-account .account-heading {display:flex;align-items:center;justify-content:space-between;gap:12px}
+.business-account .account-heading small {color:#d4e5d9;font:600 16px Georgia,serif}
+.business-account #accountHeader h1 {font:500 clamp(28px,5vw,42px)/1.2 Georgia,serif;color:white;margin:5px 0 16px}
+.business-account #accountHeader nav {display:flex;gap:8px;flex-wrap:wrap}
+.business-account #accountHeader nav button {background:transparent;color:white;border:1px solid #b1c8bb;border-radius:10px;padding:10px 16px;min-height:44px;font-weight:700;cursor:pointer}
+.business-account #accountHeader nav [aria-current] {background:#eaf1e4;color:#214b3b}
+.business-account #cashKpis .cash-kpi:last-child {order:-1;border:2px solid #416e56}

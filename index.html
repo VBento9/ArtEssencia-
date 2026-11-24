@@ -2,7 +2,14 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.191">
+<script>
+if (/^\/conta\/?$/.test(location.pathname)) {
+  const base = document.createElement('base');
+  base.href = '/';
+  document.head.append(base);
+}
+</script>
+<meta name="artessencia-version" content="1.9.192">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -23,6 +30,24 @@
 <title>ArtEssencia Backoffice</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="ArtEssencia Backoffice">
+<script>
+const businessAccountMode = /^\/conta\/?$/.test(location.pathname) || new URLSearchParams(location.search).get('conta') === 'artessencia';
+if (businessAccountMode) {
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('lockTitleV19135').textContent = 'Conta ArtEssencia';
+    document.getElementById('cloudStatus').removeAttribute('onclick');
+    document.getElementById('cloudStatus').disabled = true;
+  }, {once:true});
+  document.documentElement.classList.add('business-account');
+  document.title = 'Conta ArtEssencia';
+  document.querySelector('meta[name=theme-color]').content = '#254b40';
+  document.querySelector('link[rel="manifest"]').href = '/conta-artessencia.webmanifest';
+  document.querySelector('meta[name="apple-mobile-web-app-title"]').content = document.title;
+}
+</script>
+<style>
+.business-account .business-account-launch {display:none}
+</style>
 
 <style>
 :root{--brown:#5A240B;--rose:#F12473;--cream:#FFFDF9;--gold:#FFF4CC;--green:#DFF6EE;--blue:#11ADB5;--purple:#93469C;--yellow:#FFB21A;--red:#FFD8E6;--line:#F0DED2;--shadow:0 8px 24px rgba(90,36,11,.10)}
@@ -3694,6 +3719,10 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
 <div class="app">
 <aside class="sidebar"><div class="brand"><img src="brand-artessencia-transparente.svg" alt="ArtEssencia"><small>BACKOFFICE · GESTÃO PRIVADA</small></div><div class="nav" id="nav"></div><div class="sidebar-signature">Mais do que produtos,<br>criamos bem-estar.</div></aside>
 <main class="main">
+  <header id="accountHeader" hidden>
+    <div class="account-heading"><div><small>ArtEssencia</small><h1>Conta do atelier</h1></div><button class="btn" type="button" onclick="lockNow()">Bloquear</button></div>
+    <nav aria-label="Conta ArtEssencia"><button type="button" data-account-page="cash" onclick="go('cash')">Caixa e movimentos</button><button type="button" data-account-page="purchases" onclick="go('purchases')">Compras de materiais</button></nav>
+  </header>
   <div class="topbar"><div class="art-global-search"><span class="art-search-icon">⌕</span><input id="globalSearchV142" type="search" placeholder="Pesquisar módulos..." autocomplete="off" onkeydown="globalSearchKeyV142(event)"><span class="art-search-hint">Enter</span></div><div class="top-actions"><button id="orderAlertButtonV12624" class="smallbtn order-alert-button-v12624" onclick="toggleOrderNotificationsV12624()" title="Novas encomendas">🔔<span id="orderAlertBadgeV12624" class="order-alert-count-v12624 hidden">0</span></button><button id="installBtn" class="smallbtn hidden" onclick="installApp()">Instalar app</button><button class="pill cloud-status neutral" id="cloudStatus" onclick="go('cloud')" title="Estado da sincronização"><span class="cloud-dot"></span><span id="cloudStatusText">Cloud desligada</span></button><div class="pill art-date-pill" id="today"></div><div class="art-profile"><span>AE</span><div><b>ArtEssencia</b><small>Backoffice privado</small></div></div><span id="runtimeVersion" class="pill art-version-pill">V1.5.0</span></div><div class="page-heading"><span id="pageContext">GESTÃO ArtEssencia</span><h1 id="pageTitle">Dashboard</h1></div></div>
   <div id="installBanner" class="installBanner hidden"><div><strong>Instalar no dispositivo</strong><br><small>Adiciona a app ao ecrã inicial e abre em modo completo.</small></div><button class="btn primary" onclick="installApp()">Instalar</button></div>
 
@@ -4333,6 +4362,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       <div>
         <div class="section-title" style="margin:0">Compras</div>
         <small>Regista entradas de matérias-primas e acompanha o custo real do stock.</small>
+
       </div>
       <div class="purchase-tools">
         <input id="purchaseSearch" aria-label="Pesquisar compras por fornecedor ou artigo" placeholder="Pesquisar fornecedor ou artigo…" oninput="renderPurchases()">
@@ -5478,6 +5508,8 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
       <div>
         <div class="section-title" style="margin:0">Caixa</div>
         <small>Entradas, saídas e pagamentos num único controlo financeiro.</small>
+        <a class="btn business-account-launch" href="/conta/">Abrir Conta ArtEssencia</a>
+
       </div>
       <div class="cash-tools">
         <input id="cashSearch" aria-label="Pesquisar movimentos de caixa" placeholder="Pesquisar descrição…" oninput="renderCash()">
@@ -6464,7 +6496,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.191';
+const APP_VERSION='1.9.192';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -6986,7 +7018,7 @@ function configureLock(){
  if(input)input.value='';
  if(password)password.value='';
  if(err)err.textContent='';
- if(text)text.textContent='Introduz a palavra-passe ou utiliza a biometria para aceder ao Backoffice.';
+ if(text)text.textContent=typeof businessAccountMode!=='undefined'&&businessAccountMode?'Desbloqueia a Conta ArtEssencia com a palavra-passe ou biometria.':'Introduz a palavra-passe ou utiliza a biometria para aceder ao Backoffice.';
  refreshLockMethodsV19135();
  ls.classList.remove('hidden');
  setTimeout(()=>password?.focus(),80);
@@ -7848,6 +7880,15 @@ async function loadSocialMetaStatusV11(showToast=false){const box=document.getEl
 async function markSocialPublishedV10(id){try{const c=await socialCloudV7(),r=await c.from('artessencia_social_publications').update({status:'published',published_at:new Date().toISOString()}).eq('id',id).eq('status','approved').select('id');if(r.error)throw r.error;if(!r.data?.length)return toast('A proposta já não está aprovada ou não pôde ser atualizada');toast('Publicação marcada como publicada');await loadSocialPublicationsV7(false)}catch(e){console.error('social publication publish',e);toast('Não foi possível atualizar o estado')}}
 async function loadSocialPublicationsV7(showToast=false){const h=document.getElementById('socialPublicationsV7');if(!h)return;try{const c=await socialCloudV7(),r=await c.from('artessencia_social_publications').select('id,product_name,network,format,status,scheduled_for,created_at').order('created_at',{ascending:false}).limit(50);if(r.error)throw r.error;const d=r.data||[],labels={draft:'Rascunho',approved:'Aprovada',published:'Publicada',rejected:'Rejeitada'};h.innerHTML=d.length?'<div class="tablewrap"><table><thead><tr><th>Produto</th><th>Rede / formato</th><th>Estado</th><th>Prevista</th><th>Criada</th><th>Ações</th></tr></thead><tbody>'+d.map(x=>'<tr><td>'+escapeHtml(x.product_name||'')+'</td><td>'+escapeHtml((x.network||'')+' · '+(x.format||''))+'</td><td>'+escapeHtml(labels[x.status]||x.status||'')+'</td><td>'+escapeHtml(x.scheduled_for?new Date(x.scheduled_for).toLocaleString('pt-PT'):'—')+'</td><td>'+escapeHtml(x.created_at?new Date(x.created_at).toLocaleString('pt-PT'):'—')+'</td><td>'+(x.status==='draft'?'<button class="smallbtn social-open-draft-v9" type="button" data-social-id="'+escapeHtml(x.id||'')+'">Abrir</button>':x.status==='approved'?'<button class="smallbtn social-mark-published-v10" type="button" data-social-id="'+escapeHtml(x.id||'')+'">Marcar publicada</button>':'—')+'</td></tr>').join('')+'</tbody></table></div>':'<p class="muted">Ainda não existem propostas guardadas.</p>';h.querySelectorAll('.social-open-draft-v9').forEach(btn=>btn.addEventListener('click',()=>openSocialDraftV9(btn.dataset.socialId||'')));h.querySelectorAll('.social-mark-published-v10').forEach(btn=>btn.addEventListener('click',()=>markSocialPublishedV10(btn.dataset.socialId||'')));if(showToast)toast('Histórico atualizado')}catch(e){console.error('social publications load',e);h.innerHTML='<p class="muted">Não foi possível carregar o histórico.</p>'}}
 function go(id){
+ if (businessAccountMode) {
+   if (!['cash','purchases'].includes(id)) return;
+   const header = document.getElementById('accountHeader');
+   header.hidden = false;
+   header.querySelectorAll('[data-account-page]').forEach(button => {
+     if (button.dataset.accountPage === id) button.setAttribute('aria-current','page');
+     else button.removeAttribute('aria-current');
+   });
+ }
  if(id==='production'){const context=document.getElementById('orderProductionContextV1915');if(context)context.hidden=true;}
  document.querySelectorAll('dialog[open]').forEach(d=>{try{d.close()}catch(e){}});
  document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active','screen-enter'));
@@ -18432,7 +18473,7 @@ function renderPublicationCenterV1812(){
 document.addEventListener('input',e=>{if(e.target&&['costPackQty','costPackPrice'].includes(e.target.id))updateCostPreview()});
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;installBtn.classList.remove('hidden');installBanner.classList.remove('hidden')});
 async function installApp(){if(!deferredPrompt)return toast('No Chrome: menu ⋮ → Adicionar ao ecrã principal / Instalar app');deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;installBtn.classList.add('hidden');installBanner.classList.add('hidden')}
-ensureCostModel();syncPackagingSelect();go('dashboard');configureLock();setTimeout(authGateStartupV1880,250);setTimeout(()=>{openPushOrderFromUrlV12625();openPushEventRequestFromUrlV1285()},900);
+ensureCostModel();syncPackagingSelect();go(businessAccountMode ? 'cash' : 'dashboard');configureLock();setTimeout(authGateStartupV1880,250);setTimeout(()=>{openPushOrderFromUrlV12625();openPushEventRequestFromUrlV1285()},900);
 
 
 initStockImagePickerV1925();
@@ -19005,6 +19046,7 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 </style>
 <!-- V1.7.69 — Dashboard: materiais, trabalho, custos gerais, custo total, lucro e fluxo de caixa separados -->
 
+<link rel="stylesheet" href="/conta-artessencia.css">
 <link rel="stylesheet" href="tablet-navigation.css">
 <script src="tablet-navigation.js"></script>
 
