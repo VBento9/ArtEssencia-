@@ -9,6 +9,7 @@ on:
       - 'tests/catalog-contact-inbox-v1.test.cjs'
       - 'migrations/catalog_contact_requests_v1.sql'
       - 'tests/catalog-contact-inbox-sql-integration.sql'
+      - 'tests/catalog-contact-http-integration.cjs'
       - '.github/workflows/catalog-contact-inbox.yml'
   workflow_dispatch:
 permissions:
@@ -44,3 +45,14 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq postgresql-client
           psql -h 127.0.0.1 -U postgres -d postgres -f tests/catalog-contact-inbox-sql-integration.sql
+
+      - name: Validar API HTTP PostgREST isolada
+        env:
+          CATALOG_CONTACT_TEST_API: http://127.0.0.1:3000
+        run: |
+          docker run -d --rm --name artessencia-postgrest --network host \
+            -e PGRST_DB_URI=postgres://postgres:postgres@127.0.0.1:5432/postgres \
+            -e PGRST_DB_SCHEMAS=public \
+            -e PGRST_DB_ANON_ROLE=anon \
+            postgrest/postgrest:v12.2.0
+          node tests/catalog-contact-http-integration.cjs
