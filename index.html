@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="artessencia-version" content="1.9.188">
+<meta name="artessencia-version" content="1.9.189">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -6460,7 +6460,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.188';
+const APP_VERSION='1.9.189';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -15559,10 +15559,30 @@ function showQuoteHistory(id){
  quoteHistoryDialog.showModal()
 }
 
+function isMisfiledProductQuoteV19189(q){
+ if(!q||typeof q!=='object')return false;
+ const noBusiness=!String(q.client||'').trim()&&!q.clientId&&!String(q.contact||'').trim()&&!String(q.email||'').trim()&&!q.orderId&&!q.eventRequestId&&Array.isArray(q.items)&&q.items.length===0&&Math.max(0,Number(q.depositPaid)||0)===0&&(!Array.isArray(q.paymentHistory)||q.paymentHistory.length===0);
+ const productFields=['category','price','cost','productionType','shopVisible','aprecoImportIdV1753'].filter(k=>Object.prototype.hasOwnProperty.call(q,k)).length;
+ return noBusiness&&String(q.status||'Rascunho')==='Rascunho'&&!!String(q.code||'').trim()&&productFields>=4;
+}
+function quoteDeletionFilterV19189(rows,deleted,remote=false){
+ return (rows||[]).filter(q=>!deleted.has(String(remote?q?.id:q?._rid||'')));
+}
+async function fetchQuoteDeletionIdsV19189(userId){
+ const ids=new Set();
+ for(let offset=0;;offset+=500){
+   const {data,error}=await cloudClient.from('artessencia_quote_deletions_v1').select('quote_id').eq('user_id',userId).order('quote_id').range(offset,offset+499);
+   if(error)throw error;
+   if(cloudUser?.id!==userId)throw new Error('A sessão Cloud mudou durante a leitura de eliminações');
+   (data||[]).forEach(x=>ids.add(String(x.quote_id)));
+   if((data||[]).length<500)return ids;
+ }
+}
 async function deleteQuote(id){
  if(!destructiveDeleteAllowedV1420('o orçamento'))return;
- const q=(db.quotes||[]).find(x=>x.id===id);
- if(!q)return;
+ const matching=(db.quotes||[]).filter(x=>x.id===id);
+ if(matching.length!==1)return toast(matching.length?'Existem referências duplicadas. Sincronize antes de eliminar.':'Orçamento não encontrado');
+ const q=matching[0];
  const testLinks=[];
  if(q.orderId)testLinks.push('convertido em encomenda');
  const hasPaymentsV149=Math.max(0,Number(q.depositPaid)||0)>0.001||(Array.isArray(q.paymentHistory)&&q.paymentHistory.some(p=>Math.abs(Number(p?.amount)||0)>0.001))||(db.cash||[]).some(c=>c.quoteId===q.id&&(c.source==='quote_payment'||c.source==='order_payment'));
@@ -15570,22 +15590,25 @@ async function deleteQuote(id){
  const warningV149=testLinks.length?`\n\nAtenção: este orçamento está ${testLinks.join(' e ')}. Nesta fase de testes a eliminação é permitida; os registos relacionados não serão eliminados automaticamente.`:'';
  if(!confirm('Eliminar este orçamento definitivamente?'+warningV149))return;
  const u=cloudUser||await ensureCloudSession();
- if(q._rid&&!u)return toast('Sem sessão Cloud. Nada foi apagado.');
- if(u&&q._rid){
-   try{
-     const {error:itemsError}=await cloudClient.from('artessencia_v10_quote_items').delete().eq('user_id',u.id).eq('quote_id',q._rid);
-     if(itemsError)throw itemsError;
-     const {error}=await cloudClient.from(REL_TABLES.quotes).delete().eq('user_id',u.id).eq('id',q._rid);
-     if(error)throw error;
-   }catch(e){
-     cloudLogMsg('Falha ao eliminar orçamento na cloud: '+cloudErrText(e));
-     toast('Não foi possível eliminar da Cloud. Nada foi apagado.');
-     return
-   }
+ if(!u||!cloudClient||!navigator.onLine)return toast('Ligue a Cloud antes de eliminar. Nada foi apagado.');
+ let deletedRid;
+ try{
+   const {data:matches,error:lookupError}=await cloudClient.from(REL_TABLES.quotes).select('id').eq('user_id',u.id).eq('data->>id',String(q.id));
+   if(lookupError)throw lookupError;
+   if(cloudUser?.id!==u.id)throw new Error('Sessão alterada');
+   if((matches||[]).length>1||((matches||[]).length===1&&String(matches[0].id)!==String(q._rid||'')))throw new Error('Identidade remota ambígua. Receba os dados da Cloud antes de eliminar.');
+   deletedRid=relUuid(q);
+   const {data:confirmed,error}=await cloudClient.rpc('artessencia_delete_quote_v1',{p_quote_id:deletedRid});
+   if(error)throw error;
+   if(confirmed!==true||cloudUser?.id!==u.id)throw new Error('Eliminação sem confirmação');
+ }catch(e){
+   cloudLogMsg('Falha ao eliminar orçamento na cloud: '+cloudErrText(e));
+   toast('Eliminação não confirmada. '+cloudErrText(e));
+   return;
  }
  const cashBeforeV1783=(db.cash||[]).length;if(!q.orderId){db.cash=(db.cash||[]).filter(c=>!(c.quoteId===q.id&&c.source==='quote_payment'&&!c.orderId))}
  const cleanedQuoteCashV1783=(db.cash||[]).length!==cashBeforeV1783;
- db.quotes=(db.quotes||[]).filter(x=>x.id!==id);
+ db.quotes=quoteDeletionFilterV19189(db.quotes,new Set([String(deletedRid)]));
  localStorage.setItem(KEY,JSON.stringify(db));
  if(cleanedQuoteCashV1783&&u){try{await pushOperationalCloudStateV139(u)}catch(e){localStorage.setItem(REL_DIRTY,'1');setCloudMeta({dirty:true,verified:false,conflict:false});cloudLogMsg('Orçamento eliminado, mas limpeza do Caixa ficou pendente de Cloud: '+cloudErrText(e));renderQuotes();renderCloudUI();toast('Orçamento eliminado; sincronização da limpeza do Caixa ficou pendente');return}}
  localStorage.setItem(REL_DIRTY,'1');
@@ -17862,9 +17885,11 @@ async function relationalSyncCore(showToast=false){
    (db.clients||[]).forEach(relUuid);(db.products||[]).forEach(relUuid);db.orders.forEach(relUuid);(db.quotes||[]).forEach(relUuid);
    localStorage.setItem(KEY,JSON.stringify(db));
 
-   const [remoteClients,remoteProducts,remoteOrders,remoteQuotes]=await Promise.all([
-     relFetchAll(REL_TABLES.clients),relFetchAll(REL_TABLES.products),relFetchAll(REL_TABLES.orders),relFetchAll(REL_TABLES.quotes)
+   const [remoteClients,remoteProducts,remoteOrders,remoteQuotes,deletedQuoteIds]=await Promise.all([
+     relFetchAll(REL_TABLES.clients),relFetchAll(REL_TABLES.products),relFetchAll(REL_TABLES.orders),relFetchAll(REL_TABLES.quotes),fetchQuoteDeletionIdsV19189(u.id)
    ]);
+   db.quotes=quoteDeletionFilterV19189(db.quotes,deletedQuoteIds);
+   localStorage.setItem(KEY,JSON.stringify(db));
 
    const clientRows=(db.clients||[]).filter(c=>!isQuarantinedProductClient(c)).map(c=>({
      id:relUuid(c),user_id:u.id,name:c.name||'',phone:c.phone||null,email:c.email||null,notes:c.notes||null,
@@ -17937,7 +17962,7 @@ async function relationalSyncCore(showToast=false){
      })
    }
 
-   const quoteRows=(db.quotes||[]).map(q=>{
+   const quoteRows=(db.quotes||[]).filter(q=>!isMisfiledProductQuoteV19189(q)).map(q=>{
      const qc=quoteCalc(q);
      return {
        id:relUuid(q),user_id:u.id,client_id:relClientRid(q.clientId,q.client),
@@ -17996,8 +18021,8 @@ async function relationalHydrateCore(initial=false,allowLocalOverwriteV19102=fal
  const ownBusy=!cloudBusy;
  if(ownBusy){cloudBusy=true;renderCloudUI()}
  try{
-   const [clients,products,orders,quotes]=await Promise.all([
-     relFetchAll(REL_TABLES.clients),relFetchAll(REL_TABLES.products),relFetchAll(REL_TABLES.orders),relFetchAll(REL_TABLES.quotes)
+   const [clients,products,orders,quotes,deletedQuoteIds]=await Promise.all([
+     relFetchAll(REL_TABLES.clients),relFetchAll(REL_TABLES.products),relFetchAll(REL_TABLES.orders),relFetchAll(REL_TABLES.quotes),fetchQuoteDeletionIdsV19189(u.id)
    ]);
 
    if(productionBlockedV1926())return false;
@@ -18127,7 +18152,7 @@ async function relationalHydrateCore(initial=false,allowLocalOverwriteV19102=fal
        else db.orders.push(relClone(localOrder));
      });
 
-     db.quotes=mergeRows(localQuotes,remoteQuotesAdjusted,'quote');
+     db.quotes=mergeRows(quoteDeletionFilterV19189(localQuotes,deletedQuoteIds),quoteDeletionFilterV19189(remoteQuotesAdjusted,deletedQuoteIds,true),'quote');
 
       const hydrateChangedV19100=beforeHydrateV19100!==stableStringify([db.clients,db.products,db.orders,db.quotes]);
       if(hydrateChangedV19100)localStorage.setItem(KEY,JSON.stringify(db));
