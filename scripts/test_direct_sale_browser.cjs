@@ -1,4 +1,5 @@
 const {chromium}=require('playwright'),assert=require('node:assert/strict');
+const {stageSale}=require('../direct-sale-pos');
 (async()=>{
  const browser=await chromium.launch({headless:true});
  try{
@@ -18,6 +19,26 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
    });
    await page.getByRole('button',{name:'Venda direta',exact:true}).click();
    const pos=page.locator('#directSalePOS');await pos.waitFor({state:'visible'});
+   const orders=[],cash=[];
+   await page.exposeFunction('fixtureSale',order=>{
+    const previous=orders.find(o=>o.id===order.id);
+    const staged=stageSale(orders,cash,order,previous,order.created);
+    orders.splice(0,orders.length,...staged.orders);cash.splice(0,cash.length,...staged.cash);
+    return {orders:[{id:order._rid,status:order.status,data:order}],cash};
+   });
+   await page.evaluate(()=>{
+    const user={id:'fixture-owner'};
+    ensureCloudSession=async()=>user;
+    fetchCloudRowAuthoritative=async()=>({user_id:user.id,revision:1,data:operationalCloudSnapshotV139()});
+    cloudStartupDone=true;cloudBusy=false;cloudPushRunning=false;cloudHydrating=false;
+    relDetectChangedOrders=()=>{};localStorage.removeItem(REL_DIRTY);
+    setCloudMeta({dirty:false,conflict:false});
+    cloudClient={rpc:async(name,args)=>{
+      if(name!=='artessencia_commit_ready_sale_v1')throw Error(name);
+      const sale=await window.fixtureSale(args.p_order);
+      return {data:{orders:sale.orders,state:{user_id:user.id,revision:2,data:{...operationalCloudSnapshotV139(),cash:sale.cash},updated_at:new Date().toISOString()}}};
+    }};
+   });
    await ctx.setOffline(true);
    await pos.locator('#posSearch').fill('POS-TEST');
    await pos.locator('#posProducts').getByRole('button').click();
@@ -27,11 +48,19 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
    assert.equal(await page.evaluate(()=>db.orders.length),0);
    await pos.locator('#posStockConfirmed').check();
    await pos.locator('#posFinish').click();
+   assert.equal(await page.evaluate(()=>db.orders.length),0);
+   assert.equal(await page.evaluate(()=>db.cash.length),0);
+   await ctx.setOffline(false);
+   await pos.locator('#posFinish').click();
+   await page.waitForFunction(()=>db.orders.length===1);
+   await page.evaluate(()=>openDirectSalePOS());
    let r=await page.evaluate(()=>({o:db.orders[0],cash:db.cash,clients:db.clients.length,stock:db.stock[0].qty,runs:db.productionRuns.length,stored:JSON.parse(localStorage.getItem(KEY)).orders.length}));
    assert.equal(r.o.paid,15);assert.equal(r.o.clientId,null);assert.equal(r.cash.length,1);assert.equal(r.cash[0].value,15);assert.equal(r.clients,0);assert.equal(r.stock,20000);assert.equal(r.runs,0);assert.equal(r.stored,1);
    assert.equal(await pos.locator('#posFinish').isDisabled(),true);
    await pos.getByRole('button',{name:'Histórico de vendas diretas'}).click();
    page.once('dialog',d=>d.accept());await pos.getByRole('button',{name:'Anular e registar devolução'}).click();
+   await page.waitForFunction(()=>db.cash.length===2);
+   await page.evaluate(()=>openDirectSalePOS(db.orders[0].id));
    r=await page.evaluate(()=>({o:db.orders[0],cash:db.cash,stored:JSON.parse(localStorage.getItem(KEY)).cash}));
    assert.equal(r.o.status,'Cancelado');assert.equal(r.o.paid,0);assert.equal(r.cash.length,2);assert.equal(r.cash[1].type,'Saída');assert.equal(r.cash[1].value,15);assert.equal(r.stored.length,2);
    assert.equal(await pos.getByRole('button',{name:'Anular e registar devolução'}).count(),0);
@@ -42,6 +71,6 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
    assert.equal(await pos.evaluate(e=>e.open),false);
    await ctx.close();
   }
-  console.log('PASS: POS no browser, offline durante operação, telemóvel/tablet/desktop, Caixa, devolução e proteção de stock.');
+  console.log('PASS: POS no browser, bloqueio offline e confirmação Cloud, telemóvel/tablet/desktop, Caixa, devolução e proteção de stock.');
  }finally{await browser.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});
