@@ -1,18 +1,31 @@
 name: Direct sale POS checks
 on:
   pull_request:
-  push:
-    branches:
-      - feature/venda-direta-pos-20261124
+    paths:
+      - 'direct-sale-pos.*'
+      - 'tests/direct-sale-pos.test.cjs'
+      - 'scripts/test_direct_sale_browser.cjs'
+      - 'index.html'
+      - 'funds-ledger-v1.js'
+      - 'sw.js'
+      - '.github/workflows/direct-sale-pos.yml'
 permissions:
   contents: read
 jobs:
   direct-sale:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22'
       - run: node --check direct-sale-pos.js
-      - run: node --test tests/direct-sale-pos.test.cjs tests/funds-sales-allocation-19136.test.cjs
+      - run: node --test tests/direct-sale-pos.test.cjs tests/funds-sales-allocation-19136.test.cjs tests/cloud-operational-rebase-v19186.test.cjs
+      - run: |
+          npm install --no-save --package-lock=false --ignore-scripts @playwright/test@1.56.1
+          npx playwright install chromium
+      - run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/ae-pos.log 2>&1 &
+      - run: node scripts/test_direct_sale_browser.cjs

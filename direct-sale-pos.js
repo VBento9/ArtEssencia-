@@ -14,13 +14,13 @@
   });
   if(totalCents<=0)throw Error('O valor da venda deve ser superior a zero.');
   const total=totalCents/100;
-  return {id:identity.id,_rid:identity.rid,source:'direct_sale',created:day,client:'',clientId:null,contact:'',email:'',delivery:'',status:'Entregue',deliveredAt:now,payment:method,paid:total,total,subtotal:total,discountTotal:0,box:'',boxes:0,boxCostSnapshot:0,notes:'Venda presencial · consumidor final',stockPolicy:'materials_already_accounted',items,paymentHistory:[{id:paymentId,date:now,amount:total,method,type:'payment',source:'direct_sale'}]};
+  return {id:identity.id,_rid:identity.rid,source:'direct_sale',created:day,client:'',clientId:null,contact:'',email:'',delivery:'',status:'Entregue',deliveredAt:now,payment:method,paid:total,total,subtotal:total,discountTotal:0,box:'',boxes:0,boxCostSnapshot:0,notes:'Venda presencial · consumidor final',stockPolicy:'materials_already_accounted',items,paymentHistory:[{id:paymentId,date:now,localDate:day,amount:total,method,type:'payment',source:'direct_sale'}]};
  }
- function refundOrder(o,now,paymentId){
+ function refundOrder(o,now,paymentId,day=now.slice(0,10)){
   if(!o||o.source!=='direct_sale'||o.status!=='Entregue'||o.voidedAt||!(o.paid>0))throw Error('Venda já anulada ou inválida.');
   const paid=o.paid;
   if(Math.round(paid*100)!==Math.round(o.total*100))throw Error('Pagamento não coincide com o total da venda.');
-  return {...o,status:'Cancelado',voidedAt:now,voidedFrom:'Entregue',voidedPaid:paid,paid:0,paymentHistory:[...o.paymentHistory,{id:paymentId,date:now,amount:-paid,method:o.payment,type:'correction',source:'direct_sale',note:'Devolução integral confirmada'}]};
+  return {...o,status:'Cancelado',voidedAt:now,voidedFrom:'Entregue',voidedPaid:paid,paid:0,paymentHistory:[...o.paymentHistory,{id:paymentId,date:now,localDate:day,amount:-paid,method:o.payment,type:'correction',source:'direct_sale',note:'Devolução integral confirmada'}]};
  }
  function cashForPayment(order,payment,day){
   const correction=payment.type==='correction';
@@ -29,12 +29,13 @@
  function stageSale(orders,cash,order,previous,day){
   const current=orders.find(o=>o.id===order.id);
   if(previous?current!==previous:!!current)throw Error('A venda foi alterada. Reabra o histórico.');
-  const p=order.paymentHistory[order.paymentHistory.length-1],move=cashForPayment(order,p,day);
+  const p=order.paymentHistory[order.paymentHistory.length-1],move=cashForPayment(order,p,p.localDate||day);
   if(cash.some(c=>c.paymentId===p.id||c.id===move.id))throw Error('Pagamento já registado.');
   return {orders:previous?orders.map(o=>o===previous?order:o):[...orders,order],cash:[...cash,move]};
  }
  if(typeof module!=='undefined'&&module.exports){module.exports={buildOrder,refundOrder,cashForPayment,stageSale};return}
- let lines=[],busy=false,dialog;
+ let lines=[],busy=false,dialog,externalWrite=false;
+ window.addEventListener('storage',e=>{if(e.key===KEY||e.key===null)externalWrite=true});
  const h=v=>escapeHtml(String(v??''));
  const get=id=>document.getElementById(id);
  function mount(){
@@ -76,6 +77,7 @@
  }
  function persistOrder(order,previous=null){
   // Persistir encomenda e caixa juntos no mesmo snapshot local, antes da sincronização.
+  if(externalWrite)throw Error('Dados alterados noutra janela. Atualize a aplicação antes de continuar.');
   const oldOrders=db.orders,oldCash=db.cash;
   const staged=stageSale(oldOrders,oldCash||[],order,previous,todayISO());
   const oldRaw=localStorage.getItem(KEY);
@@ -123,7 +125,7 @@
    row.innerHTML='<strong>'+h(o.created)+' · '+euro(calcOrder(o).total)+' · '+h(o.status==='Cancelado'?'Anulada':'Paga')+'</strong><small>'+h(o.id)+' · '+h(o.payment)+'</small><p>'+h(o.items.map(i=>i.qty+' × '+i.name).join(' · '))+'</p>';
    if(o.status!=='Cancelado'){
     const btn=document.createElement('button');btn.type='button';btn.className='btn danger';btn.textContent='Anular e registar devolução';
-    btn.onclick=()=>{if(busy)return;if(productionBlockedV1926())return toast('Resolva primeiro a produção pendente.');const current=(db.orders||[]).find(x=>x.id===o.id);if(current!==o||current.status!=='Entregue')return viewHistory(id);if(!confirm('Confirma que devolveu integralmente o pagamento ao cliente?'))return;busy=true;try{const next=refundOrder(current,new Date().toISOString(),'PAY-'+current._rid+'-REFUND');persistOrder(next,current);viewHistory(id);toast('Venda anulada e devolução registada.')}catch(e){toast(e.message)}finally{busy=false}};
+    btn.onclick=()=>{if(busy)return;if(productionBlockedV1926())return toast('Resolva primeiro a produção pendente.');const current=(db.orders||[]).find(x=>x.id===o.id);if(current!==o||current.status!=='Entregue')return viewHistory(id);if(!confirm('Confirma que devolveu integralmente o pagamento ao cliente?'))return;busy=true;try{const next=refundOrder(current,new Date().toISOString(),'PAY-'+current._rid+'-REFUND',todayISO());persistOrder(next,current);viewHistory(id);toast('Venda anulada e devolução registada.')}catch(e){toast(e.message)}finally{busy=false}};
     row.append(btn);
    }
    host.append(row);

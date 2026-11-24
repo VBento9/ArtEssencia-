@@ -10754,11 +10754,23 @@ function updateOrderDetails(id){
  save();showOrder(id);toast(notice||'Encomenda corrigida')
 }
 
+function directSaleCashRecordV19190(o,p){
+ const correction=p.type==='correction';
+ return {id:'CASH-'+p.id,date:p.localDate||String(p.date||o.created||'').slice(0,10),type:Number(p.amount)<0?'Saída':'Entrada',desc:(correction?'Devolução venda direta ':'Venda direta ')+o.id,method:p.method||o.payment||'Outro',value:Math.abs(Number(p.amount)),source:correction?'order_payment_correction':'order_payment',orderId:o.id,paymentId:p.id};
+}
 function ensureOrderPaymentCashLedger(target){
  const d=target||db;d.cash=Array.isArray(d.cash)?d.cash:[];d.orders=Array.isArray(d.orders)?d.orders:[];
  let added=0;
  d.orders.forEach(o=>{
   o.paymentHistory=Array.isArray(o.paymentHistory)?o.paymentHistory:[];
+  if(o.source==='direct_sale'){
+   for(const p of o.paymentHistory){
+    if(!p.id||!Number.isFinite(Number(p.amount))||Math.abs(Number(p.amount))<=0.005)continue;
+    const move=directSaleCashRecordV19190(o,p);
+    if(!d.cash.some(c=>c.paymentId===p.id&&c.orderId===o.id&&c.source===move.source)){d.cash.push(move);added++}
+   }
+   return;
+  }
   let represented=0;
   o.paymentHistory.forEach(p=>{
    const amount=Number(p.amount)||0;
@@ -16538,6 +16550,28 @@ function mergeOperationalProductRecipesV19186(base,local,remote){
 
 /* Uma revisão operacional não deve bloquear uma edição de um produto independente.
    Reconciliar apenas chaves operacionais sem alterações concorrentes, com base confirmada. */
+function mergeDirectSaleCashV19190(base,local,remote){
+ if(![base,local,remote].every(Array.isArray))return {ok:false};
+ const key=x=>String(x?.id||'');
+ const map=rows=>new Map(rows.map(x=>[key(x),x]));
+ const b=map(base),l=map(local),r=map(remote);
+ if([b,l,r].some(m=>m.has(''))||b.size!==base.length||l.size!==local.length||r.size!==remote.length)return {ok:false};
+ for(const [id,row] of b){
+  if(!l.has(id)||!r.has(id)||stableStringify(l.get(id))!==stableStringify(row)||stableStringify(r.get(id))!==stableStringify(row))return {ok:false};
+ }
+ const valid=x=>typeof x?.orderId==='string'&&x.orderId.startsWith('VD-')&&typeof x.paymentId==='string'&&x.id==='CASH-'+x.paymentId&&
+  ((x.source==='order_payment'&&x.type==='Entrada')||(x.source==='order_payment_correction'&&x.type==='Saída'))&&Number.isFinite(x.value)&&x.value>0;
+ const additions=new Map();
+ for(const rows of [local,remote])for(const x of rows){
+  if(b.has(key(x)))continue;
+  if(!valid(x))return {ok:false};
+  const old=additions.get(key(x));
+  if(old&&stableStringify(old)!==stableStringify(x))return {ok:false};
+  additions.set(key(x),x);
+ }
+ const sorted=[...additions.values()].sort((a,b)=>String(a.date).localeCompare(String(b.date))||a.id.localeCompare(b.id));
+ return {ok:true,merged:[...base,...sorted]};
+}
 function trySafeOperationalRebaseV19102(remote,baseRevision){
  if(!remote?.data)return false;
  const remoteRev=Number(remote.revision||0);
@@ -16558,6 +16592,11 @@ function trySafeOperationalRebaseV19102(remote,baseRevision){
   if(stableStringify(ours)===stableStringify(theirs))merged[k]=ours;
   else if(baseOps&&stableStringify(ours)===stableStringify(base))merged[k]=theirs;
   else if(baseOps&&stableStringify(theirs)===stableStringify(base))merged[k]=ours;
+  else if(baseOps&&k==='cash'){
+   const result=mergeDirectSaleCashV19190(base,ours,theirs);
+   if(!result.ok){cloudLogMsg('Conflito operacional na chave cash · dados preservados');return false}
+   merged[k]=result.merged;
+  }
   else if(baseOps&&k==='productRecipes'){
    const result=mergeOperationalProductRecipesV19186(base,ours,theirs);
    if(!result.ok){
