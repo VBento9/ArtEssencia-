@@ -6563,7 +6563,7 @@ async function resumeProductionV1926(){
  try{
   const user=await ensureCloudSession();if(!user||user.id!==pending.userId)throw new Error('Inicia sessão com a conta que iniciou esta produção.');
   if(navigator.onLine===false)throw new Error('Sem internet. Liga a rede e volta a verificar.');
-  const {data,error}=await cloudClient.rpc(pending.kind==='ready_stock'?'artessencia_register_ready_stock_v1':'artessencia_complete_production_backoffice_v1',pending.args);
+  const {data,error}=await cloudClient.rpc(pending.kind==='ready_sale'?'artessencia_commit_ready_sale_v1':pending.kind==='ready_stock'?'artessencia_register_ready_stock_v1':'artessencia_complete_production_backoffice_v1',pending.args);
   if(error){
    // These are explicit PostgreSQL rejections: the transaction rolled back.
    if(['P0001','40001','22023','22P02','42501'].includes(error.code)){
@@ -6572,7 +6572,7 @@ async function resumeProductionV1926(){
    }
    throw new Error(error.message||'A Cloud não confirmou o resultado.');
   }
-  if(!data?.state?.data||data.state.user_id!==user.id||!Array.isArray(data.orders)||!data.state.data.productionRuns?.some(r=>r.id===pending.args.p_run.id))throw new Error('Resposta incompleta. É necessário verificar novamente.');
+  if(!data?.state?.data||data.state.user_id!==user.id||!Array.isArray(data.orders)||(pending.kind==='ready_sale'?!data.orders.some(r=>r.id===pending.args.p_order._rid):!data.state.data.productionRuns?.some(r=>r.id===pending.args.p_run.id)))throw new Error('Resposta incompleta. É necessário verificar novamente.');
   committed=true;
   // Apply only the authoritative transaction response; never optimistically consume stock.
   CLOUD_OPERATIONAL_KEYS_V139.forEach(key=>{if(data.state.data[key]!==undefined)db[key]=relClone(data.state.data[key])});
@@ -6580,7 +6580,7 @@ async function resumeProductionV1926(){
   localStorage.setItem(KEY,JSON.stringify(db));saveConfirmedShadow(data.state);
   setCloudMeta({baseRevision:Number(data.state.revision),remoteRevision:Number(data.state.revision),lastCloudAt:data.state.updated_at,lastSync:new Date().toISOString(),dirty:false,verified:true,conflict:false});
   localStorage.removeItem(REL_DIRTY);localStorage.removeItem(PRODUCTION_PENDING_V1926);
-  document.getElementById('productionTransactionV1926')?.remove();renderAll();toast(pending.kind==='ready_stock'?'Peças prontas registadas na Cloud':'Produção confirmada na Cloud · stock descontado · encomendas Prontas');return true;
+  document.getElementById('productionTransactionV1926')?.remove();renderAll();toast(pending.kind==='ready_sale'?'Venda/devolução confirmada na Cloud':pending.kind==='ready_stock'?'Peças prontas registadas na Cloud':'Produção confirmada na Cloud · stock descontado · encomendas Prontas');return true;
  }catch(error){productionOverlayV1926((committed?'A produção ficou confirmada na Cloud, mas a cópia local não foi guardada. ':'O resultado ainda não foi confirmado. ')+(error.message||'Tenta novamente.')+' Verificar novamente não desconta o stock duas vezes.',true);return false}
  finally{productionBusyV1926=false}
 }
@@ -16025,6 +16025,7 @@ function authGateShowV1880(message=''){
  if(password)password.value='';
  authGateMessageV1880(message);gate.classList.remove('hidden');
  if(typeof window.closeDirectSalePOSOnLock==='function')window.closeDirectSalePOSOnLock();
+ if(typeof window.closeReadyStockOnLock==='function')window.closeReadyStockOnLock();
  document.getElementById('authGatePasskeyV20261008')?.classList.toggle('hidden',!PASSKEY_PREVIEW_V20261008);
  setTimeout(()=>{(email?.value?password:email)?.focus()},80)
 }

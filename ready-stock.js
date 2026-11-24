@@ -83,7 +83,7 @@
    const user=await ensureCloudSession();if(!user||!auth())throw Error('Sessão necessária.');
    const [state,products]=await Promise.all([fetchCloudRowAuthoritative(user),relFetchAll(REL_TABLES.products)]);
    if(!state||stableStringify(operationalCloudSnapshotV139())!==stableStringify(operationalCloudRowSnapshotV1858(state)))throw Error('Os dados mudaram na Cloud. Recebe os dados antes de continuar.');
-   const row=products.find(x=>x.id===p._rid);if(!row||stableStringify(row.data)!==stableStringify(relClone(p)))throw Error('Produto ainda não sincronizado ou alterado.');
+   const row=products.find(x=>x.id===p._rid);if(!row||productionComparableV1926(row.data,'product')!==productionComparableV1926(p,'product'))throw Error('Produto ainda não sincronizado ou alterado.');
    if(!auth())throw Error('Desbloqueia a aplicação.');
    const costs=Object.fromEntries(Object.keys(needs).map(name=>[name,materialUnitCost(name)]));
    const run={id:uid('PROD'),kind:'ready_stock',mode:m,date:todayISO(),products:[{code:p.code,name:p.name,qty:n}],total:n,materials:needs,materialUnitCosts:costs,materialCostTotal:Object.entries(needs).reduce((s,[name,q])=>s+q*costs[name],0),orders:[],orderMaterials:{},orderProducts:{}};

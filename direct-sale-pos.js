@@ -96,7 +96,24 @@
   try{refreshOperationalViewsV1413('direct_sale');if(typeof renderFundsV1929==='function')renderFundsV1929();scheduleRelationalSync();queueOrderBusinessSyncV1757(order,'venda direta')}catch(e){cloudLogMsg('Venda guardada localmente; atualização pendente: '+order.id)}
   return true;
  }
- function finish(){
+ async function commitTracked(order){
+  if(externalWrite)throw Error('Dados alterados noutra janela. Atualize a aplicação.');
+  if(!navigator.onLine)throw Error('As vendas com stock acabado registado precisam de ligação à internet.');
+  if(productionBlockedV1926()||cloudBusy||cloudPushRunning||cloudHydrating||!cloudStartupDone)throw Error('Aguarde a sincronização antes de finalizar.');
+  relDetectChangedOrders();
+  if(cloudMeta().dirty||cloudMeta().conflict||localStorage.getItem(REL_DIRTY)==='1'||relOrderPendingSet().size){scheduleCloudPushV1860(100);throw Error('Existem alterações por sincronizar.')}
+  productionBusyV1926=true;
+  try{
+   const u=await ensureCloudSession();if(!u||!authorized())throw Error('Sessão necessária.');
+   const state=await fetchCloudRowAuthoritative(u);
+   if(!state||stableStringify(operationalCloudSnapshotV139())!==stableStringify(operationalCloudRowSnapshotV1858(state)))throw Error('Os dados mudaram na Cloud. Receba os dados antes de continuar.');
+   if(!authorized()||externalWrite)throw Error('Dados ou sessão alterados.');
+   localStorage.setItem(PRODUCTION_PENDING_V1926,JSON.stringify({kind:'ready_sale',userId:u.id,args:{p_revision:state.revision,p_order:order,p_device:getDeviceId()}}));
+   dialog.close();
+  }finally{productionBusyV1926=false}
+  return resumeProductionV1926();
+ }
+ async function finish(){
   if(busy||!authorized())return;
   if(lines.some(l=>!window.readyStockInventory?.().has(l.code))&&!get('posStockConfirmed').checked)return toast('Confirme que os materiais das peças prontas não registadas já foram contabilizados.');
   if(productionBlockedV1926())return toast('Resolva primeiro a produção pendente.');
@@ -112,8 +129,8 @@
    const rid=relUuid({}),day=todayISO(),now=new Date().toISOString(),identity={rid,id:'VD-'+day.replace(/-/g,'')+'-'+rid.replace(/-/g,'').slice(0,16).toUpperCase()};
    const order=buildOrder(prepared,get('posMethod').value,identity,day,now,'PAY-'+rid+'-SALE');
    if((db.orders||[]).some(o=>o.id===order.id))throw Error('Identificador já utilizado.');
-   persistOrder(order);
-   lines=[];get('posStockConfirmed').checked=false;get('posSearch').value='';renderProducts();toast('Venda direta guardada: '+euro(order.total));
+   if(order.items.some(l=>l.readyStockTracked)){const accepted=await commitTracked(order);if(!accepted&&!productionPendingV1926())return;}else persistOrder(order);
+   lines=[];get('posStockConfirmed').checked=false;get('posSearch').value='';renderProducts();if(!productionPendingV1926())toast('Venda direta guardada: '+euro(order.total));
   }catch(e){toast(e.message||'Não foi possível guardar a venda.')}
   finally{busy=false;renderLines()}
  }
@@ -128,7 +145,7 @@
    row.innerHTML='<strong>'+h(o.created)+' · '+euro(calcOrder(o).total)+' · '+h(o.status==='Cancelado'?'Anulada':'Paga')+'</strong><small>'+h(o.id)+' · '+h(o.payment)+'</small><p>'+h(o.items.map(i=>i.qty+' × '+i.name).join(' · '))+'</p>';
    if(o.status!=='Cancelado'){
     const btn=document.createElement('button');btn.type='button';btn.className='btn danger';btn.textContent='Anular e registar devolução';
-    btn.onclick=()=>{if(busy||!authorized())return;if(productionBlockedV1926())return toast('Resolva primeiro a produção pendente.');const current=(db.orders||[]).find(x=>x.id===o.id);if(current!==o||current.status!=='Entregue')return viewHistory(id);if(!confirm('Confirma que devolveu integralmente o pagamento ao cliente?'))return;busy=true;try{const next=refundOrder(current,new Date().toISOString(),'PAY-'+current._rid+'-REFUND',todayISO());if(current.items.some(i=>i.readyStockTracked))next.readyRestocked=confirm('As peças devolvidas estão fisicamente disponíveis e em condições de voltar a vender?');persistOrder(next,current);viewHistory(id);toast('Venda anulada e devolução registada.')}catch(e){toast(e.message)}finally{busy=false}};
+    btn.onclick=async()=>{if(busy||!authorized())return;if(productionBlockedV1926())return toast('Resolva primeiro a produção pendente.');const current=(db.orders||[]).find(x=>x.id===o.id);if(current!==o||current.status!=='Entregue')return viewHistory(id);if(!confirm('Confirma que devolveu integralmente o pagamento ao cliente?'))return;busy=true;try{const next=refundOrder(current,new Date().toISOString(),'PAY-'+current._rid+'-REFUND',todayISO());if(current.items.some(i=>i.readyStockTracked))next.readyRestocked=confirm('As peças devolvidas estão fisicamente disponíveis e em condições de voltar a vender?');if(current.items.some(i=>i.readyStockTracked)){const accepted=await commitTracked(next);if(!accepted)return;}else persistOrder(next,current);viewHistory(id);toast('Venda anulada e devolução registada.')}catch(e){toast(e.message)}finally{busy=false}};
     row.append(btn);
    }
    host.append(row);
