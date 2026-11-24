@@ -6570,7 +6570,7 @@ async function resumeProductionV1926(){
     localStorage.removeItem(PRODUCTION_PENDING_V1926);document.getElementById('productionTransactionV1926')?.remove();
     const operation=pending.kind==='ready_sale'?'Venda ou devolução':pending.kind==='ready_stock'?'Movimento de stock':'Produção';
     const reasons={cloud_revision_conflict:'Outro dispositivo alterou os dados.',INSUFFICIENT_READY_STOCK:'As unidades disponíveis já não chegam.',READY_STOCK_CHANGED:'A disponibilidade deste artigo mudou.',PRODUCT_CHANGED:'O produto foi alterado.',INSUFFICIENT_OR_AMBIGUOUS_STOCK:'Verifica as quantidades e os nomes das matérias-primas.'};
-    toast(operation+' sem confirmação. '+(reasons[error.message]||error.message||'Dados alterados na Cloud.')+' Recebe os dados da Cloud e revê o registo.');return false;
+    toast(operation+(pending.kind==='ready_stock'?' não concluído. ':' não concluída. ')+(reasons[error.message]||error.message||'Dados alterados na Cloud.')+' Recebe os dados da Cloud e revê o registo.');return false;
    }
    throw new Error(error.message||'A Cloud não confirmou o resultado.');
   }
