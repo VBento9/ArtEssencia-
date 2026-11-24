@@ -54,8 +54,50 @@
   if(status)status.textContent=message;
  }
 
+ // Uma cópia guardada na Cloud não prova que esta sessão tenha persistido a memória.
+ // A confirmação é local: sem comparação exata, nunca navegar automaticamente.
+ function pwaDurableSnapshotV19187(){
+  try{return typeof KEY==='string'&&typeof db!=='undefined'&&localStorage.getItem(KEY)===JSON.stringify(db)}
+  catch(_){return false}
+ }
+ let backupRequestedV19187=false,backupSnapshotV19187='';
+ function pwaExportBeforeUpdateV19187(){
+  try{
+   if(typeof backupBlob!=='function'||typeof backupFileName!=='function'||typeof downloadBlob!=='function')throw new Error('Backup indisponível');
+   const blob=backupBlob();
+   if(!blob||!blob.size)throw new Error('Backup vazio');
+   downloadBlob(blob,backupFileName('ArtEssencia_ANTES_ATUALIZAR'));
+   backupRequestedV19187=true;
+   try{backupSnapshotV19187=JSON.stringify(db)}catch(_){backupSnapshotV19187=''}
+   bannerMessage('Cópia dos dados em memória preparada. Confirma que o ficheiro JSON ficou guardado antes de continuar.');
+   return true;
+  }catch(error){backupRequestedV19187=false;backupSnapshotV19187='';bannerMessage('Não foi possível criar o backup: '+String(error?.message||error));return false}
+ }
+ function pwaPersistBeforeUpdateV19187(){
+  if(!backupRequestedV19187){bannerMessage('Primeiro descarrega uma cópia dos dados em memória.');return false}
+  try{if(!backupSnapshotV19187||backupSnapshotV19187!==JSON.stringify(db)){backupRequestedV19187=false;bannerMessage('Os dados mudaram depois do backup. Descarrega uma cópia atualizada antes de guardar.');return false}}catch(_){backupRequestedV19187=false;bannerMessage('Não foi possível verificar o backup. Não atualizar.');return false}
+  if((typeof cloudBusy==='boolean'&&cloudBusy)||
+     (typeof cloudPushRunning==='boolean'&&cloudPushRunning)||
+     (typeof productSyncBusyV19104==='boolean'&&productSyncBusyV19104)||
+     (typeof cloudHydrating==='boolean'&&cloudHydrating)||
+     (typeof hasRestorePendingV12645==='function'&&hasRestorePendingV12645())){
+   bannerMessage('Existe uma operação Cloud ou restauro em curso. Não guardar nem atualizar ainda.');return false
+  }
+  if(!confirm('Confirma que guardaste o ficheiro JSON de recuperação fora da aplicação? Apenas depois vamos guardar o estado local e tentar atualizar.'))return false;
+  try{
+   if(typeof save!=='function'||!save('none')||!pwaDurableSnapshotV19187()){
+    bannerMessage('A gravação local não foi confirmada. Não atualizar. Preserva o ficheiro JSON.');
+    return false;
+   }
+  }catch(error){bannerMessage('Falha de gravação local: '+String(error?.message||error)+'. Não atualizar.');return false}
+  backupRequestedV19187=false;backupSnapshotV19187='';
+  reloadFresh();
+  return true;
+ }
+
  function reloadFresh(){
-  if(syncPending()){
+  const pending=syncPending(),durable=pwaDurableSnapshotV19187();
+  if(pending||!durable){
    // A atualização do código não exige que o conflito remoto seja resolvido.
    // A cópia local permanece no armazenamento do dispositivo após a navegação.
    if((typeof cloudBusy==='boolean'&&cloudBusy)||
@@ -65,10 +107,8 @@
       (typeof hasRestorePendingV12645==='function'&&hasRestorePendingV12645())){
      bannerMessage('Operação Cloud ou restauro em curso. Não atualizar ainda.');return;
    }
-   let durable=false;
-   try{durable=typeof KEY==='string'&&typeof db!=='undefined'&&localStorage.getItem(KEY)===JSON.stringify(db)}catch(_){}
-   if(!durable){bannerMessage('Os dados locais não estão confirmados no armazenamento. Guarda antes de atualizar.');return}
-   if(!confirm('Existem dados locais ainda não confirmados na Cloud. A atualização mantém o armazenamento deste dispositivo, mas não resolve os conflitos. Guarda os campos que estás a editar. Atualizar agora?'))return;
+   if(!durable){bannerMessage('A memória diverge do armazenamento local. Descarrega uma cópia de recuperação e guarda localmente antes de atualizar.');return}
+   if(pending&&!confirm('Existem dados locais ainda não confirmados na Cloud. A atualização mantém o armazenamento deste dispositivo, mas não resolve os conflitos. Guarda os campos que estás a editar. Atualizar agora?'))return;
   }
   const button=updateBanner?.querySelector('button');
   if(button){button.disabled=true;button.textContent='A atualizar…'}
@@ -100,6 +140,21 @@
   button.type='button';button.className='btn primary';button.textContent='Atualizar agora';
   button.onclick=reloadFresh;
   box.append(message,status,button);
+  // O ecrã de recuperação é opcional: nunca guarda, substitui ou envia dados
+  // sem a ação explícita da pessoa. Mantém-se disponível enquanto a memória diverge.
+  if(!pwaDurableSnapshotV19187()){
+   const recovery=document.createElement('div');
+   recovery.setAttribute('data-ae-update-recovery','1');
+   recovery.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin-top:12px';
+   const backup=document.createElement('button');
+   backup.type='button';backup.className='btn';backup.textContent='Guardar backup de recuperação';
+   backup.onclick=pwaExportBeforeUpdateV19187;
+   const persist=document.createElement('button');
+   persist.type='button';persist.className='btn';
+   persist.textContent='Guardar localmente e atualizar';
+   persist.onclick=pwaPersistBeforeUpdateV19187;
+   recovery.append(backup,persist);box.append(recovery);
+  }
   document.body.append(box);
   updateBanner=box;
  }
