@@ -51,7 +51,7 @@ BEGIN
    IF total_amount<=0 OR (p_order->>'total')::numeric IS DISTINCT FROM total_amount
     OR (p_order->>'subtotal')::numeric IS DISTINCT FROM total_amount OR (p_order->>'paid')::numeric IS DISTINCT FROM total_amount
     OR (pay->>'amount')::numeric IS DISTINCT FROM total_amount OR pay->>'type' IS DISTINCT FROM 'payment' THEN RAISE EXCEPTION 'INVALID_TOTAL'; END IF;
-   result_data:=p_order;
+   result_data:=p_order||jsonb_build_object('readySaleVersion',1);
  ELSE
    IF EXISTS(SELECT 1 FROM jsonb_array_elements(o.data->'items') x WHERE x->'readyStockTracked'='true'::jsonb)
     AND jsonb_typeof(p_order->'readyRestocked') IS DISTINCT FROM 'boolean' THEN RAISE EXCEPTION 'INVALID_RESTOCK'; END IF;
@@ -60,7 +60,7 @@ BEGIN
     OR o.data->'paymentHistory'->0 IS DISTINCT FROM p_order->'paymentHistory'->0
     OR (pay->>'amount')::numeric IS DISTINCT FROM -total_amount OR pay->>'type' IS DISTINCT FROM 'correction'
     OR (o.data->>'paid')::numeric IS DISTINCT FROM total_amount OR coalesce(p_order->>'voidedAt','')='' THEN RAISE EXCEPTION 'INVALID_REFUND'; END IF;
-   result_data:=o.data||jsonb_build_object('status','Cancelado','paid',0,'voidedAt',p_order->>'voidedAt','voidedFrom','Entregue','voidedPaid',total_amount,'readyRestocked',coalesce(p_order->'readyRestocked','false'::jsonb),'paymentHistory',p_order->'paymentHistory');
+   result_data:=o.data||jsonb_build_object('readySaleVersion',1,'status','Cancelado','paid',0,'voidedAt',p_order->>'voidedAt','voidedFrom','Entregue','voidedPaid',total_amount,'readyRestocked',coalesce(p_order->'readyRestocked','false'::jsonb),'paymentHistory',p_order->'paymentHistory');
  END IF;
  method:=pay->>'method';day:=(pay->>'localDate')::date;
  IF pay->>'id' IS DISTINCT FROM paymentid OR method IS NULL OR method NOT IN ('Dinheiro','MB Way','Multibanco','Transferência','Outro')

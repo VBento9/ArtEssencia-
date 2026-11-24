@@ -68,7 +68,7 @@ BEGIN
    SELECT jsonb_agg(CASE WHEN x->>'name'=item.key THEN jsonb_set(x,'{qty}',to_jsonb(available-amount)) ELSE x END ORDER BY pos) INTO stock FROM jsonb_array_elements(stock) WITH ORDINALITY t(x,pos);
    moves:=moves||jsonb_build_array(jsonb_build_object('date',stamp,'item',item.key,'type','production','qty',amount,'beforeQty',available,'afterQty',available-amount,'productionRunId',p_run->>'id','orderIds','[]'::jsonb,'note','Produção para stock'));
  END LOOP;
- run:=p_run||jsonb_build_object('requestedMaterials',p_run->'materials','createdAt',stamp,'orders','[]'::jsonb,'orderMaterials','{}'::jsonb,'orderProducts','{}'::jsonb,'materials',needs,'total',n,'products',jsonb_build_array(jsonb_build_object('code',code,'name',p.data->>'name','qty',n)));
+ run:=p_run||jsonb_build_object('createdAt',stamp,'requestedMaterials',p_run->'materials','orders','[]'::jsonb,'orderMaterials','{}'::jsonb,'orderProducts','{}'::jsonb,'materials',needs,'total',n,'products',jsonb_build_array(jsonb_build_object('code',code,'name',p.data->>'name','qty',n)));
  PERFORM set_config('artessencia.ready_writer','stock',true);
  UPDATE public.artessencia_v1_state SET data=jsonb_set(jsonb_set(jsonb_set(s.data,'{stock}',stock),'{stockMoves}',moves),'{productionRuns}',coalesce(s.data->'productionRuns','[]')||jsonb_build_array(run)),revision=s.revision+1,updated_at=stamp,device_id=p_device,app_version='1.9.191' WHERE user_id=actor RETURNING * INTO s;
  PERFORM set_config('artessencia.ready_writer','',true);

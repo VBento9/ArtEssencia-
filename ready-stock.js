@@ -13,9 +13,11 @@
   }
   for(const o of orders||[])if(o.source==='direct_sale'&&(!o.voidedAt||o.readyRestocked!==true))for(const l of o.items||[]){
    if(!l.readyStockTracked||!result.has(l.code)||!Number.isSafeInteger(l.qty)||l.qty<=0)continue;
-   result.get(l.code).sold+=l.qty;
+   const balances=result.get(l.code);
+   if(o.voidedAt)balances.damagedReturns=(balances.damagedReturns||0)+l.qty;
+   else balances.sold+=l.qty;
   }
-  for(const x of result.values())x.available=x.made+(x.adjusted||0)-x.sold;
+  for(const x of result.values())x.available=x.made+(x.adjusted||0)-x.sold-(x.damagedReturns||0);
   return result;
  }
  function plan(product,qty,mode,recipes,stock,committed={}){
@@ -47,11 +49,17 @@
  function mount(){
   if(dialog)return;
   dialog=document.createElement('dialog');dialog.id='readyStockDialog';
-  dialog.innerHTML='<header><div><small>PRODUÇÃO PARA STOCK</small><h2>Produtos acabados</h2></div><button type="button" class="btn" id="readyClose">Fechar</button></header><div class="ready-body"><p>Regista a produção ou um ajuste à contagem física.</p><label>Pesquisar produto<input id="readySearch" placeholder="Nome ou código"></label><label>Produto<select id="readyProduct"></select></label><label>Data do movimento<input type="date" id="readyDate" required></label><label>Unidades<input id="readyQty" type="number" min="1" step="1" value="1"></label><label>Movimento<select id="readyMode"><option value="consume">Descontar pela ficha técnica</option><option value="already">Materiais já contabilizados</option><option value="damage">Peças danificadas</option><option value="loss">Perda</option><option value="correct_down">Correção de contagem (retirar)</option><option value="correct_up">Correção de contagem (adicionar)</option></select></label><label id="readyReasonLabel" hidden>Motivo do ajuste<input id="readyReason" maxlength="250"></label><div id="readyPreview" role="status"></div><label class="ready-confirm"><input id="readyConfirm" type="checkbox"> Confirmo a quantidade física e o estado dos materiais.</label><button id="readySubmit" type="button" class="btn primary">Confirmar registo</button><h3>Produtos acabados</h3><label>Pesquisar no inventário<input id="readyFilter" placeholder="Nome, referência ou categoria"></label><label>Disponibilidade<select id="readyAvailability"><option value="">Todas</option><option value="yes">Disponíveis</option><option value="no">Esgotados</option></select></label><div id="readyList"></div></div>';
-  document.body.append(dialog);el('readyClose').onclick=()=>{if(!busy)dialog.close()};
+  dialog.innerHTML='<header><div><small>PRODUÇÃO PARA STOCK</small><h2>Produtos acabados</h2></div><button type="button" class="btn" id="readyClose">Fechar</button></header><div class="ready-body"><nav><button type="button" id="readyRegisterTab" class="btn">Registar movimento</button> <button type="button" id="readyInventoryTab" class="btn">Inventário e histórico</button></nav><section id="readyForm"><p>Regista a produção ou um ajuste à contagem física.</p><label>Pesquisar produto<input id="readySearch" placeholder="Nome ou código"></label><label>Produto<select id="readyProduct"></select></label><label>Data do movimento<input type="date" id="readyDate" required></label><label>Unidades<input id="readyQty" type="number" min="1" step="1" value="1"></label><label>Movimento<select id="readyMode"><option value="consume">Descontar pela ficha técnica</option><option value="already">Materiais já contabilizados</option><option value="damage">Peças danificadas</option><option value="loss">Perda</option><option value="correct_down">Correção de contagem (retirar)</option><option value="correct_up">Correção de contagem (adicionar)</option></select></label><label id="readyReasonLabel" hidden>Motivo do ajuste<input id="readyReason" maxlength="250"></label><div id="readyPreview" role="status"></div><label class="ready-confirm"><input id="readyConfirm" type="checkbox"> Confirmo a quantidade física e o estado dos materiais.</label><button id="readySubmit" type="button" class="btn primary">Confirmar registo</button></section><section id="readyInventory"><h3>Produtos acabados</h3><label>Pesquisar no inventário<input id="readyFilter" placeholder="Nome, referência ou categoria"></label><label>Disponibilidade<select id="readyAvailability"><option value="">Todas</option><option value="yes">Disponíveis</option><option value="no">Esgotados</option></select></label><div id="readyList"></div></section></div>';
+  document.body.append(dialog);el('readyRegisterTab').onclick=()=>showArea(false);el('readyInventoryTab').onclick=()=>showArea(true);el('readyClose').onclick=()=>{if(!busy)dialog.close()};
   dialog.addEventListener('cancel',e=>{if(busy)e.preventDefault()});
   el('readyFilter').oninput=renderList;el('readyAvailability').onchange=renderList;el('readySearch').oninput=renderOptions;for(const id of ['readyProduct','readyQty','readyMode','readyDate','readyReason'])el(id).onchange=()=>{el('readyConfirm').checked=false;preview()};
   el('readyReason').oninput=()=>{el('readyConfirm').checked=false;preview()};el('readyConfirm').onchange=preview;el('readySubmit').onclick=submit;
+ }
+ function showArea(inventoryOnly){
+  el('readyForm').hidden=inventoryOnly;el('readyInventory').hidden=!inventoryOnly;
+  el('readyRegisterTab').setAttribute('aria-pressed',String(!inventoryOnly));
+  el('readyInventoryTab').setAttribute('aria-pressed',String(inventoryOnly));
+  if(inventoryOnly)renderList();
  }
  function renderOptions(){
   const s=el('readyProduct'),previous=s.value,q=el('readySearch').value.toLowerCase().trim();
@@ -95,7 +103,7 @@
    if(img){const photo=new Image();photo.src=img;photo.alt='';photo.loading='lazy';summary.append(photo)}
    const name=document.createElement('strong');name.textContent=label;
    summary.append(name,document.createTextNode(' · '+x.available+' disponíveis'));
-   const stats=document.createElement('small');stats.textContent='Produzidas '+x.made+' · Saídas de venda sem reposição '+x.sold+' · Ajustes '+(x.adjusted||0)+' · Última produção '+(last||'—');
+   const stats=document.createElement('small');stats.textContent='Produzidas '+x.made+' · Vendidas '+x.sold+' · Devolvidas sem reposição '+(x.damagedReturns||0)+' · Ajustes '+(x.adjusted||0)+' · Última produção '+(last||'—');
    summary.append(stats);details.append(summary);
    for(const event of events.sort((a,b)=>String(b.date).localeCompare(String(a.date)))){const line=document.createElement('p');line.textContent=event.date+' · '+event.text;details.append(line)}
    host.append(details);
@@ -125,6 +133,6 @@
   finally{busy=false;productionBusyV1926=false;preview()}
   await resumeProductionV1926();
  }
- window.openReadyStock=(inventoryOnly=false)=>{if(!auth())return;mount();el('readyDate').value=todayISO();el('readyDate').max=todayISO();renderOptions();renderList();if(!dialog.open)dialog.showModal();if(inventoryOnly)el('readyFilter').focus()};
+ window.openReadyStock=(inventoryOnly=false)=>{if(!auth())return;mount();el('readyDate').value=todayISO();el('readyDate').max=todayISO();renderOptions();showArea(inventoryOnly);if(!dialog.open)dialog.showModal();if(inventoryOnly)el('readyFilter').focus()};
  window.closeReadyStockOnLock=()=>{if(dialog?.open)dialog.close()};
 })();

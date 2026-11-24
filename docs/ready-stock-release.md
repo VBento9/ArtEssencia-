@@ -4,7 +4,7 @@ A abertura do stock para uma feira começa com a contagem física. Em **Produç�
 
 Em **Stock → Produtos acabados**, pesquisar por referência ou nome e abrir a linha para consultar os movimentos. Quebras, perdas e diferenças de contagem devem ser registadas com motivo. A data do movimento pode ser anterior à data de registo.
 
-Em **Vendas → Venda direta**, selecionar as peças e quantidades, verificar o total e o meio de pagamento e confirmar. Uma venda com unidades controladas precisa de confirmação Cloud. Em **Histórico de vendas diretas**, uma anulação integral regista a devolução do dinheiro. Confirmar a reposição apenas se todas as peças regressarem em condições de venda.
+Em **Vendas → Venda direta**, selecionar as peças e quantidades, verificar o total e o meio de pagamento e confirmar. A finalização exige ligação à Cloud, mesmo quando o dispositivo ainda não conhece o primeiro lote registado noutro equipamento. Em **Histórico de vendas diretas**, uma anulação integral regista a devolução do dinheiro. Confirmar a reposição apenas se todas as peças regressarem em condições de venda.
 
 ## Reversão com movimentos posteriores à publicação
 

@@ -50,7 +50,8 @@ async function main() {
     await query('insert into artessencia_v1_state(user_id,data,revision) values($1,$2,0)', [owner, JSON.stringify(initial)]);
     await query('insert into artessencia_v1_products values($1,$2,$3,now())', [productId,owner,JSON.stringify({code:'A',name:'Vela'})]);
     await login(owner);
-    const product = (await query('select * from artessencia_v1_products'))[0];
+    // Match the PostgREST JSON representation, including PostgreSQL microseconds.
+    const product = (await query('select to_jsonb(p) as product from artessencia_v1_products p'))[0].product;
     const run = {id:'lote-A',kind:'ready_stock',mode:'consume',date:'2020-01-01',products:[{code:'A',qty:1}],materials:{Cera:10}};
     const register = async (revision, lot=run) => (await query('select artessencia_register_ready_stock_v1($1,$2,$3,$4) as value',[revision,JSON.stringify(lot),JSON.stringify(product),'fixture']))[0].value;
     const commit = async (revision, sale) => (await query('select artessencia_commit_ready_sale_v1($1,$2,$3) as value',[revision,JSON.stringify(sale),'fixture']))[0].value;

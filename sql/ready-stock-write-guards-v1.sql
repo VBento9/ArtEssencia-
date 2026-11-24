@@ -8,7 +8,7 @@ DECLARE
 BEGIN
   IF writer='sale' THEN RETURN NEW; END IF;
   IF TG_OP<>'INSERT' AND OLD.data->>'source'='direct_sale'
-    AND EXISTS (SELECT 1 FROM jsonb_array_elements(OLD.data->'items') i WHERE i->'readyStockTracked'='true'::jsonb) THEN
+    AND (OLD.data->>'readySaleVersion'='1' OR EXISTS (SELECT 1 FROM jsonb_array_elements(OLD.data->'items') i WHERE i->'readyStockTracked'='true'::jsonb)) THEN
     IF TG_OP='UPDATE' AND (to_jsonb(OLD)-'updated_at')=(to_jsonb(NEW)-'updated_at') THEN RETURN NEW; END IF;
     RAISE EXCEPTION 'READY_SALE_REQUIRES_CLOUD_TRANSACTION';
   END IF;
@@ -39,7 +39,7 @@ BEGIN
     SELECT 1 FROM public.artessencia_v1_orders o
     CROSS JOIN LATERAL jsonb_array_elements(o.data->'paymentHistory') p
     WHERE o.user_id=coalesce(NEW.user_id,OLD.user_id) AND o.data->>'source'='direct_sale'
-      AND jsonb_path_exists(o.data,'$.items[*] ? (@.readyStockTracked == true)')
+      AND (o.data->>'readySaleVersion'='1' OR jsonb_path_exists(o.data,'$.items[*] ? (@.readyStockTracked == true)'))
       AND (SELECT jsonb_agg(m) FROM jsonb_array_elements(old_data->'cash') m WHERE m->>'paymentId'=p->>'id')
        IS DISTINCT FROM (SELECT jsonb_agg(m) FROM jsonb_array_elements(new_data->'cash') m WHERE m->>'paymentId'=p->>'id')
   ) THEN RAISE EXCEPTION 'READY_CASH_HISTORY_PROTECTED'; END IF;
