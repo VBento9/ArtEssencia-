@@ -128,30 +128,36 @@ function init(){
   if(print){
    const toolbar=document.createElement('div');toolbar.className='ae-order-detail-tools';const customerPdf=document.createElement('button');customerPdf.type='button';customerPdf.className='btn primary';
    customerPdf.textContent='PDF para o cliente';
+   const hint=document.createElement('small');hint.className='muted';
+   hint.setAttribute('aria-live','polite');
+   const instructions='Escolhe o WhatsApp e o contacto do cliente para enviar o PDF em anexo.';
+   hint.textContent=instructions;
+   let preparedFile=null;
    customerPdf.addEventListener('click',async()=>{
     const order=(db.orders||[]).find(entry=>String(entry.id)===id);
     if(!order)return toast('Encomenda não encontrada');
     const fileName='ArtEssencia_Encomenda_'+id.replace(/[^a-z0-9_-]/gi,'_')+'.pdf';
-    let phone=normalizePhone(order.contact).replace(/^00/,'');
-    if(/^9\d{8}$/.test(phone))phone='351'+phone;
-    const valid=/^[1-9]\d{7,14}$/.test(phone);
-    const android=/Android/i.test(navigator.userAgent);
-    const tab=valid&&!android?window.open('about:blank','_blank'):null;
-    if(tab)tab.opener=null;
     customerPdf.disabled=true;
     try{
-     const pdf=await customerOrderPdf(order);
-     downloadBlob(pdf,fileName);
-     if(!valid){toast('PDF guardado. Verifica o contacto na encomenda para abrir o WhatsApp.');return}
-     const greeting='Olá! Segue o resumo da encomenda '+id+' da ArtEssencia.';
-     if(tab)tab.location.href='https://wa.me/'+phone+'?text='+encodeURIComponent(greeting);
-     else if(android)openWhatsAppBusinessV1801(phone,greeting);
-     else window.location.assign('https://wa.me/'+phone+'?text='+encodeURIComponent(greeting));
-    }catch(error){tab?.close();toast(error.message||'Não foi possível preparar o PDF')}
-    finally{customerPdf.disabled=false}
+     const file=preparedFile||new File([await customerOrderPdf(order)],fileName,{type:'application/pdf'});
+     preparedFile=null;
+     const payload={files:[file]};
+     if(navigator.share&&navigator.canShare?.(payload)){
+      if(navigator.userActivation&&!navigator.userActivation.isActive){
+       preparedFile=file;customerPdf.textContent='Partilhar PDF preparado';
+       hint.textContent='O PDF está pronto. Toca para escolher o WhatsApp.';return;
+      }
+      try{await navigator.share(payload);return}
+      catch(error){if(error.name==='AbortError')return}
+     }
+     downloadBlob(file,fileName);
+     toast('PDF guardado em Transferências para anexar manualmente.');
+    }catch(error){toast(error.message||'Não foi possível preparar o PDF')}
+    finally{
+     customerPdf.disabled=false;
+     if(!preparedFile){customerPdf.textContent='PDF para o cliente';hint.textContent=instructions}
+    }
    });
-   const hint=document.createElement('small');hint.className='muted';
-   hint.textContent='O PDF fica nas transferências. Na conversa do cliente, anexa-o como documento.';
    toolbar.append(customerPdf,print);
    if(document.getElementById('orders')?.classList.contains('active')){
     const agenda=document.createElement('button');agenda.type='button';agenda.className='btn';agenda.textContent='Ver agenda de produção';
