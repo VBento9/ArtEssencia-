@@ -1,6 +1,42 @@
 /* Progressive disclosure: move original controls, preserving every business handler. */
 (function(){'use strict';
 
+async function customerOrderPdf(order){
+ const items=(order.items||[]).filter(item=>!['quote_discount','quote_adjustment'].includes(item.type));
+ if(!items.length)throw new Error('A encomenda não tem produtos.');
+ const pages=[],canvas=createCatalogPrintCanvas(),ctx=canvas.getContext('2d');
+ let y;
+ async function startPage(){
+  await drawArtEssenciaHeader(ctx,'ENCOMENDA',String(order.id));
+  ctx.fillStyle='#5a240b';ctx.font='bold 24px Arial';
+  ctx.fillText('Produto',70,245);ctx.textAlign='right';ctx.fillText('Quantidade',1170,245);ctx.textAlign='left';
+  ctx.font='26px Arial';y=315;
+ }
+ async function finishPage(){
+  ctx.font='20px Arial';ctx.fillText('Página '+(pages.length+1),70,1690);
+  const image=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',0.92));
+  if(!image)throw new Error('Não foi possível gerar o PDF.');
+  pages.push(image);
+ }
+ await startPage();
+ for(const item of items){
+  const lines=wrapCanvasText(ctx,item.name||'Produto',900);
+  for(const [index,line] of lines.entries()){
+   if(y>1590){await finishPage();await startPage()}
+   ctx.fillText(line,70,y,900);
+   if(index===0){ctx.textAlign='right';ctx.fillText(String(item.qty),1170,y,150);ctx.textAlign='left'}
+   y+=36;
+  }
+  y+=18;
+ }
+ if(y+60>1590){await finishPage();await startPage()}
+ ctx.fillStyle='#5a240b';ctx.fillRect(70,y,1100,2);
+ ctx.font='bold 32px Arial';ctx.fillText('Valor final',70,y+55);
+ ctx.textAlign='right';ctx.fillText(euro(calcOrder(order).total),1170,y+55);ctx.textAlign='left';
+ await finishPage();
+ return jpegBlobsToPDF(pages,canvas.width,canvas.height);
+}
+
 function materialPreview(orderId,expanded,onToggle){
  const details=document.createElement('details'),summary=document.createElement('summary'),content=document.createElement('div');
  details.className='ae-order-detail-section ae-order-materials';details.dataset.section='Materiais previstos';summary.textContent='Materiais previstos';details.append(summary,content);
@@ -63,7 +99,16 @@ function init(){
   const totals=root.querySelector('.totalbox');if(totals){layout.append(totals);for(const g of groups)g.nodes=g.nodes.filter(n=>n!==totals)}
   const print=root.querySelector('button[onclick*="printOrderCompleteV12634"]');
   if(print){
-   const toolbar=document.createElement('div');toolbar.className='ae-order-detail-tools';toolbar.append(print);
+   const toolbar=document.createElement('div');toolbar.className='ae-order-detail-tools';const customerPdf=document.createElement('button');customerPdf.type='button';customerPdf.className='btn primary';
+   customerPdf.textContent='PDF para o cliente';
+   customerPdf.addEventListener('click',()=>{
+    const order=(db.orders||[]).find(entry=>String(entry.id)===id);
+    if(!order)return toast('Encomenda não encontrada');
+    const fileName='ArtEssencia_Encomenda_'+id.replace(/[^a-z0-9_-]/gi,'_')+'.pdf';
+    const pdf=customerOrderPdf(order);
+    return sharePdfBlob(()=>pdf,fileName,'Encomenda '+id,'');
+   });
+   toolbar.append(customerPdf,print);
    if(document.getElementById('orders')?.classList.contains('active')){
     const agenda=document.createElement('button');agenda.type='button';agenda.className='btn';agenda.textContent='Ver agenda de produção';
     let edited=false;
