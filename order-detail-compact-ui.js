@@ -46,20 +46,37 @@ async function customerOrderPdf(order){
   pages.push(image);
  }
  await startPage();
- for(const item of items){
-  const lines=wrapCanvasText(ctx,item.name||'Produto',900);
-  for(const [index,line] of lines.entries()){
+ async function writeEntry(name,quantity,options){
+  const rows=[];
+  for(const [text,font,x] of [[name,'bold 26px Arial',70],...options.map(option=>[option,'23px Arial',92])]){
+   ctx.font=font;
+   for(const line of wrapCanvasText(ctx,text,970-x))rows.push({line,font,x});
+  }
+  if(y+Math.min(rows.length,35)*36>1590&&y>320){await finishPage();await startPage()}
+  for(const [index,row] of rows.entries()){
    if(y>1590){await finishPage();await startPage()}
-   ctx.fillText(line,70,y,900);
-   if(index===0){ctx.textAlign='right';ctx.fillText(String(item.qty),1170,y,150);ctx.textAlign='left'}
+   ctx.font=row.font;ctx.fillText(row.line,row.x,y,970-row.x);
+   if(index===0){ctx.textAlign='right';ctx.fillText(String(quantity),1170,y,150);ctx.textAlign='left'}
    y+=36;
   }
   y+=18;
  }
- if(y+60>1590){await finishPage();await startPage()}
+ for(const item of items){
+  const options=directOrderLineInstructionsV19158(item.directSaleOptionsV19158?item:{...item,directSaleOptionsV19158:{}});
+  await writeEntry(item.name||'Produto',item.qty,options);
+ }
+ for(const [index,box] of (order.thematicBoxes||[]).entries()){
+  const options=[box.occasion&&'Ocasião: '+box.occasion,box.style&&'Tema: '+box.style,box.color&&'Cor: '+box.color].filter(Boolean);
+  for(const unit of box.unidades||[])options.push(unit.qty+' × '+unit.name);
+  const personalization=productionOrderPersonalizationV12653({thematicBoxes:[box]});
+  for(const entry of personalization)options.push(entry.slice(entry.indexOf(' — ')+3));
+  await writeEntry(box.box||box.name||('Conjunto '+(index+1)),box.qty||1,options);
+ }
+ if(y+125>1590){await finishPage();await startPage()}
  ctx.fillStyle='#5a240b';ctx.fillRect(70,y,1100,2);
  ctx.font='bold 32px Arial';ctx.fillText('Valor final',70,y+55);
  ctx.textAlign='right';ctx.fillText(euro(total),1170,y+55);ctx.textAlign='left';
+ ctx.font='22px Arial';ctx.fillText('Confirme os artigos, as quantidades e as personalizações antes da produção.',70,y+115,1100);
  await finishPage();
  return jpegBlobsToPDF(pages,canvas.width,canvas.height);
 }
