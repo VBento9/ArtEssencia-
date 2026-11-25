@@ -4,13 +4,40 @@
 async function customerOrderPdf(order){
  const items=(order.items||[]).filter(item=>!['quote_discount','quote_adjustment'].includes(item.type));
  if(!items.length)throw new Error('A encomenda não tem produtos.');
+ const total=calcOrder(order).total,paid=Number(order.paid)||0;
+ const due=Math.max(0,total-paid);
+ const method=order.paymentRequested==='pay_later'?'No levantamento ou entrega':
+  order.paymentRequested?onlineRequestedPaymentLabel(order):order.payment;
+ const details=[];
+ if(order.client)details.push('Cliente: '+order.client);
+ if(order.delivery||order.deliveryTime){
+  const date=String(order.delivery||'').replace(/^(\d{4})-(\d{2})-(\d{2})$/,'$3/$2/$1');
+  details.push('Entrega prevista: '+[date,order.deliveryTime].filter(Boolean).join(' · '));
+ }
+ if(order.deliveryMethod==='local_delivery')details.push(['Entrega local',order.address,order.postalCode].filter(Boolean).join(' · '));
+ if(order.deliveryMethod==='pickup')details.push('Levantamento no atelier');
+ details.push('Meio de pagamento: '+(method||'A combinar'));
+ if(due>0.005){
+  const mb=mbWayInstructionsForOrderV1800(order).trim().split('\n')[0];
+  if(mb)details.push(mb);
+  if(method==='Transferência'&&db.settings?.iban)details.push('IBAN: '+db.settings.iban);
+ }
+ if(paid>0)details.push('Pago: '+euro(paid)+'     Por pagar: '+euro(due));
  const pages=[],canvas=createCatalogPrintCanvas(),ctx=canvas.getContext('2d');
  let y;
  async function startPage(){
   await drawArtEssenciaHeader(ctx,'ENCOMENDA',String(order.id));
   ctx.fillStyle='#5a240b';ctx.font='bold 24px Arial';
-  ctx.fillText('Produto',70,245);ctx.textAlign='right';ctx.fillText('Quantidade',1170,245);ctx.textAlign='left';
-  ctx.font='26px Arial';y=315;
+  let headingY=245;
+  if(!pages.length){
+   ctx.font='24px Arial';
+   for(const detail of details){
+    ctx.fillText(detail,70,headingY,1100);headingY+=36;
+   }
+   headingY+=35;
+  }
+  ctx.font='bold 24px Arial';ctx.fillText('Produto',70,headingY);ctx.textAlign='right';ctx.fillText('Quantidade',1170,headingY);ctx.textAlign='left';
+  ctx.font='26px Arial';y=headingY+70;
  }
  async function finishPage(){
   ctx.font='20px Arial';ctx.fillText('Página '+(pages.length+1),70,1690);
@@ -32,7 +59,7 @@ async function customerOrderPdf(order){
  if(y+60>1590){await finishPage();await startPage()}
  ctx.fillStyle='#5a240b';ctx.fillRect(70,y,1100,2);
  ctx.font='bold 32px Arial';ctx.fillText('Valor final',70,y+55);
- ctx.textAlign='right';ctx.fillText(euro(calcOrder(order).total),1170,y+55);ctx.textAlign='left';
+ ctx.textAlign='right';ctx.fillText(euro(total),1170,y+55);ctx.textAlign='left';
  await finishPage();
  return jpegBlobsToPDF(pages,canvas.width,canvas.height);
 }
@@ -101,13 +128,30 @@ function init(){
   if(print){
    const toolbar=document.createElement('div');toolbar.className='ae-order-detail-tools';const customerPdf=document.createElement('button');customerPdf.type='button';customerPdf.className='btn primary';
    customerPdf.textContent='PDF para o cliente';
-   customerPdf.addEventListener('click',()=>{
+   customerPdf.addEventListener('click',async()=>{
     const order=(db.orders||[]).find(entry=>String(entry.id)===id);
     if(!order)return toast('Encomenda não encontrada');
     const fileName='ArtEssencia_Encomenda_'+id.replace(/[^a-z0-9_-]/gi,'_')+'.pdf';
-    const pdf=customerOrderPdf(order);
-    return sharePdfBlob(()=>pdf,fileName,'Encomenda '+id,'');
+    let phone=normalizePhone(order.contact).replace(/^00/,'');
+    if(/^9\d{8}$/.test(phone))phone='351'+phone;
+    const valid=/^[1-9]\d{7,14}$/.test(phone);
+    const android=/Android/i.test(navigator.userAgent);
+    const tab=valid&&!android?window.open('about:blank','_blank'):null;
+    if(tab)tab.opener=null;
+    customerPdf.disabled=true;
+    try{
+     const pdf=await customerOrderPdf(order);
+     downloadBlob(pdf,fileName);
+     if(!valid){toast('PDF guardado. Verifica o contacto na encomenda para abrir o WhatsApp.');return}
+     const greeting='Olá! Segue o resumo da encomenda '+id+' da ArtEssencia.';
+     if(tab)tab.location.href='https://wa.me/'+phone+'?text='+encodeURIComponent(greeting);
+     else if(android)openWhatsAppBusinessV1801(phone,greeting);
+     else window.location.assign('https://wa.me/'+phone+'?text='+encodeURIComponent(greeting));
+    }catch(error){tab?.close();toast(error.message||'Não foi possível preparar o PDF')}
+    finally{customerPdf.disabled=false}
    });
+   const hint=document.createElement('small');hint.className='muted';
+   hint.textContent='O PDF fica nas transferências. Na conversa do cliente, anexa-o como documento.';
    toolbar.append(customerPdf,print);
    if(document.getElementById('orders')?.classList.contains('active')){
     const agenda=document.createElement('button');agenda.type='button';agenda.className='btn';agenda.textContent='Ver agenda de produção';
@@ -119,7 +163,7 @@ function init(){
     });
     toolbar.append(agenda);
    }
-   layout.append(toolbar);
+   layout.append(toolbar,hint);
   }
   const priority=['Fluxo da encomenda','Produtos','Conjuntos Temáticos','Entrega e pagamento','Saldo após entrega','Conclusão'];
   const ordered=[...priority.map(label=>groups.find(g=>g.label===label)).filter(Boolean),...groups.filter(g=>!priority.includes(g.label))];
