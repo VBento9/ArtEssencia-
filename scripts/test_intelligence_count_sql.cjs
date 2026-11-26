@@ -166,5 +166,46 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  await assert.rejects(reserve(105,1),/BUDGET_DISABLED/);
  console.log('PASS: AI budget shared cap, unknown carry, one-time claim, settlement, freeze and PostgreSQL concurrency');
 
+ 
+ // Team persistence fixture: privileged test connection only; no app grants.
+ await db.exec(fs.readFileSync('sql/intelligence-team-draft-v1.sql','utf8'));
+ await db.query("SELECT set_config('request.jwt.claim.sub',$1,false)",[owner]);
+ const modes={director:'off',stock:'manual',producao:'off',financeiro:'off',comercial:'off',marketing:'off',inovacao:'off',catalogo:'off',auditoria:'off'};
+ const allOff=Object.fromEntries(Object.keys(modes).map(a=>[a,'off']));
+ const tc=async(rev,on,m,conn=db)=>(await conn.query('SELECT artessencia_intelligence_private.team_set_controls($1,$2,$3) AS r',[rev,on,JSON.stringify(m)])).rows[0].r;
+ const tm=async(n,rev,agent='stock',kind='inventory_audit')=>(await db.query('SELECT artessencia_intelligence_private.team_create_mission($1,$2,$3,$4,$5) AS r',[bid(n),agent,kind,'Synthetic inventory',rev])).rows[0].r;
+ const tt=async(n,rev,status,summary=null,conn=db)=>(await conn.query('SELECT artessencia_intelligence_private.team_transition($1,$2,$3,$4) AS r',[bid(n),rev,status,summary])).rows[0].r;
+ await assert.rejects(tm(201,0),/TEAM_DISABLED_OR_STALE/);
+ await assert.rejects(tc(0,false,modes),/INVALID_CONTROLS/);
+ await db.exec('SET ROLE authenticated');await assert.rejects(tc(0,true,modes),/permission denied/);await db.exec('RESET ROLE');
+ assert.equal((await tc(0,true,modes)).revision,1);
+ await assert.rejects(tc(0,true,modes),/TEAM_REVISION_CONFLICT/);
+ await assert.rejects(tm(201,1,'stock','finance_review'),/INVALID_MISSION/);
+ await assert.rejects(tm(201,1,'financeiro','finance_review'),/TEAM_DISABLED_OR_STALE/);
+ assert.equal((await tm(201,1)).status,'pending_review');
+ await assert.rejects(tm(201,1),/MISSION_ID_USED/);
+ await assert.rejects(tt(201,0,'working'),/INVALID_TRANSITION/);
+ assert.equal((await tt(201,0,'approved')).status,'approved');
+ if(postgres){
+  const peer=await database();
+  try{
+   await peer.query("SELECT set_config('request.jwt.claim.sub',$1,false)",[owner]);
+   const claims=await Promise.allSettled([tt(201,1,'working'),tt(201,1,'working',null,peer)]);
+   assert.equal(claims.filter(x=>x.status==='fulfilled').length,1);
+   assert.match(String(claims.find(x=>x.status==='rejected').reason),/MISSION_REVISION_CONFLICT/);
+  }finally{await peer.close();}
+ }else await tt(201,1,'working');
+ assert.equal((await tt(201,2,'review_ready','Synthetic result')).status,'review_ready');
+ const events=await db.query('SELECT status FROM artessencia_intelligence_private.team_events WHERE mission_id=$1 ORDER BY revision',[bid(201)]);
+ assert.deepEqual(events.rows.map(r=>r.status),['pending_review','approved','working','review_ready']);
+ await tm(202,1);await tt(202,0,'approved');
+ await tc(1,false,allOff);await tc(2,true,modes);
+ await assert.rejects(tt(202,1,'working'),/TEAM_DISABLED_OR_STALE/);
+ assert.equal((await tt(202,1,'cancelled')).status,'cancelled');
+ await db.query("SELECT set_config('request.jwt.claim.sub',$1,false)",[other]);
+ await assert.rejects(tm(203,3),/OWNER_REQUIRED/);
+ await db.exec('SET ROLE authenticated');await assert.rejects(db.query('SELECT * FROM artessencia_intelligence_private.team_memory'),/permission denied/);await db.exec('RESET ROLE');
+ console.log('PASS: persistent team controls, mission transitions, history, revocation and PostgreSQL concurrent claim');
+
  await db.close();console.log('PASS: intelligence count fixture');
 })().catch(e=>{console.error(e);process.exitCode=1});
