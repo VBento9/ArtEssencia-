@@ -3,7 +3,7 @@ function createIntelligenceCore() {
   'use strict';
   const agents=['director','financeiro','producao','stock','marketing','comercial','inovacao','auditoria','catalogo'];
   const modes=['off','manual','auto','semi'];
-  const capabilities={stock:['inventory_count_plan','inventory_audit','stock_rename_plan','stock_organization_plan','stock_merge_batch_plan'],auditoria:['inventory_audit'],producao:['inventory_audit','production_plan'],financeiro:['finance_review'],director:['daily_priority_plan']};
+  const capabilities={stock:['inventory_count_plan','inventory_audit','stock_rename_plan','stock_organization_plan','stock_merge_batch_plan'],auditoria:['inventory_audit','technical_review'],producao:['inventory_audit','production_plan'],financeiro:['finance_review'],director:['daily_priority_plan'],comercial:['commercial_review'],marketing:['marketing_plan'],catalogo:['catalog_review'],inovacao:['innovation_review']};
   const defaults=()=>({enabled:false,agents:Object.fromEntries(agents.map(a=>[a,'off'])),paidEnabled:false,monthlyCeilingCents:1000});
   function config(input){
     if(!input||typeof input.enabled!=='boolean'||input.paidEnabled!==false||input.monthlyCeilingCents!==1000||!input.agents||!agents.every(a=>modes.includes(input.agents[a])))throw Error('Configuração inválida: execução bloqueada.');
@@ -44,7 +44,7 @@ function createIntelligenceCore() {
     if(typeof id!=='string'||!/^[A-Za-z0-9_-]{1,100}$/.test(id))throw Error('Identificador inválido');
     return {id,agent,kind,trigger,status:'pending'};
   }
-  function runMission(settings,mission,payload,audit,renamePlanner,organizer,operational){
+  function runMission(settings,mission,payload,audit,renamePlanner,organizer,operational,business){
     if(!mission||mission.status!=='pending')throw Error('Missão não pendente');
     const p=permit(settings,mission.agent,mission.kind,mission.trigger);
     if(!p.ok)return {...mission,status:'blocked',reason:p.reason};
@@ -57,6 +57,11 @@ function createIntelligenceCore() {
     else if(mission.kind==='production_plan'&&operational)result=operational.production(payload);
     else if(mission.kind==='finance_review'&&operational)result=operational.finance(payload);
     else if(mission.kind==='daily_priority_plan'&&operational){const permitted=agents.filter(a=>a!=='director'&&settings.agents[a]!=='off'&&(mission.trigger==='manual'||['auto','semi'].includes(settings.agents[a])));result=operational.director({...payload,enabledAgents:permitted});}
+    else if(mission.kind==='commercial_review'&&business)result=business.commercial(payload);
+    else if(mission.kind==='marketing_plan'&&business)result=business.marketing(payload);
+    else if(mission.kind==='catalog_review'&&business)result=business.catalog(payload);
+    else if(mission.kind==='innovation_review'&&business)result=business.innovation(payload);
+    else if(mission.kind==='technical_review'&&business)result=business.audit(payload);
     else throw Error('Motor indisponível');
     return {...mission,status:'review',result};
   }
