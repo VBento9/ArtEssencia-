@@ -1,0 +1,13 @@
+'use strict';
+const assert=require('node:assert/strict');
+const core=require('../intelligence/control-core.js');
+const planner=require('../intelligence/rename-planner.js');
+const off=core.defaults(),on={...off,enabled:true,agents:{...off.agents,stock:'manual'}};
+const snapshot={stock:[{name:'Cera',qty:10,unit:'g'}],products:[{code:'A'}],productRecipes:{A:[{item:'Cera',qty:2}]},purchases:[],stockMoves:[],productionRuns:[],orders:[],costMeta:{}};
+const m=core.createMission(on,{id:'rename-1',agent:'stock',kind:'stock_rename_plan'});
+const payload={snapshot,oldName:'Cera',newName:'Cera de Soja'};
+assert.equal(core.runMission(on,m,payload,null,planner.planRename).result.status,'review');
+assert.equal(core.runMission(off,m,payload,null,planner.planRename).status,'blocked');
+assert.equal(snapshot.stock[0].name,'Cera');
+assert.throws(()=>core.runMission(on,m,payload));
+console.log('4 verificações de integração concluídas');
