@@ -1,3 +1,33 @@
+-- DEVELOPMENT ONLY. Private schema must not be included in exposed Data API schemas.
+-- No application-role privileges; fixture explicitly grants temporary access.
+CREATE SCHEMA IF NOT EXISTS artessencia_intelligence_private;
+REVOKE ALL ON SCHEMA artessencia_intelligence_private FROM PUBLIC,anon,authenticated;
+CREATE TABLE IF NOT EXISTS artessencia_intelligence_private.controls (
+ user_id uuid PRIMARY KEY,
+ enabled boolean NOT NULL DEFAULT false,
+ stock_enabled boolean NOT NULL DEFAULT false
+);
+CREATE TABLE IF NOT EXISTS artessencia_intelligence_private.count_receipts (
+ user_id uuid NOT NULL,
+ mission_id uuid NOT NULL,
+ request_lines jsonb NOT NULL CHECK (jsonb_typeof(request_lines)='array'),
+ committed_revision bigint NOT NULL,
+ committed_at timestamptz NOT NULL,
+ PRIMARY KEY(user_id,mission_id)
+);
+ALTER TABLE artessencia_intelligence_private.controls ENABLE ROW LEVEL SECURITY;
+ALTER TABLE artessencia_intelligence_private.count_receipts ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE artessencia_intelligence_private.controls,artessencia_intelligence_private.count_receipts FROM PUBLIC,anon,authenticated;
+DROP POLICY IF EXISTS intelligence_controls_read ON artessencia_intelligence_private.controls;
+CREATE POLICY intelligence_controls_read ON artessencia_intelligence_private.controls FOR SELECT TO authenticated
+ USING (user_id=(SELECT auth.uid()) AND (SELECT public.artessencia_is_owner_v1()));
+DROP POLICY IF EXISTS intelligence_receipts_read ON artessencia_intelligence_private.count_receipts;
+CREATE POLICY intelligence_receipts_read ON artessencia_intelligence_private.count_receipts FOR SELECT TO authenticated
+ USING (user_id=(SELECT auth.uid()) AND (SELECT public.artessencia_is_owner_v1()));
+DROP POLICY IF EXISTS intelligence_receipts_append ON artessencia_intelligence_private.count_receipts;
+CREATE POLICY intelligence_receipts_append ON artessencia_intelligence_private.count_receipts FOR INSERT TO authenticated
+ WITH CHECK (user_id=(SELECT auth.uid()) AND (SELECT public.artessencia_is_owner_v1()));
+
 -- DEVELOPMENT DRAFT: do not deploy or grant client execution until integration tests and review.
 -- Explicitly uses the canonical operational state and existing adjustment history.
 CREATE OR REPLACE FUNCTION public.artessencia_intelligence_count_v1(
@@ -36,15 +66,22 @@ BEGIN
  INTO request_lines FROM jsonb_array_elements(p_lines) x;
  SELECT * INTO st FROM public.artessencia_v1_state WHERE user_id=actor FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION 'CANONICAL_STATE_REQUIRED'; END IF;
+ -- Any future configuration writer must acquire this same state lock first.
+ IF NOT EXISTS(SELECT 1 FROM artessencia_intelligence_private.controls c
+   WHERE c.user_id=actor AND c.enabled AND c.stock_enabled)
+ THEN RAISE EXCEPTION 'AGENT_DISABLED'; END IF;
+ SELECT r.request_lines INTO previous FROM artessencia_intelligence_private.count_receipts r
+  WHERE r.user_id=actor AND r.mission_id=p_mission;
+ IF FOUND THEN
+  IF previous IS DISTINCT FROM request_lines THEN RAISE EXCEPTION 'IDEMPOTENCY_CONFLICT'; END IF;
+  RETURN jsonb_build_object('state',to_jsonb(st),'mission',p_mission,'replayed',true);
+ END IF;
  IF jsonb_typeof(st.data->'stock') IS DISTINCT FROM 'array'
     OR jsonb_typeof(st.data->'stockMoves') IS DISTINCT FROM 'array' THEN RAISE EXCEPTION 'INVALID_STATE'; END IF;
  SELECT jsonb_agg(jsonb_build_object('name',x->>'item','unit',x->>'unit','before',x->'beforeQty','after',x->'afterQty') ORDER BY x->>'item')
  INTO previous FROM jsonb_array_elements(st.data->'stockMoves') x
  WHERE x->>'source'='intelligence_count_v1' AND x->>'intelligenceMissionId'=p_mission::text;
- IF previous IS NOT NULL THEN
-  IF previous IS DISTINCT FROM request_lines THEN RAISE EXCEPTION 'IDEMPOTENCY_CONFLICT'; END IF;
-  RETURN jsonb_build_object('state',to_jsonb(st),'mission',p_mission,'replayed',true);
- END IF;
+ IF previous IS NOT NULL THEN RAISE EXCEPTION 'UNRECONCILED_LEGACY_MISSION'; END IF;
  IF st.revision IS DISTINCT FROM p_revision THEN RAISE EXCEPTION USING errcode='40001',message='cloud_revision_conflict'; END IF;
  next_stock:=st.data->'stock'; next_moves:=st.data->'stockMoves';
  FOR line IN SELECT value FROM jsonb_array_elements(request_lines) LOOP
@@ -63,6 +100,8 @@ BEGIN
  UPDATE public.artessencia_v1_state SET data=jsonb_set(jsonb_set(st.data,'{stock}',next_stock),'{stockMoves}',next_moves),
   revision=st.revision+1,updated_at=stamp,device_id=p_device WHERE user_id=actor RETURNING * INTO st;
  IF NOT FOUND THEN RAISE EXCEPTION 'WRITE_NOT_CONFIRMED'; END IF;
+ INSERT INTO artessencia_intelligence_private.count_receipts(user_id,mission_id,request_lines,committed_revision,committed_at)
+ VALUES(actor,p_mission,request_lines,st.revision,stamp);
  RETURN jsonb_build_object('state',to_jsonb(st),'mission',p_mission,'replayed',false);
 END;
 $$;
