@@ -207,5 +207,30 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  await db.exec('SET ROLE authenticated');await assert.rejects(db.query('SELECT * FROM artessencia_intelligence_private.team_memory'),/permission denied/);await db.exec('RESET ROLE');
  console.log('PASS: persistent team controls, mission transitions, history, revocation and PostgreSQL concurrent claim');
 
+ 
+ await db.exec(fs.readFileSync('sql/intelligence-run-draft-v1.sql','utf8'));
+ await db.query("SELECT set_config('request.jwt.claim.sub',$1,false)",[owner]);
+ const runStore=require('../intelligence/sql-run-store.cjs')({query:(s,p)=>db.query(s,p),owner,loadGrants:async()=>[],releaseEnabled:true});
+ await tm(301,3);await tt(301,0,'approved');
+ const run=await runStore.claim({owner,missionId:bid(301),expectedRevision:1});
+ assert.equal(run.status,'working');assert.equal((await runStore.verifyLease(run)).active,true);
+ await assert.rejects(runStore.claim({owner,missionId:bid(301),expectedRevision:1}),/MISSION_REVISION_CONFLICT/);
+ const final={mission:run,status:'review_ready',summary:'Synthetic verified result',report:{},reasoning:'Fixture',chargedMicroeur:1000,receipts:[]};
+ await assert.rejects(runStore.finish(final),/CHARGE_UNVERIFIED/);
+ await db.query("INSERT INTO artessencia_intelligence_private.ai_budget_entries(request_id,channel,model,maximum_microeur,reserved_at,reserved_month,status,actual_microeur,settled_month,evidence_ref) VALUES($1,'stock','fixture-mini',2000,now(),date_trunc('month',now())::date,'settled',1000,date_trunc('month',now())::date,'fixture-run')",[run.requestId]);
+ assert.equal((await runStore.finish(final)).status,'review_ready');
+ assert.equal((await runStore.finish(final)).replayed,true);
+ await assert.rejects(runStore.finish({...final,summary:'Different'}),/RUN_ALREADY_FINAL/);
+ assert.equal((await runStore.status(bid(301))).outcome.chargedMicroeur,1000);
+ await tm(302,3);await tt(302,0,'approved');
+ const interrupted=await runStore.claim({owner,missionId:bid(302),expectedRevision:1});
+ await tc(3,false,allOff);
+ assert.equal((await runStore.verifyLease(interrupted)).active,false);
+ assert.equal((await runStore.interrupt({mission:interrupted,stage:'reasoning',chargedMicroeur:null,receipts:[]})).status,'blocked');
+ assert.equal((await runStore.status(bid(302))).missionStatus,'blocked');
+ await db.exec('SET ROLE authenticated');await assert.rejects(runStore.status(bid(301)),/permission denied/);await db.exec('RESET ROLE');
+ await db.query("SELECT set_config('request.jwt.claim.sub',$1,false)",[other]);await assert.rejects(runStore.status(bid(301)),/OWNER_REQUIRED/);
+ console.log('PASS: persistent run lease, financial receipt binding, replay, recovery, revocation and private permissions');
+
  await db.close();console.log('PASS: intelligence count fixture');
 })().catch(e=>{console.error(e);process.exitCode=1});
