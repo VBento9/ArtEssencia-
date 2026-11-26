@@ -7,8 +7,9 @@ async function database(){
  const {Client}=require(process.env.PG_MODULE||'pg');
  const c=new Client({host:'127.0.0.1',port:55433,database:'intelligence_fixture',user:'postgres',password:'intelligence_fixture',connectionTimeoutMillis:5000});
  await c.connect();
- const probe=await c.query("SELECT current_database() AS db, inet_server_addr()::text AS addr");
- if(probe.rows[0]?.db!=='intelligence_fixture'||probe.rows[0]?.addr!=='127.0.0.1'){await c.end();throw Error('Unsafe SQL fixture database');}
+ const probe=await c.query("SELECT current_database() AS db, current_user AS actor");
+ // Docker NAT changes inet_server_addr(); check the actual client socket instead.
+ if(probe.rows[0]?.db!=='intelligence_fixture'||probe.rows[0]?.actor!=='postgres'||c.connection.stream.remoteAddress!=='127.0.0.1'||c.connection.stream.remotePort!==55433){await c.end();throw Error('Unsafe SQL fixture database');}
  return {exec:s=>c.query(s),query:(s,p)=>c.query(s,p),close:()=>c.end()};
 }
 const assert=require('node:assert/strict'),fs=require('node:fs');
