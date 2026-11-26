@@ -3,7 +3,7 @@ function createIntelligenceCore() {
   'use strict';
   const agents=['director','financeiro','producao','stock','marketing','comercial','inovacao','auditoria','catalogo'];
   const modes=['off','manual','auto','semi'];
-  const capabilities={stock:['inventory_count_plan','inventory_audit','stock_rename_plan'],auditoria:['inventory_audit'],producao:['inventory_audit']};
+  const capabilities={stock:['inventory_count_plan','inventory_audit','stock_rename_plan','stock_organization_plan','stock_merge_batch_plan'],auditoria:['inventory_audit'],producao:['inventory_audit']};
   const defaults=()=>({enabled:false,agents:Object.fromEntries(agents.map(a=>[a,'off'])),paidEnabled:false,monthlyCeilingCents:1000});
   function config(input){
     if(!input||typeof input.enabled!=='boolean'||input.paidEnabled!==false||input.monthlyCeilingCents!==1000||!input.agents||!agents.every(a=>modes.includes(input.agents[a])))throw Error('Configuração inválida: execução bloqueada.');
@@ -44,7 +44,7 @@ function createIntelligenceCore() {
     if(typeof id!=='string'||!/^[A-Za-z0-9_-]{1,100}$/.test(id))throw Error('Identificador inválido');
     return {id,agent,kind,trigger,status:'pending'};
   }
-  function runMission(settings,mission,payload,audit,renamePlanner){
+  function runMission(settings,mission,payload,audit,renamePlanner,organizer){
     if(!mission||mission.status!=='pending')throw Error('Missão não pendente');
     const p=permit(settings,mission.agent,mission.kind,mission.trigger);
     if(!p.ok)return {...mission,status:'blocked',reason:p.reason};
@@ -52,6 +52,8 @@ function createIntelligenceCore() {
     if(mission.kind==='inventory_count_plan')result=inventoryPlan(payload.rows,payload.stock);
     else if(mission.kind==='inventory_audit'&&typeof audit==='function')result=audit(payload);
     else if(mission.kind==='stock_rename_plan'&&typeof renamePlanner==='function')result=renamePlanner(payload.snapshot,payload.oldName,payload.newName);
+    else if(mission.kind==='stock_organization_plan'&&organizer)result={categories:organizer.classify(payload.stock),duplicates:organizer.duplicates(payload.stock)};
+    else if(mission.kind==='stock_merge_batch_plan'&&organizer)result=organizer.planBatch(payload.snapshot,payload.requests);
     else throw Error('Motor indisponível');
     return {...mission,status:'review',result};
   }

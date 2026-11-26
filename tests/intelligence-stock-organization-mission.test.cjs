@@ -1,0 +1,11 @@
+'use strict';
+const assert=require('node:assert/strict');
+const core=require('../intelligence/control-core.js');
+const organizer=require('../intelligence/stock-organizer.js');
+const off=core.defaults(),on={...off,enabled:true,agents:{...off.agents,stock:'manual'}};
+const m=core.createMission(on,{id:'organize-1',agent:'stock',kind:'stock_organization_plan'});
+const payload={stock:[{name:'Cera de soja'}]};
+assert.equal(core.runMission(on,m,payload,null,null,organizer).result.categories[0].suggestedCategory,'Ceras');
+assert.equal(core.runMission(off,m,payload,null,null,organizer).status,'blocked');
+assert.throws(()=>core.runMission(on,m,payload));
+console.log('3 verificações de integração concluídas');
