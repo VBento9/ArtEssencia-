@@ -1,0 +1,35 @@
+name: Intelligence isolated tests
+on:
+  push:
+    branches:
+      - feature/intelligence-hybrid-foundation-20261126
+    paths:
+      - 'intelligence/**'
+      - 'tests/intelligence-*.test.cjs'
+      - 'scripts/test_intelligence*.cjs'
+      - 'sql/intelligence-*.sql'
+      - '.github/workflows/intelligence-isolated.yml'
+permissions:
+  contents: read
+concurrency:
+  group: intelligence-isolated-validation
+  cancel-in-progress: true
+jobs:
+  isolated:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Native Node tests
+        run: node scripts/test_intelligence_all.cjs
+      - name: Install isolated SQL engine in temporary directory
+        run: |
+          mkdir -p "$RUNNER_TEMP/ae-intelligence"
+          npm install --prefix "$RUNNER_TEMP/ae-intelligence" --no-save --package-lock=false --ignore-scripts --no-audit --no-fund @electric-sql/pglite@0.3.16
+      - name: SQL transaction fixture (synthetic data only)
+        run: PGLITE_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/@electric-sql/pglite" node scripts/test_intelligence_count_sql.cjs
