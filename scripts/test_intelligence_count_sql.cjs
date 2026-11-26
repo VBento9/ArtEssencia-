@@ -232,5 +232,30 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  await db.query("SELECT set_config('request.jwt.claim.sub',$1,false)",[other]);await assert.rejects(runStore.status(bid(301)),/OWNER_REQUIRED/);
  console.log('PASS: persistent run lease, financial receipt binding, replay, recovery, revocation and private permissions');
 
+ 
+ await db.exec(fs.readFileSync('sql/intelligence-stock-context-draft-v1.sql','utf8'));
+ await db.query("SELECT set_config('request.jwt.claim.sub',$1,false)",[owner]);
+ await db.query("UPDATE public.artessencia_v1_state SET data=jsonb_set(data,'{products}', $1::jsonb) WHERE user_id=$2",[JSON.stringify([{code:'A',privateNote:'fixture-only'}]),owner]);
+ await tc(4,true,modes);await tm(401,5);await tt(401,0,'approved');
+ const stockRun=await runStore.claim({owner,missionId:bid(401),expectedRevision:1});
+ const contextFactory=require('../intelligence/sql-stock-context.cjs');
+ const context=contextFactory({owner,query:(s,p)=>db.query(s,p),releaseEnabled:true});
+ const q={owner,agent:stockRun.agent,kind:stockRun.kind,missionId:stockRun.id,leaseId:stockRun.leaseId};
+ await assert.rejects(contextFactory({owner,query:(s,p)=>db.query(s,p)})(q),/fora do âmbito/);
+ await assert.rejects(context({...q,agent:'financeiro'}),/fora do âmbito/);
+ await assert.rejects(context({...q,leaseId:bid(499)}),/LEASE_INVALID/);
+ const projected=await context(q);
+ assert.deepEqual(Object.keys(projected.payload).sort(),['productRecipes','products','stock']);
+ assert.equal(projected.payload.stock[0].name,'Cera');
+ assert.deepEqual(projected.payload.products,[{code:'A'}]);
+ const audit=require('../intelligence/inventory-audit.js').auditInventory(projected.payload);assert.ok(audit.stockCount>0);
+ await tm(402,5,'stock','stock_organization_plan');await tt(402,0,'approved');
+ const org=await runStore.claim({owner,missionId:bid(402),expectedRevision:1});
+ assert.deepEqual(Object.keys((await context({owner,agent:org.agent,kind:org.kind,missionId:org.id,leaseId:org.leaseId})).payload),['stock']);
+ await db.exec('SET ROLE authenticated');await assert.rejects(context(q),/permission denied/);await db.exec('RESET ROLE');
+ await tc(5,false,allOff);await assert.rejects(context(q),/TEAM_DISABLED_OR_STALE/);
+ await db.query("SELECT set_config('request.jwt.claim.sub',$1,false)",[other]);await assert.rejects(context(q),/OWNER_REQUIRED/);
+ console.log('PASS: stock context scope, canonical revision, minimal fields, lease and revocation');
+
  await db.close();console.log('PASS: intelligence count fixture');
 })().catch(e=>{console.error(e);process.exitCode=1});
