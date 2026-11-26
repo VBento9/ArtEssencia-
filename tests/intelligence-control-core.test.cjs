@@ -5,7 +5,7 @@ function testCore(core){
  const off=core.defaults(),on={...off,enabled:true,agents:{...off.agents,stock:'manual'}};
  check(!core.permit(off,'stock','inventory_count_plan').ok,'default off');
  check(!core.permit({...on,paidEnabled:true},'stock','inventory_count_plan').ok,'paid blocked');
- check(!core.permit({...on,monthlyCeilingCents:1001},'stock','inventory_count_plan').ok,'ceiling');
+ check(!core.permit({...on,monthlyCeilingCents:3001},'stock','inventory_count_plan').ok,'ceiling');
  check(!core.permit(on,'stock','inventory_count_plan','automatic').ok,'manual only');
  check(!core.permit(on,'director','inventory_count_plan').ok,'unsupported');
  check(!core.permit(on,'stock','__proto__').ok,'allowlist');

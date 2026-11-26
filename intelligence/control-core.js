@@ -4,10 +4,10 @@ function createIntelligenceCore() {
   const agents=['director','financeiro','producao','stock','marketing','comercial','inovacao','auditoria','catalogo'];
   const modes=['off','manual','auto','semi'];
   const capabilities={stock:['inventory_count_plan','inventory_audit','stock_rename_plan','stock_organization_plan','stock_merge_batch_plan'],auditoria:['inventory_audit','technical_review'],producao:['inventory_audit','production_plan'],financeiro:['finance_review'],director:['daily_priority_plan'],comercial:['commercial_review'],marketing:['marketing_plan'],catalogo:['catalog_review'],inovacao:['innovation_review']};
-  const defaults=()=>({enabled:false,agents:Object.fromEntries(agents.map(a=>[a,'off'])),paidEnabled:false,monthlyCeilingCents:1000});
+  const defaults=()=>({enabled:false,agents:Object.fromEntries(agents.map(a=>[a,'off'])),paidEnabled:false,monthlyCeilingCents:3000});
   function config(input){
-    if(!input||typeof input.enabled!=='boolean'||input.paidEnabled!==false||input.monthlyCeilingCents!==1000||!input.agents||!agents.every(a=>modes.includes(input.agents[a])))throw Error('Configuração inválida: execução bloqueada.');
-    return {enabled:input.enabled,agents:Object.fromEntries(agents.map(a=>[a,input.agents[a]])),paidEnabled:false,monthlyCeilingCents:1000};
+    if(!input||typeof input.enabled!=='boolean'||input.paidEnabled!==false||input.monthlyCeilingCents!==3000||!input.agents||!agents.every(a=>modes.includes(input.agents[a])))throw Error('Configuração inválida: execução bloqueada.');
+    return {enabled:input.enabled,agents:Object.fromEntries(agents.map(a=>[a,input.agents[a]])),paidEnabled:false,monthlyCeilingCents:3000};
   }
   function permit(settings,agent,kind,trigger='manual'){
     let c;try{c=config(settings)}catch{return {ok:false,reason:'configuracao_invalida'};}
