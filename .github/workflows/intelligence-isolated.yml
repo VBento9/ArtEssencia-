@@ -48,3 +48,5 @@ jobs:
         run: '"$RUNNER_TEMP/ae-intelligence/node_modules/.bin/playwright" install chromium'
       - name: Browser stock review fixture (mock session, no Cloud)
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/playwright" node scripts/test_intelligence_browser.cjs
+      - name: Browser central preview fixture
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/playwright" node scripts/test_intelligence_central_browser.cjs
