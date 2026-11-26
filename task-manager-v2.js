@@ -296,7 +296,7 @@ function taskDetails(){
  heading.append(label,button('Fechar ×',()=>{detailTaskId=null;render()}));
  detail.append(heading);
  const ed=editions.find(e=>e.id===task.edition_id);
- const origin=task.origin_rule_id?'Tarefa recorrente':task.source==='edition-plan'?'Plano de edição':'Tarefa pontual';
+ const origin=task.origin_rule_id?'Tarefa recorrente':task.source==='edition-plan'?'Plano de edição':task.source==='intelligence'?'ArtEssencia Intelligence · '+String(task.intelligence_agent||'Agente'):'Tarefa pontual';
  const status=statuses.find(([v])=>v===task.status)?.[1]||'Pendente';
  const fields=[
   ['Estado',status],['Prioridade',priorities.find(([v])=>v===task.priority)?.[1]||'Normal'],
