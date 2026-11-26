@@ -1,0 +1,30 @@
+'use strict';
+const p=require('../intelligence/reversal-planner.cjs');
+function checks(p){
+ let n=0;const check=(x,m)=>{if(!x)throw Error(m);n++;};const throws=(f,m)=>{let ok=false;try{f()}catch{ok=true}check(ok,m)};
+ const missionId='00000000-0000-0000-0000-000000000011',reversalId='00000000-0000-0000-0000-000000000012',req={missionId,reversalId,revision:8};
+ const state={revision:8,data:{stock:[{name:'Cera',unit:'g',qty:1000,unitCost:.02},{name:'Pavio',unit:'un',qty:0,unitCost:.1}],stockMoves:[{item:'Cera',type:'adjust',unit:'g',qty:1000,beforeQty:500,afterQty:1000,delta:500,source:'intelligence_count_v1',intelligenceMissionId:missionId},{item:'Pavio',type:'adjust',unit:'un',qty:0,beforeQty:8,afterQty:0,delta:-8,source:'intelligence_count_v1',intelligenceMissionId:missionId}],productRecipes:{A:[{item:'Cera',qty:20}]}}};
+ const original=JSON.stringify(state),proposal=p.plan(state,req),after=p.simulate(state,proposal,'2026-11-26T20:00:00Z').state;
+ check(proposal.status==='review'&&proposal.lines.length===2,'review');
+ check(after.data.stock[0].qty===500&&after.data.stock[1].qty===8,'balances');
+ check(after.data.stockMoves.length===4&&after.data.stockMoves[2].reversesIntelligenceMissionId===missionId,'append-only');
+ check(JSON.stringify(after.data.stockMoves.slice(0,2))===JSON.stringify(state.data.stockMoves),'original history');
+ check(after.data.stock[0].unitCost===.02&&JSON.stringify(after.data.productRecipes)===JSON.stringify(state.data.productRecipes),'cost and recipe');
+ check(JSON.stringify(state)===original,'immutable');
+ check(p.plan(after,{...req,revision:9,reversalId:'00000000-0000-0000-0000-000000000013'}).status==='blocked','already reversed');
+ throws(()=>p.plan(state,{...req,revision:7}),'stale');
+ throws(()=>p.simulate(state,{...proposal,lines:[]},'2026-11-26T20:00:00Z'),'tampered');
+ const later=JSON.parse(original);later.data.stockMoves.push({item:'Cera',type:'in',qty:10},{item:'Cera',type:'out',qty:10});
+ check(p.plan(later,req).blockers.includes('movimento_posterior'),'same balance subsequent use');
+ const changed=JSON.parse(original);changed.data.stock[0].qty=999;
+ check(p.plan(changed,req).status==='blocked','changed balance');
+ const duplicate=JSON.parse(original);duplicate.data.stock.push({...duplicate.data.stock[0],name:'CERA'});
+ check(p.plan(duplicate,req).status==='blocked','ambiguous');
+ check(p.plan(state,{...req,missionId:'00000000-0000-0000-0000-000000000099'}).status==='blocked','missing');
+ const invalid=JSON.parse(original);invalid.data.stockMoves[0].delta=200;
+ check(p.plan(invalid,req).status==='blocked','corrupt move');
+ const used=JSON.parse(original);used.data.stockMoves.push({item:'Outro',intelligenceMissionId:reversalId});
+ check(p.plan(used,req).status==='blocked','used id');
+ return n;
+}
+console.log('Verificações concluídas:',checks(p));
