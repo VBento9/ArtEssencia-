@@ -28,6 +28,23 @@ DROP POLICY IF EXISTS intelligence_receipts_append ON artessencia_intelligence_p
 CREATE POLICY intelligence_receipts_append ON artessencia_intelligence_private.count_receipts FOR INSERT TO authenticated
  WITH CHECK (user_id=(SELECT auth.uid()) AND (SELECT public.artessencia_is_owner_v1()));
 
+-- Approval is a separate, private, immutable request bound to owner and revision.
+CREATE TABLE IF NOT EXISTS artessencia_intelligence_private.count_approvals (
+ user_id uuid NOT NULL,
+ mission_id uuid NOT NULL,
+ expected_revision bigint NOT NULL CHECK(expected_revision>=0),
+ request_lines jsonb NOT NULL CHECK(jsonb_typeof(request_lines)='array'),
+ approved_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+ expires_at timestamptz NOT NULL,
+ CHECK(expires_at>approved_at),
+ PRIMARY KEY(user_id,mission_id)
+);
+ALTER TABLE artessencia_intelligence_private.count_approvals ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE artessencia_intelligence_private.count_approvals FROM PUBLIC,anon,authenticated;
+DROP POLICY IF EXISTS intelligence_approvals_read ON artessencia_intelligence_private.count_approvals;
+CREATE POLICY intelligence_approvals_read ON artessencia_intelligence_private.count_approvals FOR SELECT TO authenticated
+ USING (user_id=(SELECT auth.uid()) AND (SELECT public.artessencia_is_owner_v1()));
+
 -- DEVELOPMENT DRAFT: do not deploy or grant client execution until integration tests and review.
 -- Explicitly uses the canonical operational state and existing adjustment history.
 CREATE OR REPLACE FUNCTION public.artessencia_intelligence_count_v1(
@@ -83,6 +100,10 @@ BEGIN
  WHERE x->>'source'='intelligence_count_v1' AND x->>'intelligenceMissionId'=p_mission::text;
  IF previous IS NOT NULL THEN RAISE EXCEPTION 'UNRECONCILED_LEGACY_MISSION'; END IF;
  IF st.revision IS DISTINCT FROM p_revision THEN RAISE EXCEPTION USING errcode='40001',message='cloud_revision_conflict'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM artessencia_intelligence_private.count_approvals a
+   WHERE a.user_id=actor AND a.mission_id=p_mission AND a.expected_revision=p_revision
+   AND a.request_lines=request_lines AND a.expires_at>clock_timestamp())
+ THEN RAISE EXCEPTION 'MISSION_NOT_APPROVED'; END IF;
  next_stock:=st.data->'stock'; next_moves:=st.data->'stockMoves';
  FOR line IN SELECT value FROM jsonb_array_elements(request_lines) LOOP
   SELECT count(*),jsonb_agg(x)->0 INTO hits,item FROM jsonb_array_elements(next_stock) x WHERE x->>'name'=line->>'name';
