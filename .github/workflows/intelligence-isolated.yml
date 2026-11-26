@@ -17,7 +17,16 @@ concurrency:
 jobs:
   isolated:
     runs-on: ubuntu-24.04
-    timeout-minutes: 8
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: intelligence_fixture
+          POSTGRES_DB: intelligence_fixture
+        ports:
+          - 55433:5432
+        options: --health-cmd "pg_isready -U postgres" --health-interval 3s --health-timeout 5s --health-retries 12
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -30,6 +39,8 @@ jobs:
       - name: Install isolated SQL engine in temporary directory
         run: |
           mkdir -p "$RUNNER_TEMP/ae-intelligence"
-          npm install --prefix "$RUNNER_TEMP/ae-intelligence" --no-save --package-lock=false --ignore-scripts --no-audit --no-fund @electric-sql/pglite@0.3.16
+          npm install --prefix "$RUNNER_TEMP/ae-intelligence" --no-save --package-lock=false --ignore-scripts --no-audit --no-fund @electric-sql/pglite@0.3.16 pg@8.16.3
       - name: SQL transaction fixture (synthetic data only)
         run: PGLITE_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/@electric-sql/pglite" node scripts/test_intelligence_count_sql.cjs
+      - name: PostgreSQL 17 transaction fixture (synthetic data only)
+        run: PG_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/pg" node scripts/test_intelligence_count_sql.cjs --postgres

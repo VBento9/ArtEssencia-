@@ -55,7 +55,7 @@ DECLARE
  st public.artessencia_v1_state%rowtype;
  line jsonb; item jsonb; hits bigint;
  old_qty numeric; new_qty numeric;
- next_stock jsonb; next_moves jsonb; previous jsonb; request_lines jsonb;
+ next_stock jsonb; next_moves jsonb; previous jsonb; v_request_lines jsonb;
  stamp timestamptz := clock_timestamp();
 BEGIN
  IF actor IS NULL OR public.artessencia_is_owner_v1() IS DISTINCT FROM true THEN
@@ -80,7 +80,7 @@ BEGIN
  IF (SELECT count(DISTINCT x->>'name') FROM jsonb_array_elements(p_lines) x)<>jsonb_array_length(p_lines)
   THEN RAISE EXCEPTION 'DUPLICATE_LINE'; END IF;
  SELECT jsonb_agg(jsonb_build_object('name',x->>'name','unit',x->>'unit','before',x->'before','after',x->'after') ORDER BY x->>'name')
- INTO request_lines FROM jsonb_array_elements(p_lines) x;
+ INTO v_request_lines FROM jsonb_array_elements(p_lines) x;
  SELECT * INTO st FROM public.artessencia_v1_state WHERE user_id=actor FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION 'CANONICAL_STATE_REQUIRED'; END IF;
  -- Any future configuration writer must acquire this same state lock first.
@@ -90,7 +90,7 @@ BEGIN
  SELECT r.request_lines INTO previous FROM artessencia_intelligence_private.count_receipts r
   WHERE r.user_id=actor AND r.mission_id=p_mission;
  IF FOUND THEN
-  IF previous IS DISTINCT FROM request_lines THEN RAISE EXCEPTION 'IDEMPOTENCY_CONFLICT'; END IF;
+  IF previous IS DISTINCT FROM v_request_lines THEN RAISE EXCEPTION 'IDEMPOTENCY_CONFLICT'; END IF;
   RETURN jsonb_build_object('state',to_jsonb(st),'mission',p_mission,'replayed',true);
  END IF;
  IF jsonb_typeof(st.data->'stock') IS DISTINCT FROM 'array'
@@ -102,10 +102,10 @@ BEGIN
  IF st.revision IS DISTINCT FROM p_revision THEN RAISE EXCEPTION USING errcode='40001',message='cloud_revision_conflict'; END IF;
  IF NOT EXISTS(SELECT 1 FROM artessencia_intelligence_private.count_approvals a
    WHERE a.user_id=actor AND a.mission_id=p_mission AND a.expected_revision=p_revision
-   AND a.request_lines=request_lines AND a.expires_at>clock_timestamp())
+   AND a.request_lines=v_request_lines AND a.expires_at>clock_timestamp())
  THEN RAISE EXCEPTION 'MISSION_NOT_APPROVED'; END IF;
  next_stock:=st.data->'stock'; next_moves:=st.data->'stockMoves';
- FOR line IN SELECT value FROM jsonb_array_elements(request_lines) LOOP
+ FOR line IN SELECT value FROM jsonb_array_elements(v_request_lines) LOOP
   SELECT count(*),jsonb_agg(x)->0 INTO hits,item FROM jsonb_array_elements(next_stock) x WHERE x->>'name'=line->>'name';
   IF hits<>1 OR item->>'unit' IS DISTINCT FROM line->>'unit'
      OR jsonb_typeof(item->'qty') NOT IN ('number','string') OR item->'qty' IS NULL THEN RAISE EXCEPTION 'STOCK_CHANGED'; END IF;
@@ -122,7 +122,7 @@ BEGIN
   revision=st.revision+1,updated_at=stamp,device_id=p_device WHERE user_id=actor RETURNING * INTO st;
  IF NOT FOUND THEN RAISE EXCEPTION 'WRITE_NOT_CONFIRMED'; END IF;
  INSERT INTO artessencia_intelligence_private.count_receipts(user_id,mission_id,request_lines,committed_revision,committed_at)
- VALUES(actor,p_mission,request_lines,st.revision,stamp);
+ VALUES(actor,p_mission,v_request_lines,st.revision,stamp);
  RETURN jsonb_build_object('state',to_jsonb(st),'mission',p_mission,'replayed',false);
 END;
 $$;

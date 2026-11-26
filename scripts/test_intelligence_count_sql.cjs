@@ -1,9 +1,19 @@
 'use strict';
 // Synthetic local PGlite fixture only. Never connect to production.
-const {PGlite}=require(process.env.PGLITE_MODULE||'@electric-sql/pglite');
+const postgres=process.argv.includes('--postgres');
+async function database(){
+ if(!postgres){const {PGlite}=require(process.env.PGLITE_MODULE||'@electric-sql/pglite');return new PGlite();}
+ // Never use an externally supplied URL, production credentials or a remote host.
+ const {Client}=require(process.env.PG_MODULE||'pg');
+ const c=new Client({host:'127.0.0.1',port:55433,database:'intelligence_fixture',user:'postgres',password:'intelligence_fixture',connectionTimeoutMillis:5000});
+ await c.connect();
+ const probe=await c.query("SELECT current_database() AS db, inet_server_addr()::text AS addr");
+ if(probe.rows[0]?.db!=='intelligence_fixture'||probe.rows[0]?.addr!=='127.0.0.1'){await c.end();throw Error('Unsafe SQL fixture database');}
+ return {exec:s=>c.query(s),query:(s,p)=>c.query(s,p),close:()=>c.end()};
+}
 const assert=require('node:assert/strict'),fs=require('node:fs');
 (async()=>{
- const db=new PGlite();
+ const db=await database();
  await db.exec(`
  CREATE ROLE anon; CREATE ROLE authenticated; CREATE SCHEMA auth;
  CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
@@ -68,7 +78,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  const replay=await rpc(7,[...lines].reverse());assert.equal(replay.replayed,true);assert.equal(replay.state.data.stockMoves.length,2);
  await assert.rejects(rpc(7,[{...lines[0],after:999},lines[1]]),/IDEMPOTENCY_CONFLICT/);
  const receipts=await db.query('SELECT * FROM artessencia_intelligence_private.count_receipts');
- assert.equal(receipts.rows.length,1);assert.equal(receipts.rows[0].committed_revision,8);
+ assert.equal(receipts.rows.length,1);assert.equal(Number(receipts.rows[0].committed_revision),8);
  await assert.rejects(db.query('DELETE FROM artessencia_intelligence_private.count_receipts'),/permission denied/);
  await assert.rejects(db.query('UPDATE artessencia_intelligence_private.count_receipts SET committed_revision=9'),/permission denied/);
  // Simulate a legacy restore removing the movement log. Receipt must still block re-application.
