@@ -113,8 +113,16 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  const finalResult=await execute(m4);assert.equal(finalResult.state.data.stock[0].qty,900);assert.equal(finalResult.state.revision,10);
  assert.equal((await execute(m4)).replayed,true);
  await assert.rejects(revoke(m4),/MISSION_ALREADY_EXECUTED/);
+ const status=async(id)=>(await db.query('SELECT artessencia_intelligence_private.count_status($1) AS r',[id])).rows[0].r;
+ await assert.rejects(status(m4),/permission denied/);
+ await db.exec('RESET ROLE; GRANT EXECUTE ON FUNCTION artessencia_intelligence_private.count_status(uuid) TO authenticated; SET ROLE authenticated');
+ const receiptStatus=await status(m4);assert.equal(receiptStatus.status,'committed');assert.equal(receiptStatus.owner,owner);assert.equal(receiptStatus.committedRevision,10);assert.deepEqual(receiptStatus.lines,adjustment);assert.equal('state' in receiptStatus,false);
+ assert.equal((await status(m2)).status,'revoked');assert.equal((await status(m3)).status,'revoked');
+ assert.equal((await status('00000000-0000-0000-0000-000000000099')).status,'missing');
+ await control(false,false);assert.equal((await status(m4)).status,'committed');await control(true,true);
+
  await assert.rejects(db.query("INSERT INTO artessencia_intelligence_private.count_receipts(user_id,mission_id,request_lines,committed_revision,committed_at) VALUES($1,$2,$3,10,now())",[owner,m3,JSON.stringify(adjustment)]),/permission denied/);
- await db.query("SELECT set_config('request.jwt.claim.sub',$1,false)",[other]);await assert.rejects(execute(m4),/OWNER_REQUIRED/);await assert.rejects(control(true,true),/OWNER_REQUIRED/);await assert.rejects(approve(m4),/OWNER_REQUIRED/);
+ await db.query("SELECT set_config('request.jwt.claim.sub',$1,false)",[other]);await assert.rejects(execute(m4),/OWNER_REQUIRED/);await assert.rejects(control(true,true),/OWNER_REQUIRED/);await assert.rejects(approve(m4),/OWNER_REQUIRED/);await assert.rejects(status(m4),/OWNER_REQUIRED/);
  await db.exec('RESET ROLE; SET ROLE anon');await assert.rejects(rpc(),/permission denied/);
  await db.close();console.log('PASS: intelligence count fixture');
 })().catch(e=>{console.error(e);process.exitCode=1});

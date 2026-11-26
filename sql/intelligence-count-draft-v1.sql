@@ -214,3 +214,21 @@ BEGIN
 END;
 $execute$;
 REVOKE ALL ON FUNCTION artessencia_intelligence_private.set_count_controls(boolean,boolean),artessencia_intelligence_private.approve_count(bigint,uuid,jsonb),artessencia_intelligence_private.revoke_count(uuid),artessencia_intelligence_private.execute_approved_count(bigint,uuid,jsonb,text) FROM PUBLIC,anon,authenticated;
+
+-- Read-only status lookup, including after disabling the agent.
+CREATE OR REPLACE FUNCTION artessencia_intelligence_private.count_status(p_mission uuid)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $status$
+DECLARE actor uuid:=auth.uid(); receipt artessencia_intelligence_private.count_receipts%rowtype;
+ approval artessencia_intelligence_private.count_approvals%rowtype; status_name text;
+BEGIN
+ IF actor IS NULL OR public.artessencia_is_owner_v1() IS DISTINCT FROM true THEN RAISE EXCEPTION USING errcode='42501',message='OWNER_REQUIRED'; END IF;
+ IF p_mission IS NULL THEN RAISE EXCEPTION 'INVALID_REQUEST'; END IF;
+ SELECT * INTO receipt FROM artessencia_intelligence_private.count_receipts r WHERE r.user_id=actor AND r.mission_id=p_mission;
+ IF FOUND THEN RETURN jsonb_build_object('mission',p_mission,'owner',actor,'status','committed','lines',receipt.request_lines,'committedRevision',receipt.committed_revision); END IF;
+ SELECT * INTO approval FROM artessencia_intelligence_private.count_approvals a WHERE a.user_id=actor AND a.mission_id=p_mission;
+ IF NOT FOUND THEN RETURN jsonb_build_object('mission',p_mission,'owner',actor,'status','missing'); END IF;
+ status_name:=CASE WHEN approval.revoked_at IS NOT NULL THEN 'revoked' WHEN approval.expires_at<=clock_timestamp() THEN 'expired' ELSE 'approved' END;
+ RETURN jsonb_build_object('mission',p_mission,'owner',actor,'status',status_name,'lines',approval.request_lines,'revision',approval.expected_revision,'expires_at',approval.expires_at);
+END;
+$status$;
+REVOKE ALL ON FUNCTION artessencia_intelligence_private.count_status(uuid) FROM PUBLIC,anon,authenticated;
