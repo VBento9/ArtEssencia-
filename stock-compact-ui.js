@@ -96,3 +96,16 @@ function init(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
+
+/* Intelligence: preview de leitura, isolado; falhas do extra não impedem o Stock. */
+(function(){
+ 'use strict';
+ const script=document.getElementById('ae-stock-compact-script');
+ if(!script||document.getElementById('ae-intelligence-preview-script'))return;
+ const extra=document.createElement('script');
+ extra.id='ae-intelligence-preview-script';
+ extra.src=new URL('intelligence/stock-review-ui.js',script.src).href;
+ extra.async=true;
+ extra.onerror=()=>console.warn('Pré-visualização Intelligence indisponível.');
+ document.head.append(extra);
+})();
