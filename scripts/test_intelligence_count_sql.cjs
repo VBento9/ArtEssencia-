@@ -124,5 +124,47 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  await assert.rejects(db.query("INSERT INTO artessencia_intelligence_private.count_receipts(user_id,mission_id,request_lines,committed_revision,committed_at) VALUES($1,$2,$3,10,now())",[owner,m3,JSON.stringify(adjustment)]),/permission denied/);
  await db.query("SELECT set_config('request.jwt.claim.sub',$1,false)",[other]);await assert.rejects(execute(m4),/OWNER_REQUIRED/);await assert.rejects(control(true,true),/OWNER_REQUIRED/);await assert.rejects(approve(m4),/OWNER_REQUIRED/);await assert.rejects(status(m4),/OWNER_REQUIRED/);
  await db.exec('RESET ROLE; SET ROLE anon');await assert.rejects(rpc(),/permission denied/);
+ 
+ // Financial ledger uses the same synthetic instance; no provider calls.
+ await db.exec('RESET ROLE');
+ await db.exec(fs.readFileSync('sql/intelligence-ai-budget-draft-v1.sql','utf8'));
+ const bid=n=>'00000000-0000-0000-0000-'+String(n).padStart(12,'0');
+ const reserve=async(n,max=12000000,channel='director',conn=db)=>(await conn.query('SELECT artessencia_intelligence_private.ai_budget_reserve($1,$2,$3,$4) AS r',[bid(n),channel,'fixture-mini',max])).rows[0].r;
+ const claim=async n=>(await db.query('SELECT artessencia_intelligence_private.ai_budget_claim($1) AS r',[bid(n)])).rows[0].r;
+ const settle=async(n,actual,voided=false)=>(await db.query('SELECT artessencia_intelligence_private.ai_budget_settle($1,$2,$3,$4) AS r',[bid(n),actual,'fixture-evidence',voided])).rows[0].r;
+ await assert.rejects(reserve(100),/BUDGET_DISABLED/);
+ await db.exec('SET ROLE authenticated');
+ await assert.rejects(reserve(100),/permission denied/);
+ await assert.rejects(db.query('UPDATE artessencia_intelligence_private.ai_budget_control SET release_enabled=true'),/permission denied/);
+ await db.exec('RESET ROLE; UPDATE artessencia_intelligence_private.ai_budget_control SET release_enabled=true');
+ if(postgres){
+  const peer=await database();
+  try{
+   const results=await Promise.allSettled([reserve(100),reserve(101,12000000,'legacy_social',peer)]);
+   assert.equal(results.filter(x=>x.status==='fulfilled').length,1);
+   assert.match(String(results.find(x=>x.status==='rejected').reason),/BUDGET_LIMIT/);
+   const winner=results[0].status==='fulfilled'?100:101;
+   await settle(winner,0,true);
+  }finally{await peer.close();}
+ }
+ assert.equal((await reserve(102)).status,'reserved');
+ await assert.rejects(reserve(102),/DUPLICATE_REQUEST/);
+ await assert.rejects(reserve(103,12000000,'legacy_social'),/BUDGET_LIMIT/);
+ assert.equal((await claim(102)).status,'inflight');
+ await assert.rejects(claim(102),/REQUEST_NOT_CLAIMABLE/);
+ await db.query('SELECT artessencia_intelligence_private.ai_budget_unknown($1)',[bid(102)]);
+ await db.query("UPDATE artessencia_intelligence_private.ai_budget_entries SET reserved_month=reserved_month-interval '1 month' WHERE request_id=$1",[bid(102)]);
+ await assert.rejects(reserve(103,12000000,'legacy_social'),/BUDGET_LIMIT/);
+ assert.equal((await settle(102,2000000)).status,'settled');
+ await assert.rejects(settle(102,0,true),/REQUEST_NOT_SETTLEABLE/);
+ assert.equal((await reserve(104,21000000,'legacy_social')).remainingMicroeur,0);
+ await assert.rejects(reserve(105,1),/BUDGET_LIMIT/);
+ await claim(104);
+ await db.exec('UPDATE artessencia_intelligence_private.ai_budget_control SET release_enabled=false');
+ assert.equal((await settle(104,22000000)).overrun,true);
+ await db.exec('UPDATE artessencia_intelligence_private.ai_budget_control SET release_enabled=true');
+ await assert.rejects(reserve(105,1),/BUDGET_DISABLED/);
+ console.log('PASS: AI budget shared cap, unknown carry, one-time claim, settlement, freeze and PostgreSQL concurrency');
+
  await db.close();console.log('PASS: intelligence count fixture');
 })().catch(e=>{console.error(e);process.exitCode=1});
