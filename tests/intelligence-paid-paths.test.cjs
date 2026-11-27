@@ -49,9 +49,11 @@ test('Account approval requires current tax, FX, infrastructure envelope and rec
  const approved=require('../intelligence/approved-pricing.cjs');
  const now=new Date('2026-11-27T12:00:00Z');
  const p={model:'gpt-5.4-mini-2026-03-17',checkedAt:'2026-11-27T11:00:00Z',validUntil:'2026-11-28T11:00:00Z',evidenceRef:'fixture',autoRechargeOff:true,
-  dedicatedKeyVerified:true,usageReconciled:true,infrastructureVerified:true,otherGrossMonthlyUpperMicroeur:7000000,grossBps:12300,eurPerUsdUpperPpm:1040000,inputMicroUsdPerMillion:750000,outputMicroUsdPerMillion:4500000};
+  dedicatedKeyVerified:true,usageReconciled:true,infrastructureVerified:true,otherGrossMonthlyUpperMicroeur:7000000,grossBps:12300,eurPerUsdUpperPpm:1040000,inputMicroUsdPerMillion:750000,outputMicroUsdPerMillion:4500000,
+  budgetMonth:'2026-11',ownerApprovalRef:'fixture-owner-approval',exclusiveProjectVerified:true,providerHardLimitVerified:true,taxVerified:true,exchangeUpperBoundVerified:true,pendingExternalCostsReconciled:true,providerHardLimitMicroUsd:17000000};
  const read=over=>approved({INTELLIGENCE_FINANCIAL_APPROVAL:JSON.stringify({...p,...over})},now);
  assert.equal(read({})[p.model].outputRate,4680000);
+ for(const over of [{budgetMonth:'2026-10'},{validUntil:'2026-12-02T00:00:00Z'},{checkedAt:'2026-11-01T00:00:00Z'},{providerHardLimitVerified:false},{providerHardLimitMicroUsd:18000000},{ownerApprovalRef:''},{exclusiveProjectVerified:false},{taxVerified:false},{exchangeUpperBoundVerified:false},{pendingExternalCostsReconciled:false}])assert.throws(()=>read(over));
  for(const over of [{validUntil:now.toISOString()},{inputMicroUsdPerMillion:0},{autoRechargeOff:false},{otherGrossMonthlyUpperMicroeur:7000001},{model:'other'},{usageReconciled:false}])assert.throws(()=>read(over));
 });
 
