@@ -8,7 +8,7 @@ on:
       operation:
         description: 'validate (gratuito) ou execute (missão Cloud já aprovada)'
         type: choice
-        options: [validate, execute]
+        options: [validate, preflight, execute]
         default: validate
       mission_id:
         description: 'UUID da missão existente e aprovada; nunca cria ou aprova missões'
@@ -36,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: 6c1512573d21560263c1e5da326483148c1750a2
+          ref: 772825ea4b877ab51fd3a187bae690738e0de657
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
@@ -64,7 +64,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: 6c1512573d21560263c1e5da326483148c1750a2
+          ref: 772825ea4b877ab51fd3a187bae690738e0de657
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
@@ -78,3 +78,23 @@ jobs:
           INTELLIGENCE_MISSION_ID: ${{ inputs.mission_id }}
           INTELLIGENCE_MISSION_REVISION: ${{ inputs.revision }}
         run: node scripts/run_intelligence_remote_trial.cjs
+  preflight:
+    if: github.event_name == 'workflow_dispatch' && inputs.operation == 'preflight' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    environment: intelligence-isolated
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: 772825ea4b877ab51fd3a187bae690738e0de657
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Verify credentials without paid AI request or mission
+        env:
+          INTELLIGENCE_REMOTE_PUBLIC_CONFIG: ${{ vars.INTELLIGENCE_REMOTE_PUBLIC_CONFIG }}
+          INTELLIGENCE_SERVICE_PASSWORD: ${{ secrets.INTELLIGENCE_SERVICE_PASSWORD }}
+          INTELLIGENCE_OPENAI_API_KEY: ${{ secrets.INTELLIGENCE_OPENAI_API_KEY }}
+        run: node scripts/check_intelligence_remote.cjs
