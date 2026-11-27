@@ -111,13 +111,13 @@ BEGIN
     (SELECT count(*) FROM (SELECT norm_title FROM planner WHERE status='pendente' AND norm_title<>'' GROUP BY norm_title HAVING count(*)>1)d) AS duplicate_title_groups
    FROM planner
   ), active_missions AS (
-   SELECT agent,kind,status,lower(regexp_replace(trim(instruction),'[[:space:]]+',' ','g')) AS norm_instruction
-   FROM artessencia_intelligence_private.team_missions WHERE user_id=actor AND mission_id<>p_id AND status IN ('pending_review','approved','working')
+   SELECT tm.agent,tm.kind,tm.status,lower(regexp_replace(trim(tm.instruction),'[[:space:]]+',' ','g')) AS norm_instruction
+   FROM artessencia_intelligence_private.team_missions tm WHERE tm.user_id=actor AND tm.mission_id<>p_id AND tm.status IN ('pending_review','approved','working')
   ), mission_stats AS (
    SELECT count(*) FILTER(WHERE status='pending_review') AS awaiting_approval,
     count(*) FILTER(WHERE status='approved') AS approved,
     count(*) FILTER(WHERE status='working') AS working,
-    (SELECT count(*) FROM (SELECT agent,kind,norm_instruction FROM active_missions GROUP BY 1,2,3 HAVING count(*)>1)d) AS duplicate_instruction_groups
+    (SELECT count(*) FROM (SELECT am.agent,am.kind,am.norm_instruction FROM active_missions am GROUP BY 1,2,3 HAVING count(*)>1)d) AS duplicate_instruction_groups
    FROM active_missions
   ), run_stats AS (
    SELECT count(*) FILTER(WHERE status='blocked') AS blocked,

@@ -371,7 +371,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
   "INSERT INTO public.artessencia_cloud_records(user_id,entity,record_id,data,client_updated_at,device_id,deleted_at) VALUES($1,'operational_tasks_v1',$2,$3,now(),'fixture',$4)",
   [uid,rid,JSON.stringify({kind:'task',title,status,priority}),deleted]);
  for(const file of ['department-context','worker'])await db.exec(fs.readFileSync('sql/intelligence-'+file+'-v1.sql','utf8'));
- const workerRpc=async(action,args={})=>(await db.query('SELECT public.artessencia_intelligence_worker_v1($1,$2) AS r',[action,JSON.stringify(args)])).rows[0].r;
+ const workerRpc=async(action,args={})=>{try{return (await db.query('SELECT public.artessencia_intelligence_worker_v1($1,$2) AS r',[action,JSON.stringify(args)])).rows[0].r;}catch(e){if(action==='department')console.error('Synthetic department SQL failed:',e.message,e.code);throw e;}};
  await db.exec('SET ROLE authenticated');
  await assert.rejects(workerRpc('next'),/permission denied/);
  const enabled=await command('controls',{revision:controls.revision,enabled:true,modes:Object.fromEntries(Object.keys(allOff).map(a=>[a,'manual']))});
