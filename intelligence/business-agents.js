@@ -55,7 +55,11 @@ function createBusinessAgents(){
    if(p.priceVerified!==true)missing.push('preço');
    if(missing.length)tasks.push(task('catalogo','complete_product',p.code,'Completar ficha de catálogo — '+p.code,p.published===true?1:2,null,{missing}));
   }
-  return report(tasks);
+  const comparison=input?.crosscheck;
+  if(!comparison)return report(tasks);
+  if(comparison.storeOrders==='enabled')tasks.push(task('catalogo','review_store_status','store','Verificar abertura inesperada das encomendas online',1));
+  if(!comparison.coverage?.products)tasks.push(task('catalogo','verify_public_feed','feed','Validar serviço público do Catálogo e Loja',1));
+  return {...report(tasks),publicComparison:comparison};
  }
  function innovation(input){
   const tasks=[];

@@ -360,6 +360,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  let simulatedCharges=0,sawInventory=false;
  const rate={model:'fixture.1',verified:true,current:true,contextLimit:10000,maxInputTokens:10000,maxOutputTokens:500,inputRate:1000000,outputRate:4000000,grossBps:12300,toolsEnabled:false,validUntil:new Date(Date.now()+60000).toISOString()};
  const runtime=runtimeFactory.compose({call:workerRpc,env:{INTELLIGENCE_TARIFF_ID:'test',INTELLIGENCE_PAID_RELEASE:'approved'},tariffs:{test:rate},
+  publicReader:async()=>({catalog:{products:[{id:'public-A',code:'A',description:'Descrição pública diferente',image_url:'',category_id:'fixture'}],categories:[{id:'fixture',name:'Velas'}]},content:{catalog_families:[{id:'velas',label:'Velas',categories:['Velas']}],campaigns:[],upcoming_campaigns:[],catalog_status:{mode:'open'}},config:{store_status:{enabled:true,accepting_orders:false,mode:'updating'}}}),
   provider:async p=>{if(JSON.stringify(p.input).includes('Material fictício'))sawInventory=true;assert.ok(!JSON.stringify(p).includes('cliente-proibido'));return {status:'completed',id:'response-'+(++simulatedCharges),model:rate.model,text:JSON.stringify({document:'Documento de validação.',tasks:[],delegations:[]}),usage:{input_tokens:100,output_tokens:42}};}});
  for(const agent of Object.keys(responsibilities)){
   const result=await runtimeFactory.processNext(runtime);
@@ -397,6 +398,13 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  await db.query("UPDATE public.artessencia_v1_quotes SET status='Enviado' WHERE id=$1",[bid(801)]);
  await db.exec('SET ROLE authenticated');
  console.log('PASS: commercial proposals linked to quote and request, owner confirmation, durable replay and stale origin, no commercial writes');
+ const catalogDoc=results.documents.find(d=>d.mission_id===ids.catalogo);
+ assert.equal(catalogDoc.public_comparison.coverage.products,true);
+ assert.equal(catalogDoc.public_comparison.storeOrders,'blocked');
+ assert.ok(catalogDoc.public_comparison.issues.some(i=>i.code==='A'&&i.kind==='missing_public_image'));
+ assert.ok(catalogDoc.public_comparison.issues.some(i=>i.code==='A'&&i.kind==='description_mismatch'));
+ assert.equal(catalogDoc.public_comparison.coverage.siteRendering,'not_tested');
+ console.log('PASS: catalog public API comparison persisted, read-only simulated feed and checkout blocked');
  const countDoc=results.documents.find(d=>d.mission_id===ids.stock);
  assert.equal(countDoc.physical_count.proposals[1].status,'new_material_review');
  const createArgs={mission:ids.stock,index:1,sourceRevision:countDoc.physical_count.sourceRevision,unitCost:.25,confirmed:true};

@@ -7,7 +7,7 @@ const core=require('./control-core.js');
 const budget=require('./ai-budget-policy.cjs');
 // Only a reviewed release may add a tariff after validating the account and total infrastructure exposure.
 const approvedPricing=require('./approved-pricing.cjs');
-function compose({env=process.env,call,provider,tariffs}={}){
+function compose({env=process.env,call,provider,tariffs,publicReader}={}){
   // Real provider is unavailable outside the explicitly released production deployment.
   // Tests inject both the transport and provider, never a real API key.
   if(!provider&&(env.VERCEL_ENV!=='production'||env.INTELLIGENCE_SUPABASE_URL!=='https://ihtsonqnnlrxvorfrarl.supabase.co'))throw Error('Faturação suspensa fora da produção autorizada.');
@@ -19,8 +19,11 @@ function compose({env=process.env,call,provider,tariffs}={}){
     return rate;
   }
   pricing();
+  const injected=!!call;
   call=call||transport(env);provider=provider||providerFactory(env.OPENAI_API_KEY);
-  return {call,provider,pricing};
+  // An injected transport cannot implicitly contact any public project.
+  if(!publicReader&&!injected)publicReader=()=>require('./catalog-crosscheck.cjs').createReader(env)();
+  return {call,provider,pricing,publicReader};
 }
 function runLegacy(runtime,channel,payload,id){
   const scope={channel,request:id};
@@ -66,6 +69,11 @@ async function processNext(runtime,approvedMission){
       if(input.mime)evidence.attachment=require('./stock-input.cjs')(input);
     }
     if(q.agent==='financeiro')evidence.payload=require('./finance-context.cjs')(evidence.payload);
+    if(q.agent==='catalogo'){
+      let publicData=null;
+      try{if(runtime.publicReader)publicData=await runtime.publicReader();}catch{}
+      evidence.payload.crosscheck=require('./catalog-crosscheck.cjs').compare(evidence.payload,publicData);
+    }
     return evidence;
   }
   const runner=createRunner({core,gateway,store,contextSource,decisionFormat:true,releaseEnabled:true,

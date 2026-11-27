@@ -154,6 +154,17 @@ function init(){
       }));
      });
     }
+    if(d.agent==='catalogo'&&d.public_comparison?.mode==='public_api_comparison'){
+     const p=d.public_comparison;
+     content.append(el('h4','Comparação Backoffice · serviço público · Catálogo e Loja'));
+     line('Produtos internos: '+(p.totalInternal??'por validar')+' · produtos públicos: '+(p.totalPublic??'por validar')+' · ocorrências: '+p.issueCount);
+     line('Encomendas na Loja: '+({blocked:'bloqueadas',enabled:'ativas — verificar',unknown:'por confirmar'}[p.storeOrders]||'por confirmar'));
+     line('Cobertura: produtos '+(p.coverage.products?'consultados':'por validar')+' · famílias '+(p.coverage.families?'consultadas':'por validar')+' · coleções '+(p.coverage.collections?'consultadas':'por validar'));
+     const names={missing_internal_code:'Código interno em falta',ambiguous_public_product:'Correspondência pública ambígua',missing_public_product_review:'Produto ausente do serviço público — rever disponibilidade',hidden_product_in_public_feed_review:'Produto oculto no serviço público — rever',name_mismatch:'Nome diferente',description_mismatch:'Descrição diferente',missing_public_image:'Referência de fotografia em falta',image_reference_mismatch:'Referência de fotografia diferente',family_mapping_review:'Família por reconciliar',public_availability_review:'Disponibilidade por confirmar',unmatched_public_product_review:'Produto público sem correspondência interna',collection_reference_not_in_feed_review:'Referência de coleção ausente do serviço público — rever'};
+     for(const i of p.issues||[])line(i.code+' · '+(names[i.kind]||'Por rever'));
+     if(p.issueCount>(p.issues||[]).length)line('Lista limitada às primeiras 100 ocorrências.');
+     line('A comparação não comprova o carregamento de imagens nem a apresentação visual nos sites. Não altera publicações.');
+    }
     const repair=d.reference_repairs;
     if(d.agent==='stock'&&repair?.mode==='reference_repair_only'&&Array.isArray(repair.proposals)&&repair.proposals.length){
      content.append(el('h4','Normalização de referências nas fichas técnicas'));

@@ -75,11 +75,12 @@ BEGIN
     'reference',r.request_id::text,'recordStatus',r.status,'sourceDigest',encode(sha256(convert_to(to_jsonb(r)::text,'UTF8')),'hex'))),'[]')
     FROM public.artessencia_shop_event_requests r WHERE r.user_id=actor AND r.status='new')) INTO payload;
  WHEN 'catalogo' THEN
-  SELECT jsonb_build_object('products',coalesce(jsonb_agg(jsonb_build_object('code',p.data->>'code','catalogEligible',true,
-   'hasVerifiedImage',length(trim(coalesce(p.data->>'shopImageUrl','')))>0,'description',left(p.data->>'shopDescription',1000),'family',p.data->>'catalogGroupV191',
+  SELECT jsonb_build_object('products',coalesce(jsonb_agg(jsonb_build_object('code',p.data->>'code','recordId',p.id,'name',left(p.data->>'name',200),
+   'catalogEligible',(p.data->'active' IS DISTINCT FROM 'false'::jsonb AND p.data->'archivedV1803' IS DISTINCT FROM 'true'::jsonb AND p.data->'shopVisible' IS DISTINCT FROM 'false'::jsonb AND p.data->'publicReleasePendingV1803' IS DISTINCT FROM 'true'::jsonb),
+   'imageUrl',left(p.data->>'shopImageUrl',2500),'hasVerifiedImage',length(trim(coalesce(p.data->>'shopImageUrl','')))>0,'description',left(p.data->>'shopDescription',1000),'family',p.data->>'catalogGroupV191',
    'priceVerified',greatest((p.data->>'onlinePrice')::numeric,(p.data->>'price')::numeric)>0,
    'optionsComplete',NULL,'published',NULL)),'[]')) INTO payload
-   FROM public.artessencia_v1_products p WHERE p.user_id=actor AND p.data->'active' IS DISTINCT FROM 'false'::jsonb AND p.data->'archivedV1803' IS DISTINCT FROM 'true'::jsonb AND p.data->'shopVisible' IS DISTINCT FROM 'false'::jsonb AND p.data->'publicReleasePendingV1803' IS DISTINCT FROM 'true'::jsonb;
+   FROM public.artessencia_v1_products p WHERE p.user_id=actor;
   facts:=jsonb_build_object('coverage','Fotografia por referência guardada. Opções e publicação pública precisam de confirmação.');
  WHEN 'marketing' THEN
   SELECT jsonb_build_object('today',work_day,'campaigns',coalesce(jsonb_agg(jsonb_build_object('id',e.id,'status',CASE WHEN e.starts_at>now() THEN 'planned' ELSE 'active' END,
