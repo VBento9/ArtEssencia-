@@ -83,3 +83,12 @@ test('ambiguous mutation response does not trigger an automatic replay',async()=
     });
   }
 });
+test('production account transport requires dedicated service release and project without altering payment authorization',async()=>{
+ const f=fixture(),original=Date.now;Date.now=f.now;
+ const production={...env,VERCEL_ENV:'production',INTELLIGENCE_EXECUTION_MODE:'paid',INTELLIGENCE_WORKER_AUTH:'service_account',INTELLIGENCE_SERVICE_RELEASE:'approved',INTELLIGENCE_SUPABASE_URL:'https://ihtsonqnnlrxvorfrarl.supabase.co'};
+ try{
+  const call=serviceTransport(production,f.request);await call('identity');
+  assert.ok(f.calls.every(c=>c.url.startsWith(production.INTELLIGENCE_SUPABASE_URL)));
+  for(const patch of [{INTELLIGENCE_SERVICE_RELEASE:''},{VERCEL_ENV:'preview'},{INTELLIGENCE_EXECUTION_MODE:'trial'},{INTELLIGENCE_WORKER_JWT:'conflicting'},{INTELLIGENCE_EXECUTION_HOST:'local'}])assert.throws(()=>serviceTransport({...production,...patch},f.request));
+ }finally{Date.now=original;}
+});

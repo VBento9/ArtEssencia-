@@ -1,6 +1,11 @@
 {
   "buildCommand": "node scripts/build_intelligence_preview.cjs",
-  "crons": [{"path":"/api/intelligence-worker","schedule":"15 7 * * *"}],
+  "crons": [
+    {
+      "path": "/api/intelligence-worker",
+      "schedule": "15 7 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/",
@@ -91,5 +96,10 @@
       "destination": "/index.html"
     }
   ],
-  "ignoreCommand": "test \"$(git log -1 --format=%s)\" = 'ci(intelligence): install remote executor without app deployment'"
+  "ignoreCommand": "test \"$(git log -1 --format=%s)\" = 'ci(intelligence): install remote executor without app deployment'",
+  "functions": {
+    "api/intelligence-worker.js": {
+      "maxDuration": 300
+    }
+  }
 }

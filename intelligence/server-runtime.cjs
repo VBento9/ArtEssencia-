@@ -111,7 +111,7 @@ function runLegacy(runtime,channel,payload,id){
   const ledger=chargeLedger(runtime.call,scope);
   return require('./legacy-ai.cjs').createLegacyService({...runtime,permitted,ledger})(channel,payload,id);
 }
-async function processNext(runtime,approvedMission,{scheduled=false}={}){
+async function processNext(runtime,approvedMission,{scheduled=false,onClaim}={}){
   if(runtime.mode==='trial'&&(!approvedMission||scheduled))throw Error('Ensaio real apenas por missão manual aprovada.');
   const {call,pricing,provider}=runtime;
   if(approvedMission && await call('identity')!==approvedMission.owner)throw Error('Titular inválido.');
@@ -125,6 +125,7 @@ async function processNext(runtime,approvedMission,{scheduled=false}={}){
     async claim(q){
       const r=await call('claim_run',{mission:q.missionId,revision:q.expectedRevision,...(scheduled?{scheduled:true}:{})});
       if(r.user_id!==owner)throw Error('Titular inválido.');
+      if(onClaim)onClaim({missionId:r.mission_id,revision:r.revision,status:r.status});
       return {id:r.mission_id,owner,kind:r.kind,agent:r.agent,instruction:r.instruction,revision:r.revision,status:r.status,
         controlRevision:r.control_revision,leaseId:r.lease_id,requestId:r.request_id};
     },

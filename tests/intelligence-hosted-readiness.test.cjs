@@ -15,3 +15,16 @@ test('hosted readiness fails closed for disabled, wrong project, unavailable cre
   assert.deepEqual(availability({...env,...change},worker,now),{status:'unavailable'});
  }
 });
+test('production service credentials require explicit release and retain financial evidence gate',()=>{
+ const service={...env,INTELLIGENCE_WORKER_AUTH:'service_account',INTELLIGENCE_WORKER_JWT:'',INTELLIGENCE_SERVICE_RELEASE:'approved',INTELLIGENCE_SERVICE_EMAIL:'fixture@example.invalid',INTELLIGENCE_SERVICE_PASSWORD:'fixture',INTELLIGENCE_SERVICE_USER_ID:'00000000-0000-0000-0000-000000000002'};
+ assert.equal(availability(service,worker,now).status,'configured');
+ for(const patch of [{INTELLIGENCE_SERVICE_RELEASE:''},{VERCEL_ENV:'preview'},{INTELLIGENCE_SERVICE_PASSWORD:''},{INTELLIGENCE_WORKER_JWT:'conflicting'},{INTELLIGENCE_FINANCIAL_APPROVAL:'{}'}])assert.equal(availability({...service,...patch},worker,now).status,'unavailable');
+});
+test('availability verifies live Cloud binding and exact owner before advertising execution',async()=>{
+ const {checkedAvailability}=require('../intelligence/hosted-readiness.cjs');
+ let calls=0;const transport=()=>async action=>{calls++;assert.equal(action,'identity');return 'owner';};
+ assert.equal((await checkedAvailability(env,worker,transport,'owner',now)).status,'configured');
+ assert.equal((await checkedAvailability(env,worker,transport,'other',now)).status,'unavailable');
+ assert.equal((await checkedAvailability(env,worker,()=>async()=>{throw Error('revoked');},'owner',now)).status,'unavailable');
+ await checkedAvailability({...env,INTELLIGENCE_PAID_RELEASE:'off'},worker,transport,'owner',now);assert.equal(calls,2);
+});

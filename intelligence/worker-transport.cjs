@@ -19,7 +19,15 @@ function isolatedTrialEnvironment(env){
   env.INTELLIGENCE_WORKER_AUTH==='service_account'&&env.INTELLIGENCE_PAID_RELEASE!=='approved'&&
   !env.OPENAI_API_KEY&&!!env.INTELLIGENCE_OPENAI_API_KEY&&!!env.INTELLIGENCE_FINANCIAL_APPROVAL&&!env.INTELLIGENCE_WORKER_JWT;
 }
-// The account-based transport is restricted to the isolated preview. Supabase
+// Production service authentication is an explicit release, independent of the
+// financial release. The Cloud binding starts disabled and authorizes each RPC.
+function productionServiceEnvironment(env){
+ return env.VERCEL_ENV==='production'&&env.INTELLIGENCE_SUPABASE_URL==='https://ihtsonqnnlrxvorfrarl.supabase.co'&&
+  env.INTELLIGENCE_SERVICE_RELEASE==='approved'&&env.INTELLIGENCE_WORKER_AUTH==='service_account'&&
+  !env.INTELLIGENCE_WORKER_JWT&&!env.INTELLIGENCE_EXECUTION_HOST&&
+  (!env.INTELLIGENCE_EXECUTION_MODE||env.INTELLIGENCE_EXECUTION_MODE==='paid');
+}
+// The account-based transport is restricted to the released production or isolated preview. Supabase
 // issues short-lived access tokens; rotate the refresh token within one warm
 // executor instance. Fail closed on authentication failures. Never retry a mutation.
 function serviceTransport(env,request=fetch){
@@ -29,7 +37,7 @@ function serviceTransport(env,request=fetch){
      base===env.INTELLIGENCE_ISOLATED_PROJECT_URL&&base===isolatedProjectUrl&&
      env.INTELLIGENCE_PAID_RELEASE!=='approved'&&env.INTELLIGENCE_TRIAL_RELEASE!=='approved'&&!env.OPENAI_API_KEY&&
      !env.INTELLIGENCE_OPENAI_API_KEY&&!env.INTELLIGENCE_FINANCIAL_APPROVAL&&!env.INTELLIGENCE_WORKER_JWT;
-  if((!simulation&&!isolatedTrialEnvironment(env))||!key||!env.INTELLIGENCE_SERVICE_EMAIL||!env.INTELLIGENCE_SERVICE_PASSWORD||
+  if((!simulation&&!isolatedTrialEnvironment(env)&&!productionServiceEnvironment(env))||!key||!env.INTELLIGENCE_SERVICE_EMAIL||!env.INTELLIGENCE_SERVICE_PASSWORD||
      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(serviceId||''))throw Error('Conta de serviço isolada indisponível.');
   let session=null,pending=null,blocked=false;
   function invalidate(){
@@ -130,4 +138,4 @@ function publicProductPhoto(value,env=process.env){
     return url.href;
   }catch{return '';}
 }
-module.exports={isolatedProjectUrl,isolatedTrialEnvironment,transport,serviceTransport,chargeLedger,projectUrl,ownerSession,publicProductPhoto};
+module.exports={productionServiceEnvironment,isolatedProjectUrl,isolatedTrialEnvironment,transport,serviceTransport,chargeLedger,projectUrl,ownerSession,publicProductPhoto};

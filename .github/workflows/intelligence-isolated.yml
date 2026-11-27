@@ -1,5 +1,7 @@
 name: Intelligence isolated tests
 on:
+  push:
+    branches: ['feature/intelligence-hybrid-foundation-20261126', 'feature/intelligence-executive-meetings-20261127']
   pull_request:
     branches:
       - main
@@ -12,11 +14,11 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: intelligence-isolated-validation
+  group: intelligence-isolated-validation-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 jobs:
   isolated:
-    if: github.event.pull_request.head.ref == 'feature/intelligence-hybrid-foundation-20261126'
+    if: github.ref == 'refs/heads/feature/intelligence-hybrid-foundation-20261126' || github.ref == 'refs/heads/feature/intelligence-executive-meetings-20261127' || github.event.pull_request.head.ref == 'feature/intelligence-hybrid-foundation-20261126' || github.event.pull_request.head.ref == 'feature/intelligence-executive-meetings-20261127'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     services:
@@ -49,6 +51,8 @@ jobs:
         run: PGLITE_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/@electric-sql/pglite" node scripts/test_intelligence_trial_sql.cjs
       - name: Audit retry and receipt preservation (local synthetic database)
         run: PGLITE_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/@electric-sql/pglite" node scripts/test_intelligence_audit_retry_sql.cjs
+      - name: Hosted service authentication and revocation (synthetic database)
+        run: PGLITE_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/@electric-sql/pglite" node scripts/test_intelligence_hosted_service_sql.cjs
       - name: Install Chromium for isolated UI test
         run: '"$RUNNER_TEMP/ae-intelligence/node_modules/.bin/playwright" install chromium'
       - name: Browser stock review fixture (mock session, no Cloud)

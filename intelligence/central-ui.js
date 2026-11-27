@@ -12,7 +12,7 @@ const el=(tag,content)=>{const e=document.createElement(tag);if(content!==undefi
 const btn=(label,fn)=>{const b=el('button',label);b.type='button';b.className='btn';b.onclick=fn;return b;};
 const select=(options,label)=>{const s=el('select');s.setAttribute('aria-label',label);for(const [v,t] of options){const o=el('option',t);o.value=v;s.append(o);}return s;};
 const statusNames={pending_review:'A aguardar aprovação',approved:'Aprovada',working:'Em execução',review_ready:'Para revisão',blocked:'Bloqueada',cancelled:'Cancelada'};
-const sections=['Visão geral','Gabinete da Diretora Geral','Funcionários','Comunicação','Missões','Trabalhos em execução','Planeamento','Aprovações','Documentos produzidos','Memória profissional','Formação','Objetivos','Desempenho','Controlo financeiro','Auditoria','Configurações'];
+const sections=['Visão geral','Gabinete da Diretora Geral','Sala de Reuniões','Funcionários','Comunicação','Missões','Trabalhos em execução','Planeamento','Aprovações','Documentos produzidos','Memória profissional','Formação','Objetivos','Desempenho','Controlo financeiro','Auditoria','Configurações'];
 const allOff=()=>Object.fromEntries(Object.keys(labels).map(key=>[key,'off']));
 const unlockedNow=()=>typeof unlocked!=='undefined'&&unlocked===true&&['authGateV1880','lockScreen'].every(id=>document.getElementById(id)?.classList.contains('hidden'));
 function init(){
@@ -90,7 +90,7 @@ function init(){
    if(ticket!==generation||!unlockedNow())return;
    if(action==='stock_change_preview')stockPreview={mission:args.mission,request:args,result:receipt,operationId:crypto.randomUUID()};
    else stockPreview=null;
-   state=data;notice.textContent=action==='audit_requeue'?'Tentativa anterior arquivada. A missão aguarda nova aprovação. Não foi iniciada nenhuma chamada paga.':action==='professional_lesson'?'Lição aprovada e guardada na memória profissional. Não concede permissões.':action==='professional_assess'?'Avaliação profissional registada. Não altera permissões.':action==='commercial_approve'?'Proposta interna guardada em Orçamentos. Nenhum contacto enviado.':['stock_change_apply','stock_change_revert'].includes(action)?'Operação confirmada na Cloud. Recebe e valida os dados antes de editar.':action==='repair_recipe_reference'?'Referência confirmada na ficha técnica. Recebe e valida a Cloud antes de editar.':action==='create_material'?'Material confirmado na Cloud. Recebe e valida os dados da Cloud antes de alterar o stock.':action==='plan_task'?(receipt.status==='archived'?'A tarefa já foi arquivada.':'Tarefa confirmada no Planeamento.'):'';
+   state=data;notice.textContent=action==='execute'?'Execução aceite na Cloud. Podes fechar a aplicação e consultar o resultado ao regressar. Atualiza a central para acompanhar.':action==='audit_requeue'?'Tentativa anterior arquivada. A missão aguarda nova aprovação. Não foi iniciada nenhuma chamada paga.':action==='professional_lesson'?'Lição aprovada e guardada na memória profissional. Não concede permissões.':action==='professional_assess'?'Avaliação profissional registada. Não altera permissões.':action==='commercial_approve'?'Proposta interna guardada em Orçamentos. Nenhum contacto enviado.':['stock_change_apply','stock_change_revert'].includes(action)?'Operação confirmada na Cloud. Recebe e valida os dados antes de editar.':action==='repair_recipe_reference'?'Referência confirmada na ficha técnica. Recebe e valida a Cloud antes de editar.':action==='create_material'?'Material confirmado na Cloud. Recebe e valida os dados da Cloud antes de alterar o stock.':action==='plan_task'?(receipt.status==='archived'?'A tarefa já foi arquivada.':'Tarefa confirmada no Planeamento.'):'';
    if(action==='plan_task')document.dispatchEvent(new CustomEvent('ae-task-refresh'));render();
   }catch{if(ticket===generation){state=null;content.replaceChildren();notice.textContent=action==='read'?'Central Cloud indisponível. Verifica a sessão e a instalação do serviço.':'Resultado por confirmar. Atualiza a central antes de repetir a operação.';if(action==='read'&&nav.value==='Funcionários'&&unlockedNow())offlineTeam();}}
   finally{if(ticket===generation){busy=false;content.inert=false;}}
@@ -178,7 +178,47 @@ function init(){
      content.append(details);
     }
    }
+  }else if(area==='Sala de Reuniões'){
+   const prefix='[REUNIÃO EXECUTIVA] ';
+   line('Preparação de reuniões e consulta dos relatórios efetivamente disponíveis. Não é uma conversa simultânea entre funcionários.');
+   const kind=select([['geral','Reunião geral de gestão'],['direcao','Reunião com a Diretora Geral'],['financeiro','Reunião financeira'],['producao','Reunião de produção'],['comercial','Reunião comercial'],['estrategia','Reunião estratégica']],'Tipo de reunião');
+   const agenda=el('textarea');agenda.maxLength=1800;agenda.setAttribute('aria-label','Ordem de trabalhos');agenda.placeholder='Questões, decisões e resultados pretendidos';
+   agenda.value='Analisar o estado do negócio, os resultados disponíveis, os problemas e as prioridades.';
+   const participants=el('fieldset');participants.className='ae-meeting-participants';participants.append(el('legend','Departamentos a consultar'));
+   const boxes={};
+   for(const key of Object.keys(labels).filter(k=>k!=='director')){
+    const label=el('label'),input=el('input');input.type='checkbox';input.checked=true;input.setAttribute('aria-label','Consultar '+displayAgent(key));boxes[key]=input;label.append(input,el('span',displayAgent(key)));participants.append(label);
+   }
+   const update=()=>{const presets={geral:Object.keys(boxes),direcao:[],financeiro:['financeiro'],producao:['stock','producao'],comercial:['comercial','marketing','catalogo'],estrategia:['financeiro','inovacao','marketing','auditoria']};for(const [key,box] of Object.entries(boxes))box.checked=presets[kind.value].includes(key);};
+   kind.onchange=update;
+   const prepare=btn('Preparar reunião com Leonor',()=>{
+    if(!unlockedNow()||busy||!controls.enabled||controls.modes.director==='off'||!agenda.value.trim())return;
+    const selected=Object.keys(boxes).filter(k=>boxes[k].checked);
+    const instruction=prefix+kind.options[kind.selectedIndex].text+'\nDepartamentos a consultar: '+(selected.map(displayAgent).join(', ')||'apenas Direção')+'\nOrdem de trabalhos: '+agenda.value.trim()+'\nPreparar ponto de situação baseado exclusivamente em evidência disponível. Distinguir resultados confirmados, lacunas e prioridades. Não simular intervenções de outros funcionários nem afirmar que foram consultados se não houver relatórios. Propor uma ata preliminar e decisões para revisão do proprietário. Se faltar informação, indicar quais os departamentos a consultar; não assumir autorização para novas chamadas ou alterações.';
+    if(instruction.length>4000)return;
+    if(window.confirm('Criar uma missão de preparação de reunião? A missão fica por aprovar; não inicia uma execução paga.'))load('mission',{id:crypto.randomUUID(),agent:'director',kind:'daily_priority_plan',instruction,revision:controls.revision});
+   });
+   prepare.disabled=!controls.enabled||controls.modes.director==='off';
+   content.append(kind,participants,agenda,prepare);
+   line('Pontos de situação departamentais · últimos documentos consultados');
+   for(const key of Object.keys(labels)){
+    const card=el('article'),docs=state.documents.filter(d=>d.agent===key),latest=docs[0];
+    card.append(el('strong',displayAgent(key)),el('p',latest?'Último documento disponível na consulta':'Sem documento disponível nesta consulta.'));
+    if(latest){const details=el('details');details.append(el('summary','Ler relatório registado'),el('p',latest.content||'Conteúdo indisponível.'));card.append(details);}
+    content.append(card);
+   }
+   line('Histórico de preparação de reuniões · últimas missões consultadas');
+   for(const m of list.filter(m=>m.agent==='director'&&m.instruction.startsWith(prefix))){
+    missionCard(m);
+    const d=state.documents.find(x=>x.mission_id===m.mission_id);
+    if(d){const details=el('details');details.append(el('summary','Ler ata preliminar / relatório da Direção'),el('p',d.content||'Conteúdo indisponível.'));content.append(details);}
+    for(const child of list.filter(x=>x.parent_id===m.mission_id)){line('Trabalho delegado associado · '+displayAgent(child.agent)+' · '+statusNames[child.status]);}
+   }
   }else if(area==='Comunicação'||area==='Gabinete da Diretora Geral'){
+   if(area==='Gabinete da Diretora Geral'){
+    const counts=el('article');counts.append(el('strong','Ponto de situação operacional'),el('p','Missões por aprovar: '+list.filter(m=>m.status==='pending_review').length+' · em execução: '+list.filter(m=>m.status==='working').length+' · bloqueadas: '+list.filter(m=>m.status==='blocked').length+' · prontas para revisão: '+list.filter(m=>m.status==='review_ready').length),el('p','Indicadores da consulta atual, não um diagnóstico integral do negócio.'));
+    counts.append(btn('Abrir Sala de Reuniões',()=>{nav.value='Sala de Reuniões';missionDraft=null;render();}));content.append(counts);
+   }
    const agent=select(Object.keys(labels).map(key=>[key,displayAgent(key)]),'Funcionário'),kind=select([],'Tipo de missão'),instruction=el('textarea');
    instruction.placeholder='Descreve o trabalho';instruction.maxLength=4000;instruction.setAttribute('aria-label','Instrução');
    const file=el('input');file.type='file';file.accept='.txt,.csv,.pdf,.jpg,.jpeg,.png';file.setAttribute('aria-label','Anexo de inventário');
@@ -385,7 +425,9 @@ function init(){
    if(!state.events.length)line('Sem movimentos.');
   }else if(area==='Planeamento'){
    const who=select(Object.keys(labels).map(key=>[key,displayAgent(key)]),'Responsável pela rotina'), cadences={daily:'Diária',weekly:'Semanal',monthly:'Mensal'},period=select(Object.entries(cadences),'Periodicidade'),instruction=el('textarea');instruction.maxLength=4000;instruction.placeholder='Objetivo da rotina';
-   content.append(who,period,instruction,btn('Guardar rotina',()=>{if(instruction.value.trim())load('routine',{agent:who.value,cadence:period.value,instruction:instruction.value.trim(),enabled:true,revision:controls.revision});}));
+   line('Responsabilidades permanentes: prepara rotinas recorrentes. Manual não executa rotinas; Semiautomático prepara missões; Automático depende de permissões, agendamento e orçamento.');
+   const template=btn('Preencher responsabilidade sugerida',()=>{const p=teamDirectory.agents[who.value];period.value=p.cadence;instruction.value=p.firstMission;});
+   content.append(who,period,template,instruction,btn('Guardar rotina',()=>{if(instruction.value.trim()&&window.confirm('Guardar esta responsabilidade recorrente? A execução futura depende do modo individual e dos controlos financeiros.'))load('routine',{agent:who.value,cadence:period.value,instruction:instruction.value.trim(),enabled:true,revision:controls.revision});}));
    for(const r of state.routines){line(displayAgent(r.agent)+' · '+cadences[r.cadence]+' · '+r.instruction);content.append(btn(r.enabled?'Suspender rotina':'Retomar rotina',()=>load('routine',{...r,enabled:!r.enabled,revision:controls.revision})));}
    const planner=document.getElementById('aeTasksCloudToggleV1');
    if(planner)content.append(btn('Abrir Planeamento de Tarefas',()=>{if(planner.getAttribute('aria-expanded')!=='true')planner.click();planner.scrollIntoView({block:'start'});}));else line('Planeamento de Tarefas indisponível.');
