@@ -21,6 +21,10 @@ test('preview pins public Cloud configuration even with stale storage or a custo
     execFileSync(process.execPath,[path.resolve('scripts/build_intelligence_preview.cjs')],{cwd,env:{...env,...overrides}});
     const built = fs.readFileSync(path.join(cwd,'public/index.html'),'utf8');
     if(expected===null){assert.equal(built,source);continue;}
+    assert.ok(built.includes('<h1>Ambiente de ensaio</h1>'));
+    assert.ok(built.includes(expected?'Utiliza a conta de teste ArtEssencia':'Configuração de ensaio indisponível'));
+    assert.ok(built.includes("error?.code==='invalid_credentials'"));
+    assert.ok(!built.includes('<p>Autentica-te com a conta ArtEssencia para aceder ao Backoffice.</p>'));
     const configCode=built.match(/const isolatedPreviewConfig=.*\nfunction cloudCfg\(\).*\n/)[0];
     for(const value of ['{"url":"stale","key":"stale","email":"old"}','invalid']) {
       const config=vm.runInNewContext(configCode+'cloudCfg()', {CLOUD_CFG:'fixture',localStorage:{getItem:()=>value}});

@@ -18,6 +18,17 @@ if (process.env.VERCEL_ENV === 'preview') {
   const marker = 'const isolatedPreviewConfig=null;';
   if (html.split(marker).length !== 2) throw Error('Missing unique preview configuration marker');
   html = html.replace(marker, 'const isolatedPreviewConfig=' + JSON.stringify(config) + ';');
+  // Change only the preview artefact. Do not change the production login flow.
+  const replaceOnce = (source, replacement) => {
+    if (html.split(source).length !== 2) throw Error('Missing unique preview login marker');
+    html = html.replace(source, replacement);
+  };
+  replaceOnce('<h1>Iniciar sessão</h1>','<h1>Ambiente de ensaio</h1>');
+  replaceOnce('<p>Autentica-te com a conta ArtEssencia para aceder ao Backoffice.</p>', permitted
+    ? '<p>Utiliza a conta de teste ArtEssencia, independente da aplicação instalada. A palavra-passe de produção não é aceite automaticamente neste ambiente.</p>'
+    : '<p>Configuração de ensaio indisponível. Não introduzas credenciais da aplicação instalada.</p>');
+  replaceOnce("cloudUser=null;authGateShowV1880('Não foi possível iniciar sessão. Verifica as credenciais e a ligação.');",
+    "cloudUser=null;authGateShowV1880(error?.code==='invalid_credentials'?'Credenciais da conta de ensaio recusadas. Confirma a conta de teste.':navigator.onLine===false?'Sem ligação à internet.':error?.status===429?'Demasiadas tentativas. Tenta novamente mais tarde.':'Não foi possível validar a conta de ensaio. Confirma a ligação e a configuração.');");
 }
 
 // Only ship browser assets. Vercel packages the API functions separately.
