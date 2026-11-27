@@ -18,3 +18,9 @@ const commercialFixture={today:'2026-11-26',quotes:[{id:'Q1',status:'open',recor
 const commercialResult=a.commercial(commercialFixture);
 if(commercialResult.commercialProposals.length!==1||commercialResult.commercialProposals[0].kind!=='quote'||commercialResult.commercialProposals[0].requiresApproval!==true)throw Error('Proposta comercial vinculada');
 if(a.commercial({...commercialFixture,quotes:[{...commercialFixture.quotes[0],sourceDigest:'invalid'}]}).commercialProposals.length)throw Error('Proposta sem evidência');
+
+const auditEvidence={coverage:'owner_cloud_aggregates_only',sync:'not_tested',publicService:'not_tested',planner:{pending:2}};
+const scopedAudit=a.audit({checks:[{id:'possible-duplicates',severity:'normal',status:'fail'}],syncVerified:null,publicServiceVerified:null,existingWork:{syncPending:1,publicPending:1},auditEvidence});
+if(scopedAudit.tasks.length!==1||scopedAudit.tasks[0].kind!=='review_check'||scopedAudit.auditEvidence!==auditEvidence)throw Error('Audit evidence / duplicate pending tasks');
+const absentAudit=a.audit({checks:[],syncVerified:null,publicServiceVerified:null,existingWork:{syncPending:0,publicPending:0},auditEvidence});
+if(absentAudit.tasks.length!==2||absentAudit.tasks.some(t=>t.requiresApproval!==true))throw Error('Audit missing evidence tasks');

@@ -93,10 +93,59 @@ BEGIN
    INTO payload,facts FROM (SELECT rr.* FROM artessencia_intelligence_private.team_runs rr JOIN artessencia_intelligence_private.team_missions m USING(user_id,mission_id)
     WHERE rr.user_id=actor AND m.agent='inovacao' AND rr.status='review_ready' ORDER BY rr.ended_at DESC LIMIT 12)r;
  WHEN 'auditoria' THEN
+  -- Owner-scoped, bounded aggregate evidence. No customer data, task titles,
+  -- instructions, credentials, device identifiers, or raw state leave SQL.
+  -- Only explicit pending status is interpreted; other statuses remain unclassified.
+  WITH planner AS (
+   SELECT data->>'status' AS status,data->>'priority' AS priority,
+    lower(regexp_replace(trim(coalesce(data->>'title','')),'[[:space:]]+',' ','g')) AS norm_title
+   FROM public.artessencia_cloud_records
+   WHERE user_id=actor AND entity='operational_tasks_v1' AND deleted_at IS NULL
+  ), task_stats AS (
+   SELECT count(*) AS total,count(*) FILTER(WHERE status='pendente') AS pending,
+    count(*) FILTER(WHERE status='pendente' AND priority='alta') AS high_pending,
+    count(*) FILTER(WHERE status IS DISTINCT FROM 'pendente') AS other_status,
+    count(*) FILTER(WHERE status='pendente' AND norm_title='') AS pending_without_title,
+    count(*) FILTER(WHERE status='pendente' AND norm_title='validar sincronização cloud') AS sync_pending,
+    count(*) FILTER(WHERE status='pendente' AND norm_title='validar serviço público do catálogo e loja') AS public_pending,
+    (SELECT count(*) FROM (SELECT norm_title FROM planner WHERE status='pendente' AND norm_title<>'' GROUP BY norm_title HAVING count(*)>1)d) AS duplicate_title_groups
+   FROM planner
+  ), active_missions AS (
+   SELECT agent,kind,status,lower(regexp_replace(trim(instruction),'[[:space:]]+',' ','g')) AS norm_instruction
+   FROM artessencia_intelligence_private.team_missions WHERE user_id=actor AND mission_id<>p_id AND status IN ('pending_review','approved','working')
+  ), mission_stats AS (
+   SELECT count(*) FILTER(WHERE status='pending_review') AS awaiting_approval,
+    count(*) FILTER(WHERE status='approved') AS approved,
+    count(*) FILTER(WHERE status='working') AS working,
+    (SELECT count(*) FROM (SELECT agent,kind,norm_instruction FROM active_missions GROUP BY 1,2,3 HAVING count(*)>1)d) AS duplicate_instruction_groups
+   FROM active_missions
+  ), run_stats AS (
+   SELECT count(*) FILTER(WHERE status='blocked') AS blocked,
+    count(*) FILTER(WHERE status='working' AND started_at<statement_timestamp()-interval '10 minutes') AS stale_working
+   FROM artessencia_intelligence_private.team_runs WHERE user_id=actor AND mission_id<>p_id
+  ), budget_stats AS (
+   SELECT count(*) FILTER(WHERE status='unknown') AS unknown_charges,
+    count(*) FILTER(WHERE status IN ('reserved','inflight')) AS unsettled_requests
+   FROM artessencia_intelligence_private.ai_budget_entries
+  )
   SELECT jsonb_build_object('checks',jsonb_build_array(
-    jsonb_build_object('id','faturacao-incerta','severity','critical','status',CASE WHEN EXISTS(SELECT 1 FROM artessencia_intelligence_private.ai_budget_entries WHERE status='unknown') THEN 'fail' ELSE 'pass' END),
-    jsonb_build_object('id','execucoes-interrompidas','severity','normal','status',CASE WHEN EXISTS(SELECT 1 FROM artessencia_intelligence_private.team_runs WHERE user_id=actor AND (status='blocked' OR (status='working' AND started_at<now()-interval '1 hour'))) THEN 'fail' ELSE 'pass' END)),
-    'syncVerified',NULL) INTO payload;
+    jsonb_build_object('id','faturacao-incerta','severity','critical','status',CASE WHEN b.unknown_charges>0 THEN 'fail' ELSE 'pass' END),
+    jsonb_build_object('id','execucoes-interrompidas','severity','normal','status',CASE WHEN r.blocked+r.stale_working>0 THEN 'fail' ELSE 'pass' END),
+    jsonb_build_object('id','possiveis-duplicados-planeamento','severity','normal','status',CASE WHEN t.duplicate_title_groups>0 THEN 'fail' WHEN t.other_status+t.pending_without_title>0 THEN 'unknown' ELSE 'pass' END),
+    jsonb_build_object('id','possiveis-duplicados-missoes','severity','normal','status',CASE WHEN m.duplicate_instruction_groups>0 THEN 'fail' ELSE 'pass' END)),
+    'syncVerified',NULL,'publicServiceVerified',NULL,
+    'existingWork',jsonb_build_object('syncPending',t.sync_pending,'publicPending',t.public_pending),
+    'auditEvidence',jsonb_build_object('coverage','owner_cloud_aggregates_only','snapshotRevision',snapshot.revision,
+      'snapshotUpdatedAt',snapshot.updated_at,'observedAt',statement_timestamp(),
+      'planner',jsonb_build_object('visible',t.total,'pending',t.pending,'highPriorityPending',t.high_pending,
+       'otherStatusUnclassified',t.other_status,'pendingWithoutTitle',t.pending_without_title,'possibleDuplicateTitleGroups',t.duplicate_title_groups),
+      'missions',jsonb_build_object('awaitingApproval',m.awaiting_approval,'approved',m.approved,'working',m.working,'possibleDuplicateInstructionGroups',m.duplicate_instruction_groups),
+      'runs',jsonb_build_object('blocked',r.blocked,'staleWorking',r.stale_working),
+      'budget',jsonb_build_object('unknownCharges',b.unknown_charges,'unsettledRequests',b.unsettled_requests),
+      'sync','not_tested','publicService','not_tested','duplicateMethod','exact_normalized_title_or_agent_kind_instruction_only'))
+  INTO payload FROM task_stats t CROSS JOIN mission_stats m CROSS JOIN run_stats r CROSS JOIN budget_stats b;
+  facts:=jsonb_build_object('coverage','Consulta agregada ao Planeamento e às missões deste titular. Estado pendente interpretado; outros estados não classificados. Correspondência textual sinaliza candidatos, não comprova duplicação nem exclui duplicados semânticos. A revisão Cloud não comprova sincronização entre dispositivos. Catálogo/Loja públicos não consultados. Não inferir funcionamento ou estado de checkout. Não propor nova tarefa de validação se já existir uma pendente correspondente.',
+   'existingWork',payload->'existingWork','auditEvidence',payload->'auditEvidence','checks',payload->'checks');
  WHEN 'financeiro' THEN
   SELECT coalesce(jsonb_agg(jsonb_build_object('id',o.id,'status',o.status,'paid',o.data->'paid','delivery',o.data->'delivery',
     'total',o.total,'paymentComplete',(jsonb_typeof(o.data->'paid')='number' AND o.total IS NOT NULL))),'[]') INTO orders FROM public.artessencia_v1_orders o WHERE o.user_id=actor;

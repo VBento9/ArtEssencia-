@@ -79,8 +79,11 @@ function createBusinessAgents(){
    if(!['pass','fail','unknown'].includes(s.status)||!['critical','normal'].includes(s.severity))throw Error('Resultado de auditoria inválido.');
    if(s.status!=='pass')tasks.push(task('auditoria','review_check',s.id,'Investigar verificação — '+s.id,s.severity==='critical'?1:2,null,{status:s.status}));
   }
-  if(input?.syncVerified!==true)tasks.push(task('auditoria','review_sync','cloud','Validar sincronização Cloud',1));
-  return report(tasks);
+  const existing=input?.existingWork;
+  if(existing&&(!Number.isSafeInteger(existing.syncPending)||existing.syncPending<0||!Number.isSafeInteger(existing.publicPending)||existing.publicPending<0))throw Error('Planeamento de auditoria inválido.');
+  if(input?.syncVerified!==true&&!existing?.syncPending)tasks.push(task('auditoria','review_sync','cloud','Validar sincronização Cloud',1));
+  if(input?.publicServiceVerified===null&&!existing?.publicPending)tasks.push(task('auditoria','review_public_service','public','Validar serviço público do Catálogo e Loja',1));
+  return {...report(tasks),...(input?.auditEvidence?{auditEvidence:input.auditEvidence,existingWork:existing,checks:input.checks}:{})};
  }
  return {commercial,marketing,catalog,innovation,audit};
 }

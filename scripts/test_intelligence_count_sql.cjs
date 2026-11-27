@@ -357,6 +357,19 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  await db.query("INSERT INTO public.artessencia_v1_quotes VALUES ($1,$2,'Enviado',CURRENT_DATE,$3)",[owner,bid(801),{id:'ORC-FIXTURE',private:'cliente-proibido@example.invalid'}]);
  await db.query("INSERT INTO public.artessencia_shop_event_requests VALUES ($1,$2,'new',now())",[owner,bid(802)]);
  await db.query("INSERT INTO public.artessencia_shop_special_editions VALUES ($1,$2,'Coleção de teste',true,now(),now()+interval '5 days')",[owner,bid(803)]);
+ // Audit fixture: only aggregate counts may reach the model. Tombstones and a second owner are excluded.
+ const auditTaskFixtures=[
+  [owner,'audit-sync-fixture','Validar sincronização Cloud','pendente','alta',null],
+  [owner,'audit-public-fixture','Validar serviço público do Catálogo e Loja','pendente','alta',null],
+  [owner,'audit-dupe-a','PRIVATE-AUDIT-FIXTURE@example.invalid','pendente','alta',null],
+  [owner,'audit-dupe-b',' private-audit-fixture@example.invalid ','pendente','alta',null],
+  [owner,'audit-unknown','PRIVATE-UNCLASSIFIED','fixture-unknown','alta',null],
+  [owner,'audit-tombstone','PRIVATE-AUDIT-FIXTURE@example.invalid','pendente','alta',new Date().toISOString()],
+  [other,'audit-other-owner','PRIVATE-OTHER-OWNER','pendente','alta',null]
+ ];
+ for(const [uid,rid,title,status,priority,deleted] of auditTaskFixtures)await db.query(
+  "INSERT INTO public.artessencia_cloud_records(user_id,entity,record_id,data,client_updated_at,device_id,deleted_at) VALUES($1,'operational_tasks_v1',$2,$3,now(),'fixture',$4)",
+  [uid,rid,JSON.stringify({kind:'task',title,status,priority}),deleted]);
  for(const file of ['department-context','worker'])await db.exec(fs.readFileSync('sql/intelligence-'+file+'-v1.sql','utf8'));
  const workerRpc=async(action,args={})=>(await db.query('SELECT public.artessencia_intelligence_worker_v1($1,$2) AS r',[action,JSON.stringify(args)])).rows[0].r;
  await db.exec('SET ROLE authenticated');
@@ -377,18 +390,30 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  await assert.rejects(workerRpc('claim_run',{mission:ids.stock,revision:1,scheduled:true}),/SCHEDULE_MODE_DENIED/);
  assert.ok((await workerRpc('next')).missionId);
  console.log('PASS: manual approved missions cannot be claimed by scheduler');
- let simulatedCharges=0,sawInventory=false;
+ let simulatedCharges=0,sawInventory=false,sawAuditEvidence=false;
  const rate={model:'fixture.1',verified:true,current:true,contextLimit:10000,maxInputTokens:10000,maxOutputTokens:500,inputRate:1000000,outputRate:4000000,grossBps:12300,toolsEnabled:false,validUntil:new Date(Date.now()+60000).toISOString()};
  const runtime=runtimeFactory.compose({call:workerRpc,env:{INTELLIGENCE_TARIFF_ID:'test',INTELLIGENCE_PAID_RELEASE:'approved'},tariffs:{test:rate},
   publicReader:async()=>({catalog:{products:[{id:'public-A',code:'A',description:'Descrição pública diferente',image_url:'',category_id:'fixture'}],categories:[{id:'fixture',name:'Velas'}]},content:{catalog_families:[{id:'velas',label:'Velas',categories:['Velas']}],campaigns:[],upcoming_campaigns:[],catalog_status:{mode:'open'}},config:{store_status:{enabled:true,accepting_orders:false,mode:'updating'}}}),
-  provider:async p=>{if(JSON.stringify(p.input).includes('Material fictício'))sawInventory=true;assert.ok(!JSON.stringify(p).includes('cliente-proibido'));return {status:'completed',id:'response-'+(++simulatedCharges),model:rate.model,text:JSON.stringify({document:'Documento de validação.',tasks:[],delegations:[]}),usage:{input_tokens:100,output_tokens:42}};}});
+  provider:async p=>{if(JSON.stringify(p.input).includes('Material fictício'))sawInventory=true;assert.ok(!JSON.stringify(p).includes('cliente-proibido'));
+   const message=JSON.parse(p.input[1].content),context=JSON.parse(message.context);
+   if(context.report?.auditEvidence){
+    const e=context.report.auditEvidence;
+    assert.equal(e.coverage,'owner_cloud_aggregates_only');assert.equal(e.planner.possibleDuplicateTitleGroups,1);
+    assert.equal(e.planner.otherStatusUnclassified,1);assert.equal(e.sync,'not_tested');assert.equal(e.publicService,'not_tested');
+    assert.equal(context.report.existingWork.syncPending,1);assert.equal(context.report.existingWork.publicPending,1);
+    assert.ok(!JSON.stringify(context).toLowerCase().includes('private-audit-fixture'));
+    assert.ok(!JSON.stringify(context).includes('PRIVATE-OTHER-OWNER'));
+    assert.ok(!context.report.tasks.some(t=>['review_sync','review_public_service'].includes(t.kind)));
+    sawAuditEvidence=true;
+   }
+   return {status:'completed',id:'response-'+(++simulatedCharges),model:rate.model,text:JSON.stringify({document:'Documento de validação.',tasks:[],delegations:[]}),usage:{input_tokens:100,output_tokens:42}};}});
  for(const agent of Object.keys(responsibilities)){
   const result=await runtimeFactory.processNext(runtime);
   assert.equal(result.status,'review_ready',JSON.stringify(result));
  }
  assert.equal((await runtimeFactory.processNext(runtime)).status,'idle');
  for(const channel of ['legacy_insights','legacy_social','legacy_description'])await runtimeFactory.runLegacy(runtime,channel,{max_output_tokens:100,input:'Validação'},bid(++number));
- assert.equal(simulatedCharges,12);assert.ok(sawInventory);
+ assert.equal(simulatedCharges,12);assert.ok(sawInventory);assert.ok(sawAuditEvidence);
  await db.exec('RESET ROLE; SET ROLE authenticated');
  const results=await command('read');
  assert.equal(Number(results.budget.monthlyLimitMicroeur),23000000);assert.equal(results.budget.ledgerReleased,true);assert.equal(results.budget.ledgerFrozen,false);assert.equal(Number(results.budget.staleInflight),0);
@@ -396,6 +421,13 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  const professionalTraining=require('../intelligence/professional-training.cjs');
  for(const [agent,id] of Object.entries(ids))assert.deepEqual(results.documents.find(d=>d.mission_id===id).professional_training,professionalTraining.receipt(agent));
  console.log('PASS: all nine mission documents persist the versioned professional instruction record; not a competency certification');
+ await db.exec('RESET ROLE');
+ const auditStored=(await db.query("SELECT outcome->'report' AS report FROM artessencia_intelligence_private.team_runs WHERE mission_id=$1",[ids.auditoria])).rows[0].report;
+ assert.equal(auditStored.auditEvidence.planner.possibleDuplicateTitleGroups,1);
+ assert.equal(auditStored.existingWork.publicPending,1);
+ assert.equal(Number((await db.query("SELECT count(*) n FROM public.artessencia_cloud_records WHERE record_id LIKE 'audit-%'")).rows[0].n),auditTaskFixtures.length);
+ await db.exec("DELETE FROM public.artessencia_cloud_records WHERE record_id LIKE 'audit-%'; SET ROLE authenticated");
+ console.log('PASS: owner-scoped audit aggregates, potential duplicate detection, unclassified status, deleted/other-owner exclusion, no duplicate proposals or raw private titles, persisted evidence');
  const assessArgs={id:bid(971),mission:ids.stock,scores:{technical:90,procedures:90,quality:90,safety:100,efficiency:80},critical:false,feedback:'Ensaio fictício: conferir unidades.',confirmed:true};
  await assert.rejects(command('professional_assess',{...assessArgs,confirmed:false}),/ASSESSMENT_INVALID/);
  await assert.rejects(command('professional_assess',{...assessArgs,scores:{...assessArgs.scores,technical:101}}),/ASSESSMENT_INVALID/);
