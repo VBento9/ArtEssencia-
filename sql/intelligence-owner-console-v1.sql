@@ -667,7 +667,8 @@ BEGIN
    (SELECT memory_id,agent,summary,kind,evidence_id,created_at,expires_at,revoked_at FROM artessencia_intelligence_private.team_memory WHERE user_id=actor AND expires_at>clock_timestamp() ORDER BY created_at DESC LIMIT 100) k;
   SELECT jsonb_build_object('pending',coalesce(sum(maximum_microeur) FILTER(WHERE status IN ('reserved','unknown','inflight')),0),
    'settled',coalesce(sum(actual_microeur) FILTER(WHERE status='settled' AND date_trunc('month',now() AT TIME ZONE 'Europe/Lisbon')::date IN(reserved_month,settled_month)),0),
-   'unknown',count(*) FILTER(WHERE status='unknown')) INTO expenses FROM artessencia_intelligence_private.ai_budget_entries;
+   'unknown',count(*) FILTER(WHERE status='unknown'),'staleInflight',count(*) FILTER(WHERE status='inflight' AND reserved_at<clock_timestamp()-interval '5 minutes')) INTO expenses FROM artessencia_intelligence_private.ai_budget_entries;
+  expenses:=expenses||jsonb_build_object('ledgerReleased',coalesce((SELECT release_enabled FROM artessencia_intelligence_private.ai_budget_control WHERE singleton),false),'ledgerFrozen',coalesce((SELECT frozen FROM artessencia_intelligence_private.ai_budget_control WHERE singleton),true));
   expenses:=expenses||jsonb_build_object('channels',(SELECT coalesce(jsonb_object_agg(channel,jsonb_build_object('settled',settled,'pending',pending)),'{}') FROM
    (SELECT channel,coalesce(sum(actual_microeur) FILTER(WHERE status='settled' AND date_trunc('month',now() AT TIME ZONE 'Europe/Lisbon')::date IN(reserved_month,settled_month)),0) settled,
     coalesce(sum(maximum_microeur) FILTER(WHERE status IN ('reserved','unknown','inflight')),0) pending FROM artessencia_intelligence_private.ai_budget_entries GROUP BY channel)t));

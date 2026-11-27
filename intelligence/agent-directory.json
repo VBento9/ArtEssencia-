@@ -1,0 +1,72 @@
+{
+  "version": "AE-EQUIPA-1.0.0",
+  "preventiveMicroeur": 23000000,
+  "reserveMicroeur": 7000000,
+  "ceilingMicroeur": 30000000,
+  "legacyPlanningMicroeur": 2000000,
+  "agents": {
+    "director": {
+      "name": "Leonor",
+      "role": "Diretora Geral",
+      "planningMicroeur": 3500000,
+      "cadence": "daily",
+      "firstMission": "Rever prioridades, tarefas em aberto e bloqueios dos departamentos. Propor delegações internas sem duplicação."
+    },
+    "stock": {
+      "name": "Tomás",
+      "role": "Gestor de Stock",
+      "planningMicroeur": 3500000,
+      "cadence": "daily",
+      "firstMission": "Rever inventário e referências nas fichas técnicas. Identificar materiais em falta e duplicados sem alterar saldos."
+    },
+    "producao": {
+      "name": "Duarte",
+      "role": "Gestor de Produção",
+      "planningMicroeur": 2500000,
+      "cadence": "daily",
+      "firstMission": "Rever encomendas confirmadas e necessidades de materiais; sinalizar fichas incompletas e prazos por validar."
+    },
+    "financeiro": {
+      "name": "Sofia",
+      "role": "Gestora Financeira",
+      "planningMicroeur": 2500000,
+      "cadence": "weekly",
+      "firstMission": "Rever custos, margens, pagamentos pendentes e dados incompletos usando cálculos canónicos."
+    },
+    "comercial": {
+      "name": "Inês",
+      "role": "Gestora Comercial",
+      "planningMicroeur": 2000000,
+      "cadence": "daily",
+      "firstMission": "Rever pedidos e orçamentos abertos. Preparar seguimento interno sem contactar clientes."
+    },
+    "marketing": {
+      "name": "Clara",
+      "role": "Gestora de Marketing",
+      "planningMicroeur": 2000000,
+      "cadence": "weekly",
+      "firstMission": "Preparar calendário editorial de acordo com os produtos e ocasiões confirmados, sem publicar nem contratar publicidade."
+    },
+    "catalogo": {
+      "name": "Beatriz",
+      "role": "Gestora de Catálogo",
+      "planningMicroeur": 2000000,
+      "cadence": "weekly",
+      "firstMission": "Comparar produtos internos e serviço público; verificar referências de imagens, famílias e coleções e sinalizar estado da Loja."
+    },
+    "inovacao": {
+      "name": "Matilde",
+      "role": "Gestora de Inovação",
+      "planningMicroeur": 1000000,
+      "cadence": "monthly",
+      "firstMission": "Propor um conceito artesanal distintivo com materiais, custos e ensaios por validar."
+    },
+    "auditoria": {
+      "name": "Miguel",
+      "role": "Auditor",
+      "planningMicroeur": 2000000,
+      "cadence": "weekly",
+      "firstMission": "Rever inconsistências e recibos, distinguir testes concluídos de lacunas e propor correções prioritárias."
+    }
+  }
+}

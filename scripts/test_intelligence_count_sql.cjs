@@ -371,6 +371,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  assert.equal(simulatedCharges,12);assert.ok(sawInventory);
  await db.exec('RESET ROLE; SET ROLE authenticated');
  const results=await command('read');
+ assert.equal(results.budget.ledgerReleased,true);assert.equal(results.budget.ledgerFrozen,false);assert.equal(Number(results.budget.staleInflight),0);
  for(const id of Object.values(ids))assert.equal(results.documents.find(d=>d.mission_id===id).content,'Documento de validação.');
  const professionalTraining=require('../intelligence/professional-training.cjs');
  for(const [agent,id] of Object.entries(ids))assert.deepEqual(results.documents.find(d=>d.mission_id===id).professional_training,professionalTraining.receipt(agent));

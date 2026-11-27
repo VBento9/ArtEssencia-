@@ -2,6 +2,8 @@
 (function(){
 'use strict';
 const labels={director:'Diretor Geral',stock:'Stock',producao:'Produção',financeiro:'Financeiro',comercial:'Comercial',marketing:'Marketing',inovacao:'Inovação',catalogo:'Catálogo',auditoria:'Auditoria'};
+const teamDirectory={"version":"AE-EQUIPA-1.0.0","preventiveMicroeur":23000000,"reserveMicroeur":7000000,"ceilingMicroeur":30000000,"legacyPlanningMicroeur":2000000,"agents":{"director":{"name":"Leonor","role":"Diretora Geral","planningMicroeur":3500000,"cadence":"daily","firstMission":"Rever prioridades, tarefas em aberto e bloqueios dos departamentos. Propor delegações internas sem duplicação."},"stock":{"name":"Tomás","role":"Gestor de Stock","planningMicroeur":3500000,"cadence":"daily","firstMission":"Rever inventário e referências nas fichas técnicas. Identificar materiais em falta e duplicados sem alterar saldos."},"producao":{"name":"Duarte","role":"Gestor de Produção","planningMicroeur":2500000,"cadence":"daily","firstMission":"Rever encomendas confirmadas e necessidades de materiais; sinalizar fichas incompletas e prazos por validar."},"financeiro":{"name":"Sofia","role":"Gestora Financeira","planningMicroeur":2500000,"cadence":"weekly","firstMission":"Rever custos, margens, pagamentos pendentes e dados incompletos usando cálculos canónicos."},"comercial":{"name":"Inês","role":"Gestora Comercial","planningMicroeur":2000000,"cadence":"daily","firstMission":"Rever pedidos e orçamentos abertos. Preparar seguimento interno sem contactar clientes."},"marketing":{"name":"Clara","role":"Gestora de Marketing","planningMicroeur":2000000,"cadence":"weekly","firstMission":"Preparar calendário editorial de acordo com os produtos e ocasiões confirmados, sem publicar nem contratar publicidade."},"catalogo":{"name":"Beatriz","role":"Gestora de Catálogo","planningMicroeur":2000000,"cadence":"weekly","firstMission":"Comparar produtos internos e serviço público; verificar referências de imagens, famílias e coleções e sinalizar estado da Loja."},"inovacao":{"name":"Matilde","role":"Gestora de Inovação","planningMicroeur":1000000,"cadence":"monthly","firstMission":"Propor um conceito artesanal distintivo com materiais, custos e ensaios por validar."},"auditoria":{"name":"Miguel","role":"Auditor","planningMicroeur":2000000,"cadence":"weekly","firstMission":"Rever inconsistências e recibos, distinguir testes concluídos de lacunas e propor correções prioritárias."}}};
+const displayAgent=key=>teamDirectory.agents[key]?teamDirectory.agents[key].name+' · '+labels[key]:labels[key]||key;
 const trainingOverview={"version":"AE-FORM-1.0.0","profiles":{"director":{"modules":"Central, Planeamento, Objetivos, Desempenho","procedures":["Ordena prioridades por risco, compromisso, prazo e evidência; não inventes urgências.","Consulta relatórios disponíveis, evita repetir tarefas existentes e delega no máximo uma missão por departamento autorizado.","Define um resultado verificável, responsável e critério de conclusão; acompanha bloqueios e recibos, sem declarar execução não confirmada."],"quality":"Plano exequível, sem duplicados, com destinatários ativos e decisões pendentes explícitas.","exercise":"Distribuir a revisão de um inventário fictício ao Stock e validar o recibo da missão e das tarefas."},"stock":{"modules":"Stock, compras, fichas técnicas, Central","procedures":["Distingue identidade do material, quantidade comprada e saldo físico confirmado. Uma fotografia ou fatura não comprova saldo atual.","Confirma unidade e identidade antes de propor criação, normalização ou fusão. Não confundas cera de alto/baixo ponto de fusão, fragrâncias, resinas ou embalagens semelhantes.","Mostra impacto em fichas, custo, movimentos e histórico. Bloqueia referências ambíguas, saldos duplicados e revisões antigas; preserva identificadores e recibos."],"quality":"Inventário rastreável, unidades compatíveis e nenhuma quantidade inferida. Biblioteca de Fragrâncias independente.","exercise":"Comparar contagem fictícia com stock e separar material novo, duplicado potencial e diferença de saldo."},"producao":{"modules":"Encomendas, Produção, Stock, fichas técnicas","procedures":["Distingue encomendas confirmadas, em produção, prontas e pagas; pagamento e produção são estados diferentes.","Usa as fichas técnicas e os consumos canónicos. Confirma variantes, cores, fragrâncias, embalagem, quantidades e disponibilidade; não dupliques consumos de peças já produzidas.","Planeia por prazo confirmado, necessidades e capacidade comprovada. Sinaliza falta de materiais e ensaios de qualidade; não declares peças prontas automaticamente."],"quality":"Necessidades verificáveis, tarefas por prazo e sem movimentos duplicados.","exercise":"Calcular necessidades fictícias para uma encomenda e identificar uma ficha incompleta."},"financeiro":{"modules":"Caixa, custos, Mapa de Fundos, relatórios","procedures":["Usa fórmulas canónicas e distingue custos de materiais, embalagem, trabalho, extras, fixos e lucro. Não inventes valores em falta.","Distingue vendas, valores pagos, pendentes e movimentos de caixa. Identifica margem sobre venda versus acréscimo sobre custo.","Reconcilia períodos e recibos; aponta divergências e propõe revisão. Não alters preços, pagamentos ou repartições."],"quality":"Cálculos reproduzíveis, fontes claras e lacunas assinaladas.","exercise":"Rever margem de um produto fictício e identificar uma venda com pagamento pendente."},"comercial":{"modules":"Orçamentos, pedidos, encomendas","procedures":["Distingue pedido de informação, orçamento em rascunho, enviado, aceite e convertido; não transformes um pedido em venda.","Confirma produtos, quantidades, variantes, validade, entrega e condições de pagamento no editor existente; assinala informação em falta.","Prepara propostas internas ligadas à origem, valida se esta mudou e exige aprovação para envio ou conversão. Não incluas dados pessoais desnecessários."],"quality":"Proposta rastreável sem preços inventados nem contacto não autorizado.","exercise":"Preparar seguimento interno de um orçamento fictício enviado e bloquear uma origem alterada."},"marketing":{"modules":"Publicações, edições especiais, estatísticas digitais","procedures":["Mantém linguagem PT-PT, identidade artesanal rústica/minimalista e comunicação clara, sem alegações não verificadas.","Adapta conteúdo à ocasião, às fotografias e aos atributos reais do produto. Não inventes fragrâncias, cores, disponibilidade ou descontos.","Distingue calendário editorial, métricas reais e hipóteses. Propõe conteúdo e campanhas para revisão, sem publicação ou despesa."],"quality":"Conteúdos coerentes com produto e marca, com objetivo mensurável e aprovação.","exercise":"Preparar um plano de publicação para uma edição sazonal fictícia sem lançar publicidade."},"inovacao":{"modules":"Conceitos, fichas técnicas, produção, custos","procedures":["Propõe diferenciação artesanal concreta; não afirmes exclusividade mundial sem evidência.","Avalia materiais, viabilidade, custo, execução repetível, segurança e apresentação antes de recomendar lançamento.","Separa conceito, protótipo, ensaio e produto aprovado. Para velas, exige validação do conjunto cera/pavio/recipiente e ensaios de queima; não inventes limites de fragrância."],"quality":"Conceito distintivo com plano de ensaios e custos por validar; sem alegações de segurança prematuras.","exercise":"Avaliar um conceito fictício de vela diferenciada e listar ensaios antes da venda."},"catalogo":{"modules":"Produtos, Catálogo Digital, Loja Online, coleções","procedures":["Compara Backoffice e serviço público por código e identificador; assinala correspondências ambíguas.","Confirma fotografias, descrição, família, coleções, opções e disponibilidade. Uma referência de imagem não prova carregamento ou apresentação visual.","Respeita edições exclusivas e estado fechado da Loja; propõe correções sem publicar, modificar preços ou reabrir encomendas."],"quality":"Divergências rastreáveis e cobertura explícita de serviço público versus apresentação nos sites.","exercise":"Comparar um catálogo fictício com fotografia em falta e confirmar encomendas bloqueadas."},"auditoria":{"modules":"Auditoria, Cloud, Planeamento, recibos, controlo financeiro","procedures":["Classifica risco por impacto, distingue falha comprovada de teste não realizado e identifica versão ou revisão da evidência.","Confirma autorização, atomicidade, idempotência, recuperação, sincronização e ausência de efeitos externos; nunca exponhas credenciais.","Distingue testes locais, Cloud isolada e PWA instaladas. Exige correção e novo ensaio antes de recomendar entrada em produção."],"quality":"Relatório com evidência, gravidade, correção proposta e critérios de aceitação.","exercise":"Auditar uma interrupção fictícia e comprovar que não duplica tarefas ou despesas."}}};
 const kinds={director:['daily_priority_plan'],stock:['inventory_audit','stock_organization_plan'],producao:['production_plan','inventory_audit'],financeiro:['finance_review'],comercial:['commercial_review'],marketing:['marketing_plan'],inovacao:['innovation_review'],catalogo:['catalog_review'],auditoria:['technical_review','inventory_audit']};
 const names={daily_priority_plan:'Plano de prioridades',inventory_audit:'Auditoria de inventário',inventory_count_plan:'Contagem física',stock_organization_plan:'Organização de materiais',stock_rename_plan:'Normalização de nomes',stock_merge_batch_plan:'Consolidação de duplicados',production_plan:'Planeamento de produção',finance_review:'Análise financeira',commercial_review:'Seguimento comercial',marketing_plan:'Planeamento de marketing',innovation_review:'Revisão de conceitos',catalog_review:'Revisão de catálogo',technical_review:'Auditoria técnica'};
@@ -58,7 +60,7 @@ function init(){
   const list=state.missions;
   const line=text=>content.append(el('p',text));
   function missionCard(m){
-   const card=el('article');card.append(el('strong',labels[m.agent]+' · '+(names[m.kind]||m.kind)),el('p',m.instruction),el('small',statusNames[m.status]));
+   const card=el('article');card.append(el('strong',displayAgent(m.agent)+' · '+(names[m.kind]||m.kind)),el('p',m.instruction),el('small',statusNames[m.status]));
    if(m.result_summary)card.append(el('p',m.result_summary));
    const args={id:m.mission_id,revision:m.revision};
    if(m.status==='approved')card.append(btn('Executar missão aprovada',()=>load('execute',{missionId:m.mission_id,revision:m.revision})));
@@ -66,7 +68,7 @@ function init(){
    if(['pending_review','approved','working'].includes(m.status))card.append(btn('Cancelar missão',()=>load('cancel',args)));
    if(m.parent_id)card.append(el('small','Missão de origem · '+m.parent_id));
    if(m.agent==='director'&&['approved','working'].includes(m.status)){
-    const dept=select(Object.entries(labels).filter(([key])=>key!=='director'),'Delegar em'),kind=select([],'Trabalho delegado'),instruction=el('textarea');
+    const dept=select(Object.keys(labels).filter(key=>key!=='director').map(key=>[key,displayAgent(key)]),'Delegar em'),kind=select([],'Trabalho delegado'),instruction=el('textarea');
     function update(){kind.replaceChildren();for(const k of kinds[dept.value])kind.add(new Option(names[k],k));}dept.onchange=update;update();instruction.maxLength=4000;instruction.placeholder='Instrução para o departamento';
     card.append(dept,kind,instruction,btn('Delegar missão',()=>{if(instruction.value.trim())load('delegate',{id:crypto.randomUUID(),parent:m.mission_id,agent:dept.value,kind:kind.value,instruction:instruction.value.trim(),revision:controls.revision});}));
    }
@@ -75,13 +77,16 @@ function init(){
   if(area==='Funcionários'||area==='Configurações'){
    const master=btn(controls.enabled?'Desligar equipa':'Ligar equipa',()=>load('controls',{revision:controls.revision,enabled:!controls.enabled,modes:allOff()}));content.append(master);
    for(const [key,label] of Object.entries(labels)){
-    const row=el('label',label+' '),mode=select(modes,'Modo de '+label);
+    const person=teamDirectory.agents[key];
+    const row=el('label',person.name+' · '+person.role+' '),mode=select(modes,'Modo de '+label);
     mode.value=controls.modes[key];mode.disabled=!controls.enabled;
     mode.onchange=()=>load('controls',{revision:controls.revision,enabled:true,modes:{...controls.modes,[key]:mode.value}});
     row.append(mode);row.style.display='block';content.append(row);
     if(area==='Funcionários'){
      const p=trainingOverview.profiles[key],details=el('details');
-     details.append(el('summary','Formação profissional · '+trainingOverview.version),el('p','Módulos: '+p.modules));
+     const amount=state.budget?.channels?.[key]||{settled:0,pending:0};
+     const money=n=>new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR',maximumFractionDigits:4}).format(n/1000000);
+     details.append(el('summary','Formação profissional · '+trainingOverview.version),el('p','Módulos: '+p.modules),el('p','Referência mensal: '+money(person.planningMicroeur)+' · comprometido: '+money(amount.settled+amount.pending)+' (não é um limite individual)'),el('p','Primeiro trabalho sugerido: '+person.firstMission),el('p','Periodicidade sugerida: '+({daily:'diária',weekly:'semanal',monthly:'mensal'}[person.cadence])+' — não ativa rotinas.'));
      const ul=el('ul');for(const procedure of p.procedures)ul.append(el('li',procedure));details.append(ul);
      details.append(el('p','Critério de qualidade: '+p.quality),el('p','Exercício de integração: '+p.exercise));
      const trained=state.documents.find(d=>d.agent===key&&d.professional_training?.version===trainingOverview.version);
@@ -99,7 +104,7 @@ function init(){
     }
    }
   }else if(area==='Comunicação'||area===sections[0]){
-   const agent=select(Object.entries(labels),'Funcionário'),kind=select([],'Tipo de missão'),instruction=el('textarea');
+   const agent=select(Object.keys(labels).map(key=>[key,displayAgent(key)]),'Funcionário'),kind=select([],'Tipo de missão'),instruction=el('textarea');
    instruction.placeholder='Descreve o trabalho';instruction.maxLength=4000;instruction.setAttribute('aria-label','Instrução');
    const file=el('input');file.type='file';file.accept='.txt,.csv,.pdf,.jpg,.jpeg,.png';file.setAttribute('aria-label','Anexo de inventário');
    const upload=el('label','Inventário · JPG, PNG ou PDF até 1 MiB, TXT ou CSV até 60 kB. Usa uma cópia sem contactos ou dados bancários. Para contagem física em TXT/CSV: primeira linha nome;quantidade contada;unidade. Até 100 materiais; nenhuma alteração automática. ');upload.append(file);
@@ -125,7 +130,7 @@ function init(){
    agent.disabled=area===sections[0];agent.value=agent.disabled?'director':recipient;agent.onchange=()=>{recipient=agent.value;refresh();};refresh();kind.onchange=()=>{upload.hidden=agent.value!=='stock'||!['inventory_audit','stock_organization_plan'].includes(kind.value);if(upload.hidden)file.value='';};content.append(agent,kind,instruction,upload,send,history);
   }else if(area==='Documentos produzidos'){
    if(!state.documents.length)line('Sem documentos concluídos.');
-   for(const d of state.documents){line(labels[d.agent]+' · '+d.mission_id);line(d.content);
+   for(const d of state.documents){line(displayAgent(d.agent)+' · '+d.mission_id);line(d.content);
     if(d.professional_training?.kind==='instructions_applied'){
      line('Formação '+d.professional_training.version+' · instruções registadas · avaliação pelo administrador');
      const evaluation=el('details');evaluation.append(el('summary','Avaliar trabalho entregue'));
@@ -269,29 +274,41 @@ function init(){
    if(!items.length)line('Sem registos nesta vista.');items.forEach(missionCard);
   }else if(area==='Memória profissional'||area==='Objetivos'){
    for(const entry of state.memory.filter(m=>area!=='Objetivos'||m.kind==='objective')){
-    line(labels[entry.agent]+' · '+entry.summary);
+    line(displayAgent(entry.agent)+' · '+entry.summary);
     if(!entry.revoked_at)content.append(btn('Corrigir',()=>{const summary=window.prompt('Corrigir memória profissional',entry.summary);if(summary?.trim())load('correct',{id:entry.memory_id,previous:entry.summary,summary:summary.trim()});}),btn('Revogar',()=>load('revoke',{id:entry.memory_id})));
     else content.append(btn('Eliminar memória revogada',()=>{if(window.confirm('Eliminar definitivamente esta memória?'))load('erase',{id:entry.memory_id});}));
    }
    const evidence=list.filter(m=>m.status==='review_ready');
    if(!evidence.length){line('É necessária uma missão concluída para validar uma nova memória.');return;}
-   const origin=select(evidence.map(m=>[m.mission_id,labels[m.agent]+' · '+m.instruction.slice(0,80)]),'Missão de origem'),summary=el('textarea');summary.maxLength=1000;summary.placeholder='Conhecimento profissional validado';
+   const origin=select(evidence.map(m=>[m.mission_id,displayAgent(m.agent)+' · '+m.instruction.slice(0,80)]),'Missão de origem'),summary=el('textarea');summary.maxLength=1000;summary.placeholder='Conhecimento profissional validado';
    content.append(origin,summary,btn('Validar e guardar',()=>{const m=evidence.find(m=>m.mission_id===origin.value);if(summary.value.trim())load('remember',{id:crypto.randomUUID(),agent:m.agent,mission:m.mission_id,summary:summary.value.trim(),kind:area==='Objetivos'?'objective':'lesson'});}));
   }else if(area==='Controlo financeiro'){
    const eur=n=>new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR',maximumFractionDigits:4}).format(n/1000000);
    const used=state.budget.settled+state.budget.pending;
-   if(state.budget.unknown)line('Chamadas suspensas até à reconciliação dos custos desconhecidos.');
+   if(state.budget.unknown||state.budget.staleInflight)line('Chamadas suspensas até à reconciliação dos custos desconhecidos ou em execução sem confirmação.');
    else if(used>=23000000)line('Limite preventivo atingido.');
    else if(used>=18400000)line('Já foram comprometidos pelo menos 80% do limite preventivo.');
-   for(const [channel,amount] of Object.entries(state.budget.channels||{})){const label=labels[channel]||({legacy_social:'Publicações',legacy_description:'Descrição de produto',legacy_insights:'Estatísticas digitais'})[channel];line(label+' · '+eur(amount.settled)+' liquidados · '+eur(amount.pending)+' reservados');}
+   line('Distribuição indicativa da equipa — não são mensalidades nem limites individuais.');
+   for(const [key,p] of Object.entries(teamDirectory.agents)){
+    const amount=state.budget.channels?.[key]||{settled:0,pending:0},committed=amount.settled+amount.pending;
+    line(displayAgent(key)+' · referência '+eur(p.planningMicroeur)+' · '+eur(amount.settled)+' liquidados · '+eur(amount.pending)+' reservados'+(committed>=p.planningMicroeur?' · referência atingida, rever prioridades':''));
+   }
+   const legacy=['legacy_social','legacy_description','legacy_insights'].reduce((sum,key)=>{const amount=state.budget.channels?.[key]||{settled:0,pending:0};return sum+amount.settled+amount.pending;},0);
+   line('Assistentes existentes · referência '+eur(teamDirectory.legacyPlanningMicroeur)+' · '+eur(legacy)+' comprometidos');
+   for(const key of ['legacy_social','legacy_description','legacy_insights']){
+    const amount=state.budget.channels?.[key]||{settled:0,pending:0};
+    line(({legacy_social:'Publicações',legacy_description:'Descrição de produto',legacy_insights:'Estatísticas digitais'})[key]+' · '+eur(amount.settled)+' liquidados · '+eur(amount.pending)+' reservados');
+   }
+   line('Margem até ao limite preventivo: '+eur(Math.max(0,teamDirectory.preventiveMicroeur-used)));
+   line(state.budget.ledgerReleased===true&&!state.budget.ledgerFrozen?'Ledger autorizado na base; fornecedor e faturação externa ainda exigem validação.':'Ledger bloqueado ou sem autorização confirmada.');
    line('Consumo liquidado no mês · '+eur(state.budget.settled));line('Reservas pendentes · '+eur(state.budget.pending));line('Custos por esclarecer · '+state.budget.unknown);line('Limite preventivo 23 € · Reserva de segurança 7 € · Teto mensal 30 €');
   }else if(area==='Auditoria'){
    for(const e of state.events)line(new Date(e.occurred_at).toLocaleString('pt-PT')+' · '+statusNames[e.status]+' · '+e.mission_id);
    if(!state.events.length)line('Sem movimentos.');
   }else if(area==='Planeamento'){
-   const who=select(Object.entries(labels),'Responsável pela rotina'), cadences={daily:'Diária',weekly:'Semanal',monthly:'Mensal'},period=select(Object.entries(cadences),'Periodicidade'),instruction=el('textarea');instruction.maxLength=4000;instruction.placeholder='Objetivo da rotina';
+   const who=select(Object.keys(labels).map(key=>[key,displayAgent(key)]),'Responsável pela rotina'), cadences={daily:'Diária',weekly:'Semanal',monthly:'Mensal'},period=select(Object.entries(cadences),'Periodicidade'),instruction=el('textarea');instruction.maxLength=4000;instruction.placeholder='Objetivo da rotina';
    content.append(who,period,instruction,btn('Guardar rotina',()=>{if(instruction.value.trim())load('routine',{agent:who.value,cadence:period.value,instruction:instruction.value.trim(),enabled:true,revision:controls.revision});}));
-   for(const r of state.routines){line(labels[r.agent]+' · '+cadences[r.cadence]+' · '+r.instruction);content.append(btn(r.enabled?'Suspender rotina':'Retomar rotina',()=>load('routine',{...r,enabled:!r.enabled,revision:controls.revision})));}
+   for(const r of state.routines){line(displayAgent(r.agent)+' · '+cadences[r.cadence]+' · '+r.instruction);content.append(btn(r.enabled?'Suspender rotina':'Retomar rotina',()=>load('routine',{...r,enabled:!r.enabled,revision:controls.revision})));}
    const planner=document.getElementById('aeTasksCloudToggleV1');
    if(planner)content.append(btn('Abrir Planeamento de Tarefas',()=>{if(planner.getAttribute('aria-expanded')!=='true')planner.click();planner.scrollIntoView({block:'start'});}));else line('Planeamento de Tarefas indisponível.');
   }else if(area==='Desempenho'){
