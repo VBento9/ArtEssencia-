@@ -1,8 +1,8 @@
 name: Intelligence isolated tests
 on:
-  push:
+  pull_request:
     branches:
-      - feature/intelligence-hybrid-foundation-20261126
+      - main
     paths:
       - 'intelligence/**'
       - 'tests/intelligence-*.test.cjs'
@@ -16,6 +16,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   isolated:
+    if: github.event.pull_request.head.ref == 'feature/intelligence-hybrid-foundation-20261126'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     services:

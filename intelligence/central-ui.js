@@ -43,9 +43,9 @@ function init(){
    if(ticket!==generation||!unlockedNow())return;
    const data=await rpc('read',{});
    if(ticket!==generation||!unlockedNow())return;
-   if(action==='stock_change_preview')stockPreview={mission:args.mission,result:receipt};
+   if(action==='stock_change_preview')stockPreview={mission:args.mission,request:args,result:receipt,operationId:crypto.randomUUID()};
    else stockPreview=null;
-   state=data;notice.textContent=action==='repair_recipe_reference'?'Referência confirmada na ficha técnica. Recebe e valida a Cloud antes de editar.':action==='create_material'?'Material confirmado na Cloud. Recebe e valida os dados da Cloud antes de alterar o stock.':action==='plan_task'?(receipt.status==='archived'?'A tarefa já foi arquivada.':'Tarefa confirmada no Planeamento.'):'';
+   state=data;notice.textContent=['stock_change_apply','stock_change_revert'].includes(action)?'Operação confirmada na Cloud. Recebe e valida os dados antes de editar.':action==='repair_recipe_reference'?'Referência confirmada na ficha técnica. Recebe e valida a Cloud antes de editar.':action==='create_material'?'Material confirmado na Cloud. Recebe e valida os dados da Cloud antes de alterar o stock.':action==='plan_task'?(receipt.status==='archived'?'A tarefa já foi arquivada.':'Tarefa confirmada no Planeamento.'):'';
    if(action==='plan_task')document.dispatchEvent(new CustomEvent('ae-task-refresh'));render();
   }catch{if(ticket===generation){state=null;content.replaceChildren();notice.textContent=action==='read'?'Central Cloud indisponível. Verifica a sessão e a instalação do serviço.':'Resultado por confirmar. Atualiza a central antes de repetir a operação.';}}
   finally{if(ticket===generation){busy=false;content.inert=false;}}
@@ -130,7 +130,19 @@ function init(){
       if(p.proposedQty!==null)line('Saldo simulado: '+p.proposedQty+' '+p.unit+' · valor simulado: '+p.inventoryValue+' €');
       for(const reason of p.blockers||[])line('Bloqueio: '+reason.replaceAll('_',' '));
       line('Esta análise não grava alterações e não constitui aprovação de execução.');
+      if(p.status==='review'&&p.executionEnabled===true){
+       const pending=stockPreview;
+       content.append(btn('Confirmar e gravar '+(p.operation==='merge'?'consolidação':'renomeação'),()=>{
+        if(window.confirm('Confirmas '+p.source+' → '+p.target+'? Saldo final '+p.proposedQty+' '+p.unit+', '+p.recipeLines+' referências e valor '+p.inventoryValue+' €. Esta operação altera o Stock canónico.'))load('stock_change_apply',{request:pending.request,preview:p,operationId:pending.operationId,confirmed:true});
+       }));
+      }else if(p.status==='review')line('Execução desligada até validação técnica.');
      }
+    }
+    for(const receipt of d.stock_change_receipts||[]){
+     line('Recibo '+receipt.source+' → '+receipt.target+' · revisão '+receipt.revision+(receipt.revertedRevision?' · revertida na revisão '+receipt.revertedRevision:''));
+     if(!receipt.revertedRevision)content.append(btn('Pedir reversão do recibo',()=>{
+      if(window.confirm('Reverter '+receipt.source+' → '+receipt.target+'? Apenas é possível sem alterações posteriores.'))load('stock_change_revert',{operationId:receipt.id,confirmed:true});
+     }));
     }
     const repair=d.reference_repairs;
     if(d.agent==='stock'&&repair?.mode==='reference_repair_only'&&Array.isArray(repair.proposals)&&repair.proposals.length){
