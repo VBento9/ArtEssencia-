@@ -28,6 +28,8 @@ function createMissionRunner(options){
    const mission=core.createMission(settings,{id:m.id,agent:m.agent,kind:m.kind,trigger:'manual'});
    const report=core.runMission(settings,mission,s.payload,engines.audit,engines.renamePlanner,engines.organizer,engines.operational,engines.business);
    if(report.status!=='review')throw Error('Análise bloqueada.');
+   const count=m.agent==='stock'&&['inventory_audit','stock_organization_plan'].includes(m.kind)?require('./stock-input.cjs').countPlan(s.attachment,s.payload.stock,core):null;
+   if(count)report.result={...report.result,physicalCount:{...count,sourceRevision:s.sourceRevision}};
    const context=JSON.stringify({professionalMemory:l.memory||[],departmentFacts:s.facts||{},sourceRevision:s.sourceRevision,evidenceIds:s.evidenceIds,report:report.result});
    if(!text(context,24000))throw Error('Contexto excede limite; dividir missão.');
    await current(m);

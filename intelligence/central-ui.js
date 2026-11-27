@@ -81,7 +81,7 @@ function init(){
    const agent=select(Object.entries(labels),'Funcionário'),kind=select([],'Tipo de missão'),instruction=el('textarea');
    instruction.placeholder='Descreve o trabalho';instruction.maxLength=4000;instruction.setAttribute('aria-label','Instrução');
    const file=el('input');file.type='file';file.accept='.txt,.csv,.pdf,.jpg,.jpeg,.png';file.setAttribute('aria-label','Anexo de inventário');
-   const upload=el('label','Inventário · JPG, PNG ou PDF até 1 MiB, TXT ou CSV até 60 kB. Usa uma cópia sem contactos ou dados bancários. ');upload.append(file);
+   const upload=el('label','Inventário · JPG, PNG ou PDF até 1 MiB, TXT ou CSV até 60 kB. Usa uma cópia sem contactos ou dados bancários. Para contagem física em TXT/CSV: primeira linha nome;quantidade contada;unidade. Até 100 materiais; nenhuma alteração automática. ');upload.append(file);
    const send=btn('Enviar missão',async()=>{
     if(!instruction.value.trim()||busy)return;
     const args={id:crypto.randomUUID(),agent:agent.value,kind:kind.value,instruction:instruction.value.trim(),revision:controls.revision};
@@ -105,6 +105,20 @@ function init(){
   }else if(area==='Documentos produzidos'){
    if(!state.documents.length)line('Sem documentos concluídos.');
    for(const d of state.documents){line(labels[d.agent]+' · '+d.mission_id);line(d.content);
+    const count=d.physical_count;
+    if(d.agent==='stock'&&count?.mode==='physical_count_proposal_only'&&Array.isArray(count.proposals)){
+     const status={new_material_review:'Material novo — rever criação',name_review:'Nome diferente — confirmar identidade',ambiguous:'Possível duplicado — rever',unit_or_balance_review:'Unidade ou saldo por validar',balance_review:'Diferença de saldo — rever',invalid:'Linha inválida'};
+     content.append(el('h4','Contagem física — propostas sem alteração de stock'));
+     line('Revisão de origem: '+count.sourceRevision+' · Confirma a identidade, unidade e saldo antes de qualquer alteração.');
+     for(const row of count.proposals){
+      const details=[row.name,status[row.status]||'Por rever'];
+      if(Number.isFinite(row.counted))details.push('Contado: '+row.counted+' '+row.unit);
+      if(Number.isFinite(row.current))details.push('Registado: '+row.current+' '+row.unit,'Diferença: '+row.delta+' '+row.unit);
+      if(row.candidate)details.push('Material existente: '+row.candidate);
+      if(Array.isArray(row.candidates)&&row.candidates.length)details.push('Candidatos: '+row.candidates.map(c=>c.name+' ('+c.unit+')').join(', '));
+      line(details.join(' · '));
+     }
+    }
     for(const receipt of d.tool_receipts||[])line((receipt.tool==='delegate'?'Missão delegada':'Tarefa no Planeamento')+' · '+receipt.id);
     for(const t of d.tasks||[])if(t.agent===d.agent&&t.requiresApproval===true){line(t.title);content.append(btn('Aprovar para Planeamento',()=>load('plan_task',{mission:d.mission_id,key:t.key})));}
    }
