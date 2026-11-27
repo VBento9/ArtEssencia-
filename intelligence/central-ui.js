@@ -46,7 +46,7 @@ function init(){
    if(ticket!==generation||!unlockedNow())return;
    if(action==='stock_change_preview')stockPreview={mission:args.mission,request:args,result:receipt,operationId:crypto.randomUUID()};
    else stockPreview=null;
-   state=data;notice.textContent=action==='commercial_approve'?'Proposta interna guardada em Orçamentos. Nenhum contacto enviado.':['stock_change_apply','stock_change_revert'].includes(action)?'Operação confirmada na Cloud. Recebe e valida os dados antes de editar.':action==='repair_recipe_reference'?'Referência confirmada na ficha técnica. Recebe e valida a Cloud antes de editar.':action==='create_material'?'Material confirmado na Cloud. Recebe e valida os dados da Cloud antes de alterar o stock.':action==='plan_task'?(receipt.status==='archived'?'A tarefa já foi arquivada.':'Tarefa confirmada no Planeamento.'):'';
+   state=data;notice.textContent=action==='professional_assess'?'Avaliação profissional registada. Não altera permissões.':action==='commercial_approve'?'Proposta interna guardada em Orçamentos. Nenhum contacto enviado.':['stock_change_apply','stock_change_revert'].includes(action)?'Operação confirmada na Cloud. Recebe e valida os dados antes de editar.':action==='repair_recipe_reference'?'Referência confirmada na ficha técnica. Recebe e valida a Cloud antes de editar.':action==='create_material'?'Material confirmado na Cloud. Recebe e valida os dados da Cloud antes de alterar o stock.':action==='plan_task'?(receipt.status==='archived'?'A tarefa já foi arquivada.':'Tarefa confirmada no Planeamento.'):'';
    if(action==='plan_task')document.dispatchEvent(new CustomEvent('ae-task-refresh'));render();
   }catch{if(ticket===generation){state=null;content.replaceChildren();notice.textContent=action==='read'?'Central Cloud indisponível. Verifica a sessão e a instalação do serviço.':'Resultado por confirmar. Atualiza a central antes de repetir a operação.';}}
   finally{if(ticket===generation){busy=false;content.inert=false;}}
@@ -86,6 +86,12 @@ function init(){
      details.append(el('p','Critério de qualidade: '+p.quality),el('p','Exercício de integração: '+p.exercise));
      const trained=state.documents.find(d=>d.agent===key&&d.professional_training?.version===trainingOverview.version);
      details.append(el('p',trained?'Instruções registadas numa missão. Competência prática por avaliar.':'Formação definida; aplicação nesta versão ainda por confirmar.'));
+     const evaluations=(state.assessments||[]).filter(x=>x.agent===key&&x.training_version===trainingOverview.version);
+     if(evaluations.length){
+      const latest=evaluations[0];
+      details.append(el('p','Última avaliação: '+latest.score+'% · '+(latest.verdict==='review_pass'?'Resultado satisfatório nesta missão':'Requer correção e nova avaliação')),
+       el('p',latest.evidence_kind==='simulation'?'Ensaio simulado — não certifica competência real.':'Origem do fornecedor por validar — não certifica competência real.'),el('p',latest.feedback));
+     }
      content.append(details);
     }
    }
@@ -117,7 +123,31 @@ function init(){
   }else if(area==='Documentos produzidos'){
    if(!state.documents.length)line('Sem documentos concluídos.');
    for(const d of state.documents){line(labels[d.agent]+' · '+d.mission_id);line(d.content);
-    if(d.professional_training?.kind==='instructions_applied')line('Formação '+d.professional_training.version+' · instruções registadas · competência prática por avaliar');
+    if(d.professional_training?.kind==='instructions_applied'){
+     line('Formação '+d.professional_training.version+' · instruções registadas · avaliação pelo administrador');
+     const evaluation=el('details');evaluation.append(el('summary','Avaliar trabalho entregue'));
+     evaluation.append(el('p','Critério do departamento: '+d.professional_training.quality));
+     const criteria=[['technical','Correção técnica',30],['procedures','Procedimentos',25],['quality','Qualidade da entrega',20],['safety','Segurança e permissões',15],['efficiency','Organização e eficiência',10]];
+     const inputs={};
+     for(const [key,label,weight] of criteria){
+      const row=el('label',label+' ('+weight+'%) '),field=el('input');
+      field.type='number';field.min='0';field.max='100';field.step='1';field.setAttribute('aria-label',label+' de '+d.mission_id);
+      row.style.display='block';row.append(field);inputs[key]=field;evaluation.append(row);
+     }
+     const critical=el('input');critical.type='checkbox';const criticalLabel=el('label',' Falha crítica de segurança');criticalLabel.prepend(critical);
+     const feedback=el('textarea');feedback.placeholder='Justificação, erros e correções a aplicar';feedback.maxLength=2000;feedback.setAttribute('aria-label','Justificação da avaliação');
+     evaluation.append(criticalLabel,feedback,el('p','Mínimo 85% e segurança ≥ 85; uma falha crítica impede resultado satisfatório. Não concede autonomia.'));
+     const assessmentId=crypto.randomUUID();
+     evaluation.append(btn('Registar avaliação',()=>{
+      const scores=Object.fromEntries(Object.entries(inputs).map(([k,v])=>[k,v.value.trim()===''?NaN:Number(v.value)]));
+      if(Object.values(scores).some(v=>!Number.isInteger(v)||v<0||v>100)||!feedback.value.trim()){notice.textContent='Preenche as cinco classificações e a justificação.';return;}
+      if(window.confirm('Registar esta avaliação profissional? Não modifica permissões nem autoriza trabalho real.'))load('professional_assess',{id:assessmentId,mission:d.mission_id,scores,critical:critical.checked,feedback:feedback.value.trim(),confirmed:true});
+     }));
+     for(const e of (state.assessments||[]).filter(x=>x.mission_id===d.mission_id)){
+      evaluation.append(el('p',e.score+'% · '+(e.verdict==='review_pass'?'Resultado satisfatório':'Requer formação')+' · '+(e.evidence_kind==='simulation'?'Simulação':'Fornecedor por validar')+' · '+e.created_at),el('p',e.feedback));
+     }
+     content.append(evaluation);
+    }
     if(d.agent==='stock'&&list.some(m=>m.mission_id===d.mission_id&&['inventory_audit','stock_organization_plan'].includes(m.kind))){
      content.append(el('h4','Analisar renomeação ou consolidação'));
      const op=select([['rename','Renomear material'],['merge','Consolidar dois materiais']],'Operação de stock');

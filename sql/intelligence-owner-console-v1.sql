@@ -320,6 +320,63 @@ BEGIN
 END;
 $commercial$;
 REVOKE ALL ON FUNCTION artessencia_intelligence_private.commercial_command(text,jsonb) FROM PUBLIC,anon,authenticated;
+-- Professional assessment is an owner review of a completed document, not a permission grant.
+CREATE TABLE IF NOT EXISTS artessencia_intelligence_private.professional_assessments(
+ user_id uuid NOT NULL,assessment_id uuid NOT NULL,mission_id uuid NOT NULL,
+ agent text NOT NULL,training_version text NOT NULL,training_digest text NOT NULL,
+ evidence_kind text NOT NULL CHECK(evidence_kind IN ('simulation','provider_unverified')),
+ evidence_digest text NOT NULL,
+ scores jsonb NOT NULL,score numeric(5,2) NOT NULL CHECK(score BETWEEN 0 AND 100),
+ critical boolean NOT NULL,feedback text NOT NULL CHECK(length(feedback) BETWEEN 1 AND 2000),
+ verdict text NOT NULL CHECK(verdict IN ('review_pass','needs_training')),
+ created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+ PRIMARY KEY(user_id,assessment_id),
+ FOREIGN KEY(user_id,mission_id) REFERENCES artessencia_intelligence_private.team_missions(user_id,mission_id)
+);
+ALTER TABLE artessencia_intelligence_private.professional_assessments ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON artessencia_intelligence_private.professional_assessments FROM PUBLIC,anon,authenticated;
+CREATE OR REPLACE FUNCTION artessencia_intelligence_private.professional_assess(p_args jsonb)
+RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $assessment$
+DECLARE
+ actor uuid:=auth.uid(); aid uuid:=(p_args->>'id')::uuid; mid uuid:=(p_args->>'mission')::uuid;
+ marks jsonb:=p_args->'scores'; critical_flag boolean; notes text:=trim(p_args->>'feedback');
+ result jsonb; training jsonb; department text; model_id text; evidence_hash text;
+ weighted numeric; decision text; k text; prior artessencia_intelligence_private.professional_assessments%rowtype;
+BEGIN
+ IF actor IS NULL OR public.artessencia_is_owner_v1() IS DISTINCT FROM true THEN RAISE EXCEPTION 'OWNER_REQUIRED'; END IF;
+ IF aid IS NULL OR mid IS NULL OR p_args->'confirmed' IS DISTINCT FROM 'true'::jsonb OR jsonb_typeof(p_args->'critical') IS DISTINCT FROM 'boolean'
+ OR coalesce(length(notes),0) NOT BETWEEN 1 AND 2000 OR jsonb_typeof(marks) IS DISTINCT FROM 'object' THEN RAISE EXCEPTION 'ASSESSMENT_INVALID'; END IF;
+ IF (SELECT count(*) FROM jsonb_object_keys(marks))<>5 THEN RAISE EXCEPTION 'ASSESSMENT_INVALID'; END IF;
+ FOREACH k IN ARRAY ARRAY['technical','procedures','quality','safety','efficiency'] LOOP
+  IF jsonb_typeof(marks->k) IS DISTINCT FROM 'number' OR coalesce(marks->>k,'') !~ '^[0-9]{1,3}$' THEN RAISE EXCEPTION 'ASSESSMENT_INVALID'; END IF;
+  IF (marks->>k)::integer NOT BETWEEN 0 AND 100 THEN RAISE EXCEPTION 'ASSESSMENT_INVALID'; END IF;
+ END LOOP;
+ critical_flag:=(p_args->>'critical')::boolean;
+ weighted:=((marks->>'technical')::numeric*30+(marks->>'procedures')::numeric*25+(marks->>'quality')::numeric*20+(marks->>'safety')::numeric*15+(marks->>'efficiency')::numeric*10)/100;
+ decision:=CASE WHEN weighted>=85 AND NOT critical_flag AND (marks->>'safety')::integer>=85 THEN 'review_pass' ELSE 'needs_training' END;
+ -- Serialize evaluation of the same immutable mission. No change to controls, modes or budget.
+ PERFORM 1 FROM artessencia_intelligence_private.team_missions m WHERE m.user_id=actor AND m.mission_id=mid AND m.status='review_ready' FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'ASSESSMENT_MISSION_UNAVAILABLE'; END IF;
+ SELECT r.outcome,m.agent,e.model INTO result,department,model_id
+ FROM artessencia_intelligence_private.team_runs r JOIN artessencia_intelligence_private.team_missions m USING(user_id,mission_id)
+ JOIN artessencia_intelligence_private.ai_budget_entries e USING(request_id)
+ WHERE r.user_id=actor AND r.mission_id=mid AND r.status='review_ready' AND e.status='settled';
+ training:=result#>'{report,professionalTraining}';
+ IF training->>'agent' IS DISTINCT FROM department OR department IS NULL OR training->>'kind' IS DISTINCT FROM 'instructions_applied'
+ OR coalesce(training->>'version','') !~ '^AE-FORM-[0-9]+[.][0-9]+[.][0-9]+$' OR coalesce(training->>'digest','') !~ '^[0-9a-f]{64}$'
+ OR coalesce(length(result->>'reasoning'),0)=0 THEN RAISE EXCEPTION 'ASSESSMENT_EVIDENCE_UNAVAILABLE'; END IF;
+ evidence_hash:=encode(sha256(convert_to(result::text,'UTF8')),'hex');
+ SELECT * INTO prior FROM artessencia_intelligence_private.professional_assessments z WHERE z.user_id=actor AND z.assessment_id=aid;
+ IF FOUND THEN
+  IF prior.mission_id<>mid OR prior.scores IS DISTINCT FROM marks OR prior.critical<>critical_flag OR prior.feedback<>notes OR prior.evidence_digest<>evidence_hash THEN RAISE EXCEPTION 'ASSESSMENT_RECEIPT_CONFLICT'; END IF;
+  RETURN jsonb_build_object('status','recorded','score',prior.score,'verdict',prior.verdict,'replayed',true);
+ END IF;
+ INSERT INTO artessencia_intelligence_private.professional_assessments(user_id,assessment_id,mission_id,agent,training_version,training_digest,evidence_kind,evidence_digest,scores,score,critical,feedback,verdict)
+ VALUES(actor,aid,mid,department,training->>'version',training->>'digest',CASE WHEN model_id='artessencia-simulation-v1' THEN 'simulation' ELSE 'provider_unverified' END,evidence_hash,marks,weighted,critical_flag,notes,decision);
+ RETURN jsonb_build_object('status','recorded','score',weighted,'verdict',decision,'replayed',false);
+END;
+$assessment$;
+REVOKE ALL ON FUNCTION artessencia_intelligence_private.professional_assess(jsonb) FROM PUBLIC,anon,authenticated;
 CREATE OR REPLACE FUNCTION public.artessencia_intelligence_console_v1(p_action text, p_args jsonb DEFAULT '{}')
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $console$
 DECLARE
@@ -407,6 +464,8 @@ BEGIN
    WHEN 'inovacao' THEN 'innovation_review' WHEN 'auditoria' THEN 'technical_review' END,p_args->>'instruction',(p_args->>'enabled')::boolean)
   ON CONFLICT(user_id,agent,cadence) DO UPDATE SET instruction=excluded.instruction,enabled=excluded.enabled;
   RETURN jsonb_build_object('agent',selected_agent);
+ WHEN 'professional_assess' THEN
+  RETURN artessencia_intelligence_private.professional_assess(p_args);
  WHEN 'commercial_read' THEN
   RETURN artessencia_intelligence_private.commercial_command('read',p_args);
  WHEN 'commercial_approve' THEN
@@ -571,6 +630,9 @@ BEGIN
     (SELECT coalesce(jsonb_agg(jsonb_build_object('id',z.operation_id,'source',z.preview->>'source','target',z.preview->>'target','operation',z.preview->>'operation','revision',z.committed_revision,'revertedRevision',z.reverted_revision) ORDER BY z.created_at DESC),'[]') FROM artessencia_intelligence_private.stock_change_receipts z WHERE z.user_id=r.user_id AND z.mission_id=r.mission_id) AS stock_change_receipts,
     r.outcome->'report'->'commercialProposals' AS commercial_proposals,
     (SELECT coalesce(jsonb_agg(z.proposal_index),'[]') FROM artessencia_intelligence_private.commercial_proposals z WHERE z.user_id=r.user_id AND z.mission_id=r.mission_id) AS commercial_receipts,r.outcome->'report'->'publicComparison' AS public_comparison,r.outcome->'report'->'professionalTraining' AS professional_training FROM artessencia_intelligence_private.team_runs r JOIN artessencia_intelligence_private.team_missions m USING(user_id,mission_id) WHERE r.user_id=actor AND r.status='review_ready' ORDER BY r.ended_at DESC LIMIT 50)d),
+   'assessments',(SELECT coalesce(jsonb_agg(to_jsonb(z) ORDER BY z.created_at DESC,z.assessment_id),'[]') FROM
+    (SELECT assessment_id,mission_id,agent,training_version,training_digest,evidence_kind,scores,score,critical,feedback,verdict,created_at
+     FROM artessencia_intelligence_private.professional_assessments WHERE user_id=actor ORDER BY created_at DESC,assessment_id LIMIT 100)z),
    'controls',controls,'missions',missions,'events',events,'memory',memory,'budget',expenses);
  ELSE RAISE EXCEPTION 'UNKNOWN_COMMAND';
  END CASE;
