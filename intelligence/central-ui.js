@@ -309,9 +309,12 @@ function init(){
   }else if(area==='Controlo financeiro'){
    const eur=n=>new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR',maximumFractionDigits:4}).format(n/1000000);
    const used=state.budget.settled+state.budget.pending;
+   const cap=state.budget.monthlyLimitMicroeur;
+   const capKnown=Number.isSafeInteger(cap)&&cap>=0&&cap<=teamDirectory.preventiveMicroeur;
    if(state.budget.unknown||state.budget.staleInflight)line('Chamadas suspensas até à reconciliação dos custos desconhecidos ou em execução sem confirmação.');
-   else if(used>=23000000)line('Limite preventivo atingido.');
-   else if(used>=18400000)line('Já foram comprometidos pelo menos 80% do limite preventivo.');
+   else if(!capKnown)line('Limite de despesa efetivo por confirmar na Cloud.');
+   else if(used>=cap)line('Limite preventivo atingido.');
+   else if(used>=cap*0.8)line('Já foram comprometidos pelo menos 80% do limite preventivo.');
    line('Distribuição indicativa da equipa — não são mensalidades nem limites individuais.');
    for(const [key,p] of Object.entries(teamDirectory.agents)){
     const amount=state.budget.channels?.[key]||{settled:0,pending:0},committed=amount.settled+amount.pending;
@@ -323,9 +326,9 @@ function init(){
     const amount=state.budget.channels?.[key]||{settled:0,pending:0};
     line(({legacy_social:'Publicações',legacy_description:'Descrição de produto',legacy_insights:'Estatísticas digitais'})[key]+' · '+eur(amount.settled)+' liquidados · '+eur(amount.pending)+' reservados');
    }
-   line('Margem até ao limite preventivo: '+eur(Math.max(0,teamDirectory.preventiveMicroeur-used)));
+   line('Margem até ao limite preventivo: '+(capKnown?eur(Math.max(0,cap-used)):'Por confirmar'));
    line(state.budget.ledgerReleased===true&&!state.budget.ledgerFrozen?'Ledger autorizado na base; fornecedor e faturação externa ainda exigem validação.':'Ledger bloqueado ou sem autorização confirmada.');
-   line('Consumo liquidado no mês · '+eur(state.budget.settled));line('Reservas pendentes · '+eur(state.budget.pending));line('Custos por esclarecer · '+state.budget.unknown);line('Limite preventivo 23 € · Reserva de segurança 7 € · Teto mensal 30 €');
+   line('Consumo liquidado no mês · '+eur(state.budget.settled));line('Reservas pendentes · '+eur(state.budget.pending));line('Custos por esclarecer · '+state.budget.unknown);line('Limite interno efetivo: '+(capKnown?eur(cap):'Por confirmar')+' · Teto global pretendido: 30 € (inclui infraestrutura; faturação externa por validar).');
   }else if(area==='Auditoria'){
    for(const e of state.events)line(new Date(e.occurred_at).toLocaleString('pt-PT')+' · '+statusNames[e.status]+' · '+e.mission_id);
    if(!state.events.length)line('Sem movimentos.');

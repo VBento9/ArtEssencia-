@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS artessencia_intelligence_private.ai_budget_control(
  release_enabled boolean NOT NULL DEFAULT false,
  frozen boolean NOT NULL DEFAULT false
 );
+-- Administrator-only installation cap; changing it never enables paid execution.
+ALTER TABLE artessencia_intelligence_private.ai_budget_control ADD COLUMN IF NOT EXISTS monthly_limit_microeur bigint NOT NULL DEFAULT 2000000 CHECK(monthly_limit_microeur BETWEEN 0 AND 23000000);
 INSERT INTO artessencia_intelligence_private.ai_budget_control(singleton) VALUES(true) ON CONFLICT DO NOTHING;
 CREATE TABLE IF NOT EXISTS artessencia_intelligence_private.ai_budget_entries(
  request_id uuid PRIMARY KEY,
@@ -38,20 +40,25 @@ BEGIN
  IF EXISTS(SELECT 1 FROM artessencia_intelligence_private.ai_budget_entries WHERE request_id=p_id) THEN RAISE EXCEPTION 'DUPLICATE_REQUEST'; END IF;
  SELECT coalesce(sum(CASE WHEN status IN ('reserved','inflight','unknown') THEN maximum_microeur WHEN status='settled' AND (reserved_month=m OR settled_month=m) THEN actual_microeur ELSE 0 END),0)
  INTO used FROM artessencia_intelligence_private.ai_budget_entries;
- IF used+p_max>23000000 THEN RAISE EXCEPTION 'BUDGET_LIMIT'; END IF;
+ IF used+p_max>c.monthly_limit_microeur THEN RAISE EXCEPTION 'BUDGET_LIMIT'; END IF;
  INSERT INTO artessencia_intelligence_private.ai_budget_entries(request_id,channel,model,maximum_microeur,reserved_at,reserved_month,status)
  VALUES(p_id,p_channel,p_model,p_max,stamp,m,'reserved');
- RETURN jsonb_build_object('requestId',p_id,'maximumMicroeur',p_max,'remainingMicroeur',23000000-used-p_max,'status','reserved');
+ RETURN jsonb_build_object('requestId',p_id,'maximumMicroeur',p_max,'remainingMicroeur',c.monthly_limit_microeur-used-p_max,'status','reserved');
 END;
 $reserve$;
 
 CREATE OR REPLACE FUNCTION artessencia_intelligence_private.ai_budget_claim(p_id uuid)
 RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $claim$
-DECLARE c artessencia_intelligence_private.ai_budget_control%rowtype; e artessencia_intelligence_private.ai_budget_entries%rowtype;
+DECLARE c artessencia_intelligence_private.ai_budget_control%rowtype; e artessencia_intelligence_private.ai_budget_entries%rowtype; m date; used numeric;
 BEGIN
  SELECT * INTO c FROM artessencia_intelligence_private.ai_budget_control WHERE singleton=true FOR UPDATE;
  IF NOT FOUND OR NOT c.release_enabled OR c.frozen THEN RAISE EXCEPTION 'BUDGET_DISABLED'; END IF;
  IF EXISTS(SELECT 1 FROM artessencia_intelligence_private.ai_budget_entries WHERE status='unknown' OR (status='inflight' AND reserved_at < clock_timestamp()-interval '5 minutes')) THEN RAISE EXCEPTION 'BUDGET_UNKNOWN'; END IF;
+ -- Recheck under the same shared lock: lowering the cap after reservation must prevent new provider calls.
+ m:=date_trunc('month',clock_timestamp() AT TIME ZONE 'Europe/Lisbon')::date;
+ SELECT coalesce(sum(CASE WHEN status IN ('reserved','inflight','unknown') THEN maximum_microeur WHEN status='settled' AND (reserved_month=m OR settled_month=m) THEN actual_microeur ELSE 0 END),0)
+ INTO used FROM artessencia_intelligence_private.ai_budget_entries;
+ IF used>c.monthly_limit_microeur THEN RAISE EXCEPTION 'BUDGET_LIMIT'; END IF;
  UPDATE artessencia_intelligence_private.ai_budget_entries SET status='inflight' WHERE request_id=p_id AND status='reserved' RETURNING * INTO e;
  IF NOT FOUND THEN RAISE EXCEPTION 'REQUEST_NOT_CLAIMABLE'; END IF;
  RETURN jsonb_build_object('requestId',p_id,'status','inflight','model',e.model,'maximumMicroeur',e.maximum_microeur);

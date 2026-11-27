@@ -100,3 +100,8 @@ Tarifa pública consultada em 27/11/2026: GPT-5.4 mini gpt-5.4-mini-2026-03-17, 
 ## Credencial dedicada da equipa
 
 O executor Intelligence e os três assistentes integrados no seu ledger usam exclusivamente INTELLIGENCE_OPENAI_API_KEY, sem fallback para OPENAI_API_KEY. Preservar as variáveis existentes da aplicação em produção. Guardar a chave nova num gestor de palavras-passe até à autorização de configuração do ambiente de produção, sem a transmitir por chat ou GitHub. Não instalar a chave em Preview/Development ou no ambiente de simulação. O modo simulado rejeita ambas as variáveis de chave. Não configurar libertação financeira nem efetuar redeploy de produção nesta fase.
+
+
+## Limite financeiro interno configurável (candidato)
+
+O limite partilhado `ai_budget_control.monthly_limit_microeur` começa em 2 000 000 microeuros (2 €) e aceita 0 a 23 000 000 microeuros. Só a administração da base pode alterá-lo; não existe RPC para aumentar o limite. A reserva e a autorização de consumo reavaliam a despesa sob o bloqueio comum. Se o limite baixar depois de uma reserva, o pedido ainda não iniciado fica bloqueado e a reserva deve ser reconciliada, sem repetir pedidos. O painel lê o limite efetivo da base; na ausência do campo, apresenta-o como por confirmar. O limite interno não substitui o controlo de saldo, a verificação de preços, o limite do fornecedor nem a faturação da infraestrutura. O esquema de simulação histórica permanece exclusivamente a custo zero; não executar migrações sobre a base de ensaio existente ou produção sem revisão e autorização. A ativação de IA real continua bloqueada.
