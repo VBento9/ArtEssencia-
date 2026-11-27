@@ -20,7 +20,7 @@ function compose({env=process.env,call,provider,tariffs,publicReader}={}){
   }
   pricing();
   const injected=!!call;
-  call=call||transport(env);provider=provider||providerFactory(env.OPENAI_API_KEY);
+  call=call||transport(env);provider=provider||providerFactory(env.INTELLIGENCE_OPENAI_API_KEY);
   // An injected transport cannot implicitly contact any public project.
   if(!publicReader&&!injected)publicReader=()=>require('./catalog-crosscheck.cjs').createReader(env)();
   return {call,provider,pricing,publicReader};
@@ -35,7 +35,7 @@ function hostedMode(env=process.env){
  const donart='https://oosumysibccagrfbomab.supabase.co';
  if(env.INTELLIGENCE_EXECUTION_MODE==='simulation'){
   if(env.VERCEL_ENV!=='preview'||url===production||url===donart||url!==env.INTELLIGENCE_ISOLATED_PROJECT_URL||
-     env.INTELLIGENCE_PAID_RELEASE==='approved'||env.OPENAI_API_KEY||env.INTELLIGENCE_FINANCIAL_APPROVAL)throw Error('Simulação isolada indisponível.');
+     env.INTELLIGENCE_PAID_RELEASE==='approved'||env.OPENAI_API_KEY||env.INTELLIGENCE_OPENAI_API_KEY||env.INTELLIGENCE_FINANCIAL_APPROVAL)throw Error('Simulação isolada indisponível.');
   return 'simulation';
  }
  if(env.VERCEL_ENV!=='production'||url!==production||env.INTELLIGENCE_EXECUTION_MODE&&env.INTELLIGENCE_EXECUTION_MODE!=='paid')throw Error('Ambiente não autorizado.');

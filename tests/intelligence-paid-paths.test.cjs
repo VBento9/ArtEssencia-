@@ -88,7 +88,7 @@ test('Hosted simulation is isolated and cannot activate paid model paths',async(
  for(const change of [{VERCEL_ENV:'production'},{INTELLIGENCE_ISOLATED_PROJECT_URL:'https://ihtsonqnnlrxvorfrarl.supabase.co'},
  {INTELLIGENCE_SUPABASE_URL:'https://ihtsonqnnlrxvorfrarl.supabase.co',INTELLIGENCE_ISOLATED_PROJECT_URL:'https://ihtsonqnnlrxvorfrarl.supabase.co'},
  {INTELLIGENCE_SUPABASE_URL:'https://oosumysibccagrfbomab.supabase.co',INTELLIGENCE_ISOLATED_PROJECT_URL:'https://oosumysibccagrfbomab.supabase.co'},
- {INTELLIGENCE_PAID_RELEASE:'approved'},{OPENAI_API_KEY:'not-used'},{INTELLIGENCE_FINANCIAL_APPROVAL:'{}'}])
+ {INTELLIGENCE_PAID_RELEASE:'approved'},{OPENAI_API_KEY:'not-used'},{INTELLIGENCE_OPENAI_API_KEY:'not-used'},{INTELLIGENCE_FINANCIAL_APPROVAL:'{}'}])
  assert.throws(()=>server.hostedMode({...env,...change}));
  await assert.rejects(server.composeHosted({env,call:async()=>false}),/Base de ensaio/);
  const calls=[];
@@ -99,4 +99,10 @@ test('Hosted simulation is isolated and cannot activate paid model paths',async(
  assert.deepEqual(result.usage,{input_tokens:0,output_tokens:0});
  assert.equal(JSON.parse(result.text).delegations[0].agent,'stock');
  assert.deepEqual(calls,['simulation_identity']);
+});
+
+test('Intelligence uses only its dedicated credential, without fallback to legacy environment keys',()=>{
+ const source=fs.readFileSync('intelligence/server-runtime.cjs','utf8');
+ assert.ok(source.includes('providerFactory(env.INTELLIGENCE_OPENAI_API_KEY)'));
+ assert.doesNotMatch(source,/providerFactory\(env\.OPENAI_API_KEY\)/);
 });
