@@ -19,7 +19,7 @@ test('preview pins public Cloud configuration even with stale storage or a custo
     [{INTELLIGENCE_SUPABASE_PUBLISHABLE_KEY:'sb_secret_fixture'},''],[{VERCEL_GIT_COMMIT_REF:'other'},''],[{VERCEL_ENV:'production'},null]]) {
     fs.writeFileSync(target, source);
     execFileSync(process.execPath,[path.resolve('scripts/build_intelligence_preview.cjs')],{cwd,env:{...env,...overrides}});
-    const built = fs.readFileSync(target,'utf8');
+    const built = fs.readFileSync(path.join(cwd,'public/index.html'),'utf8');
     if(expected===null){assert.equal(built,source);continue;}
     const configCode=built.match(/const isolatedPreviewConfig=.*\nfunction cloudCfg\(\).*\n/)[0];
     for(const value of ['{"url":"stale","key":"stale","email":"old"}','invalid']) {
