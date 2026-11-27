@@ -10,3 +10,6 @@
 #intelligence .ae-intelligence-content textarea{width:100%;min-height:76px}
 #intelligence .ae-intelligence-content .btn{white-space:normal;max-width:100%;margin:3px 4px 3px 0}
 @media(max-width:650px){#intelligence #aeIntelligenceCentral{padding:10px}#intelligence .ae-intelligence-content article{padding:8px}}
+
+#intelligence .ae-meeting-participants{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:6px;border:1px solid var(--line,#e2d5c5);border-radius:8px;padding:8px;min-width:0}
+#intelligence .ae-meeting-participants label{display:flex;gap:7px;align-items:center;min-width:0;font-size:13px}

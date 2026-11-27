@@ -55,7 +55,7 @@ async function run() {
       await page.goto(origin);
       await page.getByRole('button',{name:'ArtEssencia Intelligence',exact:true}).click();
       await page.getByText('9 funcionários ·', {exact:false}).waitFor();
-      const nav=page.getByLabel('Área de trabalho');assert.equal(await nav.locator('option').count(),16);
+      const nav=page.getByLabel('Área de trabalho');assert.equal(await nav.locator('option').count(),17);
       if(width===390){
         await nav.selectOption('Funcionários');
         await page.getByRole('button',{name:'Ligar equipa'}).click();
@@ -150,6 +150,29 @@ async function run() {
     assert.equal(Number((await db.query('SELECT count(*) n FROM artessencia_intelligence_private.team_run_retry_archive')).rows[0].n),1);
     assert.equal((await db.query('SELECT status FROM artessencia_intelligence_private.team_missions WHERE mission_id=$1',[auditId])).rows[0].status,'approved');
     console.log('PASS: explicit owner requeue from central, history and new approval across three device sizes; no charge or automatic execution');
+    await db.exec(`UPDATE artessencia_intelligence_private.team_controls SET modes=jsonb_set(modes,'{director}','"manual"') WHERE user_id='${owner}'`);
+    await db.exec('SET ROLE authenticated');
+    const meeting=await browser.newPage({viewport:{width:390,height:900}});
+    await meeting.goto(origin);
+    await meeting.getByRole('button',{name:'Abrir central de agentes'}).click();
+    await meeting.getByText('9 funcionários ·',{exact:false}).waitFor();
+    await meeting.getByLabel('Área de trabalho').selectOption('Gabinete da Diretora Geral');
+    await meeting.getByRole('button',{name:'Abrir Sala de Reuniões'}).click();
+    await meeting.getByLabel('Tipo de reunião').selectOption('financeiro');
+    await meeting.getByLabel('Ordem de trabalhos').fill('Rever margens e pagamentos de teste');
+    meeting.once('dialog',d=>d.accept());
+    await meeting.getByRole('button',{name:'Preparar reunião com Leonor'}).click();
+    await meeting.getByText('[REUNIÃO EXECUTIVA] Reunião financeira',{exact:false}).waitFor();
+    await meeting.getByText('A aguardar aprovação',{exact:true}).waitFor();
+    assert.equal(await meeting.getByRole('button',{name:'Executar missão aprovada'}).count(),0);
+    assert.ok(await meeting.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+    await meeting.close();
+    await db.exec('RESET ROLE');
+    const prepared=(await db.query("SELECT agent,kind,status,instruction FROM artessencia_intelligence_private.team_missions WHERE instruction LIKE '[REUNIÃO EXECUTIVA] %'")).rows;
+    assert.equal(prepared.length,1);assert.equal(prepared[0].agent,'director');assert.equal(prepared[0].kind,'daily_priority_plan');assert.equal(prepared[0].status,'pending_review');
+    assert.ok(prepared[0].instruction.includes('Rever margens e pagamentos de teste'));
+    assert.deepEqual((await db.query('SELECT * FROM artessencia_intelligence_private.ai_budget_entries ORDER BY request_id')).rows,ledgerBefore);
+    console.log('PASS: executive meeting preparation reuses the owner mission, no charge, no automatic execution');
   } finally {await browser?.close();await new Promise(resolve=>server.close(resolve));await db.close();}
 }
 run().catch(error=>{console.error(error);process.exitCode=1;});
