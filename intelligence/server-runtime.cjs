@@ -1,5 +1,5 @@
 'use strict';
-const {transport,chargeLedger}=require('./worker-transport.cjs');
+const {isolatedProjectUrl,transport,chargeLedger}=require('./worker-transport.cjs');
 const providerFactory=require('./responses-provider.cjs');
 const createRunner=require('./mission-runner.cjs');
 const createGateway=require('./ai-gateway.cjs');
@@ -32,9 +32,8 @@ const simulationModel='artessencia-simulation-v1';
 function hostedMode(env=process.env){
  const url=require('./worker-transport.cjs').projectUrl(env);
  const production='https://ihtsonqnnlrxvorfrarl.supabase.co';
- const donart='https://oosumysibccagrfbomab.supabase.co';
  if(env.INTELLIGENCE_EXECUTION_MODE==='simulation'){
-  if(env.VERCEL_ENV!=='preview'||url===production||url===donart||url!==env.INTELLIGENCE_ISOLATED_PROJECT_URL||
+  if(env.VERCEL_ENV!=='preview'||url!==isolatedProjectUrl||url!==env.INTELLIGENCE_ISOLATED_PROJECT_URL||
      env.INTELLIGENCE_PAID_RELEASE==='approved'||env.OPENAI_API_KEY||env.INTELLIGENCE_OPENAI_API_KEY||env.INTELLIGENCE_FINANCIAL_APPROVAL)throw Error('Simulação isolada indisponível.');
   return 'simulation';
  }

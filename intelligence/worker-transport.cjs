@@ -1,5 +1,6 @@
 'use strict';
 // All browser-accessible commands are in the separate owner console.
+const isolatedProjectUrl='https://thqhyetvxledlgjdtmzp.supabase.co';
 function projectUrl(env=process.env){
   const value=env.INTELLIGENCE_SUPABASE_URL;
   if(typeof value!=='string'||!/^https:\/\/[a-z0-9]{20}\.supabase\.co$/.test(value))throw Error('Projeto do executor inválido.');
@@ -13,7 +14,7 @@ function serviceTransport(env,request=fetch){
   const serviceId=env.INTELLIGENCE_SERVICE_USER_ID;
   if(env.VERCEL_ENV!=='preview'||env.INTELLIGENCE_EXECUTION_MODE!=='simulation'||
      base!==env.INTELLIGENCE_ISOLATED_PROJECT_URL||
-     base==='https://ihtsonqnnlrxvorfrarl.supabase.co'||base==='https://oosumysibccagrfbomab.supabase.co'||
+     base!==isolatedProjectUrl||
      env.INTELLIGENCE_PAID_RELEASE==='approved'||env.OPENAI_API_KEY||env.INTELLIGENCE_OPENAI_API_KEY||env.INTELLIGENCE_FINANCIAL_APPROVAL||
      env.INTELLIGENCE_WORKER_JWT||!key||!env.INTELLIGENCE_SERVICE_EMAIL||!env.INTELLIGENCE_SERVICE_PASSWORD||
      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(serviceId||''))throw Error('Conta de serviço isolada indisponível.');
@@ -91,4 +92,4 @@ function publicProductPhoto(value,env=process.env){
     return url.href;
   }catch{return '';}
 }
-module.exports={transport,serviceTransport,chargeLedger,projectUrl,ownerSession,publicProductPhoto};
+module.exports={isolatedProjectUrl,transport,serviceTransport,chargeLedger,projectUrl,ownerSession,publicProductPhoto};

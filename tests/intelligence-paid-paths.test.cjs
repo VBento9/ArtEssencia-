@@ -82,10 +82,10 @@ test('Owner verification and public product photos stay in the configured worker
 
 test('Hosted simulation is isolated and cannot activate paid model paths',async()=>{
  const server=require('../intelligence/server-runtime.cjs');
- const base='https://abcdefghijklmnopqrst.supabase.co';
+ const base='https://thqhyetvxledlgjdtmzp.supabase.co';
  const env={VERCEL_ENV:'preview',INTELLIGENCE_EXECUTION_MODE:'simulation',INTELLIGENCE_SUPABASE_URL:base,INTELLIGENCE_ISOLATED_PROJECT_URL:base};
  assert.equal(server.hostedMode(env),'simulation');
- for(const change of [{VERCEL_ENV:'production'},{INTELLIGENCE_ISOLATED_PROJECT_URL:'https://ihtsonqnnlrxvorfrarl.supabase.co'},
+ for(const change of [{VERCEL_ENV:'production'},{INTELLIGENCE_SUPABASE_URL:'https://abcdefghijklmnopqrst.supabase.co',INTELLIGENCE_ISOLATED_PROJECT_URL:'https://abcdefghijklmnopqrst.supabase.co'},{INTELLIGENCE_ISOLATED_PROJECT_URL:'https://ihtsonqnnlrxvorfrarl.supabase.co'},
  {INTELLIGENCE_SUPABASE_URL:'https://ihtsonqnnlrxvorfrarl.supabase.co',INTELLIGENCE_ISOLATED_PROJECT_URL:'https://ihtsonqnnlrxvorfrarl.supabase.co'},
  {INTELLIGENCE_SUPABASE_URL:'https://oosumysibccagrfbomab.supabase.co',INTELLIGENCE_ISOLATED_PROJECT_URL:'https://oosumysibccagrfbomab.supabase.co'},
  {INTELLIGENCE_PAID_RELEASE:'approved'},{OPENAI_API_KEY:'not-used'},{INTELLIGENCE_OPENAI_API_KEY:'not-used'},{INTELLIGENCE_FINANCIAL_APPROVAL:'{}'}])

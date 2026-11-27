@@ -15895,7 +15895,8 @@ function renderReports(){
 function ensureQuotePaymentModel(){(db.quotes||[]).forEach(q=>{if(!q.paymentTerms)q.paymentTerms='50_50';if(q.depositPct==null)q.depositPct=q.paymentTerms==='100_upfront'?100:50;if(q.balanceDays==null)q.balanceDays=q.paymentTerms==='100_upfront'?0:3;if(!q.paymentMethod)q.paymentMethod='MB Way';if(q.depositPaid==null)q.depositPaid=0;if(!q.paymentHistory)q.paymentHistory=[];if(!Array.isArray(q.statusHistory))q.statusHistory=[];if(!q.statusHistory.length&&q.created)q.statusHistory.push({date:q.created+'T00:00:00',from:'—',to:q.status||'Rascunho',status:q.status||'Rascunho',source:'legacy'});q.statusHistory.forEach(h=>{if(!h.to&&h.status)h.to=h.status})})}
 
 const ARTESSENCIA_SUPABASE_V1421={url:'https://ihtsonqnnlrxvorfrarl.supabase.co',key:'sb_publishable_bBAzr698eotgn-QCq0kKWQ_szVceK5x',projectRef:'ihtsonqnnlrxvorfrarl'};
-function cloudCfg(){try{const saved=JSON.parse(localStorage.getItem(CLOUD_CFG));return saved||{url:ARTESSENCIA_SUPABASE_V1421.url,key:ARTESSENCIA_SUPABASE_V1421.key,email:''}}catch(e){return{url:ARTESSENCIA_SUPABASE_V1421.url,key:ARTESSENCIA_SUPABASE_V1421.key,email:''}}}
+const isolatedPreviewConfig=null; // Replaced only by the Vercel preview build.
+function cloudCfg(){try{const saved=JSON.parse(localStorage.getItem(CLOUD_CFG));if(isolatedPreviewConfig)return {...isolatedPreviewConfig,email:saved?.url===isolatedPreviewConfig.url?saved.email||'':''};return saved||{url:ARTESSENCIA_SUPABASE_V1421.url,key:ARTESSENCIA_SUPABASE_V1421.key,email:''}}catch(e){return isolatedPreviewConfig||{url:ARTESSENCIA_SUPABASE_V1421.url,key:ARTESSENCIA_SUPABASE_V1421.key,email:''}}}
 function cloudMeta(){
  try{
    const m=JSON.parse(localStorage.getItem(CLOUD_META))||{};
