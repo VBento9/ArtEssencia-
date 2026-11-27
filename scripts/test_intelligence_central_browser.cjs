@@ -11,7 +11,13 @@ async function run() {
   const owner = '00000000-0000-0000-0000-000000000001';
   await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE SCHEMA auth;
     CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$SELECT '${owner}'::uuid$$;
-    CREATE FUNCTION public.artessencia_is_owner_v1() RETURNS boolean LANGUAGE sql AS $$SELECT true$$;`);
+    CREATE FUNCTION public.artessencia_is_owner_v1() RETURNS boolean LANGUAGE sql AS $$SELECT true$$;
+    CREATE TABLE public.artessencia_v1_state(user_id uuid PRIMARY KEY,data jsonb,revision bigint,updated_at timestamptz,device_id text,app_version text);
+    CREATE TABLE public.artessencia_v1_products(user_id uuid,id uuid PRIMARY KEY,data jsonb,updated_at timestamptz DEFAULT now());
+    CREATE TABLE public.artessencia_v1_orders(user_id uuid,id uuid PRIMARY KEY,status text,total numeric,data jsonb);
+    CREATE TABLE public.artessencia_v1_quotes(user_id uuid,id uuid PRIMARY KEY,status text,valid_until date,data jsonb);
+    CREATE TABLE public.artessencia_cloud_records(user_id uuid,entity text,record_id text,data jsonb,client_updated_at timestamptz,device_id text,deleted_at timestamptz,PRIMARY KEY(user_id,entity,record_id));`);
+  await db.query('INSERT INTO public.artessencia_v1_state(user_id,data,revision) VALUES($1,$2,7)',[owner,JSON.stringify({stock:[{name:'Material de ensaio',qty:12,unit:'g',unitCost:.02}],productRecipes:{TEST:[{item:'Material de ensaio',qty:2,unit:'g'}]},stockMoves:[],purchases:[],productionRuns:[]})]);
   for (const name of ['team-draft','ai-budget-draft','run-draft','owner-console']) {
     await db.exec(fs.readFileSync('sql/intelligence-'+name+'-v1.sql','utf8'));
   }
@@ -63,6 +69,30 @@ async function run() {
       assert.deepEqual(errors,[]);await page.close();
     }
     console.log('PASS: owner console with SQL, nine modes, persistent mission, approval, cancellation, lock and three device sizes');
+    // A completed synthetic mission is seeded solely for testing the browser approval surface.
+    await db.exec('RESET ROLE');
+    const completedId='00000000-0000-0000-0000-000000000020';
+    await db.query("INSERT INTO artessencia_intelligence_private.team_missions(user_id,mission_id,agent,kind,instruction,revision,control_revision,status) SELECT user_id,$1,'stock','inventory_audit','Auditoria fictícia concluída',3,revision,'review_ready' FROM artessencia_intelligence_private.team_controls WHERE user_id=$2",[completedId,owner]);
+    await db.query("INSERT INTO artessencia_intelligence_private.team_runs(user_id,mission_id,lease_id,request_id,claimed_revision,status,outcome,ended_at) VALUES($1,$2,gen_random_uuid(),gen_random_uuid(),2,'review_ready',$3,now())",[owner,completedId,JSON.stringify({reasoning:'Documento fictício de Stock',report:{tasks:[]}})]);
+    const before=(await db.query('SELECT data,revision FROM public.artessencia_v1_state WHERE user_id=$1',[owner])).rows[0];
+    await db.exec('SET ROLE authenticated');
+    const page=await browser.newPage({viewport:{width:820,height:900}});
+    const errors=[];page.on('pageerror',e=>errors.push(e.message));
+    await page.goto(origin);
+    await page.getByRole('button',{name:'Abrir central de agentes'}).click();
+    await page.getByRole('button',{name:'Enviar missão'}).waitFor();
+    await page.getByLabel('Área de trabalho').selectOption('Documentos produzidos');
+    await page.getByText('Documento fictício de Stock',{exact:true}).waitFor();
+    await page.getByLabel('Material de origem',{exact:true}).fill('Material de ensaio');
+    await page.getByLabel('Material de destino',{exact:true}).fill('Material de ensaio normalizado');
+    await page.getByRole('button',{name:'Analisar impacto sem alterar stock'}).click();
+    await page.getByText('Execução desligada até validação técnica.',{exact:true}).waitFor();
+    assert.equal(await page.getByRole('button',{name:'Confirmar e gravar renomeação'}).count(),0);
+    assert.deepEqual(errors,[]);
+    await page.close();
+    await db.exec('RESET ROLE');
+    assert.deepEqual((await db.query('SELECT data,revision FROM public.artessencia_v1_state WHERE user_id=$1',[owner])).rows[0],before);
+    console.log('PASS: central browser stock preview uses SQL, release gate disabled, no write to canonical stock');
   } finally {await browser?.close();await new Promise(resolve=>server.close(resolve));await db.close();}
 }
 run().catch(error=>{console.error(error);process.exitCode=1;});
