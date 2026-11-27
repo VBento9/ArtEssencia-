@@ -43,7 +43,7 @@ function init(){
    if(ticket!==generation||!unlockedNow())return;
    const data=await rpc('read',{});
    if(ticket!==generation||!unlockedNow())return;
-   state=data;notice.textContent=action==='plan_task'?(receipt.status==='archived'?'A tarefa já foi arquivada.':'Tarefa confirmada no Planeamento.'):'';
+   state=data;notice.textContent=action==='create_material'?'Material confirmado na Cloud. Recebe e valida os dados da Cloud antes de alterar o stock.':action==='plan_task'?(receipt.status==='archived'?'A tarefa já foi arquivada.':'Tarefa confirmada no Planeamento.'):'';
    if(action==='plan_task')document.dispatchEvent(new CustomEvent('ae-task-refresh'));render();
   }catch{if(ticket===generation){state=null;content.replaceChildren();notice.textContent=action==='read'?'Central Cloud indisponível. Verifica a sessão e a instalação do serviço.':'Resultado por confirmar. Atualiza a central antes de repetir a operação.';}}
   finally{if(ticket===generation){busy=false;content.inert=false;}}
@@ -117,6 +117,17 @@ function init(){
       if(row.candidate)details.push('Material existente: '+row.candidate);
       if(Array.isArray(row.candidates)&&row.candidates.length)details.push('Candidatos: '+row.candidates.map(c=>c.name+' ('+c.unit+')').join(', '));
       line(details.join(' · '));
+      const receipt=(d.material_receipts||[]).find(r=>r.index===row.index);
+      if(receipt)line('Material criado · revisão '+receipt.revision+' · '+receipt.name);
+      else if(row.status==='new_material_review'){
+       const cost=el('input');cost.type='number';cost.min='0';cost.step='any';cost.placeholder='Custo por '+row.unit+' (€)';cost.setAttribute('aria-label','Custo unitário confirmado de '+row.name);
+       content.append(cost,btn('Confirmar criação sem saldo',()=>{
+        const value=Number(cost.value);
+        if(!Number.isFinite(value)||value<=0||value>1000000){notice.textContent='Indica o custo unitário confirmado.';return;}
+        if(!window.confirm('Criar '+row.name+' ('+row.unit+') com saldo 0 e custo unitário '+value+' €? Não altera fichas técnicas, compras, movimentos ou o saldo contado. É necessária nova leitura da Cloud após confirmar.'))return;
+        load('create_material',{mission:d.mission_id,index:row.index,sourceRevision:count.sourceRevision,unitCost:value,confirmed:true});
+       }));
+      }
      }
     }
     for(const receipt of d.tool_receipts||[])line((receipt.tool==='delegate'?'Missão delegada':'Tarefa no Planeamento')+' · '+receipt.id);

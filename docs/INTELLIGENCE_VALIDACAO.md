@@ -44,3 +44,7 @@ COMMIT;
 ```
 
 Suspender quaisquer invocações programadas antes de reverter o código. A versão 1.9.196 contém chamadas diretas nos três assistentes antigos. Uma reversão para essa versão requer retirar primeiro o acesso à chave paga no ambiente de execução. Confirmar os pedidos em curso antes de restaurar o serviço. Manter a versão funcional da PWA e submeter alterações a produção e migrações a autorização específica.
+
+## Criação de material a partir de contagem física (candidata)
+
+A proposta de material novo exige confirmação do proprietário e custo unitário explícito. Cria o material com saldo zero, preserva compras, movimentos e fichas técnicas e guarda um recibo por missão e linha na mesma transação do incremento da revisão canónica. Uma repetição não duplica o material. O saldo contado exige aprovação independente. Qualquer alteração da revisão exige nova análise. Receber e validar a Cloud antes de editar noutro dispositivo. Não aplicar SQL em produção sem autorização e ensaio de sincronização.

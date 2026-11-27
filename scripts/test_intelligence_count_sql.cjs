@@ -349,7 +349,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  const ids={};let number=810;
  for(const [agent,kind] of Object.entries(responsibilities)){
   const id=ids[agent]=bid(++number);
-  await command('mission',{id,agent,kind,instruction:'Rever a atividade do departamento.',revision:enabled.revision,...(agent==='stock'?{attachment:{mime:'text/csv',content:Buffer.from('Material;Compra\nCera;500').toString('base64')}}:{})});
+  await command('mission',{id,agent,kind,instruction:'Rever a atividade do departamento.',revision:enabled.revision,...(agent==='stock'?{attachment:{mime:'text/csv',content:Buffer.from('nome;quantidade contada;unidade\nCera;500;g\nMaterial fictício;3;un').toString('base64')}}:{})});
   await command('approve',{id,revision:0});
  }
  await db.exec('RESET ROLE; SET ROLE artessencia_intelligence_worker');
@@ -358,7 +358,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  let simulatedCharges=0,sawInventory=false;
  const rate={model:'fixture.1',verified:true,current:true,contextLimit:10000,maxInputTokens:10000,maxOutputTokens:500,inputRate:1000000,outputRate:4000000,grossBps:12300,toolsEnabled:false,validUntil:new Date(Date.now()+60000).toISOString()};
  const runtime=runtimeFactory.compose({call:workerRpc,env:{INTELLIGENCE_TARIFF_ID:'test',INTELLIGENCE_PAID_RELEASE:'approved'},tariffs:{test:rate},
-  provider:async p=>{if(JSON.stringify(p.input).includes('Material;Compra'))sawInventory=true;assert.ok(!JSON.stringify(p).includes('cliente-proibido'));return {status:'completed',id:'response-'+(++simulatedCharges),model:rate.model,text:JSON.stringify({document:'Documento de validação.',tasks:[],delegations:[]}),usage:{input_tokens:100,output_tokens:42}};}});
+  provider:async p=>{if(JSON.stringify(p.input).includes('Material fictício'))sawInventory=true;assert.ok(!JSON.stringify(p).includes('cliente-proibido'));return {status:'completed',id:'response-'+(++simulatedCharges),model:rate.model,text:JSON.stringify({document:'Documento de validação.',tasks:[],delegations:[]}),usage:{input_tokens:100,output_tokens:42}};}});
  for(const agent of Object.keys(responsibilities)){
   const result=await runtimeFactory.processNext(runtime);
   assert.equal(result.status,'review_ready',JSON.stringify(result));
@@ -369,6 +369,27 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  await db.exec('RESET ROLE; SET ROLE authenticated');
  const results=await command('read');
  for(const id of Object.values(ids))assert.equal(results.documents.find(d=>d.mission_id===id).content,'Documento de validação.');
+ const countDoc=results.documents.find(d=>d.mission_id===ids.stock);
+ assert.equal(countDoc.physical_count.proposals[1].status,'new_material_review');
+ const createArgs={mission:ids.stock,index:1,sourceRevision:countDoc.physical_count.sourceRevision,unitCost:.25,confirmed:true};
+ await assert.rejects(command('create_material',{...createArgs,confirmed:false}),/MATERIAL_CONFIRMATION_REQUIRED/);
+ await assert.rejects(command('create_material',{...createArgs,index:0}),/MATERIAL_PROPOSAL_INVALID/);
+ await assert.rejects(command('create_material',{...createArgs,unitCost:0}),/MATERIAL_COST_INVALID/);
+ const createdMaterial=await command('create_material',createArgs);
+ assert.equal(createdMaterial.material.name,'Material fictício');
+ assert.equal(createdMaterial.material.qty,0);
+ assert.equal(createdMaterial.material.unitCost,.25);
+ assert.equal((await command('create_material',createArgs)).replayed,true);
+ await assert.rejects(command('create_material',{...createArgs,unitCost:.5}),/MATERIAL_RECEIPT_CONFLICT/);
+ const createdDoc=(await command('read')).documents.find(d=>d.mission_id===ids.stock);
+ assert.equal(createdDoc.material_receipts[0].index,1);
+ await db.exec('RESET ROLE');
+ const newState=(await db.query('SELECT data,revision FROM public.artessencia_v1_state WHERE user_id=$1',[owner])).rows[0];
+ assert.equal(newState.data.stock.filter(x=>x.name==='Material fictício').length,1);
+ assert.equal(newState.data.stockMoves.some(x=>x.item==='Material fictício'),false);
+ assert.equal(Number(newState.revision),createdMaterial.revision);
+ console.log('PASS: explicit owner-only zero-balance material creation, canonical state revision and durable receipt');
+ await db.exec('SET ROLE authenticated');
 
  await db.exec('RESET ROLE');
  const attachment=await db.query('SELECT content FROM artessencia_intelligence_private.team_inputs WHERE mission_id=$1',[ids.stock]);

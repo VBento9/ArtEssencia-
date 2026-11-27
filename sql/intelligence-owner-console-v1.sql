@@ -7,6 +7,20 @@ CREATE TABLE IF NOT EXISTS artessencia_intelligence_private.team_inputs(
 );
 ALTER TABLE artessencia_intelligence_private.team_inputs ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON artessencia_intelligence_private.team_inputs FROM PUBLIC,anon,authenticated;
+-- Explicitly reviewed material creation; no balance inferred from an attachment.
+CREATE TABLE IF NOT EXISTS artessencia_intelligence_private.material_creation_receipts(
+ user_id uuid NOT NULL,mission_id uuid NOT NULL,line_index integer NOT NULL CHECK(line_index BETWEEN 0 AND 99),
+ material jsonb NOT NULL,source_revision bigint NOT NULL,committed_revision bigint NOT NULL,created_at timestamptz NOT NULL,
+ PRIMARY KEY(user_id,mission_id,line_index),
+ FOREIGN KEY(user_id,mission_id) REFERENCES artessencia_intelligence_private.team_missions(user_id,mission_id)
+);
+ALTER TABLE artessencia_intelligence_private.material_creation_receipts ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON artessencia_intelligence_private.material_creation_receipts FROM PUBLIC,anon,authenticated;
+CREATE OR REPLACE FUNCTION artessencia_intelligence_private.material_name_key(p_name text)
+RETURNS text LANGUAGE sql IMMUTABLE STRICT SET search_path='' AS $key$
+ SELECT lower(regexp_replace(trim(regexp_replace(normalize(p_name,NFD),'[̀-ͯ]','','g')),'[[:space:]]+',' ','g'));
+$key$;
+REVOKE ALL ON FUNCTION artessencia_intelligence_private.material_name_key(text) FROM PUBLIC,anon,authenticated;
 CREATE TABLE IF NOT EXISTS artessencia_intelligence_private.team_delegations(
  user_id uuid NOT NULL, parent_id uuid NOT NULL, child_id uuid NOT NULL, department text NOT NULL,
  PRIMARY KEY(user_id,child_id), UNIQUE(user_id,parent_id,department), CHECK(parent_id<>child_id),
@@ -70,6 +84,15 @@ DECLARE
  task_agent text;
  existing_task record;
  task_time timestamptz := clock_timestamp();
+ canonical_state public.artessencia_v1_state%rowtype;
+ material_proposal jsonb;
+ material_receipt artessencia_intelligence_private.material_creation_receipts%rowtype;
+ material_name text;
+ material_unit text;
+ material_cost numeric;
+ material_index integer;
+ material_revision bigint;
+ material_row jsonb;
 BEGIN
  IF actor IS NULL OR public.artessencia_is_owner_v1() IS DISTINCT FROM true THEN
   RAISE EXCEPTION USING errcode='42501',message='OWNER_REQUIRED';
@@ -122,6 +145,235 @@ BEGIN
    WHEN 'inovacao' THEN 'innovation_review' WHEN 'auditoria' THEN 'technical_review' END,p_args->>'instruction',(p_args->>'enabled')::boolean)
   ON CONFLICT(user_id,agent,cadence) DO UPDATE SET instruction=excluded.instruction,enabled=excluded.enabled;
   RETURN jsonb_build_object('agent',selected_agent);
+ WHEN 'create_material' THEN
+  IF p_args->'confirmed' IS DISTINCT FROM 'true'::jsonb OR jsonb_typeof(p_args->'unitCost') IS DISTINCT FROM 'number'
+   OR coalesce(p_args->>'index','') !~ '^[0-9]{1,2}
+  SELECT m.agent INTO task_agent FROM artessencia_intelligence_private.team_controls c
+   JOIN artessencia_intelligence_private.team_missions m USING(user_id)
+   WHERE c.user_id=actor AND c.enabled AND c.modes->>m.agent<>'off' AND m.mission_id=(p_args->>'mission')::uuid AND m.status='review_ready' FOR UPDATE OF c,m;
+  IF NOT FOUND THEN RAISE EXCEPTION 'TASK_NOT_AUTHORIZED'; END IF;
+  SELECT task INTO STRICT task_record FROM artessencia_intelligence_private.team_runs r,
+   LATERAL jsonb_array_elements(r.outcome->'report'->'tasks') task
+   WHERE r.user_id=actor AND r.mission_id=(p_args->>'mission')::uuid AND r.status='review_ready'
+    AND task->>'agent'=task_agent AND task->>'key'=p_args->>'key' AND task->'requiresApproval'='true'::jsonb;
+  IF length(trim(task_record->>'title')) NOT BETWEEN 1 AND 160 OR task_record->>'priority' NOT IN ('1','2','3') THEN RAISE EXCEPTION 'INVALID_TASK'; END IF;
+  task_id:='ae-intel-'||encode(sha256(convert_to(jsonb_build_array(actor,task_agent,task_record->>'key')::text,'UTF8')),'hex');
+  INSERT INTO public.artessencia_cloud_records(user_id,entity,record_id,data,client_updated_at,device_id)
+  VALUES(actor,'operational_tasks_v1',task_id,jsonb_build_object('id',task_id,'kind','task','title',task_record->>'title',
+   'category',CASE task_agent WHEN 'marketing' THEN 'Marketing' WHEN 'comercial' THEN 'Comercial' WHEN 'producao' THEN 'Produção' WHEN 'inovacao' THEN 'Criação' WHEN 'auditoria' THEN 'Segurança' ELSE 'Gestão' END,
+   'status','pendente','source','intelligence','priority',CASE task_record->>'priority' WHEN '1' THEN 'alta' WHEN '2' THEN 'normal' ELSE 'baixa' END,
+   'due_date',(task_record->>'dueDate')::date,'intelligence_agent',task_agent,'intelligence_mission_id',p_args->>'mission',
+   'intelligence_semantic_key',task_record->>'key','createdAt',task_time,'updatedAt',task_time),task_time,'intelligence-server')
+  ON CONFLICT(user_id,entity,record_id) DO NOTHING;
+  SELECT data,deleted_at INTO STRICT existing_task FROM public.artessencia_cloud_records WHERE user_id=actor AND entity='operational_tasks_v1' AND record_id=task_id;
+  IF existing_task.data->>'intelligence_semantic_key' IS DISTINCT FROM task_record->>'key' THEN RAISE EXCEPTION 'TASK_CONFLICT'; END IF;
+  RETURN jsonb_build_object('id',task_id,'status',CASE WHEN existing_task.deleted_at IS NULL THEN 'confirmed' ELSE 'archived' END);
+ WHEN 'correct' THEN
+  IF memory_text IS NULL OR length(memory_text) NOT BETWEEN 1 AND 1000 OR memory_text ~* '(@|Bearer[[:space:]]|sk-|sb_secret_|[0-9]{9})' THEN RAISE EXCEPTION 'INVALID_MEMORY'; END IF;
+  UPDATE artessencia_intelligence_private.team_memory SET summary=memory_text
+   WHERE user_id=actor AND memory_id=(p_args->>'id')::uuid AND revoked_at IS NULL AND expires_at>clock_timestamp() AND summary=p_args->>'previous';
+  IF NOT FOUND THEN RAISE EXCEPTION 'MEMORY_STATE_CONFLICT'; END IF;
+  RETURN jsonb_build_object('id',p_args->>'id');
+ WHEN 'remember' THEN
+  IF memory_text IS NULL OR length(memory_text) NOT BETWEEN 1 AND 1000 OR memory_text ~* '(@|Bearer[[:space:]]|sk-|sb_secret_|[0-9]{9})' THEN RAISE EXCEPTION 'INVALID_MEMORY'; END IF;
+  target := (p_args->>'id')::uuid;
+  INSERT INTO artessencia_intelligence_private.team_memory(user_id,memory_id,agent,kind,summary,evidence_id,expires_at)
+  SELECT actor,target,m.agent,p_args->>'kind',memory_text,m.mission_id,clock_timestamp()+interval '364 days'
+  FROM artessencia_intelligence_private.team_missions m
+  WHERE m.user_id=actor AND m.mission_id=(p_args->>'mission')::uuid AND m.agent=selected_agent AND m.status='review_ready';
+  IF NOT FOUND THEN RAISE EXCEPTION 'EVIDENCE_REQUIRED'; END IF;
+  RETURN jsonb_build_object('id',target);
+ WHEN 'revoke','erase' THEN
+  target := (p_args->>'id')::uuid;
+  IF p_action='revoke' THEN
+   UPDATE artessencia_intelligence_private.team_memory SET revoked_at=clock_timestamp() WHERE user_id=actor AND memory_id=target AND revoked_at IS NULL;
+  ELSE
+   DELETE FROM artessencia_intelligence_private.team_memory WHERE user_id=actor AND memory_id=target AND revoked_at IS NOT NULL;
+  END IF;
+  IF NOT FOUND THEN RAISE EXCEPTION 'MEMORY_STATE_CONFLICT'; END IF;
+  RETURN jsonb_build_object('id',target);
+ WHEN 'read' THEN
+  SELECT jsonb_build_object('revision',revision,'enabled',enabled,'modes',modes) INTO controls
+  FROM artessencia_intelligence_private.team_controls WHERE user_id=actor;
+  SELECT coalesce(jsonb_agg(to_jsonb(m) ORDER BY m.updated_at DESC,m.mission_id),'[]') INTO missions FROM
+   (SELECT m.mission_id,m.agent,m.kind,m.instruction,m.status,m.revision,m.updated_at,m.result_summary,d.parent_id FROM artessencia_intelligence_private.team_missions m LEFT JOIN artessencia_intelligence_private.team_delegations d ON d.user_id=m.user_id AND d.child_id=m.mission_id WHERE m.user_id=actor ORDER BY updated_at DESC,mission_id LIMIT 100) m;
+  SELECT coalesce(jsonb_agg(to_jsonb(e) ORDER BY e.occurred_at DESC),'[]') INTO events FROM
+   (SELECT mission_id,revision,status,occurred_at FROM artessencia_intelligence_private.team_events WHERE user_id=actor ORDER BY occurred_at DESC LIMIT 100) e;
+  SELECT coalesce(jsonb_agg(to_jsonb(k) ORDER BY k.created_at DESC),'[]') INTO memory FROM
+   (SELECT memory_id,agent,summary,kind,evidence_id,created_at,expires_at,revoked_at FROM artessencia_intelligence_private.team_memory WHERE user_id=actor AND expires_at>clock_timestamp() ORDER BY created_at DESC LIMIT 100) k;
+  SELECT jsonb_build_object('pending',coalesce(sum(maximum_microeur) FILTER(WHERE status IN ('reserved','unknown','inflight')),0),
+   'settled',coalesce(sum(actual_microeur) FILTER(WHERE status='settled' AND date_trunc('month',now() AT TIME ZONE 'Europe/Lisbon')::date IN(reserved_month,settled_month)),0),
+   'unknown',count(*) FILTER(WHERE status='unknown')) INTO expenses FROM artessencia_intelligence_private.ai_budget_entries;
+  expenses:=expenses||jsonb_build_object('channels',(SELECT coalesce(jsonb_object_agg(channel,jsonb_build_object('settled',settled,'pending',pending)),'{}') FROM
+   (SELECT channel,coalesce(sum(actual_microeur) FILTER(WHERE status='settled' AND date_trunc('month',now() AT TIME ZONE 'Europe/Lisbon')::date IN(reserved_month,settled_month)),0) settled,
+    coalesce(sum(maximum_microeur) FILTER(WHERE status IN ('reserved','unknown','inflight')),0) pending FROM artessencia_intelligence_private.ai_budget_entries GROUP BY channel)t));
+  RETURN jsonb_build_object('routines',(SELECT coalesce(jsonb_agg(jsonb_build_object('agent',r.agent,'cadence',r.cadence,'enabled',r.enabled,'instruction',r.instruction)),'[]') FROM artessencia_intelligence_private.team_routines r WHERE r.user_id=actor),
+   'documents',(SELECT coalesce(jsonb_agg(to_jsonb(d)),'[]') FROM (SELECT r.mission_id,m.agent,r.outcome->>'reasoning' AS content,r.outcome->'report'->'tasks' AS tasks,r.outcome->'report'->'physicalCount' AS physical_count,r.tool_receipts,
+    (SELECT coalesce(jsonb_agg(jsonb_build_object('index',z.line_index,'name',z.material->>'name','revision',z.committed_revision)),'[]') FROM artessencia_intelligence_private.material_creation_receipts z WHERE z.user_id=r.user_id AND z.mission_id=r.mission_id) AS material_receipts FROM artessencia_intelligence_private.team_runs r JOIN artessencia_intelligence_private.team_missions m USING(user_id,mission_id) WHERE r.user_id=actor AND r.status='review_ready' ORDER BY r.ended_at DESC LIMIT 50)d),
+   'controls',controls,'missions',missions,'events',events,'memory',memory,'budget',expenses);
+ ELSE RAISE EXCEPTION 'UNKNOWN_COMMAND';
+ END CASE;
+END;
+$console$;
+REVOKE ALL ON FUNCTION public.artessencia_intelligence_console_v1(text,jsonb) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.artessencia_intelligence_console_v1(text,jsonb) TO authenticated;
+CREATE OR REPLACE FUNCTION artessencia_intelligence_private.team_director_context(p_id uuid,p_lease uuid)
+RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $director$
+DECLARE
+ actor uuid:=auth.uid();
+ run jsonb;
+ reports jsonb;
+ keys jsonb;
+BEGIN
+ run:=artessencia_intelligence_private.team_run_status(p_id);
+ IF (run->>'active')::boolean IS DISTINCT FROM true OR (run->>'leaseId')::uuid IS DISTINCT FROM p_lease
+  OR run->>'agent'<>'director' OR run->>'kind'<>'daily_priority_plan' THEN RAISE EXCEPTION 'DIRECTOR_SCOPE_DENIED'; END IF;
+ SELECT coalesce(jsonb_agg(jsonb_build_object('mode','proposal_only','tasks',items)),'[]') INTO reports FROM
+ (SELECT coalesce((SELECT jsonb_agg(jsonb_build_object('key',t->'key','agent',t->'agent','title',t->'title','priority',t->'priority','requiresApproval',t->'requiresApproval','dueDate',t->'dueDate'))
+  FROM jsonb_array_elements(r.outcome->'report'->'tasks') t WHERE t->>'agent'=m.agent),'[]'::jsonb) AS items
+  FROM artessencia_intelligence_private.team_runs r JOIN artessencia_intelligence_private.team_missions m USING(user_id,mission_id)
+  WHERE r.user_id=actor AND r.status='review_ready' AND m.agent<>'director' AND r.outcome->'report'->>'mode'='proposal_only'
+  ORDER BY r.ended_at DESC LIMIT 50) recent;
+ SELECT coalesce(jsonb_agg(data->>'intelligence_semantic_key'),'[]') INTO keys FROM public.artessencia_cloud_records
+ WHERE user_id=actor AND entity='operational_tasks_v1' AND data->>'source'='intelligence' AND data ? 'intelligence_semantic_key';
+ IF octet_length(reports::text)+octet_length(keys::text)>500000 THEN RAISE EXCEPTION 'SOURCE_TOO_LARGE'; END IF;
+ RETURN jsonb_build_object('verified',true,'owner',actor,'agent','director','kind','daily_priority_plan','missionId',p_id,'leaseId',p_lease,'sourceRevision',(run->>'missionRevision')::bigint,
+ 'evidenceIds',jsonb_build_array('mission-'||p_id),'payload',jsonb_build_object('today',(clock_timestamp() AT TIME ZONE 'Europe/Lisbon')::date,'reports',reports,'existingTaskKeys',keys,'limit',30));
+END;
+$director$;
+REVOKE ALL ON FUNCTION artessencia_intelligence_private.team_director_context(uuid,uuid) FROM PUBLIC,anon,authenticated;
+COMMIT;
+ OR coalesce(p_args->>'sourceRevision','') !~ '^[0-9]{1,15}
+  SELECT m.agent INTO task_agent FROM artessencia_intelligence_private.team_controls c
+   JOIN artessencia_intelligence_private.team_missions m USING(user_id)
+   WHERE c.user_id=actor AND c.enabled AND c.modes->>m.agent<>'off' AND m.mission_id=(p_args->>'mission')::uuid AND m.status='review_ready' FOR UPDATE OF c,m;
+  IF NOT FOUND THEN RAISE EXCEPTION 'TASK_NOT_AUTHORIZED'; END IF;
+  SELECT task INTO STRICT task_record FROM artessencia_intelligence_private.team_runs r,
+   LATERAL jsonb_array_elements(r.outcome->'report'->'tasks') task
+   WHERE r.user_id=actor AND r.mission_id=(p_args->>'mission')::uuid AND r.status='review_ready'
+    AND task->>'agent'=task_agent AND task->>'key'=p_args->>'key' AND task->'requiresApproval'='true'::jsonb;
+  IF length(trim(task_record->>'title')) NOT BETWEEN 1 AND 160 OR task_record->>'priority' NOT IN ('1','2','3') THEN RAISE EXCEPTION 'INVALID_TASK'; END IF;
+  task_id:='ae-intel-'||encode(sha256(convert_to(jsonb_build_array(actor,task_agent,task_record->>'key')::text,'UTF8')),'hex');
+  INSERT INTO public.artessencia_cloud_records(user_id,entity,record_id,data,client_updated_at,device_id)
+  VALUES(actor,'operational_tasks_v1',task_id,jsonb_build_object('id',task_id,'kind','task','title',task_record->>'title',
+   'category',CASE task_agent WHEN 'marketing' THEN 'Marketing' WHEN 'comercial' THEN 'Comercial' WHEN 'producao' THEN 'Produção' WHEN 'inovacao' THEN 'Criação' WHEN 'auditoria' THEN 'Segurança' ELSE 'Gestão' END,
+   'status','pendente','source','intelligence','priority',CASE task_record->>'priority' WHEN '1' THEN 'alta' WHEN '2' THEN 'normal' ELSE 'baixa' END,
+   'due_date',(task_record->>'dueDate')::date,'intelligence_agent',task_agent,'intelligence_mission_id',p_args->>'mission',
+   'intelligence_semantic_key',task_record->>'key','createdAt',task_time,'updatedAt',task_time),task_time,'intelligence-server')
+  ON CONFLICT(user_id,entity,record_id) DO NOTHING;
+  SELECT data,deleted_at INTO STRICT existing_task FROM public.artessencia_cloud_records WHERE user_id=actor AND entity='operational_tasks_v1' AND record_id=task_id;
+  IF existing_task.data->>'intelligence_semantic_key' IS DISTINCT FROM task_record->>'key' THEN RAISE EXCEPTION 'TASK_CONFLICT'; END IF;
+  RETURN jsonb_build_object('id',task_id,'status',CASE WHEN existing_task.deleted_at IS NULL THEN 'confirmed' ELSE 'archived' END);
+ WHEN 'correct' THEN
+  IF memory_text IS NULL OR length(memory_text) NOT BETWEEN 1 AND 1000 OR memory_text ~* '(@|Bearer[[:space:]]|sk-|sb_secret_|[0-9]{9})' THEN RAISE EXCEPTION 'INVALID_MEMORY'; END IF;
+  UPDATE artessencia_intelligence_private.team_memory SET summary=memory_text
+   WHERE user_id=actor AND memory_id=(p_args->>'id')::uuid AND revoked_at IS NULL AND expires_at>clock_timestamp() AND summary=p_args->>'previous';
+  IF NOT FOUND THEN RAISE EXCEPTION 'MEMORY_STATE_CONFLICT'; END IF;
+  RETURN jsonb_build_object('id',p_args->>'id');
+ WHEN 'remember' THEN
+  IF memory_text IS NULL OR length(memory_text) NOT BETWEEN 1 AND 1000 OR memory_text ~* '(@|Bearer[[:space:]]|sk-|sb_secret_|[0-9]{9})' THEN RAISE EXCEPTION 'INVALID_MEMORY'; END IF;
+  target := (p_args->>'id')::uuid;
+  INSERT INTO artessencia_intelligence_private.team_memory(user_id,memory_id,agent,kind,summary,evidence_id,expires_at)
+  SELECT actor,target,m.agent,p_args->>'kind',memory_text,m.mission_id,clock_timestamp()+interval '364 days'
+  FROM artessencia_intelligence_private.team_missions m
+  WHERE m.user_id=actor AND m.mission_id=(p_args->>'mission')::uuid AND m.agent=selected_agent AND m.status='review_ready';
+  IF NOT FOUND THEN RAISE EXCEPTION 'EVIDENCE_REQUIRED'; END IF;
+  RETURN jsonb_build_object('id',target);
+ WHEN 'revoke','erase' THEN
+  target := (p_args->>'id')::uuid;
+  IF p_action='revoke' THEN
+   UPDATE artessencia_intelligence_private.team_memory SET revoked_at=clock_timestamp() WHERE user_id=actor AND memory_id=target AND revoked_at IS NULL;
+  ELSE
+   DELETE FROM artessencia_intelligence_private.team_memory WHERE user_id=actor AND memory_id=target AND revoked_at IS NOT NULL;
+  END IF;
+  IF NOT FOUND THEN RAISE EXCEPTION 'MEMORY_STATE_CONFLICT'; END IF;
+  RETURN jsonb_build_object('id',target);
+ WHEN 'read' THEN
+  SELECT jsonb_build_object('revision',revision,'enabled',enabled,'modes',modes) INTO controls
+  FROM artessencia_intelligence_private.team_controls WHERE user_id=actor;
+  SELECT coalesce(jsonb_agg(to_jsonb(m) ORDER BY m.updated_at DESC,m.mission_id),'[]') INTO missions FROM
+   (SELECT m.mission_id,m.agent,m.kind,m.instruction,m.status,m.revision,m.updated_at,m.result_summary,d.parent_id FROM artessencia_intelligence_private.team_missions m LEFT JOIN artessencia_intelligence_private.team_delegations d ON d.user_id=m.user_id AND d.child_id=m.mission_id WHERE m.user_id=actor ORDER BY updated_at DESC,mission_id LIMIT 100) m;
+  SELECT coalesce(jsonb_agg(to_jsonb(e) ORDER BY e.occurred_at DESC),'[]') INTO events FROM
+   (SELECT mission_id,revision,status,occurred_at FROM artessencia_intelligence_private.team_events WHERE user_id=actor ORDER BY occurred_at DESC LIMIT 100) e;
+  SELECT coalesce(jsonb_agg(to_jsonb(k) ORDER BY k.created_at DESC),'[]') INTO memory FROM
+   (SELECT memory_id,agent,summary,kind,evidence_id,created_at,expires_at,revoked_at FROM artessencia_intelligence_private.team_memory WHERE user_id=actor AND expires_at>clock_timestamp() ORDER BY created_at DESC LIMIT 100) k;
+  SELECT jsonb_build_object('pending',coalesce(sum(maximum_microeur) FILTER(WHERE status IN ('reserved','unknown','inflight')),0),
+   'settled',coalesce(sum(actual_microeur) FILTER(WHERE status='settled' AND date_trunc('month',now() AT TIME ZONE 'Europe/Lisbon')::date IN(reserved_month,settled_month)),0),
+   'unknown',count(*) FILTER(WHERE status='unknown')) INTO expenses FROM artessencia_intelligence_private.ai_budget_entries;
+  expenses:=expenses||jsonb_build_object('channels',(SELECT coalesce(jsonb_object_agg(channel,jsonb_build_object('settled',settled,'pending',pending)),'{}') FROM
+   (SELECT channel,coalesce(sum(actual_microeur) FILTER(WHERE status='settled' AND date_trunc('month',now() AT TIME ZONE 'Europe/Lisbon')::date IN(reserved_month,settled_month)),0) settled,
+    coalesce(sum(maximum_microeur) FILTER(WHERE status IN ('reserved','unknown','inflight')),0) pending FROM artessencia_intelligence_private.ai_budget_entries GROUP BY channel)t));
+  RETURN jsonb_build_object('routines',(SELECT coalesce(jsonb_agg(jsonb_build_object('agent',r.agent,'cadence',r.cadence,'enabled',r.enabled,'instruction',r.instruction)),'[]') FROM artessencia_intelligence_private.team_routines r WHERE r.user_id=actor),
+   'documents',(SELECT coalesce(jsonb_agg(to_jsonb(d)),'[]') FROM (SELECT r.mission_id,m.agent,r.outcome->>'reasoning' AS content,r.outcome->'report'->'tasks' AS tasks,r.outcome->'report'->'physicalCount' AS physical_count,r.tool_receipts FROM artessencia_intelligence_private.team_runs r JOIN artessencia_intelligence_private.team_missions m USING(user_id,mission_id) WHERE r.user_id=actor AND r.status='review_ready' ORDER BY r.ended_at DESC LIMIT 50)d),
+   'controls',controls,'missions',missions,'events',events,'memory',memory,'budget',expenses);
+ ELSE RAISE EXCEPTION 'UNKNOWN_COMMAND';
+ END CASE;
+END;
+$console$;
+REVOKE ALL ON FUNCTION public.artessencia_intelligence_console_v1(text,jsonb) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.artessencia_intelligence_console_v1(text,jsonb) TO authenticated;
+CREATE OR REPLACE FUNCTION artessencia_intelligence_private.team_director_context(p_id uuid,p_lease uuid)
+RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $director$
+DECLARE
+ actor uuid:=auth.uid();
+ run jsonb;
+ reports jsonb;
+ keys jsonb;
+BEGIN
+ run:=artessencia_intelligence_private.team_run_status(p_id);
+ IF (run->>'active')::boolean IS DISTINCT FROM true OR (run->>'leaseId')::uuid IS DISTINCT FROM p_lease
+  OR run->>'agent'<>'director' OR run->>'kind'<>'daily_priority_plan' THEN RAISE EXCEPTION 'DIRECTOR_SCOPE_DENIED'; END IF;
+ SELECT coalesce(jsonb_agg(jsonb_build_object('mode','proposal_only','tasks',items)),'[]') INTO reports FROM
+ (SELECT coalesce((SELECT jsonb_agg(jsonb_build_object('key',t->'key','agent',t->'agent','title',t->'title','priority',t->'priority','requiresApproval',t->'requiresApproval','dueDate',t->'dueDate'))
+  FROM jsonb_array_elements(r.outcome->'report'->'tasks') t WHERE t->>'agent'=m.agent),'[]'::jsonb) AS items
+  FROM artessencia_intelligence_private.team_runs r JOIN artessencia_intelligence_private.team_missions m USING(user_id,mission_id)
+  WHERE r.user_id=actor AND r.status='review_ready' AND m.agent<>'director' AND r.outcome->'report'->>'mode'='proposal_only'
+  ORDER BY r.ended_at DESC LIMIT 50) recent;
+ SELECT coalesce(jsonb_agg(data->>'intelligence_semantic_key'),'[]') INTO keys FROM public.artessencia_cloud_records
+ WHERE user_id=actor AND entity='operational_tasks_v1' AND data->>'source'='intelligence' AND data ? 'intelligence_semantic_key';
+ IF octet_length(reports::text)+octet_length(keys::text)>500000 THEN RAISE EXCEPTION 'SOURCE_TOO_LARGE'; END IF;
+ RETURN jsonb_build_object('verified',true,'owner',actor,'agent','director','kind','daily_priority_plan','missionId',p_id,'leaseId',p_lease,'sourceRevision',(run->>'missionRevision')::bigint,
+ 'evidenceIds',jsonb_build_array('mission-'||p_id),'payload',jsonb_build_object('today',(clock_timestamp() AT TIME ZONE 'Europe/Lisbon')::date,'reports',reports,'existingTaskKeys',keys,'limit',30));
+END;
+$director$;
+REVOKE ALL ON FUNCTION artessencia_intelligence_private.team_director_context(uuid,uuid) FROM PUBLIC,anon,authenticated;
+COMMIT;
+ THEN RAISE EXCEPTION 'MATERIAL_CONFIRMATION_REQUIRED'; END IF;
+  target:=(p_args->>'mission')::uuid; material_index:=(p_args->>'index')::integer;
+  material_revision:=(p_args->>'sourceRevision')::bigint; material_cost:=(p_args->>'unitCost')::numeric;
+  IF material_cost<=0 OR material_cost>1000000 THEN RAISE EXCEPTION 'MATERIAL_COST_INVALID'; END IF;
+  PERFORM 1 FROM artessencia_intelligence_private.team_controls c JOIN artessencia_intelligence_private.team_missions m USING(user_id)
+   WHERE c.user_id=actor AND m.mission_id=target AND m.agent='stock' AND m.status='review_ready'
+     AND c.enabled AND c.modes->>'stock'<>'off' AND c.revision=m.control_revision FOR UPDATE OF c,m;
+  IF NOT FOUND THEN RAISE EXCEPTION 'MATERIAL_NOT_AUTHORIZED'; END IF;
+  SELECT * INTO canonical_state FROM public.artessencia_v1_state WHERE user_id=actor FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'CANONICAL_STATE_REQUIRED'; END IF;
+  SELECT * INTO material_receipt FROM artessencia_intelligence_private.material_creation_receipts
+   WHERE user_id=actor AND mission_id=target AND line_index=material_index;
+  IF FOUND THEN
+   IF material_receipt.source_revision<>material_revision OR (material_receipt.material->>'unitCost')::numeric<>material_cost THEN RAISE EXCEPTION 'MATERIAL_RECEIPT_CONFLICT'; END IF;
+   RETURN jsonb_build_object('status','confirmed','material',material_receipt.material,'revision',material_receipt.committed_revision,'replayed',true);
+  END IF;
+  SELECT r.outcome->'report'->'physicalCount' INTO material_proposal FROM artessencia_intelligence_private.team_runs r
+   WHERE r.user_id=actor AND r.mission_id=target AND r.status='review_ready';
+  IF material_proposal->>'mode' IS DISTINCT FROM 'physical_count_proposal_only' OR material_proposal->>'sourceRevision' IS DISTINCT FROM material_revision::text THEN RAISE EXCEPTION 'MATERIAL_PROPOSAL_STALE'; END IF;
+  material_proposal:=material_proposal->'proposals'->material_index;
+  IF material_proposal->>'status' IS DISTINCT FROM 'new_material_review' OR material_proposal->>'index' IS DISTINCT FROM material_index::text
+   OR material_proposal->'requiresApproval' IS DISTINCT FROM 'true'::jsonb THEN RAISE EXCEPTION 'MATERIAL_PROPOSAL_INVALID'; END IF;
+  material_name:=material_proposal->>'name'; material_unit:=material_proposal->>'unit';
+  IF material_name IS NULL OR length(material_name) NOT BETWEEN 1 AND 200 OR trim(material_name)<>material_name
+   OR material_name ~ '[[:cntrl:]<>"'']' OR material_name ~ '&[[:alnum:]#]+;' OR material_name IN ('__proto__','constructor','prototype')
+   OR material_unit IS NULL OR material_unit NOT IN ('g','ml','cm','un') THEN RAISE EXCEPTION 'MATERIAL_INVALID'; END IF;
+  IF canonical_state.revision IS DISTINCT FROM material_revision THEN RAISE EXCEPTION USING errcode='40001',message='cloud_revision_conflict'; END IF;
+  IF jsonb_typeof(canonical_state.data->'stock') IS DISTINCT FROM 'array' THEN RAISE EXCEPTION 'INVALID_STATE'; END IF;
+  IF EXISTS(SELECT 1 FROM jsonb_array_elements(canonical_state.data->'stock') x WHERE
+    artessencia_intelligence_private.material_name_key(x->>'name')=artessencia_intelligence_private.material_name_key(material_name)) THEN RAISE EXCEPTION 'MATERIAL_ALREADY_EXISTS'; END IF;
+  material_row:=jsonb_build_object('name',material_name,'unit',material_unit,'qty',0,'min',0,'target',NULL,'unitCost',material_cost,'preferredSupplier','','imageUrl','');
+  UPDATE public.artessencia_v1_state SET data=jsonb_set(canonical_state.data,'{stock}',(canonical_state.data->'stock')||jsonb_build_array(material_row)),
+   revision=canonical_state.revision+1,updated_at=task_time,device_id='intelligence-server'
+   WHERE user_id=actor RETURNING * INTO canonical_state;
+  INSERT INTO artessencia_intelligence_private.material_creation_receipts VALUES(actor,target,material_index,material_row,material_revision,canonical_state.revision,task_time);
+  RETURN jsonb_build_object('status','confirmed','material',material_row,'revision',canonical_state.revision,'replayed',false);
  WHEN 'plan_task' THEN
   SELECT m.agent INTO task_agent FROM artessencia_intelligence_private.team_controls c
    JOIN artessencia_intelligence_private.team_missions m USING(user_id)
