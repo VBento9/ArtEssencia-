@@ -16,6 +16,7 @@ async function run() {
     CREATE TABLE public.artessencia_v1_products(user_id uuid,id uuid PRIMARY KEY,data jsonb,updated_at timestamptz DEFAULT now());
     CREATE TABLE public.artessencia_v1_orders(user_id uuid,id uuid PRIMARY KEY,status text,total numeric,data jsonb);
     CREATE TABLE public.artessencia_v1_quotes(user_id uuid,id uuid PRIMARY KEY,status text,valid_until date,data jsonb);
+    CREATE TABLE public.artessencia_shop_event_requests(user_id uuid,request_id uuid PRIMARY KEY,status text,created_at timestamptz);
     CREATE TABLE public.artessencia_cloud_records(user_id uuid,entity text,record_id text,data jsonb,client_updated_at timestamptz,device_id text,deleted_at timestamptz,PRIMARY KEY(user_id,entity,record_id));`);
   await db.query('INSERT INTO public.artessencia_v1_state(user_id,data,revision) VALUES($1,$2,7)',[owner,JSON.stringify({stock:[{name:'Material de ensaio',qty:12,unit:'g',unitCost:.02}],productRecipes:{TEST:[{item:'Material de ensaio',qty:2,unit:'g'}]},stockMoves:[],purchases:[],productionRuns:[]})]);
   for (const name of ['team-draft','ai-budget-draft','run-draft','owner-console']) {

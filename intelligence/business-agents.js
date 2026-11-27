@@ -10,14 +10,26 @@ function createBusinessAgents(){
  const report=tasks=>({mode:'proposal_only',tasks});
  function commercial(input){
   const {today,quotes,requests}=input||{};if(!day(today))throw Error('Data inválida.');
-  const tasks=[];
+  const tasks=[],proposals=[];
+  const append=(q,kind,instruction)=>{
+   if(typeof q.sourceDigest!=='string'||!/^[0-9a-f]{64}$/.test(q.sourceDigest)||typeof q.reference!=='string'||!/^[A-Za-z0-9_-]{1,70}$/.test(q.reference)||proposals.length>=40)return;
+   proposals.push({kind,recordId:q.id,reference:q.reference,recordStatus:q.recordStatus,sourceDigest:q.sourceDigest,
+    instruction,requiresApproval:true});
+  };
   for(const q of rows(quotes,'id')){
    if(q.status!=='open')continue;
+   const instruction=q.recordStatus==='Aceite'?'Verificar condições e sinal antes de considerar a conversão em encomenda.':
+     q.recordStatus==='Rascunho'?'Rever produtos, quantidades, validade e condições no editor de orçamento.':
+     'Rever validade e preparar seguimento interno; não contactar sem autorização.';
+   if(['Aceite','Rascunho','Enviado'].includes(q.recordStatus))append(q,'quote',instruction);
    if(!day(q.followupDate)||q.contactAllowed!==true){tasks.push(task('comercial','review_quote',q.id,'Validar seguimento do orçamento — '+q.id,2));continue;}
    if(q.followupDate<=today)tasks.push(task('comercial','followup_quote',q.id,'Preparar seguimento do orçamento — '+q.id,2,q.followupDate));
   }
-  for(const q of rows(requests,'id'))if(q.status==='unanswered')tasks.push(task('comercial','review_request',q.id,'Responder a pedido de informação — '+q.id,1,day(q.receivedDate)?q.receivedDate:null));
-  return report(tasks);
+  for(const q of rows(requests,'id'))if(q.status==='unanswered'){
+   tasks.push(task('comercial','review_request',q.id,'Responder a pedido de informação — '+q.id,1,day(q.receivedDate)?q.receivedDate:null));
+   if(q.recordStatus==='new')append(q,'request','Rever o pedido original e preparar orçamento no editor existente, sem enviar ou assumir quantidades.');
+  }
+  return {...report(tasks),commercialProposals:proposals};
  }
  function marketing(input){
   const {today,campaigns,posts}=input||{};if(!day(today))throw Error('Data inválida.');

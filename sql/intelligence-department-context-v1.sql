@@ -67,9 +67,12 @@ BEGIN
  SELECT * INTO STRICT snapshot FROM public.artessencia_v1_state WHERE user_id=actor;
  CASE agent
  WHEN 'comercial' THEN
-  SELECT jsonb_build_object('today',work_day,'quotes',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',q.id,'status','open','followupDate',q.valid_until,'contactAllowed',false)),'[]') FROM public.artessencia_v1_quotes q
-    WHERE q.user_id=actor AND coalesce(q.data->>'orderId','')='' AND coalesce(q.status,'') NOT IN('Recusado','Expirado','Cancelado')),
-   'requests',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',r.request_id,'status','unanswered','receivedDate',(r.created_at AT TIME ZONE 'Europe/Lisbon')::date)),'[]')
+  SELECT jsonb_build_object('today',work_day,'quotes',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',q.id,'status','open','followupDate',q.valid_until,'contactAllowed',false,
+    'reference',CASE WHEN q.data->>'id' ~ '^[A-Za-z0-9_-]{1,70}$' THEN q.data->>'id' ELSE q.id::text END,
+    'recordStatus',q.status,'sourceDigest',encode(sha256(convert_to(to_jsonb(q)::text,'UTF8')),'hex'))),'[]') FROM public.artessencia_v1_quotes q
+    WHERE q.user_id=actor AND coalesce(q.data->>'orderId','')='' AND q.status IN('Rascunho','Enviado','Aceite')),
+   'requests',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',r.request_id,'status','unanswered','receivedDate',(r.created_at AT TIME ZONE 'Europe/Lisbon')::date,
+    'reference',r.request_id::text,'recordStatus',r.status,'sourceDigest',encode(sha256(convert_to(to_jsonb(r)::text,'UTF8')),'hex'))),'[]')
     FROM public.artessencia_shop_event_requests r WHERE r.user_id=actor AND r.status='new')) INTO payload;
  WHEN 'catalogo' THEN
   SELECT jsonb_build_object('products',coalesce(jsonb_agg(jsonb_build_object('code',p.data->>'code','catalogEligible',true,

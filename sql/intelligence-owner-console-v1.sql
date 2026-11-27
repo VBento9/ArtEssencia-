@@ -255,6 +255,71 @@ END;
 $stockcommit$;
 REVOKE ALL ON FUNCTION artessencia_intelligence_private.stock_change_commit(text,jsonb) FROM PUBLIC,anon,authenticated;
 
+-- Internal commercial drafts, never customer communications or canonical quote writes.
+CREATE TABLE IF NOT EXISTS artessencia_intelligence_private.commercial_proposals(
+ user_id uuid NOT NULL,mission_id uuid NOT NULL,proposal_index integer NOT NULL CHECK(proposal_index BETWEEN 0 AND 39),
+ source_kind text NOT NULL CHECK(source_kind IN ('quote','request')),source_id uuid NOT NULL,
+ reference text NOT NULL,source_digest text NOT NULL CHECK(source_digest ~ '^[0-9a-f]{64}$'),
+ instruction text NOT NULL CHECK(length(instruction) BETWEEN 1 AND 1000),
+ created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+ PRIMARY KEY(user_id,mission_id,proposal_index),
+ FOREIGN KEY(user_id,mission_id) REFERENCES artessencia_intelligence_private.team_missions(user_id,mission_id)
+);
+ALTER TABLE artessencia_intelligence_private.commercial_proposals ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON artessencia_intelligence_private.commercial_proposals FROM PUBLIC,anon,authenticated;
+CREATE OR REPLACE FUNCTION artessencia_intelligence_private.commercial_source(p_kind text,p_id uuid,p_lock boolean DEFAULT false)
+RETURNS text LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $commercialsource$
+DECLARE actor uuid:=auth.uid(); source_digest text;
+BEGIN
+ IF actor IS NULL OR public.artessencia_is_owner_v1() IS DISTINCT FROM true THEN RAISE EXCEPTION 'OWNER_REQUIRED'; END IF;
+ IF p_kind='quote' THEN
+  IF p_lock THEN PERFORM 1 FROM public.artessencia_v1_quotes WHERE user_id=actor AND id=p_id FOR UPDATE; END IF;
+  SELECT encode(sha256(convert_to(to_jsonb(q)::text,'UTF8')),'hex') INTO source_digest FROM public.artessencia_v1_quotes q
+   WHERE q.user_id=actor AND q.id=p_id AND q.status IN ('Rascunho','Enviado','Aceite') AND coalesce(q.data->>'orderId','')='';
+ ELSIF p_kind='request' THEN
+  IF p_lock THEN PERFORM 1 FROM public.artessencia_shop_event_requests WHERE user_id=actor AND request_id=p_id FOR UPDATE; END IF;
+  SELECT encode(sha256(convert_to(to_jsonb(r)::text,'UTF8')),'hex') INTO source_digest FROM public.artessencia_shop_event_requests r
+   WHERE r.user_id=actor AND r.request_id=p_id AND r.status='new';
+ ELSE RAISE EXCEPTION 'COMMERCIAL_SOURCE_INVALID'; END IF;
+ RETURN source_digest;
+END;
+$commercialsource$;
+REVOKE ALL ON FUNCTION artessencia_intelligence_private.commercial_source(text,uuid,boolean) FROM PUBLIC,anon,authenticated;
+
+CREATE OR REPLACE FUNCTION artessencia_intelligence_private.commercial_command(p_action text,p_args jsonb)
+RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $commercial$
+DECLARE actor uuid:=auth.uid(); mid uuid; idx integer; proposal jsonb; saved artessencia_intelligence_private.commercial_proposals%rowtype;
+ sid uuid; digest text; kind text;
+BEGIN
+ IF actor IS NULL OR public.artessencia_is_owner_v1() IS DISTINCT FROM true THEN RAISE EXCEPTION 'OWNER_REQUIRED'; END IF;
+ IF p_action='read' THEN
+  RETURN (SELECT coalesce(jsonb_agg(jsonb_build_object('mission',z.mission_id,'index',z.proposal_index,'kind',z.source_kind,'reference',z.reference,
+   'instruction',z.instruction,'createdAt',z.created_at,'current',coalesce(artessencia_intelligence_private.commercial_source(z.source_kind,z.source_id)=z.source_digest,false)) ORDER BY z.created_at DESC),'[]')
+   FROM (SELECT * FROM artessencia_intelligence_private.commercial_proposals WHERE user_id=actor ORDER BY created_at DESC LIMIT 100)z);
+ END IF;
+ IF p_action<>'approve' OR p_args->'confirmed' IS DISTINCT FROM 'true'::jsonb OR coalesce(p_args->>'index','') !~ '^[0-9]{1,2}$' THEN RAISE EXCEPTION 'COMMERCIAL_CONFIRMATION_REQUIRED'; END IF;
+ mid:=(p_args->>'mission')::uuid;idx:=(p_args->>'index')::integer;
+ IF idx NOT BETWEEN 0 AND 39 THEN RAISE EXCEPTION 'COMMERCIAL_PROPOSAL_INVALID'; END IF;
+ PERFORM 1 FROM artessencia_intelligence_private.team_controls c JOIN artessencia_intelligence_private.team_missions m USING(user_id)
+  WHERE c.user_id=actor AND c.enabled AND c.modes->>'comercial'<>'off' AND c.revision=m.control_revision
+  AND m.mission_id=mid AND m.agent='comercial' AND m.kind='commercial_review' AND m.status='review_ready' FOR UPDATE OF c,m;
+ IF NOT FOUND THEN RAISE EXCEPTION 'COMMERCIAL_NOT_AUTHORIZED'; END IF;
+ SELECT * INTO saved FROM artessencia_intelligence_private.commercial_proposals z WHERE z.user_id=actor AND z.mission_id=mid AND z.proposal_index=idx;
+ IF FOUND THEN RETURN jsonb_build_object('status','confirmed','mission',mid,'index',idx,'replayed',true); END IF;
+ SELECT r.outcome->'report'->'commercialProposals'->idx INTO proposal FROM artessencia_intelligence_private.team_runs r
+  WHERE r.user_id=actor AND r.mission_id=mid AND r.status='review_ready';
+ IF proposal->'requiresApproval' IS DISTINCT FROM 'true'::jsonb OR coalesce(proposal->>'sourceDigest','') !~ '^[0-9a-f]{64}$'
+ OR coalesce(proposal->>'reference','') !~ '^[A-Za-z0-9_-]{1,70}$'
+ OR coalesce(length(trim(proposal->>'instruction')),0) NOT BETWEEN 1 AND 1000 THEN RAISE EXCEPTION 'COMMERCIAL_PROPOSAL_INVALID'; END IF;
+ sid:=(proposal->>'recordId')::uuid;kind:=proposal->>'kind';
+ digest:=artessencia_intelligence_private.commercial_source(kind,sid,true);
+ IF digest IS NULL OR digest IS DISTINCT FROM proposal->>'sourceDigest' THEN RAISE EXCEPTION 'COMMERCIAL_SOURCE_STALE'; END IF;
+ INSERT INTO artessencia_intelligence_private.commercial_proposals(user_id,mission_id,proposal_index,source_kind,source_id,reference,source_digest,instruction)
+  VALUES(actor,mid,idx,kind,sid,proposal->>'reference',digest,proposal->>'instruction');
+ RETURN jsonb_build_object('status','confirmed','mission',mid,'index',idx,'replayed',false);
+END;
+$commercial$;
+REVOKE ALL ON FUNCTION artessencia_intelligence_private.commercial_command(text,jsonb) FROM PUBLIC,anon,authenticated;
 CREATE OR REPLACE FUNCTION public.artessencia_intelligence_console_v1(p_action text, p_args jsonb DEFAULT '{}')
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $console$
 DECLARE
@@ -342,6 +407,10 @@ BEGIN
    WHEN 'inovacao' THEN 'innovation_review' WHEN 'auditoria' THEN 'technical_review' END,p_args->>'instruction',(p_args->>'enabled')::boolean)
   ON CONFLICT(user_id,agent,cadence) DO UPDATE SET instruction=excluded.instruction,enabled=excluded.enabled;
   RETURN jsonb_build_object('agent',selected_agent);
+ WHEN 'commercial_read' THEN
+  RETURN artessencia_intelligence_private.commercial_command('read',p_args);
+ WHEN 'commercial_approve' THEN
+  RETURN artessencia_intelligence_private.commercial_command('approve',p_args);
  WHEN 'stock_change_preview' THEN
   RETURN artessencia_intelligence_private.stock_change_preview(p_args);
  WHEN 'stock_change_apply' THEN
@@ -499,7 +568,9 @@ BEGIN
    'documents',(SELECT coalesce(jsonb_agg(to_jsonb(d)),'[]') FROM (SELECT r.mission_id,m.agent,r.outcome->>'reasoning' AS content,r.outcome->'report'->'tasks' AS tasks,r.outcome->'report'->'physicalCount' AS physical_count,r.outcome->'report'->'referenceRepairs' AS reference_repairs,r.tool_receipts,
     (SELECT coalesce(jsonb_agg(jsonb_build_object('index',z.line_index,'name',z.material->>'name','revision',z.committed_revision)),'[]') FROM artessencia_intelligence_private.material_creation_receipts z WHERE z.user_id=r.user_id AND z.mission_id=r.mission_id) AS material_receipts,
     (SELECT coalesce(jsonb_agg(jsonb_build_object('index',z.proposal_index,'revision',z.committed_revision)),'[]') FROM artessencia_intelligence_private.recipe_reference_receipts z WHERE z.user_id=r.user_id AND z.mission_id=r.mission_id) AS reference_receipts,
-    (SELECT coalesce(jsonb_agg(jsonb_build_object('id',z.operation_id,'source',z.preview->>'source','target',z.preview->>'target','operation',z.preview->>'operation','revision',z.committed_revision,'revertedRevision',z.reverted_revision) ORDER BY z.created_at DESC),'[]') FROM artessencia_intelligence_private.stock_change_receipts z WHERE z.user_id=r.user_id AND z.mission_id=r.mission_id) AS stock_change_receipts FROM artessencia_intelligence_private.team_runs r JOIN artessencia_intelligence_private.team_missions m USING(user_id,mission_id) WHERE r.user_id=actor AND r.status='review_ready' ORDER BY r.ended_at DESC LIMIT 50)d),
+    (SELECT coalesce(jsonb_agg(jsonb_build_object('id',z.operation_id,'source',z.preview->>'source','target',z.preview->>'target','operation',z.preview->>'operation','revision',z.committed_revision,'revertedRevision',z.reverted_revision) ORDER BY z.created_at DESC),'[]') FROM artessencia_intelligence_private.stock_change_receipts z WHERE z.user_id=r.user_id AND z.mission_id=r.mission_id) AS stock_change_receipts,
+    r.outcome->'report'->'commercialProposals' AS commercial_proposals,
+    (SELECT coalesce(jsonb_agg(z.proposal_index),'[]') FROM artessencia_intelligence_private.commercial_proposals z WHERE z.user_id=r.user_id AND z.mission_id=r.mission_id) AS commercial_receipts FROM artessencia_intelligence_private.team_runs r JOIN artessencia_intelligence_private.team_missions m USING(user_id,mission_id) WHERE r.user_id=actor AND r.status='review_ready' ORDER BY r.ended_at DESC LIMIT 50)d),
    'controls',controls,'missions',missions,'events',events,'memory',memory,'budget',expenses);
  ELSE RAISE EXCEPTION 'UNKNOWN_COMMAND';
  END CASE;

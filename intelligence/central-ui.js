@@ -45,7 +45,7 @@ function init(){
    if(ticket!==generation||!unlockedNow())return;
    if(action==='stock_change_preview')stockPreview={mission:args.mission,request:args,result:receipt,operationId:crypto.randomUUID()};
    else stockPreview=null;
-   state=data;notice.textContent=['stock_change_apply','stock_change_revert'].includes(action)?'Operação confirmada na Cloud. Recebe e valida os dados antes de editar.':action==='repair_recipe_reference'?'Referência confirmada na ficha técnica. Recebe e valida a Cloud antes de editar.':action==='create_material'?'Material confirmado na Cloud. Recebe e valida os dados da Cloud antes de alterar o stock.':action==='plan_task'?(receipt.status==='archived'?'A tarefa já foi arquivada.':'Tarefa confirmada no Planeamento.'):'';
+   state=data;notice.textContent=action==='commercial_approve'?'Proposta interna guardada em Orçamentos. Nenhum contacto enviado.':['stock_change_apply','stock_change_revert'].includes(action)?'Operação confirmada na Cloud. Recebe e valida os dados antes de editar.':action==='repair_recipe_reference'?'Referência confirmada na ficha técnica. Recebe e valida a Cloud antes de editar.':action==='create_material'?'Material confirmado na Cloud. Recebe e valida os dados da Cloud antes de alterar o stock.':action==='plan_task'?(receipt.status==='archived'?'A tarefa já foi arquivada.':'Tarefa confirmada no Planeamento.'):'';
    if(action==='plan_task')document.dispatchEvent(new CustomEvent('ae-task-refresh'));render();
   }catch{if(ticket===generation){state=null;content.replaceChildren();notice.textContent=action==='read'?'Central Cloud indisponível. Verifica a sessão e a instalação do serviço.':'Resultado por confirmar. Atualiza a central antes de repetir a operação.';}}
   finally{if(ticket===generation){busy=false;content.inert=false;}}
@@ -144,6 +144,16 @@ function init(){
       if(window.confirm('Reverter '+receipt.source+' → '+receipt.target+'? Apenas é possível sem alterações posteriores.'))load('stock_change_revert',{operationId:receipt.id,confirmed:true});
      }));
     }
+    if(d.agent==='comercial'&&Array.isArray(d.commercial_proposals)&&d.commercial_proposals.length){
+     content.append(el('h4','Propostas internas para Orçamentos'));
+     d.commercial_proposals.forEach((p,index)=>{
+      line((p.kind==='quote'?'Orçamento ':'Pedido ')+p.reference+' · '+p.instruction);
+      if((d.commercial_receipts||[]).includes(index))line('Proposta interna guardada');
+      else content.append(btn('Guardar proposta interna',()=>{
+       if(window.confirm('Guardar a proposta interna para '+p.reference+'? Não altera o orçamento, preços, quantidades nem envia mensagens.'))load('commercial_approve',{mission:d.mission_id,index,confirmed:true});
+      }));
+     });
+    }
     const repair=d.reference_repairs;
     if(d.agent==='stock'&&repair?.mode==='reference_repair_only'&&Array.isArray(repair.proposals)&&repair.proposals.length){
      content.append(el('h4','Normalização de referências nas fichas técnicas'));
@@ -221,9 +231,38 @@ function init(){
    for(const [key,label] of Object.entries(labels))line(label+' · '+list.filter(m=>m.agent===key&&m.status==='review_ready').length+' para revisão');
   }
  }
- const observer=new MutationObserver(()=>{if(!unlockedNow())close();});
+ // Separate, explicit consultation in the existing native Orçamentos screen.
+ const quoteScreen=document.getElementById('quotes');
+ let commercialGeneration=0;
+ const commercialResults=el('div');
+ function clearCommercial(){commercialGeneration++;commercialResults.replaceChildren();}
+ if(quoteScreen&&!document.getElementById('aeIntelligenceCommercial')){
+  const panel=el('section');panel.id='aeIntelligenceCommercial';panel.className='card';
+  const refreshCommercial=btn('Consultar propostas internas',async()=>{
+   if(!unlockedNow())return;
+   const ticket=++commercialGeneration;commercialResults.replaceChildren(el('p','A consultar a Cloud…'));
+   try{
+    const proposals=await rpc('commercial_read',{});
+    if(ticket!==commercialGeneration||!unlockedNow())return;
+    commercialResults.replaceChildren();
+    if(!Array.isArray(proposals))throw Error();
+    if(!proposals.length)commercialResults.append(el('p','Sem propostas internas guardadas.'));
+    for(const p of proposals){
+     const entry=el('article');entry.append(el('strong',(p.kind==='quote'?'Orçamento ':'Pedido ')+p.reference),
+      el('p',p.instruction),el('small',p.current?'Origem atual · proposta interna, não enviada':'Origem alterada ou encerrada · voltar a analisar'));
+     if(p.current&&p.kind==='quote'&&typeof db!=='undefined'&&Array.isArray(db.quotes)&&db.quotes.filter(q=>q.id===p.reference&&!q.orderId).length===1&&typeof editQuoteV1279==='function'){
+      entry.append(btn('Abrir orçamento existente',()=>{if(unlockedNow())editQuoteV1279(p.reference);}));
+     }
+     commercialResults.append(entry);
+    }
+   }catch{if(ticket===commercialGeneration&&unlockedNow())commercialResults.replaceChildren(el('p','Propostas internas indisponíveis. Confirma a ligação Cloud.'));}
+  });
+  panel.append(el('h3','Gestor Comercial · Propostas internas'),el('p','Consulta de propostas aprovadas na Central. Não são orçamentos enviados nem alteram o estado comercial.'),refreshCommercial,commercialResults);
+  quoteScreen.prepend(panel);
+ }
+ const observer=new MutationObserver(()=>{if(!unlockedNow()){close();clearCommercial();}});
  for(const id of ['authGateV1880','lockScreen']){const e=document.getElementById(id);if(e)observer.observe(e,{attributes:true,attributeFilter:['class']});}
- window.addEventListener('pagehide',close);window.addEventListener('offline',close);document.addEventListener('visibilitychange',()=>{if(document.hidden)close();});
+ window.addEventListener('pagehide',()=>{close();clearCommercial();});window.addEventListener('offline',()=>{close();clearCommercial();});document.addEventListener('visibilitychange',()=>{if(document.hidden){close();clearCommercial();}});
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();

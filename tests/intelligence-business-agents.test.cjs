@@ -13,3 +13,8 @@ function tests(a){
  return n;
 }
 console.log('Verificações concluídas:',tests(a));
+
+const commercialFixture={today:'2026-11-26',quotes:[{id:'Q1',status:'open',recordStatus:'Rascunho',reference:'ORC-1',sourceDigest:'a'.repeat(64),followupDate:'2026-12-01',contactAllowed:false}],requests:[]};
+const commercialResult=a.commercial(commercialFixture);
+if(commercialResult.commercialProposals.length!==1||commercialResult.commercialProposals[0].kind!=='quote'||commercialResult.commercialProposals[0].requiresApproval!==true)throw Error('Proposta comercial vinculada');
+if(a.commercial({...commercialFixture,quotes:[{...commercialFixture.quotes[0],sourceDigest:'invalid'}]}).commercialProposals.length)throw Error('Proposta sem evidência');
