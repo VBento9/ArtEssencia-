@@ -4,9 +4,9 @@
 const {isolatedTrialEnvironment}=require('./worker-transport.cjs');
 const model='gpt-5.4-mini-2026-03-17';
 module.exports=function localTrialPricing(env,now=new Date()){
- if(env.INTELLIGENCE_EXECUTION_HOST!=='local'||!isolatedTrialEnvironment(env)||env.INTELLIGENCE_TARIFF_ID!==model)throw Error('Validação financeira local indisponível.');
+ if(!['local','github_actions'].includes(env.INTELLIGENCE_EXECUTION_HOST)||!isolatedTrialEnvironment(env)||env.INTELLIGENCE_TARIFF_ID!==model)throw Error('Validação financeira local indisponível.');
  const p=JSON.parse(env.INTELLIGENCE_FINANCIAL_APPROVAL),stamp=now.getTime(),start=Date.parse(p.checkedAt),end=Date.parse(p.validUntil);
- if(p.scope!=='isolated_local_trial_v1'||p.model!==model||p.ownerApproved!==true||p.autoRechargeOff!==true||
+ if(p.scope!==(env.INTELLIGENCE_EXECUTION_HOST==='github_actions'?'isolated_remote_trial_v1':'isolated_local_trial_v1')||p.model!==model||p.ownerApproved!==true||p.autoRechargeOff!==true||
   p.dedicatedKeyConfigured!==true||p.noNewHosting!==true||p.noTopup!==true||p.providerCutoffInstantaneous!==false||
   p.maxTrialMicroeur!==1000000||p.projectObservedSpendMicroUsd!==0||
   !Number.isSafeInteger(p.observedBalanceMicroUsd)||p.observedBalanceMicroUsd<1000000||

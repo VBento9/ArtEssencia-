@@ -10,7 +10,10 @@ function projectUrl(env=process.env){
 function isolatedTrialEnvironment(env){
  const hosted=env.VERCEL_ENV==='preview'&&env.VERCEL_GIT_COMMIT_REF==='feature/intelligence-hybrid-foundation-20261126'&&!env.INTELLIGENCE_EXECUTION_HOST;
  const local=env.INTELLIGENCE_EXECUTION_HOST==='local'&&!env.VERCEL_ENV&&!env.VERCEL&&!env.VERCEL_GIT_COMMIT_REF;
- return (hosted||local)&&
+ const remote=env.INTELLIGENCE_EXECUTION_HOST==='github_actions'&&env.GITHUB_ACTIONS==='true'&&
+  env.GITHUB_REPOSITORY==='VBento9/ArtEssencia-'&&env.GITHUB_REF==='refs/heads/main'&&
+  env.GITHUB_EVENT_NAME==='workflow_dispatch'&&!env.VERCEL_ENV&&!env.VERCEL&&!env.VERCEL_GIT_COMMIT_REF;
+ return (hosted||local||remote)&&
   env.INTELLIGENCE_EXECUTION_MODE==='trial'&&env.INTELLIGENCE_TRIAL_RELEASE==='approved'&&
   env.INTELLIGENCE_SUPABASE_URL===isolatedProjectUrl&&env.INTELLIGENCE_ISOLATED_PROJECT_URL===isolatedProjectUrl&&
   env.INTELLIGENCE_WORKER_AUTH==='service_account'&&env.INTELLIGENCE_PAID_RELEASE!=='approved'&&

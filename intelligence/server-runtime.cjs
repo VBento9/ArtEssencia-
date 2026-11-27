@@ -62,7 +62,7 @@ async function composeTrial({env,call}){
  if(!isolatedTrialEnvironment(env))throw Error('Ensaio real isolado indisponível.');
  const mode='trial';
   const pricing=()=>{
-   const rate=env.INTELLIGENCE_EXECUTION_HOST==='local'?require('./local-trial-pricing.cjs')(env):approvedPricing(env)[env.INTELLIGENCE_TARIFF_ID];
+   const rate=['local','github_actions'].includes(env.INTELLIGENCE_EXECUTION_HOST)?require('./local-trial-pricing.cjs')(env):approvedPricing(env)[env.INTELLIGENCE_TARIFF_ID];
    if(!rate||rate.model!=='gpt-5.4-mini-2026-03-17'||budget.estimate(rate)>1000000)throw Error('Tarifa de ensaio indisponível.');
    return rate;
   };
@@ -77,6 +77,10 @@ async function composeTrial({env,call}){
 }
 async function composeLocalTrial({env,call}={}){
  if(env?.INTELLIGENCE_EXECUTION_HOST!=='local'||!isolatedTrialEnvironment(env))throw Error('Executor local isolado indisponível.');
+ return composeTrial({env,call:call||transport(env)});
+}
+async function composeRemoteTrial({env,call}={}){
+ if(env?.INTELLIGENCE_EXECUTION_HOST!=='github_actions'||!isolatedTrialEnvironment(env))throw Error('Executor remoto isolado indisponível.');
  return composeTrial({env,call:call||transport(env)});
 }
 async function composeHosted({env=process.env,call,publicReader}={}){
@@ -162,4 +166,4 @@ async function processNext(runtime,approvedMission,{scheduled=false}={}){
     executor:{run:async()=>{throw Error('Ação sem autorização.');}}});
   return runner.run({owner,missionId:next.missionId,expectedRevision:next.revision});
 }
-module.exports={compose,composeHosted,composeLocalTrial,hostedMode,processNext,runLegacy};
+module.exports={compose,composeHosted,composeLocalTrial,composeRemoteTrial,hostedMode,processNext,runLegacy};
