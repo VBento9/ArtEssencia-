@@ -30,6 +30,28 @@ module.exports=async function preflight(config,host=process.env,request=fetch){
     ? require('node:crypto').createHash('sha256').update(organization).digest('hex'):null;
   }
  }catch{result.modelNetworkFailure=true;}
+ // Official read-only account identity endpoint. Never log names, email, user ID,
+ // organization IDs or raw response. Hash only syntactically valid organization IDs.
+ // Membership is not proof that this key is dedicated or that a particular project is billed.
+ result.accountIdentity=false;
+ result.accountOrganizationFingerprints=[];
+ try{
+  const response=await request('https://api.openai.com/v1/me',{method:'GET',redirect:'error',signal:AbortSignal.timeout(10000),
+   headers:{Authorization:'Bearer '+config.apiKey}});
+  if(!response.ok)result.accountIdentityHttpStatus=response.status;
+  else{
+   const account=await response.json();
+   const entries=account?.orgs?.data;
+   if(account?.object==='user'&&Array.isArray(entries)&&entries.length<=100){
+    const ids=entries.map(x=>x?.id);
+    if(ids.length>0&&ids.every(x=>typeof x==='string'&&/^org-[A-Za-z0-9_-]{1,200}$/.test(x))){
+     const {createHash}=require('node:crypto');
+     result.accountOrganizationFingerprints=[...new Set(ids.map(x=>createHash('sha256').update(x).digest('hex')))].sort();
+     result.accountIdentity=true;
+    }
+   }
+  }
+ }catch{result.accountIdentityNetworkFailure=true;}
  if(result.serviceAuthentication&&result.modelAccess)result.status='preflight_passed';
  return result;
 };

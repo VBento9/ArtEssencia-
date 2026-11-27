@@ -7,21 +7,32 @@ const model='gpt-5.4-mini-2026-03-17';
 test('preflight verifies real transports without Responses, missions, ledger or secret output',async()=>{
  const calls=[];const result=await preflight(config,host,async(url,o)=>{
   calls.push([url,o]);assert.equal(o.redirect,'error');
-  return {ok:true,headers:{get:()=> 'private-organization-fixture'},json:async()=>url.includes('/auth/')?{user:{id:config.serviceId},access_token:'private-token-fixture'}:{id:model,object:'model'}};
+  return {ok:true,headers:{get:()=> 'private-organization-fixture'},json:async()=>url.includes('/auth/')?{user:{id:config.serviceId},access_token:'private-token-fixture'}:url.endsWith('/v1/me')?{object:'user',id:'private-user-fixture',email:'private-email-fixture',orgs:{data:[{id:'org-fixtureA',title:'private-name-fixture'},{id:'org-fixtureB'},{id:'org-fixtureA'}]}}:{id:model,object:'model'}};
  });
  assert.equal(result.status,'preflight_passed');assert.equal(result.paidRequest,false);
  assert.equal(result.organizationFingerprint,require('node:crypto').createHash('sha256').update('private-organization-fixture').digest('hex')); 
- assert.equal(calls.length,2);assert.equal(calls[0][1].method,'POST');assert.equal(calls[1][1].method,'GET');
+ assert.equal(calls.length,3);assert.equal(calls[0][1].method,'POST');assert.equal(calls[1][1].method,'GET');
  assert.equal(calls[0][0],'https://thqhyetvxledlgjdtmzp.supabase.co/auth/v1/token?grant_type=password');
  assert.equal(calls[1][0],'https://api.openai.com/v1/models/'+model);
+ assert.equal(calls[2][0],'https://api.openai.com/v1/me');assert.equal(calls[2][1].method,'GET');
+ assert.equal(result.accountIdentity,true);
+ assert.deepEqual(result.accountOrganizationFingerprints,['org-fixtureA','org-fixtureB'].map(x=>require('node:crypto').createHash('sha256').update(x).digest('hex')).sort());
+ assert.ok(!JSON.stringify(result).includes('org-fixture'));
  assert.ok(!JSON.stringify(result).includes('private-'));
 });
 test('credential, identity and network failures are sanitized and not retried',async()=>{
  let calls=0;let result=await preflight(config,host,async()=>{calls++;return {ok:false,status:401};});
- assert.equal(calls,2);assert.equal(result.status,'preflight_blocked');assert.equal(result.serviceHttpStatus,401);assert.equal(result.modelHttpStatus,401);
+ assert.equal(calls,3);assert.equal(result.status,'preflight_blocked');assert.equal(result.serviceHttpStatus,401);assert.equal(result.modelHttpStatus,401);assert.equal(result.accountIdentityHttpStatus,401);assert.equal(result.accountIdentity,false);
  result=await preflight(config,host,async()=>({ok:true,json:async()=>({user:{id:'wrong'},access_token:'private',id:'wrong',object:'model'})}));
  assert.equal(result.serviceAuthentication,false);assert.equal(result.modelAccess,false);
  result=await preflight(config,host,async()=>{throw Error('private-fixture');});
- assert.equal(result.serviceNetworkFailure,true);assert.equal(result.modelNetworkFailure,true);assert.ok(!JSON.stringify(result).includes('private'));
+ assert.equal(result.serviceNetworkFailure,true);assert.equal(result.modelNetworkFailure,true);assert.equal(result.accountIdentityNetworkFailure,true);assert.ok(!JSON.stringify(result).includes('private'));
  await assert.rejects(preflight(config,{...host,GITHUB_EVENT_NAME:'push'},async()=>{throw Error('unexpected');}));
+});
+
+test('account metadata failures never invent organization identity or authorize charges',async()=>{
+ for(const payload of [{object:'user',orgs:{data:[{id:'private-not-an-org'}]}},{object:'user',orgs:{data:[]}},{object:'user',orgs:{data:[{id:'org-valid'},{id:'bad'}]}},{object:'user',orgs:{data:Array.from({length:101},()=>({id:'org-valid'}))}},null]){
+  const result=await preflight(config,host,async url=>({ok:true,json:async()=>url.endsWith('/v1/me')?payload:url.includes('/auth/')?{user:{id:config.serviceId},access_token:'private-token'}:{id:model,object:'model'}}));
+  assert.equal(result.status,'preflight_passed');assert.equal(result.accountIdentity,false);assert.deepEqual(result.accountOrganizationFingerprints,[]);assert.equal(result.paidRequest,false);
+ }
 });
