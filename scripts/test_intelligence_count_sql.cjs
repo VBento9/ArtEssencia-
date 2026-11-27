@@ -263,6 +263,10 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  console.log('PASS: stock context scope, canonical revision, minimal fields, lease and revocation');
 
  await db.exec('CREATE TABLE public.artessencia_cloud_records(user_id uuid,entity text,record_id text,data jsonb,client_updated_at timestamptz,device_id text,deleted_at timestamptz,PRIMARY KEY(user_id,entity,record_id))');
+ await db.exec(`
+ CREATE TABLE public.artessencia_v1_orders(user_id uuid,id uuid PRIMARY KEY,status text,total numeric,data jsonb);
+ CREATE TABLE public.artessencia_v1_quotes(user_id uuid,id uuid PRIMARY KEY,status text,valid_until date,data jsonb);
+ `);
  await db.exec(fs.readFileSync('sql/intelligence-owner-console-v1.sql','utf8'));
  const command=async(action,args={})=>(await db.query('SELECT public.artessencia_intelligence_console_v1($1,$2) AS r',[action,JSON.stringify(args)])).rows[0].r;
  await db.exec('SET ROLE authenticated');
@@ -328,8 +332,6 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  console.log('PASS: owner console, persistent memory, evidence, revocation, erasure and access control');
  // Exercise the same narrowly granted RPC and dispatcher as the server route.
  await db.exec(`
- CREATE TABLE public.artessencia_v1_orders(user_id uuid,id uuid PRIMARY KEY,status text,total numeric,data jsonb);
- CREATE TABLE public.artessencia_v1_quotes(user_id uuid,id uuid PRIMARY KEY,status text,valid_until date,data jsonb);
  CREATE TABLE public.artessencia_shop_event_requests(user_id uuid,request_id uuid PRIMARY KEY,status text,created_at timestamptz);
  CREATE TABLE public.artessencia_shop_special_editions(user_id uuid,id uuid PRIMARY KEY,name text,active boolean,starts_at timestamptz,ends_at timestamptz);
  `);
@@ -466,9 +468,9 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  assert.equal(reversed.status,'reverted');
  assert.equal((await command('stock_change_revert',{operationId:bid(893),confirmed:true})).replayed,true);
  await db.exec('RESET ROLE');
- const restored=(await db.query('SELECT data,revision FROM public.artessencia_v1_state WHERE user_id=$1',[owner])).rows[0];
- assert.deepEqual(restored.data,repairAfter.data);
- assert.equal(Number(restored.revision),Number(repairAfter.revision)+2);
+ const restoredStock=(await db.query('SELECT data,revision FROM public.artessencia_v1_state WHERE user_id=$1',[owner])).rows[0];
+ assert.deepEqual(restoredStock.data,repairAfter.data);
+ assert.equal(Number(restoredStock.revision),Number(repairAfter.revision)+2);
  const extra=[{name:'Candidato fusão A',qty:2,unit:'un',unitCost:.25},{name:'Candidato fusão B',qty:3,unit:'un',unitCost:.25}];
  await db.query("UPDATE public.artessencia_v1_state SET data=jsonb_set(data,'{stock}',(data->'stock')||$1::jsonb),revision=revision+1 WHERE user_id=$2",[JSON.stringify(extra),owner]);
  await db.exec('SET ROLE authenticated');
