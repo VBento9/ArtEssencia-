@@ -395,8 +395,14 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  const runtime=runtimeFactory.compose({call:workerRpc,env:{INTELLIGENCE_TARIFF_ID:'test',INTELLIGENCE_PAID_RELEASE:'approved'},tariffs:{test:rate},
   publicReader:async()=>({catalog:{products:[{id:'public-A',code:'A',description:'Descrição pública diferente',image_url:'',category_id:'fixture'}],categories:[{id:'fixture',name:'Velas'}]},content:{catalog_families:[{id:'velas',label:'Velas',categories:['Velas']}],campaigns:[],upcoming_campaigns:[],catalog_status:{mode:'open'}},config:{store_status:{enabled:true,accepting_orders:false,mode:'updating'}}}),
   provider:async p=>{if(JSON.stringify(p.input).includes('Material fictício'))sawInventory=true;assert.ok(!JSON.stringify(p).includes('cliente-proibido'));
-   const message=JSON.parse(p.input[1].content),context=JSON.parse(message.context);
-   if(context.report?.auditEvidence){
+   // Mission input can be text or a typed text + attachment array; legacy
+   // assistants have a separate contract and no mission envelope.
+   const content=Array.isArray(p.input)?p.input.find(x=>x.role==='user')?.content:null;
+   const raw=Array.isArray(content)?content.find(x=>x.type==='input_text')?.text:content;
+   const context=typeof raw==='string'&&raw.startsWith('{')?JSON.parse(raw).context:null;
+   const auditContext=typeof context==='string'?JSON.parse(context):null;
+   if(auditContext?.report?.auditEvidence){
+    const context=auditContext;
     const e=context.report.auditEvidence;
     assert.equal(e.coverage,'owner_cloud_aggregates_only');assert.equal(e.planner.possibleDuplicateTitleGroups,1);
     assert.equal(e.planner.otherStatusUnclassified,1);assert.equal(e.sync,'not_tested');assert.equal(e.publicService,'not_tested');
