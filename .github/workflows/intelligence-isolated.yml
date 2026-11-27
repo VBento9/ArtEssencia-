@@ -47,6 +47,8 @@ jobs:
         run: PG_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/pg" node scripts/test_intelligence_count_sql.cjs --postgres
       - name: Real trial gate migration and lifetime budget (local synthetic database)
         run: PGLITE_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/@electric-sql/pglite" node scripts/test_intelligence_trial_sql.cjs
+      - name: Audit retry and receipt preservation (local synthetic database)
+        run: PGLITE_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/@electric-sql/pglite" node scripts/test_intelligence_audit_retry_sql.cjs
       - name: Install Chromium for isolated UI test
         run: '"$RUNNER_TEMP/ae-intelligence/node_modules/.bin/playwright" install chromium'
       - name: Browser stock review fixture (mock session, no Cloud)
