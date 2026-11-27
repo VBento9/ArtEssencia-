@@ -54,3 +54,26 @@ test('Account approval requires current tax, FX, infrastructure envelope and rec
  assert.equal(read({})[p.model].outputRate,4680000);
  for(const over of [{validUntil:now.toISOString()},{inputMicroUsdPerMillion:0},{autoRechargeOff:false},{otherGrossMonthlyUpperMicroeur:7000001},{model:'other'},{usageReconciled:false}])assert.throws(()=>read(over));
 });
+
+test('Owner verification and public product photos stay in the configured worker project',async()=>{
+ const w=require('../intelligence/worker-transport.cjs');
+ const base='https://abcdefghijklmnopqrst.supabase.co',env={INTELLIGENCE_SUPABASE_URL:base,INTELLIGENCE_SUPABASE_PUBLISHABLE_KEY:'fixture-public'};
+ const id='00000000-0000-0000-0000-000000000001',urls=[];
+ const request=async(url,options)=>{urls.push(url);assert.equal(options.redirect,'error');assert.equal(options.headers.apikey,'fixture-public');return {ok:true,json:async()=>url.endsWith('/user')?{id}:true};};
+ assert.equal(await w.ownerSession({headers:{authorization:'Bearer fixture'}},{env,request}),id);
+ assert.deepEqual(urls,[base+'/auth/v1/user',base+'/rest/v1/rpc/artessencia_is_owner_v1']);
+ assert.equal(await w.ownerSession({headers:{authorization:'Bearer fixture'}},{env,request:async()=>({ok:false})}),null);
+ await assert.rejects(w.ownerSession({headers:{authorization:'Bearer fixture'}},{env:{},request}),/Projeto/);
+ const path='/storage/v1/object/public/artessencia-shop/photo.jpg';
+ assert.equal(w.publicProductPhoto(base+path,env),base+path);
+ assert.equal(w.publicProductPhoto('https://ihtsonqnnlrxvorfrarl.supabase.co'+path,env),'');
+ assert.equal(w.publicProductPhoto(base+path+'?secret=1',env),'');
+ assert.equal(w.publicProductPhoto('https://example.org/'+path,env),'');
+ const server=require('../intelligence/server-runtime.cjs');
+ assert.throws(()=>server.compose({env:{...env,VERCEL_ENV:'preview',INTELLIGENCE_PAID_RELEASE:'approved'}}),/Faturação suspensa/);
+ for(const file of ['digital-insights-ai','product-description-ai','social-ai','intelligence-worker']){
+  const source=fs.readFileSync('api/'+file+'.js','utf8');
+  assert.ok(source.includes('workerTransport.ownerSession(req)'));
+  assert.doesNotMatch(source,/ihtsonqnnlrxvorfrarl\.supabase\.co/);
+ }
+});

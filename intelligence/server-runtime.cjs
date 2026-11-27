@@ -8,6 +8,9 @@ const budget=require('./ai-budget-policy.cjs');
 // Only a reviewed release may add a tariff after validating the account and total infrastructure exposure.
 const approvedPricing=require('./approved-pricing.cjs');
 function compose({env=process.env,call,provider,tariffs}={}){
+  // Real provider is unavailable outside the explicitly released production deployment.
+  // Tests inject both the transport and provider, never a real API key.
+  if(!provider&&(env.VERCEL_ENV!=='production'||env.INTELLIGENCE_SUPABASE_URL!=='https://ihtsonqnnlrxvorfrarl.supabase.co'))throw Error('Faturação suspensa fora da produção autorizada.');
   const rate=(tariffs||approvedPricing(env))[env.INTELLIGENCE_TARIFF_ID];
   function pricing(){
     if(env.INTELLIGENCE_PAID_RELEASE!=='approved'||!rate||rate.verified!==true||

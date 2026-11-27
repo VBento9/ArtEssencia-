@@ -48,3 +48,7 @@ Suspender quaisquer invocações programadas antes de reverter o código. A vers
 ## Criação de material a partir de contagem física (candidata)
 
 A proposta de material novo exige confirmação do proprietário e custo unitário explícito. Cria o material com saldo zero, preserva compras, movimentos e fichas técnicas e guarda um recibo por missão e linha na mesma transação do incremento da revisão canónica. Uma repetição não duplica o material. O saldo contado exige aprovação independente. Qualquer alteração da revisão exige nova análise. Receber e validar a Cloud antes de editar noutro dispositivo. Não aplicar SQL em produção sem autorização e ensaio de sincronização.
+
+## Isolamento de autenticação e faturação
+
+Os quatro endpoints usam a mesma autenticação de proprietário do projeto configurado em INTELLIGENCE_SUPABASE_URL; os assistentes legados também verificam a identidade do executor antes de reservar despesa. As fotografias dos assistentes de descrição e publicações só são aceites no bucket público artessencia-shop do projeto configurado. O fornecedor pago só pode ser composto num deployment VERCEL_ENV=production ligado ao projeto de produção autorizado, além dos restantes bloqueios de faturação. Nos ensaios, o transporte e o fornecedor são injetados; ainda não existe um modo de ensaio alojado ativado. Nenhuma variável ou recurso Cloud foi alterado por este commit.

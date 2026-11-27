@@ -16,8 +16,10 @@ function createLegacyService(runtime) {
     return result.response;
   };
 }
-async function generate(channel,payload,id) {
+async function generate(channel,payload,id,ownerId) {
   const server=require('./server-runtime.cjs');
-  return server.runLegacy(server.compose(),channel,payload,id);
+  const runtime=server.compose();
+  if(typeof ownerId!=='string'||!ownerId||await runtime.call('identity')!==ownerId)throw Error('Titular não autorizado.');
+  return server.runLegacy(runtime,channel,payload,id);
 }
 module.exports = { generate, createLegacyService };

@@ -3,9 +3,7 @@
  */
 import legacyAi from '../intelligence/legacy-ai.cjs';
 import { randomUUID } from 'node:crypto';
-const SUPABASE_URL='https://ihtsonqnnlrxvorfrarl.supabase.co';
-const SUPABASE_KEY='sb_publishable_bBAzr698eotgn-QCq0kKWQ_szVceK5x';
-const PHOTO_PATH='/storage/v1/object/public/artessencia-shop/';
+import workerTransport from '../intelligence/worker-transport.cjs';
 const STYLES=new Set(['detail','theme','atmosphere','gift','short']);
 const PROPOSAL_SCHEMA={
  type:'object',additionalProperties:false,
@@ -26,28 +24,8 @@ function clean(value,max=160){return String(value??'').trim().slice(0,max)}
 function list(values,max=6,length=80){
  return (Array.isArray(values)?values:[]).slice(0,max).map(x=>clean(x,length)).filter(Boolean);
 }
-async function authorized(req){
- const token=clean(String(req.headers.authorization||'').replace(/^Bearer\s+/i,''),4096);
- if(!token)return false;
- const headers={apikey:SUPABASE_KEY,Authorization:'Bearer '+token};
- const user=await fetch(SUPABASE_URL+'/auth/v1/user',{headers});
- if(!user.ok||!(await user.json().catch(()=>null))?.id)return false;
- const owner=await fetch(SUPABASE_URL+'/rest/v1/rpc/artessencia_is_owner_v1',{
-  method:'POST',headers:{...headers,'Content-Type':'application/json'},body:'{}'
- });
- return owner.ok&&(await owner.json().catch(()=>false))===true;
-}
-function acceptedPhoto(value){
- const raw=clean(value,2500);
- if(!raw||raw.length>2500)return '';
- try{
-  const url=new URL(raw);
-  if(url.protocol!=='https:'||url.hostname!=='ihtsonqnnlrxvorfrarl.supabase.co')return '';
-  if(url.username||url.password||url.search||url.hash)return '';
-  if(!url.pathname.startsWith(PHOTO_PATH)||url.pathname.length<=PHOTO_PATH.length)return '';
-  return url.href;
- }catch{return ''}
-}
+
+function acceptedPhoto(value){return workerTransport.publicProductPhoto(value);}
 function outputText(data){
  if(typeof data?.output_text==='string'&&data.output_text.trim())return data.output_text;
  for(const row of data?.output||[])for(const part of row?.content||[]){
@@ -88,9 +66,10 @@ function resultProposal(source){
 export default async function handler(req,res){
  if(req.method!=='POST'){res.setHeader('Allow','POST');return json(res,405,{ok:false,error:'Método não permitido.'})}
  if(Number(req.headers['content-length']||0)>16000)return json(res,413,{ok:false,error:'Pedido demasiado extenso.'});
- let data;
+ let data,ownerId;
  try{
-  if(!(await authorized(req)))return json(res,401,{ok:false,error:'Sessão Cloud sem autorização de proprietário.'});
+  ownerId=await workerTransport.ownerSession(req);
+  if(!ownerId)return json(res,401,{ok:false,error:'Sessão Cloud sem autorização de proprietário.'});
  }catch{return json(res,503,{ok:false,error:'Não foi possível verificar a autorização.'})}
  try{
   if(JSON.stringify(req.body||{}).length>16000)throw new Error('Pedido demasiado extenso.');
@@ -126,7 +105,7 @@ export default async function handler(req,res){
     store:false,
     text:{format:{type:'json_schema',name:'artessencia_photo_description',strict:true,schema:PROPOSAL_SCHEMA}},
     max_output_tokens:1800
-   }, randomUUID()).catch(()=>null);
+   }, randomUUID(),ownerId).catch(()=>null);
   if(!answer)return json(res,503,{ok:false,error:'IA indisponível. Verifica o controlo financeiro.'});
   if(answer?.status!=='completed'){
    console.error('product description AI incomplete',clean(answer?.status,40),clean(answer?.incomplete_details?.reason,80));

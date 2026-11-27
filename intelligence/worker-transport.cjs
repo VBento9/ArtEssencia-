@@ -25,4 +25,28 @@ function chargeLedger(call,scope){
     settle:r=>call('settle',{request:r.requestId,actual:r.actualMicroeur,evidence:r.evidenceRef})
   };
 }
-module.exports={transport,chargeLedger,projectUrl};
+// Authenticate against exactly the worker's project; never fall back to production.
+async function ownerSession(req,{env=process.env,request=fetch}={}){
+  const token=String(req?.headers?.authorization||'');
+  if(!/^Bearer [^ ]+$/.test(token)||token.length>8192)return null;
+  const base=projectUrl(env),key=env.INTELLIGENCE_SUPABASE_PUBLISHABLE_KEY;
+  if(typeof key!=='string'||!key)throw Error('Projeto de autenticação indisponível.');
+  const headers={Authorization:token,apikey:key};
+  const options={headers,redirect:'error',signal:AbortSignal.timeout(10000)};
+  const user=await request(base+'/auth/v1/user',options);
+  if(!user.ok)return null;
+  const id=(await user.json())?.id;
+  if(typeof id!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))return null;
+  const permission=await request(base+'/rest/v1/rpc/artessencia_is_owner_v1',{...options,method:'POST',headers:{...headers,'Content-Type':'application/json'},body:'{}'});
+  return permission.ok&&await permission.json()===true?id:null;
+}
+function publicProductPhoto(value,env=process.env){
+  if(typeof value!=='string'||!value.trim()||value.length>2500)return '';
+  try{
+    const url=new URL(value),base=new URL(projectUrl(env));
+    const path='/storage/v1/object/public/artessencia-shop/';
+    if(url.origin!==base.origin||url.username||url.password||url.search||url.hash||!url.pathname.startsWith(path)||url.pathname.length<=path.length)return '';
+    return url.href;
+  }catch{return '';}
+}
+module.exports={transport,chargeLedger,projectUrl,ownerSession,publicProductPhoto};
