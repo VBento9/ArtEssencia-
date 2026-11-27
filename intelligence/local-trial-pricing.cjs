@@ -14,7 +14,7 @@ module.exports=function localTrialPricing(env,now=new Date()){
   typeof p.evidenceRef!=='string'||!p.evidenceRef.trim()||typeof p.ownerApprovalRef!=='string'||!p.ownerApprovalRef.trim()||
   p.inputMicroUsdPerMillion!==750000||p.outputMicroUsdPerMillion!==4500000||
   p.eurPerUsdUpperPpm!==1100000||p.grossBps!==12500)throw Error('Validação financeira local indisponível.');
- const eur=usd=>Math.ceil(usd*1.1);
+ const eur=usd=>Number((BigInt(usd)*1100000n+999999n)/1000000n);
  return {model,verified:true,current:true,validUntil:p.validUntil,toolsEnabled:false,contextLimit:400000,maxInputTokens:400000,maxOutputTokens:2000,
   inputRate:eur(p.inputMicroUsdPerMillion),outputRate:eur(p.outputMicroUsdPerMillion),grossBps:p.grossBps};
 };
