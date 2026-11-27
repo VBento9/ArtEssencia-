@@ -2,8 +2,7 @@
 const {run}=require('../intelligence/remote-trial.cjs');
 async function main(){
  if(Number(process.versions.node.split('.')[0])<22)throw Error('Node 22 necessário.');
- const config=JSON.parse(process.env.INTELLIGENCE_REMOTE_CONFIG||'null');
- if(!config||typeof config!=='object')throw Error('Configuração indisponível.');
+ const config=require('../intelligence/remote-config.cjs')();
  const raw=process.env.INTELLIGENCE_MISSION_REVISION;
  if(!/^[1-9][0-9]{0,8}$/.test(raw||''))throw Error('Revisão inválida.');
  const result=await run(config,{missionId:process.env.INTELLIGENCE_MISSION_ID,revision:Number(raw)});
