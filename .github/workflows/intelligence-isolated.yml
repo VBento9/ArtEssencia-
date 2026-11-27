@@ -1,5 +1,7 @@
 name: Intelligence isolated tests
 on:
+  push:
+    branches: ['feature/intelligence-executive-meetings-20261127']
   pull_request:
     branches:
       - main
@@ -12,11 +14,11 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: intelligence-isolated-validation
+  group: intelligence-isolated-validation-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 jobs:
   isolated:
-    if: github.event.pull_request.head.ref == 'feature/intelligence-hybrid-foundation-20261126'
+    if: github.ref == 'refs/heads/feature/intelligence-executive-meetings-20261127' || github.event.pull_request.head.ref == 'feature/intelligence-hybrid-foundation-20261126' || github.event.pull_request.head.ref == 'feature/intelligence-executive-meetings-20261127'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     services:
