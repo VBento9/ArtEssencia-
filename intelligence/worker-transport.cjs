@@ -6,17 +6,25 @@ function projectUrl(env=process.env){
   if(typeof value!=='string'||!/^https:\/\/[a-z0-9]{20}\.supabase\.co$/.test(value))throw Error('Projeto do executor inválido.');
   return value;
 }
+// Trial is a distinct, explicitly gated isolated mode, never a paid production override.
+function isolatedTrialEnvironment(env){
+ return env.VERCEL_ENV==='preview'&&env.VERCEL_GIT_COMMIT_REF==='feature/intelligence-hybrid-foundation-20261126'&&
+  env.INTELLIGENCE_EXECUTION_MODE==='trial'&&env.INTELLIGENCE_TRIAL_RELEASE==='approved'&&
+  env.INTELLIGENCE_SUPABASE_URL===isolatedProjectUrl&&env.INTELLIGENCE_ISOLATED_PROJECT_URL===isolatedProjectUrl&&
+  env.INTELLIGENCE_WORKER_AUTH==='service_account'&&env.INTELLIGENCE_PAID_RELEASE!=='approved'&&
+  !env.OPENAI_API_KEY&&!!env.INTELLIGENCE_OPENAI_API_KEY&&!!env.INTELLIGENCE_FINANCIAL_APPROVAL&&!env.INTELLIGENCE_WORKER_JWT;
+}
 // The account-based transport is restricted to the isolated preview. Supabase
 // issues short-lived access tokens; rotate the refresh token within one warm
 // executor instance. Fail closed on authentication failures. Never retry a mutation.
 function serviceTransport(env,request=fetch){
   const base=projectUrl(env),key=env.INTELLIGENCE_SUPABASE_PUBLISHABLE_KEY;
   const serviceId=env.INTELLIGENCE_SERVICE_USER_ID;
-  if(env.VERCEL_ENV!=='preview'||env.INTELLIGENCE_EXECUTION_MODE!=='simulation'||
-     base!==env.INTELLIGENCE_ISOLATED_PROJECT_URL||
-     base!==isolatedProjectUrl||
-     env.INTELLIGENCE_PAID_RELEASE==='approved'||env.OPENAI_API_KEY||env.INTELLIGENCE_OPENAI_API_KEY||env.INTELLIGENCE_FINANCIAL_APPROVAL||
-     env.INTELLIGENCE_WORKER_JWT||!key||!env.INTELLIGENCE_SERVICE_EMAIL||!env.INTELLIGENCE_SERVICE_PASSWORD||
+  const simulation=env.VERCEL_ENV==='preview'&&env.INTELLIGENCE_EXECUTION_MODE==='simulation'&&
+     base===env.INTELLIGENCE_ISOLATED_PROJECT_URL&&base===isolatedProjectUrl&&
+     env.INTELLIGENCE_PAID_RELEASE!=='approved'&&env.INTELLIGENCE_TRIAL_RELEASE!=='approved'&&!env.OPENAI_API_KEY&&
+     !env.INTELLIGENCE_OPENAI_API_KEY&&!env.INTELLIGENCE_FINANCIAL_APPROVAL&&!env.INTELLIGENCE_WORKER_JWT;
+  if((!simulation&&!isolatedTrialEnvironment(env))||!key||!env.INTELLIGENCE_SERVICE_EMAIL||!env.INTELLIGENCE_SERVICE_PASSWORD||
      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(serviceId||''))throw Error('Conta de serviço isolada indisponível.');
   let session=null,pending=null,blocked=false;
   function invalidate(){
@@ -117,4 +125,4 @@ function publicProductPhoto(value,env=process.env){
     return url.href;
   }catch{return '';}
 }
-module.exports={isolatedProjectUrl,transport,serviceTransport,chargeLedger,projectUrl,ownerSession,publicProductPhoto};
+module.exports={isolatedProjectUrl,isolatedTrialEnvironment,transport,serviceTransport,chargeLedger,projectUrl,ownerSession,publicProductPhoto};

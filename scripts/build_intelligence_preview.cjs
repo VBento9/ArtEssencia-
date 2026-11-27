@@ -8,7 +8,7 @@ let html = fs.readFileSync('index.html', 'utf8');
 if (process.env.VERCEL_ENV === 'preview') {
   const env = process.env;
   const permitted = env.VERCEL_GIT_COMMIT_REF === 'feature/intelligence-hybrid-foundation-20261126'
-    && env.INTELLIGENCE_EXECUTION_MODE === 'simulation'
+    && ['simulation','trial'].includes(env.INTELLIGENCE_EXECUTION_MODE)
     && env.INTELLIGENCE_SUPABASE_URL === isolatedProjectUrl
     && env.INTELLIGENCE_ISOLATED_PROJECT_URL === isolatedProjectUrl
     && /^sb_publishable_[A-Za-z0-9_-]+$/.test(env.INTELLIGENCE_SUPABASE_PUBLISHABLE_KEY || '');

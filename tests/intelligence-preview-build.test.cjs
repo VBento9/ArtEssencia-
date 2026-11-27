@@ -15,13 +15,13 @@ test('preview pins public Cloud configuration even with stale storage or a custo
     INTELLIGENCE_EXECUTION_MODE:'simulation', INTELLIGENCE_SUPABASE_URL:isolatedProjectUrl,
     INTELLIGENCE_ISOLATED_PROJECT_URL:isolatedProjectUrl, INTELLIGENCE_SUPABASE_PUBLISHABLE_KEY:'sb_publishable_fixture'};
   const target = path.join(cwd, 'index.html');
-  for (const [overrides, expected] of [[{},isolatedProjectUrl],[{INTELLIGENCE_SUPABASE_URL:'https://wrong.example'},''],
+  for (const [overrides, expected] of [[{},isolatedProjectUrl],[{INTELLIGENCE_EXECUTION_MODE:'trial',INTELLIGENCE_OPENAI_API_KEY:'fixture-not-public'},isolatedProjectUrl],[{INTELLIGENCE_SUPABASE_URL:'https://wrong.example'},''],
     [{INTELLIGENCE_SUPABASE_PUBLISHABLE_KEY:'sb_secret_fixture'},''],[{VERCEL_GIT_COMMIT_REF:'other'},''],[{VERCEL_ENV:'production'},null]]) {
     fs.writeFileSync(target, source);
     execFileSync(process.execPath,[path.resolve('scripts/build_intelligence_preview.cjs')],{cwd,env:{...env,...overrides}});
     const built = fs.readFileSync(path.join(cwd,'public/index.html'),'utf8');
     if(expected===null){assert.equal(built,source);continue;}
-    assert.ok(built.includes('<h1>Ambiente de ensaio</h1>'));
+    assert.ok(built.includes('<h1>Ambiente de ensaio</h1>'));assert.ok(!built.includes('fixture-not-public'));
     assert.ok(built.includes(expected?'Utiliza a conta de teste ArtEssencia':'Configuração de ensaio indisponível'));
     assert.ok(built.includes("error?.code==='invalid_credentials'"));
     assert.ok(!built.includes('<p>Autentica-te com a conta ArtEssencia para aceder ao Backoffice.</p>'));

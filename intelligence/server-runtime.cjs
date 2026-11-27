@@ -1,5 +1,5 @@
 'use strict';
-const {isolatedProjectUrl,transport,chargeLedger}=require('./worker-transport.cjs');
+const {isolatedProjectUrl,isolatedTrialEnvironment,transport,chargeLedger}=require('./worker-transport.cjs');
 const providerFactory=require('./responses-provider.cjs');
 const createRunner=require('./mission-runner.cjs');
 const createGateway=require('./ai-gateway.cjs');
@@ -32,9 +32,13 @@ const simulationModel='artessencia-simulation-v1';
 function hostedMode(env=process.env){
  const url=require('./worker-transport.cjs').projectUrl(env);
  const production='https://ihtsonqnnlrxvorfrarl.supabase.co';
+ if(env.INTELLIGENCE_EXECUTION_MODE==='trial'){
+  if(!isolatedTrialEnvironment(env))throw Error('Ensaio real isolado indisponível.');
+  return 'trial';
+ }
  if(env.INTELLIGENCE_EXECUTION_MODE==='simulation'){
   if(env.VERCEL_ENV!=='preview'||url!==isolatedProjectUrl||url!==env.INTELLIGENCE_ISOLATED_PROJECT_URL||
-     env.INTELLIGENCE_PAID_RELEASE==='approved'||env.OPENAI_API_KEY||env.INTELLIGENCE_OPENAI_API_KEY||env.INTELLIGENCE_FINANCIAL_APPROVAL)throw Error('Simulação isolada indisponível.');
+     env.INTELLIGENCE_PAID_RELEASE==='approved'||env.INTELLIGENCE_TRIAL_RELEASE==='approved'||env.OPENAI_API_KEY||env.INTELLIGENCE_OPENAI_API_KEY||env.INTELLIGENCE_FINANCIAL_APPROVAL)throw Error('Simulação isolada indisponível.');
   return 'simulation';
  }
  if(env.VERCEL_ENV!=='production'||url!==production||env.INTELLIGENCE_EXECUTION_MODE&&env.INTELLIGENCE_EXECUTION_MODE!=='paid')throw Error('Ambiente não autorizado.');
@@ -61,6 +65,21 @@ async function composeHosted({env=process.env,call,publicReader}={}){
  if(mode==='prepare_only')return {mode,call};
  if(!publicReader&&!injected)publicReader=()=>require('./catalog-crosscheck.cjs').createReader(env)();
  if(mode==='paid')return {mode,...compose({env,call,publicReader})};
+ if(mode==='trial'){
+  const pricing=()=>{
+   const rate=approvedPricing(env)[env.INTELLIGENCE_TARIFF_ID];
+   if(!rate||rate.model!=='gpt-5.4-mini-2026-03-17'||budget.estimate(rate)>1000000)throw Error('Tarifa de ensaio indisponível.');
+   return rate;
+  };
+  pricing();
+  if(await call('trial_identity')!==true)throw Error('Autorização Cloud do ensaio real indisponível.');
+  const provider=providerFactory(env.INTELLIGENCE_OPENAI_API_KEY);
+  return {mode,pricing,call,provider:async payload=>{
+   pricing();
+   if(await call('trial_identity')!==true)throw Error('Autorização Cloud do ensaio real retirada.');
+   return provider(payload);
+  },publicReader:undefined};
+ }
  if(await call('simulation_identity')!==true)throw Error('Base de ensaio não autorizada.');
  const checkedCall=async(action,args)=>{
   if(await call('simulation_identity')!==true)throw Error('Autorização de simulação retirada.');
@@ -75,13 +94,14 @@ async function composeHosted({env=process.env,call,publicReader}={}){
 }
 
 function runLegacy(runtime,channel,payload,id){
-  if(runtime.mode==='simulation')throw Error('Assistente legado indisponível em simulação alojada.');
+  if(['simulation','trial'].includes(runtime.mode))throw Error('Assistente legado indisponível em ensaio alojado.');
   const scope={channel,request:id};
   const permitted=async()=>{runtime.pricing();return await runtime.call('permission',scope)===true;};
   const ledger=chargeLedger(runtime.call,scope);
   return require('./legacy-ai.cjs').createLegacyService({...runtime,permitted,ledger})(channel,payload,id);
 }
 async function processNext(runtime,approvedMission,{scheduled=false}={}){
+  if(runtime.mode==='trial'&&(!approvedMission||scheduled))throw Error('Ensaio real apenas por missão manual aprovada.');
   const {call,pricing,provider}=runtime;
   if(approvedMission && await call('identity')!==approvedMission.owner)throw Error('Titular inválido.');
   if(scheduled&&approvedMission)throw Error('Agendamento inválido.');
@@ -118,6 +138,7 @@ async function processNext(runtime,approvedMission,{scheduled=false}={}){
     if(evidence.agent!==q.agent||evidence.kind!==q.kind)throw Error('Âmbito inválido.');
     if(q.agent==='stock'){
       const input=await call('input',{mission:q.missionId,lease:q.leaseId});
+      if(input.mime&&runtime.mode==='trial')throw Error('Anexos excluídos do ensaio real inicial.');
       if(input.mime)evidence.attachment=require('./stock-input.cjs')(input);
     }
     if(q.agent==='financeiro')evidence.payload=require('./finance-context.cjs')(evidence.payload);
