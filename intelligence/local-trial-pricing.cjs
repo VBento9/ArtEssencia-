@@ -8,7 +8,10 @@ module.exports=function localTrialPricing(env,now=new Date()){
  const p=JSON.parse(env.INTELLIGENCE_FINANCIAL_APPROVAL),stamp=now.getTime(),start=Date.parse(p.checkedAt),end=Date.parse(p.validUntil);
  if(p.scope!==(env.INTELLIGENCE_EXECUTION_HOST==='github_actions'?'isolated_remote_trial_v1':'isolated_local_trial_v1')||p.model!==model||p.ownerApproved!==true||p.autoRechargeOff!==true||
   p.dedicatedKeyConfigured!==true||p.noNewHosting!==true||p.noTopup!==true||p.providerCutoffInstantaneous!==false||
-  p.maxTrialMicroeur!==1000000||p.projectObservedSpendMicroUsd!==0||
+  p.maxTrialMicroeur!==1000000||
+  (env.INTELLIGENCE_EXECUTION_HOST==='github_actions'
+   ? !Number.isSafeInteger(p.projectObservedSpendMicroUsd)||p.projectObservedSpendMicroUsd<0||p.usageReconciled!==true
+   : p.projectObservedSpendMicroUsd!==0)||
   !Number.isSafeInteger(p.observedBalanceMicroUsd)||p.observedBalanceMicroUsd<1000000||
   !Number.isFinite(stamp)||!Number.isFinite(start)||!Number.isFinite(end)||start>stamp||end<=stamp||end-start>2*3600000||
   typeof p.evidenceRef!=='string'||!p.evidenceRef.trim()||typeof p.ownerApprovalRef!=='string'||!p.ownerApprovalRef.trim()||

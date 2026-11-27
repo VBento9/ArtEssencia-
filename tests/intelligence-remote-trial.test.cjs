@@ -34,5 +34,6 @@ test('remote financial scope cannot reuse local approval',()=>{
  const pricing=require('../intelligence/local-trial-pricing.cjs');
  const remote={...env,INTELLIGENCE_TARIFF_ID:p.model,INTELLIGENCE_FINANCIAL_APPROVAL:JSON.stringify(p)};
  assert.throws(()=>pricing(remote));
- assert.equal(require('../intelligence/ai-budget-policy.cjs').estimate(pricing({...remote,INTELLIGENCE_FINANCIAL_APPROVAL:JSON.stringify({...p,scope:'isolated_remote_trial_v1'})})),424875);
+ assert.throws(()=>pricing({...remote,INTELLIGENCE_FINANCIAL_APPROVAL:JSON.stringify({...p,scope:'isolated_remote_trial_v1'})}));
+ assert.equal(require('../intelligence/ai-budget-policy.cjs').estimate(pricing({...remote,INTELLIGENCE_FINANCIAL_APPROVAL:JSON.stringify({...p,scope:'isolated_remote_trial_v1',usageReconciled:true,projectObservedSpendMicroUsd:9000})})),424875);
 });
