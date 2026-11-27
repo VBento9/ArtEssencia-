@@ -12,23 +12,30 @@ const el=(tag,content)=>{const e=document.createElement(tag);if(content!==undefi
 const btn=(label,fn)=>{const b=el('button',label);b.type='button';b.className='btn';b.onclick=fn;return b;};
 const select=(options,label)=>{const s=el('select');s.setAttribute('aria-label',label);for(const [v,t] of options){const o=el('option',t);o.value=v;s.append(o);}return s;};
 const statusNames={pending_review:'A aguardar aprovação',approved:'Aprovada',working:'Em execução',review_ready:'Para revisão',blocked:'Bloqueada',cancelled:'Cancelada'};
-const sections=['Gabinete do Diretor Geral','Funcionários','Comunicação','Missões','Trabalhos em execução','Planeamento','Aprovações','Documentos produzidos','Memória profissional','Objetivos','Desempenho','Controlo financeiro','Auditoria','Configurações'];
+const sections=['Visão geral','Gabinete da Diretora Geral','Funcionários','Comunicação','Missões','Trabalhos em execução','Planeamento','Aprovações','Documentos produzidos','Memória profissional','Formação','Objetivos','Desempenho','Controlo financeiro','Auditoria','Configurações'];
 const allOff=()=>Object.fromEntries(Object.keys(labels).map(key=>[key,'off']));
 const unlockedNow=()=>typeof unlocked!=='undefined'&&unlocked===true&&['authGateV1880','lockScreen'].every(id=>document.getElementById(id)?.classList.contains('hidden'));
 function init(){
- const anchor=document.querySelector('#dashboard .dashboard-hero');
+ const anchor=document.getElementById('intelligence');
  if(!anchor||document.querySelector('#aeIntelligenceCentral'))return;
  const root=el('section');root.id='aeIntelligenceCentral';root.className='card';
  const body=el('div'), notice=el('p'), content=el('div');
  notice.setAttribute('role','status');
  const nav=select(sections.map(s=>[s,s]),'Área de trabalho');
+ body.className='ae-intelligence-body';content.className='ae-intelligence-content';
  const toggle=btn('Abrir central de agentes',()=>{if(opened)close();else if(unlockedNow()){opened=true;body.hidden=false;toggle.textContent='Fechar central';load();}});
  const teamButton=btn('Funcionários digitais',()=>{if(!unlockedNow())return;nav.value='Funcionários';missionDraft=null;if(opened){if(!busy)load();return;}opened=true;body.hidden=false;toggle.textContent='Fechar central';load();});
- root.append(el('h3','ArtEssencia Intelligence'),toggle,teamButton,body);body.append(nav,btn('Atualizar',()=>load()),notice,content);body.hidden=true;anchor.after(root);
+ root.append(el('h3','ArtEssencia Intelligence'),toggle,teamButton,body);body.append(nav,btn('Atualizar',()=>load()),notice,content);body.hidden=true;anchor.append(root);
  let opened=false,generation=0,state=null,busy=false,recipient='director',stockPreview=null,missionDraft=null;
+ document.addEventListener('ae-intelligence-navigation',event=>{if(event.detail?.page!=='intelligence'){close();clearCommercial();return;}if(!opened&&unlockedNow())toggle.click();});
  function close(){stockPreview=null;missionDraft=null;generation++;recipient='director';opened=false;busy=false;state=null;content.replaceChildren();body.hidden=true;notice.textContent='';toggle.textContent='Abrir central de agentes';}
+ function cloudAllowed(){
+  if(typeof cloudClient==='undefined'||!cloudClient)return false;
+  if(/^art-essencia-.+\.vercel\.app$/i.test(location.hostname))return cloudClient.supabaseUrl==='https://thqhyetvxledlgjdtmzp.supabase.co';
+  return true;
+ }
  async function rpc(action,args){
-  if(!unlockedNow()||typeof cloudClient==='undefined'||!cloudClient?.rpc)throw Error();
+  if(!unlockedNow()||!cloudAllowed()||!cloudClient?.rpc)throw Error();
   const result=await cloudClient.rpc('artessencia_intelligence_console_v1',{p_action:action,p_args:args});
   if(result.error||result.data==null)throw Error();
   return result.data;
@@ -39,6 +46,7 @@ function init(){
   try{
    let receipt;
    if(action==='execute'){
+    if(!cloudAllowed())throw Error();
     const auth=await cloudClient.auth.getSession();
     if(ticket!==generation||!unlockedNow()||!auth.data?.session?.access_token)throw Error();
     const response=await fetch('/api/intelligence-worker',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+auth.data.session.access_token},body:JSON.stringify(args),cache:'no-store'});
@@ -54,7 +62,7 @@ function init(){
   }catch{if(ticket===generation){state=null;content.replaceChildren();notice.textContent=action==='read'?'Central Cloud indisponível. Verifica a sessão e a instalação do serviço.':'Resultado por confirmar. Atualiza a central antes de repetir a operação.';if(action==='read'&&nav.value==='Funcionários'&&unlockedNow())offlineTeam();}}
   finally{if(ticket===generation){busy=false;content.inert=false;}}
  }
- nav.onchange=()=>{if(state&&unlockedNow())render();};
+ nav.onchange=()=>{stockPreview=null;missionDraft=null;if(state&&unlockedNow())render();else if(opened&&unlockedNow()&&!busy)load();};
  function offlineTeam(){
   content.replaceChildren();
   content.append(el('p','Equipa prevista nesta versão. Estado operacional por confirmar na Cloud; nenhuma missão pode ser enviada.'));
@@ -80,7 +88,13 @@ function init(){
    }
    content.append(card);
   }
-  if(area==='Funcionários'||area==='Configurações'){
+  if(area==='Visão geral'){
+   line(controls.enabled?'Equipa ligada · modos individuais aplicáveis':'Equipa desligada');
+   line('9 funcionários · '+list.length+' missões consultadas · '+list.filter(m=>m.status==='pending_review').length+' por aprovar · '+list.filter(m=>m.status==='working').length+' em execução');
+   line('Documentos disponíveis: '+state.documents.length+' · Memórias: '+state.memory.length);
+   for(const key of Object.keys(labels)){const p=teamDirectory.agents[key],entry=el('article');entry.append(el('strong',p.name+' · '+p.role),el('p','Modo: '+(modes.find(([v])=>v===controls.modes[key])?.[1]||'Por confirmar')+' · '+list.filter(m=>m.agent===key&&m.status==='review_ready').length+' trabalhos para revisão'),btn('Comunicar com '+p.name,()=>{recipient=key;nav.value='Comunicação';render();}));content.append(entry);}
+   line('A existência de missões e relatórios não comprova competência por IA real.');
+  }else if(area==='Funcionários'||area==='Configurações'||area==='Formação'){
    const master=btn(controls.enabled?'Desligar equipa':'Ligar equipa',()=>load('controls',{revision:controls.revision,enabled:!controls.enabled,modes:allOff()}));content.append(master);
    for(const [key,label] of Object.entries(labels)){
     const person=teamDirectory.agents[key];
@@ -88,7 +102,7 @@ function init(){
     mode.value=controls.modes[key];mode.disabled=!controls.enabled;
     mode.onchange=()=>load('controls',{revision:controls.revision,enabled:true,modes:{...controls.modes,[key]:mode.value}});
     row.append(mode);row.style.display='block';content.append(row);
-    if(area==='Funcionários'){
+    if(area==='Funcionários'||area==='Formação'){
      const p=trainingOverview.profiles[key],details=el('details');
      const amount=state.budget?.channels?.[key]||{settled:0,pending:0};
      const money=n=>new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR',maximumFractionDigits:4}).format(n/1000000);
@@ -106,12 +120,14 @@ function init(){
       if(pending)details.append(el('p',pending+' avaliação(ões) com formação complementar por aprovar. Consulta Documentos produzidos.'));
       if(evaluations.some(e=>e.lesson_status==='active'))details.append(el('p','Lições aprovadas disponíveis na Memória profissional.'));
      }
+     details.append(el('p','Missões: '+list.filter(m=>m.agent===key).length+' · Bloqueios: '+list.filter(m=>m.agent===key&&m.status==='blocked').length+' · Memórias: '+state.memory.filter(m=>m.agent===key&&!m.revoked_at).length));
+     details.append(btn('Comunicar com '+person.name,()=>{recipient=key;missionDraft=null;nav.value='Comunicação';render();}));
      const prepare=btn('Preparar primeiro trabalho',()=>{if(!unlockedNow()||busy)return;recipient=key;missionDraft={agent:key,kind:kinds[key][0],instruction:person.firstMission};nav.value='Comunicação';render();});
      prepare.disabled=!controls.enabled||controls.modes[key]==='off';details.append(prepare);
      content.append(details);
     }
    }
-  }else if(area==='Comunicação'||area===sections[0]){
+  }else if(area==='Comunicação'||area==='Gabinete da Diretora Geral'){
    const agent=select(Object.keys(labels).map(key=>[key,displayAgent(key)]),'Funcionário'),kind=select([],'Tipo de missão'),instruction=el('textarea');
    instruction.placeholder='Descreve o trabalho';instruction.maxLength=4000;instruction.setAttribute('aria-label','Instrução');
    const file=el('input');file.type='file';file.accept='.txt,.csv,.pdf,.jpg,.jpeg,.png';file.setAttribute('aria-label','Anexo de inventário');
@@ -135,7 +151,7 @@ function init(){
    });
    const history=el('div');
    function refresh(){file.value='';upload.hidden=agent.value!=='stock';kind.replaceChildren();for(const k of kinds[agent.value])kind.add(new Option(names[k],k));send.disabled=!controls.enabled||controls.modes[agent.value]==='off';history.replaceChildren();for(const m of list.filter(m=>m.agent===agent.value)){history.append(el('p',m.instruction+' · '+statusNames[m.status]));if(m.result_summary)history.append(el('p',m.result_summary));}}
-   agent.disabled=area===sections[0];agent.value=agent.disabled?'director':recipient;agent.onchange=()=>{missionDraft=null;instruction.value='';recipient=agent.value;refresh();};refresh();if(missionDraft&&missionDraft.agent===agent.value){kind.value=missionDraft.kind;instruction.value=missionDraft.instruction;missionDraft=null;}kind.onchange=()=>{upload.hidden=agent.value!=='stock'||!['inventory_audit','stock_organization_plan'].includes(kind.value);if(upload.hidden)file.value='';};content.append(agent,kind,instruction,upload,send,history);
+   agent.disabled=area==='Gabinete da Diretora Geral';agent.value=agent.disabled?'director':recipient;agent.onchange=()=>{missionDraft=null;instruction.value='';recipient=agent.value;refresh();};refresh();if(missionDraft&&missionDraft.agent===agent.value){kind.value=missionDraft.kind;instruction.value=missionDraft.instruction;missionDraft=null;}kind.onchange=()=>{upload.hidden=agent.value!=='stock'||!['inventory_audit','stock_organization_plan'].includes(kind.value);if(upload.hidden)file.value='';};content.append(agent,kind,instruction,upload,send,history);
   }else if(area==='Documentos produzidos'){
    if(!state.documents.length)line('Sem documentos concluídos.');
    for(const d of state.documents){line(displayAgent(d.agent)+' · '+d.mission_id);line(d.content);

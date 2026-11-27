@@ -7,6 +7,9 @@ const dependencyRoot = require('node:path').dirname(require.resolve(process.env.
 const {PGlite} = require(process.env.PGLITE_MODULE || require.resolve('@electric-sql/pglite',{paths:[dependencyRoot]}));
 
 async function run() {
+  const app=fs.readFileSync('index.html','utf8'), sw=fs.readFileSync('sw.js','utf8'), version=JSON.parse(fs.readFileSync('version.json','utf8')).app;
+  assert.ok(app.includes('id="intelligence" class="screen"')&&app.includes("['intelligence','ArtEssencia Intelligence']")&&app.includes('src="/intelligence/central-ui.js"')&&app.includes('href="/intelligence/central-ui.css"'));
+  assert.ok(app.includes("const APP_VERSION='"+version+"'")&&sw.includes('artessencia-backoffice-'+version)&&sw.includes('/intelligence/central-ui.js')&&sw.includes('/intelligence/central-ui.css'));
   const db = new PGlite();
   const owner = '00000000-0000-0000-0000-000000000001';
   await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE SCHEMA auth;
@@ -23,7 +26,7 @@ async function run() {
     await db.exec(fs.readFileSync('sql/intelligence-'+name+'-v1.sql','utf8'));
   }
   await db.exec('SET ROLE authenticated');
-  const html = `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><div id="authGateV1880" class="hidden"></div><div id="lockScreen" class="hidden"></div><main id="dashboard"><div class="dashboard-hero"></div></main>
+  const html = `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><div id="authGateV1880" class="hidden"></div><div id="lockScreen" class="hidden"></div><nav><button id="openIntelligence" onclick="document.dispatchEvent(new CustomEvent('ae-intelligence-navigation',{detail:{page:'intelligence'}}))">ArtEssencia Intelligence</button></nav><main><section id="intelligence" class="screen active"></section></main>
     <script>let unlocked=true;const cloudClient={rpc:async(name,args)=>(await fetch('/rpc',{method:'POST',body:JSON.stringify(args)})).json()};</script><script src="/central.js"></script>`;
   const server = http.createServer(async (req,res)=>{
     if(req.url==='/'){res.setHeader('content-type','text/html;charset=utf-8');return res.end(html);}
@@ -45,9 +48,9 @@ async function run() {
       const page=await browser.newPage({viewport:{width,height:900}});
       const errors=[];page.on('pageerror',e=>errors.push(e.message));
       await page.goto(origin);
-      await page.getByRole('button',{name:'Abrir central de agentes'}).click();
-      await page.getByRole('button',{name:'Enviar missão'}).waitFor();
-      const nav=page.getByLabel('Área de trabalho');assert.equal(await nav.locator('option').count(),14);
+      await page.getByRole('button',{name:'ArtEssencia Intelligence',exact:true}).click();
+      await page.getByText('9 funcionários ·', {exact:false}).waitFor();
+      const nav=page.getByLabel('Área de trabalho');assert.equal(await nav.locator('option').count(),16);
       if(width===390){
         await nav.selectOption('Funcionários');
         await page.getByRole('button',{name:'Ligar equipa'}).click();
@@ -81,7 +84,7 @@ async function run() {
     const errors=[];page.on('pageerror',e=>errors.push(e.message));
     await page.goto(origin);
     await page.getByRole('button',{name:'Abrir central de agentes'}).click();
-    await page.getByRole('button',{name:'Enviar missão'}).waitFor();
+    await page.getByText('9 funcionários ·',{exact:false}).waitFor();
     await page.getByLabel('Área de trabalho').selectOption('Documentos produzidos');
     await page.getByText('Documento fictício de Stock',{exact:true}).waitFor();
     await page.getByLabel('Material de origem',{exact:true}).fill('Material de ensaio');

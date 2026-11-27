@@ -1,0 +1,12 @@
+/* Native Intelligence module; no changes to other screens. */
+#intelligence #aeIntelligenceCentral{min-width:0;max-width:100%;padding:14px;overflow-wrap:anywhere}
+#intelligence #aeIntelligenceCentral h3{margin:0 0 12px;font-size:18px}
+#intelligence .ae-intelligence-body:not([hidden]){display:grid;gap:10px;margin-top:12px;min-width:0}
+#intelligence .ae-intelligence-body>select{width:100%;max-width:420px}
+#intelligence .ae-intelligence-content{display:grid;gap:8px;min-width:0}
+#intelligence .ae-intelligence-content p{margin:3px 0;font-size:13px;line-height:1.45}
+#intelligence .ae-intelligence-content article,#intelligence .ae-intelligence-content details{border:1px solid var(--line,#e2d5c5);border-radius:10px;padding:10px;min-width:0}
+#intelligence .ae-intelligence-content select,#intelligence .ae-intelligence-content textarea,#intelligence .ae-intelligence-content input{max-width:100%;min-width:0}
+#intelligence .ae-intelligence-content textarea{width:100%;min-height:76px}
+#intelligence .ae-intelligence-content .btn{white-space:normal;max-width:100%;margin:3px 4px 3px 0}
+@media(max-width:650px){#intelligence #aeIntelligenceCentral{padding:10px}#intelligence .ae-intelligence-content article{padding:8px}}
