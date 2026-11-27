@@ -46,7 +46,7 @@ function init(){
    if(ticket!==generation||!unlockedNow())return;
    if(action==='stock_change_preview')stockPreview={mission:args.mission,request:args,result:receipt,operationId:crypto.randomUUID()};
    else stockPreview=null;
-   state=data;notice.textContent=action==='professional_assess'?'Avaliação profissional registada. Não altera permissões.':action==='commercial_approve'?'Proposta interna guardada em Orçamentos. Nenhum contacto enviado.':['stock_change_apply','stock_change_revert'].includes(action)?'Operação confirmada na Cloud. Recebe e valida os dados antes de editar.':action==='repair_recipe_reference'?'Referência confirmada na ficha técnica. Recebe e valida a Cloud antes de editar.':action==='create_material'?'Material confirmado na Cloud. Recebe e valida os dados da Cloud antes de alterar o stock.':action==='plan_task'?(receipt.status==='archived'?'A tarefa já foi arquivada.':'Tarefa confirmada no Planeamento.'):'';
+   state=data;notice.textContent=action==='professional_lesson'?'Lição aprovada e guardada na memória profissional. Não concede permissões.':action==='professional_assess'?'Avaliação profissional registada. Não altera permissões.':action==='commercial_approve'?'Proposta interna guardada em Orçamentos. Nenhum contacto enviado.':['stock_change_apply','stock_change_revert'].includes(action)?'Operação confirmada na Cloud. Recebe e valida os dados antes de editar.':action==='repair_recipe_reference'?'Referência confirmada na ficha técnica. Recebe e valida a Cloud antes de editar.':action==='create_material'?'Material confirmado na Cloud. Recebe e valida os dados da Cloud antes de alterar o stock.':action==='plan_task'?(receipt.status==='archived'?'A tarefa já foi arquivada.':'Tarefa confirmada no Planeamento.'):'';
    if(action==='plan_task')document.dispatchEvent(new CustomEvent('ae-task-refresh'));render();
   }catch{if(ticket===generation){state=null;content.replaceChildren();notice.textContent=action==='read'?'Central Cloud indisponível. Verifica a sessão e a instalação do serviço.':'Resultado por confirmar. Atualiza a central antes de repetir a operação.';}}
   finally{if(ticket===generation){busy=false;content.inert=false;}}
@@ -91,6 +91,9 @@ function init(){
       const latest=evaluations[0];
       details.append(el('p','Última avaliação: '+latest.score+'% · '+(latest.verdict==='review_pass'?'Resultado satisfatório nesta missão':'Requer correção e nova avaliação')),
        el('p',latest.evidence_kind==='simulation'?'Ensaio simulado — não certifica competência real.':'Origem do fornecedor por validar — não certifica competência real.'),el('p',latest.feedback));
+      const pending=evaluations.filter(e=>e.verdict==='needs_training'&&e.lesson_status==='not_approved').length;
+      if(pending)details.append(el('p',pending+' avaliação(ões) com formação complementar por aprovar. Consulta Documentos produzidos.'));
+      if(evaluations.some(e=>e.lesson_status==='active'))details.append(el('p','Lições aprovadas disponíveis na Memória profissional.'));
      }
      content.append(details);
     }
@@ -145,6 +148,19 @@ function init(){
      }));
      for(const e of (state.assessments||[]).filter(x=>x.mission_id===d.mission_id)){
       evaluation.append(el('p',e.score+'% · '+(e.verdict==='review_pass'?'Resultado satisfatório':'Requer formação')+' · '+(e.evidence_kind==='simulation'?'Simulação':'Fornecedor por validar')+' · '+e.created_at),el('p',e.feedback));
+      if(e.verdict==='needs_training'){
+       const gaps=criteria.filter(([key])=>e.scores[key]<85).map(([,label])=>label);
+       if(e.critical&&!gaps.includes('Segurança e permissões'))gaps.push('Segurança e permissões');
+       evaluation.append(el('p','Formação complementar: '+(gaps.join(', ')||'Rever os procedimentos da missão')));
+       if(e.lesson_status==='not_approved'){
+        const lesson=el('textarea');lesson.maxLength=1000;lesson.placeholder='Escreve a lição geral validada, sem copiar dados fictícios, dados pessoais ou credenciais';
+        lesson.setAttribute('aria-label','Lição profissional de '+e.assessment_id);
+        evaluation.append(lesson,btn('Aprovar lição para missões futuras',()=>{
+         if(!lesson.value.trim())return;
+         if(window.confirm('Guardar esta lição na memória do funcionário? Será contexto de missões futuras, não uma autorização de operação.'))load('professional_lesson',{assessment:e.assessment_id,summary:lesson.value.trim(),confirmed:true});
+        }));
+       }else evaluation.append(el('p','Lição: '+({active:'ativa na memória profissional',revoked:'revogada',erased:'eliminada',expired:'expirada'}[e.lesson_status]||'por validar')));
+      }
      }
      content.append(evaluation);
     }

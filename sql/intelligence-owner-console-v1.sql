@@ -377,6 +377,52 @@ BEGIN
 END;
 $assessment$;
 REVOKE ALL ON FUNCTION artessencia_intelligence_private.professional_assess(jsonb) FROM PUBLIC,anon,authenticated;
+-- Explicit lesson approval linked to a real assessment. Do not copy the lesson text
+-- to this link table: revocation and erasure remain in the existing memory module.
+CREATE TABLE IF NOT EXISTS artessencia_intelligence_private.professional_lesson_links(
+ user_id uuid NOT NULL,assessment_id uuid NOT NULL,memory_id uuid NOT NULL,
+ created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+ PRIMARY KEY(user_id,assessment_id),UNIQUE(user_id,memory_id),
+ FOREIGN KEY(user_id,assessment_id) REFERENCES artessencia_intelligence_private.professional_assessments(user_id,assessment_id)
+);
+ALTER TABLE artessencia_intelligence_private.professional_lesson_links ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON artessencia_intelligence_private.professional_lesson_links FROM PUBLIC,anon,authenticated;
+
+CREATE OR REPLACE FUNCTION artessencia_intelligence_private.professional_lesson(p_args jsonb)
+RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $lesson$
+DECLARE
+ actor uuid:=auth.uid(); aid uuid:=(p_args->>'assessment')::uuid; note text:=trim(p_args->>'summary');
+ assessment artessencia_intelligence_private.professional_assessments%rowtype;
+ existing_link artessencia_intelligence_private.professional_lesson_links%rowtype;
+ mem artessencia_intelligence_private.team_memory%rowtype; mid uuid;
+BEGIN
+ IF actor IS NULL OR public.artessencia_is_owner_v1() IS DISTINCT FROM true THEN RAISE EXCEPTION 'OWNER_REQUIRED'; END IF;
+ IF aid IS NULL OR p_args->'confirmed' IS DISTINCT FROM 'true'::jsonb OR coalesce(length(note),0) NOT BETWEEN 1 AND 1000
+ OR note ~* '(@|Bearer[[:space:]]|sk-|sb_secret_|[0-9]{9})' THEN RAISE EXCEPTION 'LESSON_INVALID'; END IF;
+ -- Serialize approval against another lesson of the same owner.
+ PERFORM 1 FROM artessencia_intelligence_private.team_controls WHERE user_id=actor FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'LESSON_OWNER_UNAVAILABLE'; END IF;
+ SELECT * INTO assessment FROM artessencia_intelligence_private.professional_assessments z WHERE z.user_id=actor AND z.assessment_id=aid FOR UPDATE;
+ IF NOT FOUND OR assessment.verdict<>'needs_training' THEN RAISE EXCEPTION 'LESSON_ASSESSMENT_REQUIRED'; END IF;
+ PERFORM 1 FROM artessencia_intelligence_private.team_missions WHERE user_id=actor AND mission_id=assessment.mission_id AND agent=assessment.agent AND status='review_ready';
+ IF NOT FOUND THEN RAISE EXCEPTION 'LESSON_EVIDENCE_UNAVAILABLE'; END IF;
+ SELECT * INTO existing_link FROM artessencia_intelligence_private.professional_lesson_links z WHERE z.user_id=actor AND z.assessment_id=aid;
+ IF FOUND THEN
+  SELECT * INTO mem FROM artessencia_intelligence_private.team_memory WHERE user_id=actor AND memory_id=existing_link.memory_id FOR UPDATE;
+  IF NOT FOUND OR mem.revoked_at IS NOT NULL OR mem.expires_at<=clock_timestamp() THEN RAISE EXCEPTION 'LESSON_NO_LONGER_ACTIVE'; END IF;
+  IF mem.summary IS DISTINCT FROM note THEN RAISE EXCEPTION 'LESSON_RECEIPT_CONFLICT'; END IF;
+  RETURN jsonb_build_object('status','recorded','memoryId',mem.memory_id,'replayed',true);
+ END IF;
+ IF EXISTS(SELECT 1 FROM artessencia_intelligence_private.team_memory m WHERE m.user_id=actor AND m.agent=assessment.agent AND m.revoked_at IS NULL AND m.expires_at>clock_timestamp()
+ AND lower(trim(m.summary))=lower(note)) THEN RAISE EXCEPTION 'LESSON_ALREADY_EXISTS'; END IF;
+ mid:=gen_random_uuid();
+ INSERT INTO artessencia_intelligence_private.team_memory(user_id,memory_id,agent,kind,summary,evidence_id,expires_at)
+ VALUES(actor,mid,assessment.agent,'lesson',note,assessment.mission_id,clock_timestamp()+interval '364 days');
+ INSERT INTO artessencia_intelligence_private.professional_lesson_links(user_id,assessment_id,memory_id) VALUES(actor,aid,mid);
+ RETURN jsonb_build_object('status','recorded','memoryId',mid,'replayed',false);
+END;
+$lesson$;
+REVOKE ALL ON FUNCTION artessencia_intelligence_private.professional_lesson(jsonb) FROM PUBLIC,anon,authenticated;
 CREATE OR REPLACE FUNCTION public.artessencia_intelligence_console_v1(p_action text, p_args jsonb DEFAULT '{}')
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $console$
 DECLARE
@@ -464,6 +510,8 @@ BEGIN
    WHEN 'inovacao' THEN 'innovation_review' WHEN 'auditoria' THEN 'technical_review' END,p_args->>'instruction',(p_args->>'enabled')::boolean)
   ON CONFLICT(user_id,agent,cadence) DO UPDATE SET instruction=excluded.instruction,enabled=excluded.enabled;
   RETURN jsonb_build_object('agent',selected_agent);
+ WHEN 'professional_lesson' THEN
+  RETURN artessencia_intelligence_private.professional_lesson(p_args);
  WHEN 'professional_assess' THEN
   RETURN artessencia_intelligence_private.professional_assess(p_args);
  WHEN 'commercial_read' THEN
@@ -631,8 +679,13 @@ BEGIN
     r.outcome->'report'->'commercialProposals' AS commercial_proposals,
     (SELECT coalesce(jsonb_agg(z.proposal_index),'[]') FROM artessencia_intelligence_private.commercial_proposals z WHERE z.user_id=r.user_id AND z.mission_id=r.mission_id) AS commercial_receipts,r.outcome->'report'->'publicComparison' AS public_comparison,r.outcome->'report'->'professionalTraining' AS professional_training FROM artessencia_intelligence_private.team_runs r JOIN artessencia_intelligence_private.team_missions m USING(user_id,mission_id) WHERE r.user_id=actor AND r.status='review_ready' ORDER BY r.ended_at DESC LIMIT 50)d),
    'assessments',(SELECT coalesce(jsonb_agg(to_jsonb(z) ORDER BY z.created_at DESC,z.assessment_id),'[]') FROM
-    (SELECT assessment_id,mission_id,agent,training_version,training_digest,evidence_kind,scores,score,critical,feedback,verdict,created_at
-     FROM artessencia_intelligence_private.professional_assessments WHERE user_id=actor ORDER BY created_at DESC,assessment_id LIMIT 100)z),
+    (SELECT a.assessment_id,a.mission_id,a.agent,a.training_version,a.training_digest,a.evidence_kind,a.scores,a.score,a.critical,a.feedback,a.verdict,a.created_at,
+      l.memory_id AS lesson_memory_id,
+      CASE WHEN l.memory_id IS NULL THEN 'not_approved' WHEN m.memory_id IS NULL THEN 'erased' WHEN m.revoked_at IS NOT NULL THEN 'revoked' WHEN m.expires_at<=clock_timestamp() THEN 'expired' ELSE 'active' END AS lesson_status
+     FROM artessencia_intelligence_private.professional_assessments a
+     LEFT JOIN artessencia_intelligence_private.professional_lesson_links l ON l.user_id=a.user_id AND l.assessment_id=a.assessment_id
+     LEFT JOIN artessencia_intelligence_private.team_memory m ON m.user_id=l.user_id AND m.memory_id=l.memory_id
+     WHERE a.user_id=actor ORDER BY a.created_at DESC,a.assessment_id LIMIT 100)z),
    'controls',controls,'missions',missions,'events',events,'memory',memory,'budget',expenses);
  ELSE RAISE EXCEPTION 'UNKNOWN_COMMAND';
  END CASE;
