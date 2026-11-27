@@ -27,12 +27,17 @@ function createGateway(options){
    payload.input[1].content=[{type:'input_text',text:payload.input[1].content},request.attachment];
   }
   if(decisionFormat){
-   payload.text={format:{type:'json_schema',name:'artessencia_mission',strict:true,schema:require('./mission-decisions.cjs').schema}};
-   payload.input[0].content+=' Produz o documento solicitado. Podes propor até seis tarefas internas com evidência exata de evidenceIds. Só o Diretor pode delegar, no máximo uma missão por departamento ativo. Usa listas vazias quando adequado. Não incluas dados pessoais de clientes. Não proponhas ordens para alterar quantidades, preços, publicar ou contactar clientes sem autorização.';
+   const context=JSON.parse(request.context);
+   payload.text={format:{type:'json_schema',name:'artessencia_mission',strict:true,schema:require('./mission-decisions.cjs').schemaFor(request.agent,context.evidenceIds)}};
+   payload.input[0].content+=' Produz o documento solicitado. Podes propor até seis tarefas internas com evidência exata de evidenceIds. Só o Diretor pode delegar, no máximo uma missão por departamento ativo. Usa listas vazias quando adequado. Não incluas dados pessoais de clientes. Não proponhas ordens para alterar quantidades, preços, publicar ou contactar clientes sem autorização. Mantém o documento conciso, até 450 palavras, e reserva espaço para concluir o JSON. Se não houver evidência suficiente, usa uma lista de tarefas vazia.';
   }
   const {response,actual,authorized}=await accountedResponse({requestId:request.requestId,channel:request.agent,ledger,rate,payload,provider,authorize:async()=>permitted(await authorize(subject))});
   if(!authorized)return {status:'cancelled_after_charge',requestId:request.requestId,chargedMicroeur:actual};
-  if(response.status!=='completed'||!str(response.text,32000))return {status:'incomplete',requestId:request.requestId,chargedMicroeur:actual};
+  if(response.status!=='completed'||!str(response.text,32000)){
+   const refusal=Array.isArray(response.output)&&response.output.some(item=>Array.isArray(item.content)&&item.content.some(part=>part.type==='refusal'));
+   const diagnostic=refusal?'provider_refusal':response.incomplete_details?.reason==='max_output_tokens'?'provider_output_limit':response.incomplete_details?.reason==='content_filter'?'provider_content_filter':'provider_incomplete';
+   return {status:'incomplete',diagnostic,requestId:request.requestId,chargedMicroeur:actual};
+  }
   return {status:'review',requestId:request.requestId,agent:request.agent,text:response.text,chargedMicroeur:actual,executedTools:[]};
  }
  return {run};

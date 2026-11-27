@@ -44,3 +44,10 @@ test('stops on first uncertain result without executing next department',async()
  const f=fixture();f.deps.processNext=async()=>({status:'recovery_required',stage:'reasoning'});
  const r=await run(config,parent,f.deps);assert.equal(r.status,'stopped_for_reconciliation');assert.equal(r.automaticRetry,false);assert.deepEqual(f.calls,['approve:'+id(3)]);
 });
+
+test('preserves reconciled blocked delegation without replay and executes remaining pending missions',async()=>{
+ const f=fixture();f.panel.missions[1].status='blocked';f.panel.missions[1].revision=3;
+ const result=await run(config,parent,f.deps);
+ assert.equal(result.status,'completed_remaining');assert.deepEqual(result.blocked,[id(3)]);
+ assert.deepEqual(result.results.map(x=>x.agent),['comercial','marketing']);assert.deepEqual(f.calls,['approve:'+id(4),'execute:'+id(4),'approve:'+id(5),'execute:'+id(5)]);
+});

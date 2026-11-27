@@ -22,7 +22,7 @@ async function main(){
    ownerEmail:await ask('Email do titular de ensaio: '),ownerPassword:await ask('Palavra-passe do titular de ensaio: ',true),
    apiKey:await ask('Chave OpenAI dedicada (oculta): ',true)};
   const result=await run(config,parentId,{write:console.log,confirm:async()=>await ask('Escreve EXECUTAR para aprovar esta delegação: ')==='EXECUTAR'});
-  console.log(JSON.stringify({status:result.status,completed:result.results?.map(({agent,missionId,chargedMicroeur})=>({agent,missionId,chargedMicroeur})),missionId:result.missionId},null,2));
+  console.log(JSON.stringify({status:result.status,completed:result.results?.map(({agent,missionId,chargedMicroeur})=>({agent,missionId,chargedMicroeur})),missionId:result.missionId,blocked:result.blocked,stage:result.stage,diagnostic:result.diagnostic},null,2));
  }finally{rl.close();}
 }
 main().catch(()=>{console.error('Ensaio bloqueado ou resultado por confirmar. Não repetir automaticamente; verificar a Cloud.');process.exitCode=1;});

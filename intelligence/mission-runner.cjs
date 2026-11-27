@@ -19,7 +19,7 @@ function createMissionRunner(options){
   // reasoning request ID, with no browser-supplied instructions or grants.
   const m=await store.claim({owner:command.owner,missionId:command.missionId,expectedRevision:command.expectedRevision});
   if(m?.owner!==command.owner||m.id!==command.missionId||m.status!=='working'||m.revision!==command.expectedRevision+1||!uuid(m.leaseId)||!uuid(m.requestId)||!validRevision(m.controlRevision)||!text(m.instruction,4000)||!core.agents.includes(m.agent))throw Error('Claim não confirmado.');
-  let stage='context',receipts=[],chargedMicroeur=null;
+  let stage='context',receipts=[],chargedMicroeur=null,diagnostic=null;
   try{
    const l=await current(m);
    const s=await contextSource({owner:m.owner,agent:m.agent,kind:m.kind,missionId:m.id,leaseId:m.leaseId});
@@ -44,10 +44,15 @@ function createMissionRunner(options){
    const ai=await gateway.run({requestId:m.requestId,missionId:m.id,agent:m.agent,instruction:m.instruction,context,attachment:s.attachment});
    if(ai?.requestId!==m.requestId||!Number.isSafeInteger(ai.chargedMicroeur)||ai.chargedMicroeur<0)throw Error('Custo ou resposta não confirmado.');
    chargedMicroeur=ai.chargedMicroeur;
-   if(ai.status!=='review'||ai.agent!==m.agent||!text(ai.text,16000))throw Error('Resposta indisponível para revisão.');
+   if(ai.status!=='review'||ai.agent!==m.agent||!text(ai.text,16000)){
+    diagnostic=['provider_refusal','provider_output_limit','provider_content_filter','provider_incomplete'].includes(ai.diagnostic)?ai.diagnostic:ai.status==='cancelled_after_charge'?'authorization_revoked':'response_invalid';
+    throw Error('Resposta indisponível para revisão.');
+   }
    let reasoning=ai.text,delegations=[];
    if(decisionFormat){
-    const decision=require('./mission-decisions.cjs').parse(ai.text,{agent:m.agent,evidenceIds:s.evidenceIds});
+    let decision;
+    try{decision=require('./mission-decisions.cjs').parse(ai.text,{agent:m.agent,evidenceIds:s.evidenceIds});}
+    catch(e){diagnostic=['decision_json','decision_shape','decision_task','decision_delegation'].includes(e.decisionCode)?e.decisionCode:'decision_invalid';throw e;}
     reasoning=decision.document;delegations=decision.delegations;
     const tasks=decision.tasks.map(t=>({agent:m.agent,key:JSON.stringify([m.agent,t.title.trim().toLocaleLowerCase('pt-PT')]),title:t.title.trim(),priority:t.priority,dueDate:null,requiresApproval:true,evidenceId:t.evidenceId}));
     report.result={...report.result,tasks:[...(report.result.tasks||[]),...tasks]};
@@ -85,8 +90,8 @@ function createMissionRunner(options){
    // Keep the claim consumed. A transport error can hide a successful charge
    // or write. Never repeat a model request or tool automatically.
    let saved=false;
-   try{const r=await store.interrupt({mission:m,stage,chargedMicroeur,receipts});saved=r?.missionId===m.id&&r.leaseId===m.leaseId&&r.status==='blocked';}catch{}
-   return {status:saved?'blocked':'recovery_required',missionId:m.id,stage,chargedMicroeur,receipts,automaticRetry:false};
+   try{const r=await store.interrupt({mission:m,stage,diagnostic,chargedMicroeur,receipts});saved=r?.missionId===m.id&&r.leaseId===m.leaseId&&r.status==='blocked';}catch{}
+   return {status:saved?'blocked':'recovery_required',missionId:m.id,stage,diagnostic,chargedMicroeur,receipts,automaticRetry:false};
   }
  }
  return {run};

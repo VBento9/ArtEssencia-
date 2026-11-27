@@ -132,7 +132,7 @@ async function processNext(runtime,approvedMission,{scheduled=false}={}){
     finish:q=>call('finish',{mission:q.mission.id,lease:q.mission.leaseId,status:'review_ready',outcome:{
       summary:q.summary,report:q.report,reasoning:q.reasoning,chargedMicroeur:q.chargedMicroeur,receipts:q.receipts,delegations:q.delegations||[]}}),
     interrupt:q=>call('finish',{mission:q.mission.id,lease:q.mission.leaseId,status:'blocked',outcome:{
-      stage:q.stage,chargedMicroeur:q.chargedMicroeur,receipts:q.receipts}})
+      stage:q.stage,diagnostic:q.diagnostic||null,chargedMicroeur:q.chargedMicroeur,receipts:q.receipts}})
   };
   const gateway={run(request){
     const scope={channel:request.agent,mission:request.missionId,request:request.requestId};
