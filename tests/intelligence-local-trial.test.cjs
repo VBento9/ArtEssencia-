@@ -39,3 +39,21 @@ test('local launcher requires explicit confirmation and never creates another mi
  f=fixture();const result=await run(config,f.deps);assert.equal(result.status,'review_ready');assert.equal(result.chargedMicroeur,5);
  assert.deepEqual(f.events,['read','mission','approve','execute','read']);
 });
+
+test('local trial uses independent, expiring conservative tariff without claiming an instant provider cutoff',async()=>{
+ const now=new Date(),p={scope:'isolated_local_trial_v1',model:'gpt-5.4-mini-2026-03-17',checkedAt:new Date(now-1000).toISOString(),validUntil:new Date(+now+60000).toISOString(),
+  ownerApproved:true,autoRechargeOff:true,dedicatedKeyConfigured:true,noNewHosting:true,noTopup:true,providerCutoffInstantaneous:false,maxTrialMicroeur:1000000,
+  projectObservedSpendMicroUsd:0,observedBalanceMicroUsd:2970000,evidenceRef:'fixture',ownerApprovalRef:'fixture',inputMicroUsdPerMillion:750000,outputMicroUsdPerMillion:4500000,
+  eurPerUsdUpperPpm:1100000,grossBps:12500};
+ const env=environment({...config,financialApproval:JSON.stringify(p)});
+ const pricing=require('../intelligence/local-trial-pricing.cjs'),rate=pricing(env,now);
+ assert.equal(require('../intelligence/ai-budget-policy.cjs').estimate(rate),424875);
+ assert.throws(()=>pricing({...env,INTELLIGENCE_EXECUTION_HOST:''},now),/local/);
+ for(const change of [{providerCutoffInstantaneous:true},{maxTrialMicroeur:1000001},{noTopup:false},{autoRechargeOff:false},{validUntil:new Date(now-1).toISOString()},{eurPerUsdUpperPpm:900000}]){
+  assert.throws(()=>pricing({...env,INTELLIGENCE_FINANCIAL_APPROVAL:JSON.stringify({...p,...change})},now),/local/);
+ }
+ const runtime=await server.composeLocalTrial({env,call:async()=>true});
+ assert.equal(runtime.mode,'trial');assert.equal(runtime.pricing().model,p.model);
+ assert.throws(()=>server.hostedMode(env));
+ assert.throws(()=>require('../intelligence/approved-pricing.cjs')(env));
+});

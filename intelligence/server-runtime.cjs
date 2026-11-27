@@ -62,7 +62,7 @@ async function composeTrial({env,call}){
  if(!isolatedTrialEnvironment(env))throw Error('Ensaio real isolado indisponível.');
  const mode='trial';
   const pricing=()=>{
-   const rate=approvedPricing(env)[env.INTELLIGENCE_TARIFF_ID];
+   const rate=env.INTELLIGENCE_EXECUTION_HOST==='local'?require('./local-trial-pricing.cjs')(env):approvedPricing(env)[env.INTELLIGENCE_TARIFF_ID];
    if(!rate||rate.model!=='gpt-5.4-mini-2026-03-17'||budget.estimate(rate)>1000000)throw Error('Tarifa de ensaio indisponível.');
    return rate;
   };
