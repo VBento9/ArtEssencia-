@@ -1,6 +1,7 @@
 import scheduledWorker from '../intelligence/scheduled-worker.cjs';
 import worker from '../intelligence/server-runtime.cjs';
 import workerTransport from '../intelligence/worker-transport.cjs';
+import readiness from '../intelligence/hosted-readiness.cjs';
 
 
 export default async function handler(req,res){
@@ -8,8 +9,9 @@ export default async function handler(req,res){
   if(!['GET','POST'].includes(req.method))return res.status(405).end();
   if(req.method==='POST'){
     try{
-      const mode=worker.hostedMode();
       const id=await workerTransport.ownerSession(req);if(!id)return res.status(403).end();
+      if(req.body?.operation==='availability')return res.status(200).json(readiness.availability(process.env,worker));
+      const mode=worker.hostedMode();
       const {missionId,revision}=req.body||{};
       if(typeof missionId!=='string'||!/^[0-9a-f-]{36}$/i.test(missionId)||!Number.isSafeInteger(revision)||revision<0)return res.status(400).end();
       if(process.env.INTELLIGENCE_WORKER_ENABLED!=='true')return res.status(503).json({status:'desligado'});

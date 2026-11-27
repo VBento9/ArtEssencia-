@@ -69,7 +69,7 @@ async function run() {
         await page.getByText('Inventário de teste · A aguardar aprovação').waitFor();
       }
       await nav.selectOption('Missões');await page.getByText('Inventário de teste',{exact:true}).waitFor();
-      if(width===820){await page.getByRole('button',{name:'Aprovar',exact:true}).click();await page.getByText('Aprovada',{exact:true}).waitFor();}
+      if(width===820){await page.getByRole('button',{name:'Aprovar',exact:true}).click();await page.getByText('Aprovada',{exact:true}).waitFor();await page.getByRole('link',{name:'Abrir executor remoto no GitHub'}).waitFor();assert.equal(await page.getByRole('button',{name:'Executar missão aprovada'}).count(),0);}
       if(width===1440){await page.getByRole('button',{name:'Cancelar missão'}).click();await page.getByText('Cancelada',{exact:true}).waitFor();}
       assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
       await page.evaluate(()=>{unlocked=false;document.getElementById('lockScreen').classList.remove('hidden');});

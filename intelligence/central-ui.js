@@ -44,13 +44,35 @@ function init(){
   if(result.error||result.data==null)throw Error();
   return result.data;
  }
+ async function hostedAvailability(ticket){
+  // The isolated project uses the proven remote path, never the production endpoint.
+  if(cloudClient.supabaseUrl!=='https://ihtsonqnnlrxvorfrarl.supabase.co')return {status:'unavailable'};
+  try{
+   const auth=await cloudClient.auth.getSession();
+   if(ticket!==generation||!unlockedNow()||!auth.data?.session?.access_token)return {status:'unavailable'};
+   const response=await fetch('/api/intelligence-worker',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+auth.data.session.access_token},body:JSON.stringify({operation:'availability'}),cache:'no-store',signal:AbortSignal.timeout(10000)});
+   if(!response.ok)return {status:'unavailable'};
+   const result=await response.json();
+   if(result.status==='configured'&&result.mode==='paid'&&Number.isSafeInteger(result.maximumMicroeur)&&result.maximumMicroeur>0&&result.maximumMicroeur<=23000000)return result;
+  }catch{}
+  return {status:'unavailable'};
+ }
+ function executionOffer(data,m){
+  const b=data?.budget,a=data?.hostedAvailability;
+  if(!m||m.status!=='approved'||!data.controls?.enabled||data.controls.modes?.[m.agent]==='off'||!data.controls.modes?.[m.agent])return null;
+  if(a?.status!=='configured'||b?.ledgerReleased!==true||b.ledgerFrozen!==false||b.unknown!==0||b.staleInflight!==0)return null;
+  if(![b.monthlyLimitMicroeur,b.settled,b.pending,a.maximumMicroeur].every(x=>Number.isSafeInteger(x)&&x>=0)||a.maximumMicroeur<=0||a.maximumMicroeur>b.monthlyLimitMicroeur-b.settled-b.pending)return null;
+  return a.maximumMicroeur;
+ }
  async function load(action='read',args={}){
   if(!opened||busy||!unlockedNow())return;
   const ticket=++generation;busy=true;content.inert=true;notice.textContent='A consultar a Cloud…';
   try{
    let receipt;
    if(action==='execute'){
-    if(!cloudAllowed())throw Error();
+    if(!cloudAllowed()||cloudClient.supabaseUrl!=='https://ihtsonqnnlrxvorfrarl.supabase.co')throw Error();
+    const m=state?.missions?.find(x=>x.mission_id===args.missionId&&x.revision===args.revision);
+    if(executionOffer(state,m)===null)throw Error();
     const auth=await cloudClient.auth.getSession();
     if(ticket!==generation||!unlockedNow()||!auth.data?.session?.access_token)throw Error();
     const response=await fetch('/api/intelligence-worker',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+auth.data.session.access_token},body:JSON.stringify(args),cache:'no-store'});
@@ -64,6 +86,8 @@ function init(){
    try{const candidate=await rpc('audit_retry_status',{});if(Array.isArray(candidate.eligible)&&Array.isArray(candidate.history))retryStatus=candidate;}catch{}
    if(ticket!==generation||!unlockedNow())return;
    data.auditRetry=retryStatus;
+   data.hostedAvailability=await hostedAvailability(ticket);
+   if(ticket!==generation||!unlockedNow())return;
    if(action==='stock_change_preview')stockPreview={mission:args.mission,request:args,result:receipt,operationId:crypto.randomUUID()};
    else stockPreview=null;
    state=data;notice.textContent=action==='audit_requeue'?'Tentativa anterior arquivada. A missão aguarda nova aprovação. Não foi iniciada nenhuma chamada paga.':action==='professional_lesson'?'Lição aprovada e guardada na memória profissional. Não concede permissões.':action==='professional_assess'?'Avaliação profissional registada. Não altera permissões.':action==='commercial_approve'?'Proposta interna guardada em Orçamentos. Nenhum contacto enviado.':['stock_change_apply','stock_change_revert'].includes(action)?'Operação confirmada na Cloud. Recebe e valida os dados antes de editar.':action==='repair_recipe_reference'?'Referência confirmada na ficha técnica. Recebe e valida a Cloud antes de editar.':action==='create_material'?'Material confirmado na Cloud. Recebe e valida os dados da Cloud antes de alterar o stock.':action==='plan_task'?(receipt.status==='archived'?'A tarefa já foi arquivada.':'Tarefa confirmada no Planeamento.'):'';
@@ -87,12 +111,20 @@ function init(){
    if(m.result_summary)card.append(el('p',m.result_summary));
    const args={id:m.mission_id,revision:m.revision};
    const prior=state.auditRetry?.history.find(h=>h.missionId===m.mission_id);
-   const isolatedRetry=prior&&cloudClient.supabaseUrl==='https://thqhyetvxledlgjdtmzp.supabase.co';
-   if(m.status==='approved'&&isolatedRetry){
-    card.append(el('p','Retoma aprovada. O ensaio remoto exige uma autorização financeira válida e um disparo manual no GitHub.'));
+   const isolated=cloudClient.supabaseUrl==='https://thqhyetvxledlgjdtmzp.supabase.co';
+   if(m.status==='approved'&&isolated){
+    card.append(el('p',(prior?'Retoma aprovada. ':'Missão aprovada. ')+'O ensaio remoto exige uma autorização financeira válida e um disparo manual no GitHub.'));
     card.append(el('p','operation: execute · revision: '+m.revision),el('p','mission_id: '+m.mission_id));
     const link=el('a','Abrir executor remoto no GitHub');link.href='https://github.com/VBento9/ArtEssencia-/actions/workflows/intelligence-remote.yml';link.target='_blank';link.rel='noopener noreferrer';card.append(link);
-   }else if(m.status==='approved')card.append(btn('Executar missão aprovada',()=>load('execute',{missionId:m.mission_id,revision:m.revision})));
+   }else if(m.status==='approved'){
+    const maximum=executionOffer(state,m);
+    if(maximum===null)card.append(el('p','Execução direta indisponível: configuração do servidor ou autorização financeira por confirmar.'));
+    else{
+     const amount=(maximum/1000000).toFixed(6).replace('.',',')+' €';
+     card.append(el('p','Reserva máxima por execução: '+amount+' · Sujeita a revalidação no servidor.'));
+     card.append(btn('Executar missão aprovada',()=>{if(window.confirm('Executar uma vez esta missão de '+displayAgent(m.agent)+'? Reserva máxima: '+amount+'. O custo efetivo depende do consumo. Não repetir se a resposta não for confirmada.'))load('execute',{missionId:m.mission_id,revision:m.revision});}));
+    }
+   }
    if(m.status==='pending_review')card.append(btn('Aprovar',()=>load('approve',args)));
    if(prior)card.append(el('small','Tentativa anterior arquivada · revisão '+prior.blockedRevision+' · custo liquidado '+(Number(prior.chargedMicroeur)/1000000).toFixed(6).replace('.',',')+' €'));
    if(m.status==='blocked'&&state.auditRetry?.eligible.some(h=>h.missionId===m.mission_id&&h.revision===m.revision)){
