@@ -53,3 +53,18 @@ Instalar de forma controlada o esquema Intelligence e a ponte de conta de servi�
 Ordem de dependências do esquema: orçamento, equipa, execução, contexto de Stock, consola de proprietário, contexto departamental, worker, recuperação de auditoria e finalmente serviço alojado. Rever individualmente os scripts antes da instalação; os ficheiros históricos têm limites e autorizações por defeito que não substituem os limites aprovados do proprietário. O SQL de contagem física é separado e não deve ser ativado por conveniência.
 
 Loja Online permanece fechada. DONART não foi intervencionado. Dados comerciais reais não foram usados para testes de escrita.
+
+## Instalação autorizada em produção — 27/11/2026, 23:25 UTC
+
+Após autorização expressa do proprietário, foi aplicada a migração `20261127232542_intelligence_production_disabled_foundation_v1` no projeto `ihtsonqnnlrxvorfrarl`. O SQL exato está em `sql/deploy/intelligence-production-disabled-v1.sql`, incluindo preflight, dependências e postflight numa única transação. A instalação integral passou previamente em PGlite, com leitura da consola e rejeição do serviço sem binding.
+
+Estado confirmado diretamente depois da instalação:
+- Uma configuração de equipa para o proprietário existente; equipa desativada e nove modos off.
+- Orçamento de produção: limite 0 microEUR, congelado, release_enabled=false. Esta decisão não altera o teto de 1 EUR do ensaio nem concede despesa em produção.
+- Zero missões, rotinas, bindings de serviço ou movimentos financeiros no novo esquema de produção.
+- Todas as novas tabelas privadas com RLS; zero privilégios diretos de tabela para anon/authenticated.
+- RPCs Intelligence inacessíveis a anon. Worker inacessível diretamente a authenticated; ponte de serviço exige binding, sessão e proprietário válidos. Funções SECURITY DEFINER com search_path vazio.
+- Prova administrativa transacional: sem identidade, consola e ponte recusaram acesso; teste terminado com ROLLBACK, sem criar missões ou dados de teste. Isto verifica rejeição, não um login real do executor.
+- Advisor de saúde sem avisos. Avisos de RLS sem políticas nas tabelas privadas representam negação por defeito; os acessos autorizados passam pelas RPCs. Não foram alteradas as funções públicas do Catálogo ou da Loja para eliminar avisos preexistentes.
+
+Ainda não há conta técnica de produção criada ou segredo de executor configurado. O conector Supabase não dispõe de administração de utilizadores Auth; a alternativa de navegador chegou à página de início de sessão, sem sessão administrativa ativa. Não criar utilizadores mediante escrita direta nas tabelas internas Auth nem alterar a palavra-passe do proprietário. A próxima dependência é autenticação administrativa segura para preparar a conta técnica. Nenhuma chamada OpenAI, publicação de frontend, ativação de equipa, automatismo ou despesa foi efetuada nesta instalação. A aplicação pública permanece 1.9.196; candidata 1.9.197.
