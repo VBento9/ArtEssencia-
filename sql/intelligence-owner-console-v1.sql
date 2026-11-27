@@ -1,5 +1,12 @@
 -- Instalar apenas após validação das dependências team, run e ai-budget.
 BEGIN;
+ALTER TABLE artessencia_intelligence_private.team_runs ADD COLUMN IF NOT EXISTS tool_receipts jsonb NOT NULL DEFAULT '[]'::jsonb;
+CREATE TABLE IF NOT EXISTS artessencia_intelligence_private.team_inputs(
+ user_id uuid NOT NULL,mission_id uuid NOT NULL,mime text NOT NULL,content text,expires_at timestamptz NOT NULL,
+ PRIMARY KEY(user_id,mission_id),FOREIGN KEY(user_id,mission_id) REFERENCES artessencia_intelligence_private.team_missions(user_id,mission_id)
+);
+ALTER TABLE artessencia_intelligence_private.team_inputs ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON artessencia_intelligence_private.team_inputs FROM PUBLIC,anon,authenticated;
 CREATE TABLE IF NOT EXISTS artessencia_intelligence_private.team_delegations(
  user_id uuid NOT NULL, parent_id uuid NOT NULL, child_id uuid NOT NULL, department text NOT NULL,
  PRIMARY KEY(user_id,child_id), UNIQUE(user_id,parent_id,department), CHECK(parent_id<>child_id),
@@ -25,9 +32,9 @@ DECLARE
  mission uuid;
  prepared integer := 0;
 BEGIN
- FOR rule IN SELECT r.*,c.revision FROM artessencia_intelligence_private.team_controls c
+ FOR rule IN SELECT r.*,c.revision,c.modes->>r.agent AS execution_mode FROM artessencia_intelligence_private.team_controls c
   JOIN artessencia_intelligence_private.team_routines r USING(user_id)
-  WHERE c.enabled AND r.enabled AND c.modes->>r.agent='auto'
+  WHERE c.user_id=auth.uid() AND c.enabled AND r.enabled AND c.modes->>r.agent IN ('semi','auto')
   ORDER BY c.user_id,r.agent,r.cadence FOR UPDATE OF c,r SKIP LOCKED LOOP
   period_start:=CASE rule.cadence WHEN 'daily' THEN business_day WHEN 'weekly' THEN date_trunc('week',business_day)::date ELSE date_trunc('month',business_day)::date END;
   IF rule.last_period>=period_start THEN CONTINUE; END IF;
@@ -35,6 +42,10 @@ BEGIN
   INSERT INTO artessencia_intelligence_private.team_missions(user_id,mission_id,agent,kind,instruction,control_revision)
   VALUES(rule.user_id,mission,rule.agent,rule.kind,rule.instruction,rule.revision);
   INSERT INTO artessencia_intelligence_private.team_events(user_id,mission_id,revision,status) VALUES(rule.user_id,mission,0,'pending_review');
+  IF rule.execution_mode='auto' THEN
+   UPDATE artessencia_intelligence_private.team_missions SET status='approved',revision=1 WHERE user_id=rule.user_id AND mission_id=mission;
+   INSERT INTO artessencia_intelligence_private.team_events(user_id,mission_id,revision,status) VALUES(rule.user_id,mission,1,'approved');
+  END IF;
   UPDATE artessencia_intelligence_private.team_routines SET last_period=period_start WHERE user_id=rule.user_id AND agent=rule.agent AND cadence=rule.cadence;
   prepared:=prepared+1;
  END LOOP;
@@ -63,12 +74,21 @@ BEGIN
  IF actor IS NULL OR public.artessencia_is_owner_v1() IS DISTINCT FROM true THEN
   RAISE EXCEPTION USING errcode='42501',message='OWNER_REQUIRED';
  END IF;
- IF jsonb_typeof(p_args) IS DISTINCT FROM 'object' OR octet_length(p_args::text)>24000 THEN RAISE EXCEPTION 'INVALID_ARGUMENTS'; END IF;
+ IF jsonb_typeof(p_args) IS DISTINCT FROM 'object' OR octet_length(p_args::text)>(CASE WHEN p_action='mission' AND p_args ? 'attachment' THEN 1500000 ELSE 24000 END) THEN RAISE EXCEPTION 'INVALID_ARGUMENTS'; END IF;
  CASE p_action
  WHEN 'controls' THEN
   RETURN artessencia_intelligence_private.team_set_controls((p_args->>'revision')::bigint,(p_args->>'enabled')::boolean,p_args->'modes');
  WHEN 'mission' THEN
-  RETURN artessencia_intelligence_private.team_create_mission((p_args->>'id')::uuid,selected_agent,p_args->>'kind',p_args->>'instruction',(p_args->>'revision')::bigint);
+  target:=(p_args->>'id')::uuid;
+  task_record:=artessencia_intelligence_private.team_create_mission(target,selected_agent,p_args->>'kind',p_args->>'instruction',(p_args->>'revision')::bigint);
+  IF p_args ? 'attachment' THEN
+   IF selected_agent<>'stock' OR p_args->>'kind' NOT IN ('inventory_audit','stock_organization_plan') OR
+    coalesce(p_args#>>'{attachment,mime}','') NOT IN ('image/png','image/jpeg','application/pdf','text/plain','text/csv') OR
+    coalesce(length(p_args#>>'{attachment,content}'),0) NOT BETWEEN 4 AND 1398104 OR
+    (p_args#>>'{attachment,content}') !~ '^[A-Za-z0-9+/]+={0,2}$' THEN RAISE EXCEPTION 'INVALID_ATTACHMENT'; END IF;
+   INSERT INTO artessencia_intelligence_private.team_inputs VALUES(actor,target,p_args#>>'{attachment,mime}',p_args#>>'{attachment,content}',clock_timestamp()+interval '24 hours');
+  END IF;
+  RETURN task_record;
  WHEN 'cancel' THEN
   PERFORM artessencia_intelligence_private.team_transition((p_args->>'id')::uuid,(p_args->>'revision')::bigint,'cancelled',NULL);
   FOR existing_task IN SELECT m.mission_id,m.revision FROM artessencia_intelligence_private.team_delegations d
@@ -76,6 +96,8 @@ BEGIN
    WHERE d.user_id=actor AND d.parent_id=(p_args->>'id')::uuid AND m.status IN ('approved','working','pending_review') ORDER BY m.mission_id FOR UPDATE OF m LOOP
    PERFORM artessencia_intelligence_private.team_transition(existing_task.mission_id,existing_task.revision,'cancelled',NULL);
   END LOOP;
+  UPDATE artessencia_intelligence_private.team_inputs i SET content=NULL
+   FROM artessencia_intelligence_private.team_missions m WHERE m.user_id=actor AND m.mission_id=i.mission_id AND m.user_id=i.user_id AND m.status='cancelled' AND i.content IS NOT NULL;
   RETURN jsonb_build_object('status','cancelled');
  WHEN 'approve' THEN
   RETURN artessencia_intelligence_private.team_transition((p_args->>'id')::uuid,(p_args->>'revision')::bigint,
@@ -157,8 +179,11 @@ BEGIN
   SELECT jsonb_build_object('pending',coalesce(sum(maximum_microeur) FILTER(WHERE status IN ('reserved','unknown','inflight')),0),
    'settled',coalesce(sum(actual_microeur) FILTER(WHERE status='settled' AND date_trunc('month',now() AT TIME ZONE 'Europe/Lisbon')::date IN(reserved_month,settled_month)),0),
    'unknown',count(*) FILTER(WHERE status='unknown')) INTO expenses FROM artessencia_intelligence_private.ai_budget_entries;
+  expenses:=expenses||jsonb_build_object('channels',(SELECT coalesce(jsonb_object_agg(channel,jsonb_build_object('settled',settled,'pending',pending)),'{}') FROM
+   (SELECT channel,coalesce(sum(actual_microeur) FILTER(WHERE status='settled' AND date_trunc('month',now() AT TIME ZONE 'Europe/Lisbon')::date IN(reserved_month,settled_month)),0) settled,
+    coalesce(sum(maximum_microeur) FILTER(WHERE status IN ('reserved','unknown','inflight')),0) pending FROM artessencia_intelligence_private.ai_budget_entries GROUP BY channel)t));
   RETURN jsonb_build_object('routines',(SELECT coalesce(jsonb_agg(jsonb_build_object('agent',r.agent,'cadence',r.cadence,'enabled',r.enabled,'instruction',r.instruction)),'[]') FROM artessencia_intelligence_private.team_routines r WHERE r.user_id=actor),
-   'documents',(SELECT coalesce(jsonb_agg(to_jsonb(d)),'[]') FROM (SELECT r.mission_id,m.agent,r.outcome->>'reasoning' AS content,r.outcome->'report'->'tasks' AS tasks FROM artessencia_intelligence_private.team_runs r JOIN artessencia_intelligence_private.team_missions m USING(user_id,mission_id) WHERE r.user_id=actor AND r.status='review_ready' ORDER BY r.ended_at DESC LIMIT 50)d),
+   'documents',(SELECT coalesce(jsonb_agg(to_jsonb(d)),'[]') FROM (SELECT r.mission_id,m.agent,r.outcome->>'reasoning' AS content,r.outcome->'report'->'tasks' AS tasks,r.tool_receipts FROM artessencia_intelligence_private.team_runs r JOIN artessencia_intelligence_private.team_missions m USING(user_id,mission_id) WHERE r.user_id=actor AND r.status='review_ready' ORDER BY r.ended_at DESC LIMIT 50)d),
    'controls',controls,'missions',missions,'events',events,'memory',memory,'budget',expenses);
  ELSE RAISE EXCEPTION 'UNKNOWN_COMMAND';
  END CASE;

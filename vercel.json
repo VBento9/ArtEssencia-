@@ -1,4 +1,5 @@
 {
+  "crons": [{"path":"/api/intelligence-worker","schedule":"15 7 * * *"}],
   "headers": [
     {
       "source": "/",

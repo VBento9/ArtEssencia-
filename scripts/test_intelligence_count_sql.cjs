@@ -326,5 +326,99 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  console.log('PASS: director and stock missions use SQL leases, canonical context, model transport, reconciled usage and persisted documents');
  console.log('PASS: director delegation, duplicate and cycle denial, daily routine and canonical planner receipt');
  console.log('PASS: owner console, persistent memory, evidence, revocation, erasure and access control');
+ // Exercise the same narrowly granted RPC and dispatcher as the server route.
+ await db.exec(`
+ CREATE TABLE public.artessencia_v1_orders(user_id uuid,id uuid PRIMARY KEY,status text,total numeric,data jsonb);
+ CREATE TABLE public.artessencia_v1_quotes(user_id uuid,id uuid PRIMARY KEY,status text,valid_until date,data jsonb);
+ CREATE TABLE public.artessencia_shop_event_requests(user_id uuid,request_id uuid PRIMARY KEY,status text,created_at timestamptz);
+ CREATE TABLE public.artessencia_shop_special_editions(user_id uuid,id uuid PRIMARY KEY,name text,active boolean,starts_at timestamptz,ends_at timestamptz);
+ `);
+ await db.query("UPDATE public.artessencia_v1_state SET data=jsonb_set(data,'{settings}',$1::jsonb) WHERE user_id=$2",[JSON.stringify({pricingDefaultMarginPct:40}),owner]);
+ await db.query("UPDATE public.artessencia_v1_products SET data=data||$1::jsonb WHERE user_id=$2",[JSON.stringify({price:10,shopDescription:'Vela de teste'}),owner]);
+ const sale={id:'O1',delivery:'2026-11-27',paid:1,items:[{code:'A',qty:2}],contact:'cliente-proibido@example.invalid'};
+ await db.query("INSERT INTO public.artessencia_v1_orders VALUES ($1,$2,'Confirmada',8,$3)",[owner,bid(800),sale]);
+ await db.query("INSERT INTO public.artessencia_v1_quotes VALUES ($1,$2,'Enviado',CURRENT_DATE,$3)",[owner,bid(801),{private:'cliente-proibido@example.invalid'}]);
+ await db.query("INSERT INTO public.artessencia_shop_event_requests VALUES ($1,$2,'new',now())",[owner,bid(802)]);
+ await db.query("INSERT INTO public.artessencia_shop_special_editions VALUES ($1,$2,'Coleção de teste',true,now(),now()+interval '5 days')",[owner,bid(803)]);
+ for(const file of ['department-context','worker'])await db.exec(fs.readFileSync('sql/intelligence-'+file+'-v1.sql','utf8'));
+ const workerRpc=async(action,args={})=>(await db.query('SELECT public.artessencia_intelligence_worker_v1($1,$2) AS r',[action,JSON.stringify(args)])).rows[0].r;
+ await db.exec('SET ROLE authenticated');
+ await assert.rejects(workerRpc('next'),/permission denied/);
+ const enabled=await command('controls',{revision:controls.revision,enabled:true,modes:Object.fromEntries(Object.keys(allOff).map(a=>[a,'manual']))});
+ const responsibilities={director:'daily_priority_plan',stock:'inventory_audit',producao:'production_plan',financeiro:'finance_review',comercial:'commercial_review',marketing:'marketing_plan',inovacao:'innovation_review',catalogo:'catalog_review',auditoria:'technical_review'};
+ const ids={};let number=810;
+ for(const [agent,kind] of Object.entries(responsibilities)){
+  const id=ids[agent]=bid(++number);
+  await command('mission',{id,agent,kind,instruction:'Rever a atividade do departamento.',revision:enabled.revision,...(agent==='stock'?{attachment:{mime:'text/csv',content:Buffer.from('Material;Compra\nCera;500').toString('base64')}}:{})});
+  await command('approve',{id,revision:0});
+ }
+ await db.exec('RESET ROLE; SET ROLE artessencia_intelligence_worker');
+ await assert.rejects(command('read'),/permission denied/);
+ const runtimeFactory=require('../intelligence/server-runtime.cjs');
+ let simulatedCharges=0,sawInventory=false;
+ const rate={model:'fixture.1',verified:true,current:true,contextLimit:10000,maxInputTokens:10000,maxOutputTokens:500,inputRate:1000000,outputRate:4000000,grossBps:12300,toolsEnabled:false,validUntil:new Date(Date.now()+60000).toISOString()};
+ const runtime=runtimeFactory.compose({call:workerRpc,env:{INTELLIGENCE_TARIFF_ID:'test',INTELLIGENCE_PAID_RELEASE:'approved'},tariffs:{test:rate},
+  provider:async p=>{if(JSON.stringify(p.input).includes('Material;Compra'))sawInventory=true;assert.ok(!JSON.stringify(p).includes('cliente-proibido'));return {status:'completed',id:'response-'+(++simulatedCharges),model:rate.model,text:JSON.stringify({document:'Documento de validação.',tasks:[],delegations:[]}),usage:{input_tokens:100,output_tokens:42}};}});
+ for(const agent of Object.keys(responsibilities)){
+  const result=await runtimeFactory.processNext(runtime);
+  assert.equal(result.status,'review_ready',JSON.stringify(result));
+ }
+ assert.equal((await runtimeFactory.processNext(runtime)).status,'idle');
+ for(const channel of ['legacy_insights','legacy_social','legacy_description'])await runtimeFactory.runLegacy(runtime,channel,{max_output_tokens:100,input:'Validação'},bid(++number));
+ assert.equal(simulatedCharges,12);assert.ok(sawInventory);
+ await db.exec('RESET ROLE; SET ROLE authenticated');
+ const results=await command('read');
+ for(const id of Object.values(ids))assert.equal(results.documents.find(d=>d.mission_id===id).content,'Documento de validação.');
+
+ await db.exec('RESET ROLE');
+ const attachment=await db.query('SELECT content FROM artessencia_intelligence_private.team_inputs WHERE mission_id=$1',[ids.stock]);
+ assert.equal(attachment.rows[0].content,null);
+ const finance=(await db.query("SELECT outcome->'report' AS report FROM artessencia_intelligence_private.team_runs WHERE mission_id=$1",[ids.financeiro])).rows[0].report;
+ assert.equal(finance.receivables[0].dueCents,700);
+ const production=(await db.query("SELECT outcome->'report' AS report FROM artessencia_intelligence_private.team_runs WHERE mission_id=$1",[ids.producao])).rows[0].report;
+ assert.equal(production.requirements[0].required,40);
+ console.log('PASS: 9 departments and 3 legacy assistants through scoped server RPC, planning, real cost formulas and simulated usage');
+
+ await db.exec('SET ROLE authenticated');
+ const autoControls=await command('controls',{revision:enabled.revision,enabled:true,modes:{...enabled.modes,director:'auto',stock:'auto'}});
+ await command('mission',{id:bid(900),agent:'director',kind:'daily_priority_plan',revision:autoControls.revision,instruction:'Distribuir o trabalho.'});
+ await command('approve',{id:bid(900),revision:0});
+ await db.exec('RESET ROLE; SET ROLE artessencia_intelligence_worker');
+ const actingRuntime={...runtime,provider:async p=>{
+  const input=JSON.parse(p.input[1].content),context=JSON.parse(input.context);
+  const director=input.mission==='Distribuir o trabalho.';
+  return {id:director?'decision-root':'decision-child',model:rate.model,status:'completed',usage:{input_tokens:44,output_tokens:44},
+   text:JSON.stringify({document:'Resultado confirmado.',tasks:[{title:director?'Rever prioridades':'Conferir inventário',priority:1,evidenceId:context.evidenceIds[0]}],
+    delegations:director?[{agent:'stock',instruction:'Conferir referências.'}]:[]})};
+ }};
+ assert.equal((await runtimeFactory.processNext(actingRuntime)).status,'review_ready');
+ assert.equal((await runtimeFactory.processNext(actingRuntime)).status,'review_ready');
+ assert.equal((await runtimeFactory.processNext(actingRuntime)).status,'idle');
+ await db.exec('RESET ROLE');
+ const actions=await db.query("SELECT r.tool_receipts FROM artessencia_intelligence_private.team_runs r WHERE r.mission_id=$1",[bid(900)]);
+ assert.deepEqual(actions.rows[0].tool_receipts.map(r=>r.tool),['delegate','create_task']);
+ const autoTasks=await db.query("SELECT data FROM public.artessencia_cloud_records WHERE entity='operational_tasks_v1' AND data->>'title' IN ('Rever prioridades','Conferir inventário')");
+ assert.equal(autoTasks.rows.length,2);
+ console.log('PASS: structured AI decisions create a delegated mission and two canonical planner records with transactional receipts');
+
+ await db.exec('SET ROLE authenticated');
+ await command('mission',{id:bid(940),agent:'stock',kind:'inventory_audit',revision:autoControls.revision,instruction:'Recuperação de teste.'});
+ await command('approve',{id:bid(940),revision:0});
+ await db.exec('RESET ROLE; SET ROLE artessencia_intelligence_worker');
+ const lost=await workerRpc('claim_run',{mission:bid(940),revision:1});
+ const scope={mission:bid(940),request:lost.request_id,channel:'stock'};
+ await workerRpc('reserve',{...scope,model:rate.model,maximum:10000});
+ await workerRpc('claim_charge',scope);
+ await db.exec('RESET ROLE');
+ await db.query("UPDATE artessencia_intelligence_private.team_runs SET started_at=now()-interval '1 hour' WHERE mission_id=$1",[bid(940)]);
+ await db.exec('SET ROLE artessencia_intelligence_worker');
+ const tickResult=await workerRpc('tick');
+ assert.equal(tickResult.recovered,1);assert.equal((await workerRpc('tick')).recovered,0);
+ await assert.rejects(workerRpc('reserve',{request:bid(941),channel:'legacy_social',model:rate.model,maximum:1}),/BUDGET_UNKNOWN/);
+ await db.exec('RESET ROLE');
+ const recovered=await db.query("SELECT r.status run,e.status charge FROM artessencia_intelligence_private.team_runs r JOIN artessencia_intelligence_private.ai_budget_entries e USING(request_id) WHERE r.mission_id=$1",[bid(940)]);
+ assert.deepEqual(recovered.rows[0],{run:'blocked',charge:'unknown'});
+ console.log('PASS: interrupted charged mission recovered once, reservation retained, subsequent spending blocked');
+
  await db.close();console.log('PASS: intelligence count fixture');
 })().catch(e=>{console.error(e);process.exitCode=1});

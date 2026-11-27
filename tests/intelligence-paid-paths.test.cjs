@@ -11,7 +11,7 @@ test('Legacy and mission endpoints have one paid transport and release is disabl
     const source=fs.readFileSync('api/'+file+'.js','utf8');
     assert.ok(source.includes("legacyAi.generate('legacy_"+channel+"'"));
     assert.doesNotMatch(source,/OPENAI_API_KEY|api\.openai\.com/);
-    await assert.rejects(generate('legacy_'+channel,{},randomUUID()),/suspenso/);
+    await assert.rejects(generate('legacy_'+channel,{},randomUUID()),/suspens/);
   }
 });
 
@@ -31,4 +31,26 @@ test('All three legacy flows settle verified usage before returning provider out
     assert.equal(output.text,'Resposta de teste');
   }
   assert.deepEqual(events,['legacy_insights','settled','legacy_description','settled','legacy_social','settled']);
+});
+
+test('Canonical financial formulas and production material calculation match the Backoffice',()=>{
+  const html=fs.readFileSync('index.html','utf8'),finance=fs.readFileSync('intelligence/finance-context.cjs','utf8');
+  for(const match of finance.matchAll(/^function (\w+)\(/gm)){
+    const a=match.index,first=finance.slice(a).split('\n')[0];
+    const body=first.endsWith('}')?first:finance.slice(a,finance.indexOf('\n}',a)+2);
+    assert.ok(html.includes(body),match[1]);
+  }
+  const production=fs.readFileSync('sql/complete-production-backoffice-v1.sql','utf8');
+  const part=production.slice(production.indexOf("   order_needs := '{}';"),production.indexOf('   expected_order_materials:='));
+  assert.ok(part.length>1000 && fs.readFileSync('sql/intelligence-department-context-v1.sql','utf8').includes(part));
+});
+
+test('Account approval requires current tax, FX, infrastructure envelope and recharge evidence',()=>{
+ const approved=require('../intelligence/approved-pricing.cjs');
+ const now=new Date('2026-11-27T12:00:00Z');
+ const p={model:'gpt-5.4-mini-2026-03-17',checkedAt:'2026-11-27T11:00:00Z',validUntil:'2026-11-28T11:00:00Z',evidenceRef:'fixture',autoRechargeOff:true,
+  dedicatedKeyVerified:true,usageReconciled:true,infrastructureVerified:true,otherGrossMonthlyUpperMicroeur:7000000,grossBps:12300,eurPerUsdUpperPpm:1040000,inputMicroUsdPerMillion:750000,outputMicroUsdPerMillion:4500000};
+ const read=over=>approved({INTELLIGENCE_FINANCIAL_APPROVAL:JSON.stringify({...p,...over})},now);
+ assert.equal(read({})[p.model].outputRate,4680000);
+ for(const over of [{validUntil:now.toISOString()},{inputMicroUsdPerMillion:0},{autoRechargeOff:false},{otherGrossMonthlyUpperMicroeur:7000001},{model:'other'},{usageReconciled:false}])assert.throws(()=>read(over));
 });

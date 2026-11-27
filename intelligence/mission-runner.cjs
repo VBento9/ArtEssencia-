@@ -1,7 +1,7 @@
 /* Integrated mission runner; trusted stores and real provider not yet connected. */
 function createMissionRunner(options){
  'use strict';
- const {store,contextSource,core,engines={},gateway,executor,releaseEnabled=false}=options||{};
+ const {store,contextSource,core,engines={},gateway,executor,decisionFormat=false,releaseEnabled=false}=options||{};
  const uuid=v=>typeof v==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
  const validRevision=v=>Number.isSafeInteger(v)&&v>=0;
  const text=(v,n)=>typeof v==='string'&&v.trim().length>0&&v.length<=n;
@@ -28,14 +28,21 @@ function createMissionRunner(options){
    const mission=core.createMission(settings,{id:m.id,agent:m.agent,kind:m.kind,trigger:'manual'});
    const report=core.runMission(settings,mission,s.payload,engines.audit,engines.renamePlanner,engines.organizer,engines.operational,engines.business);
    if(report.status!=='review')throw Error('Análise bloqueada.');
-   const context=JSON.stringify({professionalMemory:l.memory||[],sourceRevision:s.sourceRevision,evidenceIds:s.evidenceIds,report:report.result});
+   const context=JSON.stringify({professionalMemory:l.memory||[],departmentFacts:s.facts||{},sourceRevision:s.sourceRevision,evidenceIds:s.evidenceIds,report:report.result});
    if(!text(context,24000))throw Error('Contexto excede limite; dividir missão.');
    await current(m);
    stage='reasoning';
-   const ai=await gateway.run({requestId:m.requestId,missionId:m.id,agent:m.agent,instruction:m.instruction,context});
+   const ai=await gateway.run({requestId:m.requestId,missionId:m.id,agent:m.agent,instruction:m.instruction,context,attachment:s.attachment});
    if(ai?.requestId!==m.requestId||!Number.isSafeInteger(ai.chargedMicroeur)||ai.chargedMicroeur<0)throw Error('Custo ou resposta não confirmado.');
    chargedMicroeur=ai.chargedMicroeur;
    if(ai.status!=='review'||ai.agent!==m.agent||!text(ai.text,16000))throw Error('Resposta indisponível para revisão.');
+   let reasoning=ai.text,delegations=[];
+   if(decisionFormat){
+    const decision=require('./mission-decisions.cjs').parse(ai.text,{agent:m.agent,evidenceIds:s.evidenceIds});
+    reasoning=decision.document;delegations=decision.delegations;
+    const tasks=decision.tasks.map(t=>({agent:m.agent,key:JSON.stringify([m.agent,t.title.trim().toLocaleLowerCase('pt-PT')]),title:t.title.trim(),priority:t.priority,dueDate:null,requiresApproval:true,evidenceId:t.evidenceId}));
+    report.result={...report.result,tasks:[...(report.result.tasks||[]),...tasks]};
+   }
    stage='tools';
    const grant=await current(m);
    if(!Array.isArray(grant.actions)||grant.actions.length>8||new Set(grant.actions.map(x=>x.actionId)).size!==grant.actions.length)throw Error('Permissões de ferramentas inválidas.');
@@ -61,7 +68,7 @@ function createMissionRunner(options){
    }
    stage='finish';
    await current(m);
-   const done=await store.finish({mission:m,status:'review_ready',summary:'Análise concluída para revisão. Recibos confirmados: '+receipts.length,report:report.result,reasoning:ai.text,chargedMicroeur,receipts});
+   const done=await store.finish({mission:m,status:'review_ready',summary:'Análise concluída para revisão. Recibos confirmados: '+receipts.length,report:report.result,reasoning,delegations,chargedMicroeur,receipts});
    if(done?.status!=='review_ready'||done.missionId!==m.id||done.leaseId!==m.leaseId)throw Error('Conclusão não confirmada.');
    return {status:'review_ready',missionId:m.id,chargedMicroeur,receipts};
   }catch{

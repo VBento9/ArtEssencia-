@@ -48,7 +48,9 @@ function createOperationalAgents(){
    }
    const profit=p.netSalePrice-p.totalCost,marginPct=100*profit/p.netSalePrice;
    margins.push({code:p.code,netSalePrice:p.netSalePrice,totalCost:p.totalCost,profit,marginPct});
-   if(marginPct<targetMarginPct)tasks.push(task('financeiro','review_margin',p.code,'Rever margem — '+p.code,profit<0?1:2,null,{marginPct,targetMarginPct}));
+   const target=p.targetMarginPct??targetMarginPct;
+   if(!num(target)||target>100)throw Error('Margem objetivo inválida.');
+   if(marginPct<target)tasks.push(task('financeiro','review_margin',p.code,'Rever margem — '+p.code,profit<0?1:2,null,{marginPct,targetMarginPct:target}));
   }
   for(const o of orders){
    if(!['Confirmada','Confirmado','Em produção','Produção','Pronta','Entregue','Entregue parcialmente'].includes(o.status))continue;

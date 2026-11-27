@@ -16,4 +16,8 @@ function createLegacyService(runtime) {
     return result.response;
   };
 }
-module.exports = { generate: createLegacyService(null), createLegacyService };
+async function generate(channel,payload,id) {
+  const server=require('./server-runtime.cjs');
+  return server.runLegacy(server.compose(),channel,payload,id);
+}
+module.exports = { generate, createLegacyService };

@@ -2,7 +2,7 @@
 (function(){
 'use strict';
 const labels={director:'Diretor Geral',stock:'Stock',producao:'Produção',financeiro:'Financeiro',comercial:'Comercial',marketing:'Marketing',inovacao:'Inovação',catalogo:'Catálogo',auditoria:'Auditoria'};
-const kinds={director:['daily_priority_plan'],stock:['inventory_audit','inventory_count_plan','stock_organization_plan','stock_rename_plan','stock_merge_batch_plan'],producao:['production_plan','inventory_audit'],financeiro:['finance_review'],comercial:['commercial_review'],marketing:['marketing_plan'],inovacao:['innovation_review'],catalogo:['catalog_review'],auditoria:['technical_review','inventory_audit']};
+const kinds={director:['daily_priority_plan'],stock:['inventory_audit','stock_organization_plan'],producao:['production_plan','inventory_audit'],financeiro:['finance_review'],comercial:['commercial_review'],marketing:['marketing_plan'],inovacao:['innovation_review'],catalogo:['catalog_review'],auditoria:['technical_review','inventory_audit']};
 const names={daily_priority_plan:'Plano de prioridades',inventory_audit:'Auditoria de inventário',inventory_count_plan:'Contagem física',stock_organization_plan:'Organização de materiais',stock_rename_plan:'Normalização de nomes',stock_merge_batch_plan:'Consolidação de duplicados',production_plan:'Planeamento de produção',finance_review:'Análise financeira',commercial_review:'Seguimento comercial',marketing_plan:'Planeamento de marketing',innovation_review:'Revisão de conceitos',catalog_review:'Revisão de catálogo',technical_review:'Auditoria técnica'};
 const modes=[['off','Desligado'],['manual','Manual'],['semi','Semiautomático'],['auto','Automático']];
 const el=(tag,content)=>{const e=document.createElement(tag);if(content!==undefined)e.textContent=content;return e;};
@@ -34,7 +34,12 @@ function init(){
   const ticket=++generation;busy=true;content.inert=true;notice.textContent='A consultar a Cloud…';
   try{
    let receipt;
-   if(action!=='read')receipt=await rpc(action,args);
+   if(action==='execute'){
+    const auth=await cloudClient.auth.getSession();
+    if(ticket!==generation||!unlockedNow()||!auth.data?.session?.access_token)throw Error();
+    const response=await fetch('/api/intelligence-worker',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+auth.data.session.access_token},body:JSON.stringify(args),cache:'no-store'});
+    if(!response.ok)throw Error();
+   }else if(action!=='read')receipt=await rpc(action,args);
    if(ticket!==generation||!unlockedNow())return;
    const data=await rpc('read',{});
    if(ticket!==generation||!unlockedNow())return;
@@ -53,6 +58,7 @@ function init(){
    const card=el('article');card.append(el('strong',labels[m.agent]+' · '+(names[m.kind]||m.kind)),el('p',m.instruction),el('small',statusNames[m.status]));
    if(m.result_summary)card.append(el('p',m.result_summary));
    const args={id:m.mission_id,revision:m.revision};
+   if(m.status==='approved')card.append(btn('Executar missão aprovada',()=>load('execute',{missionId:m.mission_id,revision:m.revision})));
    if(m.status==='pending_review')card.append(btn('Aprovar',()=>load('approve',args)));
    if(['pending_review','approved','working'].includes(m.status))card.append(btn('Cancelar missão',()=>load('cancel',args)));
    if(m.parent_id)card.append(el('small','Missão de origem · '+m.parent_id));
@@ -74,13 +80,32 @@ function init(){
   }else if(area==='Comunicação'||area===sections[0]){
    const agent=select(Object.entries(labels),'Funcionário'),kind=select([],'Tipo de missão'),instruction=el('textarea');
    instruction.placeholder='Descreve o trabalho';instruction.maxLength=4000;instruction.setAttribute('aria-label','Instrução');
-   const send=btn('Enviar missão',()=>{if(instruction.value.trim())load('mission',{id:crypto.randomUUID(),agent:agent.value,kind:kind.value,instruction:instruction.value.trim(),revision:controls.revision});});
+   const file=el('input');file.type='file';file.accept='.txt,.csv,.pdf,.jpg,.jpeg,.png';file.setAttribute('aria-label','Anexo de inventário');
+   const upload=el('label','Inventário · JPG, PNG ou PDF até 1 MiB, TXT ou CSV até 60 kB. Usa uma cópia sem contactos ou dados bancários. ');upload.append(file);
+   const send=btn('Enviar missão',async()=>{
+    if(!instruction.value.trim()||busy)return;
+    const args={id:crypto.randomUUID(),agent:agent.value,kind:kind.value,instruction:instruction.value.trim(),revision:controls.revision};
+    const selected=!upload.hidden&&file.files[0],ticket=generation;
+    if(selected){
+     try{
+      const ext=selected.name.toLowerCase().split('.').pop(),mime=({csv:'text/csv',txt:'text/plain',png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',pdf:'application/pdf'})[ext];
+      if(!mime||selected.size>(mime.startsWith('text/')?60000:1048576)||!selected.size)throw Error();
+      send.disabled=true;
+      const encoded=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]);reader.onerror=reject;reader.readAsDataURL(selected);});
+      if(ticket!==generation||!opened||!unlockedNow()||!send.isConnected)return;
+      args.attachment={mime,content:encoded};
+     }catch{notice.textContent='Verifica o formato e o tamanho do ficheiro de inventário.';return;}
+     finally{send.disabled=false;}
+    }
+    await load('mission',args);
+   });
    const history=el('div');
-   function refresh(){kind.replaceChildren();for(const k of kinds[agent.value])kind.add(new Option(names[k],k));send.disabled=!controls.enabled||controls.modes[agent.value]==='off';history.replaceChildren();for(const m of list.filter(m=>m.agent===agent.value)){history.append(el('p',m.instruction+' · '+statusNames[m.status]));if(m.result_summary)history.append(el('p',m.result_summary));}}
-   agent.disabled=area===sections[0];agent.value=agent.disabled?'director':recipient;agent.onchange=()=>{recipient=agent.value;refresh();};refresh();content.append(agent,kind,instruction,send,history);
+   function refresh(){file.value='';upload.hidden=agent.value!=='stock';kind.replaceChildren();for(const k of kinds[agent.value])kind.add(new Option(names[k],k));send.disabled=!controls.enabled||controls.modes[agent.value]==='off';history.replaceChildren();for(const m of list.filter(m=>m.agent===agent.value)){history.append(el('p',m.instruction+' · '+statusNames[m.status]));if(m.result_summary)history.append(el('p',m.result_summary));}}
+   agent.disabled=area===sections[0];agent.value=agent.disabled?'director':recipient;agent.onchange=()=>{recipient=agent.value;refresh();};refresh();kind.onchange=()=>{upload.hidden=agent.value!=='stock'||!['inventory_audit','stock_organization_plan'].includes(kind.value);if(upload.hidden)file.value='';};content.append(agent,kind,instruction,upload,send,history);
   }else if(area==='Documentos produzidos'){
    if(!state.documents.length)line('Sem documentos concluídos.');
    for(const d of state.documents){line(labels[d.agent]+' · '+d.mission_id);line(d.content);
+    for(const receipt of d.tool_receipts||[])line((receipt.tool==='delegate'?'Missão delegada':'Tarefa no Planeamento')+' · '+receipt.id);
     for(const t of d.tasks||[])if(t.agent===d.agent&&t.requiresApproval===true){line(t.title);content.append(btn('Aprovar para Planeamento',()=>load('plan_task',{mission:d.mission_id,key:t.key})));}
    }
   }else if(['Missões','Aprovações','Trabalhos em execução'].includes(area)){
@@ -99,6 +124,11 @@ function init(){
    content.append(origin,summary,btn('Validar e guardar',()=>{const m=evidence.find(m=>m.mission_id===origin.value);if(summary.value.trim())load('remember',{id:crypto.randomUUID(),agent:m.agent,mission:m.mission_id,summary:summary.value.trim(),kind:area==='Objetivos'?'objective':'lesson'});}));
   }else if(area==='Controlo financeiro'){
    const eur=n=>new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR',maximumFractionDigits:4}).format(n/1000000);
+   const used=state.budget.settled+state.budget.pending;
+   if(state.budget.unknown)line('Chamadas suspensas até à reconciliação dos custos desconhecidos.');
+   else if(used>=23000000)line('Limite preventivo atingido.');
+   else if(used>=18400000)line('Já foram comprometidos pelo menos 80% do limite preventivo.');
+   for(const [channel,amount] of Object.entries(state.budget.channels||{})){const label=labels[channel]||({legacy_social:'Publicações',legacy_description:'Descrição de produto',legacy_insights:'Estatísticas digitais'})[channel];line(label+' · '+eur(amount.settled)+' liquidados · '+eur(amount.pending)+' reservados');}
    line('Consumo liquidado no mês · '+eur(state.budget.settled));line('Reservas pendentes · '+eur(state.budget.pending));line('Custos por esclarecer · '+state.budget.unknown);line('Limite preventivo 23 € · Reserva de segurança 7 € · Teto mensal 30 €');
   }else if(area==='Auditoria'){
    for(const e of state.events)line(new Date(e.occurred_at).toLocaleString('pt-PT')+' · '+statusNames[e.status]+' · '+e.mission_id);
