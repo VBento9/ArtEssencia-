@@ -90,5 +90,6 @@
       "source": "/conta/",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "ignoreCommand": "test \"$(git log -1 --format=%s)\" = 'ci(intelligence): install remote executor without app deployment'"
 }

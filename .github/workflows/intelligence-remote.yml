@@ -1,0 +1,100 @@
+name: Intelligence remote executor
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/intelligence-remote.yml']
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: 'validate (gratuito) ou execute (missão Cloud já aprovada)'
+        type: choice
+        options: [validate, preflight, execute]
+        default: validate
+      mission_id:
+        description: 'UUID da missão existente e aprovada; nunca cria ou aprova missões'
+        type: string
+      revision:
+        description: 'Revisão exata aprovada'
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: intelligence-isolated-remote-executor
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: intelligence_fixture
+          POSTGRES_DB: intelligence_fixture
+        ports: ['55433:5432']
+        options: --health-cmd "pg_isready -U postgres" --health-interval 3s --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: 7326fbea86b594132d9808cd0dbae6668d33fbdb
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Tests and executor contract (no secrets or external AI)
+        run: node scripts/test_intelligence_all.cjs
+      - name: Isolated test dependencies
+        run: npm install --prefix "$RUNNER_TEMP/ae-intelligence" --no-save --package-lock=false --ignore-scripts --no-audit --no-fund @electric-sql/pglite@0.3.16 pg@8.16.3 playwright@1.56.1
+      - name: Transaction, concurrency, recovery and lifetime cap
+        run: |
+          PGLITE_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/@electric-sql/pglite" node scripts/test_intelligence_count_sql.cjs
+          PG_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/pg" node scripts/test_intelligence_count_sql.cjs --postgres
+          PGLITE_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/@electric-sql/pglite" node scripts/test_intelligence_trial_sql.cjs
+      - name: Browser fixtures on synthetic data
+        run: |
+          "$RUNNER_TEMP/ae-intelligence/node_modules/.bin/playwright" install chromium
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/playwright" node scripts/test_intelligence_browser.cjs
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/playwright" node scripts/test_intelligence_central_browser.cjs
+  execute:
+    if: github.event_name == 'workflow_dispatch' && inputs.operation == 'execute' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    environment: intelligence-isolated
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: 7326fbea86b594132d9808cd0dbae6668d33fbdb
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Execute one already approved isolated mission; never retry
+        env:
+          INTELLIGENCE_REMOTE_PUBLIC_CONFIG: ${{ vars.INTELLIGENCE_REMOTE_PUBLIC_CONFIG }}
+          INTELLIGENCE_SERVICE_PASSWORD: ${{ secrets.INTELLIGENCE_SERVICE_PASSWORD }}
+          INTELLIGENCE_OPENAI_API_KEY: ${{ secrets.INTELLIGENCE_OPENAI_API_KEY }}
+          INTELLIGENCE_FINANCIAL_APPROVAL: ${{ vars.INTELLIGENCE_FINANCIAL_APPROVAL }}
+          INTELLIGENCE_MISSION_ID: ${{ inputs.mission_id }}
+          INTELLIGENCE_MISSION_REVISION: ${{ inputs.revision }}
+        run: node scripts/run_intelligence_remote_trial.cjs
+  preflight:
+    if: github.event_name == 'workflow_dispatch' && inputs.operation == 'preflight' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    environment: intelligence-isolated
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: 7326fbea86b594132d9808cd0dbae6668d33fbdb
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Verify credentials without paid AI request or mission
+        env:
+          INTELLIGENCE_REMOTE_PUBLIC_CONFIG: ${{ vars.INTELLIGENCE_REMOTE_PUBLIC_CONFIG }}
+          INTELLIGENCE_SERVICE_PASSWORD: ${{ secrets.INTELLIGENCE_SERVICE_PASSWORD }}
+          INTELLIGENCE_OPENAI_API_KEY: ${{ secrets.INTELLIGENCE_OPENAI_API_KEY }}
+        run: node scripts/check_intelligence_remote.cjs
