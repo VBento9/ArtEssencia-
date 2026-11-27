@@ -33,7 +33,7 @@ function hostedMode(env=process.env){
  const url=require('./worker-transport.cjs').projectUrl(env);
  const production='https://ihtsonqnnlrxvorfrarl.supabase.co';
  if(env.INTELLIGENCE_EXECUTION_MODE==='trial'){
-  if(!isolatedTrialEnvironment(env))throw Error('Ensaio real isolado indisponível.');
+  if(env.INTELLIGENCE_EXECUTION_HOST||!isolatedTrialEnvironment(env))throw Error('Ensaio real isolado indisponível.');
   return 'trial';
  }
  if(env.INTELLIGENCE_EXECUTION_MODE==='simulation'){
@@ -58,14 +58,9 @@ function simulationProvider(payload){
   text:JSON.stringify({document:'[SIMULAÇÃO — sem IA externa] Ensaio de consulta, decisão e persistência. As conclusões não são uma avaliação por IA real.',
    tasks,delegations:director?[{agent:'stock',instruction:'[SIMULAÇÃO] Conferir referências de inventário fictício.'}]:[]})};
 }
-async function composeHosted({env=process.env,call,publicReader}={}){
- const mode=hostedMode(env);
- const injected=!!call;
- call=call||transport(env);
- if(mode==='prepare_only')return {mode,call};
- if(!publicReader&&!injected)publicReader=()=>require('./catalog-crosscheck.cjs').createReader(env)();
- if(mode==='paid')return {mode,...compose({env,call,publicReader})};
- if(mode==='trial'){
+async function composeTrial({env,call}){
+ if(!isolatedTrialEnvironment(env))throw Error('Ensaio real isolado indisponível.');
+ const mode='trial';
   const pricing=()=>{
    const rate=approvedPricing(env)[env.INTELLIGENCE_TARIFF_ID];
    if(!rate||rate.model!=='gpt-5.4-mini-2026-03-17'||budget.estimate(rate)>1000000)throw Error('Tarifa de ensaio indisponível.');
@@ -79,7 +74,19 @@ async function composeHosted({env=process.env,call,publicReader}={}){
    if(await call('trial_identity')!==true)throw Error('Autorização Cloud do ensaio real retirada.');
    return provider(payload);
   },publicReader:undefined};
- }
+}
+async function composeLocalTrial({env,call}={}){
+ if(env?.INTELLIGENCE_EXECUTION_HOST!=='local'||!isolatedTrialEnvironment(env))throw Error('Executor local isolado indisponível.');
+ return composeTrial({env,call:call||transport(env)});
+}
+async function composeHosted({env=process.env,call,publicReader}={}){
+ const mode=hostedMode(env);
+ const injected=!!call;
+ call=call||transport(env);
+ if(mode==='prepare_only')return {mode,call};
+ if(!publicReader&&!injected)publicReader=()=>require('./catalog-crosscheck.cjs').createReader(env)();
+ if(mode==='paid')return {mode,...compose({env,call,publicReader})};
+ if(mode==='trial')return composeTrial({env,call});
  if(await call('simulation_identity')!==true)throw Error('Base de ensaio não autorizada.');
  const checkedCall=async(action,args)=>{
   if(await call('simulation_identity')!==true)throw Error('Autorização de simulação retirada.');
@@ -155,4 +162,4 @@ async function processNext(runtime,approvedMission,{scheduled=false}={}){
     executor:{run:async()=>{throw Error('Ação sem autorização.');}}});
   return runner.run({owner,missionId:next.missionId,expectedRevision:next.revision});
 }
-module.exports={compose,composeHosted,hostedMode,processNext,runLegacy};
+module.exports={compose,composeHosted,composeLocalTrial,hostedMode,processNext,runLegacy};
