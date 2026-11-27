@@ -36,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: 772825ea4b877ab51fd3a187bae690738e0de657
+          ref: 7326fbea86b594132d9808cd0dbae6668d33fbdb
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
@@ -64,7 +64,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: 772825ea4b877ab51fd3a187bae690738e0de657
+          ref: 7326fbea86b594132d9808cd0dbae6668d33fbdb
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
@@ -87,7 +87,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: 772825ea4b877ab51fd3a187bae690738e0de657
+          ref: 7326fbea86b594132d9808cd0dbae6668d33fbdb
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
