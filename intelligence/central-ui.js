@@ -21,8 +21,8 @@ function init(){
  const nav=select(sections.map(s=>[s,s]),'Área de trabalho');
  const toggle=btn('Abrir central de agentes',()=>{if(opened)close();else if(unlockedNow()){opened=true;body.hidden=false;toggle.textContent='Fechar central';load();}});
  root.append(el('h3','ArtEssencia Intelligence'),toggle,body);body.append(nav,btn('Atualizar',()=>load()),notice,content);body.hidden=true;anchor.after(root);
- let opened=false,generation=0,state=null,busy=false,recipient='director';
- function close(){generation++;recipient='director';opened=false;busy=false;state=null;content.replaceChildren();body.hidden=true;notice.textContent='';toggle.textContent='Abrir central de agentes';}
+ let opened=false,generation=0,state=null,busy=false,recipient='director',stockPreview=null;
+ function close(){stockPreview=null;generation++;recipient='director';opened=false;busy=false;state=null;content.replaceChildren();body.hidden=true;notice.textContent='';toggle.textContent='Abrir central de agentes';}
  async function rpc(action,args){
   if(!unlockedNow()||typeof cloudClient==='undefined'||!cloudClient?.rpc)throw Error();
   const result=await cloudClient.rpc('artessencia_intelligence_console_v1',{p_action:action,p_args:args});
@@ -43,6 +43,8 @@ function init(){
    if(ticket!==generation||!unlockedNow())return;
    const data=await rpc('read',{});
    if(ticket!==generation||!unlockedNow())return;
+   if(action==='stock_change_preview')stockPreview={mission:args.mission,result:receipt};
+   else stockPreview=null;
    state=data;notice.textContent=action==='repair_recipe_reference'?'Referência confirmada na ficha técnica. Recebe e valida a Cloud antes de editar.':action==='create_material'?'Material confirmado na Cloud. Recebe e valida os dados da Cloud antes de alterar o stock.':action==='plan_task'?(receipt.status==='archived'?'A tarefa já foi arquivada.':'Tarefa confirmada no Planeamento.'):'';
    if(action==='plan_task')document.dispatchEvent(new CustomEvent('ae-task-refresh'));render();
   }catch{if(ticket===generation){state=null;content.replaceChildren();notice.textContent=action==='read'?'Central Cloud indisponível. Verifica a sessão e a instalação do serviço.':'Resultado por confirmar. Atualiza a central antes de repetir a operação.';}}
@@ -105,6 +107,31 @@ function init(){
   }else if(area==='Documentos produzidos'){
    if(!state.documents.length)line('Sem documentos concluídos.');
    for(const d of state.documents){line(labels[d.agent]+' · '+d.mission_id);line(d.content);
+    if(d.agent==='stock'&&list.some(m=>m.mission_id===d.mission_id&&['inventory_audit','stock_organization_plan'].includes(m.kind))){
+     content.append(el('h4','Analisar renomeação ou consolidação'));
+     const op=select([['rename','Renomear material'],['merge','Consolidar dois materiais']],'Operação de stock');
+     const source=el('input'),target=el('input');
+     source.placeholder='Nome atual exato';source.setAttribute('aria-label','Material de origem');
+     target.placeholder='Nome final exato';target.setAttribute('aria-label','Material de destino');
+     const identity=el('input');identity.type='checkbox';
+     const balance=el('input');balance.type='checkbox';
+     const l1=el('label',' Confirmei que são o mesmo material. '),l2=el('label',' Confirmei que os saldos são físicos e distintos, sem duplicação. ');
+     l1.prepend(identity);l2.prepend(balance);
+     function update(){l1.hidden=l2.hidden=op.value!=='merge';}op.onchange=update;update();
+     content.append(op,source,target,l1,l2,btn('Analisar impacto sem alterar stock',()=>{
+      if(!source.value.trim()||!target.value.trim())return;
+      load('stock_change_preview',{mission:d.mission_id,operation:op.value,source:source.value.trim(),target:target.value.trim(),identityConfirmed:identity.checked,balanceMode:balance.checked?'distinct_physical_balances':'unverified'});
+     }));
+     if(stockPreview?.mission===d.mission_id){
+      const p=stockPreview.result;
+      line(p.source+' → '+p.target+' · revisão '+p.sourceRevision+' · '+(p.status==='review'?'Simulação sem bloqueios identificados':'Operação bloqueada'));
+      line('Fichas afetadas: '+p.productsAffected+' · linhas: '+p.recipeLines+' · referências em produtos/encomendas/orçamentos: '+p.relatedProductRecords+'/'+p.relatedOrderRecords+'/'+p.relatedQuoteRecords);
+      line('Saldo origem: '+(p.sourceQty??'por validar')+' · saldo destino: '+(p.targetQty??'—')+' · unidade: '+(p.unit??'por validar'));
+      if(p.proposedQty!==null)line('Saldo simulado: '+p.proposedQty+' '+p.unit+' · valor simulado: '+p.inventoryValue+' €');
+      for(const reason of p.blockers||[])line('Bloqueio: '+reason.replaceAll('_',' '));
+      line('Esta análise não grava alterações e não constitui aprovação de execução.');
+     }
+    }
     const repair=d.reference_repairs;
     if(d.agent==='stock'&&repair?.mode==='reference_repair_only'&&Array.isArray(repair.proposals)&&repair.proposals.length){
      content.append(el('h4','Normalização de referências nas fichas técnicas'));

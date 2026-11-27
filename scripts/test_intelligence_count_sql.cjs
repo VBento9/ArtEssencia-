@@ -426,6 +426,23 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  assert.deepEqual(repairAfter.data.purchases,repairBefore.data.purchases);
  assert.equal(Number(repairAfter.revision),Number(repairBefore.revision)+1);
  console.log('PASS: explicit repair of one orphaned recipe reference, stock and historical movements unchanged');
+ await db.exec('SET ROLE authenticated');
+ const previewArgs={mission:bid(892),operation:'rename',source:'Material fictício',target:'Material normalizado'};
+ const preview=await command('stock_change_preview',previewArgs);
+ assert.equal(preview.mode,'simulation_only');
+ assert.equal(preview.status,'review');
+ assert.equal(preview.recipeLines,1);
+ assert.equal(preview.proposedQty,0);
+ const historicPreview=await command('stock_change_preview',{...previewArgs,source:'Cera',target:'Cera normalizada'});
+ assert.equal(historicPreview.status,'blocked');
+ assert.ok(historicPreview.blockers.includes('historico_ou_outros_registos_exigem_reconciliacao'));
+ const mergePreview=await command('stock_change_preview',{...previewArgs,operation:'merge',target:'Pavio'});
+ assert.equal(mergePreview.status,'blocked');
+ assert.ok(mergePreview.blockers.includes('origem_dos_saldos_nao_confirmada'));
+ await db.exec('RESET ROLE');
+ const previewAfter=(await db.query('SELECT data,revision FROM public.artessencia_v1_state WHERE user_id=$1',[owner])).rows[0];
+ assert.deepEqual(previewAfter,repairAfter);
+ console.log('PASS: stock preflight reports impact and blocks historical/ambiguous operations without writes');
 
 
  await db.exec('SET ROLE authenticated');

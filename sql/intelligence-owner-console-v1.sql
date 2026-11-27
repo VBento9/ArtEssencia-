@@ -75,6 +75,87 @@ BEGIN
 END;
 $tick$;
 REVOKE ALL ON FUNCTION artessencia_intelligence_private.team_tick() FROM PUBLIC,anon,authenticated;
+-- Read-only preflight. Never return full state, orders or customer information.
+CREATE OR REPLACE FUNCTION artessencia_intelligence_private.stock_change_preview(p_args jsonb)
+RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $stockpreview$
+DECLARE
+ actor uuid:=auth.uid(); mission uuid:=(p_args->>'mission')::uuid;
+ op text:=p_args->>'operation'; old_name text:=p_args->>'source'; new_name text:=p_args->>'target';
+ old_key text; new_key text; st public.artessencia_v1_state%rowtype;
+ src jsonb; dst jsonb; hits bigint; dest_hits bigint; recipe_lines bigint:=0; products_affected bigint:=0;
+ historic bigint:=0; related_products bigint:=0; related_orders bigint:=0; related_quotes bigint:=0;
+ legacy_state boolean:=false; duplicate_recipe boolean:=false; blockers text[]:=ARRAY[]::text[];
+ old_qty numeric; dest_qty numeric; cost numeric; dest_cost numeric; proposed_qty numeric;
+ result jsonb;
+BEGIN
+ IF actor IS NULL OR public.artessencia_is_owner_v1() IS DISTINCT FROM true THEN RAISE EXCEPTION 'OWNER_REQUIRED'; END IF;
+ IF op IS NULL OR op NOT IN ('rename','merge') OR old_name IS NULL OR new_name IS NULL OR old_name=new_name
+ OR length(old_name) NOT BETWEEN 1 AND 200 OR length(new_name) NOT BETWEEN 1 AND 200
+ OR trim(old_name)<>old_name OR trim(new_name)<>new_name OR old_name ~ '[[:cntrl:]<>"\\]' OR new_name ~ '[[:cntrl:]<>"\\]'
+ OR old_name IN ('__proto__','constructor','prototype') OR new_name IN ('__proto__','constructor','prototype') THEN RAISE EXCEPTION 'INVALID_STOCK_PREVIEW'; END IF;
+ old_key:=artessencia_intelligence_private.material_name_key(old_name); new_key:=artessencia_intelligence_private.material_name_key(new_name);
+ IF old_key='' OR new_key='' THEN RAISE EXCEPTION 'INVALID_STOCK_PREVIEW'; END IF;
+ PERFORM 1 FROM artessencia_intelligence_private.team_controls c JOIN artessencia_intelligence_private.team_missions m USING(user_id)
+ WHERE c.user_id=actor AND c.enabled AND c.modes->>'stock'<>'off' AND c.revision=m.control_revision
+ AND m.mission_id=mission AND m.agent='stock' AND m.kind IN ('inventory_audit','stock_organization_plan') AND m.status='review_ready';
+ IF NOT FOUND THEN RAISE EXCEPTION 'STOCK_PREVIEW_NOT_AUTHORIZED'; END IF;
+ SELECT * INTO st FROM public.artessencia_v1_state WHERE user_id=actor;
+ IF NOT FOUND OR jsonb_typeof(st.data->'stock') IS DISTINCT FROM 'array' OR jsonb_typeof(st.data->'productRecipes') IS DISTINCT FROM 'object'
+ OR jsonb_array_length(st.data->'stock')>5000 OR octet_length(st.data::text)>10000000 THEN RAISE EXCEPTION 'SOURCE_UNAVAILABLE'; END IF;
+ SELECT count(*),jsonb_agg(x)->0 INTO hits,src FROM jsonb_array_elements(st.data->'stock') x WHERE x->>'name'=old_name;
+ SELECT count(*),jsonb_agg(x)->0 INTO dest_hits,dst FROM jsonb_array_elements(st.data->'stock') x WHERE x->>'name'=new_name;
+ IF hits<>1 THEN blockers:=array_append(blockers,'origem_ambigua_ou_ausente'); END IF;
+ IF (op='merge' AND dest_hits<>1) OR (op='rename' AND dest_hits<>0) THEN blockers:=array_append(blockers,'destino_ambiguo_ou_incompativel'); END IF;
+ IF EXISTS(SELECT 1 FROM jsonb_array_elements(st.data->'stock') x
+ WHERE x->>'name' NOT IN (old_name,new_name) AND artessencia_intelligence_private.material_name_key(x->>'name') IN (old_key,new_key)) THEN
+ blockers:=array_append(blockers,'outro_material_semelhante'); END IF;
+ IF EXISTS(SELECT 1 FROM jsonb_each(st.data->'productRecipes') e WHERE jsonb_typeof(e.value) IS DISTINCT FROM 'array') THEN RAISE EXCEPTION 'SOURCE_INVALID'; END IF;
+ SELECT count(*),count(DISTINCT e.key) INTO recipe_lines,products_affected
+ FROM jsonb_each(st.data->'productRecipes') e CROSS JOIN LATERAL jsonb_array_elements(e.value) r WHERE r->>'item'=old_name;
+ SELECT EXISTS(SELECT 1 FROM jsonb_each(st.data->'productRecipes') e WHERE
+ (SELECT count(*) FROM jsonb_array_elements(e.value) r WHERE artessencia_intelligence_private.material_name_key(r->>'item') IN(old_key,new_key))>1)
+ INTO duplicate_recipe;
+ IF duplicate_recipe THEN blockers:=array_append(blockers,'varias_referencias_na_mesma_ficha'); END IF;
+ IF EXISTS(SELECT 1 FROM jsonb_each(st.data->'productRecipes') e CROSS JOIN LATERAL jsonb_array_elements(e.value) r
+ WHERE artessencia_intelligence_private.material_name_key(r->>'item') IN(old_key,new_key)
+ AND r->>'item' NOT IN(old_name,new_name)) THEN blockers:=array_append(blockers,'referencias_com_outros_nomes'); END IF;
+ -- Conservative search of the remaining state. Includes purchase, movement, cost, production and unknown legacy fields.
+ legacy_state:=position(to_jsonb(old_key)::text in artessencia_intelligence_private.material_name_key((st.data-'stock'-'productRecipes')::text))>0
+ OR position(to_jsonb(new_key)::text in artessencia_intelligence_private.material_name_key((st.data-'stock'-'productRecipes')::text))>0;
+ IF legacy_state THEN blockers:=array_append(blockers,'historico_ou_outros_registos_exigem_reconciliacao'); END IF;
+ SELECT count(*) INTO related_products FROM public.artessencia_v1_products p WHERE p.user_id=actor AND
+ (position(to_jsonb(old_key)::text in artessencia_intelligence_private.material_name_key(p.data::text))>0 OR
+ position(to_jsonb(new_key)::text in artessencia_intelligence_private.material_name_key(p.data::text))>0);
+ SELECT count(*) INTO related_orders FROM public.artessencia_v1_orders p WHERE p.user_id=actor AND
+ (position(to_jsonb(old_key)::text in artessencia_intelligence_private.material_name_key(p.data::text))>0 OR
+ position(to_jsonb(new_key)::text in artessencia_intelligence_private.material_name_key(p.data::text))>0);
+ SELECT count(*) INTO related_quotes FROM public.artessencia_v1_quotes p WHERE p.user_id=actor AND
+ (position(to_jsonb(old_key)::text in artessencia_intelligence_private.material_name_key(p.data::text))>0 OR
+ position(to_jsonb(new_key)::text in artessencia_intelligence_private.material_name_key(p.data::text))>0);
+ IF related_products+related_orders+related_quotes>0 THEN blockers:=array_append(blockers,'referencias_relacionais_exigem_reconciliacao'); END IF;
+ IF src IS NOT NULL AND coalesce(src->>'qty','') ~ '^[0-9]+([.][0-9]+)?$' AND coalesce(src->>'unitCost','') ~ '^[0-9]+([.][0-9]+)?$'
+ AND coalesce(src->>'unit','') IN ('g','ml','cm','un') THEN old_qty:=(src->>'qty')::numeric; cost:=(src->>'unitCost')::numeric;
+ ELSE blockers:=array_append(blockers,'saldo_custo_ou_unidade_invalidos'); END IF;
+ IF cost IS NOT NULL AND (cost<=0 OR old_qty>1000000000000 OR (src->>'unit'='un' AND trunc(old_qty)<>old_qty)) THEN blockers:=array_append(blockers,'saldo_ou_custo_por_validar'); END IF;
+ IF op='merge' THEN
+  IF dst IS NOT NULL AND coalesce(dst->>'qty','') ~ '^[0-9]+([.][0-9]+)?$' AND coalesce(dst->>'unitCost','') ~ '^[0-9]+([.][0-9]+)?$'
+  THEN dest_qty:=(dst->>'qty')::numeric; dest_cost:=(dst->>'unitCost')::numeric; END IF;
+  IF dest_qty IS NULL OR dest_cost IS NULL OR cost IS NULL OR dest_cost<>cost OR src->>'unit' IS DISTINCT FROM dst->>'unit'
+  OR dest_qty>1000000000000 OR (dst->>'unit'='un' AND trunc(dest_qty)<>dest_qty) THEN blockers:=array_append(blockers,'unidades_custos_ou_saldos_incompativeis'); END IF;
+  IF src ? 'id' OR dst ? 'id' OR (src-'name'-'qty'-'unitCost') IS DISTINCT FROM (dst-'name'-'qty'-'unitCost') THEN blockers:=array_append(blockers,'identificadores_ou_metadados_distintos'); END IF;
+  IF p_args->'identityConfirmed' IS DISTINCT FROM 'true'::jsonb THEN blockers:=array_append(blockers,'identidade_nao_confirmada'); END IF;
+  IF p_args->>'balanceMode' IS DISTINCT FROM 'distinct_physical_balances' THEN blockers:=array_append(blockers,'origem_dos_saldos_nao_confirmada'); END IF;
+  proposed_qty:=old_qty+dest_qty;
+ ELSE proposed_qty:=old_qty; END IF;
+ RETURN jsonb_build_object('mode','simulation_only','status',CASE WHEN cardinality(blockers)=0 THEN 'review' ELSE 'blocked' END,
+ 'operation',op,'source',old_name,'target',new_name,'sourceRevision',st.revision,'sourceQty',old_qty,'targetQty',dest_qty,
+ 'unit',src->>'unit','unitCost',cost,'proposedQty',CASE WHEN cardinality(blockers)=0 THEN proposed_qty ELSE NULL END,
+ 'inventoryValue',CASE WHEN cardinality(blockers)=0 THEN proposed_qty*cost ELSE NULL END,
+ 'recipeLines',recipe_lines,'productsAffected',products_affected,'historicalOrOtherReferences',legacy_state,
+ 'relatedProductRecords',related_products,'relatedOrderRecords',related_orders,'relatedQuoteRecords',related_quotes,'blockers',to_jsonb(blockers));
+END;
+$stockpreview$;
+REVOKE ALL ON FUNCTION artessencia_intelligence_private.stock_change_preview(jsonb) FROM PUBLIC,anon,authenticated;
 CREATE OR REPLACE FUNCTION public.artessencia_intelligence_console_v1(p_action text, p_args jsonb DEFAULT '{}')
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $console$
 DECLARE
@@ -162,6 +243,8 @@ BEGIN
    WHEN 'inovacao' THEN 'innovation_review' WHEN 'auditoria' THEN 'technical_review' END,p_args->>'instruction',(p_args->>'enabled')::boolean)
   ON CONFLICT(user_id,agent,cadence) DO UPDATE SET instruction=excluded.instruction,enabled=excluded.enabled;
   RETURN jsonb_build_object('agent',selected_agent);
+ WHEN 'stock_change_preview' THEN
+  RETURN artessencia_intelligence_private.stock_change_preview(p_args);
  WHEN 'create_material' THEN
   IF p_args->'confirmed' IS DISTINCT FROM 'true'::jsonb OR jsonb_typeof(p_args->'unitCost') IS DISTINCT FROM 'number'
    OR coalesce(p_args->>'index','') !~ '^[0-9]{1,2}$' OR coalesce(p_args->>'sourceRevision','') !~ '^[0-9]{1,15}$' THEN RAISE EXCEPTION 'MATERIAL_CONFIRMATION_REQUIRED'; END IF;

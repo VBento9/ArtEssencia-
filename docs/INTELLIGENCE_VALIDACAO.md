@@ -56,3 +56,7 @@ Os quatro endpoints usam a mesma autenticação de proprietário do projeto conf
 ## Normalização de referências nas fichas técnicas (candidata)
 
 A auditoria de Stock propõe referências sem correspondência exata com um único candidato por normalização de acentos, maiúsculas e espaços. Mostra código, linha, nomes, quantidade, unidade e custo unitário. A ação explícita do proprietário revalida a revisão canónica, produto, ausência de receita legada, custo, unidade e inexistência de linha duplicada. Corrige apenas item da ficha e guarda recibo idempotente. Não renomeia o material nem consolida saldos. O custo calculado de uma ficha anteriormente incompleta pode mudar. Testar em Cloud isolada e confirmar sincronização antes da publicação.
+
+## Pré-visualização de renomeação e consolidação (candidata)
+
+Em Documentos produzidos, uma missão de Stock concluída permite consultar o impacto de dois nomes exatos no estado canónico. A análise mostra saldo, unidade, valor simulado, referências de fichas e contagens de referências relacionais, sem devolver dados de clientes ou alterar dados. Para fusão, identidade e origem distinta dos saldos têm confirmação independente. Histórico, referências adicionais, diferenças de custo, unidade ou metadados bloqueiam a simulação. A ausência de bloqueios nesta pesquisa conservadora não constitui prova de segurança para executar uma fusão: a transação de execução e a reconciliação de histórico continuam pendentes. Não existe botão de gravação nesta pré-visualização.
