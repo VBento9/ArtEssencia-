@@ -26,9 +26,9 @@ test('Gateway loads the specific professional curriculum before the simulated pr
    settle:async r=>({...r,status:'settled',overrun:false}),unknown:async()=>{throw Error('unexpected');}
   },provider:async p=>{
    called++;assert.ok(p.input[0].content.includes(training.instructions(agent)));assert.equal(p.input[0].role,'developer');
-   assert.equal(p.store,false);return {id:'fixture',model:rate.model,status:'completed',usage:{input_tokens:10,output_tokens:10},text:'{}'};
+   assert.equal(p.store,false);assert.deepEqual(p.text.format.schema.properties.tasks.items.properties.evidenceId.enum,['mission-fixture']);assert.equal(p.text.format.schema.properties.delegations.maxItems,agent==='director'?8:0);return {id:'fixture',model:rate.model,status:'completed',usage:{input_tokens:10,output_tokens:10},text:'{}'};
   }});
-  assert.equal((await g.run({requestId:id,missionId:id,agent,instruction:'Ensaio fictício',context:'{}'})).status,'review');
+  assert.equal((await g.run({requestId:id,missionId:id,agent,instruction:'Ensaio fictício',context:JSON.stringify({evidenceIds:['mission-fixture']})})).status,'review');
   assert.equal(called,1);
  }
 });
