@@ -76,6 +76,7 @@ function createMissionRunner(options){
     receipts.push({actionId:g.actionId,id:receipt.id,status:receipt.status,tool:g.tool});
    }
    stage='finish';
+   report.result={...report.result,professionalTraining:require('./professional-training.cjs').receipt(m.agent)};
    await current(m);
    const done=await store.finish({mission:m,status:'review_ready',summary:'Análise concluída para revisão. Recibos confirmados: '+receipts.length,report:report.result,reasoning,delegations,chargedMicroeur,receipts});
    if(done?.status!=='review_ready'||done.missionId!==m.id||done.leaseId!==m.leaseId)throw Error('Conclusão não confirmada.');
