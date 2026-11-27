@@ -86,9 +86,14 @@ function init(){
    const card=el('article');card.append(el('strong',displayAgent(m.agent)+' · '+(names[m.kind]||m.kind)),el('p',m.instruction),el('small',statusNames[m.status]));
    if(m.result_summary)card.append(el('p',m.result_summary));
    const args={id:m.mission_id,revision:m.revision};
-   if(m.status==='approved')card.append(btn('Executar missão aprovada',()=>load('execute',{missionId:m.mission_id,revision:m.revision})));
-   if(m.status==='pending_review')card.append(btn('Aprovar',()=>load('approve',args)));
    const prior=state.auditRetry?.history.find(h=>h.missionId===m.mission_id);
+   const isolatedRetry=prior&&cloudClient.supabaseUrl==='https://thqhyetvxledlgjdtmzp.supabase.co';
+   if(m.status==='approved'&&isolatedRetry){
+    card.append(el('p','Retoma aprovada. O ensaio remoto exige uma autorização financeira válida e um disparo manual no GitHub.'));
+    card.append(el('p','operation: execute · revision: '+m.revision),el('p','mission_id: '+m.mission_id));
+    const link=el('a','Abrir executor remoto no GitHub');link.href='https://github.com/VBento9/ArtEssencia-/actions/workflows/intelligence-remote.yml';link.target='_blank';link.rel='noopener noreferrer';card.append(link);
+   }else if(m.status==='approved')card.append(btn('Executar missão aprovada',()=>load('execute',{missionId:m.mission_id,revision:m.revision})));
+   if(m.status==='pending_review')card.append(btn('Aprovar',()=>load('approve',args)));
    if(prior)card.append(el('small','Tentativa anterior arquivada · revisão '+prior.blockedRevision+' · custo liquidado '+(Number(prior.chargedMicroeur)/1000000).toFixed(6).replace('.',',')+' €'));
    if(m.status==='blocked'&&state.auditRetry?.eligible.some(h=>h.missionId===m.mission_id&&h.revision===m.revision)){
     card.append(btn('Preparar nova revisão',()=>{if(window.confirm('Arquivar a tentativa anterior e devolver esta missão à aprovação? Não inicia execução nem autoriza despesa.'))load('audit_requeue',args);}));

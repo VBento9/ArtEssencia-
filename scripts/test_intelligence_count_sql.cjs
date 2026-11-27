@@ -599,6 +599,52 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
 
 
 
+ // End-to-end retry contract: remote wrapper + real SQL worker + synthetic provider.
+ // Never contacts GitHub, Supabase or OpenAI; the service bridge/financial gate have their own fixtures.
+ await db.exec(fs.readFileSync('sql/intelligence-audit-retry-v1.sql','utf8'));
+ const retryId=bid(985),retryHost={GITHUB_ACTIONS:'true',GITHUB_REPOSITORY:'VBento9/ArtEssencia-',GITHUB_REF:'refs/heads/main',GITHUB_EVENT_NAME:'workflow_dispatch'};
+ const retryConfig={publishableKey:'sb_publishable_fixture',serviceId:other,serviceEmail:'fixture@example.invalid',servicePassword:'fixture',apiKey:'fixture',financialApproval:'{}'};
+ const remoteRun=require('../intelligence/remote-trial.cjs').run;
+ const remote=(rev,provider)=>remoteRun(retryConfig,{missionId:retryId,revision:rev},retryHost,{compose:async()=>({...runtime,mode:'trial',provider})});
+ let retryCalls=0;
+ const bad=async()=>({status:'completed',id:'retry-fixture-invalid',model:rate.model,text:'not a JSON decision',usage:{input_tokens:100,output_tokens:42}});
+ const good=async()=>({status:'completed',id:'retry-fixture-valid',model:rate.model,text:JSON.stringify({document:'Auditoria retomada em ensaio.',tasks:[],delegations:[]}),usage:{input_tokens:100,output_tokens:42}});
+ const counted=fn=>async p=>{retryCalls++;return fn(p);};
+ await db.exec('SET ROLE authenticated');
+ await command('mission',{id:retryId,agent:'auditoria',kind:'technical_review',instruction:'Auditoria de retoma integrada.',revision:enabled.revision});
+ await command('approve',{id:retryId,revision:0});
+ await db.exec('RESET ROLE; SET ROLE artessencia_intelligence_worker');
+ const failure=await remote(1,counted(bad));
+ assert.equal(failure.status,'blocked');assert.equal(failure.stage,'reasoning');assert.equal(failure.diagnostic,'decision_json');assert.equal(retryCalls,1);
+ assert.ok(failure.chargedMicroeur>0);
+ await assert.rejects(remote(1,counted(good)),/MISSION_REVISION_CONFLICT/);
+ assert.equal(retryCalls,1);
+ await db.exec('RESET ROLE');
+ const oldRetry=(await db.query("SELECT to_jsonb(r) snapshot,to_jsonb(e) receipt FROM artessencia_intelligence_private.team_runs r JOIN artessencia_intelligence_private.ai_budget_entries e USING(request_id) WHERE mission_id=$1",[retryId])).rows[0];
+ await db.exec('SET ROLE authenticated');
+ const requeued=(await db.query('SELECT public.artessencia_intelligence_requeue_audit_v1($1,3) AS r',[retryId])).rows[0].r;
+ assert.equal(requeued.revision,4);assert.equal(requeued.status,'pending_review');
+ await db.exec('RESET ROLE; SET ROLE artessencia_intelligence_worker');
+ await assert.rejects(remote(4,counted(good)),/INVALID_TRANSITION/);assert.equal(retryCalls,1);
+ await db.exec('RESET ROLE; SET ROLE authenticated');
+ await command('approve',{id:retryId,revision:4});
+ await db.exec('RESET ROLE; SET ROLE artessencia_intelligence_worker');
+ const retried=await remote(5,counted(good));
+ assert.equal(retried.status,'review_ready',JSON.stringify(retried));assert.equal(retryCalls,2);
+ assert.equal(retried.automaticRetry,false);
+ await assert.rejects(remote(5,counted(good)),/MISSION_REVISION_CONFLICT/);assert.equal(retryCalls,2);
+ await db.exec('RESET ROLE');
+ const archived=(await db.query('SELECT run_snapshot,request_id FROM artessencia_intelligence_private.team_run_retry_archive WHERE mission_id=$1',[retryId])).rows[0];
+ assert.deepEqual(archived.run_snapshot,oldRetry.snapshot);
+ assert.deepEqual((await db.query('SELECT to_jsonb(e) receipt FROM artessencia_intelligence_private.ai_budget_entries e WHERE request_id=$1',[archived.request_id])).rows[0].receipt,oldRetry.receipt);
+ const newRetry=(await db.query('SELECT r.request_id,r.lease_id,e.status,e.actual_microeur FROM artessencia_intelligence_private.team_runs r JOIN artessencia_intelligence_private.ai_budget_entries e USING(request_id) WHERE r.mission_id=$1',[retryId])).rows[0];
+ assert.notEqual(newRetry.request_id,archived.request_id);assert.notEqual(newRetry.lease_id,oldRetry.snapshot.lease_id);assert.equal(newRetry.status,'settled');
+ assert.equal(Number(newRetry.actual_microeur),retried.chargedMicroeur);
+ await db.exec('SET ROLE authenticated');
+ assert.equal((await command('read')).documents.find(d=>d.mission_id===retryId).content,'Auditoria retomada em ensaio.');
+ console.log('PASS: remote wrapper, SQL worker, paid-path synthetic reasoning failure, separate owner reapproval, fresh charge, preserved receipt, no duplicate calls');
+ await db.exec('RESET ROLE');
+
  await db.exec('SET ROLE authenticated');
  const autoControls=await command('controls',{revision:enabled.revision,enabled:true,modes:{...enabled.modes,director:'auto',stock:'auto'}});
  await command('mission',{id:bid(900),agent:'director',kind:'daily_priority_plan',revision:autoControls.revision,instruction:'Distribuir o trabalho.'});

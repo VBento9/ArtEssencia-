@@ -28,7 +28,7 @@ async function run() {
   await db.exec(fs.readFileSync('sql/intelligence-audit-retry-v1.sql','utf8'));
   await db.exec('SET ROLE authenticated');
   const html = `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><div id="authGateV1880" class="hidden"></div><div id="lockScreen" class="hidden"></div><nav><button id="openIntelligence" onclick="document.dispatchEvent(new CustomEvent('ae-intelligence-navigation',{detail:{page:'intelligence'}}))">ArtEssencia Intelligence</button></nav><main><section id="intelligence" class="screen active"></section></main>
-    <script>let unlocked=true;const cloudClient={rpc:async(name,args)=>(await fetch('/rpc',{method:'POST',body:JSON.stringify({name,...args})})).json()};</script><script src="/central.js"></script>`;
+    <script>let unlocked=true;const cloudClient={supabaseUrl:'https://thqhyetvxledlgjdtmzp.supabase.co',rpc:async(name,args)=>(await fetch('/rpc',{method:'POST',body:JSON.stringify({name,...args})})).json()};</script><script src="/central.js"></script>`;
   const server = http.createServer(async (req,res)=>{
     if(req.url==='/'){res.setHeader('content-type','text/html;charset=utf-8');return res.end(html);}
     if(req.url==='/central.js'){res.setHeader('content-type','application/javascript');return res.end(fs.readFileSync('intelligence/central-ui.js'));}
@@ -134,13 +134,21 @@ async function run() {
      assert.equal(await card.getByRole('button',{name:'Aprovar',exact:true}).count(),1);
      assert.equal(await card.getByRole('button',{name:'Executar missão aprovada'}).count(),0);
      assert.equal(await card.getByRole('button',{name:'Preparar nova revisão'}).count(),0);
+     if(width===1440){
+      await card.getByRole('button',{name:'Aprovar',exact:true}).click();
+      await card.getByText('Aprovada',{exact:true}).waitFor();
+      await card.getByText('operation: execute · revision: 5',{exact:true}).waitFor();
+      await card.getByText('mission_id: '+auditId,{exact:true}).waitFor();
+      assert.equal(await card.getByRole('link',{name:'Abrir executor remoto no GitHub'}).getAttribute('href'),'https://github.com/VBento9/ArtEssencia-/actions/workflows/intelligence-remote.yml');
+      assert.equal(await card.getByRole('button',{name:'Executar missão aprovada'}).count(),0);
+     }
      assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
      assert.deepEqual(errs,[]);await p.close();
     }
     await db.exec('RESET ROLE');
     assert.deepEqual((await db.query('SELECT * FROM artessencia_intelligence_private.ai_budget_entries ORDER BY request_id')).rows,ledgerBefore);
     assert.equal(Number((await db.query('SELECT count(*) n FROM artessencia_intelligence_private.team_run_retry_archive')).rows[0].n),1);
-    assert.equal((await db.query('SELECT status FROM artessencia_intelligence_private.team_missions WHERE mission_id=$1',[auditId])).rows[0].status,'pending_review');
+    assert.equal((await db.query('SELECT status FROM artessencia_intelligence_private.team_missions WHERE mission_id=$1',[auditId])).rows[0].status,'approved');
     console.log('PASS: explicit owner requeue from central, history and new approval across three device sizes; no charge or automatic execution');
   } finally {await browser?.close();await new Promise(resolve=>server.close(resolve));await db.close();}
 }
