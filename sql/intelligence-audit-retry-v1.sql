@@ -60,4 +60,40 @@ END;
 $retry$;
 REVOKE ALL ON FUNCTION public.artessencia_intelligence_requeue_audit_v1(uuid,bigint) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.artessencia_intelligence_requeue_audit_v1(uuid,bigint) TO authenticated;
+-- Read-only capability and archived receipt summaries. Never expose raw outcomes or credentials.
+CREATE OR REPLACE FUNCTION public.artessencia_intelligence_audit_retry_status_v1()
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $retry_status$
+DECLARE actor uuid:=auth.uid();
+BEGIN
+ IF actor IS NULL OR public.artessencia_is_owner_v1() IS DISTINCT FROM true THEN
+  RAISE EXCEPTION USING errcode='42501',message='OWNER_REQUIRED';
+ END IF;
+ RETURN jsonb_build_object(
+  'eligible', (SELECT coalesce(jsonb_agg(jsonb_build_object('missionId',z.mission_id,'revision',z.revision)),'[]')
+   FROM (SELECT m.mission_id,m.revision FROM artessencia_intelligence_private.team_missions m
+   JOIN artessencia_intelligence_private.team_controls c USING(user_id)
+   JOIN artessencia_intelligence_private.team_runs r USING(user_id,mission_id)
+   JOIN artessencia_intelligence_private.ai_budget_entries e USING(request_id)
+   WHERE m.user_id=actor AND m.status='blocked' AND m.agent='auditoria' AND m.kind='technical_review'
+   AND c.enabled AND c.modes->>'auditoria'='manual' AND c.revision=m.control_revision
+   AND r.status='blocked' AND r.ended_at IS NOT NULL AND r.claimed_revision+1=m.revision
+   AND r.outcome->>'stage'='reasoning' AND r.outcome->'receipts'='[]'::jsonb AND r.tool_receipts='[]'::jsonb
+   AND NOT (r.outcome ? 'report') AND e.status='settled' AND e.channel=m.agent AND e.actual_microeur IS NOT NULL
+   AND jsonb_typeof(r.outcome->'chargedMicroeur')='number' AND r.outcome->'chargedMicroeur'=to_jsonb(e.actual_microeur)
+   AND nullif(trim(e.evidence_ref),'') IS NOT NULL
+   AND EXISTS(SELECT 1 FROM artessencia_intelligence_private.ai_budget_control bc WHERE bc.singleton AND NOT bc.frozen)
+   AND NOT EXISTS(SELECT 1 FROM artessencia_intelligence_private.ai_budget_entries WHERE status IN ('reserved','inflight','unknown'))
+   AND NOT EXISTS(SELECT 1 FROM artessencia_intelligence_private.team_run_retry_archive a WHERE a.user_id=actor AND a.mission_id=m.mission_id)
+   AND NOT EXISTS(SELECT 1 FROM artessencia_intelligence_private.team_inputs i WHERE i.user_id=actor AND i.mission_id=m.mission_id)
+   AND NOT EXISTS(SELECT 1 FROM artessencia_intelligence_private.team_delegations d WHERE d.user_id=actor AND d.parent_id=m.mission_id)
+   ORDER BY m.updated_at DESC,m.mission_id LIMIT 100) z),
+  'history',(SELECT coalesce(jsonb_agg(jsonb_build_object('missionId',z.mission_id,'blockedRevision',z.blocked_revision,
+    'chargedMicroeur',z.actual_microeur,'archivedAt',z.archived_at)),'[]')
+    FROM (SELECT a.mission_id,a.blocked_revision,e.actual_microeur,a.archived_at
+    FROM artessencia_intelligence_private.team_run_retry_archive a JOIN artessencia_intelligence_private.ai_budget_entries e USING(request_id)
+    WHERE a.user_id=actor ORDER BY a.archived_at DESC,a.mission_id LIMIT 100)z));
+END;
+$retry_status$;
+REVOKE ALL ON FUNCTION public.artessencia_intelligence_audit_retry_status_v1() FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.artessencia_intelligence_audit_retry_status_v1() TO authenticated;
 COMMIT;

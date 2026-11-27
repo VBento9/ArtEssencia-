@@ -25,17 +25,22 @@ async function run() {
   for (const name of ['team-draft','ai-budget-draft','run-draft','owner-console']) {
     await db.exec(fs.readFileSync('sql/intelligence-'+name+'-v1.sql','utf8'));
   }
+  await db.exec(fs.readFileSync('sql/intelligence-audit-retry-v1.sql','utf8'));
   await db.exec('SET ROLE authenticated');
   const html = `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><div id="authGateV1880" class="hidden"></div><div id="lockScreen" class="hidden"></div><nav><button id="openIntelligence" onclick="document.dispatchEvent(new CustomEvent('ae-intelligence-navigation',{detail:{page:'intelligence'}}))">ArtEssencia Intelligence</button></nav><main><section id="intelligence" class="screen active"></section></main>
-    <script>let unlocked=true;const cloudClient={rpc:async(name,args)=>(await fetch('/rpc',{method:'POST',body:JSON.stringify(args)})).json()};</script><script src="/central.js"></script>`;
+    <script>let unlocked=true;const cloudClient={rpc:async(name,args)=>(await fetch('/rpc',{method:'POST',body:JSON.stringify({name,...args})})).json()};</script><script src="/central.js"></script>`;
   const server = http.createServer(async (req,res)=>{
     if(req.url==='/'){res.setHeader('content-type','text/html;charset=utf-8');return res.end(html);}
     if(req.url==='/central.js'){res.setHeader('content-type','application/javascript');return res.end(fs.readFileSync('intelligence/central-ui.js'));}
     if(req.url!=='/rpc'||req.method!=='POST'){res.writeHead(404);return res.end();}
     try {
       const chunks=[];for await(const chunk of req)chunks.push(chunk);
-      const {p_action,p_args}=JSON.parse(Buffer.concat(chunks));
-      const result=await db.query('select public.artessencia_intelligence_console_v1($1,$2) as data',[p_action,p_args]);
+      const {name,p_action,p_args,p_id,p_revision}=JSON.parse(Buffer.concat(chunks));
+      const result=name==='artessencia_intelligence_audit_retry_status_v1'
+       ?await db.query('select public.artessencia_intelligence_audit_retry_status_v1() as data')
+       :name==='artessencia_intelligence_requeue_audit_v1'
+        ?await db.query('select public.artessencia_intelligence_requeue_audit_v1($1,$2) as data',[p_id,p_revision])
+        :await db.query('select public.artessencia_intelligence_console_v1($1,$2) as data',[p_action,p_args]);
       res.end(JSON.stringify(result.rows[0]));
     } catch {res.end(JSON.stringify({error:true}));}
   });
@@ -97,6 +102,46 @@ async function run() {
     await db.exec('RESET ROLE');
     assert.deepEqual((await db.query('SELECT data,revision FROM public.artessencia_v1_state WHERE user_id=$1',[owner])).rows[0],before);
     console.log('PASS: central browser stock preview uses SQL, release gate disabled, no write to canonical stock');
+    // A separately seeded, reconciled reasoning failure tests the actual new RPCs from the UI.
+    const auditId='00000000-0000-0000-0000-000000000021';
+    await db.exec(`UPDATE artessencia_intelligence_private.team_controls SET modes=jsonb_set(modes,'{auditoria}','"manual"') WHERE user_id='${owner}';
+     SELECT artessencia_intelligence_private.team_create_mission('${auditId}','auditoria','technical_review','Retoma de auditoria fictícia',(SELECT revision FROM artessencia_intelligence_private.team_controls WHERE user_id='${owner}'));
+     SELECT artessencia_intelligence_private.team_transition('${auditId}',0,'approved',NULL);
+     SELECT artessencia_intelligence_private.team_claim_run('${auditId}',1);
+     INSERT INTO artessencia_intelligence_private.ai_budget_entries(request_id,channel,model,maximum_microeur,reserved_at,reserved_month,status,actual_microeur,settled_month,evidence_ref)
+     SELECT request_id,'auditoria','fixture',424875,now(),CURRENT_DATE,'settled',4208,CURRENT_DATE,'fixture-audit' FROM artessencia_intelligence_private.team_runs WHERE mission_id='${auditId}';
+     SELECT artessencia_intelligence_private.team_finish_run('${auditId}',lease_id,'blocked','{"stage":"reasoning","receipts":[],"chargedMicroeur":4208}') FROM artessencia_intelligence_private.team_runs WHERE mission_id='${auditId}';`);
+    const ledgerBefore=(await db.query('SELECT * FROM artessencia_intelligence_private.ai_budget_entries ORDER BY request_id')).rows;
+    await db.exec('SET ROLE authenticated');
+    for(const width of [390,820,1440]){
+     const p=await browser.newPage({viewport:{width,height:900}});
+     const errs=[];p.on('pageerror',e=>errs.push(e.message));
+     await p.goto(origin);
+     await p.getByRole('button',{name:'Abrir central de agentes'}).click();
+     await p.getByText('9 funcionários ·',{exact:false}).waitFor();
+     await p.getByLabel('Área de trabalho').selectOption('Missões');
+     const card=p.locator('article').filter({hasText:'Retoma de auditoria fictícia'});
+     if(width===390){
+      await card.getByRole('button',{name:'Preparar nova revisão'}).waitFor();
+      p.once('dialog',d=>d.dismiss());
+      await card.getByRole('button',{name:'Preparar nova revisão'}).click();
+      await card.getByText('Bloqueada',{exact:true}).waitFor();
+      p.once('dialog',d=>d.accept());
+      await card.getByRole('button',{name:'Preparar nova revisão'}).click();
+     }
+     await card.getByText('A aguardar aprovação',{exact:true}).waitFor();
+     await card.getByText('Tentativa anterior arquivada · revisão 3 · custo liquidado 0,004208 €',{exact:true}).waitFor();
+     assert.equal(await card.getByRole('button',{name:'Aprovar',exact:true}).count(),1);
+     assert.equal(await card.getByRole('button',{name:'Executar missão aprovada'}).count(),0);
+     assert.equal(await card.getByRole('button',{name:'Preparar nova revisão'}).count(),0);
+     assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+     assert.deepEqual(errs,[]);await p.close();
+    }
+    await db.exec('RESET ROLE');
+    assert.deepEqual((await db.query('SELECT * FROM artessencia_intelligence_private.ai_budget_entries ORDER BY request_id')).rows,ledgerBefore);
+    assert.equal(Number((await db.query('SELECT count(*) n FROM artessencia_intelligence_private.team_run_retry_archive')).rows[0].n),1);
+    assert.equal((await db.query('SELECT status FROM artessencia_intelligence_private.team_missions WHERE mission_id=$1',[auditId])).rows[0].status,'pending_review');
+    console.log('PASS: explicit owner requeue from central, history and new approval across three device sizes; no charge or automatic execution');
   } finally {await browser?.close();await new Promise(resolve=>server.close(resolve));await db.close();}
 }
 run().catch(error=>{console.error(error);process.exitCode=1;});

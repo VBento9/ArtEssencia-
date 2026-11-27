@@ -36,7 +36,11 @@ function init(){
  }
  async function rpc(action,args){
   if(!unlockedNow()||!cloudAllowed()||!cloudClient?.rpc)throw Error();
-  const result=await cloudClient.rpc('artessencia_intelligence_console_v1',{p_action:action,p_args:args});
+  const result=action==='audit_retry_status'
+   ?await cloudClient.rpc('artessencia_intelligence_audit_retry_status_v1',{})
+   :action==='audit_requeue'
+    ?await cloudClient.rpc('artessencia_intelligence_requeue_audit_v1',{p_id:args.id,p_revision:args.revision})
+    :await cloudClient.rpc('artessencia_intelligence_console_v1',{p_action:action,p_args:args});
   if(result.error||result.data==null)throw Error();
   return result.data;
  }
@@ -55,9 +59,14 @@ function init(){
    if(ticket!==generation||!unlockedNow())return;
    const data=await rpc('read',{});
    if(ticket!==generation||!unlockedNow())return;
+   // Optional isolated migration; absence must not break the existing console.
+   let retryStatus=null;
+   try{const candidate=await rpc('audit_retry_status',{});if(Array.isArray(candidate.eligible)&&Array.isArray(candidate.history))retryStatus=candidate;}catch{}
+   if(ticket!==generation||!unlockedNow())return;
+   data.auditRetry=retryStatus;
    if(action==='stock_change_preview')stockPreview={mission:args.mission,request:args,result:receipt,operationId:crypto.randomUUID()};
    else stockPreview=null;
-   state=data;notice.textContent=action==='professional_lesson'?'Lição aprovada e guardada na memória profissional. Não concede permissões.':action==='professional_assess'?'Avaliação profissional registada. Não altera permissões.':action==='commercial_approve'?'Proposta interna guardada em Orçamentos. Nenhum contacto enviado.':['stock_change_apply','stock_change_revert'].includes(action)?'Operação confirmada na Cloud. Recebe e valida os dados antes de editar.':action==='repair_recipe_reference'?'Referência confirmada na ficha técnica. Recebe e valida a Cloud antes de editar.':action==='create_material'?'Material confirmado na Cloud. Recebe e valida os dados da Cloud antes de alterar o stock.':action==='plan_task'?(receipt.status==='archived'?'A tarefa já foi arquivada.':'Tarefa confirmada no Planeamento.'):'';
+   state=data;notice.textContent=action==='audit_requeue'?'Tentativa anterior arquivada. A missão aguarda nova aprovação. Não foi iniciada nenhuma chamada paga.':action==='professional_lesson'?'Lição aprovada e guardada na memória profissional. Não concede permissões.':action==='professional_assess'?'Avaliação profissional registada. Não altera permissões.':action==='commercial_approve'?'Proposta interna guardada em Orçamentos. Nenhum contacto enviado.':['stock_change_apply','stock_change_revert'].includes(action)?'Operação confirmada na Cloud. Recebe e valida os dados antes de editar.':action==='repair_recipe_reference'?'Referência confirmada na ficha técnica. Recebe e valida a Cloud antes de editar.':action==='create_material'?'Material confirmado na Cloud. Recebe e valida os dados da Cloud antes de alterar o stock.':action==='plan_task'?(receipt.status==='archived'?'A tarefa já foi arquivada.':'Tarefa confirmada no Planeamento.'):'';
    if(action==='plan_task')document.dispatchEvent(new CustomEvent('ae-task-refresh'));render();
   }catch{if(ticket===generation){state=null;content.replaceChildren();notice.textContent=action==='read'?'Central Cloud indisponível. Verifica a sessão e a instalação do serviço.':'Resultado por confirmar. Atualiza a central antes de repetir a operação.';if(action==='read'&&nav.value==='Funcionários'&&unlockedNow())offlineTeam();}}
   finally{if(ticket===generation){busy=false;content.inert=false;}}
@@ -79,6 +88,11 @@ function init(){
    const args={id:m.mission_id,revision:m.revision};
    if(m.status==='approved')card.append(btn('Executar missão aprovada',()=>load('execute',{missionId:m.mission_id,revision:m.revision})));
    if(m.status==='pending_review')card.append(btn('Aprovar',()=>load('approve',args)));
+   const prior=state.auditRetry?.history.find(h=>h.missionId===m.mission_id);
+   if(prior)card.append(el('small','Tentativa anterior arquivada · revisão '+prior.blockedRevision+' · custo liquidado '+(Number(prior.chargedMicroeur)/1000000).toFixed(6).replace('.',',')+' €'));
+   if(m.status==='blocked'&&state.auditRetry?.eligible.some(h=>h.missionId===m.mission_id&&h.revision===m.revision)){
+    card.append(btn('Preparar nova revisão',()=>{if(window.confirm('Arquivar a tentativa anterior e devolver esta missão à aprovação? Não inicia execução nem autoriza despesa.'))load('audit_requeue',args);}));
+   }
    if(['pending_review','approved','working'].includes(m.status))card.append(btn('Cancelar missão',()=>load('cancel',args)));
    if(m.parent_id)card.append(el('small','Missão de origem · '+m.parent_id));
    if(m.agent==='director'&&['approved','working'].includes(m.status)){
