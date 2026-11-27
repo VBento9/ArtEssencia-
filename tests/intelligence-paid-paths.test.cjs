@@ -77,3 +77,24 @@ test('Owner verification and public product photos stay in the configured worker
   assert.doesNotMatch(source,/ihtsonqnnlrxvorfrarl\.supabase\.co/);
  }
 });
+
+test('Hosted simulation is isolated and cannot activate paid model paths',async()=>{
+ const server=require('../intelligence/server-runtime.cjs');
+ const base='https://abcdefghijklmnopqrst.supabase.co';
+ const env={VERCEL_ENV:'preview',INTELLIGENCE_EXECUTION_MODE:'simulation',INTELLIGENCE_SUPABASE_URL:base,INTELLIGENCE_ISOLATED_PROJECT_URL:base};
+ assert.equal(server.hostedMode(env),'simulation');
+ for(const change of [{VERCEL_ENV:'production'},{INTELLIGENCE_ISOLATED_PROJECT_URL:'https://ihtsonqnnlrxvorfrarl.supabase.co'},
+ {INTELLIGENCE_SUPABASE_URL:'https://ihtsonqnnlrxvorfrarl.supabase.co',INTELLIGENCE_ISOLATED_PROJECT_URL:'https://ihtsonqnnlrxvorfrarl.supabase.co'},
+ {INTELLIGENCE_SUPABASE_URL:'https://oosumysibccagrfbomab.supabase.co',INTELLIGENCE_ISOLATED_PROJECT_URL:'https://oosumysibccagrfbomab.supabase.co'},
+ {INTELLIGENCE_PAID_RELEASE:'approved'},{OPENAI_API_KEY:'not-used'},{INTELLIGENCE_FINANCIAL_APPROVAL:'{}'}])
+ assert.throws(()=>server.hostedMode({...env,...change}));
+ await assert.rejects(server.composeHosted({env,call:async()=>false}),/Base de ensaio/);
+ const calls=[];
+ const runtime=await server.composeHosted({env,call:async(action)=>{calls.push(action);return true;}});
+ assert.equal(runtime.mode,'simulation');
+ assert.throws(()=>server.runLegacy(runtime,'legacy_social',{},randomUUID()),/indisponível/);
+ const result=await runtime.provider({model:runtime.pricing().model,store:false,input:[{content:'Coordena departamentos e distribui trabalho.'},{content:JSON.stringify({context:JSON.stringify({evidenceIds:['fixture']})})}]});
+ assert.deepEqual(result.usage,{input_tokens:0,output_tokens:0});
+ assert.equal(JSON.parse(result.text).delegations[0].agent,'stock');
+ assert.deepEqual(calls,['simulation_identity']);
+});

@@ -25,7 +25,58 @@ function compose({env=process.env,call,provider,tariffs,publicReader}={}){
   if(!publicReader&&!injected)publicReader=()=>require('./catalog-crosscheck.cjs').createReader(env)();
   return {call,provider,pricing,publicReader};
 }
+
+// The simulation never calls a model endpoint. Positive fictional reservations
+// exercise the same ledger; usage is zero. Only a separate disposable project is eligible.
+const simulationModel='artessencia-simulation-v1';
+function hostedMode(env=process.env){
+ const url=require('./worker-transport.cjs').projectUrl(env);
+ const production='https://ihtsonqnnlrxvorfrarl.supabase.co';
+ const donart='https://oosumysibccagrfbomab.supabase.co';
+ if(env.INTELLIGENCE_EXECUTION_MODE==='simulation'){
+  if(env.VERCEL_ENV!=='preview'||url===production||url===donart||url!==env.INTELLIGENCE_ISOLATED_PROJECT_URL||
+     env.INTELLIGENCE_PAID_RELEASE==='approved'||env.OPENAI_API_KEY||env.INTELLIGENCE_FINANCIAL_APPROVAL)throw Error('Simulação isolada indisponível.');
+  return 'simulation';
+ }
+ if(env.VERCEL_ENV!=='production'||url!==production||env.INTELLIGENCE_EXECUTION_MODE&&env.INTELLIGENCE_EXECUTION_MODE!=='paid')throw Error('Ambiente não autorizado.');
+ return env.INTELLIGENCE_PAID_RELEASE==='approved'?'paid':'prepare_only';
+}
+function simulationProvider(payload){
+ if(payload.model!==simulationModel||payload.store!==false)throw Error('Pedido de simulação inválido.');
+ const user=payload.input[1].content;
+ const input=JSON.parse(Array.isArray(user)?user[0].text:user);
+ const context=JSON.parse(input.context);
+ const evidenceId=context.evidenceIds[0];
+ if(!evidenceId)throw Error('Evidência indisponível.');
+ // A fixed exercise, not an attempt to infer stock or customer data.
+ const director=payload.input[0].content.includes('Coordena departamentos e distribui trabalho.');
+ const tasks=[{title:director?'[SIMULAÇÃO] Rever prioridades':'[SIMULAÇÃO] Rever resultado do departamento',priority:2,evidenceId}];
+ return {id:'simulation-'+require('node:crypto').randomUUID(),model:simulationModel,status:'completed',usage:{input_tokens:0,output_tokens:0},
+  text:JSON.stringify({document:'[SIMULAÇÃO — sem IA externa] Ensaio de consulta, decisão e persistência. As conclusões não são uma avaliação por IA real.',
+   tasks,delegations:director?[{agent:'stock',instruction:'[SIMULAÇÃO] Conferir referências de inventário fictício.'}]:[]})};
+}
+async function composeHosted({env=process.env,call,publicReader}={}){
+ const mode=hostedMode(env);
+ const injected=!!call;
+ call=call||transport(env);
+ if(mode==='prepare_only')return {mode,call};
+ if(!publicReader&&!injected)publicReader=()=>require('./catalog-crosscheck.cjs').createReader(env)();
+ if(mode==='paid')return {mode,...compose({env,call,publicReader})};
+ if(await call('simulation_identity')!==true)throw Error('Base de ensaio não autorizada.');
+ const checkedCall=async(action,args)=>{
+  if(await call('simulation_identity')!==true)throw Error('Autorização de simulação retirada.');
+  return call(action,args);
+ };
+ const rate={model:simulationModel,verified:true,current:true,validUntil:new Date(Date.now()+3600000).toISOString(),toolsEnabled:false,
+  contextLimit:400000,maxInputTokens:400000,maxOutputTokens:2000,inputRate:1,outputRate:1,grossBps:10000};
+ // Do not set or override the real paid-release environment variable.
+ // Only this private, explicitly gated runtime can use the synthetic tariff.
+ const pricing=()=>{budget.estimate(rate);return rate;};
+ return {mode,call:checkedCall,pricing,provider:simulationProvider,publicReader};
+}
+
 function runLegacy(runtime,channel,payload,id){
+  if(runtime.mode==='simulation')throw Error('Assistente legado indisponível em simulação alojada.');
   const scope={channel,request:id};
   const permitted=async()=>{runtime.pricing();return await runtime.call('permission',scope)===true;};
   const ledger=chargeLedger(runtime.call,scope);
@@ -82,4 +133,4 @@ async function processNext(runtime,approvedMission){
     executor:{run:async()=>{throw Error('Ação sem autorização.');}}});
   return runner.run({owner,missionId:next.missionId,expectedRevision:next.revision});
 }
-module.exports={compose,processNext,runLegacy};
+module.exports={compose,composeHosted,hostedMode,processNext,runLegacy};

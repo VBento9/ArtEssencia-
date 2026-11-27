@@ -7,6 +7,13 @@ DO $role$ BEGIN
  IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname='authenticator') THEN GRANT artessencia_intelligence_worker TO authenticator; END IF;
 END $role$;
 ALTER TABLE artessencia_intelligence_private.team_runs ADD COLUMN IF NOT EXISTS tool_receipts jsonb NOT NULL DEFAULT '[]'::jsonb;
+-- No row is installed by default. Only the isolated fixture/project administrator
+-- may enable the simulation marker; neither worker nor owner console may modify it.
+CREATE TABLE IF NOT EXISTS artessencia_intelligence_private.simulation_release(
+ user_id uuid PRIMARY KEY,enabled boolean NOT NULL DEFAULT false
+);
+ALTER TABLE artessencia_intelligence_private.simulation_release ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON artessencia_intelligence_private.simulation_release FROM PUBLIC,anon,authenticated,artessencia_intelligence_worker;
 CREATE OR REPLACE FUNCTION public.artessencia_intelligence_worker_v1(p_action text,p_args jsonb)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $worker$
 <<channel_name>>
@@ -32,7 +39,9 @@ DECLARE
 BEGIN
  IF actor IS NULL OR public.artessencia_is_owner_v1() IS DISTINCT FROM true THEN RAISE EXCEPTION 'OWNER_REQUIRED'; END IF;
  IF jsonb_typeof(p_args) IS DISTINCT FROM 'object' OR octet_length(p_args::text)>110000 THEN RAISE EXCEPTION 'INVALID_ARGUMENTS'; END IF;
- IF p_action='identity' THEN RETURN to_jsonb(actor);
+ IF p_action='simulation_identity' THEN
+  RETURN to_jsonb(EXISTS(SELECT 1 FROM artessencia_intelligence_private.simulation_release s WHERE s.user_id=actor AND s.enabled));
+ ELSIF p_action='identity' THEN RETURN to_jsonb(actor);
  ELSIF p_action='tick' THEN
   PERFORM 1 FROM artessencia_intelligence_private.team_controls WHERE user_id=actor FOR UPDATE;
   UPDATE artessencia_intelligence_private.team_inputs SET content=NULL WHERE user_id=actor AND expires_at<=clock_timestamp() AND content IS NOT NULL;
@@ -108,7 +117,11 @@ BEGIN
    IF (state->>'active')::boolean IS DISTINCT FROM true OR state->>'agent' IS DISTINCT FROM agent OR (state->>'requestId')::uuid IS DISTINCT FROM request THEN RAISE EXCEPTION 'MISSION_STALE'; END IF;
   END IF;
   IF p_action='permission' THEN RETURN 'true'::jsonb; END IF;
-  IF p_action='reserve' THEN RETURN artessencia_intelligence_private.ai_budget_reserve(request,channel,p_args->>'model',(p_args->>'maximum')::bigint); END IF;
+  IF p_action='reserve' THEN
+   IF p_args->>'model'='artessencia-simulation-v1' AND NOT EXISTS(SELECT 1 FROM artessencia_intelligence_private.simulation_release s WHERE s.user_id=actor AND s.enabled) THEN RAISE EXCEPTION 'SIMULATION_DISABLED'; END IF;
+   IF p_args->>'model'<>'artessencia-simulation-v1' AND EXISTS(SELECT 1 FROM artessencia_intelligence_private.simulation_release s WHERE s.user_id=actor AND s.enabled) THEN RAISE EXCEPTION 'REAL_MODEL_DISABLED_IN_SIMULATION'; END IF;
+   RETURN artessencia_intelligence_private.ai_budget_reserve(request,channel,p_args->>'model',(p_args->>'maximum')::bigint);
+  END IF;
   IF NOT EXISTS(SELECT 1 FROM artessencia_intelligence_private.ai_budget_entries e WHERE e.request_id=request AND e.channel=channel_name.channel) THEN RAISE EXCEPTION 'WRONG_CHANNEL'; END IF;
   RETURN artessencia_intelligence_private.ai_budget_claim(request);
  ELSIF p_action='unknown' THEN
