@@ -81,16 +81,18 @@ function runLegacy(runtime,channel,payload,id){
   const ledger=chargeLedger(runtime.call,scope);
   return require('./legacy-ai.cjs').createLegacyService({...runtime,permitted,ledger})(channel,payload,id);
 }
-async function processNext(runtime,approvedMission){
+async function processNext(runtime,approvedMission,{scheduled=false}={}){
   const {call,pricing,provider}=runtime;
   if(approvedMission && await call('identity')!==approvedMission.owner)throw Error('Titular inválido.');
-  const next=approvedMission||await call('next');
+  if(scheduled&&approvedMission)throw Error('Agendamento inválido.');
+  const next=approvedMission||await call('next',scheduled?{scheduled:true}:{});
+  if(scheduled&&next?.scheduledOnly!==true)throw Error('Política de agendamento indisponível.');
   if(!next?.owner)throw Error('Titular indisponível.');
   if(!next.missionId)return {status:'idle'};
   const owner=next.owner;
   const store={
     async claim(q){
-      const r=await call('claim_run',{mission:q.missionId,revision:q.expectedRevision});
+      const r=await call('claim_run',{mission:q.missionId,revision:q.expectedRevision,...(scheduled?{scheduled:true}:{})});
       if(r.user_id!==owner)throw Error('Titular inválido.');
       return {id:r.mission_id,owner,kind:r.kind,agent:r.agent,instruction:r.instruction,revision:r.revision,status:r.status,
         controlRevision:r.control_revision,leaseId:r.lease_id,requestId:r.request_id};

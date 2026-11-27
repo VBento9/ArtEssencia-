@@ -59,10 +59,18 @@ BEGIN
   SELECT m.mission_id,m.revision INTO candidate FROM artessencia_intelligence_private.team_missions m
    JOIN artessencia_intelligence_private.team_controls c USING(user_id)
    WHERE m.user_id=actor AND c.enabled AND c.modes->>m.agent<>'off' AND m.control_revision=c.revision AND m.status='approved'
+    AND (p_args->'scheduled' IS DISTINCT FROM 'true'::jsonb OR c.modes->>m.agent IN ('semi','auto'))
     AND (m.kind IN ('daily_priority_plan','inventory_audit','stock_organization_plan','commercial_review','catalog_review','marketing_plan','innovation_review','technical_review','finance_review','production_plan'))
    ORDER BY m.created_at,m.mission_id LIMIT 1;
-  RETURN jsonb_build_object('owner',actor,'missionId',candidate.mission_id,'revision',candidate.revision);
+  RETURN jsonb_build_object('owner',actor,'missionId',candidate.mission_id,'revision',candidate.revision,'scheduledOnly',p_args->'scheduled' IS NOT DISTINCT FROM 'true'::jsonb);
  ELSIF p_action='claim_run' THEN
+  IF p_args->'scheduled' IS NOT DISTINCT FROM 'true'::jsonb THEN
+   SELECT * INTO permissions FROM artessencia_intelligence_private.team_controls WHERE user_id=actor FOR UPDATE;
+   IF NOT FOUND OR NOT permissions.enabled OR NOT EXISTS(
+    SELECT 1 FROM artessencia_intelligence_private.team_missions m WHERE m.user_id=actor AND m.mission_id=mission
+     AND m.control_revision=permissions.revision AND permissions.modes->>m.agent IN ('semi','auto')
+   ) THEN RAISE EXCEPTION 'SCHEDULE_MODE_DENIED'; END IF;
+  END IF;
   RETURN artessencia_intelligence_private.team_claim_run(mission,(p_args->>'revision')::bigint);
  ELSIF p_action='status' THEN
   RETURN artessencia_intelligence_private.team_run_status(mission);

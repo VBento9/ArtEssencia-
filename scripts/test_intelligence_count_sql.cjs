@@ -372,6 +372,11 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  await db.exec('RESET ROLE; SET ROLE artessencia_intelligence_worker');
  await assert.rejects(command('read'),/permission denied/);
  const runtimeFactory=require('../intelligence/server-runtime.cjs');
+ const scheduledManual=await workerRpc('next',{scheduled:true});
+ assert.equal(scheduledManual.scheduledOnly,true);assert.equal(scheduledManual.missionId,null);
+ await assert.rejects(workerRpc('claim_run',{mission:ids.stock,revision:1,scheduled:true}),/SCHEDULE_MODE_DENIED/);
+ assert.ok((await workerRpc('next')).missionId);
+ console.log('PASS: manual approved missions cannot be claimed by scheduler');
  let simulatedCharges=0,sawInventory=false;
  const rate={model:'fixture.1',verified:true,current:true,contextLimit:10000,maxInputTokens:10000,maxOutputTokens:500,inputRate:1000000,outputRate:4000000,grossBps:12300,toolsEnabled:false,validUntil:new Date(Date.now()+60000).toISOString()};
  const runtime=runtimeFactory.compose({call:workerRpc,env:{INTELLIGENCE_TARIFF_ID:'test',INTELLIGENCE_PAID_RELEASE:'approved'},tariffs:{test:rate},
@@ -606,9 +611,9 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
    text:JSON.stringify({document:'Resultado confirmado.',tasks:[{title:director?'Rever prioridades':'Conferir inventário',priority:1,evidenceId:context.evidenceIds[0]}],
     delegations:director?[{agent:'stock',instruction:'Conferir referências.'}]:[]})};
  }};
- assert.equal((await runtimeFactory.processNext(actingRuntime)).status,'review_ready');
- assert.equal((await runtimeFactory.processNext(actingRuntime)).status,'review_ready');
- assert.equal((await runtimeFactory.processNext(actingRuntime)).status,'idle');
+ assert.equal((await runtimeFactory.processNext(actingRuntime,undefined,{scheduled:true})).status,'review_ready');
+ assert.equal((await runtimeFactory.processNext(actingRuntime,undefined,{scheduled:true})).status,'review_ready');
+ assert.equal((await runtimeFactory.processNext(actingRuntime,undefined,{scheduled:true})).status,'idle');
  await db.exec('RESET ROLE');
  const actions=await db.query("SELECT r.tool_receipts FROM artessencia_intelligence_private.team_runs r WHERE r.mission_id=$1",[bid(900)]);
  assert.deepEqual(actions.rows[0].tool_receipts.map(r=>r.tool),['delegate','create_task']);
