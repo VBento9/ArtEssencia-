@@ -16,6 +16,14 @@ CREATE TABLE IF NOT EXISTS artessencia_intelligence_private.material_creation_re
 );
 ALTER TABLE artessencia_intelligence_private.material_creation_receipts ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON artessencia_intelligence_private.material_creation_receipts FROM PUBLIC,anon,authenticated;
+CREATE TABLE IF NOT EXISTS artessencia_intelligence_private.recipe_reference_receipts(
+ user_id uuid NOT NULL,mission_id uuid NOT NULL,proposal_index integer NOT NULL CHECK(proposal_index BETWEEN 0 AND 49),
+ proposal jsonb NOT NULL,source_revision bigint NOT NULL,committed_revision bigint NOT NULL,created_at timestamptz NOT NULL,
+ PRIMARY KEY(user_id,mission_id,proposal_index),
+ FOREIGN KEY(user_id,mission_id) REFERENCES artessencia_intelligence_private.team_missions(user_id,mission_id)
+);
+ALTER TABLE artessencia_intelligence_private.recipe_reference_receipts ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON artessencia_intelligence_private.recipe_reference_receipts FROM PUBLIC,anon,authenticated;
 CREATE OR REPLACE FUNCTION artessencia_intelligence_private.material_name_key(p_name text)
 RETURNS text LANGUAGE sql IMMUTABLE STRICT SET search_path='' AS $key$
  SELECT lower(regexp_replace(trim(regexp_replace(normalize(p_name,NFD),'[̀-ͯ]','','g')),'[[:space:]]+',' ','g'));
@@ -93,6 +101,15 @@ DECLARE
  material_index integer;
  material_revision bigint;
  material_row jsonb;
+ recipe_receipt artessencia_intelligence_private.recipe_reference_receipts%rowtype;
+ recipe_code text;
+ recipe_line integer;
+ recipe_rows jsonb;
+ recipe_row jsonb;
+ recipe_before text;
+ recipe_after text;
+ recipe_material jsonb;
+ recipe_hits bigint;
 BEGIN
  IF actor IS NULL OR public.artessencia_is_owner_v1() IS DISTINCT FROM true THEN
   RAISE EXCEPTION USING errcode='42501',message='OWNER_REQUIRED';
@@ -183,6 +200,55 @@ BEGIN
    WHERE user_id=actor RETURNING * INTO canonical_state;
   INSERT INTO artessencia_intelligence_private.material_creation_receipts VALUES(actor,target,material_index,material_row,material_revision,canonical_state.revision,task_time);
   RETURN jsonb_build_object('status','confirmed','material',material_row,'revision',canonical_state.revision,'replayed',false);
+ WHEN 'repair_recipe_reference' THEN
+  IF p_args->'confirmed' IS DISTINCT FROM 'true'::jsonb OR coalesce(p_args->>'index','') !~ '^[0-9]{1,2}$'
+   OR coalesce(p_args->>'sourceRevision','') !~ '^[0-9]{1,15}$' THEN RAISE EXCEPTION 'REFERENCE_CONFIRMATION_REQUIRED'; END IF;
+  target:=(p_args->>'mission')::uuid; material_index:=(p_args->>'index')::integer; material_revision:=(p_args->>'sourceRevision')::bigint;
+  PERFORM 1 FROM artessencia_intelligence_private.team_controls c JOIN artessencia_intelligence_private.team_missions m USING(user_id)
+   WHERE c.user_id=actor AND m.mission_id=target AND m.agent='stock' AND m.kind='inventory_audit' AND m.status='review_ready'
+   AND c.enabled AND c.modes->>'stock'<>'off' AND c.revision=m.control_revision FOR UPDATE OF c,m;
+  IF NOT FOUND THEN RAISE EXCEPTION 'REFERENCE_NOT_AUTHORIZED'; END IF;
+  SELECT * INTO canonical_state FROM public.artessencia_v1_state WHERE user_id=actor FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'CANONICAL_STATE_REQUIRED'; END IF;
+  SELECT * INTO recipe_receipt FROM artessencia_intelligence_private.recipe_reference_receipts
+   WHERE user_id=actor AND mission_id=target AND proposal_index=material_index;
+  IF FOUND THEN
+   IF recipe_receipt.source_revision<>material_revision THEN RAISE EXCEPTION 'REFERENCE_RECEIPT_CONFLICT'; END IF;
+   RETURN jsonb_build_object('status','confirmed','revision',recipe_receipt.committed_revision,'replayed',true);
+  END IF;
+  SELECT r.outcome->'report'->'referenceRepairs' INTO material_proposal FROM artessencia_intelligence_private.team_runs r
+   WHERE r.user_id=actor AND r.mission_id=target AND r.status='review_ready';
+  IF material_proposal->>'mode' IS DISTINCT FROM 'reference_repair_only' OR material_proposal->>'sourceRevision' IS DISTINCT FROM material_revision::text THEN RAISE EXCEPTION 'REFERENCE_PROPOSAL_STALE'; END IF;
+  material_proposal:=material_proposal->'proposals'->material_index;
+  IF material_index NOT BETWEEN 0 AND 49 OR material_proposal->'requiresApproval' IS DISTINCT FROM 'true'::jsonb
+   OR coalesce(material_proposal->>'line','') !~ '^[0-9]{1,7}$' THEN RAISE EXCEPTION 'REFERENCE_PROPOSAL_INVALID'; END IF;
+  recipe_code:=material_proposal->>'code'; recipe_line:=(material_proposal->>'line')::integer;
+  recipe_before:=material_proposal->>'before'; recipe_after:=material_proposal->>'after';
+  IF recipe_code IS NULL OR recipe_before IS NULL OR recipe_after IS NULL OR recipe_before=recipe_after
+   OR length(recipe_before) NOT BETWEEN 1 AND 200 OR length(recipe_after) NOT BETWEEN 1 AND 200
+   OR artessencia_intelligence_private.material_name_key(recipe_before) IS DISTINCT FROM artessencia_intelligence_private.material_name_key(recipe_after)
+   OR artessencia_intelligence_private.material_name_key(recipe_before)='' THEN RAISE EXCEPTION 'REFERENCE_PROPOSAL_INVALID'; END IF;
+  IF canonical_state.revision IS DISTINCT FROM material_revision THEN RAISE EXCEPTION USING errcode='40001',message='cloud_revision_conflict'; END IF;
+  IF jsonb_typeof(canonical_state.data->'stock') IS DISTINCT FROM 'array' OR jsonb_typeof(canonical_state.data->'productRecipes') IS DISTINCT FROM 'object' THEN RAISE EXCEPTION 'INVALID_STATE'; END IF;
+  PERFORM 1 FROM public.artessencia_v1_products WHERE user_id=actor AND data->>'code'=recipe_code FOR UPDATE;
+  IF (SELECT count(*) FROM public.artessencia_v1_products WHERE user_id=actor AND data->>'code'=recipe_code)<>1
+   OR EXISTS(SELECT 1 FROM public.artessencia_v1_products WHERE user_id=actor AND data->>'code'=recipe_code AND data ? 'recipe' AND data->'recipe' NOT IN ('null'::jsonb,'[]'::jsonb)) THEN RAISE EXCEPTION 'REFERENCE_PRODUCT_AMBIGUOUS'; END IF;
+  recipe_rows:=canonical_state.data->'productRecipes'->recipe_code; recipe_row:=recipe_rows->recipe_line;
+  IF jsonb_typeof(recipe_rows) IS DISTINCT FROM 'array' OR recipe_row->>'item' IS DISTINCT FROM recipe_before
+   OR recipe_row->'qty' IS DISTINCT FROM material_proposal->'quantity' THEN RAISE EXCEPTION 'REFERENCE_ROW_CHANGED'; END IF;
+  SELECT count(*),jsonb_agg(x)->0 INTO recipe_hits,recipe_material FROM jsonb_array_elements(canonical_state.data->'stock') x
+   WHERE artessencia_intelligence_private.material_name_key(x->>'name')=artessencia_intelligence_private.material_name_key(recipe_before);
+  IF recipe_hits<>1 OR recipe_material->>'name' IS DISTINCT FROM recipe_after
+   OR recipe_material->>'unit' IS DISTINCT FROM material_proposal->>'unit' OR recipe_material->'unitCost' IS DISTINCT FROM material_proposal->'unitCost'
+   OR coalesce(recipe_material->>'unit','') NOT IN ('g','ml','cm','un') OR coalesce(recipe_material->>'unitCost','') !~ '^[0-9]+([.][0-9]+)?$'
+   OR coalesce(recipe_row->>'qty','') !~ '^[0-9]+([.][0-9]+)?$' OR coalesce(recipe_row->>'unit','') NOT IN ('',recipe_material->>'unit') THEN RAISE EXCEPTION 'REFERENCE_MATERIAL_CHANGED'; END IF;
+  IF (recipe_material->>'unitCost')::numeric<=0 OR (recipe_row->>'qty')::numeric<=0 THEN RAISE EXCEPTION 'REFERENCE_MATERIAL_CHANGED'; END IF;
+  IF EXISTS(SELECT 1 FROM jsonb_array_elements(recipe_rows) WITH ORDINALITY t(x,pos)
+   WHERE pos<>recipe_line+1 AND artessencia_intelligence_private.material_name_key(x->>'item')=artessencia_intelligence_private.material_name_key(recipe_after)) THEN RAISE EXCEPTION 'REFERENCE_DUPLICATE_LINE'; END IF;
+  UPDATE public.artessencia_v1_state SET data=jsonb_set(canonical_state.data,ARRAY['productRecipes',recipe_code,recipe_line::text,'item'],to_jsonb(recipe_after),false),
+   revision=canonical_state.revision+1,updated_at=task_time,device_id='intelligence-server' WHERE user_id=actor RETURNING * INTO canonical_state;
+  INSERT INTO artessencia_intelligence_private.recipe_reference_receipts VALUES(actor,target,material_index,material_proposal,material_revision,canonical_state.revision,task_time);
+  RETURN jsonb_build_object('status','confirmed','revision',canonical_state.revision,'replayed',false);
  WHEN 'plan_task' THEN
   SELECT m.agent INTO task_agent FROM artessencia_intelligence_private.team_controls c
    JOIN artessencia_intelligence_private.team_missions m USING(user_id)
@@ -244,7 +310,9 @@ BEGIN
    (SELECT channel,coalesce(sum(actual_microeur) FILTER(WHERE status='settled' AND date_trunc('month',now() AT TIME ZONE 'Europe/Lisbon')::date IN(reserved_month,settled_month)),0) settled,
     coalesce(sum(maximum_microeur) FILTER(WHERE status IN ('reserved','unknown','inflight')),0) pending FROM artessencia_intelligence_private.ai_budget_entries GROUP BY channel)t));
   RETURN jsonb_build_object('routines',(SELECT coalesce(jsonb_agg(jsonb_build_object('agent',r.agent,'cadence',r.cadence,'enabled',r.enabled,'instruction',r.instruction)),'[]') FROM artessencia_intelligence_private.team_routines r WHERE r.user_id=actor),
-   'documents',(SELECT coalesce(jsonb_agg(to_jsonb(d)),'[]') FROM (SELECT r.mission_id,m.agent,r.outcome->>'reasoning' AS content,r.outcome->'report'->'tasks' AS tasks,r.outcome->'report'->'physicalCount' AS physical_count,r.tool_receipts FROM artessencia_intelligence_private.team_runs r JOIN artessencia_intelligence_private.team_missions m USING(user_id,mission_id) WHERE r.user_id=actor AND r.status='review_ready' ORDER BY r.ended_at DESC LIMIT 50)d),
+   'documents',(SELECT coalesce(jsonb_agg(to_jsonb(d)),'[]') FROM (SELECT r.mission_id,m.agent,r.outcome->>'reasoning' AS content,r.outcome->'report'->'tasks' AS tasks,r.outcome->'report'->'physicalCount' AS physical_count,r.outcome->'report'->'referenceRepairs' AS reference_repairs,r.tool_receipts,
+    (SELECT coalesce(jsonb_agg(jsonb_build_object('index',z.line_index,'name',z.material->>'name','revision',z.committed_revision)),'[]') FROM artessencia_intelligence_private.material_creation_receipts z WHERE z.user_id=r.user_id AND z.mission_id=r.mission_id) AS material_receipts,
+    (SELECT coalesce(jsonb_agg(jsonb_build_object('index',z.proposal_index,'revision',z.committed_revision)),'[]') FROM artessencia_intelligence_private.recipe_reference_receipts z WHERE z.user_id=r.user_id AND z.mission_id=r.mission_id) AS reference_receipts FROM artessencia_intelligence_private.team_runs r JOIN artessencia_intelligence_private.team_missions m USING(user_id,mission_id) WHERE r.user_id=actor AND r.status='review_ready' ORDER BY r.ended_at DESC LIMIT 50)d),
    'controls',controls,'missions',missions,'events',events,'memory',memory,'budget',expenses);
  ELSE RAISE EXCEPTION 'UNKNOWN_COMMAND';
  END CASE;

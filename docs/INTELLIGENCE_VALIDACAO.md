@@ -52,3 +52,7 @@ A proposta de material novo exige confirmação do proprietário e custo unitár
 ## Isolamento de autenticação e faturação
 
 Os quatro endpoints usam a mesma autenticação de proprietário do projeto configurado em INTELLIGENCE_SUPABASE_URL; os assistentes legados também verificam a identidade do executor antes de reservar despesa. As fotografias dos assistentes de descrição e publicações só são aceites no bucket público artessencia-shop do projeto configurado. O fornecedor pago só pode ser composto num deployment VERCEL_ENV=production ligado ao projeto de produção autorizado, além dos restantes bloqueios de faturação. Nos ensaios, o transporte e o fornecedor são injetados; ainda não existe um modo de ensaio alojado ativado. Nenhuma variável ou recurso Cloud foi alterado por este commit.
+
+## Normalização de referências nas fichas técnicas (candidata)
+
+A auditoria de Stock propõe referências sem correspondência exata com um único candidato por normalização de acentos, maiúsculas e espaços. Mostra código, linha, nomes, quantidade, unidade e custo unitário. A ação explícita do proprietário revalida a revisão canónica, produto, ausência de receita legada, custo, unidade e inexistência de linha duplicada. Corrige apenas item da ficha e guarda recibo idempotente. Não renomeia o material nem consolida saldos. O custo calculado de uma ficha anteriormente incompleta pode mudar. Testar em Cloud isolada e confirmar sincronização antes da publicação.

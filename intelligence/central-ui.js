@@ -43,7 +43,7 @@ function init(){
    if(ticket!==generation||!unlockedNow())return;
    const data=await rpc('read',{});
    if(ticket!==generation||!unlockedNow())return;
-   state=data;notice.textContent=action==='create_material'?'Material confirmado na Cloud. Recebe e valida os dados da Cloud antes de alterar o stock.':action==='plan_task'?(receipt.status==='archived'?'A tarefa já foi arquivada.':'Tarefa confirmada no Planeamento.'):'';
+   state=data;notice.textContent=action==='repair_recipe_reference'?'Referência confirmada na ficha técnica. Recebe e valida a Cloud antes de editar.':action==='create_material'?'Material confirmado na Cloud. Recebe e valida os dados da Cloud antes de alterar o stock.':action==='plan_task'?(receipt.status==='archived'?'A tarefa já foi arquivada.':'Tarefa confirmada no Planeamento.'):'';
    if(action==='plan_task')document.dispatchEvent(new CustomEvent('ae-task-refresh'));render();
   }catch{if(ticket===generation){state=null;content.replaceChildren();notice.textContent=action==='read'?'Central Cloud indisponível. Verifica a sessão e a instalação do serviço.':'Resultado por confirmar. Atualiza a central antes de repetir a operação.';}}
   finally{if(ticket===generation){busy=false;content.inert=false;}}
@@ -105,6 +105,19 @@ function init(){
   }else if(area==='Documentos produzidos'){
    if(!state.documents.length)line('Sem documentos concluídos.');
    for(const d of state.documents){line(labels[d.agent]+' · '+d.mission_id);line(d.content);
+    const repair=d.reference_repairs;
+    if(d.agent==='stock'&&repair?.mode==='reference_repair_only'&&Array.isArray(repair.proposals)&&repair.proposals.length){
+     content.append(el('h4','Normalização de referências nas fichas técnicas'));
+     line('Liga referências sem correspondência ao material existente. Não altera nomes no stock, saldos ou histórico. O custo calculado da ficha poderá mudar.');
+     repair.proposals.forEach((p,index)=>{
+      line(p.code+' · linha '+(p.line+1)+' · '+p.before+' → '+p.after+' · '+p.quantity+' '+p.unit+' · custo unitário '+p.unitCost+' €');
+      const receipt=(d.reference_receipts||[]).find(r=>r.index===index);
+      if(receipt)line('Referência corrigida · revisão '+receipt.revision);
+      else content.append(btn('Confirmar correção da referência',()=>{
+       if(window.confirm('Corrigir '+p.before+' para '+p.after+' na ficha '+p.code+'? Mantém quantidade e movimentos. Confirma a unidade e o custo apresentado.'))load('repair_recipe_reference',{mission:d.mission_id,index,sourceRevision:repair.sourceRevision,confirmed:true});
+      }));
+     });
+    }
     const count=d.physical_count;
     if(d.agent==='stock'&&count?.mode==='physical_count_proposal_only'&&Array.isArray(count.proposals)){
      const status={new_material_review:'Material novo — rever criação',name_review:'Nome diferente — confirmar identidade',ambiguous:'Possível duplicado — rever',unit_or_balance_review:'Unidade ou saldo por validar',balance_review:'Diferença de saldo — rever',invalid:'Linha inválida'};

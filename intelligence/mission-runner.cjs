@@ -30,6 +30,13 @@ function createMissionRunner(options){
    if(report.status!=='review')throw Error('Análise bloqueada.');
    const count=m.agent==='stock'&&['inventory_audit','stock_organization_plan'].includes(m.kind)?require('./stock-input.cjs').countPlan(s.attachment,s.payload.stock,core):null;
    if(count)report.result={...report.result,physicalCount:{...count,sourceRevision:s.sourceRevision}};
+   if(m.agent==='stock'&&m.kind==='inventory_audit'&&Array.isArray(report.result.issues)){
+    const proposals=report.result.issues.filter(i=>i.kind==='referencia_nao_encontrada'&&i.candidates.length===1).slice(0,50).map(i=>{
+     const c=i.candidates[0],row=s.payload.productRecipes[i.code][i.line],material=s.payload.stock[c.index];
+     return {code:i.code,line:i.line,before:i.name,after:c.name,quantity:row.qty,unit:c.unit,unitCost:material.unitCost,requiresApproval:true};
+    });
+    report.result={...report.result,referenceRepairs:{mode:'reference_repair_only',sourceRevision:s.sourceRevision,proposals}};
+   }
    const context=JSON.stringify({professionalMemory:l.memory||[],departmentFacts:s.facts||{},sourceRevision:s.sourceRevision,evidenceIds:s.evidenceIds,report:report.result});
    if(!text(context,24000))throw Error('Contexto excede limite; dividir missão.');
    await current(m);
