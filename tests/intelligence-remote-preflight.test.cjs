@@ -7,9 +7,10 @@ const model='gpt-5.4-mini-2026-03-17';
 test('preflight verifies real transports without Responses, missions, ledger or secret output',async()=>{
  const calls=[];const result=await preflight(config,host,async(url,o)=>{
   calls.push([url,o]);assert.equal(o.redirect,'error');
-  return {ok:true,json:async()=>url.includes('/auth/')?{user:{id:config.serviceId},access_token:'private-token-fixture'}:{id:model,object:'model'}};
+  return {ok:true,headers:{get:()=> 'private-organization-fixture'},json:async()=>url.includes('/auth/')?{user:{id:config.serviceId},access_token:'private-token-fixture'}:{id:model,object:'model'}};
  });
  assert.equal(result.status,'preflight_passed');assert.equal(result.paidRequest,false);
+ assert.equal(result.organizationFingerprint,require('node:crypto').createHash('sha256').update('private-organization-fixture').digest('hex')); 
  assert.equal(calls.length,2);assert.equal(calls[0][1].method,'POST');assert.equal(calls[1][1].method,'GET');
  assert.equal(calls[0][0],'https://thqhyetvxledlgjdtmzp.supabase.co/auth/v1/token?grant_type=password');
  assert.equal(calls[1][0],'https://api.openai.com/v1/models/'+model);

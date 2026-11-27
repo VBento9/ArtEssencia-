@@ -22,7 +22,13 @@ module.exports=async function preflight(config,host=process.env,request=fetch){
   const response=await request('https://api.openai.com/v1/models/'+model,{method:'GET',redirect:'error',signal:AbortSignal.timeout(10000),
    headers:{Authorization:'Bearer '+config.apiKey}});
   if(!response.ok)result.modelHttpStatus=response.status;
-  else{const metadata=await response.json();result.modelAccess=metadata.id===model&&metadata.object==='model';}
+  else{
+   const metadata=await response.json();result.modelAccess=metadata.id===model&&metadata.object==='model';
+   const organization=response.headers?.get('openai-organization');
+   // Compare account scope without publishing an organization name or identifier.
+   result.organizationFingerprint=typeof organization==='string'&&organization.length>0&&organization.length<300
+    ? require('node:crypto').createHash('sha256').update(organization).digest('hex'):null;
+  }
  }catch{result.modelNetworkFailure=true;}
  if(result.serviceAuthentication&&result.modelAccess)result.status='preflight_passed';
  return result;
