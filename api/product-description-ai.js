@@ -1,7 +1,8 @@
 /* ArtEssencia — análise de fotografias para descrições públicas de produtos.
  * Pedido iniciado pelo proprietário; nunca publica nem grava dados.
  */
-const OPENAI_URL='https://api.openai.com/v1/responses';
+import legacyAi from '../intelligence/legacy-ai.cjs';
+import { randomUUID } from 'node:crypto';
 const SUPABASE_URL='https://ihtsonqnnlrxvorfrarl.supabase.co';
 const SUPABASE_KEY='sb_publishable_bBAzr698eotgn-QCq0kKWQ_szVceK5x';
 const PHOTO_PATH='/storage/v1/object/public/artessencia-shop/';
@@ -95,8 +96,6 @@ export default async function handler(req,res){
   if(JSON.stringify(req.body||{}).length>16000)throw new Error('Pedido demasiado extenso.');
   data=inputs(req.body||{});
  }catch(e){return json(res,400,{ok:false,error:clean(e.message,180)})}
- const key=process.env.OPENAI_API_KEY;
- if(!key)return json(res,503,{ok:false,error:'Serviço de IA não configurado.'});
  const instructions=[
   'És o assistente de descrições públicas da ArtEssencia, uma marca artesanal portuguesa.',
   'Escreve em português europeu, de modo específico, natural e adequado ao produto. Evita frases genéricas, repetidas, exageros e promessas comerciais.',
@@ -121,23 +120,14 @@ export default async function handler(req,res){
   ...data.images.map(url=>({type:'input_image',image_url:url}))
  ];
  try{
-  const response=await fetch(OPENAI_URL,{
-   method:'POST',
-   headers:{Authorization:'Bearer '+key,'Content-Type':'application/json'},
-   body:JSON.stringify({
-    model:process.env.OPENAI_PRODUCT_DESCRIPTION_MODEL||process.env.OPENAI_SOCIAL_MODEL||'gpt-5.5',
+  const answer=await legacyAi.generate('legacy_description',{
     instructions,
     input:[{role:'user',content}],
     store:false,
     text:{format:{type:'json_schema',name:'artessencia_photo_description',strict:true,schema:PROPOSAL_SCHEMA}},
     max_output_tokens:1800
-   })
-  });
-  const answer=await response.json().catch(()=>({}));
-  if(!response.ok){
-   console.error('product description AI upstream',response.status,clean(answer?.error?.type,80));
-   return json(res,502,{ok:false,error:'Não foi possível analisar as fotografias.'});
-  }
+   }, randomUUID()).catch(()=>null);
+  if(!answer)return json(res,503,{ok:false,error:'IA indisponível. Verifica o controlo financeiro.'});
   if(answer?.status!=='completed'){
    console.error('product description AI incomplete',clean(answer?.status,40),clean(answer?.incomplete_details?.reason,80));
    return json(res,502,{ok:false,error:'A análise não ficou concluída. Tenta novamente.'});

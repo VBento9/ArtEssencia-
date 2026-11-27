@@ -22,7 +22,7 @@ function initCloudClient(){return {auth:{getUser:async()=>({data:{user:cloudUser
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  let browser;
  try{
-  browser=await chromium.launch({headless:true});
+  browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_EXECUTABLE});
   const context=await browser.newContext({viewport:{width:390,height:844}});
   const origin='http://127.0.0.1:'+server.address().port;
   await context.route('**/*',r=>r.request().url().startsWith(origin+'/')?r.continue():r.abort());

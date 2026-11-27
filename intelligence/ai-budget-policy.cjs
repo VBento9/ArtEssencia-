@@ -25,14 +25,14 @@ function createBudgetPolicy(){
  // Pricing supplied exclusively by a verified server-side allowlist; no provider rates hardcoded.
  // Unit prices are rounded-up EUR micro-units per million tokens, before tax; FX is already included.
  function estimate(p){
-  if(!p||p.verified!==true||p.current!==true||p.toolsEnabled!==false||!key(p.model)||!integer(p.maxInputTokens)||!integer(p.maxOutputTokens)||p.maxInputTokens===0||p.maxOutputTokens===0||!integer(p.inputRate)||!integer(p.outputRate)||p.outputRate===0||!integer(p.grossBps)||p.grossBps<10000||p.grossBps>30000)throw Error('Preço ou limites não verificados.');
+  if(!p||p.verified!==true||p.current!==true||p.toolsEnabled!==false||!(typeof p.model==='string'&&/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,99}$/.test(p.model))||!integer(p.maxInputTokens)||!integer(p.maxOutputTokens)||p.maxInputTokens===0||p.maxOutputTokens===0||!integer(p.inputRate)||p.inputRate===0||!integer(p.outputRate)||p.outputRate===0||!integer(p.grossBps)||p.grossBps<10000||p.grossBps>30000)throw Error('Preço ou limites não verificados.');
   const cost=(BigInt(p.maxInputTokens)*BigInt(p.inputRate)+BigInt(p.maxOutputTokens)*BigInt(p.outputRate))*BigInt(p.grossBps);
   const gross=(cost+9999999999n)/10000000000n; // tokens / million, multiplier / 10000, round up
   if(gross>BigInt(stop)||gross===0n)throw Error('Custo máximo inválido.');
   return Number(gross);
  }
  function reserve(s,r){
-  validate(s);if(s.blocked||r?.releaseEnabled!==true||r.authorized!==true||!key(r.id)||!channels.includes(r.channel)||!month(r.month))throw Error('Consumo bloqueado.');
+  validate(s);if(s.blocked||s.entries.some(e=>e.status==='unknown')||r?.releaseEnabled!==true||r.authorized!==true||!key(r.id)||!channels.includes(r.channel)||!month(r.month))throw Error('Consumo bloqueado.');
   const maximum=estimate(r.pricing),u=usage(s,r.month);
   if(s.entries.some(e=>e.id===r.id))throw Error('Pedido repetido.');
   if(maximum>u.remaining)throw Error('Limite preventivo atingido.');

@@ -1,37 +1,68 @@
 'use strict';
-const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
-const assert=require('node:assert/strict'),http=require('node:http'),fs=require('node:fs'),path=require('node:path');
-const root=path.resolve(__dirname,'..','intelligence');
-const fixture='<!doctype html><html lang="pt"><meta charset="utf-8"><div id="authGateV1880" class="hidden"></div><div id="lockScreen" class="hidden"></div><main id="dashboard"><div class="dashboard-hero">Dashboard</div></main><script>let unlocked=true;</script><script src="/intelligence/central-ui.js"></script></html>';
-(async()=>{
- const server=http.createServer((req,res)=>{
-  if(req.url==='/'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});return res.end(fixture);}
-  const name=req.url?.split('/').pop();if(req.url==='/intelligence/'+name&&['central-ui.js','control-core.js'].includes(name)){res.writeHead(200,{'Content-Type':'application/javascript; charset=utf-8'});return res.end(fs.readFileSync(path.join(root,name)));}
-  res.writeHead(404);res.end();
- });
- await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));let browser;
- try{
-  browser=await chromium.launch({headless:true});const context=await browser.newContext({viewport:{width:390,height:844}});const origin='http://127.0.0.1:'+server.address().port;
-  await context.route('**/*',r=>r.request().url().startsWith(origin+'/')?r.continue():r.abort());
-  const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(origin);
-  const panel=page.locator('#aeIntelligenceCentral');await panel.getByRole('button',{name:'Abrir central de agentes'}).click();
-  const master=panel.getByLabel('Ativar simulação da equipa');await master.waitFor();assert.equal(await master.isChecked(),false);
-  assert.equal(await panel.getByLabel('Modo de Stock',{exact:true}).isDisabled(),true);
-  assert.equal(await panel.locator('select[aria-label^="Modo de "]').count(),9);
-  await master.check();await panel.getByLabel('Modo de Stock',{exact:true}).selectOption('manual');
-  await panel.getByLabel('Agente destinatário').selectOption('stock');
-  await panel.getByLabel('Tipo de missão').selectOption('inventory_audit');
-  await panel.getByLabel('Instruções da missão').fill('Inventário de teste.');
-  await panel.getByRole('button',{name:'Preparar missão local'}).click();
-  await panel.getByText('Preparada — não enviada, não executada',{exact:true}).waitFor();
-  await panel.getByLabel('Modo de Stock',{exact:true}).selectOption('off');
-  await panel.getByText('Cancelada',{exact:true}).waitFor();
-  await page.evaluate(()=>{unlocked=false;document.getElementById('lockScreen').classList.remove('hidden')});
-  await panel.getByRole('button',{name:'Abrir central de agentes'}).waitFor();
-  assert.equal(await panel.getByText('Inventário de teste.',{exact:true}).count(),0);
-  await page.evaluate(()=>{unlocked=true;document.getElementById('lockScreen').classList.add('hidden')});
-  await panel.getByRole('button',{name:'Abrir central de agentes'}).click();
-  await master.waitFor();assert.equal(await master.isChecked(),false);assert.deepEqual(errors,[]);
-  console.log('PASS: central preview, nine agents, controls, local mission, revocation, lock cleanup');
- }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}
-})().catch(e=>{console.error(e);process.exitCode=1});
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const http = require('node:http');
+const {chromium} = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const dependencyRoot = require('node:path').dirname(require.resolve(process.env.PLAYWRIGHT_MODULE || 'playwright'));
+const {PGlite} = require(process.env.PGLITE_MODULE || require.resolve('@electric-sql/pglite',{paths:[dependencyRoot]}));
+
+async function run() {
+  const db = new PGlite();
+  const owner = '00000000-0000-0000-0000-000000000001';
+  await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE SCHEMA auth;
+    CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$SELECT '${owner}'::uuid$$;
+    CREATE FUNCTION public.artessencia_is_owner_v1() RETURNS boolean LANGUAGE sql AS $$SELECT true$$;`);
+  for (const name of ['team-draft','ai-budget-draft','run-draft','owner-console']) {
+    await db.exec(fs.readFileSync('sql/intelligence-'+name+'-v1.sql','utf8'));
+  }
+  await db.exec('SET ROLE authenticated');
+  const html = `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><div id="authGateV1880" class="hidden"></div><div id="lockScreen" class="hidden"></div><main id="dashboard"><div class="dashboard-hero"></div></main>
+    <script>let unlocked=true;const cloudClient={rpc:async(name,args)=>(await fetch('/rpc',{method:'POST',body:JSON.stringify(args)})).json()};</script><script src="/central.js"></script>`;
+  const server = http.createServer(async (req,res)=>{
+    if(req.url==='/'){res.setHeader('content-type','text/html;charset=utf-8');return res.end(html);}
+    if(req.url==='/central.js'){res.setHeader('content-type','application/javascript');return res.end(fs.readFileSync('intelligence/central-ui.js'));}
+    if(req.url!=='/rpc'||req.method!=='POST'){res.writeHead(404);return res.end();}
+    try {
+      const chunks=[];for await(const chunk of req)chunks.push(chunk);
+      const {p_action,p_args}=JSON.parse(Buffer.concat(chunks));
+      const result=await db.query('select public.artessencia_intelligence_console_v1($1,$2) as data',[p_action,p_args]);
+      res.end(JSON.stringify(result.rows[0]));
+    } catch {res.end(JSON.stringify({error:true}));}
+  });
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  let browser;
+  try {
+    browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_EXECUTABLE});
+    const origin='http://127.0.0.1:'+server.address().port;
+    for(const width of [390,820,1440]){
+      const page=await browser.newPage({viewport:{width,height:900}});
+      const errors=[];page.on('pageerror',e=>errors.push(e.message));
+      await page.goto(origin);
+      await page.getByRole('button',{name:'Abrir central de agentes'}).click();
+      await page.getByRole('button',{name:'Enviar missão'}).waitFor();
+      const nav=page.getByLabel('Área de trabalho');assert.equal(await nav.locator('option').count(),14);
+      if(width===390){
+        await nav.selectOption('Funcionários');
+        await page.getByRole('button',{name:'Ligar equipa'}).click();
+        await page.getByRole('button',{name:'Desligar equipa'}).waitFor();
+        await page.getByLabel('Modo de Stock',{exact:true}).selectOption('manual');
+        await page.waitForFunction(()=>!document.querySelector('#aeIntelligenceCentral [inert]'));
+        await nav.selectOption('Comunicação');
+        await page.getByLabel('Funcionário',{exact:true}).selectOption('stock');
+        await page.getByLabel('Instrução',{exact:true}).fill('Inventário de teste');
+        await page.getByRole('button',{name:'Enviar missão'}).click();
+        await page.getByText('Inventário de teste · A aguardar aprovação').waitFor();
+      }
+      await nav.selectOption('Missões');await page.getByText('Inventário de teste',{exact:true}).waitFor();
+      if(width===820){await page.getByRole('button',{name:'Aprovar',exact:true}).click();await page.getByText('Aprovada',{exact:true}).waitFor();}
+      if(width===1440){await page.getByRole('button',{name:'Cancelar missão'}).click();await page.getByText('Cancelada',{exact:true}).waitFor();}
+      assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+      await page.evaluate(()=>{unlocked=false;document.getElementById('lockScreen').classList.remove('hidden');});
+      await page.getByRole('button',{name:'Abrir central de agentes'}).waitFor();
+      assert.equal(await page.getByText('Inventário de teste',{exact:true}).count(),0);
+      assert.deepEqual(errors,[]);await page.close();
+    }
+    console.log('PASS: owner console with SQL, nine modes, persistent mission, approval, cancellation, lock and three device sizes');
+  } finally {await browser?.close();await new Promise(resolve=>server.close(resolve));await db.close();}
+}
+run().catch(error=>{console.error(error);process.exitCode=1;});

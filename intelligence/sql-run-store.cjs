@@ -17,7 +17,7 @@ function createRunStore(options){
   const active=r.active===true&&r.leaseId===m.leaseId&&r.requestId===m.requestId&&r.agent===m.agent&&r.kind===m.kind&&Number(r.controlRevision)===m.controlRevision;
   const actions=active?await loadGrants({owner,missionId:m.id,leaseId:m.leaseId,agent:m.agent,kind:m.kind}):[];
   if(!Array.isArray(actions))throw Error('Grants indisponíveis.');
-  return {verified:true,owner,missionId:m.id,agent:r.agent,kind:r.kind,leaseId:r.leaseId,controlRevision:Number(r.controlRevision),active,settings:r.settings,actions};
+  return {verified:true,owner,missionId:m.id,agent:r.agent,kind:r.kind,leaseId:r.leaseId,controlRevision:Number(r.controlRevision),active,settings:r.settings,memory:active?r.memory:[],actions};
  }
  async function finish(q){check(q.mission);if(q.status!=='review_ready')throw Error('Estado inválido.');return call('SELECT artessencia_intelligence_private.team_finish_run($1,$2,$3,$4) AS r',[q.mission.id,q.mission.leaseId,'review_ready',JSON.stringify({summary:q.summary,report:q.report,reasoning:q.reasoning,chargedMicroeur:q.chargedMicroeur,receipts:q.receipts})]);}
  async function interrupt(q){check(q.mission);return call('SELECT artessencia_intelligence_private.team_finish_run($1,$2,$3,$4) AS r',[q.mission.id,q.mission.leaseId,'blocked',JSON.stringify({stage:q.stage,chargedMicroeur:q.chargedMicroeur,receipts:q.receipts})]);}

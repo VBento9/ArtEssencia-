@@ -2,7 +2,7 @@ function createContextRouter(options){
  'use strict';
  const {owner,stockContext,loadVerified,releaseEnabled=false}=options||{};
  const scopes={director:{daily_priority_plan:['today','reports','existingTasks','limit']},producao:{production_plan:['today','orders','stock']},financeiro:{finance_review:['today','targetMarginPct','products','orders']},comercial:{commercial_review:['today','quotes','requests']},marketing:{marketing_plan:['today','campaigns','posts']},catalogo:{catalog_review:['products']},inovacao:{innovation_review:['ideas']},auditoria:{technical_review:['checks','syncVerified']}};
- const fields={orders:['id','status','alreadyProduced','complete','delivery','needs','total','paid','paymentVerified'],stock:['name','unit','qty'],products:['code','costComplete','totalCost','netSalePrice','catalogEligible','hasVerifiedImage','description','family','optionsComplete','priceVerified','published'],quotes:['id','status','followupDate','contactAllowed'],requests:['id','status','receivedDate'],campaigns:['id','status','startDate','endDate','assetsReady'],posts:['id','status','publishDate'],ideas:['id','status','feasibilityVerified','safetyTestsComplete','costVerified','distinctiveFeaturesVerified'],checks:['id','status','severity']};
+ const fields={orders:['id','status','alreadyProduced','complete','needs','total','paid','paymentComplete','delivery'],stock:['name','unit','qty'],products:['code','costComplete','totalCost','netSalePrice','catalogEligible','hasVerifiedImage','description','family','optionsComplete','priceVerified','published'],quotes:['id','status','followupDate','contactAllowed'],requests:['id','status','receivedDate'],campaigns:['id','status','startDate','endDate','assetsReady'],posts:['id','status','publishDate'],ideas:['id','status','feasibilityVerified','safetyTestsComplete','costVerified','distinctiveFeaturesVerified'],checks:['id','status','severity']};
  const scalar=v=>v===null||typeof v==='boolean'||typeof v==='number'&&Number.isFinite(v)||typeof v==='string'&&v.length<=1000;
  const uuid=v=>typeof v==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
  const obj=v=>v&&typeof v==='object'&&!Array.isArray(v);
@@ -34,7 +34,7 @@ function createContextRouter(options){
     if(!Array.isArray(v)||v.length>5000)throw Error('Lista inválida.');
     let allowed=fields[k];
     if(k==='products')allowed=q.agent==='financeiro'?['code','costComplete','totalCost','netSalePrice']:['code','catalogEligible','hasVerifiedImage','description','family','optionsComplete','priceVerified','published'];
-    if(k==='orders')allowed=['id','status','total','paid','paymentVerified'];
+    if(k==='orders')allowed=['id','status','total','paid','paymentComplete','delivery'];
     payload[k]=v.map(row=>projectRow(row,allowed));
    }else{if(!scalar(v))throw Error('Campo inválido.');payload[k]=v;}
   }

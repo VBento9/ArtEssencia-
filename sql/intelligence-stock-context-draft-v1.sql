@@ -22,10 +22,10 @@ BEGIN
  SELECT jsonb_build_object('stock',coalesce(jsonb_agg(jsonb_build_object('name',x->'name','unit',x->'unit','qty',x->'qty','unitCost',x->'unitCost','category',x->'category') ORDER BY ord),'[]'::jsonb))
  INTO payload FROM jsonb_array_elements(s.data->'stock') WITH ORDINALITY AS a(x,ord);
  IF m.kind='inventory_audit' THEN
-  IF jsonb_typeof(s.data->'products') IS DISTINCT FROM 'array' OR jsonb_typeof(s.data->'productRecipes') IS DISTINCT FROM 'object' THEN RAISE EXCEPTION 'SOURCE_UNAVAILABLE'; END IF;
-  IF jsonb_array_length(s.data->'products')>5000 OR (SELECT count(*) FROM jsonb_object_keys(s.data->'productRecipes'))>5000 THEN RAISE EXCEPTION 'SOURCE_TOO_LARGE'; END IF;
-  IF EXISTS(SELECT 1 FROM jsonb_array_elements(s.data->'products') x WHERE jsonb_typeof(x) IS DISTINCT FROM 'object') THEN RAISE EXCEPTION 'SOURCE_INVALID'; END IF;
-  payload:=payload||jsonb_build_object('products',(SELECT coalesce(jsonb_agg(jsonb_build_object('code',x->'code') ORDER BY ord),'[]'::jsonb) FROM jsonb_array_elements(s.data->'products') WITH ORDINALITY AS a(x,ord)),
+  IF jsonb_typeof(s.data->'productRecipes') IS DISTINCT FROM 'object' THEN RAISE EXCEPTION 'SOURCE_UNAVAILABLE'; END IF;
+  IF (SELECT count(*) FROM public.artessencia_v1_products WHERE user_id=actor)>5000 OR (SELECT count(*) FROM jsonb_object_keys(s.data->'productRecipes'))>5000 THEN RAISE EXCEPTION 'SOURCE_TOO_LARGE'; END IF;
+  IF EXISTS(SELECT 1 FROM public.artessencia_v1_products p WHERE p.user_id=actor AND jsonb_typeof(p.data->'code') IS DISTINCT FROM 'string') THEN RAISE EXCEPTION 'SOURCE_INVALID'; END IF;
+  payload:=payload||jsonb_build_object('products',(SELECT coalesce(jsonb_agg(jsonb_build_object('code',p.data->'code') ORDER BY p.id),'[]'::jsonb) FROM public.artessencia_v1_products p WHERE p.user_id=actor),
    'productRecipes',(SELECT coalesce(jsonb_object_agg(k,CASE WHEN jsonb_typeof(v)='array' THEN
    (SELECT coalesce(jsonb_agg(jsonb_build_object('item',x->'item','qty',x->'qty','unit',x->'unit') ORDER BY ord),'[]'::jsonb) FROM jsonb_array_elements(v) WITH ORDINALITY AS a(x,ord)) ELSE 'null'::jsonb END),'{}'::jsonb)
    FROM jsonb_each(s.data->'productRecipes') AS a(k,v)));

@@ -11,6 +11,7 @@ function checks(b){
  reject(()=>b.reserve(a,r),'duplicate');const t=b.reserve(b.reserve(a,{...r,id:'b',channel:'legacy_social'}),{...r,id:'c',channel:'stock'});
  reject(()=>b.reserve(t,{...r,id:'d'}),'shared cap');
  const u=b.markUnknown(a,'a');check(b.usage(u,'2026-12').reserved===6150000,'unknown carried');
+ reject(()=>b.reserve(u,{...r,id:'small'}),'unknown blocks all spending');
  reject(()=>b.reconcile(u,{id:'a',actual:0}),'no evidence');
  const v=b.reconcile(u,{id:'a',actual:2000000,trustedEvidence:true});check(b.usage(v,r.month).committed===2000000&&b.usage(v,r.month).reserved===0,'settled');
  reject(()=>b.reconcile(v,{id:'a',actual:0,trustedEvidence:true}),'repeat');

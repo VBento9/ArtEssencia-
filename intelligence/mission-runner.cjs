@@ -28,7 +28,7 @@ function createMissionRunner(options){
    const mission=core.createMission(settings,{id:m.id,agent:m.agent,kind:m.kind,trigger:'manual'});
    const report=core.runMission(settings,mission,s.payload,engines.audit,engines.renamePlanner,engines.organizer,engines.operational,engines.business);
    if(report.status!=='review')throw Error('Análise bloqueada.');
-   const context=JSON.stringify({sourceRevision:s.sourceRevision,evidenceIds:s.evidenceIds,report:report.result});
+   const context=JSON.stringify({professionalMemory:l.memory||[],sourceRevision:s.sourceRevision,evidenceIds:s.evidenceIds,report:report.result});
    if(!text(context,24000))throw Error('Contexto excede limite; dividir missão.');
    await current(m);
    stage='reasoning';

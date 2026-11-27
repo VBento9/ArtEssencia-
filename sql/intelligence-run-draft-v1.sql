@@ -31,6 +31,8 @@ BEGIN
  'leaseId',r.lease_id,'requestId',r.request_id,'runStatus',r.status,'outcome',r.outcome,
  'active',coalesce(c.enabled AND c.revision=m.control_revision AND c.modes->>m.agent<>'off'
  AND m.status='working' AND r.status='working' AND r.claimed_revision=m.revision,false),
+ 'memory',CASE WHEN c.enabled AND c.revision=m.control_revision AND c.modes->>m.agent<>'off' AND m.status='working' AND r.status='working'
+ THEN (SELECT coalesce(jsonb_agg(to_jsonb(k)),'[]') FROM (SELECT kind,summary,evidence_id FROM artessencia_intelligence_private.team_memory mem WHERE mem.user_id=actor AND mem.agent=m.agent AND mem.revoked_at IS NULL AND mem.expires_at>clock_timestamp() ORDER BY mem.created_at DESC,mem.memory_id LIMIT 6)k) ELSE '[]'::jsonb END,
  'settings',jsonb_build_object('enabled',coalesce(c.enabled,false),'agents',c.modes,'paidEnabled',false,'monthlyCeilingCents',3000))
  INTO result FROM artessencia_intelligence_private.team_missions m
  LEFT JOIN artessencia_intelligence_private.team_runs r ON r.user_id=m.user_id AND r.mission_id=m.mission_id
