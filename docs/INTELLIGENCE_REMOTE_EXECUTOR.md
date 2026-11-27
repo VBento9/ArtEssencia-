@@ -52,3 +52,7 @@ Cloud principal `ihtsonqnnlrxvorfrarl`: esquema privado Intelligence ainda inexi
 - GitHub Actions: execução remota `46047157913`, job validate concluído com sucesso, incluindo PostgreSQL 17; job execute corretamente ignorado na execução automática.
 
 Os testes remotos de contrato usam fornecedor simulado. Não constituem prova de execução paga pelo GitHub nem de acesso à Cloud pelo segredo remoto. Esta distinção é obrigatória antes da entrada em produção.
+
+## Verificação remota sem geração de IA
+
+A operação manual `preflight` usa os dois segredos separados apenas no runner. Faz uma autenticação Supabase da conta de serviço no projeto isolado e um GET de metadados do modelo OpenAI. Não usa `/responses`, não cria missões, não reserva orçamento nem ativa o circuito pago. Os logs devolvem apenas booleanos, código HTTP e modelo fixo; não incluem tokens, chaves, palavras-passe ou corpos de erro. A chave existir no GitHub não prova que é válida nem que pertence ao projeto dedicado. Um GET de modelo aprovado também não comprova saldo ou reconciliação financeira. A autorização Cloud e a aprovação financeira mantêm-se independentes.
