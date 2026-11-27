@@ -600,7 +600,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  const autoTasks=await db.query("SELECT data FROM public.artessencia_cloud_records WHERE entity='operational_tasks_v1' AND data->>'title' IN ('Rever prioridades','Conferir inventário')");
  assert.equal(autoTasks.rows.length,2);
  console.log('PASS: structured AI decisions create a delegated mission and two canonical planner records with transactional receipts');
- const simUrl='https://abcdefghijklmnopqrst.supabase.co';
+ const simUrl=require('../intelligence/worker-transport.cjs').isolatedProjectUrl;
  const simEnv={VERCEL_ENV:'preview',INTELLIGENCE_EXECUTION_MODE:'simulation',INTELLIGENCE_SUPABASE_URL:simUrl,INTELLIGENCE_ISOLATED_PROJECT_URL:simUrl};
  await db.exec('SET ROLE artessencia_intelligence_worker');
  await assert.rejects(runtimeFactory.composeHosted({env:simEnv,call:workerRpc}),/Base de ensaio/);
