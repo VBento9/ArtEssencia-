@@ -36,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: a19851e96523c4ee812345235bfd3cd4d466529c
+          ref: 6c1512573d21560263c1e5da326483148c1750a2
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
@@ -64,14 +64,17 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: a19851e96523c4ee812345235bfd3cd4d466529c
+          ref: 6c1512573d21560263c1e5da326483148c1750a2
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22'
       - name: Execute one already approved isolated mission; never retry
         env:
-          INTELLIGENCE_REMOTE_CONFIG: ${{ secrets.INTELLIGENCE_REMOTE_CONFIG }}
+          INTELLIGENCE_REMOTE_PUBLIC_CONFIG: ${{ vars.INTELLIGENCE_REMOTE_PUBLIC_CONFIG }}
+          INTELLIGENCE_SERVICE_PASSWORD: ${{ secrets.INTELLIGENCE_SERVICE_PASSWORD }}
+          INTELLIGENCE_OPENAI_API_KEY: ${{ secrets.INTELLIGENCE_OPENAI_API_KEY }}
+          INTELLIGENCE_FINANCIAL_APPROVAL: ${{ vars.INTELLIGENCE_FINANCIAL_APPROVAL }}
           INTELLIGENCE_MISSION_ID: ${{ inputs.mission_id }}
           INTELLIGENCE_MISSION_REVISION: ${{ inputs.revision }}
         run: node scripts/run_intelligence_remote_trial.cjs
