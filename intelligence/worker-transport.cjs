@@ -5,7 +5,49 @@ function projectUrl(env=process.env){
   if(typeof value!=='string'||!/^https:\/\/[a-z0-9]{20}\.supabase\.co$/.test(value))throw Error('Projeto do executor inválido.');
   return value;
 }
+// The account-based transport is restricted to the isolated preview. Supabase
+// issues short-lived access tokens; a fresh login is used when the cached
+// session is near expiry. Never retry an ambiguous mutation.
+function serviceTransport(env,request=fetch){
+  const base=projectUrl(env),key=env.INTELLIGENCE_SUPABASE_PUBLISHABLE_KEY;
+  const serviceId=env.INTELLIGENCE_SERVICE_USER_ID;
+  if(env.VERCEL_ENV!=='preview'||env.INTELLIGENCE_EXECUTION_MODE!=='simulation'||
+     base!==env.INTELLIGENCE_ISOLATED_PROJECT_URL||
+     base==='https://ihtsonqnnlrxvorfrarl.supabase.co'||base==='https://oosumysibccagrfbomab.supabase.co'||
+     env.INTELLIGENCE_PAID_RELEASE==='approved'||env.OPENAI_API_KEY||env.INTELLIGENCE_OPENAI_API_KEY||env.INTELLIGENCE_FINANCIAL_APPROVAL||
+     env.INTELLIGENCE_WORKER_JWT||!key||!env.INTELLIGENCE_SERVICE_EMAIL||!env.INTELLIGENCE_SERVICE_PASSWORD||
+     !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(serviceId||''))throw Error('Conta de serviço isolada indisponível.');
+  let session=null,pending=null;
+  async function login(){
+    if(session&&session.exp*1000>Date.now()+60000)return session.token;
+    if(!pending){
+      pending=(async()=>{
+        const res=await request(base+'/auth/v1/token?grant_type=password',{method:'POST',redirect:'error',signal:AbortSignal.timeout(10000),
+          headers:{apikey:key,'Content-Type':'application/json'},
+          body:JSON.stringify({email:env.INTELLIGENCE_SERVICE_EMAIL,password:env.INTELLIGENCE_SERVICE_PASSWORD})});
+        if(!res.ok)throw Error('Autenticação da conta de serviço indisponível.');
+        const data=await res.json();
+        const token=data.access_token;
+        if(typeof token!=='string'||token.length>8192||data.user?.id!==serviceId)throw Error('Identidade de serviço inválida.');
+        const claims=JSON.parse(Buffer.from(token.split('.')[1]||'','base64url').toString());
+        if(claims.role!=='authenticated'||claims.sub!==serviceId||!claims.session_id||!Number.isFinite(claims.exp)||claims.exp*1000<=Date.now()+60000)throw Error('Sessão de serviço inválida.');
+        session={token,exp:claims.exp};return token;
+      })().finally(()=>{pending=null;});
+    }
+    return pending;
+  }
+  return async(action,args={})=>{
+    const token=await login();
+    const res=await request(base+'/rest/v1/rpc/artessencia_intelligence_service_v1',{method:'POST',redirect:'error',signal:AbortSignal.timeout(10000),
+      headers:{apikey:key,Authorization:'Bearer '+token,'Content-Type':'application/json'},
+      body:JSON.stringify({p_action:action,p_args:args})});
+    if(!res.ok){if(res.status===401||res.status===403)session=null;throw Error('Comando da conta de serviço por confirmar.');}
+    return res.json();
+  };
+}
 function transport(env=process.env){
+  if(env.INTELLIGENCE_WORKER_AUTH==='service_account')return serviceTransport(env);
+  if(env.INTELLIGENCE_WORKER_AUTH&&env.INTELLIGENCE_WORKER_AUTH!=='jwt')throw Error('Método de autenticação inválido.');
   if(!env.INTELLIGENCE_WORKER_JWT||!env.INTELLIGENCE_SUPABASE_PUBLISHABLE_KEY)throw Error('Executor indisponível.');
   const endpoint=projectUrl(env)+'/rest/v1/rpc/artessencia_intelligence_worker_v1';
   const claims=JSON.parse(Buffer.from(env.INTELLIGENCE_WORKER_JWT.split('.')[1]||'','base64url').toString());
@@ -49,4 +91,4 @@ function publicProductPhoto(value,env=process.env){
     return url.href;
   }catch{return '';}
 }
-module.exports={transport,chargeLedger,projectUrl,ownerSession,publicProductPhoto};
+module.exports={transport,serviceTransport,chargeLedger,projectUrl,ownerSession,publicProductPhoto};
