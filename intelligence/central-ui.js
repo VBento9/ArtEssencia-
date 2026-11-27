@@ -23,9 +23,10 @@ function init(){
  notice.setAttribute('role','status');
  const nav=select(sections.map(s=>[s,s]),'Área de trabalho');
  const toggle=btn('Abrir central de agentes',()=>{if(opened)close();else if(unlockedNow()){opened=true;body.hidden=false;toggle.textContent='Fechar central';load();}});
- root.append(el('h3','ArtEssencia Intelligence'),toggle,body);body.append(nav,btn('Atualizar',()=>load()),notice,content);body.hidden=true;anchor.after(root);
- let opened=false,generation=0,state=null,busy=false,recipient='director',stockPreview=null;
- function close(){stockPreview=null;generation++;recipient='director';opened=false;busy=false;state=null;content.replaceChildren();body.hidden=true;notice.textContent='';toggle.textContent='Abrir central de agentes';}
+ const teamButton=btn('Funcionários digitais',()=>{if(!unlockedNow())return;nav.value='Funcionários';missionDraft=null;if(opened){if(!busy)load();return;}opened=true;body.hidden=false;toggle.textContent='Fechar central';load();});
+ root.append(el('h3','ArtEssencia Intelligence'),toggle,teamButton,body);body.append(nav,btn('Atualizar',()=>load()),notice,content);body.hidden=true;anchor.after(root);
+ let opened=false,generation=0,state=null,busy=false,recipient='director',stockPreview=null,missionDraft=null;
+ function close(){stockPreview=null;missionDraft=null;generation++;recipient='director';opened=false;busy=false;state=null;content.replaceChildren();body.hidden=true;notice.textContent='';toggle.textContent='Abrir central de agentes';}
  async function rpc(action,args){
   if(!unlockedNow()||typeof cloudClient==='undefined'||!cloudClient?.rpc)throw Error();
   const result=await cloudClient.rpc('artessencia_intelligence_console_v1',{p_action:action,p_args:args});
@@ -50,10 +51,15 @@ function init(){
    else stockPreview=null;
    state=data;notice.textContent=action==='professional_lesson'?'Lição aprovada e guardada na memória profissional. Não concede permissões.':action==='professional_assess'?'Avaliação profissional registada. Não altera permissões.':action==='commercial_approve'?'Proposta interna guardada em Orçamentos. Nenhum contacto enviado.':['stock_change_apply','stock_change_revert'].includes(action)?'Operação confirmada na Cloud. Recebe e valida os dados antes de editar.':action==='repair_recipe_reference'?'Referência confirmada na ficha técnica. Recebe e valida a Cloud antes de editar.':action==='create_material'?'Material confirmado na Cloud. Recebe e valida os dados da Cloud antes de alterar o stock.':action==='plan_task'?(receipt.status==='archived'?'A tarefa já foi arquivada.':'Tarefa confirmada no Planeamento.'):'';
    if(action==='plan_task')document.dispatchEvent(new CustomEvent('ae-task-refresh'));render();
-  }catch{if(ticket===generation){state=null;content.replaceChildren();notice.textContent=action==='read'?'Central Cloud indisponível. Verifica a sessão e a instalação do serviço.':'Resultado por confirmar. Atualiza a central antes de repetir a operação.';}}
+  }catch{if(ticket===generation){state=null;content.replaceChildren();notice.textContent=action==='read'?'Central Cloud indisponível. Verifica a sessão e a instalação do serviço.':'Resultado por confirmar. Atualiza a central antes de repetir a operação.';if(action==='read'&&nav.value==='Funcionários'&&unlockedNow())offlineTeam();}}
   finally{if(ticket===generation){busy=false;content.inert=false;}}
  }
  nav.onchange=()=>{if(state&&unlockedNow())render();};
+ function offlineTeam(){
+  content.replaceChildren();
+  content.append(el('p','Equipa prevista nesta versão. Estado operacional por confirmar na Cloud; nenhuma missão pode ser enviada.'));
+  for(const person of Object.values(teamDirectory.agents)){const card=el('article');card.append(el('strong',person.name+' · '+person.role),el('p',person.firstMission));content.append(card);}
+ }
  function render(){
   content.replaceChildren();
   const area=nav.value, controls=state.controls||{revision:0,enabled:false,modes:allOff()};
@@ -100,6 +106,8 @@ function init(){
       if(pending)details.append(el('p',pending+' avaliação(ões) com formação complementar por aprovar. Consulta Documentos produzidos.'));
       if(evaluations.some(e=>e.lesson_status==='active'))details.append(el('p','Lições aprovadas disponíveis na Memória profissional.'));
      }
+     const prepare=btn('Preparar primeiro trabalho',()=>{if(!unlockedNow()||busy)return;recipient=key;missionDraft={agent:key,kind:kinds[key][0],instruction:person.firstMission};nav.value='Comunicação';render();});
+     prepare.disabled=!controls.enabled||controls.modes[key]==='off';details.append(prepare);
      content.append(details);
     }
    }
@@ -127,7 +135,7 @@ function init(){
    });
    const history=el('div');
    function refresh(){file.value='';upload.hidden=agent.value!=='stock';kind.replaceChildren();for(const k of kinds[agent.value])kind.add(new Option(names[k],k));send.disabled=!controls.enabled||controls.modes[agent.value]==='off';history.replaceChildren();for(const m of list.filter(m=>m.agent===agent.value)){history.append(el('p',m.instruction+' · '+statusNames[m.status]));if(m.result_summary)history.append(el('p',m.result_summary));}}
-   agent.disabled=area===sections[0];agent.value=agent.disabled?'director':recipient;agent.onchange=()=>{recipient=agent.value;refresh();};refresh();kind.onchange=()=>{upload.hidden=agent.value!=='stock'||!['inventory_audit','stock_organization_plan'].includes(kind.value);if(upload.hidden)file.value='';};content.append(agent,kind,instruction,upload,send,history);
+   agent.disabled=area===sections[0];agent.value=agent.disabled?'director':recipient;agent.onchange=()=>{missionDraft=null;instruction.value='';recipient=agent.value;refresh();};refresh();if(missionDraft&&missionDraft.agent===agent.value){kind.value=missionDraft.kind;instruction.value=missionDraft.instruction;missionDraft=null;}kind.onchange=()=>{upload.hidden=agent.value!=='stock'||!['inventory_audit','stock_organization_plan'].includes(kind.value);if(upload.hidden)file.value='';};content.append(agent,kind,instruction,upload,send,history);
   }else if(area==='Documentos produzidos'){
    if(!state.documents.length)line('Sem documentos concluídos.');
    for(const d of state.documents){line(displayAgent(d.agent)+' · '+d.mission_id);line(d.content);
