@@ -1,0 +1,15 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const path=require('node:path');
+const ctx={window:{}};
+vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../intelligence/meeting-room.js'),'utf8'),ctx);
+const pick=ctx.window.ArtEssenciaMeetingRoom.availableReports;
+const id=n=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0');
+const row=(n,agent)=>({missionId:id(n),agent,title:'Relatório',updatedAt:'2026-11-28T10:00:00Z'});
+const room={participants:['director','stock']};
+const ids=xs=>Array.from(xs,x=>x.missionId);
+test('only unique reports of invited employees',()=>assert.deepEqual(ids(pick([row(1,'director'),row(1,'director'),row(2,'stock'),row(3,'marketing'),{...row(4,'stock'),missionId:'invalid'}],room,[],[])),[id(1),id(2)]));
+test('excludes previously reused and completed meeting interventions',()=>assert.deepEqual(ids(pick([row(1,'director'),row(2,'stock'),row(3,'stock')],room,[{author:'reused',evidence_mission:id(1)}],[{status:'review_ready',missionId:id(2)}])),[id(3)]));
+test('no participants or reports is safe',()=>assert.deepEqual(ids(pick([row(1,'director')],null,[],[])),[]));
