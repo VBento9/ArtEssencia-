@@ -1,12 +1,11 @@
 'use strict';
 const fs=require('node:fs'),assert=require('node:assert/strict');
-const {PGlite}=require(process.env.PGLITE_MODULE||'@electric-sql/pglite');
 const owner='00000000-0000-0000-0000-000000000001',other='00000000-0000-0000-0000-000000000002';
 let number=10;const id=()=> '00000000-0000-0000-0000-'+String(number++).padStart(12,'0');
 const ns='artessencia_intelligence_private';
 async function fixture({postgres=false}={}){
  let db;
- if(!postgres)db=new PGlite();
+ if(!postgres){const {PGlite}=require(process.env.PGLITE_MODULE||'@electric-sql/pglite');db=new PGlite();}
  else{
   const {Client}=require(process.env.PG_MODULE||'pg');
   const options={host:'127.0.0.1',port:55433,user:'postgres',password:'intelligence_fixture',connectionTimeoutMillis:5000};
