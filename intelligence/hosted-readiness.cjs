@@ -26,7 +26,11 @@ function availability(env,worker,now=new Date()){
 async function checkedAvailability(env,worker,transport,owner,now=new Date()){
  const config=availability(env,worker,now);
  if(config.status!=='configured')return config;
- try{if(await transport(env)('identity')!==owner)return {status:'unavailable'};return config;}
- catch{return {status:'unavailable'};}
+ // Never let an expected disabled-binding response poison the execution
+ // transport cached for this process. Probes get an independent environment.
+ let call,confirmed=false;
+ try{call=transport({...env});confirmed=await call('identity')===owner;}catch{}
+ try{await call?.close?.();}catch{confirmed=false;}
+ return confirmed?config:{status:'unavailable'};
 }
 module.exports={availability,checkedAvailability};

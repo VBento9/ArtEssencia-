@@ -39,7 +39,7 @@ function serviceTransport(env,request=fetch){
      !env.INTELLIGENCE_OPENAI_API_KEY&&!env.INTELLIGENCE_FINANCIAL_APPROVAL&&!env.INTELLIGENCE_WORKER_JWT;
   if((!simulation&&!isolatedTrialEnvironment(env)&&!productionServiceEnvironment(env))||!key||!env.INTELLIGENCE_SERVICE_EMAIL||!env.INTELLIGENCE_SERVICE_PASSWORD||
      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(serviceId||''))throw Error('Conta de serviço isolada indisponível.');
-  let session=null,pending=null,blocked=false;
+  let session=null,pending=null,blocked=false,cleanupToken=null;
   function invalidate(){
     blocked=true;
     session=null;
@@ -62,7 +62,7 @@ function serviceTransport(env,request=fetch){
           const claims=JSON.parse(Buffer.from(token.split('.')[1]||'','base64url').toString());
           if(claims.role!=='authenticated'||claims.sub!==serviceId||typeof claims.session_id!=='string'||!claims.session_id||
              (previous&&claims.session_id!==previous.id)||!Number.isFinite(claims.exp)||claims.exp*1000<=Date.now()+60000||blocked)throw Error('Sessão de serviço inválida.');
-          session={token,refreshToken,exp:claims.exp,id:claims.session_id};
+          session={token,refreshToken,exp:claims.exp,id:claims.session_id};cleanupToken=token;
           return token;
         }catch{
           // Refresh may have rotated a token before a response was lost.
@@ -74,7 +74,7 @@ function serviceTransport(env,request=fetch){
     }
     return pending;
   }
-  return async(action,args={})=>{
+  const call=async(action,args={})=>{
     const token=await login();
     if(blocked)throw Error('Sessão do executor bloqueada; intervenção necessária.');
     const res=await request(base+'/rest/v1/rpc/artessencia_intelligence_service_v1',{method:'POST',redirect:'error',signal:AbortSignal.timeout(10000),
@@ -83,6 +83,16 @@ function serviceTransport(env,request=fetch){
     if(!res.ok){if(res.status===401||res.status===403)invalidate();throw Error('Comando da conta de serviço por confirmar.');}
     return res.json();
   };
+  // Readiness probes own a temporary session. Close only that session, even
+  // when a disabled binding has invalidated its RPC transport.
+  call.close=async()=>{
+    const token=cleanupToken;cleanupToken=null;invalidate();
+    if(!token)return;
+    const res=await request(base+'/auth/v1/logout?scope=local',{method:'POST',redirect:'error',signal:AbortSignal.timeout(10000),
+      headers:{apikey:key,Authorization:'Bearer '+token,'Content-Type':'application/json'},body:'{}'});
+    if(!res.ok)throw Error('Encerramento da sessão do executor por confirmar.');
+  };
+  return call;
 }
 // Cache only the real process environment; injected test environments remain independent.
 // Cold instances authenticate independently; the database binding and session check

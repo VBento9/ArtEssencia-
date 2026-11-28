@@ -92,3 +92,13 @@ test('production account transport requires dedicated service release and projec
   for(const patch of [{INTELLIGENCE_SERVICE_RELEASE:''},{VERCEL_ENV:'preview'},{INTELLIGENCE_EXECUTION_MODE:'trial'},{INTELLIGENCE_WORKER_JWT:'conflicting'},{INTELLIGENCE_EXECUTION_HOST:'local'}])assert.throws(()=>serviceTransport({...production,...patch},f.request));
  }finally{Date.now=original;}
 });
+
+test('temporary readiness transport closes only its local session after a denied binding',async()=>withFixture(async(f,call)=>{
+ f.setRpc(body=>f.reply(body.p_action?403:204,{}));
+ await assert.rejects(call('identity'));
+ await call.close();await call.close();
+ const logout=f.calls.filter(x=>x.url.endsWith('/auth/v1/logout?scope=local'));
+ assert.equal(logout.length,1);assert.match(logout[0].auth,/^Bearer fixture\./);
+ await assert.rejects(call('identity'),/bloqueada/);
+ assert.equal(f.calls.filter(c=>c.url.includes('grant_type=password')).length,1);
+}));
