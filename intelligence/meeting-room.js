@@ -4,7 +4,16 @@
 const e=(tag,text)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;return node;};
 const money=n=>((Number(n)||0)/1000000).toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:6})+' €';
 const time=t=>t?new Date(t).toLocaleString('pt-PT'):'Data indisponível';
-function render({container,data,controls,people,perform,choose,openMissions,missionActions}){
+function availableReports(reports,current,messages,turns){
+ const existing=new Set([...(messages||[]).filter(m=>m.author==='reused').map(m=>m.evidence_mission),...(turns||[]).filter(t=>t.status==='review_ready').map(t=>t.missionId)]);
+ const result=new Map();
+ for(const r of reports||[]){
+  if(!r||typeof r.missionId!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(r.missionId)||!current?.participants?.includes(r.agent)||existing.has(r.missionId)||typeof r.title!=='string')continue;
+  if(!result.has(r.missionId))result.set(r.missionId,r);
+ }
+ return [...result.values()].sort((a,b)=>a.agent.localeCompare(b.agent)||String(b.updatedAt||'').localeCompare(String(a.updatedAt||''))||a.missionId.localeCompare(b.missionId));
+}
+function render({container,data,controls,people,perform,choose,openMissions,missionActions,reports=[]}){
  const button=(label,fn,disabled=false)=>{const b=e('button',label);b.type='button';b.className='btn';b.disabled=disabled;b.onclick=fn;return b;};
  const select=(items,label)=>{const s=e('select');s.setAttribute('aria-label',label);for(const [value,text]of items){const o=e('option',text);o.value=value;s.append(o);}return s;};
  const field=(tag,label,value='')=>{const n=e(tag);n.setAttribute('aria-label',label);n.value=value;return n;};
@@ -65,8 +74,13 @@ function render({container,data,controls,people,perform,choose,openMissions,miss
  container.append(question,button('Guardar pergunta',()=>{if(question.value.trim())call('message',{text:question.value.trim()});},current.status==='closed'),button('Consultar missões e aprovações',openMissions));
  if(!controls?.enabled)text('A equipa está desligada. Podes preparar a reunião; as intervenções permanecem indisponíveis.');
  const reuse=e('details');reuse.append(e('summary','Reutilizar relatório existente'));
- const report=field('input','Identificador da missão a reutilizar');report.placeholder='UUID da missão concluída';
- reuse.append(report,button('Associar relatório anterior',()=>{if(/^[0-9a-f-]{36}$/i.test(report.value))call('reuse',{mission:report.value});},current.status==='closed'));container.append(reuse);
+ const eligible=availableReports(reports,current,data.messages,data.turns);
+ const report=select([['','Selecionar relatório'],...eligible.map(r=>[r.missionId,name(r.agent)+' · '+r.title+' · '+time(r.updatedAt)])],'Relatório concluído');
+ const attach=button('Associar relatório anterior',()=>{if(eligible.some(r=>r.missionId===report.value))call('reuse',{mission:report.value});},true);
+ report.disabled=current.status==='closed'||!eligible.length;
+ report.onchange=()=>{attach.disabled=current.status==='closed'||!eligible.some(r=>r.missionId===report.value);};
+ reuse.append(report,attach,e('small',eligible.length?'Os relatórios já associados nesta vista não são apresentados novamente. A associação não inicia uma chamada paga.':'Sem novos relatórios de participantes disponíveis nesta consulta.'));
+ container.append(reuse);
  const minutes=e('section');minutes.className='ae-meeting-minutes';minutes.append(e('h4','Atas e decisões'));
  minutes.append(button('Preparar ata dos relatórios concluídos',()=>call('minutes'),current.status==='closed'),e('p','A compilação identifica os relatórios efetivamente concluídos. Não é apresentada como uma síntese de Leonor por IA.'));
  const latest=(data.minutes||[])[0];
@@ -92,5 +106,5 @@ function render({container,data,controls,people,perform,choose,openMissions,miss
  }
  container.append(minutes);
 }
-window.ArtEssenciaMeetingRoom={render};
+window.ArtEssenciaMeetingRoom={render,availableReports};
 })();

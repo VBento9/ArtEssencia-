@@ -225,6 +225,7 @@ function init(){
   }else if(area==='Sala de Reuniões'){
    if(state.meetingsData&&window.ArtEssenciaMeetingRoom){
     window.ArtEssenciaMeetingRoom.render({container:content,data:state.meetingsData,controls,people:teamDirectory.agents,
+     reports:list.filter(m=>m.status==='review_ready'&&state.documents.some(d=>d.mission_id===m.mission_id&&d.agent===m.agent&&typeof d.content==='string'&&d.content.trim())).map(m=>({missionId:m.mission_id,agent:m.agent,title:names[m.kind]||'Relatório concluído',updatedAt:m.updated_at})),
      perform:(action,args)=>load('meeting_'+action,{...args,operation:crypto.randomUUID()}),
      missionActions:meetingMissionActions,choose:id=>{meetingSelection=id;load();},openMissions:()=>{nav.value='Missões';render();}});return;
    }
