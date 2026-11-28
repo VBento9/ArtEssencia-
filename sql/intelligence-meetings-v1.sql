@@ -138,6 +138,12 @@ BEGIN
    VALUES(actor,mid,trim(p_args->>'title'),trim(p_args->>'agenda'),people,nullif(p_args->>'scheduledAt','')::timestamptz) RETURNING * INTO m;
   result:=jsonb_build_object('meetingId',mid,'revision',m.revision,'status',m.status);
  ELSE
+  -- Serialize changes to spending permission with reserve/claim using the canonical budget lock.
+  -- A claim already committed before suspension is not retroactively cancelled.
+  IF p_action IN ('budget','pause','resume','close') THEN
+   PERFORM 1 FROM artessencia_intelligence_private.ai_budget_control WHERE singleton FOR UPDATE;
+   IF NOT FOUND THEN RAISE EXCEPTION 'BUDGET_UNAVAILABLE'; END IF;
+  END IF;
   SELECT * INTO m FROM artessencia_intelligence_private.meetings WHERE user_id=actor AND meeting_id=mid FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'MEETING_REQUIRED'; END IF;
   IF m.revision IS DISTINCT FROM (p_args->>'revision')::bigint THEN RAISE EXCEPTION 'MEETING_REVISION_CONFLICT'; END IF;

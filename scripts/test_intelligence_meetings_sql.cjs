@@ -67,7 +67,24 @@ async function run(){
  await assert.rejects(db.query(`SELECT ${ns}.ai_budget_reserve($1,'stock','fixture',100)`,[request]),/MEETING_SPENDING_DISABLED/);
  await login();await action('budget',{confirmed:true,maximumMicroeur:500});
  await db.exec('RESET ROLE');await db.query(`SELECT ${ns}.ai_budget_reserve($1,'stock','fixture',400)`,[request]);
- await login();await action('pause');await db.exec('RESET ROLE');
+ await login();
+ if(db.newConnection){
+  // Owner spending-control commands must contend on the same lock as reservations/claims.
+  const blocker=await db.newConnection();
+  try{
+   await blocker.query('BEGIN');
+   await blocker.query(`SELECT 1 FROM ${ns}.ai_budget_control WHERE singleton FOR UPDATE`);
+   await db.exec("SET lock_timeout='250ms'");
+   for(const [command,args] of [['pause',{}],['budget',{confirmed:true,maximumMicroeur:500}],['close',{}]]){
+    await assert.rejects(action(command,args),/lock timeout/i);
+   }
+  }finally{
+   await db.exec('RESET lock_timeout');
+   await blocker.query('ROLLBACK');await blocker.end();
+  }
+  console.log('PASS: meeting spending controls serialize with the canonical budget lock');
+ }
+ await action('pause');await db.exec('RESET ROLE');
  await assert.rejects(db.query(`SELECT ${ns}.ai_budget_claim($1)`,[request]),/MEETING_SPENDING_DISABLED/);
  await login();await action('resume');await db.exec('RESET ROLE');
  await db.query(`SELECT ${ns}.ai_budget_claim($1)`,[request]);await db.query(`SELECT ${ns}.ai_budget_settle($1,100,'synthetic',false)`,[request]);
