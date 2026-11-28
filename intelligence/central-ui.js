@@ -26,7 +26,7 @@ function init(){
  const toggle=btn('Abrir central de agentes',()=>{if(opened)close();else if(unlockedNow()){opened=true;body.hidden=false;toggle.textContent='Fechar central';load();}});
  const teamButton=btn('Funcionários digitais',()=>{if(!unlockedNow())return;nav.value='Funcionários';missionDraft=null;if(opened){if(!busy)load();return;}opened=true;body.hidden=false;toggle.textContent='Fechar central';load();});
  root.append(el('h3','ArtEssencia Intelligence'),toggle,teamButton,body);body.append(nav,btn('Atualizar',()=>load()),notice,content);body.hidden=true;anchor.append(root);
- let opened=false,generation=0,state=null,busy=false,recipient='director',stockPreview=null,missionDraft=null;
+ let opened=false,generation=0,state=null,busy=false,recipient='director',stockPreview=null,missionDraft=null,meetingSelection=null;
  document.addEventListener('ae-intelligence-navigation',event=>{if(event.detail?.page!=='intelligence'){close();clearCommercial();return;}if(!opened&&unlockedNow())toggle.click();});
  function close(){stockPreview=null;missionDraft=null;generation++;recipient='director';opened=false;busy=false;state=null;content.replaceChildren();body.hidden=true;notice.textContent='';toggle.textContent='Abrir central de agentes';}
  function cloudAllowed(){
@@ -36,7 +36,9 @@ function init(){
  }
  async function rpc(action,args){
   if(!unlockedNow()||!cloudAllowed()||!cloudClient?.rpc)throw Error();
-  const result=action==='audit_retry_status'
+  const result=action.startsWith('meeting_')
+   ?await cloudClient.rpc('artessencia_intelligence_meetings_v1',{p_action:action.slice(8),p_args:args})
+   :action==='audit_retry_status'
    ?await cloudClient.rpc('artessencia_intelligence_audit_retry_status_v1',{})
    :action==='audit_requeue'
     ?await cloudClient.rpc('artessencia_intelligence_requeue_audit_v1',{p_id:args.id,p_revision:args.revision})
@@ -88,10 +90,17 @@ function init(){
    data.auditRetry=retryStatus;
    data.hostedAvailability=await hostedAvailability(ticket);
    if(ticket!==generation||!unlockedNow())return;
+   if(action.startsWith('meeting_')&&receipt?.meetingId)meetingSelection=receipt.meetingId;
+   try{
+    let meetings=await rpc('meeting_read',{meeting:meetingSelection});
+    if(!meetingSelection&&meetings.meetings?.[0]){meetingSelection=meetings.meetings[0].meeting_id;meetings=await rpc('meeting_read',{meeting:meetingSelection});}
+    data.meetingsData={...meetings,selected:meetingSelection};
+   }catch{data.meetingsData=null;}
+   if(ticket!==generation||!unlockedNow())return;
    if(action==='stock_change_preview')stockPreview={mission:args.mission,request:args,result:receipt,operationId:crypto.randomUUID()};
    else stockPreview=null;
-   state=data;notice.textContent=action==='execute'?'Execução aceite na Cloud. Podes fechar a aplicação e consultar o resultado ao regressar. Atualiza a central para acompanhar.':action==='audit_requeue'?'Tentativa anterior arquivada. A missão aguarda nova aprovação. Não foi iniciada nenhuma chamada paga.':action==='professional_lesson'?'Lição aprovada e guardada na memória profissional. Não concede permissões.':action==='professional_assess'?'Avaliação profissional registada. Não altera permissões.':action==='commercial_approve'?'Proposta interna guardada em Orçamentos. Nenhum contacto enviado.':['stock_change_apply','stock_change_revert'].includes(action)?'Operação confirmada na Cloud. Recebe e valida os dados antes de editar.':action==='repair_recipe_reference'?'Referência confirmada na ficha técnica. Recebe e valida a Cloud antes de editar.':action==='create_material'?'Material confirmado na Cloud. Recebe e valida os dados da Cloud antes de alterar o stock.':action==='plan_task'?(receipt.status==='archived'?'A tarefa já foi arquivada.':'Tarefa confirmada no Planeamento.'):'';
-   if(action==='plan_task')document.dispatchEvent(new CustomEvent('ae-task-refresh'));render();
+   state=data;notice.textContent=action.startsWith('meeting_')?'Operação da reunião confirmada na Cloud. Nenhuma execução de IA foi iniciada.':action==='execute'?'Execução aceite na Cloud. Podes fechar a aplicação e consultar o resultado ao regressar. Atualiza a central para acompanhar.':action==='audit_requeue'?'Tentativa anterior arquivada. A missão aguarda nova aprovação. Não foi iniciada nenhuma chamada paga.':action==='professional_lesson'?'Lição aprovada e guardada na memória profissional. Não concede permissões.':action==='professional_assess'?'Avaliação profissional registada. Não altera permissões.':action==='commercial_approve'?'Proposta interna guardada em Orçamentos. Nenhum contacto enviado.':['stock_change_apply','stock_change_revert'].includes(action)?'Operação confirmada na Cloud. Recebe e valida os dados antes de editar.':action==='repair_recipe_reference'?'Referência confirmada na ficha técnica. Recebe e valida a Cloud antes de editar.':action==='create_material'?'Material confirmado na Cloud. Recebe e valida os dados da Cloud antes de alterar o stock.':action==='plan_task'?(receipt.status==='archived'?'A tarefa já foi arquivada.':'Tarefa confirmada no Planeamento.'):'';
+   if(action==='plan_task'||action==='meeting_plan')document.dispatchEvent(new CustomEvent('ae-task-refresh'));render();
   }catch{if(ticket===generation){state=null;content.replaceChildren();notice.textContent=action==='read'?'Central Cloud indisponível. Verifica a sessão e a instalação do serviço.':'Resultado por confirmar. Atualiza a central antes de repetir a operação.';if(action==='read'&&nav.value==='Funcionários'&&unlockedNow())offlineTeam();}}
   finally{if(ticket===generation){busy=false;content.inert=false;}}
  }
@@ -179,6 +188,11 @@ function init(){
     }
    }
   }else if(area==='Sala de Reuniões'){
+   if(state.meetingsData&&window.ArtEssenciaMeetingRoom){
+    window.ArtEssenciaMeetingRoom.render({container:content,data:state.meetingsData,controls,people:teamDirectory.agents,
+     perform:(action,args)=>load('meeting_'+action,{...args,operation:crypto.randomUUID()}),
+     choose:id=>{meetingSelection=id;load();},openMissions:()=>{nav.value='Missões';render();}});return;
+   }
    const prefix='[REUNIÃO EXECUTIVA] ';
    line('Preparação de reuniões e consulta dos relatórios efetivamente disponíveis. Não é uma conversa simultânea entre funcionários.');
    const kind=select([['geral','Reunião geral de gestão'],['direcao','Reunião com a Diretora Geral'],['financeiro','Reunião financeira'],['producao','Reunião de produção'],['comercial','Reunião comercial'],['estrategia','Reunião estratégica']],'Tipo de reunião');

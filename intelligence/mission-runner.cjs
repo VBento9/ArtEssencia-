@@ -23,6 +23,7 @@ function createMissionRunner(options){
   try{
    const l=await current(m);
    const s=await contextSource({owner:m.owner,agent:m.agent,kind:m.kind,missionId:m.id,leaseId:m.leaseId});
+   const capturedAt=new Date().toISOString();
    if(s?.verified!==true||s.owner!==m.owner||s.agent!==m.agent||s.missionId!==m.id||s.leaseId!==m.leaseId||!validRevision(s.sourceRevision)||!s.payload||!Array.isArray(s.evidenceIds)||s.evidenceIds.length>20||!s.evidenceIds.every(x=>typeof x==='string'&&/^[A-Za-z0-9_-]{1,100}$/.test(x)))throw Error('Contexto não verificado.');
    const settings=core.config(l.settings);
    const mission=core.createMission(settings,{id:m.id,agent:m.agent,kind:m.kind,trigger:'manual'});
@@ -81,7 +82,7 @@ function createMissionRunner(options){
     receipts.push({actionId:g.actionId,id:receipt.id,status:receipt.status,tool:g.tool});
    }
    stage='finish';
-   report.result={...report.result,professionalTraining:require('./professional-training.cjs').receipt(m.agent)};
+   report.result={...report.result,provenance:{sourceRevision:s.sourceRevision,evidenceIds:s.evidenceIds,capturedAt},professionalTraining:require('./professional-training.cjs').receipt(m.agent)};
    await current(m);
    const done=await store.finish({mission:m,status:'review_ready',summary:'Análise concluída para revisão. Recibos confirmados: '+receipts.length,report:report.result,reasoning,delegations,chargedMicroeur,receipts});
    if(done?.status!=='review_ready'||done.missionId!==m.id||done.leaseId!==m.leaseId)throw Error('Conclusão não confirmada.');
