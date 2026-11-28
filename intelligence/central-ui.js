@@ -66,6 +66,39 @@ function init(){
   if(![b.monthlyLimitMicroeur,b.settled,b.pending,a.maximumMicroeur].every(x=>Number.isSafeInteger(x)&&x>=0)||a.maximumMicroeur<=0||a.maximumMicroeur>b.monthlyLimitMicroeur-b.settled-b.pending)return null;
   return a.maximumMicroeur;
  }
+ function meetingExecutionOffer(data,m,id){
+  const maximum=executionOffer(data,m),room=data?.meetingsData;
+  const meeting=room?.meetings?.find(x=>x.meeting_id===id);
+  if(maximum===null||room?.selected!==id||meeting?.status!=='open'||meeting.spend_approved!==true||
+     !room.turns?.some(t=>t.missionId===m.mission_id&&t.agent===m.agent&&t.status==='approved'))return null;
+  const cost=room.cost;
+  if(![meeting.max_microeur,cost?.settledMicroeur,cost?.pendingMicroeur].every(x=>Number.isSafeInteger(x)&&x>=0)||
+     maximum>meeting.max_microeur-cost.settledMicroeur-cost.pendingMicroeur)return null;
+  return maximum;
+ }
+ function meetingMissionActions(turn){
+  const room=state.meetingsData,id=room.selected,meeting=room.meetings.find(x=>x.meeting_id===id);
+  const m=state.missions.find(x=>x.mission_id===turn.missionId&&x.agent===turn.agent&&x.status===turn.status);
+  const box=el('div');
+  if(!['pending_review','approved','working'].includes(turn.status))return box;
+  if(!m){box.append(el('p','Revisão da missão indisponível. Atualiza a Central antes de continuar.'));return box;}
+  if(turn.status==='working'){box.append(btn('Atualizar intervenção de '+displayAgent(m.agent),()=>load()));return box;}
+  const active=meeting?.status==='open'&&state.controls?.enabled&&state.controls.modes?.[m.agent]&&state.controls.modes[m.agent]!=='off';
+  if(m.status==='pending_review'){
+   const approve=btn('Aprovar intervenção de '+displayAgent(m.agent),()=>{if(window.confirm('Aprovar esta intervenção? Não inicia uma chamada de IA.'))load('approve',{id:m.mission_id,revision:m.revision});});
+   approve.disabled=!active;box.append(approve);
+  }else{
+   const maximum=meetingExecutionOffer(state,m,id);
+   if(maximum===null)box.append(el('p','Execução indisponível: confirma o estado da reunião, teto, orçamento global e executor alojado.'));
+   else{
+    const amount=(maximum/1000000).toFixed(6).replace('.',',')+' €';
+    const execute=btn('Executar intervenção de '+displayAgent(m.agent),()=>{if(window.confirm('Executar uma vez a intervenção de '+displayAgent(m.agent)+'? Reserva máxima: '+amount+'. Não repetir se o resultado ficar por confirmar.'))load('execute',{missionId:m.mission_id,revision:m.revision,meetingId:id});});
+    box.append(el('p','Reserva máxima desta intervenção: '+amount),execute);
+   }
+  }
+  box.append(btn('Cancelar intervenção de '+displayAgent(m.agent),()=>{if(window.confirm('Cancelar esta missão?'))load('cancel',{id:m.mission_id,revision:m.revision});}));
+  return box;
+ }
  async function load(action='read',args={}){
   if(!opened||busy||!unlockedNow())return;
   const ticket=++generation;busy=true;content.inert=true;notice.textContent='A consultar a Cloud…';
@@ -74,10 +107,10 @@ function init(){
    if(action==='execute'){
     if(!cloudAllowed()||cloudClient.supabaseUrl!=='https://ihtsonqnnlrxvorfrarl.supabase.co')throw Error();
     const m=state?.missions?.find(x=>x.mission_id===args.missionId&&x.revision===args.revision);
-    if(executionOffer(state,m)===null)throw Error();
+    if((args.meetingId?meetingExecutionOffer(state,m,args.meetingId):executionOffer(state,m))===null)throw Error();
     const auth=await cloudClient.auth.getSession();
     if(ticket!==generation||!unlockedNow()||!auth.data?.session?.access_token)throw Error();
-    const response=await fetch('/api/intelligence-worker',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+auth.data.session.access_token},body:JSON.stringify(args),cache:'no-store'});
+    const response=await fetch('/api/intelligence-worker',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+auth.data.session.access_token},body:JSON.stringify({missionId:args.missionId,revision:args.revision}),cache:'no-store'});
     if(!response.ok)throw Error();
    }else if(action!=='read')receipt=await rpc(action,args);
    if(ticket!==generation||!unlockedNow())return;
@@ -191,7 +224,7 @@ function init(){
    if(state.meetingsData&&window.ArtEssenciaMeetingRoom){
     window.ArtEssenciaMeetingRoom.render({container:content,data:state.meetingsData,controls,people:teamDirectory.agents,
      perform:(action,args)=>load('meeting_'+action,{...args,operation:crypto.randomUUID()}),
-     choose:id=>{meetingSelection=id;load();},openMissions:()=>{nav.value='Missões';render();}});return;
+     missionActions:meetingMissionActions,choose:id=>{meetingSelection=id;load();},openMissions:()=>{nav.value='Missões';render();}});return;
    }
    const prefix='[REUNIÃO EXECUTIVA] ';
    line('Preparação de reuniões e consulta dos relatórios efetivamente disponíveis. Não é uma conversa simultânea entre funcionários.');

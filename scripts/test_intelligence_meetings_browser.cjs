@@ -5,12 +5,27 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const {fixture}=require('./test_intelligence_meetings_sql.cjs');
 (async()=>{
  const {db,login}=await fixture();let browser;
- const requests=[];
- const html=`<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/intelligence/central-ui.css"><div id="authGateV1880" class="hidden"></div><div id="lockScreen" class="hidden"></div><button id="open" onclick="document.dispatchEvent(new CustomEvent('ae-intelligence-navigation',{detail:{page:'intelligence'}}))">Abrir Intelligence</button><section id="intelligence" class="screen active"></section><script>let unlocked=true;const cloudClient={supabaseUrl:'https://thqhyetvxledlgjdtmzp.supabase.co',rpc:async(name,args)=>(await fetch('/rpc',{method:'POST',body:JSON.stringify({name,...args})})).json()};</script><script src="/intelligence/meeting-room.js"></script><script src="/intelligence/central-ui.js"></script>`;
+ const requests=[],executions=[];let configured=false;
+ const html=`<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/intelligence/central-ui.css"><div id="authGateV1880" class="hidden"></div><div id="lockScreen" class="hidden"></div><button id="open" onclick="document.dispatchEvent(new CustomEvent('ae-intelligence-navigation',{detail:{page:'intelligence'}}))">Abrir Intelligence</button><section id="intelligence" class="screen active"></section><script>let unlocked=true;const cloudClient={supabaseUrl:'https://ihtsonqnnlrxvorfrarl.supabase.co',auth:{getSession:async()=>({data:{session:{access_token:'synthetic-local-only'}}})},rpc:async(name,args)=>(await fetch('/rpc',{method:'POST',body:JSON.stringify({name,...args})})).json()};</script><script src="/intelligence/meeting-room.js"></script><script src="/intelligence/central-ui.js"></script>`;
  const server=http.createServer(async(req,res)=>{
   if(req.url==='/'){res.setHeader('content-type','text/html;charset=utf-8');return res.end(html);}
   if(['/intelligence/central-ui.js','/intelligence/meeting-room.js','/intelligence/central-ui.css'].includes(req.url)){
    res.setHeader('content-type',req.url.endsWith('.css')?'text/css':'application/javascript');return res.end(fs.readFileSync('.'+req.url));
+  }
+  if(req.url==='/api/intelligence-worker'&&req.method==='POST'){
+   try{
+    const chunks=[];for await(const chunk of req)chunks.push(chunk);const args=JSON.parse(Buffer.concat(chunks));
+    assert.equal(req.headers.authorization,'Bearer synthetic-local-only');
+    res.setHeader('content-type','application/json');
+    if(args.operation==='availability')return res.end(JSON.stringify(configured?{status:'configured',mode:'paid',maximumMicroeur:100}:{status:'disabled'}));
+    assert.equal(configured,true);assert.deepEqual(Object.keys(args).sort(),['missionId','revision']);
+    await db.exec('RESET ROLE');
+    try{
+     const changed=await db.query("UPDATE artessencia_intelligence_private.team_missions SET status='working',revision=revision+1 WHERE mission_id=$1 AND revision=$2 AND status='approved' RETURNING mission_id",[args.missionId,args.revision]);
+     assert.equal(changed.rows.length,1);executions.push(args);
+    }finally{await login();}
+    res.writeHead(202);return res.end(JSON.stringify({status:'accepted'}));
+   }catch(error){res.writeHead(503);return res.end(JSON.stringify({error:String(error)}));}
   }
   if(req.url!=='/rpc'||req.method!=='POST'){res.writeHead(404);return res.end();}
   try{
@@ -60,6 +75,36 @@ const {fixture}=require('./test_intelligence_meetings_sql.cjs');
    await page.getByRole('button',{name:'Solicitar intervenção de Tomás',exact:true}).click();
    await page.getByText('Sem intervenção concluída. Não foi inventada uma resposta.',{exact:true}).waitFor();
    const mission=(await admin('SELECT mission_id FROM artessencia_intelligence_private.meeting_turns WHERE meeting_id=$1 AND message_id=$2',[meeting,message])).rows[0].mission_id;
+   await page.getByRole('button',{name:'Aprovar intervenção de Tomás',exact:true}).click();
+   await page.getByText(/Execução indisponível: confirma o estado da reunião/).waitFor();
+   assert.equal((await admin("SELECT status FROM artessencia_intelligence_private.team_missions WHERE mission_id=$1",[mission])).rows[0].status,'approved');
+   assert.equal(executions.length,[390,820,1440].indexOf(width));
+   configured=true;
+   await admin("UPDATE artessencia_intelligence_private.ai_budget_control SET frozen=false,release_enabled=true,monthly_limit_microeur=1000000");
+   await page.getByRole('button',{name:'Atualizar',exact:true}).click();
+   await page.getByText(/Execução indisponível: confirma o estado da reunião/).waitFor();
+   assert.equal(await page.getByRole('button',{name:'Executar intervenção de Tomás',exact:true}).count(),0);
+   await page.getByText('Controlo financeiro da reunião',{exact:true}).click();
+   await page.getByRole('spinbutton',{name:'Teto da reunião em euros',exact:true}).fill('0.00005');
+   await page.getByRole('button',{name:'Aprovar teto da reunião',exact:true}).click();
+   await page.getByText(/Execução indisponível: confirma o estado da reunião/).waitFor();
+   assert.equal(await page.getByRole('button',{name:'Executar intervenção de Tomás',exact:true}).count(),0);
+   await page.getByText('Controlo financeiro da reunião',{exact:true}).click();
+   await page.getByRole('spinbutton',{name:'Teto da reunião em euros',exact:true}).fill('0.001');
+   await page.getByRole('button',{name:'Aprovar teto da reunião',exact:true}).click();
+   const execute=page.getByRole('button',{name:'Executar intervenção de Tomás',exact:true});
+   await execute.waitFor();
+   await page.getByRole('button',{name:'Suspender reunião',exact:true}).click();
+   await page.getByRole('button',{name:'Retomar reunião',exact:true}).waitFor();
+   assert.equal(await execute.count(),0);
+   await page.getByRole('button',{name:'Retomar reunião',exact:true}).click();
+   await execute.click();
+   await page.getByRole('button',{name:'Atualizar intervenção de Tomás',exact:true}).waitFor();
+   assert.equal(executions.at(-1).missionId,mission);
+   assert.equal(executions.length,[390,820,1440].indexOf(width)+1);
+   assert.equal(await execute.count(),0);
+   configured=false;
+   await admin("UPDATE artessencia_intelligence_private.ai_budget_control SET frozen=true,release_enabled=false,monthly_limit_microeur=0");
    await admin("UPDATE artessencia_intelligence_private.team_missions SET status='review_ready' WHERE mission_id=$1",[mission]);
    await admin("INSERT INTO artessencia_intelligence_private.team_runs(user_id,mission_id,lease_id,request_id,claimed_revision,status,outcome,ended_at) VALUES('00000000-0000-0000-0000-000000000001',$1,gen_random_uuid(),gen_random_uuid(),1,'review_ready',$2,now())",[mission,JSON.stringify({reasoning:'[SINTÉTICO] Conferir a cera antes de confirmar o inventário.',report:{provenance:{sourceRevision:7,evidenceIds:['synthetic-stock'],capturedAt:'2026-11-28T00:00:00Z'}}})]);
    await page.getByRole('button',{name:'Atualizar',exact:true}).click();
@@ -81,7 +126,7 @@ const {fixture}=require('./test_intelligence_meetings_sql.cjs');
    await page.getByText(query,{exact:true}).waitFor();await page.getByText(/Planeamento: pendente/).waitFor();
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+5),false);
    await admin("UPDATE artessencia_intelligence_private.team_controls SET enabled=false,modes=jsonb_set(modes,'{stock}','\"off\"')");
-   console.log('PASS: meeting browser fixture at '+width+'px, persisted question and original Planning task');
+   console.log('PASS: meeting browser fixture at '+width+'px, inline approval, synthetic hosted execution, cap and pause guards, persisted question and original Planning task');
    await page.close();
   }
   assert.ok(requests.some(r=>r.name==='artessencia_intelligence_meetings_v1'&&r.p_action==='plan'));
