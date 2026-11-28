@@ -4,7 +4,7 @@
 const e=(tag,text)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;return node;};
 const money=n=>((Number(n)||0)/1000000).toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:6})+' €';
 const time=t=>t?new Date(t).toLocaleString('pt-PT'):'Data indisponível';
-function render({container,data,controls,people,perform,choose,openMissions}){
+function render({container,data,controls,people,perform,choose,openMissions,missionActions}){
  const button=(label,fn,disabled=false)=>{const b=e('button',label);b.type='button';b.className='btn';b.disabled=disabled;b.onclick=fn;return b;};
  const select=(items,label)=>{const s=e('select');s.setAttribute('aria-label',label);for(const [value,text]of items){const o=e('option',text);o.value=value;s.append(o);}return s;};
  const field=(tag,label,value='')=>{const n=e(tag);n.setAttribute('aria-label',label);n.value=value;return n;};
@@ -51,6 +51,7 @@ function render({container,data,controls,people,perform,choose,openMissions}){
    if(turn.status==='review_ready'&&turn.content){reply.append(e('p',turn.content),e('small','Concluída em '+time(turn.completedAt)+' · custo liquidado '+(turn.costMicroeur===null?'por reconciliar':money(turn.costMicroeur))));
     const p=turn.provenance;reply.append(e('p',p?'Informação consultada: revisão '+p.sourceRevision+' · captura '+time(p.capturedAt)+' · fontes: '+(p.evidenceIds||[]).join(', '):'Proveniência detalhada indisponível neste relatório. Não assumir uma análise atual.'));
    }else reply.append(e('p','Sem intervenção concluída. Não foi inventada uma resposta.'));
+   if(typeof missionActions==='function')reply.append(missionActions(turn));
    article.append(reply);
   }
   if(message.author==='owner'&&current.status==='open'){
