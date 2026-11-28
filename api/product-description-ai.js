@@ -1,10 +1,9 @@
 /* ArtEssencia — análise de fotografias para descrições públicas de produtos.
  * Pedido iniciado pelo proprietário; nunca publica nem grava dados.
  */
-const OPENAI_URL='https://api.openai.com/v1/responses';
-const SUPABASE_URL='https://ihtsonqnnlrxvorfrarl.supabase.co';
-const SUPABASE_KEY='sb_publishable_bBAzr698eotgn-QCq0kKWQ_szVceK5x';
-const PHOTO_PATH='/storage/v1/object/public/artessencia-shop/';
+import legacyAi from '../intelligence/legacy-ai.cjs';
+import { randomUUID } from 'node:crypto';
+import workerTransport from '../intelligence/worker-transport.cjs';
 const STYLES=new Set(['detail','theme','atmosphere','gift','short']);
 const PROPOSAL_SCHEMA={
  type:'object',additionalProperties:false,
@@ -25,28 +24,8 @@ function clean(value,max=160){return String(value??'').trim().slice(0,max)}
 function list(values,max=6,length=80){
  return (Array.isArray(values)?values:[]).slice(0,max).map(x=>clean(x,length)).filter(Boolean);
 }
-async function authorized(req){
- const token=clean(String(req.headers.authorization||'').replace(/^Bearer\s+/i,''),4096);
- if(!token)return false;
- const headers={apikey:SUPABASE_KEY,Authorization:'Bearer '+token};
- const user=await fetch(SUPABASE_URL+'/auth/v1/user',{headers});
- if(!user.ok||!(await user.json().catch(()=>null))?.id)return false;
- const owner=await fetch(SUPABASE_URL+'/rest/v1/rpc/artessencia_is_owner_v1',{
-  method:'POST',headers:{...headers,'Content-Type':'application/json'},body:'{}'
- });
- return owner.ok&&(await owner.json().catch(()=>false))===true;
-}
-function acceptedPhoto(value){
- const raw=clean(value,2500);
- if(!raw||raw.length>2500)return '';
- try{
-  const url=new URL(raw);
-  if(url.protocol!=='https:'||url.hostname!=='ihtsonqnnlrxvorfrarl.supabase.co')return '';
-  if(url.username||url.password||url.search||url.hash)return '';
-  if(!url.pathname.startsWith(PHOTO_PATH)||url.pathname.length<=PHOTO_PATH.length)return '';
-  return url.href;
- }catch{return ''}
-}
+
+function acceptedPhoto(value){return workerTransport.publicProductPhoto(value);}
 function outputText(data){
  if(typeof data?.output_text==='string'&&data.output_text.trim())return data.output_text;
  for(const row of data?.output||[])for(const part of row?.content||[]){
@@ -87,16 +66,15 @@ function resultProposal(source){
 export default async function handler(req,res){
  if(req.method!=='POST'){res.setHeader('Allow','POST');return json(res,405,{ok:false,error:'Método não permitido.'})}
  if(Number(req.headers['content-length']||0)>16000)return json(res,413,{ok:false,error:'Pedido demasiado extenso.'});
- let data;
+ let data,ownerId;
  try{
-  if(!(await authorized(req)))return json(res,401,{ok:false,error:'Sessão Cloud sem autorização de proprietário.'});
+  ownerId=await workerTransport.ownerSession(req);
+  if(!ownerId)return json(res,401,{ok:false,error:'Sessão Cloud sem autorização de proprietário.'});
  }catch{return json(res,503,{ok:false,error:'Não foi possível verificar a autorização.'})}
  try{
   if(JSON.stringify(req.body||{}).length>16000)throw new Error('Pedido demasiado extenso.');
   data=inputs(req.body||{});
  }catch(e){return json(res,400,{ok:false,error:clean(e.message,180)})}
- const key=process.env.OPENAI_API_KEY;
- if(!key)return json(res,503,{ok:false,error:'Serviço de IA não configurado.'});
  const instructions=[
   'És o assistente de descrições públicas da ArtEssencia, uma marca artesanal portuguesa.',
   'Escreve em português europeu, de modo específico, natural e adequado ao produto. Evita frases genéricas, repetidas, exageros e promessas comerciais.',
@@ -121,23 +99,14 @@ export default async function handler(req,res){
   ...data.images.map(url=>({type:'input_image',image_url:url}))
  ];
  try{
-  const response=await fetch(OPENAI_URL,{
-   method:'POST',
-   headers:{Authorization:'Bearer '+key,'Content-Type':'application/json'},
-   body:JSON.stringify({
-    model:process.env.OPENAI_PRODUCT_DESCRIPTION_MODEL||process.env.OPENAI_SOCIAL_MODEL||'gpt-5.5',
+  const answer=await legacyAi.generate('legacy_description',{
     instructions,
     input:[{role:'user',content}],
     store:false,
     text:{format:{type:'json_schema',name:'artessencia_photo_description',strict:true,schema:PROPOSAL_SCHEMA}},
     max_output_tokens:1800
-   })
-  });
-  const answer=await response.json().catch(()=>({}));
-  if(!response.ok){
-   console.error('product description AI upstream',response.status,clean(answer?.error?.type,80));
-   return json(res,502,{ok:false,error:'Não foi possível analisar as fotografias.'});
-  }
+   }, randomUUID(),ownerId).catch(()=>null);
+  if(!answer)return json(res,503,{ok:false,error:'IA indisponível. Verifica o controlo financeiro.'});
   if(answer?.status!=='completed'){
    console.error('product description AI incomplete',clean(answer?.status,40),clean(answer?.incomplete_details?.reason,80));
    return json(res,502,{ok:false,error:'A análise não ficou concluída. Tenta novamente.'});

@@ -1,0 +1,63 @@
+name: Intelligence isolated tests
+on:
+  push:
+    branches: ['feature/intelligence-hybrid-foundation-20261126', 'feature/intelligence-executive-meetings-20261127']
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'intelligence/**'
+      - 'tests/intelligence-*.test.cjs'
+      - 'scripts/test_intelligence*.cjs'
+      - 'sql/intelligence-*.sql'
+      - '.github/workflows/intelligence-isolated.yml'
+permissions:
+  contents: read
+concurrency:
+  group: intelligence-isolated-validation-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+jobs:
+  isolated:
+    if: github.ref == 'refs/heads/feature/intelligence-hybrid-foundation-20261126' || github.ref == 'refs/heads/feature/intelligence-executive-meetings-20261127' || github.event.pull_request.head.ref == 'feature/intelligence-hybrid-foundation-20261126' || github.event.pull_request.head.ref == 'feature/intelligence-executive-meetings-20261127'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: intelligence_fixture
+          POSTGRES_DB: intelligence_fixture
+        ports:
+          - 55433:5432
+        options: --health-cmd "pg_isready -U postgres" --health-interval 3s --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Native Node tests
+        run: node scripts/test_intelligence_all.cjs
+      - name: Install isolated SQL engine in temporary directory
+        run: |
+          mkdir -p "$RUNNER_TEMP/ae-intelligence"
+          npm install --prefix "$RUNNER_TEMP/ae-intelligence" --no-save --package-lock=false --ignore-scripts --no-audit --no-fund @electric-sql/pglite@0.3.16 pg@8.16.3 playwright@1.56.1
+      - name: SQL transaction fixture (synthetic data only)
+        run: PGLITE_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/@electric-sql/pglite" node scripts/test_intelligence_count_sql.cjs
+      - name: PostgreSQL 17 transaction fixture (synthetic data only)
+        run: PG_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/pg" node scripts/test_intelligence_count_sql.cjs --postgres
+      - name: Real trial gate migration and lifetime budget (local synthetic database)
+        run: PGLITE_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/@electric-sql/pglite" node scripts/test_intelligence_trial_sql.cjs
+      - name: Audit retry and receipt preservation (local synthetic database)
+        run: PGLITE_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/@electric-sql/pglite" node scripts/test_intelligence_audit_retry_sql.cjs
+      - name: Hosted service authentication and revocation (synthetic database)
+        run: PGLITE_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/@electric-sql/pglite" node scripts/test_intelligence_hosted_service_sql.cjs
+      - name: Production installation remains disabled (synthetic database)
+        run: PGLITE_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/@electric-sql/pglite" node scripts/test_intelligence_production_install_sql.cjs
+      - name: Install Chromium for isolated UI test
+        run: '"$RUNNER_TEMP/ae-intelligence/node_modules/.bin/playwright" install chromium'
+      - name: Browser stock review fixture (mock session, no Cloud)
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/playwright" node scripts/test_intelligence_browser.cjs
+      - name: Browser central preview fixture
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/playwright" node scripts/test_intelligence_central_browser.cjs

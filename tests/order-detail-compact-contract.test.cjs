@@ -8,7 +8,11 @@ test('secondary panels and material consultation remain read-only',()=>{
  for(const t of ['Histórico de estados','Anulação / eliminação','Materiais previstos'])assert(js.includes(t));
  for(const t of ['supabase','localStorage','save(','saveOrder(','registerOrderPayment(','deleteOrder(','consumeProduction('])assert(!js.includes(t),t);
  // The material consultation can locate the current order, but cannot write it.
- assert.deepEqual([...new Set([...js.matchAll(/\bdb\.(\w+)/g)].map(m=>m[1]))],['orders']);
+ const start=js.indexOf('function materialPreview('),end=js.indexOf('function init()',start);
+ assert.ok(start>=0 && end>start);
+ const materialPanel=js.slice(start,end);
+ assert.deepEqual([...new Set([...materialPanel.matchAll(/\bdb\.(\w+)/g)].map(m=>m[1]))],['orders']);
+ assert.doesNotMatch(js,/\bdb\.settings(?:\?\.|\.)\w+\s*(?:=(?!=)|\+=|\+\+)/);
  assert.doesNotMatch(js,/\bdb\.orders\s*(?:=(?!=)|\+=|\+\+)|\bdb\.orders\.(?:push|pop|splice|sort|reverse)\(/);
  assert(js.includes('productionOrderNeedsV12632(o)'));
  assert(js.includes("productionOtherCommitmentsV20261021(o.delivery||'', [o])"));

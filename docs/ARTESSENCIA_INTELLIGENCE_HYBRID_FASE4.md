@@ -1,0 +1,9 @@
+# Intelligence Hybrid — fase 4: organização de materiais e lote de consolidação
+
+O motor stock-organizer.js classifica nomes por regras locais, sinaliza categorias ambíguas e identifica candidatos a duplicados por normalização de maiúsculas, acentos e espaços. As categorias são sugestões, não uma alteração de schema nem garantia de identidade. Nenhum serviço IA pago.
+
+A fusão simulada exige confirmação explícita de identidade e de que os saldos físicos são distintos (não são dois registos da mesma quantidade). Só permite unidades base iguais, custos unitários iguais e metadados compatíveis, sem identificadores nem referências históricas/legadas pendentes. Bloqueia casos ambíguos, custos diferentes e duas linhas na mesma ficha. Conserva valor do inventário, quantidades das receitas e custo unitário na simulação. Não elimina dados reais. O snapshot de reversão é apenas uma cópia em memória; nunca gravar no servidor diretamente.
+
+Lotes até 50 propostas: operações sobrepostas ou qualquer bloqueio impedem a devolução de snapshot final. O núcleo inclui missões stock_organization_plan e stock_merge_batch_plan, sujeitas ao interruptor e às permissões. Testes em tests/intelligence-stock-organizer.test.cjs e tests/intelligence-stock-organization-mission.test.cjs. 19 verificações do motor executadas em JS de autoria. Os testes Node e integração ainda não foram executados.
+
+Pendente: adaptar ao esquema real autenticado, validar todas as referências e metadados, criar interface de revisão, persistência e aplicação transacional com revisão/versionamento, reconciliação de histórico e deduplicação real. Este código é de laboratório, não produção. Nenhum dado real foi lido ou modificado.

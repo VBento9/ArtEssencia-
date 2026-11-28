@@ -9,7 +9,7 @@ if (/^\/conta\/?$/.test(location.pathname)) {
   document.head.append(base);
 }
 </script>
-<meta name="artessencia-version" content="1.9.196">
+<meta name="artessencia-version" content="1.9.197">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3B281B">
 <style id="catalog-classification-v191">
@@ -3731,6 +3731,7 @@ th{background:#493324;color:#f8efe4;font-size:10px;letter-spacing:.04em}td{borde
     <div id="orderNotificationListV12624" class="order-notification-list-v12624"></div>
   </div>
 
+  <section id="intelligence" class="screen" aria-label="ArtEssencia Intelligence"></section>
   <section id="dashboard" class="screen active">
     <div class="dashboard-hero">
       <div>
@@ -6497,7 +6498,7 @@ document.addEventListener('input',e=>{
 });
 
 
-const APP_VERSION='1.9.196';
+const APP_VERSION='1.9.197';
 const OPERATING_MODE_TEST_V1420='test';
 const OPERATING_MODE_BUSINESS_V1420='business';
 function operatingModeV1420(){
@@ -7153,9 +7154,9 @@ function installNavKeyboard(){
 
 setTimeout(installNavKeyboard,0);
 
-const pages=[['dashboard','Dashboard'],['sale','Vendas'],['orders','Encomendas'],['quotes','Orçamentos'],['production','Produção'],['costs','Custos'],['technicalLibrary','Biblioteca de Fragrâncias'],['stock','Stock'],['purchases','Compras'],['cash','Caixa'],['funds','Mapa de Fundos'],['clients','Clientes'],['email','Comunicações · Email'],['digitalStats','Estatísticas Digitais'],['reports','Relatórios'],['quantityPricing','Precificação em quantidade'],['products','Produtos'],['commercialCalendar','Calendário Comercial'],['publication','Publicação'],['catalogDigital','Catálogo Digital'],['visualCatalogs','Catálogos Visuais'],['catalogs','Catálogos'],['specialEditions','Edições Especiais'],['homepage','Homepage pública'],['socialAI','Redes Sociais / IA'],['campaigns','Campanhas'],['delivery','Entregas · futura Loja'],['legal','Informação Legal pública'],['settings','Configuração'],['cloud','Cloud Sync'],['backup','Backup']];
+const pages=[['dashboard','Dashboard'],['intelligence','ArtEssencia Intelligence'],['sale','Vendas'],['orders','Encomendas'],['quotes','Orçamentos'],['production','Produção'],['costs','Custos'],['technicalLibrary','Biblioteca de Fragrâncias'],['stock','Stock'],['purchases','Compras'],['cash','Caixa'],['funds','Mapa de Fundos'],['clients','Clientes'],['email','Comunicações · Email'],['digitalStats','Estatísticas Digitais'],['reports','Relatórios'],['quantityPricing','Precificação em quantidade'],['products','Produtos'],['commercialCalendar','Calendário Comercial'],['publication','Publicação'],['catalogDigital','Catálogo Digital'],['visualCatalogs','Catálogos Visuais'],['catalogs','Catálogos'],['specialEditions','Edições Especiais'],['homepage','Homepage pública'],['socialAI','Redes Sociais / IA'],['campaigns','Campanhas'],['delivery','Entregas · futura Loja'],['legal','Informação Legal pública'],['settings','Configuração'],['cloud','Cloud Sync'],['backup','Backup']];
 const pageIcons={
- dashboard:'🏠',sale:'➕',orders:'🧾',quotes:'📄',production:'🛠️',costs:'🧮',technicalLibrary:'🌿',stock:'📦',purchases:'🛒',cash:'💶',funds:'📊',
+ dashboard:'🏠',intelligence:'✦',sale:'➕',orders:'🧾',quotes:'📄',production:'🛠️',costs:'🧮',technicalLibrary:'🌿',stock:'📦',purchases:'🛒',cash:'💶',funds:'📊',
  clients:'👥',email:'✉️',digitalStats:'📈',reports:'📊',quantityPricing:'🧮',products:'🕯️',commercialCalendar:'🗓️',publication:'🌐',catalogDigital:'📱',visualCatalogs:'🖼️',catalogs:'🗂️',specialEditions:'🎉',homepage:'🖼️',socialAI:'✦',campaigns:'📣',delivery:'🚚',legal:'⚖️',settings:'⚙️',cloud:'☁️',backup:'💾'
 };
 const navGroupsV1857={dashboard:'Visão geral',sale:'Operação',costs:'Gestão',clients:'Clientes e comunicação',digitalStats:'Análise',products:'Conteúdo público',campaigns:'Marketing',delivery:'Loja e conformidade',settings:'Sistema'};
@@ -7897,6 +7898,7 @@ function go(id){
  if(typeof window.aeUXOpenNavGroup==='function')window.aeUXOpenNavGroup(id);
  if(typeof window.aeUXRecordPage==='function')window.aeUXRecordPage(id);
  target.classList.add('active');
+ document.dispatchEvent(new CustomEvent('ae-intelligence-navigation',{detail:{page:id}}));
  requestAnimationFrame(()=>target.classList.add('screen-enter'));
  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
  document.getElementById('pageTitle').textContent=pages.find(x=>x[0]===id)?.[1]||'';
@@ -15893,7 +15895,8 @@ function renderReports(){
 function ensureQuotePaymentModel(){(db.quotes||[]).forEach(q=>{if(!q.paymentTerms)q.paymentTerms='50_50';if(q.depositPct==null)q.depositPct=q.paymentTerms==='100_upfront'?100:50;if(q.balanceDays==null)q.balanceDays=q.paymentTerms==='100_upfront'?0:3;if(!q.paymentMethod)q.paymentMethod='MB Way';if(q.depositPaid==null)q.depositPaid=0;if(!q.paymentHistory)q.paymentHistory=[];if(!Array.isArray(q.statusHistory))q.statusHistory=[];if(!q.statusHistory.length&&q.created)q.statusHistory.push({date:q.created+'T00:00:00',from:'—',to:q.status||'Rascunho',status:q.status||'Rascunho',source:'legacy'});q.statusHistory.forEach(h=>{if(!h.to&&h.status)h.to=h.status})})}
 
 const ARTESSENCIA_SUPABASE_V1421={url:'https://ihtsonqnnlrxvorfrarl.supabase.co',key:'sb_publishable_bBAzr698eotgn-QCq0kKWQ_szVceK5x',projectRef:'ihtsonqnnlrxvorfrarl'};
-function cloudCfg(){try{const saved=JSON.parse(localStorage.getItem(CLOUD_CFG));return saved||{url:ARTESSENCIA_SUPABASE_V1421.url,key:ARTESSENCIA_SUPABASE_V1421.key,email:''}}catch(e){return{url:ARTESSENCIA_SUPABASE_V1421.url,key:ARTESSENCIA_SUPABASE_V1421.key,email:''}}}
+const isolatedPreviewConfig=null; // Replaced only by the Vercel preview build.
+function cloudCfg(){try{const saved=JSON.parse(localStorage.getItem(CLOUD_CFG));if(isolatedPreviewConfig)return {...isolatedPreviewConfig,email:saved?.url===isolatedPreviewConfig.url?saved.email||'':''};return saved||{url:ARTESSENCIA_SUPABASE_V1421.url,key:ARTESSENCIA_SUPABASE_V1421.key,email:''}}catch(e){return isolatedPreviewConfig||{url:ARTESSENCIA_SUPABASE_V1421.url,key:ARTESSENCIA_SUPABASE_V1421.key,email:''}}}
 function cloudMeta(){
  try{
    const m=JSON.parse(localStorage.getItem(CLOUD_META))||{};
@@ -16001,6 +16004,8 @@ async function boundedCloudAuthV19134(action,label,ms=20000){
 }
 function initCloudClient(){
  const cfg=cloudCfg();
+ // Intelligence preview must never initialise a production Cloud client.
+ if(typeof location!=='undefined'&&/^art-essencia-.+\.vercel\.app$/i.test(location.hostname)&&cfg.url!=='https://thqhyetvxledlgjdtmzp.supabase.co')return null;
  if(!cfg.url||!cfg.key)return null;
  if(!window.supabase||!window.supabase.createClient){cloudLogMsg('Biblioteca Supabase indisponível');return null}
  if(cloudClient)return cloudClient;
@@ -19078,3 +19083,5 @@ function openEmailThreadV179(index,refresh=false){emailThreadsV179=buildEmailThr
 <link rel="stylesheet" href="direct-sale-pos.css">
 <script src="ready-stock.js" defer></script>
 <script src="direct-sale-pos.js" defer></script>
+<link rel="stylesheet" href="/intelligence/central-ui.css">
+<script src="/intelligence/central-ui.js" defer></script>

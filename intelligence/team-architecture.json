@@ -1,0 +1,80 @@
+{
+  "version": 1,
+  "architecture": "ai-led",
+  "currency": "EUR",
+  "monthlyCeilingCents": 3000,
+  "preventiveGrossStopCents": 2300,
+  "releaseEnabled": false,
+  "paidEnabled": false,
+  "autoTopup": false,
+  "agents": [
+    {
+      "id": "director",
+      "reasoning": "ai",
+      "mode": "off",
+      "memory": "private_scoped",
+      "execution": "allowlisted_tools"
+    },
+    {
+      "id": "stock",
+      "reasoning": "ai",
+      "mode": "off",
+      "memory": "private_scoped",
+      "execution": "allowlisted_tools"
+    },
+    {
+      "id": "producao",
+      "reasoning": "ai",
+      "mode": "off",
+      "memory": "private_scoped",
+      "execution": "allowlisted_tools"
+    },
+    {
+      "id": "financeiro",
+      "reasoning": "ai",
+      "mode": "off",
+      "memory": "private_scoped",
+      "execution": "allowlisted_tools"
+    },
+    {
+      "id": "comercial",
+      "reasoning": "ai",
+      "mode": "off",
+      "memory": "private_scoped",
+      "execution": "allowlisted_tools"
+    },
+    {
+      "id": "marketing",
+      "reasoning": "ai",
+      "mode": "off",
+      "memory": "private_scoped",
+      "execution": "allowlisted_tools"
+    },
+    {
+      "id": "inovacao",
+      "reasoning": "ai",
+      "mode": "off",
+      "memory": "private_scoped",
+      "execution": "allowlisted_tools"
+    },
+    {
+      "id": "catalogo",
+      "reasoning": "ai",
+      "mode": "off",
+      "memory": "private_scoped",
+      "execution": "allowlisted_tools"
+    },
+    {
+      "id": "auditoria",
+      "reasoning": "ai",
+      "mode": "off",
+      "memory": "private_scoped",
+      "execution": "allowlisted_tools"
+    }
+  ],
+  "existingPaidChannels": [
+    "legacy_insights",
+    "legacy_description",
+    "legacy_social"
+  ]
+}

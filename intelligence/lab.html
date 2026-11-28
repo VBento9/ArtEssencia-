@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="pt-PT"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ArtEssencia Intelligence — laboratório</title>
+<style>body{font:15px system-ui;background:#f5f0e9;color:#362d26;margin:0}main{max-width:740px;margin:auto;padding:20px}section{background:#fff;border:1px solid #ddd1c4;border-radius:12px;padding:18px;margin:16px 0}h1,h2{font-family:Georgia,serif}h2{font-size:20px}label{display:block;margin:8px 0}select,textarea,button{font:inherit;padding:9px;border:1px solid #c9bcaf;border-radius:7px}select{max-width:100%}textarea{width:100%;box-sizing:border-box;min-height:100px}button{background:#6b4e3b;color:#fff;cursor:pointer;margin:4px 4px 4px 0}button:disabled{opacity:.5;cursor:not-allowed}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f5f0e9;padding:12px}.agent{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:7px 0}.note{color:#795e4a}</style>
+<main><h1>ArtEssencia Intelligence</h1><p class="note">Laboratório isolado — dados fictícios, configurações em memória. Não ligado à Cloud. Sem chamadas pagas.</p>
+<section><h2>Centro de controlo</h2><label><input id="enabled" type="checkbox"> Ativar laboratório</label><div id="agents"></div><p>Limite de projeto: 10 €/mês. Consumo neste laboratório: 0 €. IA paga indisponível.</p><button id="stop">Desligar todos</button></section>
+<section><h2>Delegar inventário físico</h2><p>Uma linha por material: nome; quantidade; unidade (g, kg, ml, l, cm, m, un). A quantidade é o saldo contado, não uma compra.</p><textarea id="rows" aria-label="Inventário de teste">Cera;1;kg
+Pavio;0;un
+Lata;12;un</textarea><p>Stock fictício: Cera 500 g; Pavio 8 un.</p><button id="prepare">Preparar missão</button><button id="run" disabled>Executar análise</button><button id="cancel" disabled>Cancelar missão</button><pre id="output" aria-live="polite">Sem missão.</pre></section></main>
+<script src="control-core.js"></script>
+<script>
+'use strict';
+const c=ArtEssenciaIntelligence,$=id=>document.getElementById(id);let settings=c.defaults(),mission=null;
+const labels={director:'Diretor',financeiro:'Financeiro',producao:'Produção',stock:'Stock',marketing:'Marketing',comercial:'Comercial',inovacao:'Inovação',auditoria:'Auditoria',catalogo:'Catálogo'};
+const selects={};for(const a of c.agents){const l=document.createElement('label');l.className='agent';l.append(document.createTextNode(labels[a]+(a==='stock'?' — disponível no laboratório':' — fase posterior')));const s=document.createElement('select');s.setAttribute('aria-label',labels[a]);for(const [v,t] of [['off','Desligado'],['manual','Manual'],['auto','Automático'],['semi','Semiautónomo']]){const o=document.createElement('option');o.value=v;o.textContent=t;s.append(o);}s.disabled=a!=='stock';s.onchange=()=>{settings.agents[a]=s.value;};selects[a]=s;l.append(s);$('agents').append(l);}
+$('enabled').onchange=()=>settings.enabled=$('enabled').checked;
+const show=v=>$('output').textContent=typeof v==='string'?v:JSON.stringify(v,null,2);
+const controls=()=>{$('run').disabled=mission?.status!=='pending';$('cancel').disabled=!['pending','review','blocked'].includes(mission?.status);};
+$('stop').onclick=()=>{settings=c.defaults();$('enabled').checked=false;for(const s of Object.values(selects))s.value='off';if(mission?.status==='pending')mission=c.cancelMission(mission);show('Todos os agentes desligados. Nenhuma execução externa.');controls();};
+$('prepare').onclick=()=>{try{if(['pending','review'].includes(mission?.status))throw Error('Cancela primeiro a missão atual.');mission=c.createMission(settings,{id:'laboratorio-'+Date.now(),agent:'stock',kind:'inventory_count_plan'});show(mission);}catch(e){show(e.message);}controls();};
+$('run').onclick=()=>{try{const rows=$('rows').value.split(/\r?\n/).filter(x=>x.trim()).map(line=>{const p=line.split(';');if(p.length!==3)throw Error('Cada linha deve ter 3 campos.');return {name:p[0].trim(),qty:p[1].trim().replace(',','.'),unit:p[2].trim()};});mission=c.runMission(settings,mission,{rows,stock:[{name:'Cera',qty:500,unit:'g'},{name:'Pavio',qty:8,unit:'un'}]});show(mission);}catch(e){show(e.message);}controls();};
+$('cancel').onclick=()=>{try{mission=c.cancelMission(mission);show(mission);}catch(e){show(e.message);}controls();};
+</script></html>

@@ -96,3 +96,14 @@ function init(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
+
+/* Central de gestão da equipa. */
+(function(){
+ 'use strict';
+ const script=document.getElementById('ae-stock-compact-script');
+ if(!script||document.getElementById('ae-intelligence-central-script'))return;
+ const extra=document.createElement('script');extra.id='ae-intelligence-central-script';
+ extra.src=new URL('intelligence/central-ui.js',script.src).href;extra.async=true;
+ extra.onerror=()=>console.warn('Central Intelligence indisponível.');
+ document.head.append(extra);
+})();

@@ -1,0 +1,34 @@
+'use strict';
+const core=require('../intelligence/control-core.js');
+function testCore(core){
+ const assert=(v,m)=>{if(!v)throw Error(m);};let n=0;const check=(v,m)=>{assert(v,m);n++;};
+ const off=core.defaults(),on={...off,enabled:true,agents:{...off.agents,stock:'manual'}};
+ check(!core.permit(off,'stock','inventory_count_plan').ok,'default off');
+ check(!core.permit({...on,paidEnabled:true},'stock','inventory_count_plan').ok,'paid blocked');
+ check(!core.permit({...on,monthlyCeilingCents:3001},'stock','inventory_count_plan').ok,'ceiling');
+ check(!core.permit(on,'stock','inventory_count_plan','automatic').ok,'manual only');
+ check(!core.permit(on,'director','inventory_count_plan').ok,'unsupported');
+ check(!core.permit(on,'stock','__proto__').ok,'allowlist');
+ const auto={...on,agents:{...on.agents,stock:'auto'}};
+ check(core.permit(auto,'stock','inventory_count_plan','automatic').ok,'auto mode');
+ const mission=core.createMission(on,{id:'m1',agent:'stock',kind:'inventory_count_plan'});
+ const stock=[{name:'Cera',qty:500,unit:'g'},{name:'Pavio',qty:8,unit:'un'}];
+ const rows=[{name:'Cera',qty:1,unit:'kg'},{name:'Pavio',qty:0,unit:'un'},{name:'Nova',qty:2,unit:'ml'}];
+ const snapshot=JSON.stringify({rows,stock});
+ const result=core.runMission(on,mission,{rows,stock});
+ check(result.status==='review'&&result.result[0].delta===500,'absolute count');
+ check(result.result[1].delta===-8,'zero count');
+ check(result.result[2].status==='new_material_review','new item');
+ check(JSON.stringify({rows,stock})===snapshot,'no mutation');
+ check(core.runMission(off,mission,{rows,stock}).status==='blocked','disable pending');
+ check(core.inventoryPlan([{name:'cera',qty:1,unit:'kg'}],stock)[0].status==='name_review','case');
+ check(core.inventoryPlan([{name:'Cera',qty:1,unit:'l'}],stock)[0].status==='unit_or_balance_review','dimension');
+ check(core.inventoryPlan([{name:'Pavio',qty:1.5,unit:'un'}],stock)[0].status==='invalid','fraction');
+ check(core.inventoryPlan([{name:'Cera',qty:1,unit:'kg'},{name:'cera',qty:2,unit:'kg'}],stock).every(r=>r.status==='ambiguous'),'duplicate');
+ check(core.inventoryPlan([{name:'Cera',qty:'',unit:'g'}],stock)[0].status==='invalid','blank');
+ check(core.cancelMission(result).status==='cancelled','cancel');
+ let denied=false;try{core.runMission(on,result,{rows,stock})}catch{denied=true;}check(denied,'repeat not permitted');
+ check(core.inventoryPlan([{name:'Cera',qty:1,unit:'__proto__'}],stock)[0].status==='invalid','unknown unit');
+ return n;
+}
+console.log('Verificações concluídas:',testCore(core));

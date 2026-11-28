@@ -1,0 +1,7 @@
+# Intelligence Hybrid — fase 13: validação de navegador e correção PostgreSQL
+
+Run 45908292940: Node e PGlite passaram, PostgreSQL falhou antes de executar a fixture por causa do endereço interno Docker (inet_server_addr). Corrigido o guard para verificar a conexão TCP cliente loopback:55433, nome da base e utilizador fixos. Não são aceites URLs externas.
+
+Novo teste Playwright (Chromium, viewport móvel, runtime sintético): carrega o código real do painel, testa estado inicial desligado, auditoria, contagem, item novo bloqueado, revisão Cloud desatualizada, aprovação apenas consultiva, ausência de alteração de saldo, limpeza ao bloquear e negação de proprietário. Rede externa bloqueada; não carrega a aplicação real nem credenciais. CI usa dependência fixada já utilizada no projeto. Teste e SQL ainda aguardam resultado. Sem migração, produção ou deploy solicitado.
+
+Revisão final em Work: usar a branch existente; verificar resultados e logs; auditar SQL/RLS, aprovação/configuração/revogação no servidor, idempotência durável, reversão real, reidratação/sync, regressões em stock e produção, autenticação, desktop/tablet/telemóvel e PWA. Não publicar protótipos nem ativar IA paga. Antes da publicação, completar canal real de autorização e escrita, consolidar funcionalidades dos agentes e orçamento total de 10 EUR/mês, incluindo endpoints existentes, com bloqueio central. Produção permanece intocada.

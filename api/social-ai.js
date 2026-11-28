@@ -1,25 +1,12 @@
-const OPENAI_URL = 'https://api.openai.com/v1/responses';
-const SUPABASE_URL = 'https://ihtsonqnnlrxvorfrarl.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_bBAzr698eotgn-QCq0kKWQ_szVceK5x';
+import legacyAi from '../intelligence/legacy-ai.cjs';
+import { randomUUID } from 'node:crypto';
+import workerTransport from '../intelligence/worker-transport.cjs';
 
-async function verifyUser(req) {
-  const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
-  if (!token) return false;
-  const response = await fetch(SUPABASE_URL + '/auth/v1/user', { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + token } });
-  if (!response.ok) return false;
-  const user = await response.json().catch(() => null);
-  if (!user?.id) return false;
-  const ownerResponse = await fetch(SUPABASE_URL + '/rest/v1/rpc/artessencia_is_owner_v1', {
-    method: 'POST',
-    headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-    body: JSON.stringify({})
-  });
-  if (!ownerResponse.ok) return false;
-  return (await ownerResponse.json().catch(() => false)) === true;
-}
+
 
 function json(res, status, body) {
   res.status(status).setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Cache-Control','no-store');
   return res.end(JSON.stringify(body));
 }
 
@@ -65,14 +52,15 @@ export default async function handler(req, res) {
     return json(res, 405, { ok: false, error: 'Método não permitido.' });
   }
 
-  if (!(await verifyUser(req))) return json(res, 401, { ok: false, error: 'Não autorizado.' });
+  let ownerId;
+  try{ownerId=await workerTransport.ownerSession(req);}
+  catch{return json(res,503,{ok:false,error:'Não foi possível verificar a autorização.'});}
+  if(!ownerId)return json(res,401,{ok:false,error:'Não autorizado.'});
 
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return json(res, 503, { ok: false, error: 'IA ainda não configurada.' });
 
   const body = req.body || {};
   const product = body.product || {};
-  const imageUrl = clean(product.imageUrl, 4000);
+  const imageUrl = workerTransport.publicProductPhoto(product.imageUrl);
   const name = clean(product.name, 160);
   if (!name) return json(res, 400, { ok: false, error: 'Produto inválido.' });
 
@@ -109,27 +97,13 @@ export default async function handler(req, res) {
   if (/^https:\/\//i.test(imageUrl)) userContent.push({ type: 'input_image', image_url: imageUrl });
 
   try {
-    const response = await fetch(OPENAI_URL, {
-      method: 'POST',
-      headers: {
-        Authorization: 'Bearer ' + apiKey,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: process.env.OPENAI_SOCIAL_MODEL || 'gpt-5.5',
+    const data=await legacyAi.generate('legacy_social',{
         instructions: instruction,
         input: [{ role: 'user', content: userContent }],
         max_output_tokens: 900
-      })
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      console.error('social-ai upstream', response.status, data?.error?.type || 'error', clean(data?.error?.code || '', 120), clean(data?.error?.message || '', 500));
-      return json(res, 502, { ok: false, error: 'Não foi possível gerar a proposta de IA.' });
-    }
-
-    const raw = outputText(data).trim();
+      }, randomUUID(),ownerId).catch(()=>null);
+  if(!data)return json(res,503,{ok:false,error:'IA indisponível. Verifica o controlo financeiro.'});
+  const raw = outputText(data).trim();
     let proposal;
     try { proposal = JSON.parse(raw); }
     catch { return json(res, 502, { ok: false, error: 'A IA devolveu uma resposta inválida.' }); }

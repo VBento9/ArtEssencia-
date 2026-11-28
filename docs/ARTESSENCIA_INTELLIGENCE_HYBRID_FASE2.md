@@ -1,0 +1,7 @@
+# Intelligence Hybrid — fase 2, laboratório isolado
+
+Implementado: núcleo de permissões, configuração desligada por defeito, nove especializações, lista fechada de capacidades, modos manual/auto/semi, bloqueio de chamadas pagas nesta fase, missão pendente → revisão/bloqueada → cancelamento. O plano de inventário físico distingue saldo contado de entrada de compras, converte unidades conhecidas, sinaliza duplicados/nomes/unidades e não altera o stock. Nenhum resultado tem permissão de escrita. Não existem tarefas agendadas reais nesta fase.
+
+Laboratório: abrir intelligence/lab.html localmente (com control-core.js no mesmo diretório). Usa exclusivamente dados fictícios e configurações voláteis. Não é um painel de produção, nem um mecanismo de autorização no servidor. Apenas stock é acionável na UI; modos automáticos ainda não têm scheduler. As opções restantes ilustram o contrato futuro. Teste: node tests/intelligence-control-core.test.cjs. Não foi executado teste visual de navegador nesta fase.
+
+Próximos passos: adaptador de leitura autenticado do runtime instalado, confirmar schema e sincronização Cloud; integrar políticas persistentes e validações de servidor; pré-visualização com snapshots autorizados e controlo de versão; aplicar alterações apenas através das operações transacionais existentes/validadas, com autorização, idempotência, histórico e reversão. Nenhum endpoint IA pago ou orçamento do fornecedor foi ativado. Não integrar nem publicar antes dos testes de regressão e segurança.

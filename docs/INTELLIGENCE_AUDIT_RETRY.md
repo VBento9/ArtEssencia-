@@ -1,0 +1,11 @@
+# Retoma controlada de auditoria — candidato
+
+O bloqueio estrutural é a chave primária de team_runs por missão e a transição terminal blocked. A migração candidata sql/intelligence-audit-retry-v1.sql arquiva a tentativa integral e estado anterior numa tabela privada com RLS, preserva o recibo original, e move atomicamente a missão para pending_review. A nova aprovação usa a revisão devolvida e a ação approve existente; a execução gera novo lease e request. Não há chamada de IA nem alteração dos limites.
+
+Âmbito deliberadamente estreito: auditoria technical_review em manual, falha reasoning, sem anexos, relatórios, efeitos de ferramentas ou delegações filhas, custo liquidado reconciliável, nenhuma reserva/consumo incerto e controlo não congelado. Uma única retoma por missão. O novo RPC exige sessão do proprietário e não integra a allowlist da conta de serviço. Não usar um JWT de serviço para reabrir ou aprovar. A migração não é aplicada pelo commit. Antes de aplicar na Cloud isolada, confirmar teste CI e revisar privilégios. A Central candidata integra o botão Preparar nova revisão, uma confirmação explícita e um resumo do recibo arquivado; a leitura opcional de capacidade não impede o funcionamento de instalações sem a migração. O navegador de teste usa os RPCs SQL reais com dados fictícios nas três larguras. O RPC não está ligado ao executor remoto nem à produção.
+
+Miguel continua blocked revisão 3 até ação autenticada do proprietário. Se for reaberta com sucesso a revisão passa a 4, pending_review; só então nova aprovação (revisão 5) e execução autorizada. Nenhuma execução automática ou autorização financeira é criada.
+
+## Continuação: integração com o executor remoto
+
+A retoma aprovada no projeto isolado apresenta o UUID, a revisão e o acesso ao workflow GitHub, sem invocar o executor Vercel nem libertar despesa. O proprietário continua responsável pela aprovação e pela autorização financeira. O teste integrado usa o wrapper remoto e o worker SQL com fornecedor fictício e verifica falha de decisão, nova revisão, novo pedido, preservação dos dois recibos e rejeição de repetições. Não prova uma chamada paga real nem substitui o teste separado do gate financeiro e da conta de serviço. Nenhuma alteração a main é necessária para esta compatibilidade: o executor fixado usa o contrato existente claim_run.
