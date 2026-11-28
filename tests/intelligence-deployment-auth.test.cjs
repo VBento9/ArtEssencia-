@@ -34,3 +34,23 @@ test('preview skips authentication and enabled execution or wrong project fails 
  for(const patch of [{INTELLIGENCE_WORKER_ENABLED:'true'},{INTELLIGENCE_PAID_RELEASE:'approved'},{INTELLIGENCE_SUPABASE_URL:'https://thqhyetvxledlgjdtmzp.supabase.co'},{INTELLIGENCE_SERVICE_PASSWORD:''}])await assert.rejects(check({...env,...patch},request),/CONFIGURATION/);
  assert.equal(calls,0);
 });
+
+test('manual staging requires reviewed financial evidence, owner approval and a disabled service binding; no provider call',async()=>{
+ const now=new Date();const month=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Lisbon',year:'numeric',month:'2-digit'}).formatToParts(now).filter(x=>x.type==='year'||x.type==='month').map(x=>x.value).join('-');
+ // Near a month boundary the current period cannot be attested with a future timestamp in the next month.
+ const expires=new Date(now.getTime()+1000);
+ if(new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Lisbon',year:'numeric',month:'2-digit'}).formatToParts(expires).filter(x=>x.type==='year'||x.type==='month').map(x=>x.value).join('-')!==month)return;
+ const model='gpt-5.4-mini-2026-03-17';
+ const approval={model,checkedAt:now.toISOString(),validUntil:new Date(now.getTime()+1000).toISOString(),budgetMonth:month,autoRechargeOff:true,dedicatedKeyVerified:true,usageReconciled:true,infrastructureVerified:true,otherGrossMonthlyUpperMicroeur:7000000,grossBps:12500,eurPerUsdUpperPpm:1100000,inputMicroUsdPerMillion:750000,outputMicroUsdPerMillion:4500000,evidenceRef:'fixture',ownerApprovalRef:'fixture-owner',exclusiveProjectVerified:true,providerHardLimitVerified:true,taxVerified:true,exchangeUpperBoundVerified:true,pendingExternalCostsReconciled:true,providerHardLimitMicroUsd:20000000,budgetPolicy:'monthly_target_v1',targetGrossMonthlyMicroeur:30000000,contingencyGrossMicroeur:5000000,ownerAcceptsNonInstantCutoff:true};
+ const stage={...env,INTELLIGENCE_ACTIVATION_STAGE:'manual_only_v1',INTELLIGENCE_WORKER_ENABLED:'true',INTELLIGENCE_PAID_RELEASE:'approved',INTELLIGENCE_OPENAI_API_KEY:'fixture-only',INTELLIGENCE_TARIFF_ID:model,INTELLIGENCE_FINANCIAL_APPROVAL:JSON.stringify(approval),INTELLIGENCE_ACTIVATION_APPROVAL_REF:'fixture-owner'};
+ const f=fixture();assert.equal((await check(stage,f.request)).executionBlocked,true);
+ assert.equal(f.paths.length,5);
+ for(const patch of [{INTELLIGENCE_ACTIVATION_APPROVAL_REF:'wrong'},{INTELLIGENCE_ACTIVATION_STAGE:'other'},{INTELLIGENCE_OPENAI_API_KEY:''},{INTELLIGENCE_FINANCIAL_APPROVAL:'{}'},{INTELLIGENCE_SERVICE_RELEASE:'off'}]){
+  const f=fixture();await assert.rejects(check({...stage,...patch},f.request));assert.equal(f.paths.length,0);
+ }
+ // A legacy key used by other Backoffice features must not block staging.
+ // It never substitutes the dedicated Intelligence key.
+ const coexist=fixture();assert.equal((await check({...stage,OPENAI_API_KEY:'legacy-backoffice'},coexist.request)).executionBlocked,true);
+ const missing=fixture();await assert.rejects(check({...stage,INTELLIGENCE_OPENAI_API_KEY:'',OPENAI_API_KEY:'legacy-backoffice'},missing.request));assert.equal(missing.paths.length,0);
+ const bound=fixture('binding');await assert.rejects(check(stage,bound.request),/DEPLOYMENT_AUTH_NOT_CONFIRMED/);
+});

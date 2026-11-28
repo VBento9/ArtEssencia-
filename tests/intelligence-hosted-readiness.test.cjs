@@ -28,3 +28,13 @@ test('availability verifies live Cloud binding and exact owner before advertisin
  assert.equal((await checkedAvailability(env,worker,()=>async()=>{throw Error('revoked');},'owner',now)).status,'unavailable');
  await checkedAvailability({...env,INTELLIGENCE_PAID_RELEASE:'off'},worker,transport,'owner',now);assert.equal(calls,2);
 });
+
+test('monthly target policy retains hard provider limit and uses contingency only for verified external ceiling',()=>{
+ const pricing=require('../intelligence/approved-pricing.cjs');
+ const flexible={...approval,budgetPolicy:'monthly_target_v1',targetGrossMonthlyMicroeur:30000000,contingencyGrossMicroeur:5000000,ownerAcceptsNonInstantCutoff:true,otherGrossMonthlyUpperMicroeur:7000000,providerHardLimitMicroUsd:20000000};
+ const read=p=>pricing({...env,INTELLIGENCE_FINANCIAL_APPROVAL:JSON.stringify(p)},now);
+ assert.ok(read(flexible)[model]); // gross provider cap 27.5 EUR; total 34.5 EUR
+ assert.throws(()=>read({...flexible,budgetPolicy:undefined}));
+ for(const patch of [{providerHardLimitVerified:false},{ownerAcceptsNonInstantCutoff:false},{contingencyGrossMicroeur:5000001},{targetGrossMonthlyMicroeur:35000000},{providerHardLimitMicroUsd:21000000},{otherGrossMonthlyUpperMicroeur:7000001},{autoRechargeOff:false},{usageReconciled:false},{budgetPolicy:'unreviewed'}])assert.throws(()=>read({...flexible,...patch}));
+ assert.equal(require('../intelligence/ai-budget-policy.cjs').stop,23000000);
+});

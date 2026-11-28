@@ -40,3 +40,13 @@ test('scheduled runtime rejects old SQL without explicit scoped queue confirmati
  assert.deepEqual(calls,[['next',{scheduled:true}]]);
  assert.deepEqual(await server.processNext({call:async()=>({owner:'fixture',missionId:null,scheduledOnly:true})},undefined,{scheduled:true}),{status:'idle'});
 });
+
+test('manual-only staging rejects scheduler and legacy work before external activity',async()=>{
+ const res={status(n){this.code=n;return this;},json(body){this.body=body;return this;},end(){return this;}};
+ let calls=0;const worker={composeHosted(){calls++;throw Error('unexpected');}};
+ const result=await handle({headers:{authorization:'Bearer '+secret}},res,{worker,env:{CRON_SECRET:secret,INTELLIGENCE_WORKER_ENABLED:'true',INTELLIGENCE_ACTIVATION_STAGE:'manual_only_v1'}});
+ assert.equal(result.code,503);assert.equal(calls,0);
+ await assert.rejects(server.processNext({manualOnly:true},undefined,{scheduled:true}),/missão manual/);
+ await assert.rejects(server.processNext({manualOnly:true}),/missão manual/);
+ assert.throws(()=>server.runLegacy({manualOnly:true},'legacy_description',{},'fixture'));
+});

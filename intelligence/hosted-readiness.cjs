@@ -17,6 +17,7 @@ function availability(env,worker,now=new Date()){
    const claims=JSON.parse(Buffer.from((env.INTELLIGENCE_WORKER_JWT||'').split('.')[1]||'','base64url').toString());
    if(claims.role!=='artessencia_intelligence_worker'||typeof claims.sub!=='string'||!Number.isFinite(claims.exp)||claims.exp*1000<=now.getTime())return {status:'unavailable'};
   }
+  require('./manual-activation.cjs').manualStage(env,now);
   const rate=approvedPricing(env,now)[env.INTELLIGENCE_TARIFF_ID];
   const maximumMicroeur=budget.estimate(rate);
   return {status:'configured',mode:'paid',maximumMicroeur};

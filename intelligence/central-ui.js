@@ -466,7 +466,7 @@ function init(){
    }
    line('Margem até ao limite preventivo: '+(capKnown?eur(Math.max(0,cap-used)):'Por confirmar'));
    line(state.budget.ledgerReleased===true&&!state.budget.ledgerFrozen?'Ledger autorizado na base; fornecedor e faturação externa ainda exigem validação.':'Ledger bloqueado ou sem autorização confirmada.');
-   line('Consumo liquidado no mês · '+eur(state.budget.settled));line('Reservas pendentes · '+eur(state.budget.pending));line('Custos por esclarecer · '+state.budget.unknown);line('Limite interno efetivo: '+(capKnown?eur(cap):'Por confirmar')+' · Teto global pretendido: 30 € (inclui infraestrutura; faturação externa por validar).');
+   line('Consumo liquidado no mês · '+eur(state.budget.settled));line('Reservas pendentes · '+eur(state.budget.pending));line('Custos por esclarecer · '+state.budget.unknown);line('Limite interno efetivo: '+(capKnown?eur(cap):'Por confirmar')+' · Objetivo global: 30 € (inclui infraestrutura); margem de contingência proposta até 35 € apenas para desvios externos, não para novas reservas. Faturação externa por validar.');
   }else if(area==='Auditoria'){
    for(const e of state.events)line(new Date(e.occurred_at).toLocaleString('pt-PT')+' · '+statusNames[e.status]+' · '+e.mission_id);
    if(!state.events.length)line('Sem movimentos.');

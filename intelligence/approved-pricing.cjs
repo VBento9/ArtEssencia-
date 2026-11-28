@@ -22,10 +22,16 @@ module.exports=function approvedPricing(env,now=new Date()){
      p.exclusiveProjectVerified!==true||p.providerHardLimitVerified!==true||
      p.taxVerified!==true||p.exchangeUpperBoundVerified!==true||p.pendingExternalCostsReconciled!==true||
      !integer(p.providerHardLimitMicroUsd)||p.providerHardLimitMicroUsd===0)throw Error('Validação financeira indisponível.');
-  // Require a provider-enforced cap within the internal EUR envelope after conservative FX/tax.
+  // The legacy strict policy remains valid. A new, explicitly documented target
+  // permits external billing headroom only; the SQL ledger remains capped at 23 EUR.
+  const flexible=p.budgetPolicy==='monthly_target_v1';
+  if(p.budgetPolicy!==undefined&&!flexible)throw Error('Política financeira desconhecida.');
+  if(flexible&&(p.targetGrossMonthlyMicroeur!==30000000||p.contingencyGrossMicroeur!==5000000||
+     p.ownerAcceptsNonInstantCutoff!==true))throw Error('Margem financeira por confirmar.');
+  // A verified provider-enforced limit is still required; it is not an instantaneous cutoff.
   // The account evidence is an administrator attestation, not automatic provider verification.
   const grossCap=(BigInt(p.providerHardLimitMicroUsd)*BigInt(p.eurPerUsdUpperPpm)*BigInt(p.grossBps)+9999999999n)/10000000000n;
-  if(grossCap>23000000n||grossCap+BigInt(p.otherGrossMonthlyUpperMicroeur)>30000000n)throw Error('Limite do fornecedor incompatível com o orçamento.');
+  if(grossCap>(flexible?28000000n:23000000n)||grossCap+BigInt(p.otherGrossMonthlyUpperMicroeur)>(flexible?35000000n:30000000n))throw Error('Limite do fornecedor incompatível com o orçamento.');
   const eur=usd=>Number((BigInt(usd)*BigInt(p.eurPerUsdUpperPpm)+999999n)/1000000n);
   return {[model]:{model,verified:true,current:true,validUntil:p.validUntil,toolsEnabled:false,contextLimit:400000,maxInputTokens:400000,
     maxOutputTokens:2000,inputRate:eur(p.inputMicroUsdPerMillion),outputRate:eur(p.outputMicroUsdPerMillion),grossBps:p.grossBps}};
