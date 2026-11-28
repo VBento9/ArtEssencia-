@@ -38,8 +38,12 @@ function createMissionRunner(options){
     });
     report.result={...report.result,referenceRepairs:{mode:'reference_repair_only',sourceRevision:s.sourceRevision,proposals}};
    }
-   const context=JSON.stringify({professionalMemory:l.memory||[],departmentFacts:s.facts||{},sourceRevision:s.sourceRevision,evidenceIds:s.evidenceIds,report:report.result});
-   if(!text(context,24000))throw Error('Contexto excede limite; dividir missão.');
+   // Preserve full deterministic results; bound only model input.
+   const modelContext=require('./reasoning-context.cjs').build({professionalMemory:l.memory||[],departmentFacts:s.facts||{},sourceRevision:s.sourceRevision,evidenceIds:s.evidenceIds,report:report.result});
+   const context=modelContext.context;
+   if(modelContext.coverage)report.result={...report.result,reasoningCoverage:modelContext.coverage};
+   // Fail before charging if the existing SQL outcome limit cannot accommodate the report.
+   if(Buffer.byteLength(JSON.stringify(report.result),'utf8')>75000){diagnostic='report_storage_limit';throw Error('Relatório excede limite de armazenamento; dividir missão.');}
    await current(m);
    stage='reasoning';
    const ai=await gateway.run({requestId:m.requestId,missionId:m.id,agent:m.agent,instruction:m.instruction,context,attachment:s.attachment});
@@ -87,7 +91,8 @@ function createMissionRunner(options){
    const done=await store.finish({mission:m,status:'review_ready',summary:'Análise concluída para revisão. Recibos confirmados: '+receipts.length,report:report.result,reasoning,delegations,chargedMicroeur,receipts});
    if(done?.status!=='review_ready'||done.missionId!==m.id||done.leaseId!==m.leaseId)throw Error('Conclusão não confirmada.');
    return {status:'review_ready',missionId:m.id,chargedMicroeur,receipts};
-  }catch{
+  }catch(error){
+   if(stage==='context'&&!diagnostic)diagnostic=error?.contextCode==='context_limit'?'context_limit':'context_preparation_failed';
    // Keep the claim consumed. A transport error can hide a successful charge
    // or write. Never repeat a model request or tool automatically.
    let saved=false;
