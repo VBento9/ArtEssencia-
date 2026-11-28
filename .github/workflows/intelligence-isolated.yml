@@ -1,7 +1,7 @@
 name: Intelligence isolated tests
 on:
   push:
-    branches: ['feature/intelligence-hybrid-foundation-20261126', 'feature/intelligence-executive-meetings-20261127', 'feature/intelligence-persistent-meetings-20261128', 'feature/intelligence-meeting-execution-20261128', 'feature/intelligence-controlled-finance-20261128', 'feature/intelligence-artessencia-training-20261128']
+    branches: ['feature/intelligence-hybrid-foundation-20261126', 'feature/intelligence-executive-meetings-20261127', 'feature/intelligence-persistent-meetings-20261128', 'feature/intelligence-meeting-execution-20261128', 'feature/intelligence-controlled-finance-20261128', 'feature/intelligence-artessencia-training-20261128', 'feature/intelligence-director-business-context-20261128']
   pull_request:
     branches:
       - main
@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   isolated:
-    if: github.ref == 'refs/heads/feature/intelligence-hybrid-foundation-20261126' || github.ref == 'refs/heads/feature/intelligence-executive-meetings-20261127' || github.event.pull_request.head.ref == 'feature/intelligence-hybrid-foundation-20261126' || github.event.pull_request.head.ref == 'feature/intelligence-executive-meetings-20261127' || github.ref == 'refs/heads/feature/intelligence-persistent-meetings-20261128' || github.event.pull_request.head.ref == 'feature/intelligence-persistent-meetings-20261128' || github.ref == 'refs/heads/feature/intelligence-meeting-execution-20261128' || github.event.pull_request.head.ref == 'feature/intelligence-meeting-execution-20261128' || github.ref == 'refs/heads/feature/intelligence-controlled-finance-20261128' || github.event.pull_request.head.ref == 'feature/intelligence-controlled-finance-20261128' || github.ref == 'refs/heads/feature/intelligence-artessencia-training-20261128' || github.event.pull_request.head.ref == 'feature/intelligence-artessencia-training-20261128'
+    if: github.ref == 'refs/heads/feature/intelligence-hybrid-foundation-20261126' || github.ref == 'refs/heads/feature/intelligence-executive-meetings-20261127' || github.event.pull_request.head.ref == 'feature/intelligence-hybrid-foundation-20261126' || github.event.pull_request.head.ref == 'feature/intelligence-executive-meetings-20261127' || github.ref == 'refs/heads/feature/intelligence-persistent-meetings-20261128' || github.event.pull_request.head.ref == 'feature/intelligence-persistent-meetings-20261128' || github.ref == 'refs/heads/feature/intelligence-meeting-execution-20261128' || github.event.pull_request.head.ref == 'feature/intelligence-meeting-execution-20261128' || github.ref == 'refs/heads/feature/intelligence-controlled-finance-20261128' || github.event.pull_request.head.ref == 'feature/intelligence-controlled-finance-20261128' || github.ref == 'refs/heads/feature/intelligence-artessencia-training-20261128' || github.event.pull_request.head.ref == 'feature/intelligence-artessencia-training-20261128' || github.ref == 'refs/heads/feature/intelligence-director-business-context-20261128' || github.event.pull_request.head.ref == 'feature/intelligence-director-business-context-20261128'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     services:
