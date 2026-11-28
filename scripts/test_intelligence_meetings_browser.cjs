@@ -84,14 +84,19 @@ const {fixture}=require('./test_intelligence_meetings_sql.cjs');
    await page.getByRole('button',{name:'Atualizar',exact:true}).click();
    await page.getByText(/Execução indisponível: confirma o estado da reunião/).waitFor();
    assert.equal(await page.getByRole('button',{name:'Executar intervenção de Tomás',exact:true}).count(),0);
-   await page.getByText('Controlo financeiro da reunião',{exact:true}).click();
-   await page.getByRole('spinbutton',{name:'Teto da reunião em euros',exact:true}).fill('0.00005');
-   await page.getByRole('button',{name:'Aprovar teto da reunião',exact:true}).click();
+   const setCap=async(value)=>{
+    await page.getByText('Controlo financeiro da reunião',{exact:true}).click();
+    await page.getByRole('spinbutton',{name:'Teto da reunião em euros',exact:true}).fill(value);
+    await page.getByRole('button',{name:'Aprovar teto da reunião',exact:true}).click();
+    await page.waitForFunction(expected=>{
+     const field=document.querySelector('input[aria-label="Teto da reunião em euros"]');
+     return !!field&&!field.closest('[inert]')&&!field.closest('details').open&&Number(field.value)===Number(expected);
+    },value);
+   };
+   await setCap('0.00005');
    await page.getByText(/Execução indisponível: confirma o estado da reunião/).waitFor();
    assert.equal(await page.getByRole('button',{name:'Executar intervenção de Tomás',exact:true}).count(),0);
-   await page.getByText('Controlo financeiro da reunião',{exact:true}).click();
-   await page.getByRole('spinbutton',{name:'Teto da reunião em euros',exact:true}).fill('0.001');
-   await page.getByRole('button',{name:'Aprovar teto da reunião',exact:true}).click();
+   await setCap('0.001');
    const execute=page.getByRole('button',{name:'Executar intervenção de Tomás',exact:true});
    await execute.waitFor();
    await page.getByRole('button',{name:'Suspender reunião',exact:true}).click();

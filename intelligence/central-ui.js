@@ -79,24 +79,24 @@ function init(){
  function meetingMissionActions(turn){
   const room=state.meetingsData,id=room.selected,meeting=room.meetings.find(x=>x.meeting_id===id);
   const m=state.missions.find(x=>x.mission_id===turn.missionId&&x.agent===turn.agent&&x.status===turn.status);
-  const box=el('div');
+  const box=el('div'),person=teamDirectory.agents[turn.agent]?.name||turn.agent;
   if(!['pending_review','approved','working'].includes(turn.status))return box;
   if(!m){box.append(el('p','Revisão da missão indisponível. Atualiza a Central antes de continuar.'));return box;}
-  if(turn.status==='working'){box.append(btn('Atualizar intervenção de '+displayAgent(m.agent),()=>load()));return box;}
+  if(turn.status==='working'){box.append(btn('Atualizar intervenção de '+person,()=>load()));return box;}
   const active=meeting?.status==='open'&&state.controls?.enabled&&state.controls.modes?.[m.agent]&&state.controls.modes[m.agent]!=='off';
   if(m.status==='pending_review'){
-   const approve=btn('Aprovar intervenção de '+displayAgent(m.agent),()=>{if(window.confirm('Aprovar esta intervenção? Não inicia uma chamada de IA.'))load('approve',{id:m.mission_id,revision:m.revision});});
+   const approve=btn('Aprovar intervenção de '+person,()=>{if(window.confirm('Aprovar esta intervenção? Não inicia uma chamada de IA.'))load('approve',{id:m.mission_id,revision:m.revision});});
    approve.disabled=!active;box.append(approve);
   }else{
    const maximum=meetingExecutionOffer(state,m,id);
    if(maximum===null)box.append(el('p','Execução indisponível: confirma o estado da reunião, teto, orçamento global e executor alojado.'));
    else{
     const amount=(maximum/1000000).toFixed(6).replace('.',',')+' €';
-    const execute=btn('Executar intervenção de '+displayAgent(m.agent),()=>{if(window.confirm('Executar uma vez a intervenção de '+displayAgent(m.agent)+'? Reserva máxima: '+amount+'. Não repetir se o resultado ficar por confirmar.'))load('execute',{missionId:m.mission_id,revision:m.revision,meetingId:id});});
+    const execute=btn('Executar intervenção de '+person,()=>{if(window.confirm('Executar uma vez a intervenção de '+person+'? Reserva máxima: '+amount+'. Não repetir se o resultado ficar por confirmar.'))load('execute',{missionId:m.mission_id,revision:m.revision,meetingId:id});});
     box.append(el('p','Reserva máxima desta intervenção: '+amount),execute);
    }
   }
-  box.append(btn('Cancelar intervenção de '+displayAgent(m.agent),()=>{if(window.confirm('Cancelar esta missão?'))load('cancel',{id:m.mission_id,revision:m.revision});}));
+  box.append(btn('Cancelar intervenção de '+person,()=>{if(window.confirm('Cancelar esta missão?'))load('cancel',{id:m.mission_id,revision:m.revision});}));
   return box;
  }
  async function load(action='read',args={}){
