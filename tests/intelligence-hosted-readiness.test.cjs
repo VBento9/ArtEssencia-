@@ -38,3 +38,17 @@ test('monthly target policy retains hard provider limit and uses contingency onl
  for(const patch of [{providerHardLimitVerified:false},{ownerAcceptsNonInstantCutoff:false},{contingencyGrossMicroeur:5000001},{targetGrossMonthlyMicroeur:35000000},{providerHardLimitMicroUsd:21000000},{otherGrossMonthlyUpperMicroeur:7000001},{autoRechargeOff:false},{usageReconciled:false},{budgetPolicy:'unreviewed'}])assert.throws(()=>read({...flexible,...patch}));
  assert.equal(require('../intelligence/ai-budget-policy.cjs').stop,23000000);
 });
+
+test('disabled-binding readiness does not poison subsequent execution and always closes its own probe',async()=>{
+ const {checkedAvailability}=require('../intelligence/hosted-readiness.cjs');
+ let enabled=false,probes=0,closed=0;
+ const transport=received=>{assert.notEqual(received,env);assert.deepEqual(received,env);probes++;let invalid=false;
+  const call=async action=>{assert.equal(action,'identity');if(!enabled||invalid){invalid=true;throw Error('binding disabled');}return 'owner';};
+  call.close=async()=>{closed++;};return call;
+ };
+ assert.equal((await checkedAvailability(env,worker,transport,'owner',now)).status,'unavailable');
+ enabled=true;assert.equal((await checkedAvailability(env,worker,transport,'owner',now)).status,'configured');
+ assert.equal(probes,2);assert.equal(closed,2);
+ const failedClose=()=>{const call=async()=> 'owner';call.close=async()=>{throw Error('logout failed');};return call;};
+ assert.equal((await checkedAvailability(env,worker,failedClose,'owner',now)).status,'unavailable');
+});
