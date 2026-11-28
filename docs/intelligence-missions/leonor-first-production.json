@@ -1,0 +1,24 @@
+{
+  "status": "proposed_not_authorized",
+  "agent": "director",
+  "kind": "daily_priority_plan",
+  "title": "Leonor — diagnóstico inicial da ArtEssencia",
+  "instruction": "Leonor, prepara o diagnóstico inicial da ArtEssencia com o dossier AE-EMPRESA-1.0.0 e a formação AE-FORM-1.1.0. Usa apenas o contexto autorizado desta consulta, indicando fonte, revisão e data. Distingue contagens de registos de atividade recente, vendas, lucro, saldo físico e capacidade: estes últimos não estão demonstrados pelas contagens. Apresenta: 1) factos confirmados e cobertura; 2) lacunas por departamento; 3) até cinco prioridades fundamentadas para revisão do proprietário; 4) consultas ou delegações que seriam necessárias, identificadas como propostas sem participação real dos outros funcionários; 5) critérios de conclusão para a etapa seguinte. Verifica o trabalho existente que estiver disponível; se a consulta não permitir excluir duplicações semânticas, declara essa limitação e não afirmes ausência de duplicados. Não cries tarefas, não executes delegações, não alteres módulos nem contactes terceiros. Não repitas a missão concluída de Miguel. Mantém o relatório conciso e guarda-o para revisão, com custo e recibo da execução.",
+  "maximumOwnerAuthorizationMicroeur": 500000,
+  "reservationStatus": "not_reserved",
+  "rateStatus": "production_financial_attestation_pending",
+  "paidCallsAuthorized": 0,
+  "proposedPaidCalls": 1,
+  "toolGrants": [],
+  "otherAgentsRemainOff": true,
+  "routinesRemainOff": true,
+  "afterExecution": "Reconciliação do custo e resultado; suspender novamente a execução paga antes de nova missão.",
+  "prerequisites": [
+    "Instalação aprovada de intelligence-director-business-context-v1.sql em produção",
+    "Autorização expressa para ativar apenas Leonor em modo manual e a ligação do serviço",
+    "Chave dedicada disponível no servidor de produção sem exposição e sem alternativa para a chave genérica",
+    "Verificação financeira atual de tarifa, impostos/câmbio conservadores, infraestrutura, consumo, limite dedicado e recarga automática desligada",
+    "Reserva transacional calculada pelo servidor não superior a 0,50 € nem ao saldo acumulado autorizado remanescente do ensaio",
+    "Missão criada e aprovada individualmente; sem execução automática de outras missões"
+  ]
+}
