@@ -37,7 +37,9 @@ function init(){
  }
  async function rpc(action,args){
   if(!unlockedNow()||!cloudAllowed()||!cloudClient?.rpc)throw Error();
-  const result=action.startsWith('management_')
+  const result=action==='technical_alerts'
+   ?await cloudClient.rpc('artessencia_intelligence_technical_alerts_v1',{})
+   :action.startsWith('management_')
    ?await cloudClient.rpc('artessencia_intelligence_management_v1',{p_action:action.slice(11),p_args:args})
    :action.startsWith('meeting_')
    ?await cloudClient.rpc('artessencia_intelligence_meetings_v1',{p_action:action.slice(8),p_args:args})
@@ -124,6 +126,9 @@ function init(){
    try{const candidate=await rpc('audit_retry_status',{});if(Array.isArray(candidate.eligible)&&Array.isArray(candidate.history))retryStatus=candidate;}catch{}
    if(ticket!==generation||!unlockedNow())return;
    data.auditRetry=retryStatus;
+   data.technicalAlerts=null;
+   try{const alerts=await rpc('technical_alerts',{});if(Array.isArray(alerts.alerts))data.technicalAlerts=alerts;}catch{}
+   if(ticket!==generation||!unlockedNow())return;
    data.management=null;
    try{const review=await rpc('management_read',{});if(Array.isArray(review.candidates)&&Array.isArray(review.byDepartment))data.management=review;}catch{}
    if(ticket!==generation||!unlockedNow())return;
@@ -274,6 +279,22 @@ function init(){
    if(area==='Gabinete da Diretora Geral'){
     const counts=el('article');counts.append(el('strong','Ponto de situação operacional'),el('p','Missões por aprovar: '+list.filter(m=>m.status==='pending_review').length+' · em execução: '+list.filter(m=>m.status==='working').length+' · bloqueadas: '+list.filter(m=>m.status==='blocked').length+' · prontas para revisão: '+list.filter(m=>m.status==='review_ready').length),el('p','Indicadores da consulta atual, não um diagnóstico integral do negócio.'));
     counts.append(btn('Abrir Sala de Reuniões',()=>{nav.value='Sala de Reuniões';missionDraft=null;render();}));content.append(counts);
+    const technical=state.technicalAlerts;
+    if(technical?.status==='ready'){
+     const card=el('article');card.append(el('h4','Duarte · Controlo automático das fichas técnicas'),
+      el('p','Leonor — '+technical.total+' alertas por verificar em '+technical.checked+' produtos de velas e wax melts. Revisão Cloud '+technical.sourceRevision+'.'),
+      el('p',technical.coverage));
+     const descriptions={missing_recipe:'Ficha técnica sem materiais registados',invalid_fragrance_quantity:'Fragrância registada sem quantidade positiva válida',probable_missing_fragrance:'Possível omissão de fragrância num produto com indícios de aroma',confirm_unscented_intent:'Confirmar se a ausência de fragrância é intencional'};
+     const details=el('details');details.open=technical.total>0;details.append(el('summary','Alertas técnicos · '+technical.total));
+     for(const item of technical.alerts){
+      const row=el('p');row.append(el('strong',item.code+' · '+item.name),el('span',' — '+(descriptions[item.kind]||'Rever ficha técnica')+' · '+(item.priority===1?'Prioritário':'Confirmar intenção')));
+      details.append(row);
+     }
+     if(technical.total>technical.alerts.length)details.append(el('p','Lista limitada aos primeiros 100 alertas.'));
+     card.append(details,el('p','A revisão é feita automaticamente na consulta da Central. A correção exige a tua validação na ficha técnica. Nenhum material foi acrescentado.'));
+     content.append(card);
+    }else if(technical?.status==='disabled')line('Controlo técnico suspenso pelos controlos da equipa.');
+    else line('Controlo técnico indisponível; não interpretar como ausência de erros.');
     const management=state.management;
     if(management){
      const panel=el('article');

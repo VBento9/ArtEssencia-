@@ -61,6 +61,10 @@ jobs:
         run: PGLITE_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/@electric-sql/pglite" node scripts/test_intelligence_professional_continuity_sql.cjs
       - name: Professional continuity PostgreSQL fixture (synthetic database)
         run: PG_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/pg" node scripts/test_intelligence_professional_continuity_sql.cjs --postgres
+      - name: Technical recipe alert fixture (synthetic database)
+        run: PGLITE_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/@electric-sql/pglite" node scripts/test_intelligence_technical_alerts_sql.cjs
+      - name: Technical recipe alert PostgreSQL fixture (synthetic database)
+        run: PG_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/pg" node scripts/test_intelligence_technical_alerts_sql.cjs --postgres
       - name: Management consolidation (synthetic database)
         run: PGLITE_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/@electric-sql/pglite" node scripts/test_intelligence_management_sql.cjs
       - name: Management consolidation PostgreSQL fixture (synthetic database)
