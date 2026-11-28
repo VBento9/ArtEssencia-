@@ -68,3 +68,11 @@ Estado confirmado diretamente depois da instalação:
 - Advisor de saúde sem avisos. Avisos de RLS sem políticas nas tabelas privadas representam negação por defeito; os acessos autorizados passam pelas RPCs. Não foram alteradas as funções públicas do Catálogo ou da Loja para eliminar avisos preexistentes.
 
 Ainda não há conta técnica de produção criada ou segredo de executor configurado. O conector Supabase não dispõe de administração de utilizadores Auth; a alternativa de navegador chegou à página de início de sessão, sem sessão administrativa ativa. Não criar utilizadores mediante escrita direta nas tabelas internas Auth nem alterar a palavra-passe do proprietário. A próxima dependência é autenticação administrativa segura para preparar a conta técnica. Nenhuma chamada OpenAI, publicação de frontend, ativação de equipa, automatismo ou despesa foi efetuada nesta instalação. A aplicação pública permanece 1.9.196; candidata 1.9.197.
+
+## Preparação da publicação controlada — 28/11/2026
+
+O proprietário autorizou a publicação da candidata 1.9.197 com a equipa e a faturação desligadas. A conta técnica foi criada pelo proprietário e confirmada, sem estatuto de proprietário; o binding mantém-se desativado. As variáveis de produção foram preparadas e a palavra-passe foi introduzida pelo proprietário diretamente na Vercel, como Secret. O valor não foi lido nem registado.
+
+A verificação `intelligence/deployment-auth-check.cjs`, integrada no build, valida apenas a configuração técnica de produção autorizada: autentica a conta, confirma a identidade via Auth, confirma que não é proprietária, exige rejeição pela ponte de execução desativada e termina a sessão temporária com scope=local. Não importa o fornecedor de IA nem cria missões. Qualquer falha interrompe o build antes da promoção do deployment. Os testes locais cobrem credenciais incorretas, identidade divergente, privilégios de proprietário, binding ativo, falha de logout e ausência de repetições. Nesta candidata, ativar o executor requer revisão deste bloqueio de publicação e autorização financeira independente; não basta alterar uma variável.
+
+84 testes Node passaram antes da publicação. A evidência de autenticação real só poderá ser declarada depois do build de produção. Versão de recuperação preservada: deployment dpl_7jG42yvuMqpNhK2gkGkAqnxb3Ujy, main 812ef1a, aplicação 1.9.196.

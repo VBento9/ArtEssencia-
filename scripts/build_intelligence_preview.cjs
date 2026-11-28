@@ -45,3 +45,12 @@ for (const directory of ['.', 'security', 'intelligence']) {
   }
 }
 fs.writeFileSync('public/index.html', html);
+
+// A released service configuration must prove its credentials and disabled gates
+// before this controlled production rollout can replace the recovery deployment.
+require('../intelligence/deployment-auth-check.cjs').check().then(result=>{
+  if(result.status==='verified')console.log('INTELLIGENCE_AUTH_VERIFIED: identity confirmed, non-owner, execution blocked, temporary session closed.');
+}).catch(()=>{
+  console.error('INTELLIGENCE_AUTH_NOT_CONFIRMED: production deployment stopped; no AI calls made.');
+  process.exitCode=1;
+});
