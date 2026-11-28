@@ -1,10 +1,12 @@
 'use strict';
 // Deployment safety check only. No provider, mission, worker enablement or data writes.
 async function check(env=process.env,request=fetch){
- if(env.VERCEL_ENV!=='production'||env.INTELLIGENCE_SERVICE_RELEASE!=='approved')return {status:'skipped'};
+ if(env.VERCEL_ENV!=='production')return {status:'skipped'};
+ const manual=require('./manual-activation.cjs').manualStage(env);
+ if(env.INTELLIGENCE_SERVICE_RELEASE!=='approved')return {status:'skipped'};
  const base='https://ihtsonqnnlrxvorfrarl.supabase.co';
  if(env.INTELLIGENCE_SUPABASE_URL!==base||env.INTELLIGENCE_WORKER_AUTH!=='service_account'||
-    env.INTELLIGENCE_WORKER_ENABLED!=='false'||env.INTELLIGENCE_PAID_RELEASE==='approved'||
+    (!manual&&(env.INTELLIGENCE_WORKER_ENABLED!=='false'||env.INTELLIGENCE_PAID_RELEASE==='approved'))||
     !env.INTELLIGENCE_SUPABASE_PUBLISHABLE_KEY||!env.INTELLIGENCE_SERVICE_EMAIL||!env.INTELLIGENCE_SERVICE_PASSWORD||
     !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(env.INTELLIGENCE_SERVICE_USER_ID||''))throw Error('DEPLOYMENT_AUTH_CONFIGURATION');
  let token=null,passed=false,closed=false;

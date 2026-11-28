@@ -5,6 +5,7 @@ async function handle(req,res,{worker,env=process.env,now=Date.now}){
  const secret=env.CRON_SECRET;
  if(typeof secret!=='string'||secret.length<32||!timingSafeEqual(digest(String(req.headers?.authorization||'')),digest('Bearer '+secret)))return res.status(401).end();
  if(env.INTELLIGENCE_WORKER_ENABLED!=='true')return res.status(503).json({status:'desligado'});
+ if(env.INTELLIGENCE_ACTIVATION_STAGE)return res.status(503).json({status:'ativacao_manual'});
  if(env.INTELLIGENCE_EXECUTION_MODE==='trial')return res.status(503).json({status:'ensaio_manual'});
  const deadline=now()+45000;
  try{

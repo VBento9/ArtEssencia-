@@ -11,6 +11,7 @@ function compose({env=process.env,call,provider,tariffs,publicReader}={}){
   // Real provider is unavailable outside the explicitly released production deployment.
   // Tests inject both the transport and provider, never a real API key.
   if(!provider&&(env.VERCEL_ENV!=='production'||env.INTELLIGENCE_SUPABASE_URL!=='https://ihtsonqnnlrxvorfrarl.supabase.co'))throw Error('Faturação suspensa fora da produção autorizada.');
+  const manualOnly=require('./manual-activation.cjs').manualStage(env);
   const rate=(tariffs||approvedPricing(env))[env.INTELLIGENCE_TARIFF_ID];
   function pricing(){
     if(env.INTELLIGENCE_PAID_RELEASE!=='approved'||!rate||rate.verified!==true||
@@ -23,7 +24,7 @@ function compose({env=process.env,call,provider,tariffs,publicReader}={}){
   call=call||transport(env);provider=provider||providerFactory(env.INTELLIGENCE_OPENAI_API_KEY);
   // An injected transport cannot implicitly contact any public project.
   if(!publicReader&&!injected)publicReader=()=>require('./catalog-crosscheck.cjs').createReader(env)();
-  return {call,provider,pricing,publicReader};
+  return {call,provider,pricing,publicReader,manualOnly};
 }
 
 // The simulation never calls a model endpoint. Positive fictional reservations
@@ -105,13 +106,14 @@ async function composeHosted({env=process.env,call,publicReader}={}){
 }
 
 function runLegacy(runtime,channel,payload,id){
-  if(['simulation','trial'].includes(runtime.mode))throw Error('Assistente legado indisponível em ensaio alojado.');
+  if(runtime.manualOnly===true||['simulation','trial'].includes(runtime.mode))throw Error('Assistente legado indisponível em ensaio alojado.');
   const scope={channel,request:id};
   const permitted=async()=>{runtime.pricing();return await runtime.call('permission',scope)===true;};
   const ledger=chargeLedger(runtime.call,scope);
   return require('./legacy-ai.cjs').createLegacyService({...runtime,permitted,ledger})(channel,payload,id);
 }
 async function processNext(runtime,approvedMission,{scheduled=false,onClaim}={}){
+  if(runtime.manualOnly===true&&(!approvedMission||scheduled))throw Error('Ativação apenas por missão manual aprovada.');
   if(runtime.mode==='trial'&&(!approvedMission||scheduled))throw Error('Ensaio real apenas por missão manual aprovada.');
   const {call,pricing,provider}=runtime;
   if(approvedMission && await call('identity')!==approvedMission.owner)throw Error('Titular inválido.');
