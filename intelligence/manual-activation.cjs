@@ -8,7 +8,7 @@ function manualStage(env=process.env,now=new Date()){
  if(!env.INTELLIGENCE_ACTIVATION_STAGE)return false;
  if(env.INTELLIGENCE_ACTIVATION_STAGE!=='manual_only_v1'||!productionServiceEnvironment(env)||
     env.INTELLIGENCE_WORKER_ENABLED!=='true'||env.INTELLIGENCE_PAID_RELEASE!=='approved'||
-    !env.INTELLIGENCE_OPENAI_API_KEY||env.OPENAI_API_KEY||
+    !env.INTELLIGENCE_OPENAI_API_KEY||
     !env.INTELLIGENCE_SUPABASE_PUBLISHABLE_KEY||
     !env.INTELLIGENCE_SERVICE_EMAIL||!env.INTELLIGENCE_SERVICE_PASSWORD||
     !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(env.INTELLIGENCE_SERVICE_USER_ID||''))throw Error('Ativação manual indisponível.');
