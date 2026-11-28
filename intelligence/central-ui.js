@@ -37,7 +37,9 @@ function init(){
  }
  async function rpc(action,args){
   if(!unlockedNow()||!cloudAllowed()||!cloudClient?.rpc)throw Error();
-  const result=action.startsWith('meeting_')
+  const result=action.startsWith('management_')
+   ?await cloudClient.rpc('artessencia_intelligence_management_v1',{p_action:action.slice(11),p_args:args})
+   :action.startsWith('meeting_')
    ?await cloudClient.rpc('artessencia_intelligence_meetings_v1',{p_action:action.slice(8),p_args:args})
    :action==='audit_retry_status'
    ?await cloudClient.rpc('artessencia_intelligence_audit_retry_status_v1',{})
@@ -122,6 +124,9 @@ function init(){
    try{const candidate=await rpc('audit_retry_status',{});if(Array.isArray(candidate.eligible)&&Array.isArray(candidate.history))retryStatus=candidate;}catch{}
    if(ticket!==generation||!unlockedNow())return;
    data.auditRetry=retryStatus;
+   data.management=null;
+   try{const review=await rpc('management_read',{});if(Array.isArray(review.candidates)&&Array.isArray(review.byDepartment))data.management=review;}catch{}
+   if(ticket!==generation||!unlockedNow())return;
    data.hostedAvailability=await hostedAvailability(ticket);
    if(ticket!==generation||!unlockedNow())return;
    if(action.startsWith('meeting_')&&receipt?.meetingId)meetingSelection=receipt.meetingId;
@@ -269,6 +274,30 @@ function init(){
    if(area==='Gabinete da Diretora Geral'){
     const counts=el('article');counts.append(el('strong','Ponto de situação operacional'),el('p','Missões por aprovar: '+list.filter(m=>m.status==='pending_review').length+' · em execução: '+list.filter(m=>m.status==='working').length+' · bloqueadas: '+list.filter(m=>m.status==='blocked').length+' · prontas para revisão: '+list.filter(m=>m.status==='review_ready').length),el('p','Indicadores da consulta atual, não um diagnóstico integral do negócio.'));
     counts.append(btn('Abrir Sala de Reuniões',()=>{nav.value='Sala de Reuniões';missionDraft=null;render();}));content.append(counts);
+    const management=state.management;
+    if(management){
+     const panel=el('article');
+     panel.append(el('h4','Prioridades consolidadas dos departamentos'),
+      el('p',management.reports+' relatórios · '+management.total+' propostas · '+management.sameTitleExtra+' repetições por título agrupadas · '+management.alreadyInPlanning+' já no Planeamento · '+management.eligible+' grupos disponíveis.'),
+      el('p',management.coverage),el('p','Seleciona até 10 prioridades para criar tarefas internas, sem chamadas de IA nem alterações comerciais.'));
+     if(management.invalid)panel.append(el('p',management.invalid+' propostas inválidas por rever.'));
+     const departments=el('details');departments.append(el('summary','Resumo por departamento'));
+     for(const d of management.byDepartment)departments.append(el('p',displayAgent(d.agent)+' · '+d.original+' propostas / '+d.groups+' grupos / '+d.existing+' já registados'));
+     panel.append(departments);
+     const chosen=new Map(),approve=btn('Aprovar prioridades selecionadas',()=>{
+      if(!chosen.size||chosen.size>10)return;
+      if(window.confirm('Criar '+chosen.size+' tarefas internas no Planeamento? Não inicia IA nem altera dados comerciais.'))load('management_plan',{revision:management.revision,confirmed:true,items:[...chosen.values()]});
+     });approve.disabled=true;
+     for(const item of management.candidates){
+      const label=el('label'),input=el('input');input.type='checkbox';input.setAttribute('aria-label','Selecionar '+item.title);
+      const k=item.missionId+'|'+item.key;
+      input.onchange=()=>{if(input.checked&&chosen.size>=10){input.checked=false;return;}if(input.checked)chosen.set(k,{missionId:item.missionId,key:item.key});else chosen.delete(k);approve.disabled=!chosen.size;};
+      label.append(input,document.createTextNode(' '+displayAgent(item.agent)+' · '+item.title+' · '+({1:'Alta',2:'Normal',3:'Baixa'}[item.priority]||'Por validar')+(item.dueDate?' · '+item.dueDate:'')+(item.groupCount>1?' · '+item.groupCount+' propostas agrupadas':'')));
+      const entry=el('p');entry.append(label);panel.append(entry);
+     }
+     if(!management.candidates.length)panel.append(el('p','Sem novas prioridades elegíveis nesta consulta.'));
+     panel.append(approve);content.append(panel);
+    }else line('Consolidação de prioridades indisponível nesta versão da Cloud.');
    }
    const agent=select(Object.keys(labels).map(key=>[key,displayAgent(key)]),'Funcionário'),kind=select([],'Tipo de missão'),instruction=el('textarea');
    instruction.placeholder='Descreve o trabalho';instruction.maxLength=4000;instruction.setAttribute('aria-label','Instrução');
