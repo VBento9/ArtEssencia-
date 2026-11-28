@@ -57,6 +57,10 @@ jobs:
         run: PGLITE_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/@electric-sql/pglite" node scripts/test_intelligence_hosted_service_sql.cjs
       - name: Production installation remains disabled (synthetic database)
         run: PGLITE_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/@electric-sql/pglite" node scripts/test_intelligence_production_install_sql.cjs
+      - name: Professional continuity transaction fixture (synthetic database)
+        run: PGLITE_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/@electric-sql/pglite" node scripts/test_intelligence_professional_continuity_sql.cjs
+      - name: Professional continuity PostgreSQL fixture (synthetic database)
+        run: PG_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/pg" node scripts/test_intelligence_professional_continuity_sql.cjs --postgres
       - name: Persistent meetings SQL fixture (synthetic database)
         run: PGLITE_MODULE="$RUNNER_TEMP/ae-intelligence/node_modules/@electric-sql/pglite" node scripts/test_intelligence_meetings_sql.cjs
       - name: Persistent meetings PostgreSQL 17 concurrency fixture (synthetic database)
