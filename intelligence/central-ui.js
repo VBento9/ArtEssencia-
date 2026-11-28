@@ -13,6 +13,7 @@ const btn=(label,fn)=>{const b=el('button',label);b.type='button';b.className='b
 const select=(options,label)=>{const s=el('select');s.setAttribute('aria-label',label);for(const [v,t] of options){const o=el('option',t);o.value=v;s.append(o);}return s;};
 const statusNames={pending_review:'A aguardar aprovação',approved:'Aprovada',working:'Em execução',review_ready:'Para revisão',blocked:'Bloqueada',cancelled:'Cancelada'};
 const sections=['Visão geral','Gabinete da Diretora Geral','Sala de Reuniões','Funcionários','Comunicação','Missões','Trabalhos em execução','Planeamento','Aprovações','Documentos produzidos','Memória profissional','Formação','Objetivos','Desempenho','Controlo financeiro','Auditoria','Configurações'];
+const memoryGuidance=Object.freeze({"director":"Consultar os relatórios existentes antes de delegar novas missões. Distinguir factos confirmados de estimativas e indicar prioridades, responsáveis e bloqueios. Não repetir trabalhos concluídos sem justificação nem ultrapassar as autorizações do proprietário.","stock":"Distinguir inventário registado de contagem física confirmada. Validar unidades, custos e referências das fichas técnicas antes de propor correções. Não alterar materiais, quantidades ou receitas sem autorização. Comunicar necessidades de validação à Leonor."});
 const allOff=()=>Object.fromEntries(Object.keys(labels).map(key=>[key,'off']));
 const unlockedNow=()=>typeof unlocked!=='undefined'&&unlocked===true&&['authGateV1880','lockScreen'].every(id=>document.getElementById(id)?.classList.contains('hidden'));
 function init(){
@@ -132,7 +133,7 @@ function init(){
    if(ticket!==generation||!unlockedNow())return;
    if(action==='stock_change_preview')stockPreview={mission:args.mission,request:args,result:receipt,operationId:crypto.randomUUID()};
    else stockPreview=null;
-   state=data;notice.textContent=action.startsWith('meeting_')?'Operação da reunião confirmada na Cloud. Nenhuma execução de IA foi iniciada.':action==='execute'?'Execução aceite na Cloud. Podes fechar a aplicação e consultar o resultado ao regressar. Atualiza a central para acompanhar.':action==='audit_requeue'?'Tentativa anterior arquivada. A missão aguarda nova aprovação. Não foi iniciada nenhuma chamada paga.':action==='professional_lesson'?'Lição aprovada e guardada na memória profissional. Não concede permissões.':action==='professional_assess'?'Avaliação profissional registada. Não altera permissões.':action==='commercial_approve'?'Proposta interna guardada em Orçamentos. Nenhum contacto enviado.':['stock_change_apply','stock_change_revert'].includes(action)?'Operação confirmada na Cloud. Recebe e valida os dados antes de editar.':action==='repair_recipe_reference'?'Referência confirmada na ficha técnica. Recebe e valida a Cloud antes de editar.':action==='create_material'?'Material confirmado na Cloud. Recebe e valida os dados da Cloud antes de alterar o stock.':action==='plan_task'?(receipt.status==='archived'?'A tarefa já foi arquivada.':'Tarefa confirmada no Planeamento.'):'';
+   state=data;notice.textContent=action==='start_team_work'?'Equipa iniciada em modo semiautomático: '+receipt.prepared+' novas missões preparadas. Nenhuma chamada paga iniciada.':action.startsWith('meeting_')?'Operação da reunião confirmada na Cloud. Nenhuma execução de IA foi iniciada.':action==='execute'?'Execução aceite na Cloud. Podes fechar a aplicação e consultar o resultado ao regressar. Atualiza a central para acompanhar.':action==='audit_requeue'?'Tentativa anterior arquivada. A missão aguarda nova aprovação. Não foi iniciada nenhuma chamada paga.':action==='professional_lesson'?'Lição aprovada e guardada na memória profissional. Não concede permissões.':action==='professional_assess'?'Avaliação profissional registada. Não altera permissões.':action==='commercial_approve'?'Proposta interna guardada em Orçamentos. Nenhum contacto enviado.':['stock_change_apply','stock_change_revert'].includes(action)?'Operação confirmada na Cloud. Recebe e valida os dados antes de editar.':action==='repair_recipe_reference'?'Referência confirmada na ficha técnica. Recebe e valida a Cloud antes de editar.':action==='create_material'?'Material confirmado na Cloud. Recebe e valida os dados da Cloud antes de alterar o stock.':action==='plan_task'?(receipt.status==='archived'?'A tarefa já foi arquivada.':'Tarefa confirmada no Planeamento.'):'';
    if(action==='plan_task'||action==='meeting_plan')document.dispatchEvent(new CustomEvent('ae-task-refresh'));render();
   }catch{if(ticket===generation){state=null;content.replaceChildren();notice.textContent=action==='read'?'Central Cloud indisponível. Verifica a sessão e a instalação do serviço.':'Resultado por confirmar. Atualiza a central antes de repetir a operação.';if(action==='read'&&nav.value==='Funcionários'&&unlockedNow())offlineTeam();}}
   finally{if(ticket===generation){busy=false;content.inert=false;}}
@@ -444,9 +445,20 @@ function init(){
     else content.append(btn('Eliminar memória revogada',()=>{if(window.confirm('Eliminar definitivamente esta memória?'))load('erase',{id:entry.memory_id});}));
    }
    const evidence=list.filter(m=>m.status==='review_ready');
+   if(area==='Memória profissional'){
+    line('Sugestões de procedimento para aprovação do proprietário. Não são novas respostas de IA nem factos aprendidos automaticamente.');
+    for(const key of ['director','stock']){
+     const m=evidence.find(x=>x.agent===key&&x.kind===kinds[key][0]&&state.documents.some(d=>d.mission_id===x.mission_id&&d.agent===key&&d.content));
+     if(!m)continue;
+     const proposal=memoryGuidance[key],already=state.memory.some(x=>x.agent===key&&x.kind==='lesson'&&!x.revoked_at&&x.summary===proposal);
+     if(already)continue;
+     const card=el('article');card.append(el('strong',displayAgent(key)+' · Sugestão de memória'),el('p',proposal),el('small','Relatório de origem: '+(names[m.kind]||m.kind)+' · '+new Date(m.updated_at).toLocaleString('pt-PT')));
+     card.append(btn('Aprovar e guardar memória',()=>{if(window.confirm('Guardar este procedimento como memória profissional? Não autoriza novas operações.'))load('remember',{id:crypto.randomUUID(),agent:key,mission:m.mission_id,summary:proposal,kind:'lesson'});}));content.append(card);
+    }
+   }
    if(!evidence.length){line('É necessária uma missão concluída para validar uma nova memória.');return;}
    const origin=select(evidence.map(m=>[m.mission_id,displayAgent(m.agent)+' · '+m.instruction.slice(0,80)]),'Missão de origem'),summary=el('textarea');summary.maxLength=1000;summary.placeholder='Conhecimento profissional validado';
-   content.append(origin,summary,btn('Validar e guardar',()=>{const m=evidence.find(m=>m.mission_id===origin.value);if(summary.value.trim())load('remember',{id:crypto.randomUUID(),agent:m.agent,mission:m.mission_id,summary:summary.value.trim(),kind:area==='Objetivos'?'objective':'lesson'});}));
+   content.append(origin,summary,btn('Validar e guardar',()=>{const m=evidence.find(m=>m.mission_id===origin.value);if(m&&summary.value.trim()&&window.confirm('Validar e guardar este conhecimento? Não altera permissões.'))load('remember',{id:crypto.randomUUID(),agent:m.agent,mission:m.mission_id,summary:summary.value.trim(),kind:area==='Objetivos'?'objective':'lesson'});}));
   }else if(area==='Controlo financeiro'){
    const eur=n=>new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR',maximumFractionDigits:4}).format(n/1000000);
    const used=state.budget.settled+state.budget.pending;
@@ -475,10 +487,16 @@ function init(){
    if(!state.events.length)line('Sem movimentos.');
   }else if(area==='Planeamento'){
    const who=select(Object.keys(labels).map(key=>[key,displayAgent(key)]),'Responsável pela rotina'), cadences={daily:'Diária',weekly:'Semanal',monthly:'Mensal'},period=select(Object.entries(cadences),'Periodicidade'),instruction=el('textarea');instruction.maxLength=4000;instruction.placeholder='Objetivo da rotina';
-   line('Responsabilidades permanentes: prepara rotinas recorrentes. Manual não executa rotinas; Semiautomático prepara missões; Automático depende de permissões, agendamento e orçamento.');
+   line('Responsabilidades permanentes: preparar não é ativar. As rotinas novas ficam suspensas; a ativação exige uma ação separada.');
+   const startTeam=btn('Iniciar trabalho dos nove funcionários',()=>{if(window.confirm('Iniciar a equipa em modo semiautomático? As responsabilidades recorrentes ficam ativas para preparar missões. Não são aprovadas nem executadas chamadas pagas; os relatórios do período e as missões em curso serão reutilizados.'))load('start_team_work',{revision:controls.revision,confirmed:true});});
+   content.append(startTeam);line('O arranque prepara missões para aprovação; o executor financeiro mantém o seu controlo independente.');
+   const missing=Object.keys(labels).filter(key=>!state.routines.some(r=>r.agent===key));
+   const preparation=el('details');preparation.open=missing.length>0;preparation.append(el('summary','Preparar responsabilidades da equipa ('+missing.length+' em falta)'));
+   for(const key of Object.keys(labels)){const p=teamDirectory.agents[key];preparation.append(el('p',p.name+' · '+cadences[p.cadence]+' · '+(missing.includes(key)?'por preparar':'já configurada')+' — '+p.firstMission));}
+   const prepareAll=btn('Preparar responsabilidades em falta (suspensas)',()=>{if(window.confirm('Preparar as '+missing.length+' responsabilidades em falta, todas suspensas? As existentes não serão substituídas e não haverá execução paga.'))load('prepare_team_routines',{revision:controls.revision,confirmed:true});});prepareAll.disabled=!missing.length;preparation.append(prepareAll);content.append(preparation);
    const template=btn('Preencher responsabilidade sugerida',()=>{const p=teamDirectory.agents[who.value];period.value=p.cadence;instruction.value=p.firstMission;});
-   content.append(who,period,template,instruction,btn('Guardar rotina',()=>{if(instruction.value.trim()&&window.confirm('Guardar esta responsabilidade recorrente? A execução futura depende do modo individual e dos controlos financeiros.'))load('routine',{agent:who.value,cadence:period.value,instruction:instruction.value.trim(),enabled:true,revision:controls.revision});}));
-   for(const r of state.routines){line(displayAgent(r.agent)+' · '+cadences[r.cadence]+' · '+r.instruction);content.append(btn(r.enabled?'Suspender rotina':'Retomar rotina',()=>load('routine',{...r,enabled:!r.enabled,revision:controls.revision})));}
+   content.append(who,period,template,instruction,btn('Guardar rotina suspensa',()=>{if(instruction.value.trim()&&window.confirm('Guardar esta responsabilidade suspensa? Não inicia missões nem despesas.'))load('routine',{agent:who.value,cadence:period.value,instruction:instruction.value.trim(),enabled:false,revision:controls.revision});}));
+   for(const r of state.routines){line(displayAgent(r.agent)+' · '+cadences[r.cadence]+' · '+r.instruction);content.append(btn(r.enabled?'Suspender rotina':'Ativar rotina',()=>{if(r.enabled||window.confirm('Ativar esta responsabilidade? A execução futura continua condicionada ao modo do funcionário, agendamento e autorização financeira.'))load('routine',{...r,enabled:!r.enabled,revision:controls.revision});}));}
    const planner=document.getElementById('aeTasksCloudToggleV1');
    if(planner)content.append(btn('Abrir Planeamento de Tarefas',()=>{if(planner.getAttribute('aria-expanded')!=='true')planner.click();planner.scrollIntoView({block:'start'});}));else line('Planeamento de Tarefas indisponível.');
   }else if(area==='Desempenho'){
