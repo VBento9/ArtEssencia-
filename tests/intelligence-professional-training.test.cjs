@@ -5,8 +5,8 @@ const core=require('../intelligence/control-core.js'),gateway=require('../intell
 test('All nine departments have distinct procedures, an exercise, and a versioned receipt, not certification',()=>{
  assert.deepEqual(Object.keys(data.profiles).sort(),core.agents.slice().sort());
  assert.throws(()=>training.profile('__proto__'));
- const ui=Object.fromEntries(Object.entries(data.profiles).map(([k,p])=>[k,{modules:p.modules,procedures:p.procedures,quality:p.quality,exercise:p.exercise}]));
- assert.ok(fs.readFileSync('intelligence/central-ui.js','utf8').includes('const trainingOverview='+JSON.stringify({version:data.version,profiles:ui})+';'));
+ const ui=Object.fromEntries(Object.entries(data.profiles).map(([k,p])=>[k,{modules:p.modules,procedures:p.procedures,quality:p.quality,exercise:p.exercise,responsibilities:p.responsibilities,inputs:p.inputs,collaboration:p.collaboration,acceptance:p.acceptance}]));
+ assert.ok(fs.readFileSync('intelligence/central-ui.js','utf8').includes('const trainingOverview='+JSON.stringify({version:data.version,company:data.company,profiles:ui})+';'));
  for(const agent of core.agents){
   const p=training.profile(agent),r=training.receipt(agent);
   assert.equal(p.procedures.length,3);assert.ok(p.exercise&&p.quality);
@@ -30,5 +30,18 @@ test('Gateway loads the specific professional curriculum before the simulated pr
   }});
   assert.equal((await g.run({requestId:id,missionId:id,agent,instruction:'Ensaio fictício',context:JSON.stringify({evidenceIds:['mission-fixture']})})).status,'review');
   assert.equal(called,1);
+ }
+});
+
+test('Company knowledge and role boundaries reach every provider; profiles cannot mutate the shared curriculum',()=>{
+ for(const agent of core.agents){
+  const p=training.profile(agent),instructions=training.instructions(agent);
+  assert.equal(p.role,require('../intelligence/agent-directory.cjs').profile(agent).role);
+  for(const field of ['responsibilities','inputs','collaboration','acceptance']){assert.ok(p[field].length);for(const text of p[field])assert.ok(instructions.includes(text));}
+  for(const field of ['identity','operatingRules','sourcePolicy','workCycle','unknowns'])for(const text of data.company[field])assert.ok(instructions.includes(text));
+  assert.equal(training.receipt(agent).companyVersion,data.company.version);
+  p.company.operatingRules.length=0;p.responsibilities.length=0;
+  assert.ok(training.profile(agent).company.operatingRules.length);assert.ok(training.profile(agent).responsibilities.length);
+  assert.ok(instructions.includes('limite efetivo do servidor, que pode ser zero'));
  }
 });
