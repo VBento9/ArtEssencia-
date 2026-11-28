@@ -36,13 +36,23 @@ const {fixture}=require('./test_intelligence_meetings_sql.cjs');
    if(!await create.evaluate(n=>n.open))await create.locator('summary').click();
    await page.getByRole('textbox',{name:'Título da reunião',exact:true}).fill('Reunião '+width);
    await page.getByRole('button',{name:'Guardar convocatória',exact:true}).click();
-   await page.getByRole('combobox',{name:'Reunião guardada',exact:true}).waitFor();
+   // On subsequent viewports the old meeting selector already exists. Wait for the
+   // newly created meeting to be selected and the Cloud render to finish.
+   await page.waitForFunction(title=>{
+    const selector=document.querySelector('select[aria-label="Reunião guardada"]');
+    const question=document.querySelector('textarea[aria-label="Pergunta na reunião"]');
+    return selector?.selectedOptions[0]?.textContent===title+' · Aberta'&&!!question&&!question.closest('[inert]');
+   },'Reunião '+width);
+   const selectedMeeting=await page.getByRole('combobox',{name:'Reunião guardada',exact:true}).inputValue();
    const query='Pergunta sintética '+width+' <img src=x onerror=alert(1)>';
    await page.getByRole('textbox',{name:'Pergunta na reunião',exact:true}).fill(query);
    await page.getByRole('button',{name:'Guardar pergunta',exact:true}).click();
    await page.getByText(query,{exact:true}).waitFor();assert.equal(await page.locator('.ae-meeting-thread img').count(),0);
    const meeting=(await admin('SELECT meeting_id FROM artessencia_intelligence_private.meetings WHERE title=$1',['Reunião '+width])).rows[0].meeting_id;
-   const message=(await admin('SELECT message_id FROM artessencia_intelligence_private.meeting_messages WHERE meeting_id=$1 AND author=$2',[meeting,'owner'])).rows[0].message_id;
+   assert.equal(selectedMeeting,meeting,'The new meeting must be selected before saving its question');
+   const stored=(await admin('SELECT message_id,content FROM artessencia_intelligence_private.meeting_messages WHERE meeting_id=$1 AND author=$2',[meeting,'owner'])).rows;
+   assert.equal(stored.length,1);assert.equal(stored[0].content,query);
+   const message=stored[0].message_id;
    assert.equal(await page.getByRole('button',{name:'Solicitar intervenção de Tomás',exact:true}).isDisabled(),true);
    await admin("UPDATE artessencia_intelligence_private.team_controls SET enabled=true,modes=jsonb_set(modes,'{stock}','\"manual\"')");
    await page.getByRole('button',{name:'Atualizar',exact:true}).click();
@@ -67,9 +77,11 @@ const {fixture}=require('./test_intelligence_meetings_sql.cjs');
    await page.getByText(/Planeamento: pendente/).waitFor();
    await page.reload();await page.getByRole('button',{name:'Abrir Intelligence',exact:true}).click();
    await page.getByRole('combobox',{name:'Área de trabalho'}).selectOption('Sala de Reuniões');
+   await page.waitForFunction(id=>document.querySelector('select[aria-label="Reunião guardada"]')?.value===id,meeting);
    await page.getByText(query,{exact:true}).waitFor();await page.getByText(/Planeamento: pendente/).waitFor();
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+5),false);
    await admin("UPDATE artessencia_intelligence_private.team_controls SET enabled=false,modes=jsonb_set(modes,'{stock}','\"off\"')");
+   console.log('PASS: meeting browser fixture at '+width+'px, persisted question and original Planning task');
    await page.close();
   }
   assert.ok(requests.some(r=>r.name==='artessencia_intelligence_meetings_v1'&&r.p_action==='plan'));
